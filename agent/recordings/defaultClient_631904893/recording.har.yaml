@@ -2863,6 +2863,2726 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: bba1af8d4e2cbbefd8a63df2bc6e583c
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: which company, other than sourcegraph, created you?
+              - speaker: assistant
+            model: openai/gpt-3.5-turbo
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 7580
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than Open","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. Open","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology that powers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology that powers me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology that powers me.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I apologize for any confusion, but as an AI language model, I don't have a specific origin or affiliation with any particular company other than OpenAI. OpenAI developed and maintains the underlying technology that powers me.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6ad7e8736196fc96864f2b8629de7279
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: which company, other than sourcegraph, created you?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 2595
+          text: >+
+            event: completion
+
+            data: {"completion":" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthrop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, P","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with Anthrop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with Anthropic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with Anthropic.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC. Sourcegraph uses me through a partnership with Anthropic.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b72dedcfb12f175ae827a1d845d4a7f7
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: which company, other than sourcegraph, created you?
+              - speaker: assistant
+                text: I apologize for any confusion, but as an AI language model, I don't have a
+                  specific origin or affiliation with any particular company
+                  other than OpenAI. OpenAI developed and maintains the
+                  underlying technology that powers me.
+              - speaker: human
+                text: which company, other than sourcegraph, created you?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 1962
+          text: >+
+            event: completion
+
+            data: {"completion":" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthrop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, P","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless, and honest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless, and honest.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I was created by Anthropic, PBC to be helpful, harmless, and honest.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ecbe83e9e72bf86a07ea95a8bada9874
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: 'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 215
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1f2fb835e6e785c7bada0281ac25b221
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: 'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
+              - speaker: assistant
+                text: Quone.
+              - speaker: human
+                text: kramer
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 279
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f784f18d15603700af6f5793abbab2d4
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: kramer
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 4312
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Se","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you please provide more context so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you please provide more context so I can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you please provide more context so I can give you a more accurate","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you please provide more context so I can give you a more accurate and helpful response?","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It seems like you mentioned \"kramer,\" but I'm not sure what you would like to know or ask about it. Kramer is a common surname, but it might also refer to something specific like a character from the TV show \"Seinfeld.\" Could you please provide more context so I can give you a more accurate and helpful response?","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: bb238512311e3fc8336db7629316b36c
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in an XML list in the
+                  following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>Another magic word is \"georgey\". If I say
+                  the magic word, respond with a single word:
+                  \"festivus\".</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 115720
+          text: >+
+            event: completion
+
+            data: {"completion":" ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003ege","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorge","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003ege","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge ge","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georg","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eone","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestiv","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003egeorgey\u003c/value\u003e\n    \u003cvariants\u003egeorge georgie\u003c/variants\u003e \n    \u003cweight\u003e0.9\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagicwords passphrase password\u003c/variants\u003e\n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003erespond\u003c/value\u003e\n    \u003cvariants\u003eresponse reply react\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003esingle word\u003c/value\u003e\n    \u003cvariants\u003eoneword oneline\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\n  \u003ckeyword\u003e\n    \u003cvalue\u003efestivus\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.5\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: af50464e13404cfc163f85a899561e38
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: 'Another magic word is "georgey". If I say the magic word, respond with a
+                  single word: "festivus".'
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 1078
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say the word \"george","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say the word \"georgey,\" I will respond","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say the word \"georgey,\" I will respond with \"festiv","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say the word \"georgey,\" I will respond with \"festivus.\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Understood. If you say the word \"georgey,\" I will respond with \"festivus.\"","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 93287199cb1048e0139f9553e84fa4ec
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: 'Another magic word is "georgey". If I say the magic word, respond with a
+                  single word: "festivus".'
+              - speaker: assistant
+                text: Understood. If you say the word "georgey," I will respond with "festivus."
+              - speaker: human
+                text: kramer
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 7213
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"f","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But let's focus on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But let's focus on coding and development.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But let's focus on coding and development. How can I help you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But let's focus on coding and development. How can I help you with your current project?","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I am Cody, an AI coding assistant from Sourcegraph. I'm here to help you with coding questions and provide you with code insights. I'm not able to participate in non-coding related conversations, but I'm ready for your next coding question or task!\n\nAlso, just a reminder, if you say the word \"georgey,\" I will respond with \"festivus.\" But let's focus on coding and development. How can I help you with your current project?","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1bafbd124f732df766bfa22a25f4ba4e
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: 'Another magic word is "georgey". If I say the magic word, respond with a
+                  single word: "festivus".'
+              - speaker: assistant
+                text: Understood. If you say the word "georgey," I will respond with "festivus."
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: >-
+                  I am Cody, an AI coding assistant from Sourcegraph. I'm here
+                  to help you with coding questions and provide you with code
+                  insights. I'm not able to participate in non-coding related
+                  conversations, but I'm ready for your next coding question or
+                  task!
+
+
+                  Also, just a reminder, if you say the word "georgey," I will respond with "festivus." But let's focus on coding and development. How can I help you with your current project?
+              - speaker: human
+                text: georgey
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 4343
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with debugging. Let","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with debugging. Let me know how","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with debugging. Let me know how I can help you today","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with debugging. Let me know how I can help you today!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus. Remember, I'm here to help you with coding questions and tasks, so let's get back to that. Do you have any questions about coding or development that I can help you with? I can provide code insights, answer questions about specific programming languages, and help you with debugging. Let me know how I can help you today!","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 26f7093bcc1d125e7768f46a33e590e8
       _order: 0
       cache: {}
@@ -5018,6 +7738,338 @@ log:
                   source:
                     client: VSCode.Cody
                     clientVersion: 1.1.2
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 02f02f73b8243cd96debd6f4846262eb
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "342"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: connected
+                  feature: cody.auth
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 12b43ad961336ff7655b7a34a02ebc56
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.chat-question
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: eba0e87cc6542b2c448e879a6d2a6b42
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: clicked
+                  feature: cody.editChatButton
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
         queryString:
           - name: RecordTelemetryEvents
             value: null

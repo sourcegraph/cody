@@ -114,15 +114,7 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
-    | {
-          type: 'attribution'
-          snippet: string
-          attribution?: {
-              repositoryNames: string[]
-              limitHit: boolean
-          }
-          error?: string
-      }
+    | ({ type: 'attribution' } & ExtensionAttributionMessage)
 
 interface WebviewSubmitMessage {
     text: string
@@ -135,6 +127,15 @@ export interface ExtensionTranscriptMessage {
     messages: ChatMessage[]
     isMessageInProgress: boolean
     chatID: string
+}
+
+export interface ExtensionAttributionMessage {
+    snippet: string
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
 }
 
 /**
