@@ -85,10 +85,6 @@ export interface HoverContext {
     }
 }
 
-export interface OldContextMessage extends Message {
-    fileName?: string
-}
-
 export function getContextMessageWithResponse(
     text: string,
     file: ContextFile,

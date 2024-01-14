@@ -229,13 +229,6 @@ export function collapseDuplicativeWhitespace(prefix: string, completion: string
     return completion
 }
 
-/**
- * Trims trailing whitespace on the last line if the last line is whitespace-only.
- */
-export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
-    return text.replace(/(\r?\n)\s+$/, '$1')
-}
-
 export function removeTrailingWhitespace(text: string): string {
     return text
         .split('\n')

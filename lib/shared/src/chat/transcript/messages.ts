@@ -46,7 +46,7 @@ export interface ChatError {
     isChatErrorGuard: 'isChatErrorGuard'
 }
 
-export interface ChatMetadata {
+interface ChatMetadata {
     source?: ChatEventSource
     requestID?: string
     chatModel?: string
