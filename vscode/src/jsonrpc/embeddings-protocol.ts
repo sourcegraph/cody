@@ -4,7 +4,6 @@
 
 interface InitializeParams {
     codyGatewayEndpoint: string
-    appIndexPath?: string
     indexPath: string
     chunkingPolicy?: ChunkingPolicy
 }
