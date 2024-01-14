@@ -1026,6 +1026,7 @@
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
+    "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",

@@ -368,6 +368,9 @@ importers:
       mkdirp:
         specifier: ^3.0.1
         version: 3.0.1
+      os-browserify:
+        specifier: ^0.3.0
+        version: 0.3.0
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
@@ -12717,6 +12720,10 @@ packages:
       strip-ansi: 6.0.1
       wcwidth: 1.0.1
     dev: true
+
+  /os-browserify@0.3.0:
+    resolution: {integrity: sha512-gjcpUc3clBf9+210TRaDWbf+rZZZEshZ+DlXMRCeAjp0xhTrnQsKHypIy1J3d5hKdUzj69t708EHtU8P6bUn0A==}
+    dev: false
 
   /ovsx@0.8.2:
     resolution: {integrity: sha512-btDXZorXlmwN9+9Un3khrVygCXmhwbrtg8gifNXw92rZPXcRBAiLG/L09Kb6srhGEratsFt42AktfD8t9XhzoA==}
