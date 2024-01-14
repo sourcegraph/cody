@@ -53,6 +53,7 @@ export { basename, dedupeWith, isDefined, isErrorLike, pluralize } from './commo
 export { ProgrammingLanguage, languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './common/languages'
 export { renderMarkdown } from './common/markdown'
 export { isWindows } from './common/platform'
+export type { FileURI } from './common/uri'
 export type {
     AutocompleteTimeouts,
     Configuration,
