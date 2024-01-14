@@ -1,5 +1,6 @@
 import { type GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     isDotCom,
@@ -7,6 +8,7 @@ import {
     type ContextGroup,
     type ContextStatusProvider,
     type EmbeddingsSearchResult,
+    type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
 } from '@sourcegraph/cody-shared'
@@ -30,20 +32,14 @@ export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEn
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
 
-function getIndexLibraryPath(): { indexPath: string } {
+function getIndexLibraryPath(): FileURI {
     switch (process.platform) {
         case 'darwin':
-            return {
-                indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
-            }
+            return URI.file(`${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`)
         case 'linux':
-            return {
-                indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
-            }
+            return URI.file(`${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`)
         case 'win32':
-            return {
-                indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
-            }
+            return URI.file(`${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`)
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
     }
@@ -61,7 +57,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // These properties are constants, but may be overridden for testing.
     private readonly model: string
     private readonly endpoint: string
-    private readonly indexLibraryPath: string | undefined
+    private readonly indexLibraryPath: FileURI | undefined
 
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
@@ -108,6 +104,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
         this.endpoint = config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
         this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
+            ? URI.file(config.testingLocalEmbeddingsIndexLibraryPath)
+            : undefined
     }
 
     public dispose(): void {
@@ -201,7 +199,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        const paths = getIndexLibraryPath()
+        let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
             logDebug(
@@ -210,11 +208,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 'overriding index library path',
                 this.indexLibraryPath
             )
-            paths.indexPath = this.indexLibraryPath
+            indexPath = this.indexLibraryPath
         }
         const initResult = await service.request('embeddings/initialize', {
             codyGatewayEndpoint: this.endpoint,
-            ...paths,
+            indexPath: indexPath.fsPath,
         })
         logDebug(
             'LocalEmbeddingsController',
