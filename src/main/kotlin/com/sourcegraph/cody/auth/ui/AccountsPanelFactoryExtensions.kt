@@ -25,13 +25,7 @@ import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
-import javax.swing.Icon
-import javax.swing.JComponent
-import javax.swing.JMenuItem
-import javax.swing.JPopupMenu
-import javax.swing.ListCellRenderer
-import javax.swing.ListSelectionModel
-import javax.swing.SwingUtilities
+import javax.swing.*
 
 /**
  * Custom factory method to create and account panel with possibility to add mouse listener for list
@@ -88,14 +82,18 @@ private fun <A : Account, Cred, R> create(
   if (model is AccountsListModel.WithActive) {
     toolbar.addExtraAction(
         object : ToolbarDecorator.ElementActionButton("Set as Active", AllIcons.Actions.Checked) {
+          init {
+            addCustomUpdater { isEnabled && model.activeAccount != accountsList.selectedValue }
+          }
+
           override fun actionPerformed(e: AnActionEvent) {
             val selected = accountsList.selectedValue
             if (selected == model.activeAccount) return
             if (selected != null) model.activeAccount = selected
           }
 
-          override fun updateButton(e: AnActionEvent) {
-            isEnabled = isEnabled && model.activeAccount != accountsList.selectedValue
+          override fun isDumbAware(): Boolean {
+            return true
           }
         })
   }
