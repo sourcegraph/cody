@@ -11,7 +11,7 @@ describe('[getInlineCompletions] streaming', () => {
         expect(
             await getInlineCompletions({
                 ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
-                    async onNetworkRequest(_params, onPartialResponse) {
+                    onNetworkRequest(_params, onPartialResponse) {
                         onPartialResponse?.(completion`├1337\ncon┤`)
                     },
                 }),
@@ -26,7 +26,7 @@ describe('[getInlineCompletions] streaming', () => {
         expect(
             await getInlineCompletions({
                 ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
-                    async onNetworkRequest(_params, onPartialResponse) {
+                    onNetworkRequest(_params, onPartialResponse) {
                         onPartialResponse?.(completion`├13┤`)
                         onPartialResponse?.(completion`├1337\n┤`)
                     },
@@ -55,7 +55,7 @@ describe('[getInlineCompletions] streaming', () => {
                             `,
                 ],
                 {
-                    async onNetworkRequest(_params, onPartialResponse) {
+                    onNetworkRequest(_params, onPartialResponse) {
                         onPartialResponse?.(completion`
                                         ├console.log('what?')┤
                                     ┴┴┴┴
@@ -93,7 +93,7 @@ describe('[getInlineCompletions] streaming', () => {
                             `,
                     ],
                     {
-                        async onNetworkRequest(_params, onPartialResponse) {
+                        onNetworkRequest(_params, onPartialResponse) {
                             onPartialResponse?.(completion`
                                         ├const a = new Array()
                                         console.log('oh no')┤
@@ -126,7 +126,7 @@ describe('[getInlineCompletions] streaming', () => {
                     completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()`,
                 ],
                 {
-                    async onNetworkRequest(_params, onPartialResponse) {
+                    onNetworkRequest(_params, onPartialResponse) {
                         onPartialResponse?.(
                             completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (`
                         )
@@ -158,7 +158,7 @@ describe('[getInlineCompletions] streaming', () => {
                 `,
                 [completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`],
                 {
-                    async onNetworkRequest(_params, onPartialResponse) {
+                    onNetworkRequest(_params, onPartialResponse) {
                         onPartialResponse?.(completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`)
                     },
                 }
