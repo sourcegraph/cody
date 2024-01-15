@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isWindows } from '@sourcegraph/cody-shared'
-
-import { setDisplayPathEnvInfo } from '../../../lib/shared/src/editor/displayPath'
+import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 
 /** Runs in the VS Code extension host. */
 export function manageDisplayPathEnvInfoForExtension(): vscode.Disposable {
