@@ -5,7 +5,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { startPollyRecording } from '../testutils/polly'
 
-import { expandQuery } from './symf'
+import { symfExpandQuery } from './symfExpandQuery'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
@@ -23,7 +23,7 @@ describe('symf', () => {
 
         function check(query: string, expectedHandler: (expandedTerm: string) => void): void {
             it(query, async () => {
-                expectedHandler(await expandQuery(client, query))
+                expectedHandler(await symfExpandQuery(client, query))
             })
         }
 
