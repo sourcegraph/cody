@@ -116,7 +116,16 @@ export type ExtensionMessage =
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
 
-interface WebviewSubmitMessage {
+export interface ExtensionAttributionMessage {
+    snippet: string
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
+export interface WebviewSubmitMessage {
     text: string
     submitType: ChatSubmitType
     addEnhancedContext?: boolean
@@ -127,15 +136,6 @@ export interface ExtensionTranscriptMessage {
     messages: ChatMessage[]
     isMessageInProgress: boolean
     chatID: string
-}
-
-export interface ExtensionAttributionMessage {
-    snippet: string
-    attribution?: {
-        repositoryNames: string[]
-        limitHit: boolean
-    }
-    error?: string
 }
 
 /**

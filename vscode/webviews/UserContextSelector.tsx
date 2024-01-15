@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { displayPath } from '@sourcegraph/cody-shared'
 import { type UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+
+import { displayPath } from '../../lib/shared/src/editor/displayPath'
 
 import styles from './UserContextSelector.module.css'
 

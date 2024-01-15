@@ -8,7 +8,7 @@ import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/cha
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 
 /** Utility class to manage a list of `AgentWebPanel` instances. */
-export class AgentWebPanels {
+export class AgentWebviewPanels {
     public panels = new Map<string, AgentWebviewPanel>()
     public add(panel: AgentWebviewPanel): void {
         this.panels.set(panel.panelID, panel)

@@ -26,7 +26,7 @@ import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUr
 
 import { AgentGlobalState } from './AgentGlobalState'
 import { newTextEditor } from './AgentTextEditor'
-import { AgentWebPanels, AgentWebviewPanel } from './AgentWebviewPanel'
+import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
@@ -129,7 +129,7 @@ export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
-    public webPanels = new AgentWebPanels()
+    public webPanels = new AgentWebviewPanels()
 
     private clientInfo: ClientInfo | null = null
 
@@ -558,6 +558,18 @@ export class Agent extends MessageHandler {
             return Promise.resolve(null)
         })
 
+        this.registerRequest('commands/explain', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code'))
+        })
+
+        this.registerRequest('commands/test', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests'))
+        })
+
+        this.registerRequest('commands/smell', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code'))
+        })
+
         this.registerRequest('chat/new', () => {
             return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.new'))
         })
@@ -671,6 +683,8 @@ export class Agent extends MessageHandler {
                     }
                 } else if (message.type === 'chatModels') {
                     panel.models = message.models
+                } else if (message.type === 'errors') {
+                    panel.messageInProgressChange.fire(message)
                 }
 
                 this.notify('webview/postMessage', {
