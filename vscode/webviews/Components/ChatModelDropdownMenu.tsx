@@ -120,7 +120,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     )
 }
 
-export const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
+const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
     if (model.startsWith('openai/')) {
         return <OpenAILogo className={className} />
     }

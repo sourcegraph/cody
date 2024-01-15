@@ -100,16 +100,26 @@ export class ChatQuestion implements Recipe {
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent
+            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileUri, visibleContent.repoName),
+            {
+                type: 'file',
+                uri: visibleContent.fileUri,
+                repoName: visibleContent.repoName,
+                revision: visibleContent.revision,
+            }
         )
     }
 
     public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
-            selection
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileUri, selection.repoName),
+            {
+                type: 'file',
+                uri: selection.fileUri,
+                repoName: selection.repoName,
+                revision: selection.revision,
+            }
         )
     }
 

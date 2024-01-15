@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { type ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
-export const FIX_PROMPT_TOPICS = {
+const FIX_PROMPT_TOPICS = {
     SOURCE: 'PROBLEMCODE4179',
     RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
 }

@@ -16,13 +16,6 @@ export class PromptMixin {
     private static defaultMixin: PromptMixin = new PromptMixin(CODY_INTRO_PROMPT)
 
     /**
-     * Adds a prompt mixin to the global set.
-     */
-    public static add(mixin: PromptMixin): void {
-        this.mixins.push(mixin)
-    }
-
-    /**
      * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
      * and any new change could replace the old one.
      */
@@ -48,15 +41,6 @@ export class PromptMixin {
      * Creates a mixin with the given, fixed prompt to insert.
      */
     constructor(private readonly prompt: string) {}
-}
-
-/**
- * Creates a prompt mixin to get Cody to reply in the given language, for example "en-AU" for "Australian English".
- * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
- */
-export function languagePromptMixin(languageCode: string): PromptMixin {
-    const languagePrompt = `Reply in the language with RFC5646/ISO language code "${languageCode}".`
-    return new PromptMixin(languageCode ? languagePrompt : '')
 }
 
 export function newPromptMixin(text: string): PromptMixin {

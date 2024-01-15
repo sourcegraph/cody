@@ -6,7 +6,7 @@ import { toSlashCommand } from './prompt/utils'
 export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
     const map = new Map<string, CodyCommand>()
 
-    // Add editor specifc commands
+    // Add editor specific commands
     for (const command of editorCommands) {
         if (command.slashCommand) {
             map.set(command.slashCommand, command)

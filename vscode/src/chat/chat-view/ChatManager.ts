@@ -18,7 +18,7 @@ import { type AuthStatus } from '../protocol'
 
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
-import { type SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { type ChatSession, type SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -89,7 +89,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<ChatSession | undefined> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -99,6 +99,7 @@ export class ChatManager implements vscode.Disposable {
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         await chatProvider.handleCommands(command, source)
+        return chatProvider
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -194,11 +195,11 @@ export class ChatManager implements vscode.Disposable {
         })
     }
 
-    private async openFileFromChat(fsPath: string): Promise<void> {
-        const rangeIndex = fsPath.indexOf(':range:')
-        const range = rangeIndex ? fsPath.slice(Math.max(0, rangeIndex + 7)) : 0
-        const filteredFsPath = range ? fsPath.slice(0, rangeIndex) : fsPath
-        const uri = vscode.Uri.file(filteredFsPath)
+    private async openFileFromChat(uriAndRange: string): Promise<void> {
+        const rangeIndex = uriAndRange.indexOf(':range:')
+        const range = rangeIndex ? uriAndRange.slice(Math.max(0, rangeIndex + 7)) : 0
+        const uriStr = range ? uriAndRange.slice(0, rangeIndex) : uriAndRange
+        const uri = vscode.Uri.parse(uriStr)
         // If the active editor is undefined, that means the chat panel is the active editor
         // so we will open the file in the first visible editor instead
         const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
@@ -215,32 +216,29 @@ export class ChatManager implements vscode.Disposable {
     }
 
     // For registering the commands for chat panels in advance
-    private async createNewWebviewPanel(): Promise<void> {
-        const debounceCreatePanel = debounce(
-            async () => {
-                await this.chatPanelsManager.createWebviewPanel()
-            },
-            250,
-            { leading: true, trailing: true }
-        )
+    private async createNewWebviewPanel(): Promise<ChatSession | undefined> {
+        const debounceCreatePanel = debounce(() => this.chatPanelsManager.createWebviewPanel(), 250, {
+            leading: true,
+            trailing: true,
+        })
 
         if (this.chatPanelsManager) {
-            await debounceCreatePanel()
+            return debounceCreatePanel()
         }
+        return undefined
     }
 
-    private async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
+    private async restorePanel(chatID: string, chatQuestion?: string): Promise<ChatSession | undefined> {
         const debounceRestore = debounce(
-            async (chatID: string, chatQuestion?: string) => {
-                await this.chatPanelsManager.restorePanel(chatID, chatQuestion)
-            },
+            async (chatID: string, chatQuestion?: string) => this.chatPanelsManager.restorePanel(chatID, chatQuestion),
             250,
             { leading: true, trailing: true }
         )
 
         if (this.chatPanelsManager) {
-            await debounceRestore(chatID, chatQuestion)
+            return debounceRestore(chatID, chatQuestion)
         }
+        return undefined
     }
 
     public dispose(): void {

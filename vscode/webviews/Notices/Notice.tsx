@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import styles from './Notice.module.css'
 
-export interface NoticeProps {
+interface NoticeProps {
     icon: React.ReactNode
     title: React.ReactNode
     text?: React.ReactNode

@@ -15,35 +15,6 @@ export interface BotResponseSubscriber {
 }
 
 /**
- * A bot response subscriber that provides the entire bot response in one shot without
- * surfacing incremental updates.
- */
-export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
-    private buffer_: string[] = []
-
-    /**
-     * Creates a BufferedBotResponseSubscriber. `callback` is called once per
-     * turn with the bot's entire output provided in one shot. If the topic
-     * was not mentioned, `callback` is called with `undefined` signifying the
-     * end of a turn.
-     * @param callback the callback to handle content from the bot, if any.
-     */
-    constructor(private callback: (content: string | undefined) => Promise<void>) {}
-
-    // BotResponseSubscriber implementation
-
-    public onResponse(content: string): Promise<void> {
-        this.buffer_.push(content)
-        return Promise.resolve()
-    }
-
-    public async onTurnComplete(): Promise<void> {
-        await this.callback(this.buffer_.length ? this.buffer_.join('') : undefined)
-        this.buffer_ = []
-    }
-}
-
-/**
  * Splits a string in one or two places.
  *
  * For example, `splitAt('banana!', 2) => ['ba', 'nana!']`
@@ -221,12 +192,5 @@ export class BotResponseMultiplexer {
             return
         }
         return sub.onResponse(content)
-    }
-
-    /** Produces a prompt to describe the response format to the bot. */
-    public prompt(): string {
-        return `Enclose each part of the response in one of the relevant tags: ${[...this.subs_.keys()]
-            .map(topic => `<${topic}>`)
-            .join(', ')}:\n\n`
     }
 }

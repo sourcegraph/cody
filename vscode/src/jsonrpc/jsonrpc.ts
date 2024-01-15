@@ -458,7 +458,7 @@ export class MessageHandler {
 /**
  * A client for a JSON-RPC {@link MessageHandler} running in the same process.
  */
-export class InProcessClient {
+class InProcessClient {
     constructor(
         private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
         private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>

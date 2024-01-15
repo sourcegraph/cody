@@ -26,13 +26,7 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | {
-          command: 'submit'
-          text: string
-          submitType: ChatSubmitType
-          addEnhancedContext?: boolean
-          contextFiles?: ContextFile[]
-      }
+    | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
@@ -46,9 +40,8 @@ export type WebviewMessage =
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
-          filePath: string
+          uri: URI
           range?: ActiveTextEditorSelectionRange
-          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'
@@ -102,9 +95,14 @@ export type WebviewMessage =
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
+    | {
+          type: 'config'
+          config: ConfigurationSubsetForWebview & LocalEnv
+          authStatus: AuthStatus
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
+    | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
@@ -116,15 +114,29 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
-    | {
-          type: 'attribution'
-          snippet: string
-          attribution?: {
-              repositoryNames: string[]
-              limitHit: boolean
-          }
-          error?: string
-      }
+    | ({ type: 'attribution' } & ExtensionAttributionMessage)
+
+export interface ExtensionAttributionMessage {
+    snippet: string
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
+export interface WebviewSubmitMessage {
+    text: string
+    submitType: ChatSubmitType
+    addEnhancedContext?: boolean
+    contextFiles?: ContextFile[]
+}
+
+export interface ExtensionTranscriptMessage {
+    messages: ChatMessage[]
+    isMessageInProgress: boolean
+    chatID: string
+}
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -135,7 +147,6 @@ export interface ConfigurationSubsetForWebview
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support

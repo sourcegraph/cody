@@ -2,8 +2,7 @@ import { type URI } from 'vscode-uri'
 
 export interface ActiveTextEditor {
     content: string
-    filePath: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
     selectionRange?: ActiveTextEditorSelectionRange
@@ -23,8 +22,7 @@ export interface ActiveTextEditorSelectionRange {
 }
 
 export interface ActiveTextEditorSelection {
-    fileName: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
     precedingText: string
@@ -44,16 +42,7 @@ export interface ActiveTextEditorDiagnostic {
 
 export interface ActiveTextEditorVisibleContent {
     content: string
-    fileName: string
-    fileUri?: URI
-    repoName?: string
-    revision?: string
-}
-
-export interface TextDocumentContent {
-    content: string
-    fileName: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
 }

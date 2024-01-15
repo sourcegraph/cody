@@ -48,6 +48,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 siteVersion: '5.1.0',
                 endpoint: 'https://example.com',
             },
+            workspaceFolderUris: [],
         })
         return () => {}
     },

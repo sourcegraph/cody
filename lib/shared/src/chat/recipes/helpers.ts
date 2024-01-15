@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { type URI } from 'vscode-uri'
+
 import { type CodebaseContext } from '../../codebase-context'
 import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
@@ -29,16 +31,6 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     rs: 'Rust',
 }
 
-export const commandRegex = {
-    chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
-    edit: new RegExp(/^\/e(dit)?\s/i),
-    touch: new RegExp(/^\/t(ouch)?\s/i),
-    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test(s)?\s)/i), // Has /touch or /t but no test or tests in the string
-    noTest: new RegExp(/^(?!.*test)/i),
-    search: new RegExp(/^\/s(earch)?\s/i),
-    test: new RegExp(/^\/n(ew)?\s|test(s)?\s/, 'i'),
-}
-
 export function getNormalizedLanguageName(extension: string): string {
     return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
@@ -47,7 +39,7 @@ export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
+    { fileUri, repoName, revision }: { fileUri: URI; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
@@ -59,8 +51,9 @@ export async function getContextMessagesFromSelection(
         [precedingText, followingText]
             .filter(text => text.trim().length > 0)
             .flatMap(text =>
-                getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
-                    fileName,
+                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
+                    type: 'file',
+                    uri: fileUri,
                     repoName,
                     revision,
                 })
@@ -68,8 +61,11 @@ export async function getContextMessagesFromSelection(
     )
 }
 
-export function getFileExtension(fileName: string): string {
-    return path.extname(fileName).slice(1).toLowerCase()
+export function getFileExtension(file: URI | string): string {
+    return path
+        .extname(typeof file === 'string' ? file : file.path)
+        .slice(1)
+        .toLowerCase()
 }
 
 export const numResults = {

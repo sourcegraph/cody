@@ -1,10 +1,8 @@
-import path from 'path'
+import { type URI } from 'vscode-uri'
 
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
-import { type ActiveTextEditorDiagnostic, type ActiveTextEditorSelection } from '../editor'
-
-import { MAX_RECIPE_INPUT_TOKENS } from './constants'
-import { truncateText, truncateTextStart } from './truncation'
+import { type ActiveTextEditorDiagnostic } from '../editor'
+import { displayPath } from '../editor/displayPath'
 
 const CODE_CONTEXT_TEMPLATE = `Use the following code snippet from file \`{filePath}\`:
 \`\`\`{language}
@@ -16,10 +14,10 @@ const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use the following code snippet from fil
 {text}
 \`\`\``
 
-export function populateCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
+export function populateCodeContextTemplate(code: string, fileUri: URI, repoName?: string): string {
     return (repoName ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : CODE_CONTEXT_TEMPLATE)
-        .replace('{filePath}', filePath)
-        .replace('{language}', getExtension(filePath))
+        .replace('{filePath}', displayPath(fileUri))
+        .replace('{language}', getFileExtension(fileUri))
         .replace('{text}', code)
 }
 
@@ -28,10 +26,10 @@ const PRECISE_CONTEXT_TEMPLATE = `The symbol '{symbol}' is defined in the file {
 {text}
 \`\`\``
 
-export function populatePreciseCodeContextTemplate(symbol: string, filePath: string, code: string): string {
+export function populatePreciseCodeContextTemplate(symbol: string, fileUri: URI, code: string): string {
     return PRECISE_CONTEXT_TEMPLATE.replace('{symbol}', symbol)
-        .replace('{filePath}', filePath)
-        .replace('{language}', getExtension(filePath))
+        .replace('{filePath}', displayPath(fileUri))
+        .replace('{language}', getFileExtension(fileUri))
         .replace('{text}', code)
 }
 
@@ -40,9 +38,9 @@ const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
     'Use the following text from file `{filePath}` in repository `{repoName}`:\n{text}'
 
-export function populateMarkdownContextTemplate(markdown: string, filePath: string, repoName?: string): string {
+export function populateMarkdownContextTemplate(markdown: string, fileUri: URI, repoName?: string): string {
     return (repoName ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : MARKDOWN_CONTEXT_TEMPLATE)
-        .replace('{filePath}', filePath)
+        .replace('{filePath}', displayPath(fileUri))
         .replace('{text}', markdown)
 }
 
@@ -51,15 +49,15 @@ const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my 
 const CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO =
     'I have the `{filePath}` file from the repository `{repoName}` opened in my editor. '
 
-export function populateCurrentEditorContextTemplate(code: string, filePath: string, repoName?: string): string {
-    const context = isMarkdownFile(filePath)
-        ? populateMarkdownContextTemplate(code, filePath, repoName)
-        : populateCodeContextTemplate(code, filePath, repoName)
+export function populateCurrentEditorContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+    const context = isMarkdownFile(fileUri)
+        ? populateMarkdownContextTemplate(code, fileUri, repoName)
+        : populateCodeContextTemplate(code, fileUri, repoName)
     return (
         (repoName
             ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : CURRENT_EDITOR_CODE_TEMPLATE
-        ).replaceAll('{filePath}', filePath) + context
+        ).replaceAll('{filePath}', displayPath(fileUri)) + context
     )
 }
 
@@ -68,23 +66,19 @@ const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'Here is the selected {language} c
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
     'Here is the selected code from file `{filePath}` in the {repoName} repository, written in {language}: '
 
-export function populateCurrentEditorSelectedContextTemplate(
-    code: string,
-    filePath: string,
-    repoName?: string
-): string {
-    const extension = getFileExtension(filePath)
+export function populateCurrentEditorSelectedContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+    const extension = getFileExtension(fileUri)
     const languageName = getNormalizedLanguageName(extension)
-    const context = isMarkdownFile(filePath)
-        ? populateMarkdownContextTemplate(code, filePath, repoName)
-        : populateCodeContextTemplate(code, filePath, repoName)
+    const context = isMarkdownFile(fileUri)
+        ? populateMarkdownContextTemplate(code, fileUri, repoName)
+        : populateCodeContextTemplate(code, fileUri, repoName)
     return (
         (repoName
             ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
         )
             .replace('{language}', languageName)
-            .replaceAll('{filePath}', filePath) + context
+            .replaceAll('{filePath}', displayPath(fileUri)) + context
     )
 }
 
@@ -97,11 +91,11 @@ Code snippet:
 
 export function populateCurrentEditorDiagnosticsTemplate(
     { message, type, text }: ActiveTextEditorDiagnostic,
-    filePath: string
+    fileUri: URI
 ): string {
-    const language = getExtension(filePath)
+    const language = getFileExtension(fileUri)
     return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
-        .replace('{filePath}', filePath)
+        .replace('{filePath}', displayPath(fileUri))
         .replace('{prefix}', type)
         .replace('{message}', message)
         .replace('{language}', language)
@@ -116,12 +110,8 @@ export function populateTerminalOutputContextTemplate(output: string): string {
 
 const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
 
-export function isMarkdownFile(filePath: string): boolean {
-    return MARKDOWN_EXTENSIONS.has(getExtension(filePath))
-}
-
-function getExtension(filePath: string): string {
-    return path.extname(filePath).slice(1)
+export function isMarkdownFile(fileUri: URI): boolean {
+    return MARKDOWN_EXTENSIONS.has(getFileExtension(fileUri))
 }
 
 const SELECTED_CODE_CONTEXT_TEMPLATE = `"My selected {languageName} code from file \`{filePath}\`:
@@ -134,8 +124,8 @@ const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} co
 {code}
 </selected>`
 
-export function populateCurrentSelectedCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
-    const extension = getFileExtension(filePath)
+export function populateCurrentSelectedCodeContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+    const extension = getFileExtension(fileUri)
     const languageName = getNormalizedLanguageName(extension)
     return (
         repoName
@@ -143,49 +133,29 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
         .replace('{code}', code)
-        .replaceAll('{filePath}', filePath)
+        .replaceAll('{filePath}', displayPath(fileUri))
         .replace('{languageName}', languageName)
-}
-
-const CURRENT_FILE_CONTEXT_TEMPLATE = `My selected code from file path \`{filePath}\` in <selected> tags:
-{precedingText}<selected>{selectedText}</selected>{followingText}`
-
-export function populateCurrentFileFromEditorSelectionContextTemplate(
-    selection: ActiveTextEditorSelection,
-    filePath: string
-): string {
-    const extension = getFileExtension(filePath)
-    const languageName = getNormalizedLanguageName(extension)
-    const surroundingTextLength = (MAX_RECIPE_INPUT_TOKENS - selection.selectedText.length) / 2
-    const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS) || ''
-    const truncatedPrecedingText = truncateTextStart(selection.precedingText, surroundingTextLength)
-    const truncatedFollowingText = truncateText(selection.followingText, surroundingTextLength)
-
-    const fileContext = CURRENT_FILE_CONTEXT_TEMPLATE.replace('{languageName}', languageName)
-        .replaceAll('{filePath}', filePath)
-        .replace('{followingText}', truncatedFollowingText)
-        .replace('{selectedText}', truncatedSelectedText)
-        .replace('{precedingText}', truncatedPrecedingText)
-
-    return truncateText(fileContext, MAX_RECIPE_INPUT_TOKENS * 3)
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the directory contains {fileName} in my codebase: '
 const ROOT_DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the root codebase directory: '
 
-export function populateListOfFilesContextTemplate(fileList: string, fileName: string): string {
-    const templateText = fileName === 'root' ? ROOT_DIRECTORY_FILE_LIST_TEMPLATE : DIRECTORY_FILE_LIST_TEMPLATE
-    return templateText.replace('{fileName}', fileName) + fileList
+export function populateListOfFilesContextTemplate(fileList: string, fileUri?: URI): string {
+    return (
+        (fileUri
+            ? DIRECTORY_FILE_LIST_TEMPLATE.replace('{fileName}', displayPath(fileUri))
+            : ROOT_DIRECTORY_FILE_LIST_TEMPLATE) + fileList
+    )
 }
 
-export function populateContextTemplateFromText(templateText: string, content: string, fileName: string): string {
-    return templateText.replace('{fileName}', fileName) + content
+export function populateContextTemplateFromText(templateText: string, content: string, fileUri: URI): string {
+    return templateText.replace('{fileName}', displayPath(fileUri)) + content
 }
 
 const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
 
-export function populateImportListContextTemplate(importList: string, fileName: string): string {
-    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', fileName) + importList
+export function populateImportListContextTemplate(importList: string, fileUri: URI): string {
+    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', displayPath(fileUri)) + importList
 }
 
 const CODE_GENERATION_CONTEXT_TEMPLATE = `Below is the code from file path {filePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
@@ -195,11 +165,11 @@ const CODE_GENERATION_CONTEXT_TEMPLATE = `Below is the code from file path {file
 export function populateCodeGenerationContextTemplate(
     precedingText: string,
     followingText: string,
-    filePath: string,
+    fileUri: URI,
     tag: string
 ): string {
     return CODE_GENERATION_CONTEXT_TEMPLATE.replace('{precedingText}', precedingText)
         .replace('{followingText}', followingText)
-        .replace('{filePath}', filePath)
+        .replace('{filePath}', displayPath(fileUri))
         .replace('{outputTag}', tag)
 }

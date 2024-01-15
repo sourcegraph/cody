@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
 import { type EmbeddingsSearch } from '../embeddings'
@@ -27,13 +29,12 @@ import {
     type ContextMessage,
 } from './messages'
 
-export interface ContextSearchOptions {
+interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
 }
 
 export class CodebaseContext {
-    private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'experimentalLocalSymbols'>,
         private codebase: string | undefined,
@@ -46,10 +47,6 @@ export class CodebaseContext {
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
-
-    public getCodebase(): string | undefined {
-        return this.codebase
-    }
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
@@ -85,18 +82,6 @@ export class CodebaseContext {
                     : this.getLocalContextMessages(query, options)
             }
         }
-    }
-
-    public checkEmbeddingsConnection(): boolean {
-        return !!this.embeddings
-    }
-
-    public get embeddingsEndpoint(): string | undefined {
-        return this.embeddings?.endpoint
-    }
-
-    public getEmbeddingSearchErrors(): string {
-        return this.embeddingResultsError.trim()
     }
 
     public async getSearchResults(
@@ -148,26 +133,24 @@ export class CodebaseContext {
             )
             if (isError(embeddingsSearchResults)) {
                 console.error('Error retrieving embeddings:', embeddingsSearchResults)
-                this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
                 return []
             }
-            this.embeddingResultsError = ''
             return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
         }
         return []
     }
 
     public static makeContextMessageWithResponse(groupedResults: {
-        file: ContextFile
+        file: ContextFile & Required<Pick<ContextFile, 'uri'>>
         results: string[]
     }): ContextMessage[] {
-        const contextTemplateFn = isMarkdownFile(groupedResults.file.fileName)
+        const contextTemplateFn = isMarkdownFile(groupedResults.file.uri)
             ? populateMarkdownContextTemplate
             : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
             getContextMessageWithResponse(
-                contextTemplateFn(text, groupedResults.file.fileName, groupedResults.file.repoName),
+                contextTemplateFn(text, groupedResults.file.uri, groupedResults.file.repoName),
                 groupedResults.file
             )
         )
@@ -193,11 +176,18 @@ export class CodebaseContext {
         return results.flatMap(result => {
             if (result?.type === 'FileChunkContext') {
                 const { content, filePath, repoName, revision } = result
-                const messageText = isMarkdownFile(filePath)
-                    ? populateMarkdownContextTemplate(content, filePath, repoName)
-                    : populateCodeContextTemplate(content, filePath, repoName)
+                const fileUri = URI.file(filePath)
+                const messageText = isMarkdownFile(fileUri)
+                    ? populateMarkdownContextTemplate(content, fileUri, repoName)
+                    : populateCodeContextTemplate(content, fileUri, repoName)
 
-                return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision, source })
+                return getContextMessageWithResponse(messageText, {
+                    type: 'file',
+                    uri: fileUri,
+                    repoName,
+                    revision,
+                    source,
+                })
             }
 
             return []
@@ -210,12 +200,9 @@ export class CodebaseContext {
             const rerankedResults = await (this.rerank ? this.rerank(query, filenameResults) : filenameResults)
             const messages = resultsToMessages(rerankedResults)
 
-            this.embeddingResultsError = ''
-
             return messages
         } catch (error) {
             console.error('Error retrieving local context:', error)
-            this.embeddingResultsError = `Error retrieving local context: ${error}`
             return []
         }
     }
@@ -236,7 +223,7 @@ export class CodebaseContext {
         for (const preciseContext of await this.graph.getContext()) {
             const text = populatePreciseCodeContextTemplate(
                 preciseContext.symbol.fuzzyName || 'unknown',
-                preciseContext.filePath,
+                URI.file(preciseContext.filePath),
                 preciseContext.definitionSnippet
             )
 
@@ -247,12 +234,15 @@ export class CodebaseContext {
     }
 }
 
-function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextFile; results: string[] }[] {
-    const originalFileOrder: ContextFile[] = []
+function groupResultsByFile(
+    results: EmbeddingsSearchResult[]
+): { file: ContextFile & Required<Pick<ContextFile, 'uri'>>; results: string[] }[] {
+    const originalFileOrder: (ContextFile & Required<Pick<ContextFile, 'uri'>>)[] = []
     for (const result of results) {
-        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.fileName === result.fileName)) {
+        const resultUri = URI.file(result.fileName)
+        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.uri.toString() === resultUri.toString())) {
             originalFileOrder.push({
-                fileName: result.fileName,
+                uri: resultUri,
                 repoName: result.repoName,
                 revision: result.revision,
                 range: createContextFileRange(result),
@@ -262,19 +252,20 @@ function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextF
         }
     }
 
-    const resultsGroupedByFile = new Map<string, EmbeddingsSearchResult[]>()
+    const resultsGroupedByFile = new Map<string /* resultUri.toString() */, EmbeddingsSearchResult[]>()
     for (const result of results) {
-        const results = resultsGroupedByFile.get(result.fileName)
+        const resultUri = URI.file(result.fileName)
+        const results = resultsGroupedByFile.get(resultUri.toString())
         if (results === undefined) {
-            resultsGroupedByFile.set(result.fileName, [result])
+            resultsGroupedByFile.set(resultUri.toString(), [result])
         } else {
-            resultsGroupedByFile.set(result.fileName, results.concat([result]))
+            resultsGroupedByFile.set(resultUri.toString(), results.concat([result]))
         }
     }
 
     return originalFileOrder.map(file => ({
         file,
-        results: mergeConsecutiveResults(resultsGroupedByFile.get(file.fileName)!),
+        results: mergeConsecutiveResults(resultsGroupedByFile.get(file.uri.toString())!),
     }))
 }
 
@@ -297,9 +288,9 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 }
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
-    return results.flatMap(({ content, fileName, repoName, revision }) => {
-        const messageText = populateCodeContextTemplate(content, fileName, repoName)
-        return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
+    return results.flatMap(({ content, fileName, uri, repoName, revision }) => {
+        const messageText = populateCodeContextTemplate(content, uri ?? URI.file(fileName), repoName)
+        return getContextMessageWithResponse(messageText, { type: 'file', uri, repoName, revision })
     })
 }
 

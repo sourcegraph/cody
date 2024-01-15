@@ -1,16 +1,15 @@
-import * as path from 'path'
+import { URI } from 'vscode-uri'
+
+import { isWindows } from '../common/platform'
 
 /**
- * Builds a platform-aware absolute path for a filename.
+ * For testing only. Return a platform-native absolute path for a filename. Tests should almost
+ * always use this instead of {@link URI.file}. Only use {@link URI.file} directly if the test is
+ * platform-specific.
  *
- * For POSIX platforms, returns `/file`, for windows returns
- * 'C:\file'.
- * @param name The name/relative path of the file. Always in POSIX format.
+ * For macOS/Linux, it returns `/file`. For Windows, it returns `C:\file`.
+ * @param relativePath The name/relative path of the file (with forward slashes).
  */
-export function testFilePath(name: string): string {
-    // `path === path.win32` does not appear to work, even though win32 says
-    // "Same as parent object on windows" ☹️
-    const filePath = path.sep === path.win32.sep ? `C:\\${name}` : `/${name}`
-
-    return path.normalize(filePath)
+export function testFileUri(relativePath: string): URI {
+    return URI.file(isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`)
 }

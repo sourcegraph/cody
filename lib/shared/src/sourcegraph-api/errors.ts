@@ -63,10 +63,6 @@ export class TracedError extends Error {
     }
 }
 
-export function isTracedError(error: Error): error is TracedError {
-    return error instanceof TracedError
-}
-
 export class NetworkError extends Error {
     public readonly status: number
 

@@ -11,7 +11,7 @@ import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 
-export function registerRecipe(id: RecipeID, recipe: Recipe): void {
+function registerRecipe(id: RecipeID, recipe: Recipe): void {
     registeredRecipes[id] = recipe
 }
 

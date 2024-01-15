@@ -12,6 +12,8 @@ import {
     type Guardrails,
 } from '@sourcegraph/cody-shared'
 
+import { displayPath } from '../../shared/src/editor/displayPath'
+
 import { type CodeBlockMeta } from './chat/CodeBlocks'
 import { type FileLinkProps } from './chat/components/EnhancedContext'
 import { type SymbolLinkProps } from './chat/PreciseContext'
@@ -251,10 +253,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputPrefix = input.slice(0, lastAtIndex)
-                const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
-                const symbolName = isFileType ? '' : `#${selected.fileName}`
-                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
+                const symbolName = selected.type === 'file' ? '' : `#${selected.symbolName}`
+                const fileDisplayText = `@${displayPath(selected.uri)}${range}${symbolName}`
                 // Add empty space at the end to end the file matching process
                 const newInput = `${inputPrefix}${fileDisplayText} `
 

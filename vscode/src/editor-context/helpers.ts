@@ -8,7 +8,6 @@ import {
     getContextMessageWithResponse,
     type ContextMessage,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     populateCodeContextTemplate,
@@ -16,45 +15,7 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { createSelectionDisplayText, isValidTestFileName } from '../commands/prompt/utils'
-
-/**
- * Gets the currently active text editor instance from the list of visible editors.
- * Returns undefined if there are no visible editors.
- *
- * Checks if selection is empty to handle case where webview panel is focused,
- * since that will make activeTextEditor API return undefined.
- */
-export function getActiveEditorFromVisibleEditors(): vscode.TextEditor | undefined {
-    const visibleTextEditors = vscode.window.visibleTextEditors
-    if (visibleTextEditors.length === 0) {
-        return undefined
-    }
-    // Because webview panel will return undefine so we cannot use
-    // vscode.window.activeTextEditor to get the current active editor
-    // when a user has moved to their webview panel for chat
-    // We will use the first visible editor that is not a
-    const activeEditor = vscode.window.activeTextEditor
-    const editorWithSelection = visibleTextEditors.find(editor => !editor.selection.isEmpty)
-    return activeEditor || editorWithSelection
-}
-
-/**
- * Gets the currently active VS Code text document instance if one exists.
- * @returns The active VS Code text document, or undefined if none.
- */
-export function getCurrentVSCodeDoc(): vscode.TextDocument | undefined {
-    return getActiveEditorFromVisibleEditors()?.document
-}
-
-/**
- * Gets the full text content of the currently active VS Code text document.
- * @param range - Optional VS Code range to get only a subset of the document text.
- * @returns The text content of the active document, or empty string if none.
- */
-export function getCurrentVSCodeDocText(range?: vscode.Range): string {
-    return getCurrentVSCodeDoc()?.getText(range) || ''
-}
+import { isValidTestFileName } from '../commands/prompt/utils'
 
 /**
  * Checks if a file URI is part of the current workspace.
@@ -65,20 +26,17 @@ export function isInWorkspace(fileToCheck: URI): boolean {
     return vscode.workspace.getWorkspaceFolder(fileToCheck) !== undefined
 }
 
-function createFileContextResponseMessage(context: string, filePath: string): ContextMessage[] {
-    const fileName = createVSCodeRelativePath(filePath)
-    const uri = vscode.Uri.file(filePath)
+function createFileContextResponseMessage(context: string, fileUri: vscode.Uri): ContextMessage[] {
     const truncatedContent = truncateText(context, MAX_CURRENT_FILE_TOKENS)
-    return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
-        fileName,
-        uri,
+    return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileUri), {
+        type: 'file',
+        uri: fileUri,
         content: truncatedContent,
         source: 'editor',
     })
 }
 
-export async function getFilePathContext(filePath: string): Promise<string> {
-    const fileUri = vscode.Uri.file(filePath)
+async function getFilePathContext(fileUri: vscode.Uri): Promise<string> {
     try {
         const decoded = await decodeVSCodeTextDoc(fileUri)
         return decoded
@@ -163,15 +121,6 @@ export async function decodeVSCodeTextDoc(fileUri: URI): Promise<string> {
 }
 
 /**
- * Creates a relative file path using the VS Code workspace APIs.
- * @param filePath - The absolute file path to convert to a relative path.
- * @returns The relative path string for the given file path.
- */
-export function createVSCodeRelativePath(filePath: string | URI): string {
-    return vscode.workspace.asRelativePath(filePath)
-}
-
-/**
  * Gets the text content of a VS Code text document specified by URI.
  * @param uri - The URI of the text document to get content for.
  * @param range - Optional VS Code range to get only a subset of the document text.
@@ -229,26 +178,6 @@ export async function getFoldingRanges(
 }
 
 /**
- * Creates a human readable display text with a link to the VS Code editor.
- * @param input - The original human input text.
- * @param docUri - The URI of the referenced text document.
- * @param selection - The selection in the text document.
- * @returns The display text with a VS Code file link and selection range.
- */
-export function createHumanDisplayTextWithDocLink(
-    input: string,
-    docUri: URI,
-    selection: ActiveTextEditorSelection
-): string {
-    const { range, start } = createSelectionDisplayText(selection)
-    const fsPath = docUri.fsPath
-    const fileName = createVSCodeRelativePath(fsPath)
-    const fileLink = `vscode://file${fsPath}:${start}`
-
-    return `${input}\n\nFile: [_${fileName}:${range}_](${fileLink})`
-}
-
-/**
  * Generates context messages for each file in a given directory.
  * @param dirUri - The URI representing the directory to be analyzed.
  * @param filesInDir - An array of tuples containing the name and type of each file in the directory.
@@ -257,18 +186,17 @@ export function createHumanDisplayTextWithDocLink(
 export async function getCurrentDirFilteredContext(
     dirUri: vscode.Uri,
     filesInDir: [string, vscode.FileType][],
-    currentFileName: string,
+    currentFile: vscode.Uri,
     maxFiles = 5
 ): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
 
-    const filePathParts = currentFileName.split('/')
+    const filePathParts = currentFile.path.split('/')
     const fileNameWithoutExt = filePathParts.pop()?.split('.').shift() || ''
 
     for (const file of filesInDir) {
         // Get the context from each file
         const fileUri = vscode.Uri.joinPath(dirUri, file[0])
-        const fileName = createVSCodeRelativePath(fileUri.fsPath)
 
         // check file size before opening the file
         // skip file if it's larger than 1MB
@@ -278,7 +206,7 @@ export async function getCurrentDirFilteredContext(
         }
 
         // skip current file to avoid duplicate from current file context
-        if (file[0] === currentFileName) {
+        if (file[0] === currentFile.path) {
             continue
         }
 
@@ -290,8 +218,8 @@ export async function getCurrentDirFilteredContext(
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
-                populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
+                populateContextTemplateFromText(templateText, truncatedContent, fileUri),
+                { type: 'file', uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -313,7 +241,7 @@ export async function getCurrentDirFilteredContext(
 
 /**
  * Gets context messages for test files related to the given file name.
- * @param fileName - The name of the file to get test context for
+ * @param file - The file to get test context for
  * @param isUnitTestRequest - Whether the request is specifically for unit tests
  * @returns Promise<ContextMessage[]> - A promise resolving to context messages
  * containing information about test files related to the given file name.
@@ -324,13 +252,13 @@ export async function getCurrentDirFilteredContext(
  * Then it searches the codebase for additional test files matching the given
  * file name, preferring unit tests if isUnitTestRequest is true.
  */
-export async function getEditorTestContext(fileName: string, isUnitTestRequest = false): Promise<ContextMessage[]> {
+export async function getEditorTestContext(file: vscode.Uri, isUnitTestRequest = false): Promise<ContextMessage[]> {
     try {
-        const currentTestFile = await getCurrentTestFileContext(fileName, isUnitTestRequest)
+        const currentTestFile = await getCurrentTestFileContext(file, isUnitTestRequest)
         if (currentTestFile.length) {
             return currentTestFile
         }
-        const codebaseTestFiles = await getCodebaseTestFilesContext(fileName, isUnitTestRequest)
+        const codebaseTestFiles = await getCodebaseTestFilesContext(file, isUnitTestRequest)
         return [...codebaseTestFiles, ...currentTestFile]
     } catch {
         return []
@@ -356,7 +284,6 @@ export async function getDirContextMessages(
     for (const file of filesInDir) {
         // Get the context from each file
         const fileUri = vscode.Uri.joinPath(dirUri, file[0])
-        const fileName = createVSCodeRelativePath(fileUri.fsPath)
 
         // check file size before opening the file. skip file if it's larger than 1MB
         const fileSize = await vscode.workspace.fs.stat(fileUri)
@@ -371,8 +298,8 @@ export async function getDirContextMessages(
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
-                populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
+                populateContextTemplateFromText(templateText, truncatedContent, fileUri),
+                { type: 'file', uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -385,7 +312,7 @@ export async function getDirContextMessages(
 
 /**
  * Gets the context for the test file related to the given file name.
- * @param fileName - The name of the file to find the related test file for.
+ * @param file - The file to find the related test file for.
  * @returns A Promise resolving to the ContextMessage[] containing the context
  * for the found test file. If no related test file is found, returns context for
  * other test files in the project.
@@ -394,24 +321,24 @@ export async function getDirContextMessages(
  * If none found, searches for test files matching the fileName.
  * Gets the content of the found test files and returns ContextMessages.
  */
-export async function getCurrentTestFileContext(fileName: string, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
     // pattern to search for test files with same name
-    const searchPattern = createVSCodeTestSearchPattern(fileName)
+    const searchPattern = createVSCodeTestSearchPattern(file.fsPath)
     const foundFiles = await findVSCodeFiles(searchPattern, excludePattern, 5)
     const testFile = foundFiles.find(file => isValidTestFileName(file.fsPath))
     if (testFile) {
-        const context = await getFilePathContext(testFile.fsPath)
-        return createFileContextResponseMessage(context, testFile.fsPath)
+        const context = await getFilePathContext(testFile)
+        return createFileContextResponseMessage(context, testFile)
     }
     return []
 }
 
 /**
  * Gets context messages for test files related to the given file name.
- * @param fileName - The name of the file to find related test files for.
+ * @param file - The file to find related test files for.
  * @param isUnitTest - Whether to only look for unit test files.
  * @returns Promise resolving to ContextMessage[] containing the found test files.
  *
@@ -419,41 +346,18 @@ export async function getCurrentTestFileContext(fileName: string, isUnitTest: bo
  * test directories if getting unit tests. Returns context messages for up to 5
  * matching test files.
  */
-async function getCodebaseTestFilesContext(fileName: string, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCodebaseTestFilesContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
-    const testFilesPattern = createVSCodeTestSearchPattern(fileName, true)
+    const testFilesPattern = createVSCodeTestSearchPattern(file.fsPath, true)
     const testFilesMatches = await findVSCodeFiles(testFilesPattern, excludePattern, 5)
     const filteredTestFiles = testFilesMatches.filter(file => isValidTestFileName(file.fsPath))
 
     return getContextMessageFromFiles(filteredTestFiles)
 }
 
-/**
- * Creates a VS Code search pattern to find files matching the given file path.
- * @param fsPath - The file system path of the file to generate a search pattern for.
- * @param fromRoot - Whether to search from the root directory. Default false.
- * @returns A search pattern string to find matching files.
- *
- * This generates a search pattern by taking the base file name without extension
- * and appending wildcards.
- *
- * If fromRoot is true, the pattern will search recursively from the repo root.
- * Otherwise, it will search only the current directory.
- */
-export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): string {
-    const fileName = basename(fsPath)
-    const fileExtension = extname(fsPath)
-    const fileNameWithoutExt = fileName.replace(fileExtension, '')
-
-    const root = fromRoot ? '**' : ''
-
-    const currentFilePattern = `/*${fileNameWithoutExt}*${fileExtension}`
-    return root + currentFilePattern
-}
-
-export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
+function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
     const fileExtension = extname(fsPath)
     const fileName = basename(fsPath, fileExtension)
 
@@ -474,11 +378,11 @@ export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boo
  * @param files - The array of file URIs to get context messages for.
  * @returns A Promise resolving to an array of ContextMessage objects containing context from the files.
  */
-export async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextMessage[]> {
+async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
     for (const file of files) {
-        const context = await getFilePathContext(file.fsPath)
-        contextMessages.push(...createFileContextResponseMessage(context, file.fsPath))
+        const context = await getFilePathContext(file)
+        contextMessages.push(...createFileContextResponseMessage(context, file))
     }
     return contextMessages
 }

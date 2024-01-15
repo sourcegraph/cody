@@ -33,7 +33,7 @@ export interface ProviderConfig {
     model: string
 }
 
-export interface ProviderContextSizeHints {
+interface ProviderContextSizeHints {
     /** Total max length of all context (prefix + suffix + snippets). */
     totalChars: number
 

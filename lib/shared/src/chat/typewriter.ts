@@ -1,4 +1,4 @@
-export interface IncrementalTextConsumer {
+interface IncrementalTextConsumer {
     /**
      * Push new text to the consumer.
      * Text should be incremental but still include the previous text. E.g. "Hel" -> "Hello" -> "Hello, world!"

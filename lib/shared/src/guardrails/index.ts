@@ -6,7 +6,7 @@ export interface Attribution {
     repositories: RepositoryAttribution[]
 }
 
-export interface RepositoryAttribution {
+interface RepositoryAttribution {
     name: string
 }
 

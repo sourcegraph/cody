@@ -19,7 +19,7 @@ export interface CodyCommand {
  * - 'insert' mode is the same as edit, it adds to the top of the selection instead of replacing selection
  * - 'file' mode create a new file with cody's response as content
  */
-export type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
+type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
 
 // Type of context available for prompt building
 export interface CodyCommandContext {
@@ -36,7 +36,7 @@ export interface CodyCommandContext {
     none?: boolean
 }
 
-export type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
+type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
 
 export type CustomCommandType = 'workspace' | 'user'
 

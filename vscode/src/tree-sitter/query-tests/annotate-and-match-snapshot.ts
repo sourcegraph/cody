@@ -96,7 +96,7 @@ function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): v
 }
 
 // Defines the signature for functions that annotate nodes.
-export type Captures = (
+type Captures = (
     node: SyntaxNode,
     startPosition: Point,
     endPosition?: Point

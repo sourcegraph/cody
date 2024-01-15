@@ -17,7 +17,6 @@
     "webviews/*.d.ts",
     "package.json",
     ".storybook/*.ts",
-    "../lib/shared/src/telemetry/EventLogger.ts",
   ],
   "exclude": ["scripts", "dist", "test/integration", "**/test-data", "vite.config.ts", "webviews/vite.config.ts"],
   "references": [

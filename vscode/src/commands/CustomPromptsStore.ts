@@ -30,7 +30,6 @@ export class CustomPromptsStore implements vscode.Disposable {
 
     constructor(
         private isActive: boolean,
-        private extensionPath: string,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
@@ -215,7 +214,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         const configFileUri = this.getConfigUriByType(type)
         try {
             if (configFileUri) {
-                await createJSONFile(this.extensionPath, configFileUri)
+                await createJSONFile(configFileUri)
                 void vscode.window
                     .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
                     .then(async choice => {

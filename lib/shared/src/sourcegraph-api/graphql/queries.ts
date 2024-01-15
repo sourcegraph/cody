@@ -79,54 +79,11 @@ query Repository($name: String!) {
 	}
 }`
 
-export const REPOSITORY_IDS_QUERY = `
-query Repositories($names: [String!]!, $first: Int!) {
-	repositories(names: $names, first: $first) {
-                nodes {
-		        id
-                        name
-                }
-	}
-}`
-
-export const REPOSITORY_NAMES_QUERY = `
-query Repositories($first: Int!) {
-	repositories(first: $first) {
-                nodes {
-		        id
-                        name
-                }
-	}
-}`
-
 export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
                 id
                 embeddingExists
-	}
-}`
-
-export const GET_CODY_CONTEXT_QUERY = `
-query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-                __typename
-		... on FileChunkContext {
-                        blob {
-                                path
-                                repository {
-                                        id
-                                        name
-                                }
-                                commit {
-                                        id
-                                        oid
-                                }
-                        }
-			startLine
-			endLine
-                        chunkContent
-		}
 	}
 }`
 

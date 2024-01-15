@@ -1,5 +1,3 @@
-import * as path from 'path'
-
 import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDocument } from 'vscode'
 import { type TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
@@ -60,21 +58,6 @@ export function range(startLine: number, startCharacter: number, endLine?: numbe
 }
 
 /**
- * Builds a platform-aware absolute path for a filename.
- *
- * For POSIX platforms, returns `/file`, for windows returns
- * 'C:\file'.
- * @param name The name/relative path of the file. Always in POSIX format.
- */
-export function testFilePath(name: string): string {
-    // `path === path.win32` does not appear to work, even though win32 says
-    // "Same as parent object on windows" ☹️
-    const filePath = path.sep === path.win32.sep ? `C:\\${name}` : `/${name}`
-
-    return path.normalize(filePath)
-}
-
-/**
  * A helper to convert paths and file URIs on objects to posix form so that test snapshots can always use
  * forward slashes and work on Windows.
  *
@@ -107,14 +90,13 @@ export function withPosixPaths<T extends object>(obj: T): T {
     return obj
 }
 
-function normalizeFilePathToPosix(filePath: string): string {
-    // We only need to change anything on Windows.
-    if (path.sep !== path.win32.sep) {
-        return filePath
-    }
+export function withPosixPathsInString(text: string): string {
+    return text.replaceAll('file:/c%3A%5C', 'file:/').replaceAll('file:/c%3A/', 'file:/')
+}
 
+function normalizeFilePathToPosix(filePath: string): string {
     // Remove any drive letter.
-    if (filePath.slice(1, 2) === ':') {
+    if (filePath[1] === ':') {
         filePath = filePath.slice(2)
     }
 

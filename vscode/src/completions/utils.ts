@@ -13,11 +13,6 @@ export function messagesToText(messages: Message[]): string {
         .join('')
 }
 
-export function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
-}
-
 /**
  * Creates a new signal that forks a parent signal. When the parent signal is aborted, the forked
  * signal will be aborted as well. This allows propagating abort signals across asynchronous

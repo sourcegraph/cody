@@ -29,7 +29,7 @@ const meta: Meta<typeof Transcript> = {
 
 export default meta
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri }) => <>{uri.toString()}</>
 
 export const Simple: StoryObj<typeof meta> = {
     args: {
