@@ -8,6 +8,7 @@ import { CodyPersister } from './CodyPersister'
 
 interface PollyOptions {
     recordingName: string
+    keepUnusedRecordings?: boolean
     recordingDirectory?: string
     recordIfMissing?: boolean
     recordingMode?: MODE
@@ -29,7 +30,7 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
         expiryStrategy: options.recordingExpiryStrategy,
         expiresIn: options.expiresIn,
         persisterOptions: {
-            keepUnusedRequests: true,
+            keepUnusedRequests: options.keepUnusedRecordings ?? true,
             fs: {
                 recordingsDir: options.recordingDirectory,
             },
