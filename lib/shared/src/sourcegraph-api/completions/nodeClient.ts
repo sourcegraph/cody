@@ -1,6 +1,7 @@
 import http from 'http'
 import https from 'https'
 
+import { logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
@@ -20,6 +21,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 temperature: 0,
             }
         }
+
         const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
@@ -130,7 +132,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
-                        console.error(parseResult)
+                        logError('SourcegraphNodeCompletionsClient', 'isError(parseEvents(bufferText))', parseResult)
                         return
                     }
 

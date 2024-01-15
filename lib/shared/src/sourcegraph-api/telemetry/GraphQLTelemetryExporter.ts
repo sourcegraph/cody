@@ -1,5 +1,6 @@
 import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
 
+import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
 import { type LogEventMode, type SourcegraphGraphQLAPIClient } from '../graphql/client'
 
@@ -42,7 +43,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
-                console.warn('telemetry: failed to evaluate server version:', siteVersion)
+                logError('GraphQLTelemetryExporter', 'telemetry: failed to evaluate server version:', siteVersion)
                 return // we can try again later
             }
 
@@ -63,7 +64,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             } else {
                 this.exportMode = 'legacy'
             }
-            // console.log('telemetry: evaluated export mode:', this.exportMode)
+            logDebug('GraphQLTelemetryExporter', 'evaluated export mode:', this.exportMode)
         }
         if (this.exportMode === 'legacy' && this.legacySiteIdentification === undefined) {
             const siteIdentification = await this.client.getSiteIdentification()
@@ -116,9 +117,14 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                 )
             )
             if (isError(resultOrError)) {
-                console.error('Error exporting telemetry events as legacy event logs:', resultOrError, {
-                    legacyBackcompatLogEventMode: this.legacyBackcompatLogEventMode,
-                })
+                logError(
+                    'GraphQLTelemetryExporter',
+                    'Error exporting telemetry events as legacy event logs:',
+                    resultOrError,
+                    {
+                        legacyBackcompatLogEventMode: this.legacyBackcompatLogEventMode,
+                    }
+                )
             }
 
             return
@@ -136,7 +142,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
          */
         const resultOrError = await this.client.recordTelemetryEvents(events)
         if (isError(resultOrError)) {
-            console.error('Error exporting telemetry events:', resultOrError)
+            logError('GraphQLTelemetryExporter', 'Error exporting telemetry events:', resultOrError)
         }
     }
 }

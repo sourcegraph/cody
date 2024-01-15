@@ -1,4 +1,5 @@
 import { type ConfigurationWithAccessToken } from '../configuration'
+import { logError } from '../logger'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -25,7 +26,7 @@ export class EventLogger {
         private config: ConfigurationWithAccessToken
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
-        this.setSiteIdentification().catch(error => console.error(error))
+        this.setSiteIdentification().catch(error => logError('EventLogger', 'setSiteIdentification', error))
         if (this.extensionDetails.ideExtensionType !== 'Cody') {
             throw new Error(`new extension type ${this.extensionDetails.ideExtensionType} not yet accounted for`)
         }
@@ -57,7 +58,9 @@ export class EventLogger {
         this.extensionDetails = newExtensionDetails
         this.config = newConfig
         this.gqlAPIClient.onConfigurationChange(newConfig)
-        this.setSiteIdentification().catch(error => console.error(error))
+        this.setSiteIdentification().catch(error =>
+            logError('EventLogger', 'onConfigurationChange.setSiteIdentification', error)
+        )
     }
 
     private async setSiteIdentification(): Promise<void> {
@@ -141,9 +144,9 @@ export class EventLogger {
             )
             .then(response => {
                 if (isError(response)) {
-                    console.error('Error logging event', response)
+                    logError('EventLogger', 'Error logging event', response)
                 }
             })
-            .catch(error => console.error('Error logging event', error))
+            .catch(error => logError('EventLogger', 'Uncaught error logging event', error))
     }
 }

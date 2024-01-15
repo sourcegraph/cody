@@ -24,7 +24,7 @@ type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifi
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
 // String literal types for the names of the Cody Agent protocol methods.
-type RequestMethodName = keyof Requests
+export type RequestMethodName = keyof Requests
 type NotificationMethodName = keyof Notifications
 type MethodName = RequestMethodName | NotificationMethodName
 
@@ -242,7 +242,7 @@ class MessageEncoder extends Readable {
     }
 }
 
-type RequestCallback<M extends RequestMethodName> = (
+export type RequestCallback<M extends RequestMethodName> = (
     params: ParamsOf<M>,
     cancelToken: vscode.CancellationToken
 ) => Promise<ResultOf<M>>
@@ -254,7 +254,7 @@ type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<
  */
 export class MessageHandler {
     public id = 0
-    private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
+    public requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true

@@ -1,3 +1,5 @@
+import { logError } from './logger'
+
 export const isError = (value: unknown): value is Error => value instanceof Error
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
@@ -12,9 +14,9 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     if (isError(result)) {
         if (result.message) {
             if (result.cause) {
-                console.error(result.message, result.cause)
+                logError('convertGitCloneURLToCodebaseName', result.message, result.cause)
             } else {
-                console.error(result.message)
+                logError('convertGitCloneURLToCodebaseName', result.message)
             }
         }
         return null

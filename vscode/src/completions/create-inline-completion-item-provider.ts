@@ -22,6 +22,17 @@ interface InlineCompletionItemProviderArgs {
     createBfgRetriever?: () => BfgRetriever
 }
 
+class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+    public provideInlineCompletionItems(
+        _document: vscode.TextDocument,
+        _position: vscode.Position,
+        _context: vscode.InlineCompletionContext,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+        return { items: [] }
+    }
+}
+
 export async function createInlineCompletionItemProvider({
     config,
     client,
@@ -37,9 +48,7 @@ export async function createInlineCompletionItemProvider({
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
-            return vscode.languages.registerInlineCompletionItemProvider('*', {
-                provideInlineCompletionItems: () => Promise.resolve({ items: [] }),
-            })
+            return vscode.languages.registerInlineCompletionItemProvider('*', new NoopCompletionItemProvider())
         }
 
         return {

@@ -15,6 +15,7 @@ import type {
 
 import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
 
+import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -433,57 +434,14 @@ export class WorkspaceEdit {
     }
 }
 
-interface Callback {
+export interface Callback {
     handler: (arg?: any) => any
     thisArg?: any
 }
-function invokeCallback(callback: Callback, arg?: any): any {
+export function invokeCallback(callback: Callback, arg?: any): any {
     return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
 }
 export const emptyDisposable = new Disposable(() => {})
-
-export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
-    public on = (): undefined => undefined
-
-    constructor() {
-        this.on = () => undefined
-    }
-
-    private readonly listeners = new Set<Callback>()
-    event: vscode_types.Event<T> = (listener, thisArgs) => {
-        const value: Callback = { handler: listener, thisArg: thisArgs }
-        this.listeners.add(value)
-        return new Disposable(() => {
-            this.listeners.delete(value)
-        })
-    }
-
-    fire(data: T): void {
-        for (const listener of this.listeners) {
-            invokeCallback(listener, data)
-        }
-    }
-
-    /**
-     * Custom extension of the VS Code API to make it possible to `await` on the
-     * result of `EventEmitter.fire()`.  Most event listeners return a
-     * meaningful `Promise` that is discarded in the signature of the `fire()`
-     * function.  Being able to await on returned promise makes it possible to
-     * write more robust tests because we don't need to rely on magic timeouts.
-     */
-    public async cody_fireAsync(data: T): Promise<void> {
-        const promises: Promise<void>[] = []
-        for (const listener of this.listeners) {
-            const value = invokeCallback(listener, data)
-            promises.push(Promise.resolve(value))
-        }
-        await Promise.all(promises)
-    }
-
-    dispose(): void {
-        this.listeners.clear()
-    }
-}
 
 export enum EndOfLine {
     LF = 1,
@@ -795,8 +753,8 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
-    public syncAuthStatus(): void {
-        return
+    public syncAuthStatus(): Promise<void> {
+        return Promise.resolve()
     }
 }
 
