@@ -1,11 +1,16 @@
 import { Utils, type URI } from 'vscode-uri'
 
 import { type CodebaseContext } from '../../codebase-context'
+import {
+    languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+    ProgrammingLanguage,
+} from '../../common/languages'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension, numResults } from './helpers'
+import { numResults } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 /*
@@ -69,9 +74,8 @@ export class ContextSearch implements Recipe {
         let snippets = `Here are the code snippets for: ${text}\n\n`
         for (const file of resultContext.results) {
             const fileContent = this.sanitizeContent(file.content)
-            const extension = getFileExtension(file.fileName)
-            const ignoreFilesExtension = /^(md|txt)$/
-            if (extension.match(ignoreFilesExtension)) {
+            const language = languageFromFilename(file.fileName)
+            if (language === ProgrammingLanguage.Markdown || language === ProgrammingLanguage.PlainText) {
                 continue
             }
             let uri: string = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
@@ -84,7 +88,9 @@ export class ContextSearch implements Recipe {
 
             snippets +=
                 fileContent && fileContent.length > 5
-                    ? `File Name: [_${file.fileName}_](${uri})\n\`\`\`${extension}\n${fileContent}\n\`\`\`\n\n`
+                    ? `File Name: [_${file.fileName}_](${uri})\n\`\`\`${markdownCodeBlockLanguageIDForFilename(
+                          file.fileName
+                      )}\n${fileContent}\n\`\`\`\n\n`
                     : ''
         }
 

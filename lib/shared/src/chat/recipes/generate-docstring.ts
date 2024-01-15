@@ -1,14 +1,13 @@
+import {
+    languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+    ProgrammingLanguage,
+} from '../../common/languages'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { type Interaction } from '../transcript/interaction'
 
-import {
-    getContextMessagesFromSelection,
-    getFileExtension,
-    getNormalizedLanguageName,
-    MARKDOWN_FORMAT_PROMPT,
-    newInteraction,
-} from './helpers'
+import { getContextMessagesFromSelection, MARKDOWN_FORMAT_PROMPT, newInteraction } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class GenerateDocstring implements Recipe {
@@ -27,29 +26,34 @@ export class GenerateDocstring implements Recipe {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
 
-        const extension = getFileExtension(selection.fileUri)
-        const languageName = getNormalizedLanguageName(extension)
-        const promptPrefix = `Generate a comment documenting the parameters and functionality of the following ${languageName} code:`
-        let additionalInstructions = `Use the ${languageName} documentation style to generate a ${languageName} comment.`
-        if (extension === 'java') {
+        const language = languageFromFilename(selection.fileUri)
+        const promptPrefix = `Generate a comment documenting the parameters and functionality of the following ${language} code:`
+        let additionalInstructions = `Use the ${language} documentation style to generate a ${language} comment.`
+        if (language === ProgrammingLanguage.Java) {
             additionalInstructions = 'Use the JavaDoc documentation style to generate a Java comment.'
-        } else if (extension === 'py') {
+        } else if (language === ProgrammingLanguage.Python) {
             additionalInstructions = 'Use a Python docstring to generate a Python multi-line string.'
         }
         const promptMessage = `${promptPrefix}\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\nOnly generate the documentation, do not generate the code. ${additionalInstructions} ${MARKDOWN_FORMAT_PROMPT}`
 
         let docStart = ''
-        if (extension === 'java' || extension.startsWith('js') || extension.startsWith('ts')) {
+        if (
+            language === ProgrammingLanguage.Java ||
+            language === ProgrammingLanguage.JavaScript ||
+            language === ProgrammingLanguage.TypeScript
+        ) {
             docStart = '/*'
-        } else if (extension === 'py') {
+        } else if (language === ProgrammingLanguage.Python) {
             docStart = '"""\n'
-        } else if (extension === 'go') {
+        } else if (language === ProgrammingLanguage.Go) {
             docStart = '// '
         }
 
         const displayText = `Generate documentation for the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
-        const assistantResponsePrefix = `Here is the generated documentation:\n\`\`\`${extension}\n${docStart}`
+        const assistantResponsePrefix = `Here is the generated documentation:\n\`\`\`${markdownCodeBlockLanguageIDForFilename(
+            selection.fileUri
+        )}\n${docStart}`
         return newInteraction({
             text: promptMessage,
             displayText,
