@@ -6,7 +6,7 @@ export { renderCodyMarkdown } from './chat/markdown'
 export type { ChatButton, ChatError, ChatMessage } from './chat/transcript/messages'
 export type { ContextFile, PreciseContext } from './codebase-context/messages'
 export type { CodyCommand } from './commands'
-export { basename, dedupeWith, isDefined, pluralize, isErrorLike } from './common'
+export { basename, dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { isWindows } from './common/platform'
 export type { ActiveTextEditorSelectionRange } from './editor'
 // TODO: figure out why the symbols from displayPath.ts can't be imported from
@@ -16,6 +16,7 @@ export type { ActiveTextEditorSelectionRange } from './editor'
 // (call setDisplayPathEnvInfo; see displayPath docstring for more info)". The
 // error is not reproducible when running in replay mode.
 // export { displayPath, setDisplayPathEnvInfo } from './editor/displayPath'
+export { languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './common/languages'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export type { Attribution, Guardrails } from './guardrails'
 export { ContextWindowLimitError, RateLimitError } from './sourcegraph-api/errors'

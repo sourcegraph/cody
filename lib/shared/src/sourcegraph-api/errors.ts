@@ -85,7 +85,7 @@ export function isAuthError(error: unknown): boolean {
 }
 
 export class AbortError extends Error {
-    // Added to make Typescript understand that AbortError is not the same as Error.
+    // Added to make TypeScript understand that AbortError is not the same as Error.
     public readonly isAbortError = true
 }
 

@@ -1,5 +1,6 @@
 import { type CodebaseContext } from '../../codebase-context'
 import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
+import { markdownCodeBlockLanguageIDForFilename } from '../../common/languages'
 import { type ActiveTextEditorSelection, type Editor } from '../../editor'
 import { type IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
@@ -10,7 +11,7 @@ import {
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension, isSingleWord, numResults } from './helpers'
+import { isSingleWord, numResults } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class CodeQuestion implements Recipe {
@@ -23,12 +24,13 @@ export class CodeQuestion implements Recipe {
         const source = this.id
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
+        const fileUri = context.editor.getActiveTextEditorSelection()?.fileUri
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput, metadata: { source } },
                 {
                     speaker: 'assistant',
-                    text: `\`\`\`${getFileExtension(context.editor.getActiveTextEditorSelection()?.fileUri ?? '')}\n`,
+                    text: `\`\`\`${fileUri ? markdownCodeBlockLanguageIDForFilename(fileUri) : ''}\n`,
                     metadata: { source },
                 },
                 this.getContextMessages(

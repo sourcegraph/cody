@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import * as vscode from 'vscode'
 
-import { getFileExtension } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { markdownCodeBlockLanguageIDForFilename } from '@sourcegraph/cody-shared'
 import { type Recipe, type RecipeContext, type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
@@ -128,7 +128,6 @@ function groupByFile(results: Result[]): { file: string; results: Result[] }[] {
 async function htmlForResultGroups(groups: { file: string; results: Result[] }[]): Promise<string> {
     const groupHTMLsPromise = groups.map(async ({ file, results }) => {
         const doc = await vscode.workspace.openTextDocument(file)
-        const extension = getFileExtension(file)
         const fileUri = vscode.Uri.file(file)
         const uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
 
@@ -149,7 +148,7 @@ async function htmlForResultGroups(groups: { file: string; results: Result[] }[]
                     result.range.startPoint.col
                 }:${result.range.endPoint.row}:${result.range.endPoint.col}">
 
-\`\`\`${extension}
+\`\`\`${markdownCodeBlockLanguageIDForFilename(file)}
 ${firstNLines(text, 10)}
 \`\`\`
 

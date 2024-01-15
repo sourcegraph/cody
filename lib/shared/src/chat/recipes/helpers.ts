@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { type URI } from 'vscode-uri'
 
 import { type CodebaseContext } from '../../codebase-context'
@@ -10,30 +8,6 @@ import { Interaction } from '../transcript/interaction'
 import { type ChatEventSource } from '../transcript/messages'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
-
-const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
-    py: 'Python',
-    rb: 'Ruby',
-    md: 'Markdown',
-    php: 'PHP',
-    js: 'Javascript',
-    ts: 'Typescript',
-    jsx: 'JSX',
-    tsx: 'TSX',
-    go: 'Go',
-    java: 'Java',
-    c: 'C',
-    cpp: 'C++',
-    cs: 'C#',
-    css: 'CSS',
-    html: 'HTML',
-    json: 'JSON',
-    rs: 'Rust',
-}
-
-export function getNormalizedLanguageName(extension: string): string {
-    return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
-}
 
 export async function getContextMessagesFromSelection(
     selectedText: string,
@@ -59,13 +33,6 @@ export async function getContextMessagesFromSelection(
                 })
             )
     )
-}
-
-export function getFileExtension(file: URI | string): string {
-    return path
-        .extname(typeof file === 'string' ? file : file.path)
-        .slice(1)
-        .toLowerCase()
 }
 
 export const numResults = {

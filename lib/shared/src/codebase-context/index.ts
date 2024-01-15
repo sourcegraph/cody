@@ -1,5 +1,6 @@
 import { URI } from 'vscode-uri'
 
+import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
 import { type EmbeddingsSearch } from '../embeddings'
@@ -11,7 +12,6 @@ import {
     type LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
-    isMarkdownFile,
     populateCodeContextTemplate,
     populateMarkdownContextTemplate,
     populatePreciseCodeContextTemplate,
@@ -144,9 +144,10 @@ export class CodebaseContext {
         file: ContextFile & Required<Pick<ContextFile, 'uri'>>
         results: string[]
     }): ContextMessage[] {
-        const contextTemplateFn = isMarkdownFile(groupedResults.file.uri)
-            ? populateMarkdownContextTemplate
-            : populateCodeContextTemplate
+        const contextTemplateFn =
+            languageFromFilename(groupedResults.file.uri) === ProgrammingLanguage.Markdown
+                ? populateMarkdownContextTemplate
+                : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
             getContextMessageWithResponse(
@@ -177,9 +178,10 @@ export class CodebaseContext {
             if (result?.type === 'FileChunkContext') {
                 const { content, filePath, repoName, revision } = result
                 const fileUri = URI.file(filePath)
-                const messageText = isMarkdownFile(fileUri)
-                    ? populateMarkdownContextTemplate(content, fileUri, repoName)
-                    : populateCodeContextTemplate(content, fileUri, repoName)
+                const messageText =
+                    languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
+                        ? populateMarkdownContextTemplate(content, fileUri, repoName)
+                        : populateCodeContextTemplate(content, fileUri, repoName)
 
                 return getContextMessageWithResponse(messageText, {
                     type: 'file',
