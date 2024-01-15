@@ -103,6 +103,20 @@ export class SimpleChatModel {
         return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
     }
 
+    /**
+     * Removes the human message at the given index, as well as all messages after it.
+     * This removes the human message and the following bot response.
+     * Throws if the message at the given index is not a human message.
+     */
+    public removeHumanMessageByIndex(index: number): void {
+        const humanMessage = this.messagesWithContext[index]
+        if (humanMessage?.message?.speaker !== 'human') {
+            throw new Error('SimpleChatModel.removeHumanMessageByIndex: expected human message, got bot')
+        }
+        // Remove everything after the index + 1 (the bot message)
+        this.messagesWithContext.splice(index + 1)
+    }
+
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {
         const lastMessage = this.messagesWithContext.at(-1)
         if (!lastMessage) {

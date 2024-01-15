@@ -156,12 +156,16 @@ export const Transcript: React.FunctionComponent<
             return (
                 <TranscriptItem
                     key={index + offset}
+                    index={index + offset - 1} // remove the welcome message
                     message={message}
                     inProgress={
                         offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
                     }
-                    beingEdited={messageBeingEdited && offsetIndex}
+                    showEditButton={!messageInProgress?.speaker && !message.displayText?.startsWith('/')}
+                    beingEdited={message.speaker === 'human' && messageBeingEdited && index + offset > 0}
                     setBeingEdited={setMessageBeingEdited}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
                     fileLinkComponent={fileLinkComponent}
                     symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -171,9 +175,6 @@ export const Transcript: React.FunctionComponent<
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     textAreaComponent={textAreaComponent}
-                    EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText?.startsWith('/')}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
@@ -209,6 +210,7 @@ export const Transcript: React.FunctionComponent<
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
+                        index={transcript.length}
                         message={messageInProgress}
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={false}

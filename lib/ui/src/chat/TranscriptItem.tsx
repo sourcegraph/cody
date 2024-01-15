@@ -41,6 +41,7 @@ export interface TranscriptItemClassNames {
  */
 export const TranscriptItem: React.FunctionComponent<
     {
+        index: number
         message: ChatMessage
         inProgress: boolean
         beingEdited: boolean
@@ -49,7 +50,7 @@ export const TranscriptItem: React.FunctionComponent<
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        editButtonOnSubmit?: (text: string) => void
+        editButtonOnSubmit?: (text: string, index?: number) => void
         showEditButton: boolean
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
@@ -65,6 +66,7 @@ export const TranscriptItem: React.FunctionComponent<
         guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
+    index,
     message,
     inProgress,
     beingEdited,
@@ -94,43 +96,42 @@ export const TranscriptItem: React.FunctionComponent<
     guardrails,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const EditTextArea =
-        TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
-            <div className={styles.textAreaContainer}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={5}
-                    value={formInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={event => setFormInput((event.target as HTMLInputElement).value)}
-                    onKeyDown={event => {
-                        if (event.key === 'Escape') {
-                            setBeingEdited(false)
-                        }
-
-                        if (
-                            event.key === 'Enter' &&
-                            !event.shiftKey &&
-                            !event.nativeEvent.isComposing &&
-                            formInput.trim()
-                        ) {
-                            event.preventDefault()
-                            setBeingEdited(false)
-                            editButtonOnSubmit(formInput)
-                        }
-                    }}
-                />
-                <SubmitButton
-                    className={styles.submitButton}
-                    onClick={() => {
+    const EditTextArea = TextArea && beingEdited && editButtonOnSubmit && SubmitButton && (
+        <div className={styles.textAreaContainer}>
+            <TextArea
+                className={classNames(styles.chatInput, chatInputClassName)}
+                rows={5}
+                value={formInput}
+                autoFocus={true}
+                required={true}
+                onInput={event => setFormInput((event.target as HTMLInputElement).value)}
+                onKeyDown={event => {
+                    if (event.key === 'Escape') {
                         setBeingEdited(false)
-                        editButtonOnSubmit(formInput)
-                    }}
-                    disabled={formInput.length === 0}
-                />
-            </div>
-        ) : null
+                    }
+
+                    if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing &&
+                        formInput.trim()
+                    ) {
+                        event.preventDefault()
+                        setBeingEdited(false)
+                        editButtonOnSubmit(formInput, index)
+                    }
+                }}
+            />
+            <SubmitButton
+                className={styles.submitButton}
+                onClick={() => {
+                    setBeingEdited(false)
+                    editButtonOnSubmit(formInput, index)
+                }}
+                disabled={formInput.length === 0}
+            />
+        </div>
+    )
 
     return (
         <div

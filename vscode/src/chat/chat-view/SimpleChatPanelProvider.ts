@@ -358,7 +358,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             case 'edit': {
                 const requestID = uuid.v4()
-                await this.handleEdit(requestID, message.text)
+                await this.handleEdit(requestID, message.text, message.index)
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
@@ -664,7 +664,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.updateWebviewPanelTitle(inputText)
     }
 
-    private async handleEdit(requestID: string, text: string): Promise<void> {
+    private async handleEdit(requestID: string, text: string, index?: number): Promise<void> {
+        if (index !== undefined) {
+            this.chatModel.removeHumanMessageByIndex(index)
+        }
         this.chatModel.updateLastHumanMessage({ text })
         this.postViewTranscript()
         await this.generateAssistantResponse(requestID)

@@ -124,8 +124,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onEditBtnClick = useCallback(
-        (text: string) => {
-            vscodeAPI.postMessage({ command: 'edit', text })
+        (text: string, index?: number) => {
+            vscodeAPI.postMessage({ command: 'edit', text, index })
         },
         [vscodeAPI]
     )
