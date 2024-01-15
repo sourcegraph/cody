@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
+    displayPath,
     isDefined,
     type ChatButton,
     type ChatMessage,
@@ -11,8 +12,6 @@ import {
     type ContextFile,
     type Guardrails,
 } from '@sourcegraph/cody-shared'
-
-import { displayPath } from '../../shared/src/editor/displayPath'
 
 import { type CodeBlockMeta } from './chat/CodeBlocks'
 import { type FileLinkProps } from './chat/components/EnhancedContext'

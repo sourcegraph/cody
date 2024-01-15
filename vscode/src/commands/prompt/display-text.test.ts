@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { setDisplayPathEnvInfo, type DisplayPathEnvInfo } from '@sourcegraph/cody-shared/src/editor/displayPath'
+import { setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
+import { type DisplayPathEnvInfo } from '@sourcegraph/cody-shared/src/editor/displayPath'
 
 import { replaceFileNameWithMarkdownLink } from './display-text'
 

@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { displayPath } from '../../../lib/shared/src/editor/displayPath'
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
 import { type ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'

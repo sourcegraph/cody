@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
+import { displayPath } from '@sourcegraph/cody-shared'
 import { type ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
-import { displayPath } from '../../../../lib/shared/src/editor/displayPath'
 
 import { trailingNonAlphaNumericRegex } from './utils'
 
