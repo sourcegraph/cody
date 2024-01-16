@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { convertFsPathToTestFile } from '../commands/utils/new-test-file'
@@ -13,6 +14,9 @@ import { type FixupController } from '../non-stop/FixupController'
 import { NewFixupFileMap } from '../non-stop/FixupFile'
 import { type FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
+import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
 
 import { type EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
@@ -131,6 +135,23 @@ export class EditProvider {
 
         if (!response) {
             return
+        }
+
+        if (!isMessageInProgress) {
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                ...countCode(response),
+                source: this.config.task.source,
+                hasV2Event: true,
+            })
+            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
+            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata: countCode(response),
+                privateMetadata: {
+                    source: this.config.task.source,
+                    responseText,
+                },
+            })
         }
 
         // If the response finished and we didn't receive file name suggestion,

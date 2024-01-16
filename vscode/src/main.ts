@@ -193,7 +193,7 @@ const register = async (
         commandsController
     )
 
-    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
+    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider, authProvider }))
     disposables.push(new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
