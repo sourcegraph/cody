@@ -10,7 +10,12 @@ const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
  * @param selection - The selection to check
  * @returns boolean - True if the selection does not contain the full range of non-whitespace characters on the line
  */
-function isIncompleteSelection(document: vscode.TextDocument, selection: vscode.Selection): boolean {
+function isEmptyOrIncompleteSelection(document: vscode.TextDocument, selection: vscode.Selection): boolean {
+    if (selection.isEmpty) {
+        // Nothing to select
+        return true
+    }
+
     if (!selection.isSingleLine) {
         // Multi line selections are always considered complete
         return false
@@ -69,13 +74,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                 }
 
                 const selection = event.selections[0]
-                if (selection.isEmpty) {
-                    // Empty selection so clear any existing text and don't show a message to avoid spamming the user with text.
-                    return this.clearGhostText(editor)
-                }
-
-                if (isIncompleteSelection(editor.document, selection)) {
-                    // Incomplete selection, we can technically do an edit here but it is unlikely the user will want to do so.
+                if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                    // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                    // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
                     return this.clearGhostText(editor)
                 }
 
