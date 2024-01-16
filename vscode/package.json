@@ -506,6 +506,16 @@
         "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+      },
+      {
+        "command": "cody.fixup.retryNearest",
+        "key": "alt+r",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.fixup.undoNearest",
+        "key": "alt+u",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [

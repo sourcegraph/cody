@@ -93,6 +93,25 @@ export class FixupController
                 })
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
                 return this.skipFormatting(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.retryNearest', () => {
+                const nearestTask = this.getNearestTask()
+                if (!nearestTask) {
+                    return
+                }
+
+                void vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.undoNearest', () => {
+                const nearestTask = this.getNearestTask()
+                if (!nearestTask) {
+                    return
+                }
+
+                console.log('RUNNING UNO...s')
+
+                // TODO: Check why this does not work
+                return vscode.commands.executeCommand('cody.fixup.codelens.undo', nearestTask.id)
             })
         )
         // Observe file renaming and deletion
@@ -1000,6 +1019,32 @@ export class FixupController
             this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
+    }
+
+    private getNearestTask(): FixupTask | undefined {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            return
+        }
+
+        const fixupFile = this.maybeFileForUri(editor.document.uri)
+        if (!fixupFile) {
+            return
+        }
+
+        const position = editor.selection.active
+
+        /**
+         * Gets the task closest to the current cursor position from the tasks associated with the current file.
+         * Sorts by distance between task selection range start line and current cursor line.
+         */
+        const closestTask = this.tasksForFile(fixupFile)
+            .filter(({ state }) => state === CodyTaskState.applied)
+            .sort((a, b) => {
+                return position.line - a.selectionRange.start.line - (position.line - b.selectionRange.start.line)
+            })[0]
+
+        return closestTask
     }
 
     private reset(): void {
