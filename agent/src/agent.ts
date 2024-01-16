@@ -513,16 +513,19 @@ export class Agent extends MessageHandler {
             return Promise.resolve(null)
         })
 
+        // The arguments to pass to the command to make sure edit commands would also run in chat mode
+        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+
         this.registerRequest('commands/explain', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code', commandArgs))
         })
 
         this.registerRequest('commands/test', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests', commandArgs))
         })
 
         this.registerRequest('commands/smell', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code', commandArgs))
         })
 
         this.registerRequest('chat/new', () => {

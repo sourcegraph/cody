@@ -17,7 +17,6 @@ import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -33,6 +32,7 @@ import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-sha
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
+import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
 import { type CommandsController } from '../../commands/CommandsController'
 import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../../commands/prompt/display-text'
 import { getContextForCommand } from '../../commands/utils/get-context'
@@ -598,9 +598,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const command = await this.commandsController?.findCommand(text)
+            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
+            const command = await this.commandsController?.findCommand(text, commandArgs)
             if (command) {
-                return this.handleCommands(command, 'chat', requestID)
+                return this.handleCommands(command, commandArgs)
             }
         }
 
@@ -614,19 +615,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * generates a chat request from the command,
      * and sends it to be handled like a regular chat request.
      */
-    public async handleCommands(command: CodyCommand, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
+    public async handleCommands(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
+        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
+        // This is because findCommand will start the CommandRunner,
+        // which would send all fixup requests to the FixupController
+        if (command.mode !== 'ask') {
+            return
+        }
+
+        // If editor is not active, post error and return early
         if (command && !this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
             if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
                 return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
             }
         }
-        // Returns early if it's an edit command as edit command is redirected to edits in findCommand
-        if (command.mode !== 'ask') {
-            return
-        }
+
         const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
 
-        await this.handleChatRequest(requestID, inputText, 'user', [], false, command)
+        await this.handleChatRequest(args.requestID, inputText, 'user', [], false, command)
     }
 
     /**
@@ -1025,7 +1031,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     return !isRedundantCommand && !isCustomEdit
                 }) || []
 
-            console.log(prompts, 'prompts')
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
