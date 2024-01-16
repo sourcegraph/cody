@@ -1,7 +1,7 @@
 import { Range, type Position, type TextDocument } from 'vscode'
 import { type Tree } from 'web-tree-sitter'
 
-import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
+import { dedupeWith } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'

@@ -6,14 +6,21 @@ import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
-import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import {
+    convertGitCloneURLToCodebaseName,
+    createClient,
+    FeatureFlag,
+    featureFlagProvider,
+    isRateLimitError,
+    NoOpTelemetryRecorderProvider,
+    setUserAgent,
+    type BillingCategory,
+    type BillingProduct,
+    type Client,
+    type LogEventMode,
+} from '@sourcegraph/cody-shared'
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'

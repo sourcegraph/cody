@@ -1,9 +1,13 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type CodyCommand, type Guardrails } from '@sourcegraph/cody-shared'
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    ChatModelProvider,
+    type ChatClient,
+    type ChatEventSource,
+    type CodyCommand,
+    type Guardrails,
+} from '@sourcegraph/cody-shared'
 
 import { type View } from '../../../webviews/NavBar'
 import { type CommandsController } from '../../commands/CommandsController'

@@ -1,7 +1,7 @@
 import * as uuid from 'uuid'
 import { type Memento } from 'vscode'
 
-import { type ChatHistory, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatHistory, type UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 

@@ -1,16 +1,16 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import type {
-    ActiveTextEditor,
-    ActiveTextEditorDiagnostic,
-    ActiveTextEditorDiagnosticType,
-    ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
-    ActiveTextEditorVisibleContent,
-    Editor,
-} from '@sourcegraph/cody-shared/src/editor'
-import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
+import {
+    isCodyIgnoredFile,
+    SURROUNDING_LINES,
+    type ActiveTextEditor,
+    type ActiveTextEditorDiagnostic,
+    type ActiveTextEditorDiagnosticType,
+    type ActiveTextEditorSelection,
+    type ActiveTextEditorSelectionRange,
+    type ActiveTextEditorVisibleContent,
+    type Editor,
+} from '@sourcegraph/cody-shared'
 
 import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'

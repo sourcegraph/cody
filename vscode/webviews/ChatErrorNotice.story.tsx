@@ -2,7 +2,7 @@ import { type Meta, type StoryObj } from '@storybook/react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { RateLimitError } from '@sourcegraph/cody-shared'
 import { type ChatButtonProps } from '@sourcegraph/cody-ui/src/Chat'
 import { ErrorItem } from '@sourcegraph/cody-ui/src/chat/ErrorItem'
 

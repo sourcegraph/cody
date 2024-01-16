@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand, type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
 import { type VSCodeEditor } from '../../editor/vscode-editor'

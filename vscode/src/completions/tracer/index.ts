@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { type GetContextResult } from '../context/context-mixer'
 import { type InlineCompletionsResult, type TriggerKind } from '../get-inline-completions'

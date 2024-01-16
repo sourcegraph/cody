@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared'
 
 import { TriggerKind } from '../get-inline-completions'
 import { completion } from '../test-helpers'

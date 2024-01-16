@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { FeatureFlag, isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { getFullConfig } from '../configuration'

@@ -1,20 +1,19 @@
 import type * as vscode from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
     createContextMessageByFile,
     getContextMessageWithResponse,
-    type ContextFile,
-    type ContextMessage,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
+    MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+    truncateText,
+    truncateTextStart,
+    type CodebaseContext,
+    type CodyCommand,
+    type ContextFile,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type EditIntent } from '../types'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import type * as status from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import type * as status from '@sourcegraph/cody-shared'
 
 import { ContextStatusAggregator } from './enhanced-context-status'
 

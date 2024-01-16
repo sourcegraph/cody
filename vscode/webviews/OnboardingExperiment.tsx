@@ -1,6 +1,6 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type TelemetryService } from '@sourcegraph/cody-shared'
 
 import { type AuthMethod } from '../src/chat/protocol'
 

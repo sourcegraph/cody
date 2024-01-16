@@ -1,7 +1,6 @@
 import { type Meta, type StoryObj } from '@storybook/react'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { ChatModelProvider, DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 

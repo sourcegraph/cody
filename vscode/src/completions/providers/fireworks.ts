@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'

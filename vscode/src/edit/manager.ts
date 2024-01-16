@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
 
 import { type ContextProvider } from '../chat/ContextProvider'
 import { getEditor } from '../editor/active-editor'
