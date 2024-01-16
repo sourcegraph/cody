@@ -1,6 +1,7 @@
 import { type URI } from 'vscode-uri'
 
 import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
+import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -26,6 +27,7 @@ export type WebviewMessage =
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
     | ({ command: 'submit' } & WebviewSubmitMessage)
+    | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
@@ -114,7 +116,7 @@ export type ExtensionMessage =
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
 
-interface ExtensionAttributionMessage {
+export interface ExtensionAttributionMessage {
     snippet: string
     attribution?: {
         repositoryNames: string[]
@@ -123,7 +125,7 @@ interface ExtensionAttributionMessage {
     error?: string
 }
 
-interface WebviewSubmitMessage {
+export interface WebviewSubmitMessage {
     text: string
     submitType: ChatSubmitType
     addEnhancedContext?: boolean

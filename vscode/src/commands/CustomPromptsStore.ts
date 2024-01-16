@@ -104,7 +104,8 @@ export class CustomPromptsStore implements vscode.Disposable {
                 return null
             }
             const json = JSON.parse(content) as MyPromptsJSON
-            const promptEntries = Object.entries(json.commands)
+            const prompts = json.commands || json.recipes
+            const promptEntries = Object.entries(prompts)
 
             const isOldFormat = promptEntries.some(
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)

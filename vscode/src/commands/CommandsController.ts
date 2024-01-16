@@ -69,7 +69,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
-        // Additional instruction that will be added to end of prompt in the custom command prompt
+        // Additional instruction that will be added to end of prompt in the custom-prompt recipe
         const commandInput = commandKey === text ? '' : commandSplit.join(' ')
 
         const command = this.default.get(commandKey)
@@ -101,7 +101,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
-        // Fixup request will be taken care by the fixup command in the CommandRunner
+        // Fixup request will be taken care by the fixup recipe in the CommandRunner
         if (isFixupRequest) {
             return undefined
         }

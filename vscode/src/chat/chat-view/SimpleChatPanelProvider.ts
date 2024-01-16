@@ -556,7 +556,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-        // If this is a slash command, run it with custom command instead
+        // If this is a slash command, run it with custom prompt recipe instead
         if (text.startsWith('/')) {
             if (text.match(/^\/r(eset)?$/)) {
                 return this.clearAndRestartSession()

@@ -8,7 +8,7 @@ import { test } from './helpers'
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test('open the Custom Commands in sidebar and add new user command', async ({ page, sidebar }) => {
+test('open the Custom Commands in sidebar and add new user recipe', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -30,7 +30,7 @@ test('open the Custom Commands in sidebar and add new user command', async ({ pa
     // Create Command via UI
     await page.keyboard.type('New Custom Command...')
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
-    const commandName = 'ATestCommand'
-    await page.keyboard.type(commandName)
+    const recipeName = 'ATestRecipes'
+    await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
 })

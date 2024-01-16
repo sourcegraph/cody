@@ -11,8 +11,9 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { OldChatQuestion } from './OldChatQuestion'
 import { getPreamble } from './preamble'
+import { getRecipe } from './recipes/browser-recipes'
+import { type RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { type ChatMessage } from './transcript/messages'
 import { reformatBotMessageForChat } from './viewHelpers'
@@ -37,6 +38,15 @@ export interface Client {
     readonly transcript: Transcript
     readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
+    executeRecipe: (
+        recipeId: RecipeID,
+        options?: {
+            signal?: AbortSignal
+            prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
+            data?: any // returned as is
+        }
+    ) => Promise<void>
     reset: () => void
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
@@ -114,15 +124,22 @@ export async function createClient({
             }
         }
 
-        async function executeChat(options?: {
-            signal?: AbortSignal
-            prefilledOptions?: PrefilledOptions
-            humanChatInput?: string
-            data?: any
-        }): Promise<void> {
+        async function executeRecipe(
+            recipeId: RecipeID,
+            options?: {
+                signal?: AbortSignal
+                prefilledOptions?: PrefilledOptions
+                humanChatInput?: string
+                data?: any
+            }
+        ): Promise<void> {
             const humanChatInput = options?.humanChatInput ?? ''
+            const recipe = getRecipe(recipeId)
+            if (!recipe) {
+                return
+            }
 
-            const interaction = await new OldChatQuestion(() => {}).getInteraction(humanChatInput, {
+            const interaction = await recipe.getInteraction(humanChatInput, {
                 editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
                 intentDetector,
                 codebaseContext,
@@ -185,8 +202,9 @@ export async function createClient({
                 return isMessageInProgress
             },
             submitMessage(text: string) {
-                return executeChat({ humanChatInput: text })
+                return executeRecipe('chat-question', { humanChatInput: text })
             },
+            executeRecipe,
             reset() {
                 isMessageInProgress = false
                 transcript.reset()

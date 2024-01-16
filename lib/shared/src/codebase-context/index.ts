@@ -84,6 +84,22 @@ export class CodebaseContext {
         }
     }
 
+    public async getSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<{ results: ContextResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
+        if (this.embeddings && this.config.useContext !== 'keyword') {
+            return {
+                results: await this.getEmbeddingSearchResults(query, options),
+                endpoint: this.getServerEndpoint(),
+            }
+        }
+        return {
+            results: [],
+            endpoint: this.getServerEndpoint(),
+        }
+    }
+
     // We split the context into multiple messages instead of joining them into a single giant message.
     // We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
     // when we run out of tokens.

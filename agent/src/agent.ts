@@ -7,6 +7,7 @@ import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
+import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -29,7 +30,7 @@ import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
-import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -244,7 +245,7 @@ export class Agent extends MessageHandler {
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
+                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
                 reason: undefined,
             })
         })
@@ -317,6 +318,15 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
+        this.registerRequest('recipes/list', () =>
+            Promise.resolve(
+                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
+                    id,
+                    title,
+                }))
+            )
+        )
+
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
             client?.reset()
@@ -324,6 +334,41 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
+        })
+
+        this.registerRequest('recipes/execute', async (data, token) => {
+            const client = await this.client
+            if (!client) {
+                return null
+            }
+
+            const abortController = new AbortController()
+            if (token) {
+                if (token.isCancellationRequested) {
+                    abortController.abort()
+                }
+                token.onCancellationRequested(() => {
+                    abortController.abort()
+                })
+            }
+
+            await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
+            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
+            try {
+                await client.executeRecipe(data.id, {
+                    signal: abortController.signal,
+                    humanChatInput: data.humanChatInput,
+
+                    data: data.data,
+                })
+            } catch (error) {
+                // can happen when the client cancels the request
+                if (isRateLimitError(error)) {
+                    throw error
+                }
+                console.log('recipe failed', error)
+            }
+            return null
         })
 
         this.registerRequest('autocomplete/execute', async (params, token) => {

@@ -1,6 +1,7 @@
 import { type ContextFile, type PreciseContext } from '../../codebase-context/messages'
 import { type CodyDefaultCommands } from '../../commands'
 import { type Message } from '../../sourcegraph-api'
+import { type RecipeID } from '../recipes/recipe'
 
 import { type TranscriptJSON } from '.'
 
@@ -69,6 +70,7 @@ export type ChatEventSource =
     | 'test'
     | 'code-lens'
     | CodyDefaultCommands
+    | RecipeID
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,
