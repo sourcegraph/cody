@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { renderCodyMarkdown, type Guardrails, isError } from '@sourcegraph/cody-shared'
 
 import { type CodeBlockActionsProps } from '../Chat'
 import {
