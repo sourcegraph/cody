@@ -5,6 +5,26 @@ const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
 /**
+ * Checks if the given selection in the document is an incomplete line selection.
+ * @param document - The text document containing the selection
+ * @param selection - The selection to check
+ * @returns boolean - True if the selection does not contain the full range of non-whitespace characters on the line
+ */
+function isIncompleteSelection(document: vscode.TextDocument, selection: vscode.Selection): boolean {
+    if (!selection.isSingleLine) {
+        // Multi line selections are always considered complete
+        return false
+    }
+
+    const line = document.lineAt(selection.start.line)
+    // Return `true` (incomplete selection) if the selection does not contain the full range of non-whitespace characters on the line
+    return (
+        line.firstNonWhitespaceCharacterIndex < selection.start.character ||
+        line.range.end.character > selection.end.character
+    )
+}
+
+/**
  * Creates a new decoration for showing a "ghost" hint to the user.
  *
  * Note: This needs to be created at extension run time as the order in which `createTextEditorDecorationType`
@@ -41,12 +61,22 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
                 const editor = event.textEditor
-                const selection = event.selections[0]
 
-                if (selection.isEmpty && !editor.document.lineAt(selection.start.line).isEmptyOrWhitespace) {
-                    // Empty selection but non-empty line, so we don't show a message to avoid spamming the user with text.
-                    this.clearGhostText(editor)
-                    return
+                if (!event.kind || event.kind === vscode.TextEditorSelectionChangeKind.Command) {
+                    // The selection event was likely triggered programatically, or via another action (e.g. search)
+                    // It's unlikely the user would want to trigger an edit here, so clear any existing text and return early.
+                    return this.clearGhostText(editor)
+                }
+
+                const selection = event.selections[0]
+                if (selection.isEmpty) {
+                    // Empty selection so clear any existing text and don't show a message to avoid spamming the user with text.
+                    return this.clearGhostText(editor)
+                }
+
+                if (isIncompleteSelection(editor.document, selection)) {
+                    // Incomplete selection, we can technically do an edit here but it is unlikely the user will want to do so.
+                    return this.clearGhostText(editor)
                 }
 
                 /**
@@ -58,7 +88,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                     : selection.active.translate(selection.end.character === 0 ? -1 : 0)
 
                 if (this.activeDecoration && this.activeDecoration.range.start.line !== targetPosition.line) {
-                    // Selection changed, remove existing decoration
+                    // Selection changed, remove existing decoration and continue
                     this.clearGhostText(editor)
                 }
 
