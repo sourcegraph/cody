@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { type EditIntent, type EditMode } from './types'
 

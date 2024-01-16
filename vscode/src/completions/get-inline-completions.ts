@@ -1,8 +1,7 @@
 import type * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import { type CompletionIntent } from '../tree-sitter/query-sdk'

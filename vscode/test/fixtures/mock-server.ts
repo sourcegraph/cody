@@ -59,8 +59,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.status(200)
     })
 
-    // matches @sourcegraph/cody-shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter
-    // importing const doesn't work, so hardcode it here.
+    // matches @sourcegraph/cody-shared't work, so hardcode it here.
     app.post('/.api/mockEventRecording', (req, res) => {
         const events = req.body as TelemetryEventInput[]
         events.forEach(event => {

@@ -1,10 +1,13 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import {
+    ConfigFeaturesSingleton,
+    FeatureFlag,
+    featureFlagProvider,
+    isCodyIgnoredFile,
+    RateLimitError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'

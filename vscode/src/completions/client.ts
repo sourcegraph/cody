@@ -1,22 +1,21 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import type {
-    CompletionLogger,
-    CompletionsClientConfig,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import type {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import {
+    addTraceparent,
+    FeatureFlag,
+    featureFlagProvider,
+    getActiveTraceAndSpanId,
     isAbortError,
+    isNodeResponse,
     isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
     TracedError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { isNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+    wrapInActiveSpan,
+    type CompletionLogger,
+    type CompletionParameters,
+    type CompletionResponse,
+    type CompletionsClientConfig,
+} from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
 

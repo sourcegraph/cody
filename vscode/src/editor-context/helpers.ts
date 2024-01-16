@@ -6,14 +6,12 @@ import { type URI } from 'vscode-uri'
 
 import {
     getContextMessageWithResponse,
-    type ContextMessage,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
+    MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
+    truncateText,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
 import { isValidTestFileName } from '../commands/prompt/utils'
 

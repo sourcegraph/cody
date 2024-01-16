@@ -1,10 +1,14 @@
-import { isDefined } from '@sourcegraph/cody-shared'
-import type { OllamaGenerateParameters, OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
-import type { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import type { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { isNodeResponse, type BrowserOrNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import {
+    isAbortError,
+    isDefined,
+    isError,
+    isNodeResponse,
+    type BrowserOrNodeResponse,
+    type CompletionLogger,
+    type CompletionResponse,
+    type OllamaGenerateParameters,
+    type OllamaOptions,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
 import { createTimeout, type CodeCompletionsClient } from '../client'

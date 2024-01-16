@@ -5,8 +5,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { type HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
+import { dedupeWith, type HoverContext } from '@sourcegraph/cody-shared'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../../../../graph/lsp/graph'
 import {

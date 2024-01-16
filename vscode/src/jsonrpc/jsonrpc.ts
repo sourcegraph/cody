@@ -6,7 +6,7 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'

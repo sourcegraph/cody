@@ -1,7 +1,7 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../log'
 

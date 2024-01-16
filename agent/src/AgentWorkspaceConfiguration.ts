@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 

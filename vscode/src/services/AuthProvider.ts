@@ -1,10 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import {
+    DOTCOM_URL,
+    FeatureFlag,
+    featureFlagProvider,
+    isDotCom,
+    isError,
+    LOCAL_APP_URL,
+    SourcegraphGraphQLAPIClient,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {

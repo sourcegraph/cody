@@ -1,4 +1,4 @@
-import { AbortError, TimeoutError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { AbortError, TimeoutError } from '@sourcegraph/cody-shared'
 
 import { type CustomAbortSignal } from '../../completions/context/utils'
 

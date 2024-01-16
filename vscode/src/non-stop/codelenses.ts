@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import { getSingleLineRange } from '../services/InlineAssist'
 

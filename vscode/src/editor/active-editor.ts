@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 /**
  * Interface for tracking the last active text editor that is not a webview panel for

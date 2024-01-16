@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { type CodyCommand, type CustomCommandType, type VsCodeCommandsController } from '@sourcegraph/cody-shared'
 
 import { getFullConfig } from '../configuration'
 import { executeEdit } from '../edit/execute'

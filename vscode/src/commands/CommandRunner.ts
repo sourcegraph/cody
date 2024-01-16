@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { ConfigFeaturesSingleton, type ChatEventSource, type CodyCommand } from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'

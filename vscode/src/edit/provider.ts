@@ -2,9 +2,7 @@ import path from 'path'
 
 import { URI } from 'vscode-uri'
 
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
-import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { BotResponseMultiplexer, isAbortError, Typewriter } from '@sourcegraph/cody-shared'
 
 import { convertFsPathToTestFile } from '../commands/utils/new-test-file'
 import { doesFileExist } from '../editor-context/helpers'

@@ -1,10 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { ConfigFeaturesSingleton, graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import {
+    ConfigFeaturesSingleton,
+    FeatureFlag,
+    featureFlagProvider,
+    graphqlClient,
+    isDotCom,
+    newPromptMixin,
+    PromptMixin,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'

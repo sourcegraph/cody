@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 

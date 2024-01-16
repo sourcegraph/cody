@@ -2,8 +2,7 @@ import { dirname } from 'path'
 
 import * as vscode from 'vscode'
 
-import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
+import { CODY_IGNORE_FILENAME_POSIX_GLOB, ignores } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
