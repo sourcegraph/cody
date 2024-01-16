@@ -89,22 +89,20 @@ export class GhostHintDecorator implements vscode.Disposable {
                     : selection.active.translate(selection.end.character === 0 ? -1 : 0)
 
                 if (this.activeDecoration && this.activeDecoration.range.start.line !== targetPosition.line) {
-                    // Selection changed, remove existing decoration and continue
+                    // Active decoration is incorrectly positioned, remove it before continuing
                     this.clearGhostText(editor)
                 }
 
-                const ghostText = `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`
-
                 // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                return this.throttledSetGhostText(editor, targetPosition, ghostText)
+                return this.throttledSetGhostText(editor, targetPosition)
             })
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, text: string): void {
+    private setGhostText(editor: vscode.TextEditor, position: vscode.Position): void {
         this.activeDecoration = {
             range: new vscode.Range(position, position),
-            renderOptions: { after: { contentText: text } },
+            renderOptions: { after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` } },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
     }
