@@ -188,7 +188,8 @@ const register = async (
         chatClient,
         embeddingsClient,
         localEmbeddings || null,
-        symfRunner || null
+        symfRunner || null,
+        guardrails
     )
 
     disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
