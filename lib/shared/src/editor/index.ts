@@ -88,7 +88,6 @@ export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsContr
 
     getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
 
-    replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
     showInputBox(prompt?: string): Promise<string | undefined>
@@ -138,10 +137,6 @@ export class NoopEditor implements Editor {
         _range?: ActiveTextEditorSelectionRange
     ): Promise<string | undefined> {
         return Promise.resolve(undefined)
-    }
-
-    public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
-        return Promise.resolve()
     }
 
     public showQuickPick(_labels: string[]): Promise<string | undefined> {

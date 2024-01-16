@@ -261,34 +261,6 @@ export class VSCodeEditor implements Editor<CommandsController> {
         }
     }
 
-    public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
-            // TODO: should return something indicating success or failure
-            console.error('Missing file')
-            return
-        }
-        const selection = activeEditor.selection
-        if (!selection) {
-            console.error('Missing selection')
-            return
-        }
-        if (activeEditor.document.getText(selection) !== selectedText) {
-            // TODO: Be robust to this.
-            await vscode.window.showInformationMessage(
-                'The selection changed while Cody was working. The text will not be edited.'
-            )
-            return
-        }
-
-        // Editing the document
-        await activeEditor.edit(edit => {
-            edit.replace(selection, replacement)
-        })
-
-        return
-    }
-
     public async createWorkspaceFile(content: string, uri?: vscode.Uri): Promise<void> {
         const fileUri = uri ?? (await vscode.window.showSaveDialog())
         if (!fileUri) {

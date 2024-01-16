@@ -124,10 +124,6 @@ export class AgentEditor implements Editor {
         }
     }
 
-    public replaceSelection(): Promise<void> {
-        throw new Error('Not implemented')
-    }
-
     public showQuickPick(): Promise<string | undefined> {
         throw new Error('Not implemented')
     }
