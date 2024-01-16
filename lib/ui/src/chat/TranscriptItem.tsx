@@ -138,6 +138,7 @@ export const TranscriptItem: React.FunctionComponent<
                         editButtonOnSubmit(editFormInput, index)
                     }
                 }}
+                chatEnabled={true}
             />
             <SubmitButton
                 className={styles.submitButton}
@@ -203,7 +204,6 @@ export const TranscriptItem: React.FunctionComponent<
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             metadata={message.metadata}
-                            inProgress={inProgress}
                             guardrails={guardrails}
                         />
                     )

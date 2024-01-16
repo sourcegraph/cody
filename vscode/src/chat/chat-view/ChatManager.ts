@@ -97,7 +97,15 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<ChatSession | undefined> {
+    public async executeCommand(
+        command: CodyCommand,
+        source: ChatEventSource,
+        enabled?: boolean
+    ): Promise<ChatSession | undefined> {
+        if (!enabled) {
+            void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
+            return
+        }
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
