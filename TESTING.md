@@ -20,11 +20,16 @@
 - Chat
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
     - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
+- Sourcegraph Code Search
+    - [ ] [Find with Sourcegraph...](#find-with-sourcegraph)
+    - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
+    - [ ] [Search Selection in Repository on Sourcegraph Web](#search-selection-in-repository-on-sourcegraph-web)
+    - [ ] [Open Selection on Sourcegraph Web](#open-selection-on-sourcegraph-web)
+    - [ ] [Copy Sourcegraph File Link](#copy-sourcegraph-file-link)
 - Product-led growth
     - [ ] [Cody Free/Pro subscription tab](#cody-freepro-subscription-tab)
     - [ ] [Cody Free/Pro rate limit errors](#cody-freepro-rate-limit-errors)
 - Other
-    - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
     - [ ] [Automatic repository recognition](#automatic-repository-recognition)
     - [ ] [Persistent custom repository](#persistent-custom-repository)
     - [ ] [Colour scheme changes](#colour-scheme-changes)
@@ -249,6 +254,50 @@ through the browser. Expected behaviour is identical.
 * Scrollbar is **not moving automatically** while new message tokens are generated. You can easily read older messages
   without interruptions and scrolling is smooth.
 
+## Code Search
+
+All `Code Search` actions are available under the same `Sourcegraph` right-click context menu, so for simplicity, we describe only the **Expected behaviours**.
+
+To open the context menu:
+
+1. Open a file in the repository that is indexed by Sourcegraph.
+2. Select the fragment of code you want to search for (for example: `System.out.println` or `println` may be the simplest candidate).
+3. Right-click on selected fragment, navigate to the `Sourcegraph` sub-menu and choose one of the actions.
+
+### Find with Sourcegraph...
+
+// todo, it's not working for me
+
+### Search Selection on Sourcegraph Web
+
+#### Expected behaviour:
+
+1. The browser is launched.
+2. The result is a list of fragments that are found in **all indexed repositories**.
+
+### Search Selection in Repository on Sourcegraph Web
+
+#### Expected behaviour:
+
+1. The browser is launched.
+2. The result is a list of fragments that are found **within the same repository** from which the searched fragment originates.
+
+### Open Selection on Sourcegraph Web
+
+#### Expected behaviour:
+
+1. The browser is launched.
+2. The result is a **single indexed file** from which the searched fragment originates.
+3. The line with fragment is visible and there is no need to manually scroll to it.
+
+### Copy Sourcegraph File Link
+
+#### Expected behaviour:
+
+1. A link is copied to the clipboard.
+2. Notification pops up with successful message.
+3. After pasting the link into the browser, the Code Search page opens with the file and the exact line from which the searched fragment originates.
+
 ## [Product-led growth](https://handbook.sourcegraph.com/departments/data-analytics/product-led-growth/)
 
 ### Cody Free/Pro subscription tab
@@ -278,20 +327,6 @@ through the browser. Expected behaviour is identical.
 5. Verify: A similar notification is shown to the user.
 
 ## Other
-
-### Search Selection on Sourcegraph Web
-
-1. Paste the following Java code:
-    ```java
-    System.out.println("Hello, Cody!");
-    ```
-2. Select `System.out.println` phrase.
-3. Right-click on selection to open context menu and navigate to `Sourcegraph | Search Selection on Sourcegraph Web`.
-
-#### Expected behaviour
-
-* Browser automatically opened at `sourcegraph.com` with the `Code Search` feature. Results are found
-  with `System.out.println` occurrences.
 
 ### Automatic repository recognition
 
