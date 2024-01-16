@@ -363,7 +363,7 @@ function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): 
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test}${fileExtension}`
+    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test,spec_${fileName},${fileName}_spec,spec.${fileName},${fileName}.spec,${fileName}Spec}${fileExtension}`
 
     if (allTestFiles) {
         return `${root}${defaultTestFilePattern}`
@@ -385,4 +385,17 @@ async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextM
         contextMessages.push(...createFileContextResponseMessage(context, file))
     }
     return contextMessages
+}
+
+/**
+ * Checks if a file URI exists in workspace.
+ * @param uri - The file URI to check.
+ */
+export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri)
+        return true
+    } catch {
+        return false
+    }
 }

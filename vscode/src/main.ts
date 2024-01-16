@@ -5,7 +5,7 @@ import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { ConfigFeaturesSingleton, graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -103,8 +103,8 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    const commandsController = platform.createCommandsController?.()
-    const editor = new VSCodeEditor({ command: commandsController })
+    const editor = new VSCodeEditor()
+    const commandsController = platform.createCommandsController?.(editor)
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -174,7 +174,6 @@ const register = async (
         editor,
         authProvider,
         contextProvider,
-        platform,
     }
 
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
@@ -189,7 +188,9 @@ const register = async (
         chatClient,
         embeddingsClient,
         localEmbeddings || null,
-        symfRunner || null
+        symfRunner || null,
+        guardrails,
+        commandsController
     )
 
     disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
@@ -281,8 +282,8 @@ const register = async (
         if (command.mode !== 'ask') {
             return
         }
-
-        return chatManager.executeCommand(command, source)
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        return chatManager.executeCommand(command, source, configFeatures.commands)
     }
 
     const statusBar = createStatusBar()
@@ -323,16 +324,14 @@ const register = async (
             executeCommand(`/ask ${input}`, source)
         ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
-            await editor.controllers.command?.menu('default')
+            await commandsController?.menu('default')
         }),
-        vscode.commands.registerCommand(
-            'cody.action.commands.custom.menu',
-            () => editor.controllers.command?.menu('custom')
-        ),
-        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
+        vscode.commands.registerCommand('cody.action.commands.custom.menu', () => commandsController?.menu('custom')),
+        vscode.commands.registerCommand('cody.settings.commands', () => commandsController?.menu('config')),
         vscode.commands.registerCommand('cody.action.commands.exec', async title => executeCommand(title)),
         vscode.commands.registerCommand('cody.command.explain-code', async () => executeCommand('/explain')),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
+        vscode.commands.registerCommand('cody.command.unit-tests', async () => executeCommand('/unit')),
         vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
         vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
 

@@ -90,14 +90,13 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
-
-        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
-
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
          * Hidden settings for internal use only.
          */
+
+        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),

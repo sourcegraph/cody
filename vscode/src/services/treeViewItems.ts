@@ -24,6 +24,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -163,6 +165,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

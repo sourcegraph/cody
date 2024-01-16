@@ -1,10 +1,10 @@
 import path from 'path'
 
 import fuzzysort from 'fuzzysort'
-import { throttle } from 'lodash'
+import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
     type ContextFileFile,
@@ -13,8 +13,6 @@ import {
     type ContextFileType,
     type SymbolKind,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-
-import { displayPath } from '../../../../lib/shared/src/editor/displayPath'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 

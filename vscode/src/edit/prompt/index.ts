@@ -38,6 +38,8 @@ const getInteractionArgsFromIntent = (
             return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
             return INTERACTION_MODELS[model].getEdit(options)
+        case 'new':
+            return INTERACTION_MODELS[model].getNew(options)
     }
 }
 
@@ -99,6 +101,7 @@ export const buildInteraction = async ({
             uri: task.fixupFile.uri,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
+            contextMessages: task.contextMessages,
             context,
             editor,
             followingText,

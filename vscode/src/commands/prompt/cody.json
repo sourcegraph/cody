@@ -25,6 +25,17 @@
         "selection": true
       }
     },
+    "unit": {
+      "description": "Experimental: Generate unit tests in test file directly",
+      "prompt": "Review the shared code context and configurations to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the functions in <selected> using the detected test framework and libraries. Be sure to import the function being tested. Follow the same patterns, testing conventions and testing library as shown in shared context. Only add packages, imports, dependencies, and assertions if they are used in the shared code. Pay attention to the file name of each shared context to see if test for <selected> already exists. If one exists, focus on generating new unit tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Only include mocks if one is detected in the shared code. Before writing the tests, identify which testing libraries and frameworks to use and import. Then, enclose the file name for the unit test file between <FILEPATH7041> tags. At the end, enclose the full completed code for the new unit tests without any comments, fragments or TODO. The new tests should validate expected functionality and cover edge cases for <selected> with all required imports, including the function being tested. Do not repeat tests in shared context. Do not include any markdown formatting or triple backticks. Enclose only the complete runnable tests. If there is a shared context that has the same test file name, only include import if no conflict exists.",
+      "context": {
+        "currentDir": true,
+        "currentFile": true,
+        "selection": true
+      },
+      "type": "experimental",
+      "mode": "file"
+    },
     "smell": {
       "description": "Find code smells",
       "prompt": "Please review and analyze the {languageName} code I have selected and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'"

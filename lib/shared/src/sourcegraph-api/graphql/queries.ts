@@ -58,6 +58,17 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_CONFIG_FEATURES = `
+query CodyConfigFeaturesResponse {
+    site {
+        codyConfigFeatures {
+            chat
+            autoComplete
+            commands
+          }
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
 query CurrentSiteCodyLlmConfiguration {
     site {
@@ -135,11 +146,6 @@ query SnippetAttribution($snippet: String!) {
             repositoryName
         }
     }
-}`
-
-export const IS_CONTEXT_REQUIRED_QUERY = `
-query IsContextRequiredForChatQuery($query: String!) {
-	isContextRequiredForChatQuery(query: $query)
 }`
 
 /**

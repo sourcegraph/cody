@@ -7,4 +7,5 @@ export enum CodyTaskState {
     'applied' = 6,
     'finished' = 7,
     'error' = 8,
+    'pending' = 9,
 }

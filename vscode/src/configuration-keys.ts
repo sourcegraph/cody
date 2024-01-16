@@ -59,7 +59,7 @@ type CamelCaseDotSeparatedFragments<T extends string> = T extends `${infer A}.${
  *
  * We should avoid specifiying config keys manually and instead rely on constant.
  * No manual changes will be required in this file when changing configuration keys in package.json.
- * Typescript will error for all outdated/missing keys.
+ * TypeScript will error for all outdated/missing keys.
  */
 export const CONFIG_KEY = getConfigFromPackageJson()
 

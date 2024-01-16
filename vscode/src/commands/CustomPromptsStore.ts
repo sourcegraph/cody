@@ -5,7 +5,7 @@ import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shar
 
 import { logDebug, logError } from '../log'
 
-import { ConfigFileName, type MyPrompts, type MyPromptsJSON } from '.'
+import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '.'
 import { fromSlashCommand, toSlashCommand } from './prompt/utils'
 import {
     constructFileUri,
@@ -22,8 +22,8 @@ import { promptSizeInit } from './utils/menu'
  * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
  */
 export class CustomPromptsStore implements vscode.Disposable {
-    public myPromptsJSON: MyPromptsJSON | null = null
-    public myPromptsMap = new Map<string, CodyCommand>()
+    public commandsJSON: CodyCommandsFileJSON | null = null
+    public customCommandsMap = new Map<string, CodyCommand>()
 
     public promptSize = promptSizeInit
     public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
@@ -61,11 +61,11 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the formatted context from the json config file
      */
-    public async refresh(): Promise<MyPrompts> {
+    public async refresh(): Promise<CodyCommandsFile> {
         try {
             if (this.isActive) {
                 // reset map and set
-                this.myPromptsMap = new Map<string, CodyCommand>()
+                this.customCommandsMap = new Map<string, CodyCommand>()
                 this.promptSize = { ...promptSizeInit }
                 // user prompts
                 if (this.homeDir) {
@@ -79,14 +79,14 @@ export class CustomPromptsStore implements vscode.Disposable {
         } catch (error) {
             logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
-        return { commands: this.myPromptsMap }
+        return { commands: this.customCommandsMap }
     }
 
     /**
-     * Returns myPromptsMap as an array with keys as the id
+     * Returns customCommandsMap as an array with keys as the id
      */
     public getCommands(): [string, CodyCommand][] {
-        return [...this.myPromptsMap].sort((a, b) => a[0].localeCompare(b[0]))
+        return [...this.customCommandsMap].sort((a, b) => a[0].localeCompare(b[0]))
     }
 
     /**
@@ -103,9 +103,8 @@ export class CustomPromptsStore implements vscode.Disposable {
             if (!content) {
                 return null
             }
-            const json = JSON.parse(content) as MyPromptsJSON
-            const prompts = json.commands || json.recipes
-            const promptEntries = Object.entries(prompts)
+            const json = JSON.parse(content) as CodyCommandsFileJSON
+            const promptEntries = Object.entries(json.commands)
 
             const isOldFormat = promptEntries.some(
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
@@ -150,16 +149,16 @@ export class CustomPromptsStore implements vscode.Disposable {
             for (const [key, prompt] of promptEntries) {
                 const current: CodyCommand = { ...prompt, slashCommand: toSlashCommand(key) }
                 current.type = type
-                this.myPromptsMap.set(current.slashCommand, current)
+                this.customCommandsMap.set(current.slashCommand, current)
             }
             if (type === 'user') {
-                this.myPromptsJSON = json
+                this.commandsJSON = json
             }
-            this.promptSize[type] = this.myPromptsMap.size
+            this.promptSize[type] = this.customCommandsMap.size
         } catch (error) {
             logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }
-        return this.myPromptsMap
+        return this.customCommandsMap
     }
 
     /**
@@ -172,13 +171,13 @@ export class CustomPromptsStore implements vscode.Disposable {
         type: CustomCommandType = 'user'
     ): Promise<void> {
         if (deletePrompt) {
-            this.myPromptsMap.delete(id)
+            this.customCommandsMap.delete(id)
         } else {
-            this.myPromptsMap.set(id, prompt)
+            this.customCommandsMap.set(id, prompt)
         }
         // filter prompt map to remove prompt with type workspace
         const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
-        for (const [key, value] of this.myPromptsMap) {
+        for (const [key, value] of this.customCommandsMap) {
             if (value.type === 'user' && value.prompt !== 'separator') {
                 value.type = undefined
                 filtered.set(fromSlashCommand(key), omit(value, 'slashCommand'))
@@ -187,15 +186,15 @@ export class CustomPromptsStore implements vscode.Disposable {
         // Add new prompt to the map
         filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
         // turn prompt map into json
-        const jsonContext = { ...this.myPromptsJSON }
+        const jsonContext = { ...this.commandsJSON }
         jsonContext.commands = Object.fromEntries(filtered)
-        return this.updateJSONFile(jsonContext as MyPromptsJSON, type)
+        return this.updateJSONFile(jsonContext as CodyCommandsFileJSON, type)
     }
 
     /**
      * Updates the corresponding Cody config file with the given prompts.
      */
-    private async updateJSONFile(prompts: MyPromptsJSON, type: CustomCommandType): Promise<void> {
+    private async updateJSONFile(prompts: CodyCommandsFileJSON, type: CustomCommandType): Promise<void> {
         try {
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
             if (!rootDirPath) {
@@ -271,9 +270,9 @@ export class CustomPromptsStore implements vscode.Disposable {
      */
     public dispose(): void {
         this.isActive = false
-        this.myPromptsMap = new Map<string, CodyCommand>()
+        this.customCommandsMap = new Map<string, CodyCommand>()
         this.promptSize = { ...promptSizeInit }
-        this.myPromptsJSON = null
+        this.commandsJSON = null
     }
 
     /**

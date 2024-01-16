@@ -1,5 +1,6 @@
 import { URI } from 'vscode-uri'
 
+import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
 import { type EmbeddingsSearch } from '../embeddings'
@@ -11,7 +12,6 @@ import {
     type LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
-    isMarkdownFile,
     populateCodeContextTemplate,
     populateMarkdownContextTemplate,
     populatePreciseCodeContextTemplate,
@@ -84,22 +84,6 @@ export class CodebaseContext {
         }
     }
 
-    public async getSearchResults(
-        query: string,
-        options: ContextSearchOptions
-    ): Promise<{ results: ContextResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
-        if (this.embeddings && this.config.useContext !== 'keyword') {
-            return {
-                results: await this.getEmbeddingSearchResults(query, options),
-                endpoint: this.getServerEndpoint(),
-            }
-        }
-        return {
-            results: [],
-            endpoint: this.getServerEndpoint(),
-        }
-    }
-
     // We split the context into multiple messages instead of joining them into a single giant message.
     // We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
     // when we run out of tokens.
@@ -144,9 +128,10 @@ export class CodebaseContext {
         file: ContextFile & Required<Pick<ContextFile, 'uri'>>
         results: string[]
     }): ContextMessage[] {
-        const contextTemplateFn = isMarkdownFile(groupedResults.file.uri)
-            ? populateMarkdownContextTemplate
-            : populateCodeContextTemplate
+        const contextTemplateFn =
+            languageFromFilename(groupedResults.file.uri) === ProgrammingLanguage.Markdown
+                ? populateMarkdownContextTemplate
+                : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
             getContextMessageWithResponse(
@@ -177,9 +162,10 @@ export class CodebaseContext {
             if (result?.type === 'FileChunkContext') {
                 const { content, filePath, repoName, revision } = result
                 const fileUri = URI.file(filePath)
-                const messageText = isMarkdownFile(fileUri)
-                    ? populateMarkdownContextTemplate(content, fileUri, repoName)
-                    : populateCodeContextTemplate(content, fileUri, repoName)
+                const messageText =
+                    languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
+                        ? populateMarkdownContextTemplate(content, fileUri, repoName)
+                        : populateCodeContextTemplate(content, fileUri, repoName)
 
                 return getContextMessageWithResponse(messageText, {
                     type: 'file',
@@ -215,7 +201,7 @@ export class CodebaseContext {
         return results
     }
 
-    public async getGraphContextMessages(): Promise<ContextMessage[]> {
+    private async getGraphContextMessages(): Promise<ContextMessage[]> {
         if (!this.config.experimentalLocalSymbols || !this.graph) {
             return []
         }

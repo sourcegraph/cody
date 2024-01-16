@@ -21,12 +21,6 @@ export class AgentEditor implements Editor {
 
     constructor(private agent: Agent) {}
 
-    /** @deprecated Use {@link AgentEditor.getWorkspaceRootUri} instead. */
-    public getWorkspaceRootPath(): string | null {
-        const uri = this.getWorkspaceRootUri()
-        return uri?.scheme === 'file' ? uri.fsPath : null
-    }
-
     public getWorkspaceRootUri(): vscode.Uri | null {
         return this.agent.workspace.workspaceRootUri ?? null
     }
@@ -124,19 +118,7 @@ export class AgentEditor implements Editor {
         }
     }
 
-    public replaceSelection(): Promise<void> {
-        throw new Error('Not implemented')
-    }
-
-    public showQuickPick(): Promise<string | undefined> {
-        throw new Error('Not implemented')
-    }
-
     public showWarningMessage(): Promise<void> {
-        throw new Error('Not implemented')
-    }
-
-    public showInputBox(): Promise<string | undefined> {
         throw new Error('Not implemented')
     }
 }
