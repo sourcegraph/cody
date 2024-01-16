@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
 
+import { languageFromFilename } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import {
-    isMarkdownFile,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
@@ -157,7 +158,7 @@ export class DefaultPrompter implements IPrompter {
             messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri)
         } else if (contextItem.source === 'terminal') {
             messageText = contextItem.text
-        } else if (isMarkdownFile(contextItem.uri)) {
+        } else if (languageFromFilename(contextItem.uri) === ProgrammingLanguage.Markdown) {
             messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri)
         } else {
             messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri)

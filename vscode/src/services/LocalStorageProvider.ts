@@ -180,12 +180,12 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async setLastUsedCommands(recipes: string[]): Promise<void> {
-        if (recipes.length === 0) {
+    public async setLastUsedCommands(commands: string[]): Promise<void> {
+        if (commands.length === 0) {
             return
         }
         try {
-            await this.storage.update(this.KEY_LAST_USED_RECIPES, recipes)
+            await this.storage.update(this.KEY_LAST_USED_RECIPES, commands)
         } catch (error) {
             console.error(error)
         }

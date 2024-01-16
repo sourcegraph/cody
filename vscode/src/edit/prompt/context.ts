@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import { type CodyCommand } from '@sourcegraph/cody-shared'
-import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
     createContextMessageByFile,
@@ -159,4 +158,30 @@ export const getContext = async ({
     }
 
     return [...derivedContextMessages, ...userProvidedContextMessages]
+}
+
+async function getContextMessagesFromSelection(
+    selectedText: string,
+    precedingText: string,
+    followingText: string,
+    { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
+    codebaseContext: CodebaseContext
+): Promise<ContextMessage[]> {
+    const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
+        numCodeResults: 4,
+        numTextResults: 0,
+    })
+
+    return selectedTextContext.concat(
+        [precedingText, followingText]
+            .filter(text => text.trim().length > 0)
+            .flatMap(text =>
+                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
+                    type: 'file',
+                    uri: fileUri,
+                    repoName,
+                    revision,
+                })
+            )
+    )
 }

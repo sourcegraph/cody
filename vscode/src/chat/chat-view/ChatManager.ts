@@ -6,6 +6,7 @@ import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { type View } from '../../../webviews/NavBar'
+import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { type SymfRunner } from '../../local-context/symf'
@@ -68,7 +69,9 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
-            vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
+            vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
+                this.passthroughVsCodeOpen(...args)
+            )
         )
     }
 
@@ -195,18 +198,34 @@ export class ChatManager implements vscode.Disposable {
         })
     }
 
-    private async openFileFromChat(uriAndRange: string): Promise<void> {
-        const rangeIndex = uriAndRange.indexOf(':range:')
-        const range = rangeIndex ? uriAndRange.slice(Math.max(0, rangeIndex + 7)) : 0
-        const uriStr = range ? uriAndRange.slice(0, rangeIndex) : uriAndRange
-        const uri = vscode.Uri.parse(uriStr)
-        // If the active editor is undefined, that means the chat panel is the active editor
-        // so we will open the file in the first visible editor instead
-        const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
-        // If there is no editor or visible editor found, then we will open the file next to chat panel
-        const viewColumn = editor ? editor.viewColumn : vscode.ViewColumn.Beside
-        const doc = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(doc, { viewColumn })
+    /**
+     * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
+     */
+    private async passthroughVsCodeOpen(...args: unknown[]): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (args[1] && (args[1] as any).viewColumn === vscode.ViewColumn.Beside) {
+            // Make vscode.ViewColumn.Beside work as expected from a webview: open it to the side,
+            // instead of always opening a new editor to the right.
+            //
+            // If the active editor is undefined, that means the chat panel is the active editor, so
+            // we will open the file in the first visible editor instead.
+            const textEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            ;(args[1] as any).viewColumn = textEditor ? textEditor.viewColumn : vscode.ViewColumn.Beside
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (args[1] && Array.isArray((args[1] as any).selection)) {
+            // Fix a weird issue where the selection was getting encoded as a JSON array, not an
+            // object.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            ;(args[1] as any).selection = new vscode.Selection(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                (args[1] as any).selection[0],
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                (args[1] as any).selection[1]
+            )
+        }
+        await vscode.commands.executeCommand('vscode.open', ...args)
     }
 
     private disposeChatPanelsManager(): void {

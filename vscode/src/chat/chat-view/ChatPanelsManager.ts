@@ -197,7 +197,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
             models,
-            commandsController: this.options.commandsController,
         })
     }
 

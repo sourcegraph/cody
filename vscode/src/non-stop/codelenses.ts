@@ -32,10 +32,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
         }
         case CodyTaskState.applied: {
             const title = getAppliedLens(codeLensRange, task.id)
+            const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
-            const accept = getAcceptLens(codeLensRange, task.id)
-            return [title, retry, undo, accept]
+            return [title, accept, retry, undo]
         }
         case CodyTaskState.error: {
             const title = getErrorLens(codeLensRange, task)
@@ -143,7 +143,7 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
 function getAppliedLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(cody-logo) Edits Applied',
+        title: '$(cody-logo) Show Diff',
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
@@ -173,7 +173,7 @@ function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
 function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Done',
+        title: 'Accept',
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }

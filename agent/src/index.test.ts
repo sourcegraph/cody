@@ -365,11 +365,6 @@ describe('Agent', () => {
         })
     })
 
-    it('lists recipes correctly', async () => {
-        const recipes = await client.request('recipes/list', null)
-        assert.equal(9, recipes.length, JSON.stringify(recipes))
-    })
-
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
@@ -487,30 +482,30 @@ describe('Agent', () => {
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-              " Here is a simple Hello World program in Java:
+          " Here is a simple Hello World program in Java:
 
-              \`\`\`java
-              public class Main {
+          \`\`\`java
+          public class Main {
 
-                public static void main(String[] args) {
-                  System.out.println(\\"Hello World!\\");
-                }
+            public static void main(String[] args) {
+              System.out.println("Hello World!");
+            }
 
-              }
-              \`\`\`
+          }
+          \`\`\`
 
-              This program prints \\"Hello World!\\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
+          This program prints "Hello World!" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
 
-              To run this:
+          To run this:
 
-              1. Save the code in a file called Main.java
-              2. Compile it with: javac Main.java
-              3. Run it with: java Main
+          1. Save the code in a file called Main.java
+          2. Compile it with: javac Main.java
+          3. Run it with: java Main
 
-              The \\"Hello World!\\" text will be printed to the console.
+          The "Hello World!" text will be printed to the console.
 
-              Let me know if you need any clarification or have additional requirements for the Java program!"
-            `,
+          Let me know if you need any clarification or have additional requirements for the Java program!"
+        `,
             explainPollyError
         )
     }, 20_000)
@@ -534,9 +529,7 @@ describe('Agent', () => {
         // is not a git directory and symf reports some git-related error.
         expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
             `
-          " Here is the Dog class that implements the Animal interface:
-
-          \`\`\`typescript
+          " \`\`\`typescript
           export class Dog implements Animal {
             name: string;
 
@@ -565,21 +558,21 @@ describe('Agent', () => {
                 `
               " The selected code defines an Animal interface in TypeScript.
 
-              It starts by exporting the interface, which makes it available to other files that import this one.
+              An interface in TypeScript is a way to define a "contract" that other classes or objects can implement. This allows enforcing certain properties and methods on objects that implement the interface.
 
-              The interface is called Animal and has 3 properties:
+              Specifically, this Animal interface defines:
 
-              1. name - This is a string that represents the animal's name.
+              1. A name property of type string. This will be used to store the animal's name.
 
-              2. makeAnimalSound() - This is a method that returns a string sound the animal makes.
+              2. A makeAnimalSound() method that returns a string. This will be implemented by classes to make an animal noise unique to that animal.
 
-              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
+              3. An isMammal property of type boolean. This indicates whether the animal is a mammal or not.
 
-              By defining this interface, we set up a blueprint for what fields and methods an Animal object will have. Other classes can then implement this interface to take on these requirements. For example, we could make a Dog class that implements Animal and provides the proper name, sound, and mammal flag.
+              So in summary, this Animal interface defines the blueprint for an object representing an animal. Anything implementing this interface would need to have a name, have a way to make a sound, and specify whether it's a mammal or not. This allows enforcing a consistent API for animal objects in the codebase.
 
-              Interfaces allow us to define contracts in our code, setting consistent expectations for different objects. This helps with organization and interoperability. By exporting the Animal interface, we make it available across multiple files. Other files that import src/animal.ts can use the Animal type for functions, variables, classes and more. This allows us to reuse the interface and ensures a consistent API.
+              The interface itself doesn't contain any implementation logic. It just defines the contract. Concrete classes would then implement the Animal interface to provide the actual logic and data for specific animal instances. Those classes would ensure they fulfill the contract by matching the interface's property and method signatures.
 
-              In summary, the selected code defines and exports an Animal interface with common fields for animal objects in TypeScript. This creates a reusable structure other parts of the codebase can implement and rely on. It sets clear expectations for what an Animal object should look like and do."
+              So in essence, this interface sets up a reusable way to model animal objects in a standardized way. The consuming code can just rely on the Animal interface without worrying about the details of specific animal types."
             `,
                 explainPollyError
             )
@@ -591,44 +584,45 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " No test framework or libraries were detected in the shared context. Since this is TypeScript code, I will generate Jest tests:
+              " No test framework or libraries are imported in the shared context code. Since this is TypeScript code, I will generate Jest tests:
 
-              \`\`\`ts
+              \`\`\`typescript
               import { Animal } from './animal';
 
               describe('Animal', () => {
-
-                test('makeAnimalSound returns expected sound', () => {
-                  const animal: Animal = {
+                it('should return the animal sound', () => {
+                  const dog: Animal = {
                     name: 'Dog',
                     makeAnimalSound: () => 'Woof',
                     isMammal: true
                   };
-                  expect(animal.makeAnimalSound()).toEqual('Woof');
+
+                  expect(dog.makeAnimalSound()).toBe('Woof');
                 });
 
-                test('isMammal returns true for mammal', () => {
-                  const animal: Animal = {
-                    name: 'Dog',
-                    makeAnimalSound: () => 'Woof',
+                it('should have a boolean isMammal property', () => {
+                  const cat: Animal = {
+                    name: 'Cat',
+                    makeAnimalSound: () => 'Meow',
                     isMammal: true
                   };
-                  expect(animal.isMammal).toBeTruthy();
+
+                  expect(typeof cat.isMammal).toBe('boolean');
                 });
 
-                test('isMammal returns false for non-mammal', () => {
-                  const animal: Animal = {
-                    name: 'Snake',
-                    makeAnimalSound: () => 'Hiss',
+                it('should throw if makeAnimalSound is not a function', () => {
+                  const invalidAnimal: Animal = {
+                    name: 'Fish',
+                    makeAnimalSound: 'Blub',
                     isMammal: false
                   };
-                  expect(animal.isMammal).toBeFalsy();
-                });
 
+                  expect(() => invalidAnimal.makeAnimalSound()).toThrow();
+                });
               });
               \`\`\`
 
-              This generates a basic Jest test suite for the Animal interface, validating the makeAnimalSound and isMammal properties with simple assertions. Additional tests could be added for more robust coverage."
+              This adds Jest and generates a basic test suite that validates the Animal interface contract. It tests the makeAnimalSound method returns the expected sound, isMammal is a boolean, and makeAnimalSound throws if not a function. There may be more edge cases to cover, but this provides a starting set of tests."
             `,
                 explainPollyError
             )
@@ -640,7 +634,66 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                '""',
+                `
+              " Here are 5 potential improvements for the selected TypeScript code:
+
+              1. Add type annotations for method parameters and return types:
+
+              \`\`\`
+              export interface Animal {
+                name: string;
+                makeAnimalSound(volume?: number): string;
+                isMammal: boolean;
+              }
+              \`\`\`
+
+              Adding type annotations makes the code more self-documenting and enables stronger type checking.
+
+              2. Make interface name PascalCase:
+
+              \`\`\`
+              export interface Animal {
+                // ...
+              }
+              \`\`\`
+
+              The PascalCase convention is standard for TypeScript interfaces.
+
+              3. Make method names camelCase:
+
+              \`\`\`
+              makeAnimalSound() {
+                // ...
+              }
+              \`\`\`
+
+              camelCase is the standard naming convention for methods in TypeScript.
+
+              4. Add JSDoc comments for documentation:
+
+              \`\`\`
+              /**
+               * Represents an animal.
+               */
+              export interface Animal {
+                // ...
+              }
+              \`\`\`
+
+              JSDoc comments improve documentation and discoverability.
+
+              5. Export class instead of interface:
+
+              \`\`\`
+              export class Animal {
+                // ...
+              }
+              \`\`\`
+
+              A class is more standard and flexible than an interface for this use case.
+
+              Overall, the selected code follows reasonable design practices. The suggestions above are minor enhancements to improve type safety, conventions, documentation and flexibility. Aside from those opportunities, the code is well-structured."
+            `,
                 explainPollyError
             )
         }, 20_000)
@@ -650,7 +703,7 @@ describe('Agent', () => {
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
     it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
+        await client.request('chat/new', null)
     }, 600)
 
     describe('progress bars', () => {
