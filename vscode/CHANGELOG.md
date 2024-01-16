@@ -7,6 +7,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
+- Chat: Added the ability for users to edit any chat message they have previously submitted to Cody, instead of only being able to edit the last message. [pull/2739](https://github.com/sourcegraph/cody/pull/2739)
 
 ### Fixed
 
