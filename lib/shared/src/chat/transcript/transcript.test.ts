@@ -7,9 +7,9 @@ import { isWindows } from '../../common/platform'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { CODY_INTRO_PROMPT } from '../../prompt/prompt-mixin'
 import { type Message } from '../../sourcegraph-api'
-import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newRecipeContext } from '../../test/mocks'
+import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newChatQuestionContext } from '../../test/mocks'
 import { testFileUri } from '../../test/path-helpers'
-import { ChatQuestion } from '../recipes/chat-question'
+import { OldChatQuestion } from '../OldChatQuestion'
 
 import { Transcript } from '.'
 
@@ -18,9 +18,9 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
     const numInteractions = 100
     const transcript = new Transcript()
     for (let i = 0; i < numInteractions; i++) {
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'ABCD'.repeat(256), // 256 tokens, 1 token is ~4 chars
-            newRecipeContext()
+            newChatQuestionContext()
         )
         transcript.addInteraction(interaction)
 
@@ -42,9 +42,9 @@ describe('Transcript', () => {
     })
 
     it('generates a prompt without context for a chat question', async () => {
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext()
+            newChatQuestionContext()
         )
 
         const transcript = new Transcript()
@@ -76,9 +76,9 @@ describe('Transcript', () => {
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector: new MockIntentDetector({
                     isCodebaseContextRequired: async () => Promise.resolve(true),
                 }),
@@ -134,9 +134,9 @@ describe('Transcript', () => {
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
@@ -199,12 +199,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const addEnhancedContext = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -217,7 +217,7 @@ describe('Transcript', () => {
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(
             'how to create a batch change',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -307,12 +307,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const interaction = await chatQuestionRecipe.getInteraction(
             'in my current file, how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 editor,
                 intentDetector,
                 codebaseContext,
@@ -357,9 +357,9 @@ describe('Transcript', () => {
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 
         const transcript = new Transcript()
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 editor,
                 intentDetector,
             })
@@ -402,12 +402,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(
             'how do batch changes work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -418,7 +418,7 @@ describe('Transcript', () => {
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -429,7 +429,7 @@ describe('Transcript', () => {
 
         const thirdInteraction = await chatQuestionRecipe.getInteraction(
             'how do to delete them',
-            newRecipeContext({
+            newChatQuestionContext({
                 codebaseContext,
                 // Disable context fetching.
                 addEnhancedContext: true,

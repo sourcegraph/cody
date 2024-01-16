@@ -12,7 +12,7 @@ TODO:
 
 - Add web app to view and analyze the test results.
 - Add 100+ test cases.
-- Add support for non-chat recipes.
+- Add support for non-chat commands.
 
 ## Running the suite
 

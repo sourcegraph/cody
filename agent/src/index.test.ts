@@ -365,11 +365,6 @@ describe('Agent', () => {
         })
     })
 
-    it('lists recipes correctly', async () => {
-        const recipes = await client.request('recipes/list', null)
-        assert.equal(9, recipes.length, JSON.stringify(recipes))
-    })
-
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
@@ -708,7 +703,7 @@ describe('Agent', () => {
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
     it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
+        await client.request('chat/new', null)
     }, 600)
 
     describe('progress bars', () => {

@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Removed recipes, which were replaced by commands in November 2023 (version 0.18.0).
+
 ## [1.1.3]
 
 ### Added
