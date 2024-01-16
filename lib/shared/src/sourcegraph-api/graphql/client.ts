@@ -20,6 +20,7 @@ import {
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_FEATURE_FLAGS_QUERY,
+    IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -150,6 +151,10 @@ interface CurrentUserInfo {
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
+}
+
+interface IsContextRequiredForChatQueryResponse {
+    isContextRequiredForChatQuery: boolean
 }
 
 interface EvaluatedFeatureFlag {
@@ -570,6 +575,12 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(SEARCH_ATTRIBUTION_QUERY, {
             snippet,
         }).then(response => extractDataOrError(response, data => data.snippetAttribution))
+    }
+
+    public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
     }
 
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {

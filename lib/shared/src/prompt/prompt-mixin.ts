@@ -7,7 +7,7 @@ export const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
- * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple commands.
+ * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []

@@ -102,7 +102,7 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
+        intentDetector: new SourcegraphIntentDetectorClient(graphqlClient, completionsClient),
         codebaseContext,
         chatClient,
         codeCompletionsClient,

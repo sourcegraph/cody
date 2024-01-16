@@ -365,6 +365,11 @@ describe('Agent', () => {
         })
     })
 
+    it('lists recipes correctly', async () => {
+        const recipes = await client.request('recipes/list', null)
+        assert.equal(9, recipes.length, JSON.stringify(recipes))
+    })
+
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
@@ -420,11 +425,19 @@ describe('Agent', () => {
     }, 10_000)
 
     it('allows us to send a very short chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
+        await openFile(animalUri)
+        const lastMessage = await client.sendSingleMessageToNewChat('Hello!', {
+            contextFiles: [{ type: 'file', uri: animalUri }],
+        })
         expect(lastMessage).toMatchInlineSnapshot(
             `
               {
-                "contextFiles": [],
+                "contextFiles": [
+                    {
+                        "type": "file"
+                        "uri": "${animalUri.toString()}",
+                    }
+                ],
                 "displayText": " Hello!",
                 "speaker": "assistant",
                 "text": " Hello!",
@@ -703,7 +716,7 @@ describe('Agent', () => {
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
     it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('chat/new', null)
+        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
     }, 600)
 
     describe('progress bars', () => {

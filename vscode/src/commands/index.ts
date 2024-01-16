@@ -30,11 +30,14 @@ export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<s
 export interface MyPrompts {
     // A set of reusable commands where instructions (prompts) and context can be configured.
     commands: Map<string, CodyCommand>
+    // backward compatibility
+    recipes?: Map<string, CodyCommand>
 }
 
 // JSON format of MyPrompts
 export interface MyPromptsJSON {
     commands: { [id: string]: Omit<CodyCommand, 'slashCommand'> }
+    recipes?: { [id: string]: CodyCommand }
 }
 
 export const ConfigFileName = {

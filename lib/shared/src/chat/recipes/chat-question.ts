@@ -1,49 +1,39 @@
-import { type CodebaseContext } from '../codebase-context'
+import { type CodebaseContext } from '../../codebase-context'
 import {
     createContextMessageByFile,
     getContextMessageWithResponse,
     type ContextFile,
     type ContextMessage,
-} from '../codebase-context/messages'
-import { type ActiveTextEditorSelection, type Editor } from '../editor'
-import { type IntentDetector } from '../intent-detector'
+} from '../../codebase-context/messages'
+import { type ActiveTextEditorSelection, type Editor } from '../../editor'
+import { type IntentDetector } from '../../intent-detector'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
-    MAX_CURRENT_FILE_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
-    NUM_CODE_RESULTS,
-    NUM_TEXT_RESULTS,
-} from '../prompt/constants'
-import { populateCurrentEditorContextTemplate, populateCurrentEditorSelectedContextTemplate } from '../prompt/templates'
-import { truncateText } from '../prompt/truncation'
+    populateCurrentEditorContextTemplate,
+    populateCurrentEditorSelectedContextTemplate,
+} from '../../prompt/templates'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import { type BotResponseMultiplexer } from './bot-response-multiplexer'
-import { Interaction } from './transcript/interaction'
+import { isSingleWord, numResults } from './helpers'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
-export interface ChatQuestionContext {
-    editor: Editor
-    intentDetector: IntentDetector
-    codebaseContext: CodebaseContext
-    responseMultiplexer?: BotResponseMultiplexer
-    addEnhancedContext: boolean
-    userInputContextFiles?: ContextFile[]
-}
+export class ChatQuestion implements Recipe {
+    public id: RecipeID = 'chat-question'
+    public title = 'Chat Question'
 
-/**
- * A legacy chat implementation from the pre-November 2023 (version 0.18.0) world. This used to be
- * the ChatQuestion recipe. It is only used by e2e and unit tests.
- */
-export class OldChatQuestion {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
-    public async getInteraction(humanChatInput: string, context: ChatQuestionContext): Promise<Interaction | null> {
+    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
         const displayText = humanChatInput
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText },
-                { speaker: 'assistant' },
+                { speaker: 'human', text: truncatedText, displayText, metadata: { source } },
+                { speaker: 'assistant', metadata: { source } },
                 this.getContextMessages(
                     truncatedText,
                     context.editor,
@@ -76,7 +66,7 @@ export class OldChatQuestion {
             if (!contextFiles?.length) {
                 return contextMessages
             }
-            return OldChatQuestion.getContextFilesContext(editor, contextFiles)
+            return ChatQuestion.getContextFilesContext(editor, contextFiles)
         }
 
         this.debug('ChatQuestion:getContextMessages', 'addEnhancedContext', addEnhancedContext)
@@ -87,17 +77,17 @@ export class OldChatQuestion {
         const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
         this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
         if (isEditorContextRequired) {
-            contextMessages.push(...OldChatQuestion.getEditorContext(editor))
+            contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
         if (contextFiles?.length) {
-            const contextFileMessages = await OldChatQuestion.getContextFilesContext(editor, contextFiles)
+            const contextFileMessages = await ChatQuestion.getContextFilesContext(editor, contextFiles)
             contextMessages.push(...contextFileMessages)
         }
 
         // Add selected text as context when available
         if (selection?.selectedText) {
-            contextMessages.push(...OldChatQuestion.getEditorSelectionContext(selection))
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
         return contextMessages
@@ -147,13 +137,4 @@ export class OldChatQuestion {
         }
         return contextFileMessages
     }
-}
-
-const numResults = {
-    numCodeResults: NUM_CODE_RESULTS,
-    numTextResults: NUM_TEXT_RESULTS,
-}
-
-function isSingleWord(str: string): boolean {
-    return str.trim().split(/\s+/).length === 1
 }
