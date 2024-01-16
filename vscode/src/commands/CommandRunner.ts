@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'
@@ -137,6 +138,13 @@ export class CommandRunner implements vscode.Disposable {
      */
     private async handleFixupRequest(insertMode = false): Promise<void> {
         logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+        if (!configFeatures.commands) {
+            const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
+            void vscode.window.showErrorMessage(disabledMsg)
+            return
+        }
 
         let selection = this.editor?.selection
         const doc = this.editor?.document

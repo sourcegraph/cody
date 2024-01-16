@@ -56,6 +56,7 @@ interface ChatProps extends ChatClassNames {
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
+    chatEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     chatCommands?: [string, CodyCommand][] | null
     filterChatCommands?: (chatCommands: [string, CodyCommand][], input: string) => [string, CodyCommand][]
@@ -98,6 +99,7 @@ export interface ChatUITextAreaProps {
     autoFocus: boolean
     value: string
     required: boolean
+    chatEnabled: boolean
     disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
@@ -219,6 +221,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
+    chatEnabled,
     onCurrentChatModelChange,
     userInfo,
     postMessage,
@@ -621,6 +624,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
                             setValue={inputHandler}
+                            chatEnabled={chatEnabled}
                             chatModels={chatModels}
                         />
                         {EnhancedContextSettings && (

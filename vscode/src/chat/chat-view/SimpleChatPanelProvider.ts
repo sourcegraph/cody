@@ -29,6 +29,7 @@ import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/tru
 import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
@@ -312,6 +313,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void this.postMessage({
+            type: 'setChatEnabledConfigFeature',
+            data: configFeatures.chat,
+        })
 
         return panel
     }
@@ -1030,7 +1037,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
                     return !isRedundantCommand && !isCustomEdit
                 }) || []
-
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,

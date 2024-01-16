@@ -16,8 +16,6 @@ import {
 import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
-    inProgress: boolean
-
     displayText: string
 
     copyButtonClassName?: string
@@ -161,17 +159,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonClassName,
     insertButtonOnSubmit,
     metadata,
-    inProgress,
     guardrails,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        // Attach code block actions only when the message is completed
-        if (inProgress) {
-            return
-        }
-
         const preElements = rootRef.current?.querySelectorAll('pre')
         if (!preElements?.length || !copyButtonOnSubmit) {
             return
@@ -248,7 +240,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         insertButtonOnSubmit,
         metadata?.requestID,
         metadata?.source,
-        inProgress,
         guardrails,
     ])
 
