@@ -272,18 +272,7 @@ export class VSCodeEditor implements Editor<CommandsController> {
         }
     }
 
-    public async showQuickPick(labels: string[]): Promise<string | undefined> {
-        const label = await vscode.window.showQuickPick(labels)
-        return label
-    }
-
     public async showWarningMessage(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
-    }
-
-    public async showInputBox(prompt?: string): Promise<string | undefined> {
-        return vscode.window.showInputBox({
-            placeHolder: prompt || 'Enter here...',
-        })
     }
 }

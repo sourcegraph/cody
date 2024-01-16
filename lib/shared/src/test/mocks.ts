@@ -98,16 +98,8 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
-    public showQuickPick(labels: string[]): Promise<string | undefined> {
-        return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
-    }
-
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
-    }
-
-    public showInputBox(prompt?: string): Promise<string | undefined> {
-        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
 
     public async getTextEditorContentForFile(

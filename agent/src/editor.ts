@@ -118,15 +118,7 @@ export class AgentEditor implements Editor {
         }
     }
 
-    public showQuickPick(): Promise<string | undefined> {
-        throw new Error('Not implemented')
-    }
-
     public showWarningMessage(): Promise<void> {
-        throw new Error('Not implemented')
-    }
-
-    public showInputBox(): Promise<string | undefined> {
         throw new Error('Not implemented')
     }
 }
