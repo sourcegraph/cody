@@ -58,12 +58,6 @@ export interface ActiveTextEditorViewControllers<C extends VsCodeCommandsControl
 export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsController> {
     controllers?: ActiveTextEditorViewControllers<P>
 
-    /**
-     * The path of the workspace root if on the file system, otherwise `null`.
-     * @deprecated Use {@link Editor.getWorkspaceRootUri} instead.
-     */
-    getWorkspaceRootPath(): string | null
-
     /** The URI of the workspace root. */
     getWorkspaceRootUri(): URI | null
 
@@ -95,10 +89,6 @@ export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsContr
 
 export class NoopEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers<VsCodeCommandsController> | undefined
-
-    public getWorkspaceRootPath(): string | null {
-        return null
-    }
 
     public getWorkspaceRootUri(): URI | null {
         return null
