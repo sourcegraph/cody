@@ -1031,8 +1031,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
                     return !isRedundantCommand && !isCustomEdit
                 }) || []
-
-            console.log(prompts, 'prompts')
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
