@@ -2,14 +2,14 @@ import { type GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
+    isDotCom,
+    type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
+    type EmbeddingsSearchResult,
+    type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+} from '@sourcegraph/cody-shared'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
 import { type IndexHealthResultFound, type IndexRequest, type QueryResultSet } from '../jsonrpc/embeddings-protocol'

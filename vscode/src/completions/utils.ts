@@ -1,6 +1,6 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared'
 
 export function messagesToText(messages: Message[]): string {
     return messages

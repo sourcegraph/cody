@@ -3,10 +3,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
-import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import {
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type ContextFile,
+    type Guardrails,
+    type TelemetryService,
+} from '@sourcegraph/cody-shared'
 import {
     Chat as ChatUI,
     type ChatButtonProps,

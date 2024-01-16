@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
+    type CompletionLogger,
     type CompletionParameters,
     type CompletionResponse,
     type Event,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+} from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 

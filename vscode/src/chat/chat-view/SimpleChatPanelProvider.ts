@@ -4,34 +4,38 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    ChatModelProvider,
+    ConfigFeaturesSingleton,
+    ContextWindowLimitError,
+    FeatureFlag,
     hydrateAfterPostMessage,
+    isCodyIgnoredFile,
     isDefined,
+    isDotCom,
+    isError,
+    isRateLimitError,
+    MAX_BYTES_PER_FILE,
+    NUM_CODE_RESULTS,
+    NUM_TEXT_RESULTS,
+    reformatBotMessageForChat,
+    truncateTextNearestLine,
+    Typewriter,
     type ActiveTextEditorSelectionRange,
+    type ChatClient,
+    type ChatEventSource,
     type ChatMessage,
     type CodyCommand,
     type ContextFile,
+    type ContextMessage,
+    type CustomCommandType,
+    type Editor,
+    type FeatureFlagProvider,
     type Guardrails,
+    type InteractionJSON,
+    type Message,
+    type Result,
+    type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
-import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
-import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { type Result } from '@sourcegraph/cody-shared/src/local-context'
-import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
 import { type CommandsController } from '../../commands/CommandsController'

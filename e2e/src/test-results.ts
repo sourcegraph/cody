@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { type FactCheck } from './fact-check'
 import { type LLMJudgement } from './llm-judge'

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { tokensToChars } from '@sourcegraph/cody-shared'
 
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
 import { type DocumentContext } from '../get-current-doc-context'

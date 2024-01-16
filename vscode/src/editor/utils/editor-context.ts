@@ -4,15 +4,16 @@ import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
-import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
+    displayPath,
+    isCodyIgnoredFile,
+    type ContextFile,
     type ContextFileFile,
     type ContextFileSource,
     type ContextFileSymbol,
     type ContextFileType,
     type SymbolKind,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+} from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 

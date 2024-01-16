@@ -1,6 +1,9 @@
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+    type CodyLLMSiteConfiguration,
+    type Configuration,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
 import { type CodeCompletionsClient } from '../client'

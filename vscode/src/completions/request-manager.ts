@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { type DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from './get-inline-completions'

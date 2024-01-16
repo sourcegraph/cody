@@ -1,4 +1,4 @@
-import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'

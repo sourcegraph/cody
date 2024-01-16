@@ -1,13 +1,16 @@
 import * as vscode from 'vscode'
 
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { type CompletionParameters, type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import {
+    BotResponseMultiplexer,
+    getSimplePreamble,
+    Interaction,
+    MAX_CURRENT_FILE_TOKENS,
+    Transcript,
+    truncateText,
+    type CodebaseContext,
+    type CompletionParameters,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type FixupTask } from '../../non-stop/FixupTask'

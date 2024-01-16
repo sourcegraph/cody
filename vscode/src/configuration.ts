@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import type {
-    Configuration,
-    ConfigurationUseContext,
-    ConfigurationWithAccessToken,
-} from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import {
+    DOTCOM_URL,
+    type Configuration,
+    type ConfigurationUseContext,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CONFIG_KEY, getConfigEnumValues, type ConfigKeys, type ConfigurationKeysMap } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'

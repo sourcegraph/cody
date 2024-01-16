@@ -13,8 +13,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
 
 import { Uri } from './uri'
 

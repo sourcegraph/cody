@@ -1,4 +1,4 @@
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 
 import * as defaultCommands from './prompt/cody.json'
 import { toSlashCommand } from './prompt/utils'

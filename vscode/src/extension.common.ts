@@ -1,7 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type Configuration, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
+import {
+    type Configuration,
+    type ConfigurationWithAccessToken,
+    type SourcegraphBrowserCompletionsClient,
+} from '@sourcegraph/cody-shared'
+// eslint-disable-next-line no-restricted-imports
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { type CommandsController } from './commands/CommandsController'

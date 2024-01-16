@@ -1,4 +1,4 @@
-import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type TelemetryService } from '@sourcegraph/cody-shared'
 
 import { type VSCodeWrapper } from './VSCodeApi'
 

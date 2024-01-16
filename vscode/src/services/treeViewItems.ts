@@ -1,6 +1,6 @@
 import { findLast } from 'lodash'
 
-import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, type AuthStatus } from '../chat/protocol'

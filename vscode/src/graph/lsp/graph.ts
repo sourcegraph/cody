@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { type HoverContext, type PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
-import { type ActiveTextEditorSelectionRange, type Editor } from '@sourcegraph/cody-shared/src/editor'
+import {
+    dedupeWith,
+    isDefined,
+    type ActiveTextEditorSelectionRange,
+    type Editor,
+    type HoverContext,
+    type PreciseContext,
+} from '@sourcegraph/cody-shared'
 
 import { type CustomAbortSignal } from '../../completions/context/utils'
 import { logDebug } from '../../log'

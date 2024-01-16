@@ -1,11 +1,7 @@
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
-import { testFileUri } from '@sourcegraph/cody-shared'
-import {
-    type CompletionParameters,
-    type CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { testFileUri, type CompletionParameters, type CompletionResponse } from '@sourcegraph/cody-shared'
 
 import { type SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'

@@ -2,9 +2,8 @@ import fs from 'fs/promises'
 
 import chalk from 'chalk'
 
-import { type ChatMessage } from '@sourcegraph/cody-shared'
-import { createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
-import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { createClient, NoopEditor, Transcript, type ChatMessage } from '@sourcegraph/cody-shared'
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { program, type CLIOptions } from '.'

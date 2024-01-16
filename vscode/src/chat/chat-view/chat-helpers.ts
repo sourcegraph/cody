@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
-import { type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ActiveTextEditorSelectionRange, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { type ContextItem } from './SimpleChatModel'
 

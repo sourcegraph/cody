@@ -1,4 +1,4 @@
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 
 import { getDefaultCommandsMap } from '.'
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
