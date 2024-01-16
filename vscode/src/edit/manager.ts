@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { type ContextProvider } from '../chat/ContextProvider'
 import { getEditor } from '../editor/active-editor'
@@ -47,6 +48,11 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (!configFeatures.commands) {
+            void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
+            return
+        }
         const commandEventName = source === 'doc' ? 'doc' : 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${commandEventName}:executed`,

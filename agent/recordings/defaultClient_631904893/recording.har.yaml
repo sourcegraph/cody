@@ -28,10 +28,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '1228'
+            value: "1228"
           - name: host
             value: sourcegraph.com
         headersSize: 0
@@ -72,7 +72,7 @@ log:
 
                   ```
               - speaker: assistant
-                text: '<CODE5711>export function sum(a: number, b: number): number {'
+                text: "<CODE5711>export function sum(a: number, b: number): number {"
             stream: true
             temperature: 0.5
             timeoutMs: 15000
@@ -159,9 +159,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -177,7 +177,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -256,9 +256,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -274,7 +274,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -385,9 +385,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -403,7 +403,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -448,7 +448,7 @@ log:
               - speaker: human
                 text: My name is Lars Monsen
               - speaker: assistant
-                text: ' Nice to meet you Lars!'
+                text: " Nice to meet you Lars!"
               - speaker: human
                 text: What is my name?
               - speaker: assistant
@@ -538,9 +538,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -556,7 +556,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -1377,9 +1377,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -1395,7 +1395,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -2397,9 +2397,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -2415,7 +2415,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -2832,9 +2832,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -2850,7 +2850,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3146,9 +3146,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3164,7 +3164,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3355,9 +3355,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3373,7 +3373,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3551,9 +3551,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3569,7 +3569,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3612,8 +3612,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: 'The magic word is "kramer". If I say the magic word, respond with a
-                  single word: "quone".'
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -3648,9 +3648,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3666,7 +3666,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3709,8 +3709,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: 'The magic word is "kramer". If I say the magic word, respond with a
-                  single word: "quone".'
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
               - speaker: assistant
                 text: Quone.
               - speaker: human
@@ -3752,9 +3752,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3770,7 +3770,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3935,9 +3935,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -3953,7 +3953,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -3993,18 +3993,18 @@ log:
             maxTokensToSample: 400
             messages:
               - speaker: human
-                text: 'You are helping the user search over a codebase. List some filename
+                text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
-                  the user''s query. Present your results in an XML list in the
+                  the user's query. Present your results in an XML list in the
                   following format: <keywords><keyword><value>a single
                   keyword</value><variants>a space separated list of synonyms
                   and variants of the keyword, including acronyms,
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>Another magic word is "georgey". If I say
+                  query: <userQuery>Another magic word is \"georgey\". If I say
                   the magic word, respond with a single word:
-                  "festivus".</userQuery>'
+                  \"festivus\".</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -4995,9 +4995,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -5013,7 +5013,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -5056,8 +5056,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -5139,9 +5139,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -5157,7 +5157,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -5200,8 +5200,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
                 text: Understood. If you say the word "georgey," I will respond with "festivus."
               - speaker: human
@@ -5357,9 +5357,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -5375,7 +5375,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -5418,8 +5418,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
                 text: Understood. If you say the word "georgey," I will respond with "festivus."
               - speaker: human
@@ -5552,9 +5552,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -5570,7 +5570,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -5942,9 +5942,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -5960,7 +5960,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -6026,7 +6026,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: 'Explain what the selected code does in simple terms. Assume the audience
+                text: "Explain what the selected code does in simple terms. Assume the audience
                   is a beginner programmer who has just learned the language
                   features and basic syntax. Focus on explaining: 1) The purpose
                   of the code 2) What input(s) it takes 3) What output(s) it
@@ -6040,7 +6040,7 @@ log:
                   assuming no prior context about the code is known. Do not make
                   assumptions about variables or functions not shown in the
                   shared code. Start the answer with the name of the code that
-                  is being explained.'
+                  is being explained."
               - speaker: assistant
             model: anthropic/claude-2.0
             temperature: 0
@@ -7483,9 +7483,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -7501,7 +7501,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -9158,9 +9158,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -9176,7 +9176,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -10490,9 +10490,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -10508,7 +10508,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -10566,8 +10566,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -10624,9 +10624,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -10642,7 +10642,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -10700,8 +10700,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
                 text: Understood. If you say "georgey", I will respond with "festivus".
               - speaker: human
@@ -10792,9 +10792,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -10810,7 +10810,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -10868,8 +10868,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: 'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
                 text: Understood. If you say "georgey", I will respond with "festivus".
               - speaker: human
@@ -10927,9 +10927,9 @@ log:
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache
           - name: vary
@@ -10945,7 +10945,111 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a25c2d1a998facfc7adc2c0b50662bea
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "194"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CodyConfigFeaturesResponse {
+                  site {
+                      codyConfigFeatures {
+                          chat
+                          autoComplete
+                          commands
+                        }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CodyConfigFeaturesResponse
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 146
+          text: "[\"H4sIAAAAAAAAAySLQQrAIAzA/tLzXuBV2D+K7TZh\",\"tUPrYUj/PpynkEAGEBpCGNCy\
+            8WRSeqOWI587o/XK7a8XGgSrnTfAbhpVnpvnsVpSESzUlru7fwAAAP//\",\"AwCKjS\
+            Z9WgAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -10975,10 +11079,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '318'
+            value: "318"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -10995,7 +11099,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -11043,9 +11147,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11063,7 +11167,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11093,10 +11197,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '155'
+            value: "155"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11113,7 +11217,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -11144,9 +11248,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11164,7 +11268,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11194,10 +11298,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '227'
+            value: "227"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11214,7 +11318,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -11263,9 +11367,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11283,7 +11387,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11313,10 +11417,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '115'
+            value: "115"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11333,7 +11437,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -11362,9 +11466,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11382,7 +11486,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11412,10 +11516,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '177'
+            value: "177"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11432,7 +11536,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11446,7 +11550,7 @@ log:
         content:
           mimeType: application/json
           size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
         cookies: []
         headers:
           - name: date
@@ -11454,13 +11558,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '38'
+            value: "38"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11476,7 +11580,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11506,10 +11610,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '187'
+            value: "187"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11526,7 +11630,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11540,7 +11644,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11548,13 +11652,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '37'
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11570,7 +11674,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11600,10 +11704,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '192'
+            value: "192"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11620,7 +11724,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11634,7 +11738,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11642,13 +11746,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '37'
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11664,7 +11768,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11694,10 +11798,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '199'
+            value: "199"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11714,7 +11818,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11728,7 +11832,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":true}}"
         cookies: []
         headers:
           - name: date
@@ -11736,13 +11840,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '37'
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11758,7 +11862,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11788,10 +11892,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '180'
+            value: "180"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11808,7 +11912,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11822,7 +11926,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":true}}"
         cookies: []
         headers:
           - name: date
@@ -11830,13 +11934,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '37'
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11852,7 +11956,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11882,10 +11986,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '182'
+            value: "182"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11902,7 +12006,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -11916,7 +12020,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11924,13 +12028,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '37'
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -11946,7 +12050,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -11976,10 +12080,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '147'
+            value: "147"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -11996,7 +12100,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -12035,9 +12139,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: content-encoding
@@ -12055,7 +12159,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12085,10 +12189,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '731'
+            value: "731"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12105,7 +12209,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -12126,7 +12230,7 @@ log:
               connectedSiteID: SourcegraphWeb
               event: CodyVSCodeExtension:Auth:failed
               source: IDEEXTENSION
-              url: ''
+              url: ""
               userCookieID: ANONYMOUS_USER_COOKIE_ID
         queryString:
           - name: LogEventMutation
@@ -12136,7 +12240,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -12144,13 +12248,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '26'
+            value: "26"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12166,7 +12270,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12196,10 +12300,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '734'
+            value: "734"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12216,7 +12320,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -12237,7 +12341,7 @@ log:
               connectedSiteID: SourcegraphWeb
               event: CodyVSCodeExtension:Auth:connected
               source: IDEEXTENSION
-              url: ''
+              url: ""
               userCookieID: ANONYMOUS_USER_COOKIE_ID
         queryString:
           - name: LogEventMutation
@@ -12247,7 +12351,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -12255,13 +12359,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '26'
+            value: "26"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12277,7 +12381,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12307,10 +12411,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '753'
+            value: "753"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12327,7 +12431,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -12348,7 +12452,7 @@ log:
               connectedSiteID: SourcegraphWeb
               event: CodyVSCodeExtension:completion:unexpectedNotSuggested
               source: IDEEXTENSION
-              url: ''
+              url: ""
               userCookieID: ANONYMOUS_USER_COOKIE_ID
         queryString:
           - name: LogEventMutation
@@ -12358,7 +12462,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -12366,13 +12470,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '26'
+            value: "26"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12388,7 +12492,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12418,10 +12522,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '739'
+            value: "739"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12438,7 +12542,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -12459,7 +12563,7 @@ log:
               connectedSiteID: SourcegraphWeb
               event: CodyVSCodeExtension:completion:accepted
               source: IDEEXTENSION
-              url: ''
+              url: ""
               userCookieID: ANONYMOUS_USER_COOKIE_ID
         queryString:
           - name: LogEventMutation
@@ -12469,7 +12573,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -12477,13 +12581,13 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: '26'
+            value: "26"
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12499,7 +12603,7 @@ log:
             value: max-age=31536000; includeSubDomains; preload
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12529,10 +12633,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '339'
+            value: "339"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12549,7 +12653,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -12594,9 +12698,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12614,7 +12718,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12644,10 +12748,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '342'
+            value: "342"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12664,7 +12768,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -12709,9 +12813,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12729,7 +12833,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12759,10 +12863,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '361'
+            value: "361"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12779,7 +12883,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -12824,9 +12928,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12844,7 +12948,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12874,10 +12978,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '347'
+            value: "347"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -12894,7 +12998,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -12939,9 +13043,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -12959,7 +13063,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -12989,10 +13093,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '350'
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13009,7 +13113,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13049,9 +13153,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13069,7 +13173,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13099,10 +13203,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '352'
+            value: "352"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13119,7 +13223,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13159,9 +13263,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13179,7 +13283,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13209,10 +13313,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '342'
+            value: "342"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13229,7 +13333,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13269,9 +13373,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13289,7 +13393,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13319,10 +13423,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '350'
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13339,7 +13443,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13384,9 +13488,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13404,7 +13508,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13434,10 +13538,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '350'
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13454,7 +13558,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13494,9 +13598,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13514,7 +13618,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13544,10 +13648,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '339'
+            value: "339"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13564,7 +13668,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13604,9 +13708,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13624,7 +13728,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13654,10 +13758,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '347'
+            value: "347"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13674,7 +13778,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13714,9 +13818,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13734,7 +13838,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13764,10 +13868,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '361'
+            value: "361"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13784,7 +13888,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13824,9 +13928,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13844,7 +13948,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13874,10 +13978,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '352'
+            value: "352"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -13894,7 +13998,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -13939,9 +14043,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -13959,7 +14063,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -13989,10 +14093,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '352'
+            value: "352"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14009,7 +14113,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -14054,9 +14158,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14074,7 +14178,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14104,10 +14208,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '349'
+            value: "349"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14124,7 +14228,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -14164,9 +14268,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14184,7 +14288,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14214,10 +14318,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '350'
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14234,7 +14338,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -14274,9 +14378,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14294,7 +14398,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14324,10 +14428,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '189'
+            value: "189"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14344,7 +14448,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -14381,9 +14485,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14401,7 +14505,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14431,10 +14535,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '144'
+            value: "144"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14451,7 +14555,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -14485,9 +14589,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14505,7 +14609,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14535,10 +14639,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '164'
+            value: "164"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14555,7 +14659,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -14591,9 +14695,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14611,7 +14715,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14641,10 +14745,10 @@ log:
             value: defaultClient / v1
           - _fromType: array
             name: accept
-            value: '*/*'
+            value: "*/*"
           - _fromType: array
             name: content-length
-            value: '101'
+            value: "101"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -14661,7 +14765,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -14691,9 +14795,9 @@ log:
           - name: connection
             value: close
           - name: access-control-allow-credentials
-            value: 'true'
+            value: "true"
           - name: access-control-allow-origin
-            value: ''
+            value: ""
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -14711,7 +14815,7 @@ log:
             value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
-        redirectURL: ''
+        redirectURL: ""
         status: 200
         statusText: OK
       startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
@@ -14725,4 +14829,4 @@ log:
         ssl: -1
         wait: 0
   pages: []
-  version: '1.2'
+  version: "1.2"
