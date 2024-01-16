@@ -22,7 +22,7 @@ interface EnhancedContextSettingsProps {
     setOpen: (open: boolean) => void
 }
 
-export function defaultEnhancedContextContext(): EnhancedContextContextT {
+function defaultEnhancedContextContext(): EnhancedContextContextT {
     return {
         groups: [],
     }
@@ -46,7 +46,7 @@ export interface EnhancedContextEventHandlersT {
     onShouldBuildSymfIndex: (provider: SearchProvider) => void
 }
 
-export function useEnhancedContextContext(): EnhancedContextContextT {
+function useEnhancedContextContext(): EnhancedContextContextT {
     return React.useContext(EnhancedContextContext)
 }
 
@@ -54,7 +54,7 @@ export function useEnhancedContextEnabled(): boolean {
     return React.useContext(EnhancedContextEnabled)
 }
 
-export function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {
+function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {
     return React.useContext(EnhancedContextEventHandlers)
 }
 
@@ -241,7 +241,8 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
         (event: any): void => {
-            const shouldEnable = !!event.target?.checked
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
                 setEnabled(shouldEnable)
@@ -262,16 +263,36 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         localStorage.setItem(hasOpenedBeforeKey, 'true')
     }
 
+    // Can't point at and use VSCodeCheckBox type with 'ref'
+
+    const autofocusTarget = React.useRef<any>(null)
+    React.useEffect(() => {
+        if (isOpen) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            autofocusTarget.current?.focus()
+        }
+    }, [isOpen])
+
+    // Can't point at and use VSCodeButton type with 'ref'
+
+    const restoreFocusTarget = React.useRef<any>(null)
+    const handleDismiss = React.useCallback(() => {
+        setOpen(false)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        restoreFocusTarget.current?.focus()
+    }, [setOpen, restoreFocusTarget])
+
     return (
         <div className={classNames(popupStyles.popupHost)}>
-            <PopupFrame
-                isOpen={isOpen}
-                onDismiss={() => setOpen(false)}
-                classNames={[popupStyles.popupTrail, styles.popup]}
-            >
+            <PopupFrame isOpen={isOpen} onDismiss={handleDismiss} classNames={[popupStyles.popupTrail, styles.popup]}>
                 <div className={styles.container}>
                     <div>
-                        <VSCodeCheckbox onChange={enabledChanged} checked={enabled} id="enhanced-context-checkbox" />
+                        <VSCodeCheckbox
+                            onChange={enabledChanged}
+                            checked={enabled}
+                            id="enhanced-context-checkbox"
+                            ref={autofocusTarget}
+                        />
                     </div>
                     <div>
                         <label htmlFor="enhanced-context-checkbox">
@@ -295,6 +316,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 type="button"
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
+                ref={restoreFocusTarget}
             >
                 <i className="codicon codicon-sparkle" />
                 {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}

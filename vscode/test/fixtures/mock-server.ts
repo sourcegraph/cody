@@ -260,7 +260,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
+async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
     }
@@ -299,13 +299,13 @@ export let loggedEvents: string[] = []
 // Events recorded using the new event recorders
 // Needs to be recorded separately from the legacy events to ensure ordering
 // is stable.
-export let loggedV2Events: string[] = []
+let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
     loggedEvents = []
     loggedV2Events = []
 }
-export function storeLoggedEvents(event: string): void {
+function storeLoggedEvents(event: string): void {
     interface ParsedEvent {
         event: string
     }

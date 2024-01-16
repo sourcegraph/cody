@@ -13,8 +13,6 @@
   "sideEffects": false,
   "scripts": {
     "start": "pnpm run --silent build && node dist/e2e",
-    "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "vitest",
     "build": "esbuild ./src/index.ts --bundle --outfile=dist/e2e --platform=node --log-level=warning"
   },

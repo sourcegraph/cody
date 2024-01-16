@@ -91,10 +91,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
             if (contextFiles?.size) {
-                for (const file of contextFiles) {
-                    if (text.includes(file[0])) {
-                        file[1].fileName = file[0]
-                        userContextFiles.push(file[1])
+                for (const [fileName, contextFile] of contextFiles) {
+                    if (text.includes(fileName)) {
+                        userContextFiles.push(contextFile)
                     }
                 }
             }

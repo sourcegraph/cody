@@ -1,0 +1,28 @@
+{
+    "$schema": "https://unpkg.com/knip@3/schema-jsonc.json",
+    "workspaces": {
+        "vscode": {
+            "entry": [
+                "src/extension.*.ts",
+                "scripts/*.ts",
+                "test/integration/*.ts",
+                "webviews/index.tsx",
+                "webviews/search.tsx"
+            ],
+            "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
+            "ignoreBinaries": ["code", "code-insiders"],
+            "ignoreDependencies": ["@vscode/vsce", "ovsx", "path-browserify", "os-browserify", "@vscode/codicons"]
+        },
+        "agent": {
+            "vitest": {
+                "entry": ["**/__tests__/**/*.ts"]
+            },
+            "ignore": ["src/vscode-shim.ts"]
+        },
+        "lib/ui": {
+            "ignore": ["src/utils/icons.tsx"]
+        }
+    },
+    "ignore": ["**/__mocks__/**", "**/mocks.*"],
+    "exclude": []
+}

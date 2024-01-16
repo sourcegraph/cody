@@ -2,15 +2,17 @@ import { defaultAuthStatus, unauthenticatedStatus, type AuthStatus } from './pro
 
 /**
  * Checks a user's authentication status.
+ * @param endpoint The server endpoint.
  * @param isDotComOrApp Whether the user is on an insider build instance or enterprise instance.
- * @param userId The user's ID.
+ * @param user Whether the user is logged in.
  * @param isEmailVerified Whether the user has verified their email. Default to true for non-enterprise instances.
  * @param isCodyEnabled Whether Cody is enabled on the Sourcegraph instance. Default to true for non-enterprise instances.
+ * @param userCanUpgrade Whether the user can upgrade their plan.
  * @param version The Sourcegraph instance version.
  * @param avatarURL The user's avatar URL, or '' if not set.
- * @param primaryEmail The user's primary email, or '' if not set.
  * @param username The user's username.
  * @param displayName The user's display name, or '' if not set.
+ * @param primaryEmail The user's primary email, or '' if not set.
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
 export function newAuthStatus(

@@ -17,12 +17,11 @@ const escapeHTML = (html: string): string => {
  * Attempts to syntax-highlight the given code.
  * If the language is not given, it is auto-detected.
  * If an error occurs, the code is returned as plain text with escaped HTML entities
- *
  * @param code The code to highlight
  * @param language The language of the code, if known
  * @returns Safe HTML
  */
-export const highlightCodeSafe = (code: string, language?: string): string => {
+const highlightCodeSafe = (code: string, language?: string): string => {
     try {
         if (language === 'plaintext' || language === 'text') {
             return escapeHTML(code)
@@ -43,7 +42,6 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
- *
  * @param markdown The markdown to render
  */
 export const renderMarkdown = (
@@ -124,28 +122,4 @@ export const renderMarkdown = (
     }
 
     return result
-}
-
-export const markdownLexer = (markdown: string): marked.TokensList => marked.lexer(markdown)
-
-/**
- * Escapes markdown by escaping all ASCII punctuation.
- *
- * Note: this does not escape whitespace, so when rendered markdown will
- * likely collapse adjacent whitespace.
- */
-export const escapeMarkdown = (text: string): string => {
-    /*
-     * GFM you can escape any ASCII punctuation [1]. So we do that, with two
-     * special notes:
-     * - we escape "\" first to prevent double escaping it
-     * - we replace < and > with HTML escape codes to prevent needing to do
-     *   HTML escaping.
-     * [1]: https://github.github.com/gfm/#backslash-escapes
-     */
-    const punctuation = '\\!"#%&\'()*+,-./:;=?@[]^_`{|}~'
-    for (const char of punctuation) {
-        text = text.replaceAll(char, '\\' + char)
-    }
-    return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 }

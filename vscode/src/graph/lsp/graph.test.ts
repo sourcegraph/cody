@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { testFilePath } from '../../testutils/textDocument'
+import { testFileUri } from '@sourcegraph/cody-shared'
 
 import {
     extractDefinitionContexts,
@@ -11,7 +11,7 @@ import {
     gatherDefinitions,
 } from './graph'
 
-const testFile1Uri = URI.file(testFilePath('test-1.test'))
+const testFile1Uri = testFileUri('test-1.test')
 const testFile1 = `
 import fmt
 
@@ -34,7 +34,7 @@ class bar {
 // end of file
 `
 
-const testFile2Uri = URI.file(testFilePath('test-2.test'))
+const testFile2Uri = testFileUri('test-2.test')
 const testFile2 = `
 import foo
 import bar
@@ -45,7 +45,7 @@ const bazbar = new bar()
 // end of file
 `
 
-const testFile3Uri = URI.file(testFilePath('test-3.test'))
+const testFile3Uri = testFileUri('test-3.test')
 const testFile3 = `
 import foo
 import bar

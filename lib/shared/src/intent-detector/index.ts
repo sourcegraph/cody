@@ -24,7 +24,6 @@ export interface IntentClassificationOption<Intent = string> {
 }
 
 export interface IntentDetector {
-    isCodebaseContextRequired(input: string): Promise<boolean | Error>
     isEditorContextRequired(input: string): boolean | Error
     classifyIntentFromOptions<Intent extends string>(
         input: string,

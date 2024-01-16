@@ -33,7 +33,7 @@ export function addTestCase(label: string, testCase: Omit<TestCase, 'label'>): v
     testCases.push({ label, ...testCase })
 }
 
-export function initialize(): void {
+function initialize(): void {
     /* eslint-disable @typescript-eslint/no-require-imports */
     require('./sourcegraph')
     require('./zoekt')

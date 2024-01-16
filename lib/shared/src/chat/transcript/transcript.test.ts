@@ -3,11 +3,13 @@ import assert from 'assert'
 import { describe, it } from 'vitest'
 
 import { CodebaseContext } from '../../codebase-context'
+import { isWindows } from '../../common/platform'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { CODY_INTRO_PROMPT } from '../../prompt/prompt-mixin'
 import { type Message } from '../../sourcegraph-api'
-import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newRecipeContext } from '../../test/mocks'
-import { ChatQuestion } from '../recipes/chat-question'
+import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newChatQuestionContext } from '../../test/mocks'
+import { testFileUri } from '../../test/path-helpers'
+import { OldChatQuestion } from '../OldChatQuestion'
 
 import { Transcript } from '.'
 
@@ -16,9 +18,9 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
     const numInteractions = 100
     const transcript = new Transcript()
     for (let i = 0; i < numInteractions; i++) {
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'ABCD'.repeat(256), // 256 tokens, 1 token is ~4 chars
-            newRecipeContext()
+            newChatQuestionContext()
         )
         transcript.addInteraction(interaction)
 
@@ -36,13 +38,13 @@ describe('Transcript', () => {
     it('generates an empty prompt with no interactions', async () => {
         const transcript = new Transcript()
         const { prompt } = await transcript.getPromptForLastInteraction()
-        assert.deepStrictEqual(prompt, [])
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), [])
     })
 
     it('generates a prompt without context for a chat question', async () => {
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext()
+            newChatQuestionContext()
         )
 
         const transcript = new Transcript()
@@ -53,24 +55,31 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('generates a prompt with context for a chat question', async () => {
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
-                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                    codeResults: [
+                        {
+                            fileName: testFileUri('src/main.go').fsPath,
+                            startLine: 0,
+                            endLine: 1,
+                            content: 'package main',
+                        },
+                    ],
+                    textResults: [
+                        { fileName: testFileUri('docs/README.md').fsPath, startLine: 0, endLine: 1, content: '# Main' },
+                    ],
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
-                intentDetector: new MockIntentDetector({
-                    isCodebaseContextRequired: async () => Promise.resolve(true),
-                }),
+            newChatQuestionContext({
+                intentDetector: new MockIntentDetector({}),
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
@@ -102,21 +111,30 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('generates a prompt with context for a chat question for first interaction', async () => {
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
-                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                    codeResults: [
+                        {
+                            fileName: testFileUri('src/main.go').fsPath,
+                            startLine: 0,
+                            endLine: 1,
+                            content: 'package main',
+                        },
+                    ],
+                    textResults: [
+                        { fileName: testFileUri('docs/README.md').fsPath, startLine: 0, endLine: 1, content: '# Main' },
+                    ],
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
@@ -148,18 +166,27 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('generates a prompt for multiple chat questions, includes context for last question only', async () => {
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
-                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                    codeResults: [
+                        {
+                            fileName: testFileUri('src/main.go').fsPath,
+                            startLine: 0,
+                            endLine: 1,
+                            content: 'package main',
+                        },
+                    ],
+                    textResults: [
+                        { fileName: testFileUri('docs/README.md').fsPath, startLine: 0, endLine: 1, content: '# Main' },
+                    ],
                 }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
+        const intentDetector = new MockIntentDetector({})
         const codebaseContext = new CodebaseContext(
             { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
@@ -170,12 +197,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const addEnhancedContext = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -188,7 +215,7 @@ describe('Transcript', () => {
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(
             'how to create a batch change',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -210,7 +237,7 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how to create a batch change' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('should limit prompts to a maximum number of tokens', async () => {
@@ -220,7 +247,7 @@ describe('Transcript', () => {
         const numExpectedMessages = numExpectedInteractions * 2 // Each interaction has two messages.
 
         const { prompt } = await transcript.getPromptForLastInteraction()
-        assert.deepStrictEqual(prompt.length, numExpectedMessages)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt).length, numExpectedMessages)
     })
 
     it('should limit prompts to a maximum number of tokens with preamble always included', async () => {
@@ -237,23 +264,34 @@ describe('Transcript', () => {
         const numExpectedMessages = numExpectedInteractions * 2 // Each interaction has two messages.
 
         const { prompt } = await transcript.getPromptForLastInteraction(preamble)
-        assert.deepStrictEqual(prompt.length, numExpectedMessages)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt).length, numExpectedMessages)
         assert.deepStrictEqual(preamble, prompt.slice(0, 4))
     })
 
     it('includes currently visible content from the editor', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: () => ({
+                fileUri: testFileUri('internal/lib.go'),
+                content: 'package lib',
+            }),
         })
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
-                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                    codeResults: [
+                        {
+                            fileName: testFileUri('src/main.go').fsPath,
+                            startLine: 0,
+                            endLine: 1,
+                            content: 'package main',
+                        },
+                    ],
+                    textResults: [
+                        { fileName: testFileUri('docs/README.md').fsPath, startLine: 0, endLine: 1, content: '# Main' },
+                    ],
                 }),
         })
         const intentDetector = new MockIntentDetector({
-            isCodebaseContextRequired: async () => Promise.resolve(true),
             isEditorContextRequired: () => true,
         })
         const codebaseContext = new CodebaseContext(
@@ -266,12 +304,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const interaction = await chatQuestionRecipe.getInteraction(
             'in my current file, how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 editor,
                 intentDetector,
                 codebaseContext,
@@ -303,19 +341,22 @@ describe('Transcript', () => {
             },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('does not include currently visible content from the editor if no codebase context is required', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: () => ({
+                fileUri: testFileUri('internal/lib.go'),
+                content: 'package lib',
+            }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
+        const intentDetector = new MockIntentDetector({})
 
         const transcript = new Transcript()
-        const interaction = await new ChatQuestion(() => {}).getInteraction(
+        const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 editor,
                 intentDetector,
             })
@@ -327,18 +368,27 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 
     it('adds context for last interaction with non-empty context', async () => {
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
-                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                    codeResults: [
+                        {
+                            fileName: testFileUri('src/main.go').fsPath,
+                            startLine: 0,
+                            endLine: 1,
+                            content: 'package main',
+                        },
+                    ],
+                    textResults: [
+                        { fileName: testFileUri('docs/README.md').fsPath, startLine: 0, endLine: 1, content: '# Main' },
+                    ],
                 }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
+        const intentDetector = new MockIntentDetector({})
         const codebaseContext = new CodebaseContext(
             { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
@@ -349,12 +399,12 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => {})
+        const chatQuestionRecipe = new OldChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(
             'how do batch changes work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -365,7 +415,7 @@ describe('Transcript', () => {
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
-            newRecipeContext({
+            newChatQuestionContext({
                 intentDetector,
                 codebaseContext,
                 addEnhancedContext: true,
@@ -376,7 +426,7 @@ describe('Transcript', () => {
 
         const thirdInteraction = await chatQuestionRecipe.getInteraction(
             'how do to delete them',
-            newRecipeContext({
+            newChatQuestionContext({
                 codebaseContext,
                 // Disable context fetching.
                 addEnhancedContext: true,
@@ -400,6 +450,17 @@ describe('Transcript', () => {
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do to delete them' },
             { speaker: 'assistant', text: undefined },
         ]
-        assert.deepStrictEqual(prompt, expectedPrompt)
+        assert.deepStrictEqual(normalizeMessagesPathSep(prompt), expectedPrompt)
     })
 })
+
+const SEP = isWindows() ? '\\' : '/'
+
+function normalizeMessagesPathSep(messages: Message[]): Message[] {
+    for (const m of messages) {
+        if (m.text) {
+            m.text = m.text.replaceAll(SEP, '/')
+        }
+    }
+    return messages
+}

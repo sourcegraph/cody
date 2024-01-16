@@ -51,7 +51,7 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     }
 
     // Remove by file path
-    public deleteByFilePath(fileName: string): void {
+    private deleteByFilePath(fileName: string): void {
         const files = this.tasksByFilePath.get(fileName)
         if (!files) {
             return

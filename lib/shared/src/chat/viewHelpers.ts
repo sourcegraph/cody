@@ -13,10 +13,6 @@ export function reformatBotMessageForChat(text: string, prefix: string): string 
     return fixOpenMarkdownCodeBlock(reformattedMessage)
 }
 
-export function reformatBotMessageForEdit(text: string, prefix: string): string {
-    return prefix + text
-}
-
 function fixOpenMarkdownCodeBlock(text: string): string {
     const occurrences = text.split('```').length - 1
     if (occurrences % 2 === 1) {

@@ -43,12 +43,12 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
 })
 
-export interface AnthropicOptions {
+interface AnthropicOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
 }
 
-export class AnthropicProvider extends Provider {
+class AnthropicProvider extends Provider {
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
 

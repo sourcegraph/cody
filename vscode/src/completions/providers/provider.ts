@@ -33,9 +33,9 @@ export interface ProviderConfig {
     model: string
 }
 
-export interface ProviderContextSizeHints {
-    /** Total max length of all file context (prefix + suffix + snippets). */
-    totalFileContextChars: number
+interface ProviderContextSizeHints {
+    /** Total max length of all context (prefix + suffix + snippets). */
+    totalChars: number
 
     /** Max length of the document prefix (text before the cursor). */
     prefixChars: number
@@ -46,7 +46,7 @@ export interface ProviderContextSizeHints {
 
 export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
     return {
-        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        totalChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
         prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
         suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
     }

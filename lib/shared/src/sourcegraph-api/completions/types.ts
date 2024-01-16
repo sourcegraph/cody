@@ -1,12 +1,12 @@
-export interface DoneEvent {
+interface DoneEvent {
     type: 'done'
 }
 
-export interface CompletionEvent extends CompletionResponse {
+interface CompletionEvent extends CompletionResponse {
     type: 'completion'
 }
 
-export interface ErrorEvent {
+interface ErrorEvent {
     type: 'error'
     error: string
 }

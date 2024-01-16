@@ -28,11 +28,6 @@ vi.mock('vscode', () => ({
             return null
         },
     },
-    window: {
-        ...vsCodeMocks.window,
-        visibleTextEditors: [],
-        tabGroups: { all: [] },
-    },
 }))
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
@@ -69,10 +64,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+
             statusBar: null as any,
             providerConfig: createProviderConfig({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
             }),
             triggerNotice: null,

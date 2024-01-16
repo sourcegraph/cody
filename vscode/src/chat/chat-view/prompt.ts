@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
 
+import { languageFromFilename } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { type CodyCommand, type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
+import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import {
-    isMarkdownFile,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
@@ -149,18 +150,18 @@ export class DefaultPrompter implements IPrompter {
         }
         let messageText: string
         if (contextItem.source === 'selection') {
-            messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
+            messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri)
         } else if (contextItem.source === 'editor') {
             // This template text works well with prompts in our commands
             // Using populateCodeContextTemplate here will cause confusion to Cody
             const templateText = 'Codebase context from file path {fileName}: '
-            messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri.fsPath)
+            messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri)
         } else if (contextItem.source === 'terminal') {
             messageText = contextItem.text
-        } else if (isMarkdownFile(contextItem.uri.fsPath)) {
-            messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri.fsPath)
+        } else if (languageFromFilename(contextItem.uri) === ProgrammingLanguage.Markdown) {
+            messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri)
         } else {
-            messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
+            messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri)
         }
         return [
             { speaker: 'human', text: messageText },

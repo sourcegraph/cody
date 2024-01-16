@@ -47,11 +47,13 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
 
     public get(userSection: string, defaultValue?: unknown): any {
         const section = this.actualSection(userSection)
+
         const fromDictionary = this.dictionary?.[section]
         if (fromDictionary !== undefined) {
             return fromDictionary
         }
         const extensionConfig = this.extensionConfig()
+
         const fromCustomConfiguration = extensionConfig?.customConfiguration?.[section]
         if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration

@@ -1,13 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vitest, type Mock } from 'vitest'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { range } from '../../../../testutils/textDocument'
+import { testFileUri } from '@sourcegraph/cody-shared'
+
+import { range, withPosixPathsInString } from '../../../../testutils/textDocument'
 import * as docContextGetters from '../../../doc-context-getters'
 
 import { SectionHistoryRetriever } from './section-history-retriever'
 
-const document1Uri = URI.file('/document1.ts')
-const document2Uri = URI.file('/document2.ts')
+const document1Uri = testFileUri('document1.ts')
+const document2Uri = testFileUri('document2.ts')
 
 const disposable = {
     dispose: () => {},
@@ -92,7 +94,7 @@ describe('GraphSectionObserver', () => {
     })
 
     it('loads visible documents when it loads', () => {
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document1.ts
             ├─ foo
             └─ bar"
@@ -106,7 +108,7 @@ describe('GraphSectionObserver', () => {
         ])
         await onDidChangeVisibleTextEditors()
 
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document2.ts
             ├─ baz
             └─ qux
@@ -120,7 +122,7 @@ describe('GraphSectionObserver', () => {
         visibleTextEditors.mockImplementation(() => [{ document: testDocuments.document2 }])
         await onDidChangeVisibleTextEditors()
 
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document2.ts
             ├─ baz
             └─ qux
@@ -141,7 +143,7 @@ describe('GraphSectionObserver', () => {
             contentChanges: [],
         })
 
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document1.ts
             ├─ foo
             └─ baz"
@@ -153,7 +155,7 @@ describe('GraphSectionObserver', () => {
             textEditor: { document: testDocuments.document1 },
             selections: [{ active: { line: 1, character: 0 } }],
         })
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document1.ts
             ├─ foo
             └─ bar
@@ -171,7 +173,7 @@ describe('GraphSectionObserver', () => {
             contentChanges: [],
         })
 
-        expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+        expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
           "file:/document1.ts
             └─ baz
 
@@ -202,7 +204,7 @@ describe('GraphSectionObserver', () => {
             })
 
             // We opened and preloaded the first section of both documents and have visited them
-            expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+            expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
               "file:/document1.ts
                 ├─ foo
                 └─ bar
@@ -242,7 +244,7 @@ describe('GraphSectionObserver', () => {
                 selections: [{ active: { line: 11, character: 0 } }],
             })
 
-            expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+            expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
               "file:/document1.ts
                 ├─ foo
                 └─ bar

@@ -3,11 +3,6 @@ import { type URI } from 'vscode-uri'
 
 import type { DocumentContext } from './get-current-doc-context'
 
-export interface Completion {
-    content: string
-    stopReason?: string
-}
-
 /**
  * @see vscode.InlineCompletionItem
  */

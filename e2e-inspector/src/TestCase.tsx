@@ -47,7 +47,6 @@ const Transcripts: React.FunctionComponent<{ runs: TestResult[] }> = ({ runs }) 
                     <div
                         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                         tabIndex={0}
-                        // eslint-disable-next-line react/no-array-index-key
                         key={`run-${idx}`}
                         className={classNames(styles.transcriptSummary, idx === runIndex && styles.selected)}
                         onClick={() => setRunIndex(idx)}

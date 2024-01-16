@@ -9,6 +9,7 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { type ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import { ContextProvider } from './chat/ContextProvider'
 import { type MessageProviderOptions } from './chat/MessageProvider'
 import {
@@ -23,6 +24,7 @@ import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
+import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -34,13 +36,11 @@ import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { localStorage } from './services/LocalStorageProvider'
-import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -89,6 +89,10 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
+    // Initialize `displayPath` first because it might be used to display paths in error messages
+    // from the subsequent initialization.
+    disposables.push(manageDisplayPathEnvInfoForExtension())
+
     // Set codyignore list on git extension startup
     const gitAPI = await gitAPIinit()
     if (gitAPI) {
@@ -100,7 +104,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    const commandsController = platform.createCommandsController?.(context.extensionPath)
+    const commandsController = platform.createCommandsController?.()
     const editor = new VSCodeEditor({ command: commandsController })
 
     // Could we use the `initialConfig` instead?
@@ -171,7 +175,6 @@ const register = async (
         editor,
         authProvider,
         contextProvider,
-        platform,
     }
 
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
@@ -243,6 +246,7 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
@@ -257,7 +261,6 @@ const register = async (
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
                 .catch(() => {})
-            workspaceActionsOnConfigChange(editor.getWorkspaceRootUri(), authStatus.endpoint)
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
@@ -268,7 +271,10 @@ const register = async (
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     // Execute Cody Commands and Cody Custom Commands
-    const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
+    const executeCommand = async (
+        commandKey: string,
+        source: ChatEventSource = 'editor'
+    ): Promise<ChatSession | undefined> => {
         const command = await commandsController?.findCommand(commandKey)
         if (!command) {
             return
@@ -294,6 +300,7 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.status', () => authProvider.getAuthStatus()), // Used by the agent
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
@@ -458,7 +465,7 @@ const register = async (
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In To Use Cody',
+                title: 'Sign In to Use Cody',
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
@@ -500,7 +507,9 @@ const register = async (
                     client: codeCompletionsClient,
                     statusBar,
                     authProvider,
-                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                    triggerNotice: notice => {
+                        void chatManager.triggerNotice(notice)
+                    },
                     createBfgRetriever: platform.createBfgRetriever,
                 })
             })
@@ -521,9 +530,6 @@ const register = async (
     }
 
     void showSetupNotification(initialConfig)
-
-    // Clean up old onboarding experiment state
-    void OnboardingExperiment.cleanUpCachedSelection()
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

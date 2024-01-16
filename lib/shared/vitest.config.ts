@@ -1,10 +1,8 @@
-/// <reference types="vitest" />
+import { defineProjectWithDefaults } from '../../.config/viteShared'
 
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-    logLevel: 'warn',
+export default defineProjectWithDefaults(__dirname, {
     test: {
         environment: 'jsdom', // needed for DOMPurify
+        setupFiles: ['src/test/testSetup.ts'],
     },
 })

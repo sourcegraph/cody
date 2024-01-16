@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
+import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -18,7 +19,7 @@ import { type EditLLMInteraction, type GetLLMInteractionOptions, type LLMInterac
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
 
-export const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
 } as const
@@ -95,7 +96,7 @@ export const buildInteraction = async ({
         { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
         getContext({
             intent: task.intent,
-            fileName: task.fixupFile.uri.fsPath,
+            uri: task.fixupFile.uri,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
             context,
@@ -107,7 +108,8 @@ export const buildInteraction = async ({
         []
     )
     transcript.addInteraction(interaction)
-    const completePrompt = await transcript.getPromptForLastInteraction()
+    const preamble = getSimplePreamble()
+    const completePrompt = await transcript.getPromptForLastInteraction(preamble)
 
     return {
         messages: completePrompt.prompt,

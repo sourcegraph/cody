@@ -8,7 +8,7 @@ import { type InlineCompletionItem } from '../types'
 import { getMatchingSuffixLength, type InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { getLastLine, lines } from './utils'
 
-export interface CompletionContext {
+interface CompletionContext {
     completion: InlineCompletionItem
     document: TextDocument
     docContext: DocumentContext

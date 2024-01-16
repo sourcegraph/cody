@@ -16,7 +16,7 @@ export interface WorkspaceDirectory {
     workspaceDirectory: string
 }
 
-export interface WorkspaceSettings {
+interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
@@ -141,7 +141,7 @@ export const test = base
         },
     })
 
-export async function getCodySidebar(page: Page): Promise<Frame> {
+async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
         for (const frame of page.frames()) {
             try {
@@ -162,7 +162,7 @@ export async function getCodySidebar(page: Page): Promise<Frame> {
     return (await findCodySidebarFrame()) || page.mainFrame()
 }
 
-export async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
+async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
     let delay = 10
     while (!(await predicate())) {
         await new Promise(resolve => setTimeout(resolve, delay))
@@ -175,10 +175,7 @@ function escapeToPath(text: string): string {
 }
 
 // Build a workspace settings file that enables the experimental inline mode
-export async function buildWorkSpaceSettings(
-    workspaceDirectory: string,
-    extraSettings: WorkspaceSettings
-): Promise<void> {
+async function buildWorkSpaceSettings(workspaceDirectory: string, extraSettings: WorkspaceSettings): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,

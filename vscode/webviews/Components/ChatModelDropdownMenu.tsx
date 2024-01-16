@@ -28,6 +28,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const handleChange = useCallback(
         (event: any): void => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const selectedModel = models[event.target?.selectedIndex]
             if (showCodyProBadge && selectedModel.codyProOnly) {
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
@@ -61,6 +62,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
         onClickCapture: () => {
             // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (!dropdownRef.current?.open) {
                 getVSCodeAPI().postMessage({
                     command: 'event',
@@ -118,7 +120,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     )
 }
 
-export const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
+const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
     if (model.startsWith('openai/')) {
         return <OpenAILogo className={className} />
     }
