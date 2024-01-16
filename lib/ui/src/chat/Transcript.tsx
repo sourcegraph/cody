@@ -161,8 +161,8 @@ export const Transcript: React.FunctionComponent<
                     inProgress={
                         offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
                     }
-                    showEditButton={!messageInProgress?.speaker && !message.displayText?.startsWith('/')}
-                    beingEdited={message.speaker === 'human' && messageBeingEdited && index + offset > 0}
+                    showEditButton={!messageInProgress?.speaker && message.speaker === 'human'}
+                    beingEdited={message.speaker === 'human' && messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}

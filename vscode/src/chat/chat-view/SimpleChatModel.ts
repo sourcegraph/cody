@@ -104,17 +104,18 @@ export class SimpleChatModel {
     }
 
     /**
-     * Removes the human message at the given index, as well as all messages after it.
-     * This removes the human message and the following bot response.
-     * Throws if the message at the given index is not a human message.
+     * Removes all messages after the given index if it matches the expected speaker.
+     * expectedSpeaker is the expected speaker of the message at the given index
+     * to ensure the correct messages are being removed.
      */
-    public removeHumanMessageByIndex(index: number): void {
-        const humanMessage = this.messagesWithContext[index]
-        if (humanMessage?.message?.speaker !== 'human') {
-            throw new Error('SimpleChatModel.removeHumanMessageByIndex: expected human message, got bot')
+    public removeMessagesAfterIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
+        const messageAtIndex = this.messagesWithContext[index]
+        if (messageAtIndex?.message?.speaker !== expectedSpeaker) {
+            throw new Error(`SimpleChatModel.removeHumanMessageByIndex: ${expectedSpeaker} is not the expected speaker`)
         }
-        // Remove everything after the index + 1 (the bot message)
-        this.messagesWithContext.splice(index + 1)
+
+        // Remove everything after the index
+        this.messagesWithContext.splice(index)
     }
 
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {

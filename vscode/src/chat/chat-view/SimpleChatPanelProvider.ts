@@ -694,13 +694,32 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.updateWebviewPanelTitle(inputText)
     }
 
-    private async handleEdit(requestID: string, text: string, index?: number): Promise<void> {
-        if (index !== undefined) {
-            this.chatModel.removeHumanMessageByIndex(index)
+    private async handleEdit(requestID: string, text: string, humanMessageIndex?: number): Promise<void> {
+        try {
+            // if it's a command, we will handle it in handleCommands in case the command is an edit command
+            // in this case, we will need to remove the human message at index and return early
+            // Otherwise, we will handle it as a regular edit and remove the existing bot response (index + 1) instead
+            const isCommand = text.startsWith('/')
+            if (humanMessageIndex !== undefined) {
+                const updatedIndex = isCommand ? humanMessageIndex : humanMessageIndex + 1
+                const expectedSpeaker = isCommand ? 'human' : 'assistant'
+                this.chatModel.removeMessagesAfterIndex(updatedIndex, expectedSpeaker)
+            }
+            // Handle command input
+            if (isCommand) {
+                const command = await this.commandsController?.findCommand(text)
+                if (command) {
+                    return await this.handleCommands(command, 'chat', requestID)
+                }
+            }
+            // Handle regular chat input
+            this.chatModel.updateLastHumanMessage({ text })
+            await this.saveSession(text)
+            this.postViewTranscript()
+            await this.generateAssistantResponse(requestID, [], false)
+        } catch {
+            this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-        await this.generateAssistantResponse(requestID)
     }
 
     private async postViewConfig(): Promise<void> {

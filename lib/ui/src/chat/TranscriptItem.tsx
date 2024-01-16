@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -95,40 +95,57 @@ export const TranscriptItem: React.FunctionComponent<
     postMessage,
     guardrails,
 }) {
-    const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const EditTextArea = TextArea && beingEdited && editButtonOnSubmit && SubmitButton && (
+    // Only returns command name if it is the first word in the message to remove markdown links
+    const initValue = message.displayText?.startsWith('/')
+        ? message.displayText.replaceAll(/\[_@.*\)/g, '') || message.displayText.split(' ')?.[0]
+        : message.text
+    const [editFormInput, setEditFormInput] = useState<string>(initValue?.trim() ?? '')
+
+    // To identify if the current message is the one being edited when beingEdited is true
+    // This is used to display EditTextArea only for the message being edited
+    const [isItemBeingEdited, setIsItemBeingEdited] = useState<boolean>(false)
+
+    const onEditCurrentMessage = useCallback(
+        (status: boolean) => {
+            setBeingEdited(status)
+            setIsItemBeingEdited(status)
+        },
+        [setBeingEdited]
+    )
+
+    const EditTextArea = TextArea && beingEdited && editButtonOnSubmit && SubmitButton && isItemBeingEdited && (
         <div className={styles.textAreaContainer}>
             <TextArea
                 className={classNames(styles.chatInput, chatInputClassName)}
-                rows={5}
-                value={formInput}
+                rows={1}
+                value={editFormInput}
                 autoFocus={true}
                 required={true}
-                onInput={event => setFormInput((event.target as HTMLInputElement).value)}
+                onInput={event => setEditFormInput((event.target as HTMLInputElement).value)}
                 onKeyDown={event => {
                     if (event.key === 'Escape') {
-                        setBeingEdited(false)
+                        onEditCurrentMessage(false)
                     }
 
                     if (
                         event.key === 'Enter' &&
                         !event.shiftKey &&
                         !event.nativeEvent.isComposing &&
-                        formInput.trim()
+                        editFormInput.trim()
                     ) {
                         event.preventDefault()
-                        setBeingEdited(false)
-                        editButtonOnSubmit(formInput, index)
+                        onEditCurrentMessage(false)
+                        editButtonOnSubmit(editFormInput, index)
                     }
                 }}
             />
             <SubmitButton
                 className={styles.submitButton}
                 onClick={() => {
-                    setBeingEdited(false)
-                    editButtonOnSubmit(formInput, index)
+                    onEditCurrentMessage(false)
+                    editButtonOnSubmit(editFormInput, index)
                 }}
-                disabled={formInput.length === 0}
+                disabled={editFormInput.length === 0}
             />
         </div>
     )
@@ -142,13 +159,13 @@ export const TranscriptItem: React.FunctionComponent<
             )}
         >
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
-                <div className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}>
+                <div className={isItemBeingEdited ? styles.editingContainer : styles.editingButtonContainer}>
                     <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
-                        {beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
+                        {isItemBeingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
                         <EditButtonContainer
                             className={styles.FeedbackEditButtonsContainer}
                             messageBeingEdited={beingEdited}
-                            setMessageBeingEdited={setBeingEdited}
+                            setMessageBeingEdited={onEditCurrentMessage}
                         />
                     </header>
                 </div>
@@ -177,7 +194,7 @@ export const TranscriptItem: React.FunctionComponent<
             <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (
                     EditTextArea ? (
-                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
+                        !inProgress && EditTextArea
                     ) : (
                         <CodeBlocks
                             displayText={message.displayText}
