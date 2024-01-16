@@ -17,6 +17,8 @@ export type { ActiveTextEditorSelectionRange } from './editor'
 // error is not reproducible when running in replay mode.
 // export { displayPath, setDisplayPathEnvInfo } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
-export type { Attribution, Guardrails } from './guardrails'
+// eslint-disable-next-line @typescript-eslint/consistent-type-exports
+export { Attribution } from './guardrails'
+export type { Guardrails } from './guardrails'
 export { ContextWindowLimitError, RateLimitError } from './sourcegraph-api/errors'
 export { testFileUri } from './test/path-helpers'

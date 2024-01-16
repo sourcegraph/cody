@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type Guardrails } from '@sourcegraph/cody-shared'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
@@ -59,7 +59,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         private chatClient: ChatClient,
         private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly symf: SymfRunner | null
+        private readonly symf: SymfRunner | null,
+        private readonly guardrails: Guardrails
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
@@ -194,6 +195,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
             models,
+            guardrails: this.guardrails,
         })
     }
 
