@@ -55,13 +55,13 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'fireworks',
-                    autocompleteAdvancedModel: 'starcoder-3b',
+                    autocompleteAdvancedModel: 'starcoder-7b',
                 }),
                 dummyCodeCompletionsClient,
                 {}
             )
             expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('starcoder-3b')
+            expect(provider?.model).toBe('starcoder-7b')
         })
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
@@ -131,6 +131,10 @@ describe('createProviderConfig', () => {
                 {
                     codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-1.2' },
                     expected: null,
+                },
+                {
+                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'fireworks/starcoder' },
+                    expected: { provider: 'fireworks', model: 'starcoder' },
                 },
 
                 // aws-bedrock
