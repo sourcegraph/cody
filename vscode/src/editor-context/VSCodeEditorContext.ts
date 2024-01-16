@@ -3,15 +3,15 @@ import { dirname } from 'path'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { getFileExtension } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { languageFromFilename } from '@sourcegraph/cody-shared'
 import {
     getContextMessageWithResponse,
     type ContextMessage,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
-    populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
@@ -177,13 +177,16 @@ export class VSCodeEditorContext {
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, file), {
-                type: 'file',
-                content: decoded,
-                uri: file,
-                source: 'editor',
-                range,
-            })
+            return getContextMessageWithResponse(
+                populateContextTemplateFromText('Codebase context from file path {fileName}: ', truncatedContent, file),
+                {
+                    type: 'file',
+                    content: decoded,
+                    uri: file,
+                    source: 'editor',
+                    range,
+                }
+            )
         } catch (error) {
             console.error(error)
             return []
@@ -234,8 +237,9 @@ export class VSCodeEditorContext {
             const rootFileNames = await this.getDirectoryFileListContext(workspaceRootUri, true)
             contextMessages.push(...rootFileNames)
         }
-        // Add package.json content only if files matches the ts/js extension regex
-        if (selection?.fileUri && getFileExtension(selection?.fileUri).match(/ts|js/)) {
+        // Add package.json content for JavaScript/TypeScript files.
+        const language = languageFromFilename(selection.fileUri.fsPath)
+        if (language === ProgrammingLanguage.JavaScript || language === ProgrammingLanguage.TypeScript) {
             const packageJson = await this.getPackageJsonContext()
             contextMessages.push(...packageJson)
         }

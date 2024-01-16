@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
+import { displayPath } from '@sourcegraph/cody-shared'
 import { type ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
-import { displayPath } from '../../../../lib/shared/src/editor/displayPath'
 
 import { trailingNonAlphaNumericRegex } from './utils'
 
@@ -64,6 +63,15 @@ export function createDisplayTextWithFileSelection(
 }
 
 /**
+ * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
+ * https://github.com/microsoft/vscode/issues/178868#issuecomment-1494826381); you can't pass a
+ * selection or viewColumn. We need to proxy `vscode.open` to be able to pass these args.
+ *
+ * Also update `lib/shared/src/chat/markdown.ts`'s `ALLOWED_URI_REGEXP` if you change this.
+ */
+export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
+
+/**
  * Replaces a file name in given text with markdown link to open that file in editor.
  * @returns The updated text with the file name replaced by a markdown link.
  */
@@ -75,15 +83,19 @@ export function replaceFileNameWithMarkdownLink(
 ): string {
     const inputRepr = inputRepresentation(file, range, symbolName)
 
-    // Create markdown link to the file
-    const fileLink = `${file.toString()}:range:${range?.start.line ?? 0}`
-
-    // Encode the filename to go on the command: link in a way that preserves all characters
-    // including backslashes from Windows paths:
-    // https://github.com/microsoft/vscode/issues/200965
-    const encodedFileLink = encodeURIComponent(JSON.stringify(fileLink))
     // Then encode the complete link to go into Markdown.
-    const markdownText = `[_@${inputRepr}_](command:cody.chat.open.file?${encodedFileLink})`
+    const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
+        JSON.stringify([
+            file.toJSON(),
+            {
+                selection: range,
+                preserveFocus: true,
+                background: true,
+                preview: true,
+                viewColumn: vscode.ViewColumn.Beside,
+            },
+        ])
+    )})`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const textToBeReplaced = new RegExp(`\\s*@${inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')

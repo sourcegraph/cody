@@ -4,12 +4,15 @@ import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent } from '../edit/types'
+import { type EditIntent, type EditMode } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+
+import { getContextForCommand } from './utils/get-context'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -28,11 +31,12 @@ export class CommandRunner implements vscode.Disposable {
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
     private kind: string
+    private isFixupRequest = false
 
     constructor(
-        private command: CodyCommand,
-        public instruction?: string,
-        private isFixupRequest?: boolean
+        private readonly vscodeEditor: VSCodeEditor,
+        public readonly command: CodyCommand,
+        public instruction?: string
     ) {
         // use commandKey to identify default command in telemetry
         const commandKey = command.slashCommand
@@ -78,7 +82,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         this.editor = editor.active
-        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
+        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
@@ -86,12 +90,9 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert'
-        const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
-        this.isFixupRequest = isFixupRequest || fixupMode || insertMode
+        this.isFixupRequest = isFixupCommand(command, instruction)
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(insertMode)
-            return
+            void this.handleFixupRequest(command.mode === 'insert')
         }
     }
 
@@ -143,16 +144,19 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
-        const intent: EditIntent = this.kind === 'doc' ? 'doc' : 'edit'
+        const intent: EditIntent = this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
+
+        const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
         await executeEdit(
             {
                 range,
                 instruction,
                 document: doc,
                 intent,
-                insertMode,
+                mode: this.command.mode as EditMode,
+                contextMessages,
             } satisfies ExecuteEditArguments,
             source as ChatEventSource
         )
@@ -204,4 +208,8 @@ function getDocCommandRange(
     }
 
     return new vscode.Selection(adjustedStartPosition, selection.end)
+}
+
+function isFixupCommand(command: CodyCommand, instruction?: string): boolean {
+    return instruction?.startsWith('/edit ') || command.mode !== 'ask'
 }

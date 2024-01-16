@@ -8,9 +8,7 @@ import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
 import { getFileContextFiles } from './editor-context'
 
-vi.mock('lodash', () => ({
-    throttle: vi.fn(fn => fn),
-}))
+vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
 afterEach(() => {
     vi.clearAllMocks()

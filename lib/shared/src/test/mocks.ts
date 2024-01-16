@@ -1,7 +1,7 @@
 import { type URI } from 'vscode-uri'
 
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
-import { type RecipeContext } from '../chat/recipes/recipe'
+import { type ChatQuestionContext } from '../chat/OldChatQuestion'
 import { CodebaseContext } from '../codebase-context'
 import {
     type ActiveTextEditor,
@@ -48,10 +48,6 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
-        return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
-    }
-
     public isEditorContextRequired(input: string): boolean | Error {
         return this.mocks.isEditorContextRequired?.(input) ?? false
     }
@@ -67,12 +63,6 @@ export class MockIntentDetector implements IntentDetector {
 
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
-
-    public fileName = ''
-
-    public getWorkspaceRootPath(): string | null {
-        return this.mocks.getWorkspaceRootPath?.() ?? null
-    }
 
     public getWorkspaceRootUri(): URI | null {
         return this.mocks.getWorkspaceRootUri?.() ?? null
@@ -108,20 +98,8 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
-    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
-    }
-
-    public showQuickPick(labels: string[]): Promise<string | undefined> {
-        return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
-    }
-
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
-    }
-
-    public showInputBox(prompt?: string): Promise<string | undefined> {
-        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
 
     public async getTextEditorContentForFile(
@@ -138,7 +116,7 @@ export const defaultIntentDetector = new MockIntentDetector()
 
 export const defaultEditor = new MockEditor()
 
-export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
+export function newChatQuestionContext(args?: Partial<ChatQuestionContext>): ChatQuestionContext {
     args = args || {}
     return {
         editor: args.editor || defaultEditor,

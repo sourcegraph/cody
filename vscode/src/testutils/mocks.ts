@@ -775,6 +775,7 @@ export const vsCodeMocks = {
     FoldingRangeKind,
     CodeActionKind,
     DiagnosticSeverity,
+    ViewColumn,
 } as const
 
 export function emptyEvent<T>(): vscode_types.Event<T> {
