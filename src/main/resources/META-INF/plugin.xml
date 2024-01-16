@@ -68,6 +68,8 @@
         <!-- autocomplete -->
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
+        <errorHandler implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
+
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
