@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import classNames from 'classnames'
 
 import { renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type CodeBlockActionsProps } from '../Chat'
 import {
@@ -202,7 +203,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     guardrails
                         .searchAttribution(preText)
                         .then(attribution => {
-                            if (attribution instanceof Error || attribution.limitHit) {
+                            if (isError(attribution)) {
                                 attributionContainer.classList.add(styles.attributionIconUnavailable)
                                 attributionContainer.title = 'Attribution search unavailable.'
                                 return
