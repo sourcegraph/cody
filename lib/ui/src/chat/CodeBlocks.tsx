@@ -211,7 +211,9 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                             if (attribution.repositories.length > 0) {
                                 attributionContainer.classList.add(styles.attributionIconFound)
                                 let tooltip = `Attribution found in ${attribution.repositories[0].name}`
-                                if (attribution.repositories.length > 1) {
+                                if (attribution.repositories.length > 1 && attribution.limitHit) {
+                                    tooltip = `${tooltip} and ${attribution.repositories.length - 1} or more.`
+                                } else if (attribution.repositories.length > 1) {
                                     tooltip = `${tooltip} and ${attribution.repositories.length - 1} more.`
                                 } else {
                                     tooltip = `${tooltip}.`
