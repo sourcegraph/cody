@@ -17,6 +17,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Removed recipes, which were replaced by commands in November 2023 (version 0.18.0).
 - Edit: Updated the codelens display to be more descriptive. [pull/2710](https://github.com/sourcegraph/cody/pull/2710)
+- [Internal] New generate unit test available behind `cody.internal.unstable`. [pull/2646](https://github.com/sourcegraph/cody/pull/2646)
 
 ## [1.1.3]
 
