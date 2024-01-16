@@ -189,6 +189,7 @@ const register = async (
         embeddingsClient,
         localEmbeddings || null,
         symfRunner || null,
+        guardrails,
         commandsController
     )
 

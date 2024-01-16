@@ -1,7 +1,7 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type CodyCommand } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type CodyCommand, type Guardrails } from '@sourcegraph/cody-shared'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -44,6 +44,7 @@ export class ChatManager implements vscode.Disposable {
         private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
+        private guardrails: Guardrails,
         private commandsController?: CommandsController
     ) {
         logDebug(
@@ -61,6 +62,7 @@ export class ChatManager implements vscode.Disposable {
             this.embeddingsClient,
             this.localEmbeddings,
             this.symf,
+            this.guardrails,
             this.commandsController
         )
 

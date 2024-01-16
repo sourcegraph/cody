@@ -10,6 +10,7 @@ import {
     type ChatMessage,
     type CodyCommand,
     type ContextFile,
+    type Guardrails,
 } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -89,6 +90,7 @@ interface SimpleChatPanelProviderOptions {
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
     models: ChatModelProvider[]
+    guardrails: Guardrails
     commandsController?: CommandsController
 }
 
@@ -123,6 +125,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
+    private readonly guardrails: Guardrails
     private readonly commandsController?: CommandsController
 
     private history = new ChatHistoryManager()
@@ -149,6 +152,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         treeView,
         models,
         commandsController,
+        guardrails,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
@@ -158,11 +162,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
+        this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
-        this.commandsController = commandsController
+        this.guardrails = guardrails
+
         commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
@@ -429,16 +435,34 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                setTimeout(() => {
-                    void this.postMessage({
-                        type: 'attribution',
-                        snippet: message.snippet,
-                        attribution: {
-                            repositoryNames: [],
-                            limitHit: true,
-                        },
+                this.guardrails
+                    .searchAttribution(message.snippet)
+                    .then((attribution): void => {
+                        if (isError(attribution)) {
+                            void this.postMessage({
+                                type: 'attribution',
+                                snippet: message.snippet,
+                                error: attribution.message,
+                            })
+                            return
+                        }
+                        void this.postMessage({
+                            type: 'attribution',
+                            snippet: message.snippet,
+                            attribution: {
+                                repositoryNames: attribution.repositories.map(r => r.name),
+                                limitHit: attribution.limitHit,
+                            },
+                        })
                     })
-                }, 1000)
+                    .catch(error => {
+                        void this.postMessage({
+                            type: 'attribution',
+                            snippet: message.snippet,
+                            error: `${error}`,
+                        })
+                    })
+
                 break
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
