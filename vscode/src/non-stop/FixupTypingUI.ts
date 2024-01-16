@@ -115,7 +115,7 @@ export class FixupTypingUI {
         range,
         source,
         placeholder = 'Instructions (@ to include code)',
-        initialValue = '',
+        initialValue,
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
     }: QuickPickParams): Promise<{
@@ -125,7 +125,9 @@ export class FixupTypingUI {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
         quickPick.placeholder = placeholder
-        quickPick.value = initialValue
+        if (initialValue) {
+            quickPick.value = initialValue
+        }
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
@@ -153,7 +155,7 @@ export class FixupTypingUI {
         }
 
         quickPick.onDidChangeValue(async newValue => {
-            if (newValue === initialValue) {
+            if (initialValue !== undefined && newValue === initialValue) {
                 // Noop, this event is fired when an initial value is set
                 return
             }
