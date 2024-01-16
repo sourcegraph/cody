@@ -37,7 +37,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
                     range: new vscode.Range(selection.start, selection.end),
                     intent: 'add',
                     document,
-                    insertMode: true,
+                    mode: 'insert',
                 } satisfies ExecuteEditArguments,
                 source,
             ],

@@ -2,9 +2,10 @@ import * as vscode from 'vscode'
 
 import { type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent } from '../edit/types'
+import { type EditIntent, type EditMode } from '../edit/types'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -17,7 +18,7 @@ import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
-import { type FixupFile } from './FixupFile'
+import { NewFixupFileMap, type FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
@@ -126,7 +127,6 @@ export class FixupController
     }
 
     // FixupFileCollection
-
     public tasksForFile(file: FixupFile): FixupTask[] {
         return [...this.tasks.values()].filter(task => task.fixupFile === file)
     }
@@ -152,17 +152,28 @@ export class FixupController
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
         intent?: EditIntent,
-        insertMode?: boolean,
-        source?: ChatEventSource
+        mode: EditMode = 'edit',
+        source?: ChatEventSource,
+        contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(documentUri)
         // Support expanding the selection range for intents where it is useful
         if (intent !== 'add') {
             selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
         }
-        const task = new FixupTask(fixupFile, instruction, userContextFiles, intent, selectionRange, insertMode, source)
+        const task = new FixupTask(
+            fixupFile,
+            instruction,
+            userContextFiles,
+            intent,
+            selectionRange,
+            mode,
+            source,
+            contextMessages
+        )
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.working)
+        const state = task.mode === 'file' ? CodyTaskState.pending : CodyTaskState.working
+        this.setTaskState(task, state)
         return task
     }
 
@@ -171,7 +182,6 @@ export class FixupController
         logDebug('FixupController:apply', 'applying', { verbose: { id } })
         const task = this.tasks.get(id)
         if (!task) {
-            console.error('cannot find task')
             return
         }
         await this.applyTask(task)
@@ -428,9 +438,10 @@ export class FixupController
 
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk = task.insertMode
-            ? await this.insertEdit(edit, document, task, applyEditOptions)
-            : await this.replaceEdit(edit, diff, task, applyEditOptions)
+        const editOk =
+            task.mode === 'edit'
+                ? await this.replaceEdit(edit, diff, task, applyEditOptions)
+                : await this.insertEdit(edit, document, task, applyEditOptions)
 
         this.logTaskCompletion(task, editOk)
 
@@ -457,7 +468,7 @@ export class FixupController
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
         // Consider only ever showing 1 notification that opens a UI to display all fixups.
-        if (!visibleEditor) {
+        if (!visibleEditor && task.mode !== 'file') {
             await this.notifyTaskComplete(task)
         }
     }
@@ -574,7 +585,12 @@ export class FixupController
         }, options)
     }
 
+    // Notify users of task completion when the edited file is not visible
     private async notifyTaskComplete(task: FixupTask): Promise<void> {
+        // Don't show for file mode as the doc will be displayed when done
+        if (task.mode === 'file') {
+            return
+        }
         const showChangesButton = 'Show Changes'
         const result = await vscode.window.showInformationMessage(
             `Edit applied to ${task.fixupFile.fileName}`,
@@ -690,6 +706,7 @@ export class FixupController
     }
 
     private discard(task: FixupTask): void {
+        NewFixupFileMap.delete(task.id)
         this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
         this.contentStore.delete(task.id)
@@ -776,9 +793,40 @@ export class FixupController
         return Promise.resolve()
     }
 
+    /**
+     * Update the task's fixup file and selection range with the new info,
+     * and then task mode to "insert".
+     *
+     * NOTE: Currently used for /test command only.
+     */
+    public async didReceiveNewFileRequest(id: string, newFileUri: vscode.Uri): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        // append response to new file
+        const doc = await vscode.workspace.openTextDocument(newFileUri)
+        const pos = new vscode.Position(doc.lineCount - 1, 0)
+        const range = new vscode.Range(pos, pos)
+        task.selectionRange = range
+        task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
+        // Set original text to empty as we are not replacing original text but appending to file
+        task.original = ''
+
+        // Show the new document before streaming start
+        await vscode.window.showTextDocument(doc, { selection: range, viewColumn: vscode.ViewColumn.Beside })
+        // life the pending state from the task so it can proceed to the next stage
+        this.setTaskState(task, CodyTaskState.working)
+        NewFixupFileMap.set(id, newFileUri)
+    }
+
     // Handles changes to the source document in the fixup selection, or the
     // replacement text generated by Cody.
     public textDidChange(task: FixupTask): void {
+        // Do not make any changes when task is in pending
+        if (task.state === CodyTaskState.pending) {
+            return
+        }
         // User has changed an applied task, so we assume the user has accepted the change and wants to take control.
         // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
         // Note: This will also apply if the user attempts to undo the applied change.
@@ -864,7 +912,7 @@ export class FixupController
             const bufferText = editor.document.getText(task.selectionRange)
 
             // Add new line at the end of bot text when running insert mode
-            const newLine = task.insertMode ? '\n' : ''
+            const newLine = task.mode === 'edit' ? '' : '\n'
             task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
@@ -962,7 +1010,7 @@ export class FixupController
                 userContextFiles: input.userContextFiles,
                 document,
                 intent: task.intent,
-                insertMode: task.insertMode,
+                mode: task.mode,
             } satisfies ExecuteEditArguments,
             'code-lens'
         )

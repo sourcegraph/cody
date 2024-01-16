@@ -12,7 +12,6 @@ import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languag
 import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
-    populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
@@ -178,13 +177,16 @@ export class VSCodeEditorContext {
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, file), {
-                type: 'file',
-                content: decoded,
-                uri: file,
-                source: 'editor',
-                range,
-            })
+            return getContextMessageWithResponse(
+                populateContextTemplateFromText('Codebase context from file path {fileName}: ', truncatedContent, file),
+                {
+                    type: 'file',
+                    content: decoded,
+                    uri: file,
+                    source: 'editor',
+                    range,
+                }
+            )
         } catch (error) {
             console.error(error)
             return []

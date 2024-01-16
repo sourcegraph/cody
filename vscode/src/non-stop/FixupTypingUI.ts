@@ -274,7 +274,7 @@ export class FixupTypingUI {
             input.userContextFiles,
             range,
             args.intent,
-            args.insertMode,
+            args.mode,
             source
         )
 

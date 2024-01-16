@@ -47,10 +47,14 @@ export interface Configuration {
     experimentalChatPredictions: boolean
 
     /**
+     * Unstable Features for internal testing only
+     */
+    internalUnstable: boolean
+
+    /**
      * Experimental autocomplete
      */
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    internalUnstable: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { languageFromFilename } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { type CodyCommand, type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import {
     populateCodeContextTemplate,
@@ -24,7 +24,7 @@ export interface IContextProvider {
     // Relevant context pulled from the editor state and broader repository
     getEnhancedContext(query: string): Promise<ContextItem[]>
 
-    getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]>
+    getCommandContext(command: CodyCommand): Promise<ContextItem[]>
 }
 
 export interface IPrompter {
@@ -121,7 +121,7 @@ export class DefaultPrompter implements IPrompter {
         if (useEnhancedContext || command) {
             // Add additional context from current editor or broader search
             const additionalContextItems = command
-                ? await contextProvider.getCommandContext(command.prompt, command.context || { codebase: false })
+                ? await contextProvider.getCommandContext(command)
                 : await contextProvider.getEnhancedContext(lastMessage.message.text)
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,
