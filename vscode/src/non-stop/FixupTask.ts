@@ -37,8 +37,6 @@ export class FixupTask {
     public diff: Diff | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
-
-    public skipContent?: string
     /**
      * A callback to skip formatting.
      * We use the users' default editor formatter so it is possible that
