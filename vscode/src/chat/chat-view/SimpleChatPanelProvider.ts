@@ -712,6 +712,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const expectedSpeaker = isCommand ? 'human' : 'assistant'
                 this.chatModel.removeMessagesAfterIndex(updatedIndex, expectedSpeaker)
             }
+            // save new input text to input history
+            await this.saveSession(text)
             // Handle command input
             if (isCommand) {
                 const command = await this.commandsController?.findCommand(text)
@@ -721,9 +723,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             // Handle regular chat input
             this.chatModel.updateLastHumanMessage({ text })
-            await this.saveSession(text)
             this.postViewTranscript()
-            await this.generateAssistantResponse(requestID, [], false)
+            // TODO (bee) add support for userContextFiles and addEnhancedContext options when updating edit UI
+            await this.generateAssistantResponse(requestID)
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
