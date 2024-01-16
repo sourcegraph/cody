@@ -1,7 +1,7 @@
 import { type URI } from 'vscode-uri'
 
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
-import { type RecipeContext } from '../chat/recipes/recipe'
+import { type ChatQuestionContext } from '../chat/OldChatQuestion'
 import { CodebaseContext } from '../codebase-context'
 import {
     type ActiveTextEditor,
@@ -138,7 +138,7 @@ export const defaultIntentDetector = new MockIntentDetector()
 
 export const defaultEditor = new MockEditor()
 
-export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
+export function newChatQuestionContext(args?: Partial<ChatQuestionContext>): ChatQuestionContext {
     args = args || {}
     return {
         editor: args.editor || defaultEditor,

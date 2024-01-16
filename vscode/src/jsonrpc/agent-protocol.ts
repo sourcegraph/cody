@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
 import { type ChatModelProvider } from '@sourcegraph/cody-shared'
-import type { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -31,19 +30,6 @@ export type Requests = {
     initialize: [ClientInfo, ServerInfo]
     // The 'shutdown' request must be sent before terminating the agent process.
     shutdown: [null, null]
-
-    // Client requests the agent server to lists all recipes that are supported
-    // by the agent.
-    'recipes/list': [null, RecipeInfo[]]
-    // Client requests the agent server to execute an individual recipe.
-    // The response is null because the AI/Assistant messages are streamed through
-    // the chat/updateMessageInProgress notification. The flow to trigger a recipe
-    // is like this:
-    // client --- recipes/execute --> server
-    // client <-- chat/updateMessageInProgress --- server
-    //             ....
-    // client <-- chat/updateMessageInProgress --- server
-    'recipes/execute': [ExecuteRecipeParams, null]
 
     // Start a new chat session and returns a UUID that can be used to reference
     // this session in other requests like chat/submitMessage or
@@ -384,17 +370,6 @@ export interface TextDocument {
     filePath?: string
     content?: string
     selection?: Range
-}
-
-export interface RecipeInfo {
-    id: RecipeID
-    title: string // Title Case
-}
-
-interface ExecuteRecipeParams {
-    id: RecipeID
-    humanChatInput: string
-    data?: any
 }
 
 interface ExecuteCommandParams {

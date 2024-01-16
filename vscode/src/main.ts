@@ -174,7 +174,6 @@ const register = async (
         editor,
         authProvider,
         contextProvider,
-        platform,
     }
 
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
