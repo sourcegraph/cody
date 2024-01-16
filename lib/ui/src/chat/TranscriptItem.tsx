@@ -186,7 +186,6 @@ export const TranscriptItem: React.FunctionComponent<
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             metadata={message.metadata}
-                            inProgress={inProgress}
                             guardrails={guardrails}
                         />
                     )
