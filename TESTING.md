@@ -10,7 +10,8 @@
     - [ ] [Infilling autocomplete](#infilling-autocomplete)
     - [ ] [Cycle through autocomplete](#cycle-through-autocomplete)
 - Commands
-    - [ ] [General commands availability](#general-commands-availability)
+    - [ ] [General commands availability in toolbar](#general-commands-availability-in-cody-toolbar)
+    - [ ] [General commands availability in context menu](#general-commands-availability-in-context-menu)
     - [ ] [Explain Selected Code (Detailed)](#explain-selected-code-detailed)
     - [ ] [Explain Selected Code (High Level)](#explain-selected-code-high-level)
     - [ ] [Generate Docstring](#generate-docstring)
@@ -117,13 +118,23 @@ through the browser. Expected behaviour is identical.
 
 ## Commands
 
-### General commands availability
+### General commands availability in Cody toolbar
 
 1. Navigate to `Cody` toolbar and open `Commands`.
 
 #### Expected behaviour
 
 * List of commands is immediately available after the toolbar is displayed. **No refresh is required.**
+
+### General commands availability in context menu
+
+1. Open file with source code and select some fragment.
+2. Show context menu with right mouse button, navigate to `Cody`, and choose one of the commands.
+
+#### Expected behaviour
+
+* All commands are visible in context menu and can be selected.
+* All commands works after selection.
 
 ### Explain Selected Code (Detailed)
 
