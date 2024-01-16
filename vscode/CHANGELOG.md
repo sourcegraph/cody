@@ -6,11 +6,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- [Internal] Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
+- [Internal] Edit/Chat: Added Cmd/Ctrl+K and Cmd/Ctrl+L commands to trigger Edit and Chat [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
+
 ### Fixed
 
 ### Changed
 
 - Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)
+- Edit: Cody will now always generate new code when the cursor is on an empty line. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 
 ## [1.1.2]
 

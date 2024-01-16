@@ -115,7 +115,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('internal.ghostHints') as boolean
+        const isEnabled = config.get('internal.unstable') as boolean
 
         if (!isEnabled) {
             return this.dispose()
