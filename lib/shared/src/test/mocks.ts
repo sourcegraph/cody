@@ -48,10 +48,6 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
-        return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
-    }
-
     public isEditorContextRequired(input: string): boolean | Error {
         return this.mocks.isEditorContextRequired?.(input) ?? false
     }

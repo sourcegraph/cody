@@ -89,7 +89,7 @@ export async function createClient({
             null
         )
 
-        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
+        const intentDetector = new SourcegraphIntentDetectorClient(completionsClient)
 
         const transcript = initialTranscript || new Transcript()
 

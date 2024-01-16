@@ -79,9 +79,7 @@ describe('Transcript', () => {
         const interaction = await new OldChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newChatQuestionContext({
-                intentDetector: new MockIntentDetector({
-                    isCodebaseContextRequired: async () => Promise.resolve(true),
-                }),
+                intentDetector: new MockIntentDetector({}),
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
@@ -188,7 +186,7 @@ describe('Transcript', () => {
                     ],
                 }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
+        const intentDetector = new MockIntentDetector({})
         const codebaseContext = new CodebaseContext(
             { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
@@ -294,7 +292,6 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({
-            isCodebaseContextRequired: async () => Promise.resolve(true),
             isEditorContextRequired: () => true,
         })
         const codebaseContext = new CodebaseContext(
@@ -354,7 +351,7 @@ describe('Transcript', () => {
                 content: 'package lib',
             }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
+        const intentDetector = new MockIntentDetector({})
 
         const transcript = new Transcript()
         const interaction = await new OldChatQuestion(() => {}).getInteraction(
@@ -391,7 +388,7 @@ describe('Transcript', () => {
                     ],
                 }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
+        const intentDetector = new MockIntentDetector({})
         const codebaseContext = new CodebaseContext(
             { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
