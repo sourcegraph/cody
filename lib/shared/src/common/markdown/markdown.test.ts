@@ -50,19 +50,19 @@ describe('renderMarkdown', () => {
     }
     it('renders code blocks, with syntax highlighting', () => {
         expect(renderMarkdown(complicatedMarkdown)).toMatchInlineSnapshot(`
-          "<h1 id=\\"this-is-a-heading\\">This is a heading</h1>
-          <h2 id=\\"this-is-a-subheading\\">This is a subheading</h2>
+          "<h1 id="this-is-a-heading">This is a heading</h1>
+          <h2 id="this-is-a-subheading">This is a subheading</h2>
           <p>Some text
           in the same paragraph
-          with a <a href=\\"./destination\\">link</a>.</p>
-          <pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> someTypeScriptCode = funcCall()
+          with a <a href="./destination">link</a>.</p>
+          <pre><code class="language-ts"><span class="hljs-keyword">const</span> someTypeScriptCode = funcCall()
           </code></pre>
           <ul>
           <li>bullet list item 1</li>
           <li>bullet list item 2</li>
           </ul>
           <ol>
-          <li>item 1<pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> codeInsideTheBulletPoint = <span class=\\"hljs-string\\">\\"string\\"</span>
+          <li>item 1<pre><code class="language-ts"><span class="hljs-keyword">const</span> codeInsideTheBulletPoint = <span class="hljs-string">"string"</span>
           </code></pre>
           </li>
           <li>item 2</li>
@@ -83,7 +83,7 @@ describe('renderMarkdown', () => {
           <td>B</td>
           </tr>
           </tbody></table>
-          <p><img alt=\\"image alt text\\" src=\\"./src.jpg\\"></p>
+          <p><img alt="image alt text" src="./src.jpg"></p>
           <p><b>inline html</b></p>
           <p>Escaped * markdown and escaped html code &amp;gt;</p>"
         `)

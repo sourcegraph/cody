@@ -487,30 +487,30 @@ describe('Agent', () => {
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-              " Here is a simple Hello World program in Java:
+          " Here is a simple Hello World program in Java:
 
-              \`\`\`java
-              public class Main {
+          \`\`\`java
+          public class Main {
 
-                public static void main(String[] args) {
-                  System.out.println(\\"Hello World!\\");
-                }
+            public static void main(String[] args) {
+              System.out.println("Hello World!");
+            }
 
-              }
-              \`\`\`
+          }
+          \`\`\`
 
-              This program prints \\"Hello World!\\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
+          This program prints "Hello World!" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
 
-              To run this:
+          To run this:
 
-              1. Save the code in a file called Main.java
-              2. Compile it with: javac Main.java
-              3. Run it with: java Main
+          1. Save the code in a file called Main.java
+          2. Compile it with: javac Main.java
+          3. Run it with: java Main
 
-              The \\"Hello World!\\" text will be printed to the console.
+          The "Hello World!" text will be printed to the console.
 
-              Let me know if you need any clarification or have additional requirements for the Java program!"
-            `,
+          Let me know if you need any clarification or have additional requirements for the Java program!"
+        `,
             explainPollyError
         )
     }, 20_000)
@@ -563,7 +563,7 @@ describe('Agent', () => {
                 `
               " The selected code defines an Animal interface in TypeScript.
 
-              An interface in TypeScript is a way to define a \\"contract\\" that other classes or objects can implement. This allows enforcing certain properties and methods on objects that implement the interface.
+              An interface in TypeScript is a way to define a "contract" that other classes or objects can implement. This allows enforcing certain properties and methods on objects that implement the interface.
 
               Specifically, this Animal interface defines:
 
