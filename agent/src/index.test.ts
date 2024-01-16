@@ -425,11 +425,19 @@ describe('Agent', () => {
     }, 10_000)
 
     it('allows us to send a very short chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
+        await openFile(animalUri)
+        const lastMessage = await client.sendSingleMessageToNewChat('Hello!', {
+            contextFiles: [{ type: 'file', uri: animalUri }],
+        })
         expect(lastMessage).toMatchInlineSnapshot(
             `
               {
-                "contextFiles": [],
+                "contextFiles": [
+                    {
+                        "type": "file"
+                        "uri": "${animalUri.toString()}",
+                    }
+                ],
                 "displayText": " Hello!",
                 "speaker": "assistant",
                 "text": " Hello!",
