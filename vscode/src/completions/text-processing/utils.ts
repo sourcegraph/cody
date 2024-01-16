@@ -50,7 +50,7 @@ export function fixBadCompletionStart(completion: string): string {
  * the Claude API, which is highly sensitive to whitespace and performs better when there
  * is no trailing whitespace in its input.
  */
-export interface TrimmedString {
+interface TrimmedString {
     trimmed: string
     leadSpace: string
     rearSpace: string
@@ -229,13 +229,6 @@ export function collapseDuplicativeWhitespace(prefix: string, completion: string
     return completion
 }
 
-/**
- * Trims trailing whitespace on the last line if the last line is whitespace-only.
- */
-export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
-    return text.replace(/(\r?\n)\s+$/, '$1')
-}
-
 export function removeTrailingWhitespace(text: string): string {
     return text
         .split('\n')
@@ -243,7 +236,7 @@ export function removeTrailingWhitespace(text: string): string {
         .join('\n')
 }
 
-export const INDENTATION_REGEX = /^[\t ]*/
+const INDENTATION_REGEX = /^[\t ]*/
 export const OPENING_BRACKET_REGEX = /([([{])$/
 export const FUNCTION_OR_METHOD_INVOCATION_REGEX = /\b[^()]+\((.*)\)$/g
 export const FUNCTION_KEYWORDS = /^(function|def|fn)/g
@@ -255,7 +248,6 @@ export const BRACKET_PAIR = {
     '<': '>',
 } as const
 export type OpeningBracket = keyof typeof BRACKET_PAIR
-export type ClosingBracket = (typeof BRACKET_PAIR)[OpeningBracket]
 
 export function getEditorTabSize(): number {
     return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2

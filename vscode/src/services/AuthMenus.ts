@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-export interface LoginMenuItem {
+interface LoginMenuItem {
     id: string
     label: string
     description: string
@@ -10,12 +10,7 @@ export interface LoginMenuItem {
     uri: string
 }
 
-export interface LoginInput {
-    endpoint: string | null | undefined
-    token: string | null | undefined
-}
-
-export type AuthMenuType = 'signin' | 'switch'
+type AuthMenuType = 'signin' | 'switch'
 
 function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
@@ -85,7 +80,7 @@ export async function showAccessTokenInputBox(endpoint: string): Promise<string 
     return result
 }
 
-export const AuthMenuOptions = {
+const AuthMenuOptions = {
     signin: {
         title: 'Other Sign-in Options',
         placeholder: 'Choose a sign-in option',
@@ -96,7 +91,7 @@ export const AuthMenuOptions = {
     },
 }
 
-export const LoginMenuOptionItems = [
+const LoginMenuOptionItems = [
     {
         id: 'enterprise',
         label: 'Sign In to Sourcegraph Enterprise Instance',

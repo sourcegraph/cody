@@ -2,19 +2,18 @@
  * The protocol for communicating between Cody and local embeddings.
  */
 
-export interface InitializeParams {
+interface InitializeParams {
     codyGatewayEndpoint: string
-    appIndexPath?: string
     indexPath: string
     chunkingPolicy?: ChunkingPolicy
 }
 
-export interface ChunkingPolicy {
+interface ChunkingPolicy {
     maxFileSizeBytes: number
     pathsToExcludeRegexp: string
 }
 
-export interface QueryParams {
+interface QueryParams {
     repoName: string
     query: string
 }
@@ -23,20 +22,20 @@ export interface QueryResultSet {
     results: QueryResult[]
 }
 
-export interface QueryResult {
+interface QueryResult {
     fileName: string
     startLine: number
     endLine: number
     content: string
 }
 
-export interface IndexHealthRequest {
+interface IndexHealthRequest {
     // The name of the repository to scrutinize the index for. Note, this
     // is a repo name, like github.com/sourcegraph/cody, not a file path.
     repoName: string
 }
 
-export type IndexHealthResult = IndexHealthResultFound | IndexHealthResultNotFound
+type IndexHealthResult = IndexHealthResultFound | IndexHealthResultNotFound
 
 export interface IndexHealthResultFound {
     type: 'found'
@@ -52,7 +51,7 @@ export interface IndexHealthResultFound {
     numFiles: number
 }
 
-export interface IndexHealthResultNotFound {
+interface IndexHealthResultNotFound {
     type: 'notFound'
     repoName: string
 }
@@ -62,23 +61,23 @@ export interface IndexRequest {
     mode: IndexRequestMode
 }
 
-export type IndexRequestMode = IndexRequestModeNew | IndexRequestModeContinue
+type IndexRequestMode = IndexRequestModeNew | IndexRequestModeContinue
 
-export interface IndexRequestModeNew {
+interface IndexRequestModeNew {
     type: 'new'
     model: string
     dimension: number
 }
 
-export interface IndexRequestModeContinue {
+interface IndexRequestModeContinue {
     type: 'continue'
 }
 
-export interface IndexResult {
+interface IndexResult {
     repoName: string
 }
 
-export interface LoadResult {
+interface LoadResult {
     repoName: string
 }
 
@@ -101,9 +100,9 @@ export type Requests = {
     'embeddings/shutdown': [{}, {}]
 }
 
-export type ProgressValue = Progress | ProgressError | ProgressDone
+type ProgressValue = Progress | ProgressError | ProgressDone
 
-export interface Progress {
+interface Progress {
     type: 'progress'
     currentPath: string
     repoName: string
@@ -112,12 +111,12 @@ export interface Progress {
     totalItems: number
 }
 
-export interface ProgressDone {
+interface ProgressDone {
     type: 'done'
     repoName: string
 }
 
-export interface ProgressError {
+interface ProgressError {
     type: 'error'
     repoName: string
     message: string

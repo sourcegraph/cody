@@ -7,7 +7,6 @@ import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
-import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -17,30 +16,24 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
+import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { type ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
+import { type AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
+import { AgentGlobalState } from './AgentGlobalState'
 import { newTextEditor } from './AgentTextEditor'
-import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
+import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
-import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
-
-const globalStorage = new Map<string, any>()
-
-// Disable the feature that opens a webview when the user accepts their first
-// autocomplete request.  Removing this line should fail the agent integration
-// tests with the following error message "chat/new: command finished executing
-// without creating a webview" because we reuse the webview when sending
-// chat/new.
-globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -63,24 +56,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: {
-            keys: () => [localStorage.ANONYMOUS_USER_ID_KEY, ...globalStorage.keys()],
-            get: key => {
-                switch (key) {
-                    case localStorage.ANONYMOUS_USER_ID_KEY:
-                        return vscode_shim.extensionConfiguration?.anonymousUserID
-                    case localStorage.LAST_USED_ENDPOINT:
-                        return vscode_shim.extensionConfiguration?.serverEndpoint
-                    default:
-                        return globalStorage.get(key)
-                }
-            },
-            update: (key, value) => {
-                globalStorage.set(key, value)
-                return Promise.resolve()
-            },
-            setKeysForSync: () => {},
-        },
+        globalState: new AgentGlobalState(),
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
@@ -152,7 +128,7 @@ export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
-    public webPanels = new AgentWebPanels()
+    public webPanels = new AgentWebviewPanels()
 
     private clientInfo: ClientInfo | null = null
 
@@ -173,8 +149,6 @@ export class Agent extends MessageHandler {
                 ),
         },
     ])
-
-    private resolveChatPanelId: ((chatPanelId: string) => void) | null = null
 
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
@@ -270,7 +244,7 @@ export class Agent extends MessageHandler {
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
                 reason: undefined,
             })
         })
@@ -343,15 +317,6 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
-        this.registerRequest('recipes/list', () =>
-            Promise.resolve(
-                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
-                    id,
-                    title,
-                }))
-            )
-        )
-
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
             client?.reset()
@@ -359,41 +324,6 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
-        })
-
-        this.registerRequest('recipes/execute', async (data, token) => {
-            const client = await this.client
-            if (!client) {
-                return null
-            }
-
-            const abortController = new AbortController()
-            if (token) {
-                if (token.isCancellationRequested) {
-                    abortController.abort()
-                }
-                token.onCancellationRequested(() => {
-                    abortController.abort()
-                })
-            }
-
-            await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
-            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
-            try {
-                await client.executeRecipe(data.id, {
-                    signal: abortController.signal,
-                    humanChatInput: data.humanChatInput,
-
-                    data: data.data,
-                })
-            } catch (error) {
-                // can happen when the client cancels the request
-                if (isRateLimitError(error)) {
-                    throw error
-                }
-                console.log('recipe failed', error)
-            }
-            return null
         })
 
         this.registerRequest('autocomplete/execute', async (params, token) => {
@@ -583,47 +513,55 @@ export class Agent extends MessageHandler {
             return Promise.resolve(null)
         })
 
-        this.registerRequest('chat/new', async () => {
-            const id = await new Promise<string>((resolve, reject) => {
-                // HACK: when triggering this command, Cody creates a webview under the hood and there's
-                // no clean way for us (yet) to pair the webview with this command invocation.
-                // To work around this limitation, we hijack the `webview/create` handler to capture
-                // the webview that's created from executing this command.
-                this.resolveChatPanelId = resolve
-
-                vscode.commands.executeCommand('cody.chat.panel.new').then(
-                    () => reject(new Error('chat/new: command finished executing without creating a webview')),
-                    error => reject(error)
-                )
-
-                setTimeout(() => {
-                    reject(new Error('chat/new: timed out waiting for chat panel to be created'))
-                }, 1000)
-            })
-
-            // Important: this request never responds if we await on the messages here.
-            this.receiveWebviewMessage(id, { command: 'ready' }).then(
-                () => {},
-                () => {}
-            )
-            this.receiveWebviewMessage(id, { command: 'initialized' }).then(
-                () => {},
-                () => {}
-            )
-            return id
+        this.registerRequest('commands/explain', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code'))
         })
 
-        this.registerRequest('chat/submitMessage', async ({ id, message }, token) => {
-            if (message.command !== 'submit') {
+        this.registerRequest('commands/test', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests'))
+        })
+
+        this.registerRequest('commands/smell', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code'))
+        })
+
+        this.registerRequest('chat/new', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.new'))
+        })
+
+        this.registerRequest('chat/restore', async ({ modelID, messages, chatID }) => {
+            const chatModel = new SimpleChatModel(modelID, [], chatID, undefined)
+            for (const message of messages) {
+                if (message.error) {
+                    chatModel.addErrorAsBotMessage(message.error)
+                } else if (message.speaker === 'assistant') {
+                    chatModel.addBotMessage(message)
+                } else if (message.speaker === 'human') {
+                    chatModel.addHumanMessage(message)
+                }
+            }
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
+            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]))
+        })
+
+        this.registerRequest('chat/models', async ({ id }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            if (panel.models) {
+                return { models: panel.models }
+            }
+            await this.receiveWebviewMessage(id, { command: 'get-chat-models' })
+            return { models: panel.models ?? [] }
+        })
+
+        const submitOrEditHandler = async (
+            { id, message }: { id: string; message: WebviewMessage },
+            token: vscode.CancellationToken
+        ): Promise<ExtensionMessage> => {
+            if (message.command !== 'submit' && message.command !== 'edit') {
                 throw new Error('Invalid message, must have a command of "submit"')
             }
-            const panel = this.webPanels.panels.get(id)
-            if (!panel) {
-                return Promise.resolve({
-                    type: 'errors',
-                    errors: `No panel with id ${id} found`,
-                } satisfies ExtensionMessage)
-            }
+            const panel = this.webPanels.getPanelOrError(id)
             if (panel.isMessageInProgress) {
                 throw new Error('Message is already in progress')
             }
@@ -657,7 +595,9 @@ export class Agent extends MessageHandler {
             return result.finally(() => {
                 vscode.Disposable.from(...disposables).dispose()
             })
-        })
+        }
+        this.registerRequest('chat/submitMessage', submitOrEditHandler)
+        this.registerRequest('chat/editMessage', submitOrEditHandler)
 
         this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
@@ -672,7 +612,7 @@ export class Agent extends MessageHandler {
     private registerWebviewHandlers(): void {
         const webPanels = this.webPanels
         vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
-            const panel = new AgentWebPanel(viewType, title, showOptions, options)
+            const panel = new AgentWebviewPanel(viewType, title, showOptions, options)
             webPanels.add(panel)
 
             panel.onDidPostMessage(message => {
@@ -696,6 +636,10 @@ export class Agent extends MessageHandler {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
+                } else if (message.type === 'chatModels') {
+                    panel.models = message.models
+                } else if (message.type === 'errors') {
+                    panel.messageInProgressChange.fire(message)
                 }
 
                 this.notify('webview/postMessage', {
@@ -704,18 +648,6 @@ export class Agent extends MessageHandler {
                 })
             })
 
-            if (this.resolveChatPanelId) {
-                this.resolveChatPanelId(panel.panelID)
-                this.resolveChatPanelId = null
-            } else {
-                this.request('webview/create', {
-                    id: panel.panelID,
-                    data: { viewType, title, showOptions, options },
-                }).then(
-                    () => {},
-                    () => {}
-                )
-            }
             return panel
         })
     }
@@ -785,12 +717,35 @@ export class Agent extends MessageHandler {
         return client
     }
 
+    private async createChatPanel(commandResult: Thenable<ChatSession | undefined>): Promise<string> {
+        const { sessionID, webviewPanel } = (await commandResult) ?? {}
+        if (sessionID === undefined) {
+            throw new Error('chatID is undefined')
+        }
+        if (webviewPanel === undefined) {
+            throw new Error(`No webview panel for sessionID ${sessionID}`)
+        }
+        if (!(webviewPanel instanceof AgentWebviewPanel)) {
+            throw new TypeError(`Expected AgentWebviewPanel, received ${JSON.stringify(webviewPanel)}`)
+        }
+        if (webviewPanel.chatID === undefined) {
+            webviewPanel.chatID = sessionID
+        }
+        if (sessionID !== webviewPanel.chatID) {
+            throw new TypeError(
+                `Mismatching chatID, (sessionID) ${sessionID} !== ${webviewPanel.chatID} (webviewPanel.chatID)`
+            )
+        }
+        webviewPanel.initialize()
+        return webviewPanel.panelID
+    }
+
     private async reloadAuth(): Promise<void> {
-        await vscode_shim.commands.executeCommand('agent.auth.reload').then(() => {
-            // TODO(#56621): JetBrains: persistent chat history:
-            // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
-            this.webPanels.panels.clear()
-        })
+        await vscode_shim.commands.executeCommand('agent.auth.reload')
+
+        // TODO(#56621): JetBrains: persistent chat history:
+        // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
+        this.webPanels.panels.clear()
     }
 
     /**

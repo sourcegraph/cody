@@ -73,10 +73,7 @@ function completionMatchesPopupItem(
     return true
 }
 
-export function completionMatchesSuffix(
-    completion: Pick<AutocompleteItem, 'insertText'>,
-    currentLineSuffix: string
-): boolean {
+function completionMatchesSuffix(completion: Pick<AutocompleteItem, 'insertText'>, currentLineSuffix: string): boolean {
     if (typeof completion.insertText !== 'string') {
         return false
     }

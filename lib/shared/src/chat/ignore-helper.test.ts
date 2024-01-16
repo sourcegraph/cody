@@ -5,14 +5,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 //  (or if we should be testing both).
 import { URI, Utils } from 'vscode-uri'
 
-import { testFilePath } from '../test/path-helpers'
+import { testFileUri } from '../test/path-helpers'
 
 import { CODY_IGNORE_FILENAME, IgnoreHelper } from './ignore-helper'
 
 describe('IgnoreHelper', () => {
     let ignore: IgnoreHelper
-    const workspace1Root = URI.file(testFilePath('foo/workspace1'))
-    const workspace2Root = URI.file(testFilePath('foo/workspace2'))
+    const workspace1Root = testFileUri('foo/workspace1')
+    const workspace2Root = testFileUri('foo/workspace2')
 
     function setIgnores(workspaceRoot: string, ignoreFolder: string, rules: string[]) {
         ignore.setIgnoreFiles(workspaceRoot, [
@@ -133,12 +133,12 @@ describe('IgnoreHelper', () => {
         expect(ignore.isIgnored(Utils.joinPath(workspace2Root, 'ignored_2.txt'))).toBe(true)
     })
 
-    it('throws on an empty URI', () => {
-        expect(() => ignore.isIgnored(URI.file(''))).toThrow()
+    it('throws on an empty file: URI', () => {
+        expect(() => ignore.isIgnored(URI.parse('file:///'))).toThrow()
     })
 
     it.skip('throws on a relative Uri', () => {
-        const relativeFileUri = URI.file('a')
+        const relativeFileUri = URI.parse('file://a')
         expect(() => ignore.isIgnored(relativeFileUri)).toThrow()
     })
 

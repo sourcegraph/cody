@@ -1,154 +1,23 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 
 import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
 import { type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { createVSCodeRelativePath } from '../../editor-context/helpers'
-
-import { type CodebaseIdentifiers } from './CodebaseStatusProvider'
 import { type ContextItem } from './SimpleChatModel'
 
-export const relativeFileUrlScheme = 'cody-file-relative'
-export const embeddingsUrlScheme = 'cody-remote-embeddings'
-
-/**
- * Returns a URI for a snippet returned from the remote embeddings endpoint
- */
-export function remoteEmbeddingSnippetUri(codebase: CodebaseIdentifiers, result: EmbeddingsSearchResult): vscode.Uri {
-    return vscode.Uri.from({
-        scheme: embeddingsUrlScheme,
-        authority: codebase.remote,
-        path: '/' + result.fileName,
-        fragment: `L${result.startLine}-${result.endLine}`,
-        query: `local=${encodeURIComponent(codebase.local)}`,
-    })
-}
-
-/**
- * Return a URI for a local file that's relative to a workspace folder.
- */
-export function relativeFileUri(
-    absParentDir: string,
-    relPath: string,
-    range?: ActiveTextEditorSelectionRange
-): vscode.Uri {
-    return vscode.Uri.from({
-        scheme: relativeFileUrlScheme,
-        authority: absParentDir.endsWith('/') ? absParentDir.slice(0, -1) : absParentDir,
-        path: relPath.startsWith('/') ? relPath : '/' + relPath,
-        fragment: range && rangeToFragment(range),
-    })
-}
-
-/**
- * Returns a URI for a file from a legacy ContextFile instance
- */
-export function legacyContextFileUri(fileName: string, range?: vscode.Range): vscode.Uri {
-    return vscode.Uri.from({
-        scheme: relativeFileUrlScheme,
-        path: fileName,
-        fragment: range && rangeToFragment(range),
-    })
-}
-
-export function rangeToFragment(range: ActiveTextEditorSelectionRange): string {
-    return `L${range.start.line}-${range.end.line}`
-}
-
-export function fragmentToRange(fragment: string): ActiveTextEditorSelectionRange | undefined {
-    const match = fragment?.match(/^L(\d+)-(\d+)$/)
-    if (!fragment || !match) {
-        return undefined
-    }
-    return {
-        start: {
-            line: parseInt(match[1], 10),
-            character: 0,
-        },
-        end: {
-            line: parseInt(match[2], 10),
-            character: 0,
-        },
-    }
-}
-
-export async function openUri(
+export async function openFile(
     uri: vscode.Uri,
     range?: ActiveTextEditorSelectionRange,
     currentViewColumn?: vscode.ViewColumn
 ): Promise<void> {
-    switch (uri.scheme) {
-        case embeddingsUrlScheme: {
-            const localCodebaseDir = new URLSearchParams(uri.query).get('local')
-            if (!localCodebaseDir) {
-                throw new Error(`Failed to open embeddings: missing local codebase dir from uri ${uri}`)
-            }
-            const relpath = uri.path.startsWith('/') ? uri.path.slice(1) : uri.path
-            await openFile(path.join(localCodebaseDir, relpath), range, currentViewColumn)
-            break
-        }
-        case relativeFileUrlScheme: {
-            const containerDir = uri.authority || ''
-            const relPath = uri.path.startsWith('/') ? uri.path.slice(1) : uri.path
+    const doc = await vscode.workspace.openTextDocument(uri)
 
-            const absPath = containerDir
-                ? path.join(containerDir, relPath)
-                : (await legacyFilenameToAbsPath(relPath)) || relPath
-
-            if (!range) {
-                range = uri.fragment ? fragmentToRange(uri.fragment) : undefined
-            }
-
-            await openFile(absPath, range, currentViewColumn)
-            break
-        }
-        case 'file':
-            await openFile(uri.fsPath, fragmentToRange(uri.fragment), currentViewColumn)
-            break
-        default:
-            throw new Error(`Failed to open uri ${uri}: unsupported scheme "${uri.scheme}"`)
+    let viewColumn = vscode.ViewColumn.Beside
+    if (currentViewColumn) {
+        viewColumn = currentViewColumn - 1 || currentViewColumn + 1
     }
-}
-
-async function legacyFilenameToAbsPath(fileName: string): Promise<string | null> {
-    for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
-        try {
-            const maybeAbsPath = path.join(workspaceFolder.uri.fsPath, fileName)
-            await vscode.workspace.fs.stat(vscode.Uri.file(maybeAbsPath))
-            return maybeAbsPath
-        } catch {
-            try {
-                const maybeAbsPath = path.join(path.dirname(workspaceFolder.uri.fsPath), fileName)
-                await vscode.workspace.fs.stat(vscode.Uri.file(maybeAbsPath))
-                return maybeAbsPath
-            } catch {
-                continue
-            }
-        }
-    }
-    return null
-}
-
-export async function openFile(
-    absPath: string,
-    range?: ActiveTextEditorSelectionRange,
-    currentViewColumn?: vscode.ViewColumn
-): Promise<void> {
-    try {
-        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
-
-        let viewColumn = vscode.ViewColumn.Beside
-        if (currentViewColumn) {
-            viewColumn = currentViewColumn - 1 || currentViewColumn + 1
-        }
-        const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
-        await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
-    } catch (error) {
-        console.error(error)
-    }
+    const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
+    await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
 }
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
@@ -166,9 +35,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
     const range = contextMessage.file.range
     return {
         text: contextText,
-        uri:
-            contextMessage.file.uri ||
-            legacyContextFileUri(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
+        uri: contextMessage.file.uri,
         source: contextMessage.file.source,
         range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     }
@@ -207,13 +74,9 @@ export function stripContextWrapper(text: string): string | undefined {
 export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
     const contextFiles: ContextFile[] = []
     for (const item of items) {
-        let relFsPath = item.uri.fsPath
-        if (relFsPath.startsWith('/')) {
-            relFsPath = relFsPath.slice(1)
-        }
         contextFiles.push({
+            type: 'file', // TODO(sqs): some of these are symbols; preserve that `type`
             uri: item.uri,
-            fileName: createVSCodeRelativePath(item.uri) || relFsPath,
             source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
@@ -222,9 +85,7 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
     return contextFiles
 }
 
-export function rangeToActiveTextEditorSelectionRange(
-    range?: vscode.Range
-): ActiveTextEditorSelectionRange | undefined {
+function rangeToActiveTextEditorSelectionRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
     if (!range) {
         return undefined
     }
@@ -238,13 +99,6 @@ export function rangeToActiveTextEditorSelectionRange(
             character: range.end.character,
         },
     }
-}
-
-function activeEditorSelectionRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
-    if (!range) {
-        return undefined
-    }
-    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
 
 export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true): string {

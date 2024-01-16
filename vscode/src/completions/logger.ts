@@ -192,7 +192,7 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -205,7 +205,7 @@ export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void
         params
     )
 }
-export function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
+function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -218,7 +218,7 @@ export function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
         params
     )
 }
-export function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPayload): void {
+function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -257,12 +257,12 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
         params
     )
 }
-export function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
+function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('noResponse', { version: 0, metadata, privateMetadata }, params)
 }
-export function logCompletionErrorEvent(params: ErrorEventPayload): void {
+function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
@@ -389,7 +389,7 @@ export interface CompletionItemInfo extends ItemPostProcessingInfo {
     stopReason?: string
 }
 
-export const READ_TIMEOUT_MS = 750
+const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion requests
 const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkeepingEvent>({

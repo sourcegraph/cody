@@ -10,6 +10,7 @@ import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
     recordingDirectory?: string
+    keepUnusedRecordings?: boolean
     recordingMode?: MODE
     recordIfMissing?: boolean
     recordingExpiryStrategy?: EXPIRY_STRATEGY
@@ -56,6 +57,14 @@ export const jsonrpcCommand = new Command('jsonrpc')
     )
     .addOption(
         new Option(
+            '--keep-unused-recordings <bool>',
+            'If true, unused recordings are not removed from the recording file'
+        )
+            .env('CODY_KEEP_UNUSED_RECORDINGS')
+            .default(false)
+    )
+    .addOption(
+        new Option(
             '--recording-mode <mode>',
             'What kind of recording mode to use. Valid values are to the directory where network traffic is recorded or replayed from. This option should only be used in testing environments.'
         )
@@ -98,6 +107,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             polly = startPollyRecording({
                 recordingName: options.recordingName ?? 'CodyAgent',
                 recordingDirectory: options.recordingDirectory,
+                keepUnusedRecordings: options.keepUnusedRecordings,
                 recordingMode: options.recordingMode,
                 expiresIn: options.expiresIn,
                 recordIfMissing: options.recordIfMissing,

@@ -27,7 +27,7 @@ export class PollyYamlWriter {
     }
 
     public saveRecording(recording: string, data: any): Response {
-        const text = YAML.stringify(data)
+        const text = YAML.stringify(data, undefined, { singleQuote: false })
         fs.outputFileSync(this.filenameFor(recording), text)
 
         return this.respond(201)

@@ -1,16 +1,5 @@
 import * as vscode from 'vscode'
 
-/**
- * Get the last part of the file path after the last slash
- */
-export function getFileNameAfterLastDash(filePath: string): string {
-    const lastDashIndex = filePath.lastIndexOf('/')
-    if (lastDashIndex === -1) {
-        return filePath
-    }
-    return filePath.slice(lastDashIndex + 1)
-}
-
 export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
     const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
     if (!editor) {

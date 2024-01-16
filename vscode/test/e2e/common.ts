@@ -23,13 +23,7 @@ export const sidebarSignin = async (page: Page, sidebar: Frame, enableNotificati
 const sidebarExplorerRole = { name: /Explorer.*/ }
 export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidebarExplorerRole)
 
-// Selector for the Cody button in the sidebar
-const sidebarCodyRole = { name: /Cody.*/ }
-export const sidebarCody = (page: Page): Locator => page.getByRole('tab', sidebarCodyRole)
-
-export const codyEditorCommandButtonRole = { name: /Commands.*/ }
-
-export async function disableNotifications(page: Page): Promise<void> {
+async function disableNotifications(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Notifications' }).click()
     await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
 }

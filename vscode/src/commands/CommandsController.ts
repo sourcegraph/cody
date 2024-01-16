@@ -5,10 +5,10 @@ import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shar
 import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
+import { getEditor } from '../editor/active-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
-import { type MyPrompts } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -40,11 +40,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(extensionPath: string) {
+    constructor() {
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
-        this.custom = new CustomPromptsStore(this.isEnabled, extensionPath, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(this.isEnabled, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
@@ -52,23 +52,24 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.fileWatcherInit()
     }
 
-    public isCommand(text: string): boolean {
-        const commandSplit = text.split(' ')
-        // The unique key for the command. e.g. /test
-        const commandKey = commandSplit.shift() || text
-
-        return !!this.default.get(commandKey)
-    }
-
     public async findCommand(
         text: string,
         requestID?: string,
         contextFiles?: ContextFile[]
     ): Promise<CodyCommand | null> {
+        const editor = getEditor()
+        if (!editor.active || editor.ignored) {
+            const message = editor.ignored
+                ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
+                : 'No editor is active. Please open a file and try again.'
+            void vscode.window.showErrorMessage(message)
+            return null
+        }
+
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
-        // Additional instruction that will be added to end of prompt in the custom-prompt recipe
+        // Additional instruction that will be added to end of prompt in the custom command prompt
         const commandInput = commandKey === text ? '' : commandSplit.join(' ')
 
         const command = this.default.get(commandKey)
@@ -100,7 +101,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
-        // Fixup request will be taken care by the fixup recipe in the CommandRunner
+        // Fixup request will be taken care by the fixup command in the CommandRunner
         if (isFixupRequest) {
             return undefined
         }
@@ -123,15 +124,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async getAllCommands(keepSperator = false): Promise<[string, CodyCommand][]> {
         await this.refresh()
         return this.default.getGroupedCommands(keepSperator)
-    }
-
-    /**
-     * Gets the custom prompt configuration by refreshing the store.
-     * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
-     */
-    public async getCustomConfig(): Promise<MyPrompts> {
-        const myPromptsConfig = await this.custom.refresh()
-        return myPromptsConfig
     }
 
     /**

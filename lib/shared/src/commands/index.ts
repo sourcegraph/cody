@@ -24,7 +24,7 @@ export interface CodyCommand {
  * - insert mode is the same as edit, but instead of replacing selection with cody's response,
  * it adds to the top of the selection instead
  */
-export type CodyCommandMode = 'ask' | 'edit' | 'insert'
+type CodyCommandMode = 'ask' | 'edit' | 'insert'
 
 // Type of context available for prompt building
 export interface CodyCommandContext {
@@ -41,7 +41,7 @@ export interface CodyCommandContext {
     none?: boolean
 }
 
-export type CodyCommandType = 'workspace' | 'user' | 'default' | 'recently used'
+type CodyCommandType = 'workspace' | 'user' | 'default' | 'recently used'
 
 export type CustomCommandType = 'workspace' | 'user'
 

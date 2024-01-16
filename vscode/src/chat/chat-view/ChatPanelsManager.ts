@@ -30,7 +30,7 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-export interface ChatPanelProviderOptions extends MessageProviderOptions {
+interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
@@ -68,6 +68,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
             treeDataProvider: this.treeViewProvider,
         })
+        this.disposables.push(this.treeViewProvider)
+        this.disposables.push(this.treeView)
 
         // Register Tree View
         this.disposables.push(
@@ -264,24 +266,20 @@ export class ChatPanelsManager implements vscode.Disposable {
         await chatProvider.clearAndRestartSession()
     }
 
-    public async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
+    public async restorePanel(chatID: string, chatQuestion?: string): Promise<SimpleChatPanelProvider | undefined> {
         try {
             logDebug('ChatPanelsManager', 'restorePanel')
             // Panel already exists, just reveal it
             const provider = this.panelProvidersMap.get(chatID)
             if (provider) {
                 provider.webviewPanel?.reveal()
-                return
+                return provider
             }
-            await this.createWebviewPanel(chatID, chatQuestion)
+            return await this.createWebviewPanel(chatID, chatQuestion)
         } catch (error) {
             console.error(error, 'errored restoring panel')
+            return undefined
         }
-    }
-
-    public async triggerNotice(notice: { key: string }): Promise<void> {
-        const chatProvider = await this.getChatPanel()
-        chatProvider.triggerNotice(notice)
     }
 
     private disposeProvider(chatID: string): void {

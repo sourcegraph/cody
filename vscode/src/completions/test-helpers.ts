@@ -1,11 +1,11 @@
 import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { URI } from 'vscode-uri'
 
+import { testFileUri } from '@sourcegraph/cody-shared'
 import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { testFilePath, wrapVSCodeTextDocument } from '../testutils/textDocument'
+import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 export * from '../tree-sitter/test-helpers'
 
@@ -39,7 +39,7 @@ const CURSOR_MARKER = '█'
 export function document(
     text: string,
     languageId: string = 'typescript',
-    uriString = URI.file(testFilePath('test.ts')).toString()
+    uriString = testFileUri('test.ts').toString()
 ): VSCodeTextDocument {
     return wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, text))
 }

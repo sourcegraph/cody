@@ -1,4 +1,5 @@
 import { type Meta, type StoryObj } from '@storybook/react'
+import { URI } from 'vscode-uri'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { UserContextSelectorComponent } from './UserContextSelector'
@@ -44,8 +45,7 @@ export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = 
     args: {
         // Long enough to test text-overflow
         contextSelection: Array.from(new Array(20).keys()).map(i => ({
-            fileName: `file-${i}.py`,
-            path: { relative: `${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py` },
+            uri: URI.file(`${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py`),
             type: 'file',
         })),
         selected: 0,
@@ -64,43 +64,43 @@ export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorCo
 export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [
-            { fileName: 'LoginDialog', type: 'symbol', kind: 'class', path: { relative: 'lib/src/LoginDialog.tsx' } },
+            { symbolName: 'LoginDialog', type: 'symbol', kind: 'class', uri: URI.file('/lib/src/LoginDialog.tsx') },
             {
-                fileName: 'login',
+                symbolName: 'login',
                 type: 'symbol',
                 kind: 'function',
-                path: { relative: 'src/login.go' },
+                uri: URI.file('/src/login.go'),
                 range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
             },
             {
-                fileName: 'handleLogin',
+                symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
             {
-                fileName: 'handleLogin',
+                symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
             {
-                fileName: 'handleLogin',
+                symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
             {
-                fileName: 'handleLogin',
+                symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
             {
-                fileName: 'handleLogin',
+                symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
         ],
         selected: 0,

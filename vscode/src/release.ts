@@ -1,8 +1,8 @@
-export type ReleaseType = 'stable' | 'insiders'
+type ReleaseType = 'stable' | 'insiders'
 
-export const majorVersion = (version: string): string => version.split('.')[0]
+const majorVersion = (version: string): string => version.split('.')[0]
 
-export const minorVersion = (version: string): string => version.split('.')[1]
+const minorVersion = (version: string): string => version.split('.')[1]
 
 export const majorMinorVersion = (version: string): string => [majorVersion(version), minorVersion(version)].join('.')
 

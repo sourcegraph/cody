@@ -1,1 +1,0 @@
-export { commitCommand } from './command'

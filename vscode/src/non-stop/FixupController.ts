@@ -28,7 +28,6 @@ import {
     type FixupTaskFactory,
     type FixupTextChanged,
 } from './roles'
-import { TaskViewProvider, type FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
@@ -36,7 +35,6 @@ export class FixupController
     implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<taskID, FixupTask>()
-    private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
@@ -52,11 +50,6 @@ export class FixupController
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
-            vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)),
-            vscode.commands.registerCommand('cody.fixup.accept', treeItem => this.acceptFixups(treeItem)),
-            vscode.commands.registerCommand('cody.fixup.accept-by-file', treeItem => this.acceptFixups(treeItem)),
-            vscode.commands.registerCommand('cody.fixup.accept-all', () => this.acceptFixups()),
-            vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel', hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel')
@@ -108,8 +101,6 @@ export class FixupController
         this._disposables.push(vscode.workspace.onDidDeleteFiles(this.files.didDeleteFiles.bind(this.files)))
         // Observe editor focus
         this._disposables.push(vscode.window.onDidChangeVisibleTextEditors(this.didChangeVisibleTextEditors.bind(this)))
-        // Start the fixup tree view provider
-        this.taskViewProvider = new TaskViewProvider()
         // Observe file edits
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
@@ -132,15 +123,6 @@ export class FixupController
                 })
             )
         }
-    }
-
-    /**
-     * Register the tree view that provides an additional UI for Fixups.
-     * Call this if the feature is enabled.
-     * TODO: We should move this to a QuickPick and enable it by default.
-     */
-    public registerTreeView(): void {
-        this._disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider))
     }
 
     // FixupFileCollection
@@ -182,17 +164,6 @@ export class FixupController
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
-    }
-
-    // Open fsPath at the selected line in editor on tree item click
-    private showThisFixup(taskID: taskID): void {
-        const task = this.tasks.get(taskID)
-        if (!task) {
-            void vscode.window.showInformationMessage('No fixup was found...')
-            return
-        }
-        // Create vscode Uri from task uri and selection range
-        void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
     }
 
     // Apply single fixup from task ID. Public for testing.
@@ -615,34 +586,6 @@ export class FixupController
         }
     }
 
-    // Accepting fixups from tree item click
-    private acceptFixups(treeItem?: FixupTaskTreeItem): void {
-        // Accepting all fixup tasks
-        if (!treeItem) {
-            for (const task of this.tasks.values()) {
-                this.accept(task.id)
-            }
-            return
-        }
-
-        // Accepting all fixup tasks in a directory
-        if (treeItem.contextValue === 'fsPath') {
-            for (const task of this.tasks.values()) {
-                if (task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath)) {
-                    this.accept(task.id)
-                }
-            }
-            return
-        }
-
-        // Accepting a single fixup task
-        if (treeItem.contextValue === 'task' && treeItem.id) {
-            this.accept(treeItem.id)
-        }
-
-        console.error('cannot apply fixups')
-    }
-
     private cancel(id: taskID): void {
         const task = this.tasks.get(id)
         if (!task) {
@@ -752,11 +695,6 @@ export class FixupController
         this.contentStore.delete(task.id)
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
-        this.taskViewProvider.removeTreeItemByID(task.id)
-    }
-
-    public getTasks(): FixupTask[] {
-        return Array.from(this.tasks.values())
     }
 
     public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
@@ -947,14 +885,6 @@ export class FixupController
         }
     }
 
-    // Callback function for the Fixup Task Tree View item Diff button
-    private async showDiff(treeItem: FixupTaskTreeItem): Promise<void> {
-        if (!treeItem?.id) {
-            return
-        }
-        await this.diff(treeItem.id)
-    }
-
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
         const task = this.tasks.get(id)
@@ -1058,7 +988,6 @@ export class FixupController
         }
         // Save states of the task
         this.codelenses.didUpdateTask(task)
-        this.taskViewProvider.setTreeItem(task)
 
         if (task.state === CodyTaskState.applying) {
             void this.apply(task.id)
@@ -1075,14 +1004,12 @@ export class FixupController
 
     private reset(): void {
         this.tasks = new Map<taskID, FixupTask>()
-        this.taskViewProvider.reset()
     }
 
     public dispose(): void {
         this.reset()
         this.codelenses.dispose()
         this.decorator.dispose()
-        this.taskViewProvider.dispose()
         for (const disposable of this._disposables) {
             disposable.dispose()
         }

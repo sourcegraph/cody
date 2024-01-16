@@ -30,7 +30,6 @@ export class CustomPromptsStore implements vscode.Disposable {
 
     constructor(
         private isActive: boolean,
-        private extensionPath: string,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
@@ -105,8 +104,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 return null
             }
             const json = JSON.parse(content) as MyPromptsJSON
-            const prompts = json.commands || json.recipes
-            const promptEntries = Object.entries(prompts)
+            const promptEntries = Object.entries(json.commands)
 
             const isOldFormat = promptEntries.some(
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
@@ -215,7 +213,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         const configFileUri = this.getConfigUriByType(type)
         try {
             if (configFileUri) {
-                await createJSONFile(this.extensionPath, configFileUri)
+                await createJSONFile(configFileUri)
                 void vscode.window
                     .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
                     .then(async choice => {

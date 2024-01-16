@@ -2,8 +2,7 @@ import { type URI } from 'vscode-uri'
 
 export interface ActiveTextEditor {
     content: string
-    filePath: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
     selectionRange?: ActiveTextEditorSelectionRange
@@ -23,8 +22,7 @@ export interface ActiveTextEditorSelectionRange {
 }
 
 export interface ActiveTextEditorSelection {
-    fileName: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
     precedingText: string
@@ -44,16 +42,7 @@ export interface ActiveTextEditorDiagnostic {
 
 export interface ActiveTextEditorVisibleContent {
     content: string
-    fileName: string
-    fileUri?: URI
-    repoName?: string
-    revision?: string
-}
-
-export interface TextDocumentContent {
-    content: string
-    fileName: string
-    fileUri?: URI
+    fileUri: URI
     repoName?: string
     revision?: string
 }
@@ -68,12 +57,6 @@ export interface ActiveTextEditorViewControllers<C extends VsCodeCommandsControl
 
 export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsController> {
     controllers?: ActiveTextEditorViewControllers<P>
-
-    /**
-     * The path of the workspace root if on the file system, otherwise `null`.
-     * @deprecated Use {@link Editor.getWorkspaceRootUri} instead.
-     */
-    getWorkspaceRootPath(): string | null
 
     /** The URI of the workspace root. */
     getWorkspaceRootUri(): URI | null
@@ -99,18 +82,11 @@ export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsContr
 
     getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
 
-    replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
-    showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
-    showInputBox(prompt?: string): Promise<string | undefined>
 }
 
 export class NoopEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers<VsCodeCommandsController> | undefined
-
-    public getWorkspaceRootPath(): string | null {
-        return null
-    }
 
     public getWorkspaceRootUri(): URI | null {
         return null
@@ -151,19 +127,7 @@ export class NoopEditor implements Editor {
         return Promise.resolve(undefined)
     }
 
-    public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
-        return Promise.resolve()
-    }
-
-    public showQuickPick(_labels: string[]): Promise<string | undefined> {
-        return Promise.resolve(undefined)
-    }
-
     public showWarningMessage(_message: string): Promise<void> {
         return Promise.resolve()
-    }
-
-    public showInputBox(_prompt?: string): Promise<string | undefined> {
-        return Promise.resolve(undefined)
     }
 }

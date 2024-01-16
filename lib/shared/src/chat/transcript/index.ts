@@ -1,17 +1,12 @@
-import {
-    type ContextFile,
-    type ContextMessage,
-    type OldContextMessage,
-    type PreciseContext,
-} from '../../codebase-context/messages'
+import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import { type Message } from '../../sourcegraph-api'
 
-import { Interaction, type InteractionJSON } from './interaction'
+import { type Interaction, type InteractionJSON } from './interaction'
 import { errorToChatError, type ChatMessage } from './messages'
 
-export interface TranscriptJSONScope {
+interface TranscriptJSONScope {
     includeInferredRepository: boolean
     includeInferredFile: boolean
     repositories: string[]
@@ -32,98 +27,20 @@ export interface TranscriptJSON {
  * Any "controller" logic belongs outside of this class.
  */
 export class Transcript {
-    public static fromJSON(json: TranscriptJSON): Transcript {
-        return new Transcript(
-            json.interactions.map(
-                ({
-                    humanMessage,
-                    assistantMessage,
-                    context,
-                    fullContext,
-                    usedContextFiles,
-                    usedPreciseContext,
-                    timestamp,
-                }) => {
-                    if (!fullContext) {
-                        fullContext = context || []
-                    }
-                    return new Interaction(
-                        humanMessage,
-                        assistantMessage,
-                        Promise.resolve(
-                            fullContext.map(message => {
-                                if (message.file) {
-                                    return message
-                                }
-
-                                const { fileName } = message as any as OldContextMessage
-                                if (fileName) {
-                                    return { ...message, file: { fileName } }
-                                }
-
-                                return message
-                            })
-                        ),
-                        usedContextFiles || [],
-                        usedPreciseContext || [],
-                        timestamp || new Date().toISOString()
-                    )
-                }
-            ),
-            json.id,
-            json.chatModel,
-            json.chatTitle
-        )
-    }
-
     private interactions: Interaction[] = []
-
-    private internalID: string
 
     public chatModel: string | undefined = undefined
 
     public chatTitle: string | undefined = undefined
 
-    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string, title?: string) {
+    constructor(interactions: Interaction[] = [], chatModel?: string, title?: string) {
         this.interactions = interactions
-        this.internalID =
-            id ||
-            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
-            new Date().toISOString()
         this.chatModel = chatModel
         this.chatTitle = title || this.getLastInteraction()?.getHumanMessage()?.displayText
     }
 
-    public get id(): string {
-        return this.internalID
-    }
-
-    public setChatModel(chatModel?: string): void {
-        // Set chat model for new transcript only
-        if (!chatModel || this.interactions.length > 1) {
-            return
-        }
-        this.chatModel = chatModel
-    }
-
-    public setChatTitle(title: string): void {
-        this.chatTitle = title
-    }
-
     public get isEmpty(): boolean {
         return this.interactions.length === 0
-    }
-
-    public get lastInteractionTimestamp(): string {
-        for (let index = this.interactions.length - 1; index >= 0; index--) {
-            const { timestamp } = this.interactions[index]
-
-            if (!isNaN(new Date(timestamp) as any)) {
-                return timestamp
-            }
-        }
-
-        return this.internalID
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -135,17 +52,6 @@ export class Transcript {
 
     public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions.at(-1)! : null
-    }
-
-    public removeLastInteraction(): void {
-        this.interactions.pop()
-    }
-
-    public removeInteractionsSince(id: string): void {
-        const index = this.interactions.findIndex(({ timestamp }) => timestamp === id)
-        if (index >= 0) {
-            this.interactions = this.interactions.slice(0, index)
-        }
     }
 
     public addAssistantResponse(text: string, displayText?: string): void {
@@ -240,49 +146,8 @@ export class Transcript {
         return this.interactions.flatMap(interaction => interaction.toChat())
     }
 
-    public async toChatPromise(): Promise<ChatMessage[]> {
-        return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
-    }
-
-    public async toJSON(scope?: TranscriptJSONScope): Promise<TranscriptJSON> {
-        const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
-
-        return {
-            id: this.id,
-            chatModel: this.chatModel,
-            chatTitle: this.chatTitle,
-            interactions,
-            lastInteractionTimestamp: this.lastInteractionTimestamp,
-            scope: scope
-                ? {
-                      repositories: scope.repositories,
-                      includeInferredRepository: scope.includeInferredRepository,
-                      includeInferredFile: scope.includeInferredFile,
-                  }
-                : undefined,
-        }
-    }
-
-    public toJSONEmpty(scope?: TranscriptJSONScope): TranscriptJSON {
-        return {
-            id: this.id,
-            chatModel: this.chatModel,
-            chatTitle: this.chatTitle,
-            interactions: [],
-            lastInteractionTimestamp: this.lastInteractionTimestamp,
-            scope: scope
-                ? {
-                      repositories: scope.repositories,
-                      includeInferredRepository: scope.includeInferredRepository,
-                      includeInferredFile: scope.includeInferredFile,
-                  }
-                : undefined,
-        }
-    }
-
     public reset(): void {
         this.interactions = []
-        this.internalID = new Date().toISOString()
     }
 }
 

@@ -63,10 +63,6 @@ export class TracedError extends Error {
     }
 }
 
-export function isTracedError(error: Error): error is TracedError {
-    return error instanceof TracedError
-}
-
 export class NetworkError extends Error {
     public readonly status: number
 
@@ -89,7 +85,7 @@ export function isAuthError(error: unknown): boolean {
 }
 
 export class AbortError extends Error {
-    // Added to make Typescript understand that AbortError is not the same as Error.
+    // Added to make TypeScript understand that AbortError is not the same as Error.
     public readonly isAbortError = true
 }
 

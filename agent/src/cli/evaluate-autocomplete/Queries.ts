@@ -5,7 +5,7 @@ import { type default as Parser, type Query } from 'web-tree-sitter'
 
 import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 
-export type QueryName = 'context'
+type QueryName = 'context'
 
 /**
  * Queries manages compilation of tree-sitter queries from a directory layout.

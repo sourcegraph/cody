@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -375,44 +375,6 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.fixup.open",
-        "category": "Cody",
-        "title": "Go to Fixup",
-        "icon": "$(file-code)"
-      },
-      {
-        "command": "cody.fixup.accept",
-        "category": "Cody",
-        "title": "Accept fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check)"
-      },
-      {
-        "command": "cody.fixup.accept-all",
-        "category": "Cody",
-        "title": "Accept all fixups",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.accept-by-file",
-        "category": "Cody",
-        "title": "Accept fixups in the selected directory",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.diff",
-        "category": "Cody",
-        "title": "Show diff for fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(diff)"
-      },
-      {
         "command": "cody.action.commands.menu",
         "category": "Cody",
         "title": "Commands",
@@ -590,26 +552,6 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
-        },
-        {
-          "command": "cody.fixup.accept",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-all",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-by-file",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.diff",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.open",
-          "when": "false"
         },
         {
           "command": "cody.guardrails.debug",
@@ -1056,7 +998,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
-    "@mdi/js": "^7.2.96",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1072,7 +1013,6 @@
     "@sourcegraph/cody-ui": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@storybook/preview-api": "^7.6.2",
-    "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
@@ -1086,18 +1026,13 @@
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
-    "mock-require": "^3.0.3",
-    "openai": "^3.2.1",
     "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
-    "stream-json": "^1.8.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.20.8",
-    "wink-eng-lite-web-model": "^1.5.0",
-    "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
@@ -1105,7 +1040,6 @@
     "@playwright/test": "1.39.0",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
-    "@pollyjs/node-server": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
@@ -1117,27 +1051,22 @@
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
-    "@types/mock-require": "^2.0.1",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
     "@types/unzipper": "^0.10.7",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
-    "@types/vscode-webview": "^1.57.1",
     "@types/yaml": "^1.9.7",
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
-    "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
-    "envalid": "^7.3.1",
     "express": "^4.18.2",
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
-    "node-server": "link:@types/pollyjs/node-server",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
     "path-browserify": "^1.0.1",

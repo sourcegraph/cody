@@ -51,15 +51,6 @@ export function setUpCodyIgnore(): vscode.Disposable {
 }
 
 /**
- * Updates the mapping of codebase name to workspace file system path
- * in the ignores context filter.
- */
-export function updateCodyIgnoreCodespaceMap(codebaseName: string, workspaceFsPath: string): void {
-    ignores.updateCodebaseWorkspaceMap(codebaseName, workspaceFsPath)
-    logDebug('CodyIgnore:updateCodyIgnoreCodespaceMap:codebase', codebaseName)
-}
-
-/**
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
 async function refresh(uri: vscode.Uri): Promise<void> {
@@ -104,10 +95,10 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 
     // Main workspace root
-    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
     // Nested codebases
     for (const cb of codebases) {
-        ignores.setIgnoreFiles(cb[1], filesWithContent, cb[0])
+        ignores.setIgnoreFiles(cb[1], filesWithContent)
     }
 }
 
