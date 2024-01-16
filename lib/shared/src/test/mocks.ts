@@ -64,8 +64,6 @@ export class MockIntentDetector implements IntentDetector {
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
 
-    public fileName = ''
-
     public getWorkspaceRootUri(): URI | null {
         return this.mocks.getWorkspaceRootUri?.() ?? null
     }
