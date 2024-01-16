@@ -8,7 +8,7 @@ interface UpdatableChat {
 
   fun updateLastMessage(message: ChatMessage)
 
-  fun displayUsedContext(contextMessages: List<ContextMessage?>)
+  fun displayUsedContext(contextMessages: List<ContextMessage>)
 
   fun finishMessageProcessing()
 

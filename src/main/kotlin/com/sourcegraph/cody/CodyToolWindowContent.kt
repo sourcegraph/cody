@@ -510,13 +510,13 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     }
   }
 
-  override fun displayUsedContext(contextMessages: List<ContextMessage?>) {
+  override fun displayUsedContext(contextMessages: List<ContextMessage>) {
     if (contextMessages.isEmpty()) {
       // Do nothing when there are no context files. It's normal that some answers have no context
       // files.
       return
     }
-    val contextFilesMessage = ContextFilesMessage(contextMessages)
+    val contextFilesMessage = ContextFilesMessage(project, contextMessages)
     val messageContentPanel = JPanel(BorderLayout())
     messageContentPanel.add(contextFilesMessage)
     addComponentToChat(messageContentPanel)
