@@ -117,7 +117,7 @@ export class FixupTypingUI {
         filePath,
         range,
         source,
-        placeholder = 'Instructions (@ to include code)',
+        placeholder = 'Instructions (@ to include code, / for commands)',
         initialValue,
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
@@ -133,6 +133,20 @@ export class FixupTypingUI {
         if (initialValue) {
             quickPick.value = initialValue
         }
+        const commandItems: vscode.QuickPickItem[] = [
+            {
+                label: 'Write documentation for getActiveName',
+                buttons: [{ iconPath: new vscode.ThemeIcon('book') }],
+                alwaysShow: true,
+                picked: false,
+            },
+            {
+                label: 'Generate a unit test for getActiveName',
+                buttons: [{ iconPath: new vscode.ThemeIcon('book') }],
+                alwaysShow: true,
+                picked: false,
+            },
+        ]
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
@@ -160,6 +174,11 @@ export class FixupTypingUI {
         quickPick.onDidChangeValue(async newValue => {
             if (initialValue !== undefined && newValue === initialValue) {
                 // Noop, this event is fired when an initial value is set
+                return
+            }
+
+            if (newValue.startsWith('/')) {
+                quickPick.items = commandItems
                 return
             }
 
