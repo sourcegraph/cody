@@ -922,7 +922,6 @@ export class FixupController
             {
                 preview: true,
                 preserveFocus: false,
-                selection: task.selectionRange,
                 label: 'Cody Edit Diff View',
                 description: 'Cody Edit Diff View: ' + task.fixupFile.uri.fsPath,
             }
