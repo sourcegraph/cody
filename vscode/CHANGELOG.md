@@ -8,7 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Edit: Fixed an issue where the file/symbol hint would remain ever after the file/symbol prefix had been deleted. [pull/2712](https://github.com/sourcegraph/cody/pull/2712)
+- Edit: Fixed an issue where the file/symbol hint would remain even after the file/symbol prefix had been deleted. [pull/2712](https://github.com/sourcegraph/cody/pull/2712)
 
 ### Changed
 
