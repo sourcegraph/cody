@@ -1,7 +1,7 @@
 import path from 'path'
 
 import fuzzysort from 'fuzzysort'
-import { throttle } from 'lodash'
+import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
