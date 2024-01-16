@@ -24,8 +24,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
-
-    isExperimentalCommand?: string
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -167,11 +167,11 @@ const commandsItems: CodySidebarTreeItem[] = [
         description: 'Generate unit tests',
     },
     {
-        title: 'Test File',
-        icon: 'package',
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
         command: { command: 'cody.command.unit-tests' },
-        description: 'Experimental: Add tests to test file',
-        isExperimentalCommand: 'cody.experimental.commands',
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

@@ -8,6 +8,7 @@ import {
     type FeatureFlagProvider,
 } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
+import { type CommandsController } from '../../commands/CommandsController'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -24,7 +25,10 @@ import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
 
-export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'experimentalSymfContext'>
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable'
+>
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -60,7 +64,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         private chatClient: ChatClient,
         private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly symf: SymfRunner | null
+        private readonly symf: SymfRunner | null,
+        private commandsController?: CommandsController
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
@@ -197,6 +202,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
             models,
+            commandsController: this.commandsController,
         })
     }
 

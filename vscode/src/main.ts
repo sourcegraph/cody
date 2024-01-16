@@ -104,7 +104,7 @@ const register = async (
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     const editor = new VSCodeEditor()
-    const commandsController = platform.createCommandsController?.(editor, context.extensionPath)
+    const commandsController = platform.createCommandsController?.(editor)
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -188,7 +188,8 @@ const register = async (
         chatClient,
         embeddingsClient,
         localEmbeddings || null,
-        symfRunner || null
+        symfRunner || null,
+        commandsController
     )
 
     disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
@@ -329,15 +330,7 @@ const register = async (
         vscode.commands.registerCommand('cody.action.commands.exec', async title => executeCommand(title)),
         vscode.commands.registerCommand('cody.command.explain-code', async () => executeCommand('/explain')),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
-        vscode.commands.registerCommand('cody.command.unit-tests', async () => {
-            if (!config.experimentalCommands) {
-                void vscode.window.showWarningMessage(
-                    'This is an experimental feature. Please enable the cody.experimental.commands in the extension settings and try again.'
-                )
-                return
-            }
-            await executeCommand('/test-file')
-        }),
+        vscode.commands.registerCommand('cody.command.unit-tests', async () => executeCommand('/unit')),
         vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
         vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
 

@@ -163,6 +163,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
         this.commandsController = commandsController
+        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -1000,6 +1001,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     return !isRedundantCommand && !isCustomEdit
                 }) || []
 
+            console.log(prompts, 'prompts')
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,

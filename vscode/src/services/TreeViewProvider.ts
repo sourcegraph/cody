@@ -56,10 +56,9 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         const updatedTree: vscode.TreeItem[] = []
         this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
         for (const item of this.treeItems) {
-            if (item.isExperimentalCommand) {
+            if (item.isUnstable) {
                 const config = await getFullConfig()
-                const enabled = config.experimentalCommands
-                if (!enabled) {
+                if (!config.internalUnstable) {
                     continue
                 }
             }

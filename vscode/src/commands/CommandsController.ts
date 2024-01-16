@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
+import { getFullConfig } from '../configuration'
 import { executeEdit } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { type VSCodeEditor } from '../editor/vscode-editor'
@@ -41,15 +42,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    private enableExperimentalCommands = false
+    public enableExperimentalCommands = false
 
-    constructor(
-        private readonly editor: VSCodeEditor,
-        extensionPath: string
-    ) {
-        const config = vscode.workspace.getConfiguration('cody')
-        const enableExperimentalCommands = config.get('cody.experimental.commands', false)
-        this.default = new PromptsProvider(enableExperimentalCommands)
+    constructor(private readonly editor: VSCodeEditor) {
+        this.default = new PromptsProvider()
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
@@ -63,11 +59,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.disposables.push(
             vscode.workspace.onDidChangeConfiguration(async event => {
                 if (event.affectsConfiguration('cody')) {
-                    this.enableExperimentalCommands = enableExperimentalCommands
+                    const config = await getFullConfig()
+                    this.setEnableExperimentalCommands(config.internalUnstable)
                     await this.refresh()
                 }
             })
         )
+    }
+
+    public setEnableExperimentalCommands(enable: boolean): void {
+        this.enableExperimentalCommands = enable
     }
 
     public async findCommand(text: string, requestID?: string): Promise<CodyCommand | null> {

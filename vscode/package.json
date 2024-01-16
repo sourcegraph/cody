@@ -292,9 +292,9 @@
       {
         "command": "cody.command.unit-tests",
         "category": "Cody Command",
-        "title": "Generate Unit Tests - Experimental",
+        "title": "Generate Unit Tests in File - Experimental",
         "icon": "$(package)",
-        "when": "cody.activated && config.cody.experimental.commands && editorTextFocus"
+        "when": "cody.activated && config.cody.internal.unstable && editorTextFocus"
       },
       {
         "command": "cody.command.document-code",
@@ -545,7 +545,7 @@
         },
         {
           "command": "cody.command.unit-tests",
-          "when": "cody.activated && config.cody.experimental.commands && editorIsOpen"
+          "when": "cody.activated && config.cody.internal.unstable && editorIsOpen"
         },
         {
           "command": "cody.command.document-code",
@@ -606,7 +606,7 @@
         },
         {
           "command": "cody.command.unit-tests",
-          "when": "cody.activated && config.cody.experimental.commands",
+          "when": "cody.activated && config.cody.internal.unstable",
           "group": "command"
         },
         {
@@ -844,12 +844,6 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
-          "default": false
-        },
-        "cody.experimental.commands": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable the updated generate unit tests command",
           "default": false
         },
         "cody.debug.enable": {
