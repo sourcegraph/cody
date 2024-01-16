@@ -1,8 +1,6 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
-import { isGenerateIntent } from '../edit/utils/edit-selection'
-
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
@@ -64,16 +62,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                     this.clearGhostText(editor)
                 }
 
-                const isGenerate = isGenerateIntent(editor.document, selection)
-                const ghostText = `${EDIT_SHORTCUT_LABEL} to ${
-                    isGenerate ? 'Generate' : 'Edit'
-                }, ${CHAT_SHORTCUT_LABEL} to Chat`
-
-                if (isGenerate) {
-                    // Generate code flow, cancel any pending edit flow and show new text immediately
-                    this.throttledSetGhostText.cancel()
-                    return this.setGhostText(editor, targetPosition, ghostText)
-                }
+                const ghostText = `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`
 
                 // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
                 return this.throttledSetGhostText(editor, targetPosition, ghostText)

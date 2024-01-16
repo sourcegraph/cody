@@ -6,7 +6,7 @@ import { getSmartSelection } from '../../editor/utils'
  * Checks if the current selection and editor represent a generate intent.
  * A generate intent means the user has an empty selection on an empty line.
  */
-export function isGenerateIntent(document: vscode.TextDocument, selection: vscode.Selection | vscode.Range): boolean {
+function isGenerateIntent(document: vscode.TextDocument, selection: vscode.Selection | vscode.Range): boolean {
     return selection.isEmpty && document.lineAt(selection.start.line).isEmptyOrWhitespace
 }
 
