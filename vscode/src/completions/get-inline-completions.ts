@@ -302,8 +302,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
     tracer?.({ context: contextResult })
 
-    // Completion providers
-    const completionProviders = getCompletionProviders({
+    const completionProvider = getCompletionProvider({
         document,
         position,
         triggerKind,
@@ -312,11 +311,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         dynamicMultilineCompletions,
         hotStreak,
     })
+
     tracer?.({
-        completers: completionProviders.map(({ options }) => ({
-            ...options,
-            completionIntent,
-        })),
+        completers: [
+            {
+                ...completionProvider.options,
+                completionIntent,
+            },
+        ],
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
@@ -332,7 +334,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({
         requestParams,
-        providers: completionProviders,
+        provider: completionProvider,
         context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
@@ -355,7 +357,7 @@ interface GetCompletionProvidersParams
     docContext: DocumentContext
 }
 
-function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
+function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     const { document, position, triggerKind, providerConfig, docContext, dynamicMultilineCompletions, hotStreak } =
         params
 
@@ -368,25 +370,22 @@ function getCompletionProviders(params: GetCompletionProvidersParams): Provider[
     }
 
     if (docContext.multilineTrigger) {
-        return [
-            providerConfig.create({
-                id: 'multiline',
-                ...sharedProviderOptions,
-                n: 3, // 3 vs. 1 does not meaningfully affect perf
-                multiline: true,
-            }),
-        ]
-    }
-    return [
-        providerConfig.create({
-            id: 'single-line-suffix',
+        return providerConfig.create({
+            id: 'multiline',
             ...sharedProviderOptions,
-            // Show more if manually triggered (but only showing 1 is faster, so we use it
-            // in the automatic trigger case).
-            n: triggerKind === TriggerKind.Automatic ? 1 : 3,
-            multiline: false,
-        }),
-    ]
+            n: 3, // 3 vs. 1 does not meaningfully affect perf
+            multiline: true,
+        })
+    }
+
+    return providerConfig.create({
+        id: 'single-line-suffix',
+        ...sharedProviderOptions,
+        // Show more if manually triggered (but only showing 1 is faster, so we use it
+        // in the automatic trigger case).
+        n: triggerKind === TriggerKind.Automatic ? 1 : 3,
+        multiline: false,
+    })
 }
 
 function createCompletionProviderTracer(

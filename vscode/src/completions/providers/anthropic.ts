@@ -5,7 +5,6 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -16,15 +15,11 @@ import {
     trimLeadingWhitespaceUntilNewline,
     type PrefixComponents,
 } from '../text-processing'
-import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
-import { messagesToText } from '../utils'
+import { forkSignal, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
 
-import {
-    generateCompletions,
-    getCompletionParamsAndFetchImpl,
-    getLineNumberDependentCompletionParams,
-} from './generate-completions'
+import { type FetchCompletionResult } from './fetch-and-process-completions'
+import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -136,16 +131,11 @@ class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
             providerOptions: this.options,
             lineNumberDependentCompletionParams,
@@ -157,17 +147,26 @@ class AnthropicProvider extends Provider {
             temperature: 0.5,
         }
 
-        await generateCompletions({
-            client: this.client,
-            requestParams,
-            abortSignal,
-            providerSpecificPostProcess: this.postProcess,
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                this.client.complete(requestParams, abortController),
+                requestParams.timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletionsImpl({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: this.postProcess,
+                providerOptions: this.options,
+            })
         })
+
+        return zipGenerators(completionsGenerators)
     }
 
     private postProcess = (rawResponse: string): string => {

@@ -7,6 +7,8 @@ import { type DocumentContext } from '../get-current-doc-context'
 import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
 
+import { type FetchCompletionResult } from './fetch-and-process-completions'
+
 export interface ProviderConfig {
     /**
      * A factory to create instances of the provider. This pattern allows us to
@@ -74,13 +76,8 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completions: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void>
+    ): AsyncGenerator<FetchCompletionResult[]>
 }
 
 /**

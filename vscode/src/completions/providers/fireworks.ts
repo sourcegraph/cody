@@ -5,16 +5,12 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import {
-    generateCompletions,
-    getCompletionParamsAndFetchImpl,
-    getLineNumberDependentCompletionParams,
-} from './generate-completions'
+import { type FetchCompletionResult } from './fetch-and-process-completions'
+import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -150,16 +146,11 @@ class FireworksProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
             providerOptions: this.options,
             timeouts: this.timeouts,
@@ -178,17 +169,26 @@ class FireworksProvider extends Provider {
                     : MODEL_MAP[this.model],
         }
 
-        await generateCompletions({
-            client: this.client,
-            requestParams,
-            abortSignal,
-            providerSpecificPostProcess: this.postProcess,
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                this.client.complete(requestParams, abortController),
+                requestParams.timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletionsImpl({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: this.postProcess,
+                providerOptions: this.options,
+            })
         })
+
+        return zipGenerators(completionsGenerators)
     }
 
     private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {

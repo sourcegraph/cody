@@ -1,19 +1,17 @@
 import { isDefined } from '@sourcegraph/cody-shared'
 import type { OllamaGenerateParameters, OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
 import type { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import type { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { isNodeResponse, type BrowserOrNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { isNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../../log'
-import { createTimeout, type CodeCompletionsClient } from '../client'
-import { forkSignal } from '../utils'
+import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient, type CompletionResponseGenerator } from '../client'
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
  */
-interface OllamaGenerateParams {
+export interface OllamaGenerateParams {
     model: string
     template: string
     prompt: string
@@ -42,9 +40,7 @@ interface OllamaGenerateErrorResponse {
     error?: string
 }
 
-export interface OllamaClientParams extends OllamaGenerateParams {
-    timeoutMs: number
-}
+const RESPONSE_SEPARATOR = /\r?\n/
 
 /**
  * The implementation is based on the `createClient` function from
@@ -53,30 +49,11 @@ export interface OllamaClientParams extends OllamaGenerateParams {
 export function createOllamaClient(
     ollamaOptions: OllamaOptions,
     logger?: CompletionLogger
-): CodeCompletionsClient<OllamaClientParams> {
-    function completeWithTimeout(
-        params: OllamaClientParams,
-        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const abortController = signal ? forkSignal(signal) : new AbortController()
-        const { timeoutMs, ...restParams } = params
-
-        return Promise.race([
-            complete(restParams, onPartialResponse, abortController.signal),
-            createTimeout(timeoutMs).finally(() => {
-                // We abort the network request in the next run loop so that the race promise can be
-                // rejected with the timeout error before that.
-                setTimeout(() => abortController.abort(), 0)
-            }),
-        ])
-    }
-
-    async function complete(
-        params: Omit<OllamaClientParams, 'timeoutMs'>,
-        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
+): CodeCompletionsClient<OllamaGenerateParams> {
+    async function* complete(
+        params: OllamaGenerateParams,
+        abortController: AbortController
+    ): CompletionResponseGenerator {
         const url = new URL('/api/generate', ollamaOptions.url).href
         const log = logger?.startCompletion(params, url)
 
@@ -87,7 +64,7 @@ export function createOllamaClient(
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                signal,
+                signal: abortController.signal,
             })
 
             if (!response.ok) {
@@ -95,7 +72,33 @@ export function createOllamaClient(
                 throw new Error(`ollama generation error: ${errorResponse?.error || 'unknown error'}`)
             }
 
-            const { responseText } = await ollamaStreamToResponseText(response, onPartialResponse)
+            if (!response.body) {
+                throw new Error('no response body')
+            }
+
+            const iterableBody = isNodeResponse(response)
+                ? response.body
+                : browserResponseToAsyncIterable(response.body)
+
+            let responseText = ''
+
+            for await (const chunk of iterableBody) {
+                for (const chunkString of chunk.toString().split(RESPONSE_SEPARATOR).filter(Boolean)) {
+                    const line = JSON.parse(chunkString) as OllamaGenerateResponse
+
+                    if (line.response) {
+                        responseText += line.response
+                        yield { completion: responseText, stopReason: STOP_REASON_STREAMING_CHUNK }
+                    }
+
+                    if (line.done && line.total_duration) {
+                        const timingInfo = formatOllamaTimingInfo(line)
+                        // TODO(valery): yield debug message with timing info to a tracer
+                        logDebug('ollama', 'generation done', timingInfo.join(' '))
+                    }
+                }
+            }
+
             log?.onComplete(responseText)
 
             return { completion: responseText, stopReason: '' }
@@ -109,51 +112,9 @@ export function createOllamaClient(
     }
 
     return {
-        complete: completeWithTimeout,
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        onConfigurationChange() {},
+        complete,
+        onConfigurationChange: () => undefined,
     }
-}
-
-const RESPONSE_SEPARATOR = /\r?\n/
-
-interface OllamaStreamToResponseTextResult {
-    responseText: string
-}
-
-async function ollamaStreamToResponseText(
-    response: BrowserOrNodeResponse,
-    onPartialResponse: (incompleteResponse: CompletionResponse) => void
-): Promise<OllamaStreamToResponseTextResult> {
-    if (!response.body) {
-        throw new Error('no response body')
-    }
-
-    let responseText = ''
-    const iterableBody = isNodeResponse(response) ? response.body : browserResponseToAsyncIterable(response.body)
-
-    for await (const chunk of iterableBody) {
-        chunk
-            .toString()
-            .split(RESPONSE_SEPARATOR)
-            .filter(Boolean)
-            .forEach(chunkString => {
-                const line = JSON.parse(chunkString) as OllamaGenerateResponse
-
-                if (line.response) {
-                    responseText += line.response
-                    onPartialResponse({ completion: responseText, stopReason: '' })
-                }
-
-                if (line.done && line.total_duration) {
-                    const timingInfo = formatOllamaTimingInfo(line)
-                    // TODO(valery): pass timing info as a debug message to a tracer.
-                    logDebug('ollama', 'generation done', timingInfo.join(' '))
-                }
-            })
-    }
-
-    return { responseText }
 }
 
 function formatOllamaTimingInfo(response: OllamaGenerateResponse): string[] {

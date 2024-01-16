@@ -37,6 +37,7 @@ const config = {
     'unicorn/prefer-dom-node-remove': 'off',
     'ban/ban': 'off',
     'react/no-array-index-key': 'off',
+    'jsdoc/require-yields': 'off',
 
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
