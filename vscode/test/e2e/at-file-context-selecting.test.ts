@@ -2,6 +2,8 @@ import path from 'path'
 
 import { expect } from '@playwright/test'
 
+import { isWindows } from '@sourcegraph/cody-shared'
+
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
@@ -17,7 +19,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('@')
     await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols..' })
+        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols...' })
     ).toBeVisible()
 
     // No results
@@ -51,7 +53,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     ).toBeVisible()
 
     // Backslashes
-    if (path.sep === path.win32.sep) {
+    if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
             chatPanelFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })

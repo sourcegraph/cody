@@ -5,6 +5,7 @@ import packageJson from '../package.json'
 const { properties } = packageJson.contributes.configuration
 
 export function defaultConfigurationValue(key: string): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const value = (properties as any)[key as any]?.default
     return value
 }
@@ -26,6 +27,7 @@ function getConfigFromPackageJson(): ConfigurationKeysMap {
         acc[keyProperty] = key as ConfigurationKeysMap[typeof keyProperty]
 
         return acc
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     }, {} as ConfigurationKeysMap)
 }
 
@@ -57,7 +59,7 @@ type CamelCaseDotSeparatedFragments<T extends string> = T extends `${infer A}.${
  *
  * We should avoid specifiying config keys manually and instead rely on constant.
  * No manual changes will be required in this file when changing configuration keys in package.json.
- * Typescript will error for all outdated/missing keys.
+ * TypeScript will error for all outdated/missing keys.
  */
 export const CONFIG_KEY = getConfigFromPackageJson()
 

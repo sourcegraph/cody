@@ -87,7 +87,7 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
-export class FireworksProvider extends Provider {
+class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>

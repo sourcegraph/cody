@@ -15,7 +15,7 @@ import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockSe
 
 import { type BillingCategory, type BillingProduct } from '.'
 
-export interface ExtensionDetails {
+interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     ideExtensionType: 'Cody' | 'CodeSearch'
 
@@ -68,14 +68,12 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
 export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
-    public readonly noOp = true
-
     constructor(processors?: TelemetryProcessor[]) {
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
 }
 
-export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
+const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
 /**
  * MockServerTelemetryRecorderProvider uses MockServerTelemetryExporter to export

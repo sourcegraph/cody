@@ -71,9 +71,11 @@ export function createLimiter(limit: number, timeout: number): Limiter {
                 reject,
             }
         })
+
         queue.push(queued! as Queued<unknown>)
         abortSignal?.addEventListener('abort', () => {
             // Only abort queued requests
+
             const index = queue.indexOf(queued! as Queued<unknown>)
             if (index < 0) {
                 return

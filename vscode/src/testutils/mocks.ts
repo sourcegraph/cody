@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable import/no-duplicates */
 /* eslint-disable @typescript-eslint/no-empty-function */
@@ -778,6 +775,7 @@ export const vsCodeMocks = {
     FoldingRangeKind,
     CodeActionKind,
     DiagnosticSeverity,
+    ViewColumn,
 } as const
 
 export function emptyEvent<T>(): vscode_types.Event<T> {

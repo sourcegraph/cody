@@ -50,6 +50,7 @@ In particular, 'autocomplete/execute' in `agent.ts` and was affected.
 It was required to add `(error as any)?.name === RateLimitError.errorName`.
  *  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
@@ -60,10 +61,6 @@ export class TracedError extends Error {
     ) {
         super(message)
     }
-}
-
-export function isTracedError(error: Error): error is TracedError {
-    return error instanceof TracedError
 }
 
 export class NetworkError extends Error {
@@ -88,7 +85,7 @@ export function isAuthError(error: unknown): boolean {
 }
 
 export class AbortError extends Error {
-    // Added to make Typescript understand that AbortError is not the same as Error.
+    // Added to make TypeScript understand that AbortError is not the same as Error.
     public readonly isAbortError = true
 }
 

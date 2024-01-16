@@ -7,8 +7,7 @@ import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegr
 import { TranscriptAction } from '../actions/TranscriptAction'
 
 export interface FileLinkProps {
-    uri?: URI
-    path: string
+    uri: URI
     repoName?: string
     revision?: string
     source?: string
@@ -24,13 +23,13 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const uniqueFiles = new Set<string>()
+    const uniqueFiles = new Set<string /* uri.toString() */>()
 
     const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.fileName)) {
+        if (uniqueFiles.has(file.uri.toString())) {
             return false
         }
-        uniqueFiles.add(file.fileName)
+        uniqueFiles.add(file.uri.toString())
         return true
     })
 
@@ -62,7 +61,6 @@ export const EnhancedContext: React.FunctionComponent<{
                 object: (
                     <FileLink
                         uri={file.uri}
-                        path={file.fileName}
                         repoName={file.repoName}
                         revision={file.revision}
                         source={file.source}

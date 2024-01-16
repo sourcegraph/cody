@@ -19,17 +19,13 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
-    GET_CODY_CONTEXT_QUERY,
     GET_FEATURE_FLAGS_QUERY,
-    IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
-    REPOSITORY_IDS_QUERY,
-    REPOSITORY_NAMES_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
@@ -97,14 +93,6 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
-interface RepositoryIdsResponse {
-    repositories: { nodes: { id: string; name: string }[] }
-}
-
-interface RepositoryNamesResponse {
-    repositories: { nodes: { id: string; name: string }[] }
-}
-
 interface RepositoryEmbeddingExistsResponse {
     repository: { id: string; embeddingExists: boolean } | null
 }
@@ -115,30 +103,6 @@ interface EmbeddingsSearchResponse {
 
 interface EmbeddingsMultiSearchResponse {
     embeddingsMultiSearch: EmbeddingsSearchResults
-}
-
-interface CodyFileChunkContext {
-    __typename: 'FileChunkContext'
-    blob: {
-        path: string
-        repository: {
-            id: string
-            name: string
-        }
-        commit: {
-            id: string
-            oid: string
-        }
-    }
-    startLine: number
-    endLine: number
-    chunkContent: string
-}
-
-type GetCodyContextResult = CodyFileChunkContext | null
-
-interface GetCodyContextResponse {
-    getCodyContext: GetCodyContextResult[]
 }
 
 interface SearchAttributionResponse {
@@ -164,7 +128,7 @@ export interface EmbeddingsSearchResults {
     textResults: EmbeddingsSearchResult[]
 }
 
-export interface SearchAttributionResults {
+interface SearchAttributionResults {
     limitHit: boolean
     nodes: { repositoryName: string }[]
 }
@@ -179,17 +143,13 @@ export interface CodyLLMSiteConfiguration {
     provider?: string
 }
 
-export interface CurrentUserInfo {
+interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
-}
-
-interface IsContextRequiredForChatQueryResponse {
-    isContextRequiredForChatQuery: boolean
 }
 
 interface EvaluatedFeatureFlag {
@@ -389,27 +349,10 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider }
     }
 
-    public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
-            names,
-            first: names.length,
-        }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
-    }
-
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
-    }
-
-    public async getRepoNames(first: number): Promise<string[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryNamesResponse>>(REPOSITORY_NAMES_QUERY, { first }).then(
-            response =>
-                extractDataOrError(
-                    response,
-                    data => data?.repositories?.nodes?.map((node: { id: string; name: string }) => node?.name) || []
-                )
-        )
     }
 
     public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
@@ -594,20 +537,6 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async getCodyContext(
-        repos: string[],
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<GetCodyContextResult[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<GetCodyContextResponse>>(GET_CODY_CONTEXT_QUERY, {
-            repos,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.getCodyContext))
-    }
-
     public async searchEmbeddings(
         repos: string[],
         query: string,
@@ -643,23 +572,14 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
-            query,
-        }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
-    }
-
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
             response =>
                 extractDataOrError(response, data =>
-                    data.evaluatedFeatureFlags.reduce(
-                        (acc, { name, value }) => {
-                            acc[name] = value
-                            return acc
-                        },
-                        {} as Record<string, boolean>
-                    )
+                    data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
+                        acc[name] = value
+                        return acc
+                    }, {})
                 )
         )
     }
@@ -752,9 +672,6 @@ async function verifyResponseCode(response: Response): Promise<Response> {
     }
     return response
 }
-
-class RepoNotFoundError extends Error {}
-export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
 
 export type LogEventMode =
     | 'dotcom-only' // only log to dotcom

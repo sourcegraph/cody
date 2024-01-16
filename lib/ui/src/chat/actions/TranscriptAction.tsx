@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import styles from './TranscriptAction.module.css'
 
-export interface TranscriptActionStep {
+interface TranscriptActionStep {
     verb: string
     object: string | JSX.Element
 

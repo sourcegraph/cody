@@ -53,7 +53,7 @@ export const RequestErrorItem: React.FunctionComponent<{
     )
 })
 
-export const ContextWindowLimitErrorItem: React.FunctionComponent<{
+const ContextWindowLimitErrorItem: React.FunctionComponent<{
     error: ContextWindowLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     postMessage: ApiPostMessage
@@ -85,7 +85,7 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
 /**
  * An error message shown in the chat.
  */
-export const RateLimitErrorItem: React.FunctionComponent<{
+const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo: UserAccountInfo

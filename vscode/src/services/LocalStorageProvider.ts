@@ -18,7 +18,7 @@ type AccountKeyedChatHistory = {
     input: []
 }
 
-export class LocalStorage {
+class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
@@ -112,6 +112,7 @@ export class LocalStorage {
             return { chat: {}, input: [] }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         return (history as any)[key]
     }
 
@@ -179,12 +180,12 @@ export class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async setLastUsedCommands(recipes: string[]): Promise<void> {
-        if (recipes.length === 0) {
+    public async setLastUsedCommands(commands: string[]): Promise<void> {
+        if (commands.length === 0) {
             return
         }
         try {
-            await this.storage.update(this.KEY_LAST_USED_RECIPES, recipes)
+            await this.storage.update(this.KEY_LAST_USED_RECIPES, commands)
         } catch (error) {
             console.error(error)
         }

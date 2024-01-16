@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
@@ -25,9 +25,9 @@ function getLabelForContextFile(file: ContextFile): string {
     const isFileType = file.type === 'file'
     const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
     if (isFileType) {
-        return `${file.path?.relative}${rangeLabel}`
+        return `${displayPath(file.uri)}${rangeLabel}`
     }
-    return `${file.path?.relative}${rangeLabel}#${file.fileName}`
+    return `${displayPath(file.uri)}${rangeLabel}#${file.symbolName}`
 }
 
 /**
@@ -56,7 +56,7 @@ const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 const MATCHING_SYMBOL_REGEX = /@#(\S+)$/
 
 const MAX_FUZZY_RESULTS = 20
-const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols..'
+const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols...'
 const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
 const NO_MATCHES_LABEL = 'No matches found'
 
@@ -92,7 +92,7 @@ export class FixupTypingUI {
                 key: getLabelForContextFile(result),
                 file: result,
                 shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
-                    result.fileName
+                    result.symbolName
                 }`,
             }))
         }
@@ -139,6 +139,7 @@ export class FixupTypingUI {
 
         // VS Code automatically sorts quick pick items by label.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ;(quickPick as any).sortByLabel = false
 
         if (source === 'menu') {

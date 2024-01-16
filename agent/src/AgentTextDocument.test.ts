@@ -3,12 +3,14 @@ import assert from 'assert'
 import { describe, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { testFileUri } from '@sourcegraph/cody-shared'
+
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 
 describe('AgentTextDocument', () => {
-    const uri = vscode.Uri.file('foo')
+    const uri = testFileUri('foo')
     const basic = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
     const basicCrlf = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' }))
     const emptyLine = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\n\n' }))

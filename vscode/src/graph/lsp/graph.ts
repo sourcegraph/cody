@@ -39,7 +39,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     const label = 'getGraphContextFromEditor'
     performance.mark(label)
 
-    const uri = workspaceRootUri.with({ path: activeEditor.filePath })
+    const uri = activeEditor.fileUri
     const contexts = await getGraphContextFromSelection(
         [{ uri, range: activeEditor.selectionRange }],
         new Map([[uri.fsPath, activeEditor.content.split('\n')]]),
@@ -543,7 +543,7 @@ export const extractDefinitionContexts = async (
 /**
  * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
  */
-export const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
+const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
     vscode.commands
         .executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[] | undefined>(
             'vscode.executeDocumentSymbolProvider',

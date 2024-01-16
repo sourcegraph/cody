@@ -15,11 +15,9 @@ export async function beforeIntegrationTest(): Promise<void> {
     const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
     assert.ok(api, 'extension not found')
 
-    // TODO(sqs): ensure this doesn't run the activate func multiple times
     await api?.activate()
 
     // Wait for Cody to become activated.
-    // TODO(sqs)
     await new Promise(resolve => setTimeout(resolve, 200))
 
     // Configure extension.
@@ -82,4 +80,41 @@ export async function getTextEditorWithSelection(): Promise<void> {
 
     // Select the "main" method
     textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+}
+
+/**
+ * For testing only. Return a platform-native absolute path for a filename. Tests should almost
+ * always use this instead of {@link URI.file}. Only use {@link URI.file} directly if the test is
+ * platform-specific.
+ *
+ * For macOS/Linux, it returns `/file`. For Windows, it returns `C:\file`.
+ * @param relativePath The name/relative path of the file (with forward slashes).
+ *
+ * NOTE: Copied from @sourcegraph/cody-shared because the test module can't require it (because it's
+ * ESM).
+ */
+export function testFileUri(relativePath: string): vscode.Uri {
+    return vscode.Uri.file(isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`)
+}
+
+/**
+ * Report whether the current OS is Windows.
+ *
+ * NOTE: Copied from @sourcegraph/cody-shared because the test module can't require it (because it's
+ * ESM).
+ */
+function isWindows(): boolean {
+    // For Node environments (such as VS Code Desktop).
+    if (typeof process !== 'undefined') {
+        if (process.platform) {
+            return process.platform.startsWith('win')
+        }
+    }
+
+    // For web environments (such as webviews and VS Code Web).
+    if (typeof navigator === 'object') {
+        return navigator.userAgent.toLowerCase().includes('windows')
+    }
+
+    return false // default
 }

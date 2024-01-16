@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { type Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { type Configuration, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -8,6 +7,9 @@ import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/
 import { type CommandsController } from './commands/CommandsController'
 import { type BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
+
+import './editor/displayPathEnvInfo' // import for side effects
+
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
@@ -35,7 +37,6 @@ export interface PlatformContext {
     createOpenTelemetryService?: (
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
     ) => OpenTelemetryService
-    recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }
 

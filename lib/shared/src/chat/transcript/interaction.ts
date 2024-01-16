@@ -1,7 +1,7 @@
 import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
-import { isCodyIgnoredFile, isCodyIgnoredFilePath } from '../context-filter'
+import { isCodyIgnoredFile } from '../context-filter'
 
-import { type ChatMessage, type ChatMetadata, type InteractionMessage } from './messages'
+import { type ChatMessage, type InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage
@@ -41,17 +41,9 @@ export class Interaction {
             const message = contextMessages[i]
             // Skips the assistant message if the human message is ignored
             if (message.speaker === 'human' && message.file) {
-                const { uri, repoName, fileName, source } = message.file
-                if (uri && isCodyIgnoredFile(uri)) {
+                if (isCodyIgnoredFile(message.file.uri)) {
                     i++
                     continue
-                }
-                // Filter embedding results from the current workspace
-                if (source === 'embeddings') {
-                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
-                        i++
-                        continue
-                    }
                 }
             }
             newMessages.push(message)
@@ -60,19 +52,12 @@ export class Interaction {
         return newMessages
     }
 
-    private metadata?: ChatMetadata
-    public setMetadata(metadata: ChatMetadata): void {
-        this.metadata = metadata
-        this.humanMessage.metadata = this.metadata
-        this.assistantMessage.metadata = this.metadata
-    }
-
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        this.assistantMessage = { ...assistantMessage, metadata: this.metadata }
+        this.assistantMessage = { ...assistantMessage }
     }
 
     public getHumanMessage(): InteractionMessage {
@@ -82,11 +67,6 @@ export class Interaction {
     public async getFullContext(): Promise<ContextMessage[]> {
         const msgs = await this.removeCodyIgnoredFiles()
         return msgs.map(msg => ({ ...msg }))
-    }
-
-    public async hasContext(): Promise<boolean> {
-        const contextMessages = await this.removeCodyIgnoredFiles()
-        return contextMessages.length > 0
     }
 
     public setUsedContext(usedContextFiles: ContextFile[], usedPreciseContext: PreciseContext[]): void {
@@ -110,21 +90,5 @@ export class Interaction {
                 preciseContext: this.usedPreciseContext,
             },
         ]
-    }
-
-    public async toChatPromise(): Promise<ChatMessage[]> {
-        await this.fullContext
-        return this.toChat()
-    }
-
-    public async toJSON(): Promise<InteractionJSON> {
-        return {
-            humanMessage: this.humanMessage,
-            assistantMessage: this.assistantMessage,
-            fullContext: await this.fullContext,
-            usedContextFiles: this.usedContextFiles,
-            usedPreciseContext: this.usedPreciseContext,
-            timestamp: this.timestamp,
-        }
     }
 }

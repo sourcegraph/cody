@@ -3,16 +3,11 @@ import { type URI } from 'vscode-uri'
 import { type ContextFile } from '../codebase-context/messages'
 import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
-export interface ContextResult extends ContextFile {
+export type ContextResult = ContextFile & {
     repoName?: string
     revision?: string
     fileName: string
     content: string
-}
-
-export interface KeywordContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
-    getSearchContext(query: string, numResults: number): Promise<ContextResult[]>
 }
 
 export interface FilenameContextFetcher {
@@ -23,12 +18,12 @@ export interface LocalEmbeddingsFetcher {
     getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
-export interface Point {
+interface Point {
     row: number
     col: number
 }
 
-export interface Range {
+interface Range {
     startByte: number
     endByte: number
     startPoint: Point

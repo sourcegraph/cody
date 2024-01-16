@@ -10,7 +10,7 @@ import { normalizeStartLine, truncateMultilineCompletion } from './truncate-mult
 import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { getFirstLine } from './utils'
 
-export interface ParseAndTruncateParams {
+interface ParseAndTruncateParams {
     document: TextDocument
     docContext: DocumentContext
     isDynamicMultilineCompletion?: boolean
@@ -87,7 +87,7 @@ interface TruncateMultilineBlockResult {
     nodeToInsert?: SyntaxNode
 }
 
-export function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
+function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
     const { parsed, docContext, document } = params
 
     if (parsed.tree) {

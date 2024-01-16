@@ -138,7 +138,7 @@ async function ollamaStreamToResponseText(
             .split(RESPONSE_SEPARATOR)
             .filter(Boolean)
             .forEach(chunkString => {
-                const line = JSON.parse(chunkString)
+                const line = JSON.parse(chunkString) as OllamaGenerateResponse
 
                 if (line.response) {
                     responseText += line.response

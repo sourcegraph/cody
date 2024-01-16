@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
+    displayPath,
     isDefined,
     type ChatButton,
     type ChatMessage,
@@ -251,10 +252,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputPrefix = input.slice(0, lastAtIndex)
-                const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
-                const symbolName = isFileType ? '' : `#${selected.fileName}`
-                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
+                const symbolName = selected.type === 'file' ? '' : `#${selected.symbolName}`
+                const fileDisplayText = `@${displayPath(selected.uri)}${range}${symbolName}`
                 // Add empty space at the end to end the file matching process
                 const newInput = `${inputPrefix}${fileDisplayText} `
 

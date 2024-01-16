@@ -221,7 +221,7 @@ cases.forEach(isTreeSitterEnabled => {
                 expect(pick(item, ['insertText', 'nodeTypes', 'nodeTypesWithCompletion', 'parseErrorCount']))
                     .toMatchInlineSnapshot(`
                       {
-                        "insertText": "\\"one\\"",
+                        "insertText": ""one"",
                         "nodeTypes": {
                           "atCursor": "program",
                           "grandparent": undefined,

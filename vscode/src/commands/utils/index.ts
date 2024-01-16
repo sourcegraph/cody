@@ -1,13 +1,8 @@
 import { type QuickPickItem } from 'vscode'
 
-import { type CodyCommandType, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 
-export type CustomCommandMenuAction = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'docs' | 'back'
-
-export interface CustomCommandMenuAnswer {
-    actionID: CustomCommandMenuAction
-    commandType: CodyCommandType
-}
+type CustomCommandMenuAction = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'docs' | 'back'
 
 export interface UserWorkspaceInfo {
     homeDir: string

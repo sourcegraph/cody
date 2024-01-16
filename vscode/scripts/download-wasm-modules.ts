@@ -4,10 +4,8 @@ import path from 'path'
 
 import ProgressBar from 'progress'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
-
-const DIST_DIRECTORY = path.join(ROOT_PATH, 'vscode/dist')
-const WASM_DIRECTORY = path.join(ROOT_PATH, 'vscode/resources/wasm')
+const DIST_DIRECTORY = path.join(__dirname, '../dist')
+const WASM_DIRECTORY = path.join(__dirname, '../resources/wasm')
 
 // We have to manually copy this because it's resolved by tree-sitter package
 // relative to the current `__dirname` which works fine if we do not bundle `node_modules`
@@ -120,6 +118,7 @@ function downloadFile(url: string): Promise<WriteStream> {
 
             res.on('data', (chunk): void => {
                 file.write(chunk)
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 progress.tick(chunk.length)
             })
                 .on('end', () => {

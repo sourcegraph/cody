@@ -4,7 +4,7 @@ import { type DocumentContext } from './get-current-doc-context'
 import { parseAndTruncateCompletion } from './text-processing/parse-and-truncate-completion'
 import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
-export interface CanUsePartialCompletionParams {
+interface CanUsePartialCompletionParams {
     document: TextDocument
     docContext: DocumentContext
     isDynamicMultilineCompletion?: boolean
