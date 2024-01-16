@@ -201,7 +201,7 @@ export class CodebaseContext {
         return results
     }
 
-    private async getGraphContextMessages(): Promise<ContextMessage[]> {
+    public async getGraphContextMessages(): Promise<ContextMessage[]> {
         if (!this.config.experimentalLocalSymbols || !this.graph) {
             return []
         }

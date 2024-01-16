@@ -1,6 +1,7 @@
 import { CodebaseContext } from '../codebase-context'
 import { type ConfigurationWithAccessToken } from '../configuration'
 import { type Editor } from '../editor'
+import { withPreselectedOptions, type PrefilledOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
@@ -88,7 +89,7 @@ export async function createClient({
             null
         )
 
-        const intentDetector = new SourcegraphIntentDetectorClient(completionsClient)
+        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
         const transcript = initialTranscript || new Transcript()
 
@@ -113,11 +114,16 @@ export async function createClient({
             }
         }
 
-        async function executeChat(options?: { humanChatInput?: string }): Promise<void> {
+        async function executeChat(options?: {
+            signal?: AbortSignal
+            prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
+            data?: any
+        }): Promise<void> {
             const humanChatInput = options?.humanChatInput ?? ''
 
             const interaction = await new OldChatQuestion(() => {}).getInteraction(humanChatInput, {
-                editor,
+                editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
@@ -137,31 +143,35 @@ export async function createClient({
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
             const chatPromise = new Promise<void>((resolve, reject) => {
-                chatClient.chat(prompt, {
+                const onAbort = chatClient.chat(prompt, {
                     onChange(_rawText) {
                         rawText = _rawText
 
                         const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
 
-                        sendTranscript()
+                        sendTranscript(options?.data)
                     },
                     onComplete() {
                         isMessageInProgress = false
 
                         const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
-                        sendTranscript()
+                        sendTranscript(options?.data)
                         resolve()
                     },
                     onError(error: Error) {
                         // Display error message as assistant response
                         transcript.addErrorAsAssistantResponse(error)
                         isMessageInProgress = false
-                        sendTranscript()
+                        sendTranscript(options?.data)
                         console.error(`Completion request failed: ${error}`)
                         reject(error)
                     },
+                })
+                options?.signal?.addEventListener('abort', () => {
+                    onAbort()
+                    isMessageInProgress = false
                 })
             })
             await chatPromise

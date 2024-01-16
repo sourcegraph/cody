@@ -137,6 +137,11 @@ query SnippetAttribution($snippet: String!) {
     }
 }`
 
+export const IS_CONTEXT_REQUIRED_QUERY = `
+query IsContextRequiredForChatQuery($query: String!) {
+	isContextRequiredForChatQuery(query: $query)
+}`
+
 /**
  * Deprecated following new event structure: https://github.com/sourcegraph/sourcegraph/pull/55126.
  */
