@@ -36,8 +36,6 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
             },
         },
         matchRequestsBy: {
-            // Need to take into account access tokens. Otherwise we return the
-            // same reply regardless of the access token.
             order: false,
 
             // The logic below is a bit tricky to follow. Simplified, we need to

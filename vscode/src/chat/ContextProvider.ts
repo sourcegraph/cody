@@ -126,8 +126,9 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         }
 
         if (this.configurationChangeEvent instanceof AgentEventEmitter) {
-            // NOTE: we must return a promise here to allow the agent to
-            // await on changes to authentication credentials.
+            // NOTE: we must return a promise here from the event handlers to
+            // allow the agent to await on changes to authentication
+            // credentials.
             return this.configurationChangeEvent.cody_fireAsync(null)
         }
 

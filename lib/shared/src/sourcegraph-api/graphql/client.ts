@@ -214,7 +214,7 @@ export class SourcegraphGraphQLAPIClient {
      */
     private _config: GraphQLAPIClientConfig | null = null
 
-    public get config(): GraphQLAPIClientConfig {
+    private get config(): GraphQLAPIClientConfig {
         if (!this._config) {
             throw new Error('GraphQLAPIClientConfig is not set')
         }

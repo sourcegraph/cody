@@ -22,6 +22,11 @@ interface InlineCompletionItemProviderArgs {
     createBfgRetriever?: () => BfgRetriever
 }
 
+/**
+ * Inline completion item providers that always returns an empty reply.
+ * Implemented as a class instead of anonymous function so that you can identify
+ * it with `console.log()` debugging.
+ */
 class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     public provideInlineCompletionItems(
         _document: vscode.TextDocument,

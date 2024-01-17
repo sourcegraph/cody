@@ -651,12 +651,11 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         }
 
-        // TODO(olafurpg): consider rejecting promise for unknown commands. I
-        // Silently ignore missing commands because
+        // We only log a debug warning when unknown commands are invoked because
+        // the extension triggers quite a few commands that are not getting activated
+        // inside the agent yet.
         logDebug('vscode.commands.executeCommand', 'not found', command)
-        // just spent a while debugging why a command was silently returning
-        // undefined when I was executing the wrong command.
-        // return Promise.reject(new Error(`command not found: '${command}'`))
+
         return Promise.resolve(undefined)
     },
 }

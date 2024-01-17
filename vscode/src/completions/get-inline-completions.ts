@@ -249,7 +249,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   handleDidPartiallyAcceptCompletionItem,
               })
             : null
-
     if (resultToReuse) {
         return resultToReuse
     }

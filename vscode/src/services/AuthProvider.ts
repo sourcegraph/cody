@@ -223,7 +223,6 @@ export class AuthProvider {
         if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
-
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {
             this.config = config
@@ -459,11 +458,6 @@ function formatURL(uri: string): string | null {
         console.error('Invalid URL')
     }
     return null
-}
-
-export interface AuthTestResult {
-    isLoggedIn: boolean
-    authStatus: AuthStatus
 }
 
 async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
