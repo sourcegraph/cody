@@ -27,13 +27,15 @@ describe('createDefaultTestFileNameByLanguageExt', () => {
 
 describe('convertFileUriToTestFileUri', () => {
     it('should return the current file uri if it is already a test file', () => {
-        const testFile = URI.file('/path/to/testFile.test.ts')
-        expect(convertFileUriToTestFileUri(testFile)).toBe(testFile)
+        expect(convertFileUriToTestFileUri(URI.file('/path/to/testFile.test.ts')).toString()).toBe(
+            URI.file('/path/to/testFile.test.ts').toString()
+        )
     })
 
     it('should return the current file uri if it is already a spec file', () => {
-        const testFile = URI.file('/path/to/testFile.spec.rb')
-        expect(convertFileUriToTestFileUri(testFile)).toBe(testFile)
+        expect(convertFileUriToTestFileUri(URI.file('/path/to/testFile.spec.rb')).toString()).toBe(
+            URI.file('/path/to/testFile.spec.rb').toString()
+        )
     })
 
     it('should generate a test file uri from a non-test file uri', () => {
