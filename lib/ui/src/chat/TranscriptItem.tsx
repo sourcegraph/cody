@@ -63,6 +63,7 @@ export const TranscriptItem: React.FunctionComponent<
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
+        isEnhancedContextEnabled: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -92,6 +93,7 @@ export const TranscriptItem: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
+    isEnhancedContextEnabled,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -205,7 +207,7 @@ export const TranscriptItem: React.FunctionComponent<
                             className={transcriptActionClassName}
                         />
                     ) : (
-                        inProgress && <LoadingContext />
+                        inProgress && <LoadingContext isEnhancedContextEnabled={isEnhancedContextEnabled} />
                     )}
                 </div>
             )}

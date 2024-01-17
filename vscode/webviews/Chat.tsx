@@ -232,6 +232,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            isEnhancedContextEnabled={addEnhancedContext}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
         />

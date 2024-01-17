@@ -47,6 +47,7 @@ export const Transcript: React.FunctionComponent<
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
+        isEnhancedContextEnabled: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -79,6 +80,7 @@ export const Transcript: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
+    isEnhancedContextEnabled,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -185,6 +187,7 @@ export const Transcript: React.FunctionComponent<
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
+                    isEnhancedContextEnabled={isEnhancedContextEnabled}
                 />
             )
         }
@@ -229,6 +232,7 @@ export const Transcript: React.FunctionComponent<
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
                         userInfo={userInfo}
+                        isEnhancedContextEnabled={isEnhancedContextEnabled}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
