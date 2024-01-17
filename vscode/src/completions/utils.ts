@@ -68,6 +68,24 @@ export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncG
     }
 }
 
+export async function* generatorWithErrorObserver<T>(
+    generator: AsyncGenerator<T>,
+    errorCallback: (error: unknown) => void
+): AsyncGenerator<T> {
+    while (true) {
+        try {
+            const res = await generator.next()
+            if (res.done) {
+                return
+            }
+            yield res.value
+        } catch (error: unknown) {
+            errorCallback(error)
+            throw error
+        }
+    }
+}
+
 export async function* generatorWithTimeout<T>(
     generator: AsyncGenerator<T>,
     timeoutMs: number,

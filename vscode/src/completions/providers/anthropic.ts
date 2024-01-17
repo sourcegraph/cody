@@ -15,7 +15,7 @@ import {
     type PrefixComponents,
 } from '../text-processing'
 import { type ContextSnippet } from '../types'
-import { forkSignal, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
 
 import { type FetchCompletionResult } from './fetch-and-process-completions'
 import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
@@ -36,6 +36,8 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
     multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
 })
+
+let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
 
 interface AnthropicOptions {
     model?: string // The model identifier that is being used by the server's site config.
@@ -158,7 +160,10 @@ class AnthropicProvider extends Provider {
             // Note: This behavior only works when Cody Gateway is used (as that's the only backend
             //       that supports switching between providers at the same time). We also only allow
             //       models that are allowlisted on a recent SG server build to avoid regressions.
-            model: isAllowlistedModel(this.model) ? this.model : undefined,
+            model:
+                !isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist && isAllowlistedModel(this.model)
+                    ? this.model
+                    : undefined,
         }
 
         tracer?.params(requestParams)
@@ -166,10 +171,29 @@ class AnthropicProvider extends Provider {
         const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
             const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
-                requestParams.timeoutMs,
-                abortController
+            const completionResponseGenerator = generatorWithErrorObserver(
+                generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                ),
+                error => {
+                    if (error instanceof Error) {
+                        // If an "unsupported code completion model" error is thrown for Anthropic,
+                        // it's most likely because we started adding the `model` identifier to
+                        // requests to ensure the clients does not crash when the default site
+                        // config value changes.
+                        //
+                        // Older instances do not allow for the `model` to be set, even to
+                        // identifiers it supports and thus the error.
+                        //
+                        // If it happens once, we disable the behavior where the client includes a
+                        // `model` parameter.
+                        if (error.message.includes('Unsupported code completion model')) {
+                            isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                        }
+                    }
+                }
             )
 
             return fetchAndProcessCompletionsImpl({
