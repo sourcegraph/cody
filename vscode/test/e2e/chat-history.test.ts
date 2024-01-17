@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('checks if chat history shows up in sidebar correctly', async ({ page, sidebar }) => {
+test('checks if chat history shows up in sidebar and open on click correctly', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -21,9 +21,11 @@ test('checks if chat history shows up in sidebar correctly', async ({ page, side
     ).toBeVisible()
 
     // Clear and restart chat session
+    // All current messages should be removed, and the panel name should be updated to 'New Chat'
     await chatInput.fill('/reset')
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText('Hey')).not.toBeVisible()
+    await expect(page.getByRole('tab', { name: 'New Chat' })).toBeVisible()
 
     // Submit a new message and check if both sessions are showing up in the sidebar
     await chatInput.fill('Hola')
@@ -34,4 +36,13 @@ test('checks if chat history shows up in sidebar correctly', async ({ page, side
     await expect(
         page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3)
     ).toBeVisible()
+
+    // The panel name is now updated to the last submitted message
+    await expect(page.getByRole('tab', { name: 'Hola' })).toBeVisible()
+
+    // Click on the previous chat session to open the chat panel in editor
+    // Both chat panels should be visible as tabs in the editor
+    await page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3).click()
+    await expect(page.getByRole('tab', { name: 'Hola' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Hey' })).toBeVisible()
 })
