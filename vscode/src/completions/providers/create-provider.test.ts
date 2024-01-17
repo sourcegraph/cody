@@ -125,7 +125,7 @@ describe('createProviderConfig', () => {
                 { codyLLMConfig: { provider: 'sourcegraph', completionModel: 'hello-world' }, expected: null },
                 {
                     codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/claude-instant-1.2' },
-                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
+                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
                 },
                 {
                     codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/' },

@@ -91,7 +91,11 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return createAnthropicProviderConfig({ client, model: codyLLMSiteConfig.completionModel })
+                return createAnthropicProviderConfig({
+                    client,
+                    // Only pass through the upstream-defined model if we're using Cody Gateway
+                    model: codyLLMSiteConfig.provider === 'sourcegraph' ? codyLLMSiteConfig.completionModel : undefined,
+                })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
