@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('checks if chat history shows up in sidebar and open on click correctly', async ({ page, sidebar }) => {
+test('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -45,4 +45,10 @@ test('checks if chat history shows up in sidebar and open on click correctly', a
     await page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3).click()
     await expect(page.getByRole('tab', { name: 'Hola' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hey' })).toBeVisible()
+
+    // Click the delete chat button twice to remove the chats we submitted
+    // Once the chat history is empty, the 'New Chat' button should show up
+    await page.getByLabel('Delete Chat').last().click()
+    await page.getByLabel('Delete Chat').last().click()
+    await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
 })
