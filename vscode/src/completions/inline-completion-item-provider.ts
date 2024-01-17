@@ -402,7 +402,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: autocompleteItems,
+                    items: updateInsertRangeForVSCode(autocompleteItems),
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
@@ -413,10 +413,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
-                return {
-                    ...autocompleteResult,
-                    items: updateInsertRangeForVSCode(autocompleteItems),
-                }
+                return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)
                 throw error
