@@ -6,7 +6,6 @@ import fspromises from 'fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
-    Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
     Location as VSCodeLocation,
     Position as VSCodePosition,
@@ -16,23 +15,13 @@ import type {
 import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export class Disposable implements VSCodeDisposable {
-    public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
-        return new Disposable(() => {
-            for (const disposable of disposableLikes) {
-                disposable.dispose()
-            }
-        })
-    }
-    constructor(private readonly callOnDispose: () => any) {}
-    public dispose(): void {
-        this.callOnDispose()
-    }
-}
+export { Disposable } from './Disposable'
+export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -434,13 +423,6 @@ export class WorkspaceEdit {
     }
 }
 
-export interface Callback {
-    handler: (arg?: any) => any
-    thisArg?: any
-}
-export function invokeCallback(callback: Callback, arg?: any): any {
-    return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
-}
 export const emptyDisposable = new Disposable(() => {})
 
 export enum EndOfLine {

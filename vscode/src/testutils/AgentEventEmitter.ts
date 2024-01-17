@@ -1,6 +1,15 @@
 import type * as vscode_types from 'vscode'
 
-import { Disposable, invokeCallback, type Callback } from './mocks'
+import { Disposable } from './Disposable'
+
+interface Callback {
+    handler: (arg?: any) => any
+    thisArg?: any
+}
+
+function invokeCallback(callback: Callback, arg?: any): any {
+    return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
+}
 
 /**
  * Implementation of `vscode.EventEmitter` with a single modification: there's
