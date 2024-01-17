@@ -1,9 +1,13 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import {
+    ConfigFeaturesSingleton,
+    FeatureFlag,
+    featureFlagProvider,
+    isCodyIgnoredFile,
+    RateLimitError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
@@ -186,6 +190,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const completionRequest: CompletionRequest = { document, position, context }
             this.lastCompletionRequest = completionRequest
 
+            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+            try {
+                if (!configFeatures.autoComplete) {
+                    // If Configfeatures exists and autocomplete is disabled then raise
+                    // the error banner for autocomplete config turned off
+                    throw new Error('AutocompleteConfigTurnedOff')
+                }
+            } catch (error) {
+                this.onError(error as Error)
+                throw error
+            }
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {
@@ -605,6 +621,26 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
+        if (error.message === 'AutocompleteConfigTurnedOff') {
+            const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
+            // If there's already an existing error, don't add another one.
+            const hasAutocompleteDisabledBanner = this.config.statusBar.hasError('AutoCompleteDisabledByAdmin')
+            if (hasAutocompleteDisabledBanner) {
+                return
+            }
+            let shown = false
+            this.config.statusBar.addError({
+                title: errorTitle,
+                description: 'Contact your Sourcegraph site admin to enable autocomplete',
+                errorType: 'AutoCompleteDisabledByAdmin',
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                },
+            })
+        }
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459

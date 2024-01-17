@@ -1,6 +1,9 @@
-import { type SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { GraphQLTelemetryExporter } from '@sourcegraph/cody-shared/src/sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import {
+    GraphQLTelemetryExporter,
+    type BillingCategory,
+    type BillingProduct,
+    type SourcegraphGraphQLAPIClient,
+} from '@sourcegraph/cody-shared'
 import {
     defaultEventRecordingOptions,
     MarketingTrackingTelemetryProcessor,

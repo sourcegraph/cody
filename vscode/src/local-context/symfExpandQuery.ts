@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
 
-import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 
 export function symfExpandQuery(completionsClient: SourcegraphCompletionsClient, query: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {

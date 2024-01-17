@@ -1,9 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
-    type ContextGroup,
-    type ContextStatusProvider,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ContextGroup, type ContextStatusProvider } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -148,7 +145,6 @@ export class ContextStatusAggregator implements vscode.Disposable, ContextStatus
 
     // TODO: Create a publisher to push into the webview
     // TODO: Hook in local embeddings
-    // TODO: Hook in cloud embeddings
     // TODO: Hook in symf
     // TODO: Hook in graph
     // TODO: Hook in the Cody: building code index ... notification pusher's

@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { vsCodeMocks } from '../../testutils/mocks'
 import { InlineCompletionsResultSource } from '../get-inline-completions'

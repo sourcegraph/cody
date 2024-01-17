@@ -6,14 +6,19 @@ import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
-import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
+import {
+    convertGitCloneURLToCodebaseName,
+    createClient,
+    FeatureFlag,
+    featureFlagProvider,
+    isRateLimitError,
+    NoOpTelemetryRecorderProvider,
+    setUserAgent,
+    type BillingCategory,
+    type BillingProduct,
+    type Client,
+    type LogEventMode,
+} from '@sourcegraph/cody-shared'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
@@ -27,7 +32,6 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
 import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -472,15 +476,6 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
-            if (result instanceof Error) {
-                console.error('getRepoIdIfEmbeddingExists', result)
-            }
-            return typeof result === 'string' ? result : null
-        })
-
         this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
             const client = await this.client
             const result = await client?.graphqlClient.getRepoId(repoName)
@@ -703,7 +698,6 @@ export class Agent extends MessageHandler {
 
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
-            editor: new AgentEditor(this),
             config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
@@ -711,7 +705,6 @@ export class Agent extends MessageHandler {
             setTranscript: () => {
                 // Not supported yet by agent.
             },
-            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
         this.oldClient = client
         return client

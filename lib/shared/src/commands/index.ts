@@ -1,5 +1,3 @@
-import { type ContextFile } from '../codebase-context/messages'
-
 // A list of default cody commands
 export type CodyDefaultCommands = 'ask' | 'doc' | 'edit' | 'explain' | 'smell' | 'test' | 'reset'
 
@@ -12,19 +10,16 @@ export interface CodyCommand {
     type?: CodyCommandType
     slashCommand: string
     mode?: CodyCommandMode
-
-    // internal properties
-    contextFiles?: ContextFile[]
     additionalInput?: string
 }
 
 /**
- * - ask mode is the default mode, run prompt in sidebar
- * - edit mode will run prompt with fixup
- * - insert mode is the same as edit, but instead of replacing selection with cody's response,
- * it adds to the top of the selection instead
+ * - 'ask' mode is the default mode, run prompt in chat view
+ * - 'edit' mode will run prompt with edit command which replace selection with cody's response
+ * - 'insert' mode is the same as edit, it adds to the top of the selection instead of replacing selection
+ * - 'file' mode create a new file with cody's response as content
  */
-type CodyCommandMode = 'ask' | 'edit' | 'insert'
+type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
 
 // Type of context available for prompt building
 export interface CodyCommandContext {
@@ -41,7 +36,7 @@ export interface CodyCommandContext {
     none?: boolean
 }
 
-type CodyCommandType = 'workspace' | 'user' | 'default' | 'recently used'
+type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
 
 export type CustomCommandType = 'workspace' | 'user'
 

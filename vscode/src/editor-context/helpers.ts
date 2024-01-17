@@ -6,14 +6,12 @@ import { type URI } from 'vscode-uri'
 
 import {
     getContextMessageWithResponse,
-    type ContextMessage,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
+    MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
+    truncateText,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
 import { isValidTestFileName } from '../commands/prompt/utils'
 
@@ -363,7 +361,7 @@ function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): 
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test}${fileExtension}`
+    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test,spec_${fileName},${fileName}_spec,spec.${fileName},${fileName}.spec,${fileName}Spec}${fileExtension}`
 
     if (allTestFiles) {
         return `${root}${defaultTestFilePattern}`
@@ -385,4 +383,17 @@ async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextM
         contextMessages.push(...createFileContextResponseMessage(context, file))
     }
     return contextMessages
+}
+
+/**
+ * Checks if a file URI exists in workspace.
+ * @param uri - The file URI to check.
+ */
+export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri)
+        return true
+    } catch {
+        return false
+    }
 }

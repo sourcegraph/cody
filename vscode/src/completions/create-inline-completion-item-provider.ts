@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { FeatureFlag, featureFlagProvider, isDotCom, type Configuration } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -66,9 +64,7 @@ export async function createInlineCompletionItemProvider({
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'lsp-light'
-                ? 'lsp-light'
-                : config.autocompleteExperimentalGraphContext === 'bfg'
+            config.autocompleteExperimentalGraphContext === 'bfg'
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'

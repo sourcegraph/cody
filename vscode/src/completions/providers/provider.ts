@@ -1,11 +1,12 @@
 import { type Position, type TextDocument } from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { tokensToChars, type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { type DocumentContext } from '../get-current-doc-context'
 import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
+
+import { type FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
     /**
@@ -74,13 +75,8 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completions: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void>
+    ): AsyncGenerator<FetchCompletionResult[]>
 }
 
 /**

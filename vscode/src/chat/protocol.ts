@@ -1,14 +1,20 @@
 import { type URI } from 'vscode-uri'
 
-import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import {
+    type ActiveTextEditorSelectionRange,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type CodyLLMSiteConfiguration,
+    type ConfigurationWithAccessToken,
+    type ContextFile,
+    type ContextFileType,
+    type CustomCommandType,
+    type EnhancedContextContextT,
+    type SearchPanelFile,
+    type TelemetryEventProperties,
+    type UserLocalHistory,
+} from '@sourcegraph/cody-shared'
 import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
@@ -113,6 +119,7 @@ export type ExtensionMessage =
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
+    | { type: 'setChatEnabledConfigFeature'; data: boolean }
 
 interface ExtensionAttributionMessage {
     snippet: string

@@ -40,7 +40,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
                     range,
                     intent: 'doc',
                     document,
-                    insertMode: true,
+                    mode: 'insert',
                 } satisfies ExecuteEditArguments,
                 source,
             ],

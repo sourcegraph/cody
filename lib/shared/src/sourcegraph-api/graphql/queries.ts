@@ -58,6 +58,17 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_CONFIG_FEATURES = `
+query CodyConfigFeaturesResponse {
+    site {
+        codyConfigFeatures {
+            chat
+            autoComplete
+            commands
+          }
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
 query CurrentSiteCodyLlmConfiguration {
     site {
@@ -76,54 +87,6 @@ export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
 		id
-	}
-}`
-
-export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
-query Repository($name: String!) {
-	repository(name: $name) {
-                id
-                embeddingExists
-	}
-}`
-
-export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
-}`
-
-export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
-query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
 	}
 }`
 

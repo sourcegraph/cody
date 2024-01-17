@@ -9,6 +9,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
@@ -20,14 +21,11 @@ import {
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_FEATURE_FLAGS_QUERY,
-    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     RECORD_TELEMETRY_EVENTS_MUTATION,
-    REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -71,8 +69,18 @@ interface CurrentUserInfoResponse {
         displayName?: string
         username: string
         avatarURL: string
+        codyProEnabled: boolean
         primaryEmail?: { email: string } | null
     } | null
+}
+interface CodyConfigFeatures {
+    chat: boolean
+    autoComplete: boolean
+    commands: boolean
+}
+
+interface CodyConfigFeaturesResponse {
+    site: { codyConfigFeatures: CodyConfigFeatures | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -93,18 +101,6 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
-interface RepositoryEmbeddingExistsResponse {
-    repository: { id: string; embeddingExists: boolean } | null
-}
-
-interface EmbeddingsSearchResponse {
-    embeddingsSearch: EmbeddingsSearchResults
-}
-
-interface EmbeddingsMultiSearchResponse {
-    embeddingsMultiSearch: EmbeddingsSearchResults
-}
-
 interface SearchAttributionResponse {
     snippetAttribution: {
         limitHit: boolean
@@ -121,11 +117,6 @@ export interface EmbeddingsSearchResult {
     startLine: number
     endLine: number
     content: string
-}
-
-export interface EmbeddingsSearchResults {
-    codeResults: EmbeddingsSearchResult[]
-    textResults: EmbeddingsSearchResult[]
 }
 
 interface SearchAttributionResults {
@@ -250,8 +241,7 @@ export class SourcegraphGraphQLAPIClient {
         return isDotCom(this.config.serverEndpoint)
     }
 
-    // Gets the server endpoint for this client. The UI uses this to display
-    // which endpoint provides embeddings.
+    // Gets the server endpoint for this client.
     public get endpoint(): string {
         return this.config.serverEndpoint
     }
@@ -324,6 +314,25 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    /**
+     * Fetches the Site Admin enabled/disable Cody config features for the current instance.
+     */
+    public async getCodyConfigFeatures(): Promise<
+        | {
+              chat: boolean
+              autoComplete: boolean
+              commands: boolean
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
+            CURRENT_SITE_CODY_CONFIG_FEATURES,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
+        )
+    }
+
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
         const [configResponse, providerResponse] = await Promise.all([
@@ -353,17 +362,6 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
-    }
-
-    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
-            REPOSITORY_EMBEDDING_EXISTS_QUERY,
-            {
-                name: repoName,
-            }
-        ).then(response =>
-            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
-        )
     }
 
     /**
@@ -537,35 +535,6 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchEmbeddings(
-        repos: string[],
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
-            repos,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
-    }
-
-    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
-    public async legacySearchEmbeddings(
-        repo: string,
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
-            repo,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
-    }
-
     public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(SEARCH_ATTRIBUTION_QUERY, {
             snippet,
@@ -664,6 +633,81 @@ export class SourcegraphGraphQLAPIClient {
  * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
+
+/**
+ * ConfigFeaturesSingleton is a class that manages the retrieval
+ * and caching of configuration features from GraphQL endpoints.
+ */
+export class ConfigFeaturesSingleton {
+    private static instance: ConfigFeaturesSingleton
+    private configFeatures: Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }>
+
+    // Constructor is private to prevent creating new instances outside of the class
+    private constructor() {
+        // Initialize with default values
+        this.configFeatures = Promise.resolve({
+            chat: true,
+            autoComplete: true,
+            commands: true,
+        })
+        // Initiate the first fetch and set up a recurring fetch every 30 seconds
+        this.refreshConfigFeatures()
+        // Fetch config features periodically every 30 seconds only if isDotCom is false
+        if (!graphqlClient.isDotCom()) {
+            setInterval(() => this.refreshConfigFeatures(), 30000)
+        }
+    }
+
+    // Static method to get the singleton instance
+    public static getInstance(): ConfigFeaturesSingleton {
+        if (!ConfigFeaturesSingleton.instance) {
+            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+        }
+        return ConfigFeaturesSingleton.instance
+    }
+
+    // Refreshes the config features by fetching them from the server and caching the result
+    private refreshConfigFeatures(): void {
+        const previousConfigFeatures = this.configFeatures
+        this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
+            // Ignore a fetcherror as older SG instances will always face this because their GQL is outdated
+            if (!error.message.includes('FetchError')) {
+                console.error(error.message)
+            }
+            // In case of an error, return previously fetched value
+            return previousConfigFeatures
+        })
+    }
+
+    public getConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }> {
+        return this.configFeatures
+    }
+
+    // Fetches the config features from the server and handles errors
+    private async fetchConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }> {
+        // Execute the GraphQL query to fetch the configuration features
+        const features = await graphqlClient.getCodyConfigFeatures()
+        if (features instanceof Error) {
+            // If there's an error, throw it to be caught in refreshConfigFeatures
+            throw features
+        } else {
+            // If the fetch is successful, store the fetched configuration features
+            return features
+        }
+    }
+}
 
 async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {

@@ -99,6 +99,105 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: a25c2d1a998facfc7adc2c0b50662bea
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "194"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CodyConfigFeaturesResponse {
+                  site {
+                      codyConfigFeatures {
+                          chat
+                          autoComplete
+                          commands
+                        }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CodyConfigFeaturesResponse
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
+      response:
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 26f7093bcc1d125e7768f46a33e590e8
       _order: 0
       cache: {}
@@ -159,7 +258,10 @@ log:
           encoding: base64
           mimeType: application/json
           size: 215
-          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UF","jiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQBAAA="]'
+          text: "[\"H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UF\",\"jiTW0PROzAktkncvulgylE4H\
+            H39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYn\
+            B140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZ\
+            jCzQQBAAA=\"]"
         cookies: []
         headers:
           - name: date
@@ -259,7 +361,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 131
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV","Pj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV\",\"Pj6+zvl5aZnppUWJJZn5eSDx\
+            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
           - name: date
@@ -364,7 +467,12 @@ log:
           encoding: base64
           mimeType: application/json
           size: 344
-          text: '["H4sIAAAAAAAAA2yOzUrDQBSF3+Wu84PYljhQMGgXBYmoTdBVuZ25JlNnMunMZLAJeRifxReT0C7dnR8O5xtBoEdgI/DeWmp96cjOVgpgUL0Xih/N9/OuvCkGvoYIGnQVWfkpSWw0SgXM254iENJ1Cs8FagIGj78/QQqIoHdk20smMEiRBHIDKRPc8CUhAgzo0ZavT8Cg8b5zLE1Vc5vUxtSK5jU3rafWJ9zoFNP8oc4M3+aL2OxV1p3iPj7mzZvamuViZ18qn1Ur+jgM4aT7uNkf1u5uFXOIoLNSoz1fmUegi/iH6r6eq/kPpmma/gAAAP//AwAWfOcnIgEAAA=="]'
+          text: "[\"H4sIAAAAAAAAA2yOzUrDQBSF3+Wu84PYljhQMGgXBYmoTdBVuZ25JlNnMunMZLAJeRifx\
+            ReT0C7dnR8O5xtBoEdgI/DeWmp96cjOVgpgUL0Xih/N9/OuvCkGvoYIGnQVWfkpSWw0\
+            SgXM254iENJ1Cs8FagIGj78/QQqIoHdk20smMEiRBHIDKRPc8CUhAgzo0ZavT8Cg8b5\
+            zLE1Vc5vUxtSK5jU3rafWJ9zoFNP8oc4M3+aL2OxV1p3iPj7mzZvamuViZ18qn1Ur+j\
+            gM4aT7uNkf1u5uFXOIoLNSoz1fmUegi/iH6r6eq/kPpmma/gAAAP//AwAWfOcnIgEAA\
+            A==\"]"
           textDecoded:
             data:
               currentUser:
@@ -472,7 +580,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 110
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1O","LQJz81MqA4ryXfMSk3JSU5SsSopKU2trawEAAAD//w==","AwCqrAKmMAAAAA=="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1O\",\"LQJz81MqA4ryXfMSk3JSU5Ss\
+            SopKU2trawEAAAD//w==\",\"AwCqrAKmMAAAAA==\"]"
         cookies: []
         headers:
           - name: date
@@ -568,7 +677,7 @@ log:
         content:
           mimeType: application/json
           size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
         cookies: []
         headers:
           - name: date
@@ -662,7 +771,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -756,7 +865,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -850,7 +959,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":true}}"
         cookies: []
         headers:
           - name: date
@@ -944,7 +1053,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":true}}"
         cookies: []
         headers:
           - name: date
@@ -1041,7 +1150,12 @@ log:
           encoding: base64
           mimeType: application/json
           size: 382
-          text: '["H4sIAAAAAAAAA4yRO3LDMAxE78LaKNKk0AF8CU8=","Cohci4wpUgOAtjUe3T0TFUk8iez07+Gze3OBjV13czhzbmwIe7A1wT7zoK473FzhEa5zhowRJjPhOlUxt3OfClxn0rDsvkBfw0yT1AdAMWE18nWccuJipHMxvlJMQ8xpiJbK8K0fOetPX8HiIxVc6IT5UiVss32uPU08gPSSzEdiAStprGK+mW6b6xs+stFY/YkMatuwsIFyGpMp4eqBgEDHKqt298xfYXGzumYBAwUcuWUjNRZfA4ReXvsnZ94NMGH/ML//7IxzLyk87ZjeYb1wKrqJahpKm0ibnDETCvcZvwp7W5YPAAAA//8=","AwCiqgRMiwIAAA=="]'
+          text: "[\"H4sIAAAAAAAAA4yRO3LDMAxE78LaKNKk0AF8CU8=\",\"Cohci4wpUgOAtjUe3T0TFUk8\
+            iez07+Gze3OBjV13czhzbmwIe7A1wT7zoK473FzhEa5zhowRJjPhOlUxt3OfClxn0rD\
+            svkBfw0yT1AdAMWE18nWccuJipHMxvlJMQ8xpiJbK8K0fOetPX8HiIxVc6IT5UiVss3\
+            2uPU08gPSSzEdiAStprGK+mW6b6xs+stFY/YkMatuwsIFyGpMp4eqBgEDHKqt298xfY\
+            XGzumYBAwUcuWUjNRZfA4ReXvsnZ94NMGH/ML//7IxzLyk87ZjeYb1wKrqJahpKm0ib\
+            nDETCvcZvwp7W5YPAAAA//8=\",\"AwCiqgRMiwIAAA==\"]"
         cookies: []
         headers:
           - name: date
@@ -1154,7 +1268,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1261,7 +1375,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
           textDecoded:
             data:
               telemetry:
@@ -1375,7 +1490,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 115
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
         cookies: []
         headers:
           - name: date
@@ -1484,7 +1600,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 122
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//w==\",\"AwCEdn1qOgAAAA==\"]"
         cookies: []
         headers:
           - name: date
@@ -1593,7 +1710,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 115
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
         cookies: []
         headers:
           - name: date
@@ -1693,7 +1811,9 @@ log:
           encoding: base64
           mimeType: application/json
           size: 151
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q\",\"BPEyU5SslEJzw8qTjP0KUtwt\
+            K1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8\
+            DAP+HlYJUAAAA\"]"
         cookies: []
         headers:
           - name: date
@@ -1792,7 +1912,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 120
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
           textDecoded:
             data:
               repository:
@@ -1899,7 +2020,10 @@ log:
           encoding: base64
           mimeType: application/json
           size: 212
-          text: '["H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFqgAAAA"]'
+          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIl\
+            aA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cf\
+            sONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFq\
+            gAAAA\"]"
           textDecoded:
             data:
               site:
@@ -2004,7 +2128,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5mbmJvFGBkYmugaGuoZG8aZ6Rrpp5ikWackGaYmGiYlKtbW1AAAAAP//AwCdi4Q5SQAAAA=="]'
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5mbmJvFGB\
+            kYmugaGuoZG8aZ6Rrpp5ikWackGaYmGiYlKtbW1AAAAAP//AwCdi4Q5SQAAAA==\"]"
           textDecoded:
             data:
               site:

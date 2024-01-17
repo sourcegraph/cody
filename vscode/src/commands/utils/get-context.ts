@@ -1,19 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand, type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { extractTestType } from '../prompt/utils'
 
-export const getContextForCommand = async (
-    editor: VSCodeEditor,
-    promptText: string,
-    contextConfig: CodyCommandContext
-): Promise<ContextMessage[]> => {
+export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCommand): Promise<ContextMessage[]> => {
     logDebug('getContextForCommand', 'getting context')
+    const contextConfig = command.context || { codebase: false }
     // Get smart selection if selection is required
     const smartSelection = await editor.getActiveTextEditorSmartSelection()
     const visibleSelection = editor.getActiveTextEditorSelectionOrVisibleContent()
@@ -24,7 +20,7 @@ export const getContextForCommand = async (
     const contextMessages: ContextMessage[] = []
 
     const workspaceRootUri = editor.getWorkspaceRootUri()
-    const isUnitTestRequest = extractTestType(promptText) === 'unit'
+    const isUnitTestRequest = extractTestType(command.prompt) === 'unit'
 
     if (contextConfig.none) {
         return []

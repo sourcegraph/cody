@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import type {
-    Configuration,
-    ConfigurationUseContext,
-    ConfigurationWithAccessToken,
-} from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import {
+    DOTCOM_URL,
+    type Configuration,
+    type ConfigurationUseContext,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CONFIG_KEY, getConfigEnumValues, type ConfigKeys, type ConfigurationKeysMap } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
@@ -58,14 +58,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         checkValidEnumValues(key, value)
     }
 
-    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
+    const autocompleteExperimentalGraphContext: 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
     )
-    // Handle the old `true` option
-    if (autocompleteExperimentalGraphContext === true) {
-        autocompleteExperimentalGraphContext = 'lsp-light'
-    }
 
     return {
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
@@ -90,14 +86,13 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
-
-        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
-
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
          * Hidden settings for internal use only.
          */
+
+        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),

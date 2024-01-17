@@ -8,6 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - [Internal] Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 - [Internal] Edit/Chat: Added Cmd/Ctrl+K and Cmd/Ctrl+L commands to trigger Edit and Chat [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
+- Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
 
 ### Fixed
 
@@ -16,8 +17,10 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Changed code block UI to show actions immediately instead of waiting for Cody's response to be completed. [pull/2737](https://github.com/sourcegraph/cody/pull/2737)
 - Removed recipes, which were replaced by commands in November 2023 (version 0.18.0).
 - Edit: Updated the codelens display to be more descriptive. [pull/2710](https://github.com/sourcegraph/cody/pull/2710)
+- [Internal] New generate unit test available behind `cody.internal.unstable`. [pull/2646](https://github.com/sourcegraph/cody/pull/2646)
 
 ## [1.1.3]
 

@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { type CodyCommand, type CustomCommandType, type VsCodeCommandsController } from '@sourcegraph/cody-shared'
 
+import { getFullConfig } from '../configuration'
 import { executeEdit } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -28,9 +28,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     private tools: ToolsProvider
     private custom: CustomPromptsStore
-    public default = new PromptsProvider()
-
-    private myPromptsMap = new Map<string, CodyCommand>()
+    // Provide the default Cody Commands
+    public default
+    // Provide the custom commands from user file system or codebase
+    private userCustomCommandsMap = new Map<string, CodyCommand>()
 
     private lastUsedCommands = new Set<string>()
 
@@ -40,7 +41,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor() {
+    public enableExperimentalCommands = false
+
+    constructor(private readonly editor: VSCodeEditor) {
+        this.default = new PromptsProvider()
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
@@ -50,13 +54,23 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
+
+        this.disposables.push(
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    const config = await getFullConfig()
+                    this.setEnableExperimentalCommands(config.internalUnstable)
+                    await this.refresh()
+                }
+            })
+        )
     }
 
-    public async findCommand(
-        text: string,
-        requestID?: string,
-        contextFiles?: ContextFile[]
-    ): Promise<CodyCommand | null> {
+    public setEnableExperimentalCommands(enable: boolean): void {
+        this.enableExperimentalCommands = enable
+    }
+
+    public async findCommand(text: string, requestID?: string): Promise<CodyCommand | null> {
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
@@ -80,36 +94,35 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             command.prompt = command.prompt.replace('/ask', '')
         }
         command.additionalInput = commandInput
+        // Default mode to /ask if not specified
         command.mode = command.prompt.startsWith('/edit') ? 'edit' : command.mode || 'ask'
         command.requestID = requestID
-        command.contextFiles = contextFiles
         await this.createCodyCommandRunner(command, commandInput)
         return command
     }
 
     private async createCodyCommandRunner(command: CodyCommand, input = ''): Promise<CommandRunner | undefined> {
         const commandKey = command.slashCommand
-        const defaultEditCommands = new Set(['/edit', '/doc'])
-        const isFixupRequest = defaultEditCommands.has(commandKey) || command.mode !== 'ask'
 
         logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
 
         // Start the command runner
-        const runner = new CommandRunner(command, input, isFixupRequest)
+        const runner = new CommandRunner(this.editor, command, input)
         this.commandRunners.set(runner.id, runner)
 
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
-        // Fixup request will be taken care by the fixup command in the CommandRunner
-        if (isFixupRequest) {
-            return undefined
-        }
-
+        // TODO bee runs tools in runner instead
         // Run shell command if any
         const shellCommand = command.context?.command
         if (shellCommand) {
             await runner.runShell(this.tools.exeCommand(shellCommand))
+        }
+
+        // Fixup request will be taken care by the fixup recipe in the CommandRunner
+        if (runner.command.mode !== 'ask') {
+            return undefined
         }
 
         this.commandRunners.delete(runner.id)
@@ -153,8 +166,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async refresh(): Promise<void> {
         await this.saveLastUsedCommands()
         const { commands } = await this.custom.refresh()
-        this.myPromptsMap = commands
-        this.default.groupCommands(commands)
+        this.userCustomCommandsMap = commands
+        this.default.groupCommands(commands, this.enableExperimentalCommands)
     }
 
     /**
@@ -332,7 +345,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Allows user to enter the prompt name and prompt description in the input box
      */
     private async addNewUserCommandQuick(): Promise<void> {
-        const newCommand = await showNewCustomCommandMenu(this.myPromptsMap)
+        const newCommand = await showNewCustomCommandMenu(this.userCustomCommandsMap)
         if (!newCommand) {
             return
         }
@@ -456,7 +469,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
         this.fileWatcherDisposables = []
         this.disposables = []
-        this.myPromptsMap = new Map<string, CodyCommand>()
+        this.userCustomCommandsMap = new Map<string, CodyCommand>()
         this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }

@@ -1,4 +1,4 @@
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 
 import { getDefaultCommandsMap } from '.'
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
@@ -19,12 +19,15 @@ const editorCommands: CodyCommand[] = [
 
 export class PromptsProvider {
     // The default prompts
-    private defaultPromptsMap = getDefaultCommandsMap(editorCommands)
+    private defaultPromptsMap
 
     // The commands grouped by default prompts and custom prompts
     private allCommands = new Map<string, CodyCommand>()
 
     constructor() {
+        // Filter commands that has the experimental type
+        this.defaultPromptsMap = getDefaultCommandsMap(editorCommands)
+
         // add the default prompts to the all commands map
         this.groupCommands(this.defaultPromptsMap)
     }
@@ -35,7 +38,6 @@ export class PromptsProvider {
     public get(id: string): CodyCommand | undefined {
         return this.allCommands.get(id)
     }
-
     /**
      * Return default and custom commands without the separator which is added for quick pick menu
      */
@@ -49,9 +51,16 @@ export class PromptsProvider {
     /**
      * Group the default prompts with the custom prompts and add a separator
      */
-    public groupCommands(customCommands = new Map<string, CodyCommand>()): void {
-        const combinedMap = new Map([...this.defaultPromptsMap])
+    public groupCommands(customCommands = new Map<string, CodyCommand>(), includeExperimentalCommands = false): void {
+        // Filter commands that has the experimental type if not enabled
+        let defaultCommands = [...this.defaultPromptsMap]
+        if (!includeExperimentalCommands) {
+            defaultCommands = defaultCommands.filter(command => command[1]?.type !== 'experimental')
+        }
+        // Add a separator between the default and custom commands
+        const combinedMap = new Map([...defaultCommands])
         combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
+        // Add the custom commands to the all commands map
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())
     }
 }

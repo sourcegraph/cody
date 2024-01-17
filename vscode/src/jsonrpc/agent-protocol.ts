@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
-import { type ChatModelProvider } from '@sourcegraph/cody-shared'
-import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import type { BillingCategory, BillingProduct, ChatMessage, ChatModelProvider, event } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
     KnownString,

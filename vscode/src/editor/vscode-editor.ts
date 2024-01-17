@@ -1,26 +1,23 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import type {
-    ActiveTextEditor,
-    ActiveTextEditorDiagnostic,
-    ActiveTextEditorDiagnosticType,
-    ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
-    ActiveTextEditorVisibleContent,
-    Editor,
-} from '@sourcegraph/cody-shared/src/editor'
-import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
-
-import { type CommandsController } from '../commands/CommandsController'
+import {
+    isCodyIgnoredFile,
+    SURROUNDING_LINES,
+    type ActiveTextEditor,
+    type ActiveTextEditorDiagnostic,
+    type ActiveTextEditorDiagnosticType,
+    type ActiveTextEditorSelection,
+    type ActiveTextEditorSelectionRange,
+    type ActiveTextEditorVisibleContent,
+    type Editor,
+} from '@sourcegraph/cody-shared'
 
 import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
-export class VSCodeEditor implements Editor<CommandsController> {
-    constructor(public readonly controllers: ActiveTextEditorViewControllers<CommandsController>) {
+export class VSCodeEditor implements Editor {
+    constructor() {
         /**
          * Callback function that calls getEditor().active whenever the visible text editors change in VS Code.
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.

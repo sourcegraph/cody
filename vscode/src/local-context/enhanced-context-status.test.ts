@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import type * as status from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import type * as status from '@sourcegraph/cody-shared'
 
 import { ContextStatusAggregator } from './enhanced-context-status'
 
@@ -38,11 +38,11 @@ class TestProvider implements status.ContextStatusProvider {
 describe('ContextStatusAggregator', () => {
     it('should fire status changed when providers are added and pass through simple status', async () => {
         const aggregator = new ContextStatusAggregator()
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => resolve(provider.status))
         })
         aggregator.addProvider(new TestProvider())
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
                 name: 'github.com/foo/bar',
                 providers: [
@@ -59,7 +59,7 @@ describe('ContextStatusAggregator', () => {
     it('should fire aggregate status from multiple providers', async () => {
         const aggregator = new ContextStatusAggregator()
         let callbackCount = 0
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => {
                 callbackCount++
                 resolve(provider.status)
@@ -77,16 +77,14 @@ describe('ContextStatusAggregator', () => {
                     providers: [
                         {
                             kind: 'embeddings',
-                            type: 'remote',
+                            type: 'local',
                             state: 'ready',
-                            origin: 'sourcegraph.com',
-                            remoteName: 'github.com/foo/bar',
                         },
                     ],
                 },
             ])
         )
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
                 name: 'github.com/foo/bar',
                 providers: [
@@ -97,10 +95,8 @@ describe('ContextStatusAggregator', () => {
                     },
                     {
                         kind: 'embeddings',
-                        type: 'remote',
+                        type: 'local',
                         state: 'ready',
-                        origin: 'sourcegraph.com',
-                        remoteName: 'github.com/foo/bar',
                     },
                 ],
             },
@@ -120,7 +116,7 @@ describe('ContextStatusAggregator', () => {
         // Skip the first update event.
         await Promise.resolve()
         let callbackCount = 0
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => {
                 callbackCount++
                 resolve(provider.status)
@@ -129,7 +125,7 @@ describe('ContextStatusAggregator', () => {
         provider.status = [{ name: 'github.com/foo/bar', providers: [{ kind: 'graph', state: 'indexing' }] }]
         provider.emitter.fire(provider)
 
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
                 name: 'github.com/foo/bar',
                 providers: [

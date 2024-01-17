@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import { getSingleLineRange } from '../services/InlineAssist'
 
@@ -11,6 +11,7 @@ import { CodyTaskState } from './utils'
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
     switch (task.state) {
+        case CodyTaskState.pending:
         case CodyTaskState.working: {
             const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)

@@ -3,8 +3,12 @@ import * as path from 'path'
 
 import * as vscode from 'vscode'
 
-import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
-import { type Result, type SearchPanelFile, type SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
+import {
+    hydrateAfterPostMessage,
+    type Result,
+    type SearchPanelFile,
+    type SearchPanelSnippet,
+} from '@sourcegraph/cody-shared'
 
 import { type WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
