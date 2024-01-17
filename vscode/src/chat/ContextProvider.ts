@@ -24,7 +24,6 @@ import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { type SidebarChatWebview } from './chat-view/SidebarViewController'
-import { GraphContextProvider } from './GraphContextProvider'
 import { type AuthStatus, type ConfigurationSubsetForWebview, type LocalEnv } from './protocol'
 
 export type Config = Pick<
@@ -294,7 +293,6 @@ async function getCodebaseContext(
         codebase,
         () => authStatus.endpoint ?? '',
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        new GraphContextProvider(editor),
         // Use local embeddings if we have them.
         ((await hasLocalEmbeddings) && localEmbeddings) || null,
         symf,
