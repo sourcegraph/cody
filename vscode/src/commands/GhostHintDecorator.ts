@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
@@ -52,7 +54,10 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecoration: vscode.DecorationOptions | null = null
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
-    constructor() {
+    private iconPath: vscode.Uri
+
+    constructor(extensionUri: vscode.Uri) {
+        this.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'ghost.svg')
         this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, { leading: false, trailing: true })
         this.updateConfig()
         vscode.workspace.onDidChangeConfiguration(e => {
@@ -60,6 +65,41 @@ export class GhostHintDecorator implements vscode.Disposable {
                 this.updateConfig()
             }
         })
+    }
+
+    private constructSvg(): vscode.Uri | undefined {
+        const svgRaw = readFileSync(this.iconPath.fsPath, 'utf8')
+        const config = vscode.workspace.getConfiguration('editor')
+        const fontSize = config.get<number>('fontSize')
+        const fontFamily = config.get<string>('fontFamily')
+
+        if (!fontSize || !fontFamily) {
+            return
+        }
+
+        /**
+         * TODO: How do we determine the line height if set automatically?
+         * Hacky approach is to generate a webview and execute a script to fetch it from the document...
+         */
+        const defaultLineHeight = 1.2
+        const svgHeightPx = Math.round(fontSize * defaultLineHeight)
+        const iconOffset = 1
+        const iconHeight = svgHeightPx + iconOffset
+
+        /**
+         * Inject the svg with the relevant heights and font settings
+         * WARNING MAGIC VALUES AHEAD (probably breaks with different font settings)
+         */
+        const svg = svgRaw
+            .replaceAll('{height}', `${svgHeightPx}px`)
+            .replaceAll('{textHeight}', `${svgHeightPx - 1}px`)
+            .replaceAll('{iconHeight}', iconHeight.toString())
+            .replaceAll('{fontSize}', fontSize.toString())
+            .replaceAll('{fontFamily}', fontFamily)
+            .replaceAll(/\r?\n/g, ' ')
+
+        const encoded = encodeURIComponent(svg)
+        return vscode.Uri.parse(`data:image/svg+xml;utf8,${encoded}`)
     }
 
     private init(): void {
@@ -100,9 +140,14 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private setGhostText(editor: vscode.TextEditor, position: vscode.Position): void {
+        const icon = this.constructSvg()
         this.activeDecoration = {
             range: new vscode.Range(position, position),
-            renderOptions: { after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` } },
+            renderOptions: {
+                after: {
+                    contentIconPath: icon,
+                },
+            },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
     }

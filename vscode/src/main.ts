@@ -196,7 +196,7 @@ const register = async (
         commandsController
     )
 
-    const ghostHintDecorator = new GhostHintDecorator()
+    const ghostHintDecorator = new GhostHintDecorator(context.extensionUri)
     disposables.push(
         ghostHintDecorator,
         new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
