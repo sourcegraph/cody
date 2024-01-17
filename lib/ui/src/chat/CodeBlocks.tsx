@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
+import { isError, renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
 
 import { type CodeBlockActionsProps } from '../Chat'
 import {
@@ -16,8 +16,6 @@ import {
 import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
-    inProgress: boolean
-
     displayText: string
 
     copyButtonClassName?: string
@@ -161,17 +159,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonClassName,
     insertButtonOnSubmit,
     metadata,
-    inProgress,
     guardrails,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        // Attach code block actions only when the message is completed
-        if (inProgress) {
-            return
-        }
-
         const preElements = rootRef.current?.querySelectorAll('pre')
         if (!preElements?.length || !copyButtonOnSubmit) {
             return
@@ -202,7 +194,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     guardrails
                         .searchAttribution(preText)
                         .then(attribution => {
-                            if (attribution instanceof Error || attribution.limitHit) {
+                            if (isError(attribution)) {
                                 attributionContainer.classList.add(styles.attributionIconUnavailable)
                                 attributionContainer.title = 'Attribution search unavailable.'
                                 return
@@ -210,7 +202,9 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                             if (attribution.repositories.length > 0) {
                                 attributionContainer.classList.add(styles.attributionIconFound)
                                 let tooltip = `Attribution found in ${attribution.repositories[0].name}`
-                                if (attribution.repositories.length > 1) {
+                                if (attribution.repositories.length > 1 && attribution.limitHit) {
+                                    tooltip = `${tooltip} and ${attribution.repositories.length - 1} or more.`
+                                } else if (attribution.repositories.length > 1) {
                                     tooltip = `${tooltip} and ${attribution.repositories.length - 1} more.`
                                 } else {
                                     tooltip = `${tooltip}.`
@@ -246,7 +240,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         insertButtonOnSubmit,
         metadata?.requestID,
         metadata?.source,
-        inProgress,
         guardrails,
     ])
 

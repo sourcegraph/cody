@@ -1,11 +1,16 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type CodyCommand } from '@sourcegraph/cody-shared'
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    ChatModelProvider,
+    type ChatClient,
+    type ChatEventSource,
+    type CodyCommand,
+    type Guardrails,
+} from '@sourcegraph/cody-shared'
 
 import { type View } from '../../../webviews/NavBar'
+import { type CommandsController } from '../../commands/CommandsController'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -42,7 +47,9 @@ export class ChatManager implements vscode.Disposable {
         private chatClient: ChatClient,
         private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null,
-        private symf: SymfRunner | null
+        private symf: SymfRunner | null,
+        private guardrails: Guardrails,
+        private commandsController?: CommandsController
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -58,7 +65,9 @@ export class ChatManager implements vscode.Disposable {
             this.chatClient,
             this.embeddingsClient,
             this.localEmbeddings,
-            this.symf
+            this.symf,
+            this.guardrails,
+            this.commandsController
         )
 
         // Register Commands
@@ -92,7 +101,15 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<ChatSession | undefined> {
+    public async executeCommand(
+        command: CodyCommand,
+        source: ChatEventSource,
+        enabled?: boolean
+    ): Promise<ChatSession | undefined> {
+        if (!enabled) {
+            void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
+            return
+        }
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')

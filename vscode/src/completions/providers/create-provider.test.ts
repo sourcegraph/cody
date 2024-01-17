@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import {
     graphqlClient,
     type CodyLLMSiteConfiguration,
+    type Configuration,
     type GraphQLAPIClientConfig,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+} from '@sourcegraph/cody-shared'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import { type CodeCompletionsClient } from '../client'
@@ -58,13 +58,13 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'fireworks',
-                    autocompleteAdvancedModel: 'starcoder-3b',
+                    autocompleteAdvancedModel: 'starcoder-7b',
                 }),
                 dummyCodeCompletionsClient,
                 {}
             )
             expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('starcoder-3b')
+            expect(provider?.model).toBe('starcoder-7b')
         })
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
@@ -134,6 +134,10 @@ describe('createProviderConfig', () => {
                 {
                     codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-1.2' },
                     expected: null,
+                },
+                {
+                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'fireworks/starcoder' },
+                    expected: { provider: 'fireworks', model: 'starcoder' },
                 },
 
                 // aws-bedrock

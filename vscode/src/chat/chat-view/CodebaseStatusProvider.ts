@@ -2,14 +2,14 @@ import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
+    isDotCom,
+    isError,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
     type Disposable,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+    type Editor,
+} from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../../configuration'
 import { getEditor } from '../../editor/active-editor'

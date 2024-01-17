@@ -1,4 +1,4 @@
-import type { OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
+import type { OllamaOptions } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'

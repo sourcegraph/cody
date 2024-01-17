@@ -1,14 +1,14 @@
 import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     isAbortError,
     isAuthError,
+    isDotCom,
     isRateLimitError,
     NetworkError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
 

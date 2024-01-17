@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AbortError, TimeoutError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { AbortError, TimeoutError } from '@sourcegraph/cody-shared'
 
 import { createLimiter, type Limiter } from './limiter'
 

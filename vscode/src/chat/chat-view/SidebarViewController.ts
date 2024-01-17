@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 import { type View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'

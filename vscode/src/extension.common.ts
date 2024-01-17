@@ -1,8 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { type Configuration, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
+import {
+    type Configuration,
+    type ConfigurationWithAccessToken,
+    type SourcegraphBrowserCompletionsClient,
+} from '@sourcegraph/cody-shared'
+// eslint-disable-next-line no-restricted-imports
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { type CommandsController } from './commands/CommandsController'
@@ -38,7 +41,6 @@ export interface PlatformContext {
     createOpenTelemetryService?: (
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
     ) => OpenTelemetryService
-    recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }
 

@@ -1,4 +1,4 @@
-import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
+import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
 
 import { type CodeCompletionsParams } from '../client'
 

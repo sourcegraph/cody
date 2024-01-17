@@ -1,9 +1,8 @@
 import type * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
-import { type EditIntent } from '../edit/types'
+import { type EditIntent, type EditMode } from '../edit/types'
 
 import { type FixupFile } from './FixupFile'
 import { type FixupTask } from './FixupTask'
@@ -43,7 +42,7 @@ export interface FixupTaskFactory {
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
         intent?: EditIntent,
-        insertMode?: boolean,
+        mode?: EditMode,
         source?: ChatEventSource
     ): Promise<FixupTask>
 }

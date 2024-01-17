@@ -4,7 +4,7 @@ import { zipGenerators } from './utils'
 
 async function* generatorFromArray<T>(array: T[]) {
     for (const item of array) {
-        yield item
+        yield await Promise.resolve(item)
     }
 }
 

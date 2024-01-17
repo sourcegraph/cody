@@ -2,12 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
+import {
+    GuardrailsPost,
+    type ChatHistory,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type Configuration,
+    type ContextFile,
+    type EnhancedContextContextT,
+} from '@sourcegraph/cody-shared'
 import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
@@ -56,6 +60,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+
+    const [chatEnabled, setChatEnabled] = useState<boolean>(true)
 
     const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
@@ -109,6 +115,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         if (message.authStatus.isLoggedIn) {
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
+                        break
+                    case 'setChatEnabledConfigFeature':
+                        setChatEnabled(message.data)
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -266,6 +275,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
                                 <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                                     <Chat
+                                        chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
                                         messageBeingEdited={messageBeingEdited}

@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'vitest'
 
-import { testFileUri, type ContextFile } from '@sourcegraph/cody-shared'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
+    CodebaseContext,
     populateCurrentEditorSelectedContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
+    testFileUri,
+    type ContextFile,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from '../../testutils/mocks'
 

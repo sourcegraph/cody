@@ -2,9 +2,7 @@ import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'

@@ -1,4 +1,4 @@
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 
 import * as defaultCommands from './prompt/cody.json'
 import { toSlashCommand } from './prompt/utils'
@@ -18,7 +18,7 @@ export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<s
     for (const key in commands) {
         if (Object.prototype.hasOwnProperty.call(commands, key)) {
             const command = commands[key] as CodyCommand
-            command.type = 'default'
+            command.type = command.type || 'default'
             command.slashCommand = toSlashCommand(key)
             map.set(command.slashCommand, command)
         }
@@ -27,17 +27,14 @@ export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<s
     return map
 }
 
-export interface MyPrompts {
+export interface CodyCommandsFile {
     // A set of reusable commands where instructions (prompts) and context can be configured.
     commands: Map<string, CodyCommand>
-    // backward compatibility
-    recipes?: Map<string, CodyCommand>
 }
 
-// JSON format of MyPrompts
-export interface MyPromptsJSON {
+// JSON format of CodyCommandsFile
+export interface CodyCommandsFileJSON {
     commands: { [id: string]: Omit<CodyCommand, 'slashCommand'> }
-    recipes?: { [id: string]: CodyCommand }
 }
 
 export const ConfigFileName = {

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { displayPath, type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
 import { type ExecuteEditArguments } from '../edit/execute'
@@ -10,6 +9,7 @@ import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/edit
 
 import { type FixupTask } from './FixupTask'
 import { type FixupTaskFactory } from './roles'
+import { updateRangeMultipleChanges, type TextChange } from './tracked-range'
 
 function removeAfterLastAt(str: string): string {
     const lastIndex = str.lastIndexOf('@')
@@ -114,7 +114,7 @@ export class FixupTypingUI {
         range,
         source,
         placeholder = 'Instructions (@ to include code)',
-        initialValue = '',
+        initialValue,
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
     }: QuickPickParams): Promise<{
@@ -124,7 +124,9 @@ export class FixupTypingUI {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
         quickPick.placeholder = placeholder
-        quickPick.value = initialValue
+        if (initialValue) {
+            quickPick.value = initialValue
+        }
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
@@ -152,7 +154,7 @@ export class FixupTypingUI {
         }
 
         quickPick.onDidChangeValue(async newValue => {
-            if (newValue === initialValue) {
+            if (initialValue !== undefined && newValue === initialValue) {
                 // Noop, this event is fired when an initial value is set
                 return
             }
@@ -237,10 +239,25 @@ export class FixupTypingUI {
             return null
         }
         const document = args.document || editor?.document
-        const range = args.range || editor?.selection
+        let range = args.range || editor?.selection
         if (!document || !range) {
             return null
         }
+
+        /**
+         * Listens for text document changes and updates the range when changes occur.
+         * This allows the range to stay in sync if the user continues editing after
+         * requesting the refactoring.
+         */
+        const textDocumentListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document !== document) {
+                return
+            }
+
+            const changes = new Array<TextChange>(...event.contentChanges)
+            range = updateRangeMultipleChanges(range, changes)
+        })
+
         const input = await this.getInputFromQuickPick({
             filePath: document.uri.fsPath,
             range,
@@ -256,9 +273,11 @@ export class FixupTypingUI {
             input.userContextFiles,
             range,
             args.intent,
-            args.insertMode,
+            args.mode,
             source
         )
+
+        textDocumentListener.dispose()
 
         // Return focus to the editor
         void vscode.window.showTextDocument(document)

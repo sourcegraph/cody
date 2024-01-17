@@ -9,6 +9,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
@@ -20,7 +21,6 @@ import {
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_FEATURE_FLAGS_QUERY,
-    IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -72,8 +72,18 @@ interface CurrentUserInfoResponse {
         displayName?: string
         username: string
         avatarURL: string
+        codyProEnabled: boolean
         primaryEmail?: { email: string } | null
     } | null
+}
+interface CodyConfigFeatures {
+    chat: boolean
+    autoComplete: boolean
+    commands: boolean
+}
+
+interface CodyConfigFeaturesResponse {
+    site: { codyConfigFeatures: CodyConfigFeatures | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -151,10 +161,6 @@ interface CurrentUserInfo {
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
-}
-
-interface IsContextRequiredForChatQueryResponse {
-    isContextRequiredForChatQuery: boolean
 }
 
 interface EvaluatedFeatureFlag {
@@ -326,6 +332,25 @@ export class SourcegraphGraphQLAPIClient {
                 extractDataOrError(response, data =>
                     data.currentUser ? { ...data.currentUser } : new Error('current user not found')
                 )
+        )
+    }
+
+    /**
+     * Fetches the Site Admin enabled/disable Cody config features for the current instance.
+     */
+    public async getCodyConfigFeatures(): Promise<
+        | {
+              chat: boolean
+              autoComplete: boolean
+              commands: boolean
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
+            CURRENT_SITE_CODY_CONFIG_FEATURES,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
         )
     }
 
@@ -577,12 +602,6 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
-            query,
-        }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
-    }
-
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
             response =>
@@ -675,6 +694,81 @@ export class SourcegraphGraphQLAPIClient {
  * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
+
+/**
+ * ConfigFeaturesSingleton is a class that manages the retrieval
+ * and caching of configuration features from GraphQL endpoints.
+ */
+export class ConfigFeaturesSingleton {
+    private static instance: ConfigFeaturesSingleton
+    private configFeatures: Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }>
+
+    // Constructor is private to prevent creating new instances outside of the class
+    private constructor() {
+        // Initialize with default values
+        this.configFeatures = Promise.resolve({
+            chat: true,
+            autoComplete: true,
+            commands: true,
+        })
+        // Initiate the first fetch and set up a recurring fetch every 30 seconds
+        this.refreshConfigFeatures()
+        // Fetch config features periodically every 30 seconds only if isDotCom is false
+        if (!graphqlClient.isDotCom()) {
+            setInterval(() => this.refreshConfigFeatures(), 30000)
+        }
+    }
+
+    // Static method to get the singleton instance
+    public static getInstance(): ConfigFeaturesSingleton {
+        if (!ConfigFeaturesSingleton.instance) {
+            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+        }
+        return ConfigFeaturesSingleton.instance
+    }
+
+    // Refreshes the config features by fetching them from the server and caching the result
+    private refreshConfigFeatures(): void {
+        const previousConfigFeatures = this.configFeatures
+        this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
+            // Ignore a fetcherror as older SG instances will always face this because their GQL is outdated
+            if (!error.message.includes('FetchError')) {
+                console.error(error.message)
+            }
+            // In case of an error, return previously fetched value
+            return previousConfigFeatures
+        })
+    }
+
+    public getConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }> {
+        return this.configFeatures
+    }
+
+    // Fetches the config features from the server and handles errors
+    private async fetchConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    }> {
+        // Execute the GraphQL query to fetch the configuration features
+        const features = await graphqlClient.getCodyConfigFeatures()
+        if (features instanceof Error) {
+            // If there's an error, throw it to be caught in refreshConfigFeatures
+            throw features
+        } else {
+            // If the fetch is successful, store the fetched configuration features
+            return features
+        }
+    }
+}
 
 async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {

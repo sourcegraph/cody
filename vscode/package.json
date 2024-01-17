@@ -290,6 +290,13 @@
         "when": "cody.activated && editorTextFocus"
       },
       {
+        "command": "cody.command.unit-tests",
+        "category": "Cody Command",
+        "title": "Generate Unit Tests in File - Experimental",
+        "icon": "$(package)",
+        "when": "cody.activated && config.cody.internal.unstable && editorTextFocus"
+      },
+      {
         "command": "cody.command.document-code",
         "category": "Cody Command",
         "title": "Document Code",
@@ -537,6 +544,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated && config.cody.internal.unstable && editorIsOpen"
+        },
+        {
           "command": "cody.command.document-code",
           "when": "cody.activated && editorIsOpen"
         },
@@ -591,6 +602,11 @@
         {
           "command": "cody.command.generate-tests",
           "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated && config.cody.internal.unstable",
           "group": "command"
         },
         {

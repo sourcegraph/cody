@@ -1,41 +1,29 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import type {
-    ActiveTextEditor,
-    ActiveTextEditorDiagnostic,
-    ActiveTextEditorDiagnosticType,
-    ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
-    ActiveTextEditorVisibleContent,
-    Editor,
-} from '@sourcegraph/cody-shared/src/editor'
-import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
-
-import { type CommandsController } from '../commands/CommandsController'
+import {
+    isCodyIgnoredFile,
+    SURROUNDING_LINES,
+    type ActiveTextEditor,
+    type ActiveTextEditorDiagnostic,
+    type ActiveTextEditorDiagnosticType,
+    type ActiveTextEditorSelection,
+    type ActiveTextEditorSelectionRange,
+    type ActiveTextEditorVisibleContent,
+    type Editor,
+} from '@sourcegraph/cody-shared'
 
 import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
-export class VSCodeEditor implements Editor<CommandsController> {
-    constructor(public readonly controllers: ActiveTextEditorViewControllers<CommandsController>) {
+export class VSCodeEditor implements Editor {
+    constructor() {
         /**
          * Callback function that calls getEditor().active whenever the visible text editors change in VS Code.
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
          */
         vscode.window.onDidChangeActiveTextEditor(() => getEditor())
         new EditorCodeLenses()
-    }
-
-    /**
-     * @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead
-    /** NOTE DO NOT UES - this does not work with chat webview panel
-     */
-    public getWorkspaceRootPath(): string | null {
-        const uri = this.getWorkspaceRootUri()
-        return uri?.scheme === 'file' ? uri.fsPath : null
     }
 
     public getWorkspaceRootUri(): vscode.Uri | null {
@@ -261,34 +249,6 @@ export class VSCodeEditor implements Editor<CommandsController> {
         }
     }
 
-    public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
-            // TODO: should return something indicating success or failure
-            console.error('Missing file')
-            return
-        }
-        const selection = activeEditor.selection
-        if (!selection) {
-            console.error('Missing selection')
-            return
-        }
-        if (activeEditor.document.getText(selection) !== selectedText) {
-            // TODO: Be robust to this.
-            await vscode.window.showInformationMessage(
-                'The selection changed while Cody was working. The text will not be edited.'
-            )
-            return
-        }
-
-        // Editing the document
-        await activeEditor.edit(edit => {
-            edit.replace(selection, replacement)
-        })
-
-        return
-    }
-
     public async createWorkspaceFile(content: string, uri?: vscode.Uri): Promise<void> {
         const fileUri = uri ?? (await vscode.window.showSaveDialog())
         if (!fileUri) {
@@ -309,18 +269,7 @@ export class VSCodeEditor implements Editor<CommandsController> {
         }
     }
 
-    public async showQuickPick(labels: string[]): Promise<string | undefined> {
-        const label = await vscode.window.showQuickPick(labels)
-        return label
-    }
-
     public async showWarningMessage(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
-    }
-
-    public async showInputBox(prompt?: string): Promise<string | undefined> {
-        return vscode.window.showInputBox({
-            placeHolder: prompt || 'Enter here...',
-        })
     }
 }

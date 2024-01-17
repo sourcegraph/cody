@@ -1,20 +1,19 @@
 import type * as vscode from 'vscode'
 
-import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
     createContextMessageByFile,
     getContextMessageWithResponse,
-    type ContextFile,
-    type ContextMessage,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
+    MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+    truncateText,
+    truncateTextStart,
+    type CodebaseContext,
+    type CodyCommand,
+    type ContextFile,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type EditIntent } from '../types'
@@ -54,6 +53,7 @@ const getContextFromIntent = async ({
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
+        case 'new':
         case 'add': {
             return [
                 ...getContextMessageWithResponse(
@@ -127,14 +127,22 @@ const getContextFromIntent = async ({
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
+    contextMessages?: ContextMessage[]
     editor: VSCodeEditor
+    command?: CodyCommand
 }
 
 export const getContext = async ({
     userContextFiles,
     editor,
+    contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextMessage[]> => {
+    // return contextMessages is already provided by the caller
+    if (contextMessages) {
+        return contextMessages
+    }
+
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
@@ -149,4 +157,30 @@ export const getContext = async ({
     }
 
     return [...derivedContextMessages, ...userProvidedContextMessages]
+}
+
+async function getContextMessagesFromSelection(
+    selectedText: string,
+    precedingText: string,
+    followingText: string,
+    { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
+    codebaseContext: CodebaseContext
+): Promise<ContextMessage[]> {
+    const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
+        numCodeResults: 4,
+        numTextResults: 0,
+    })
+
+    return selectedTextContext.concat(
+        [precedingText, followingText]
+            .filter(text => text.trim().length > 0)
+            .flatMap(text =>
+                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
+                    type: 'file',
+                    uri: fileUri,
+                    repoName,
+                    revision,
+                })
+            )
+    )
 }

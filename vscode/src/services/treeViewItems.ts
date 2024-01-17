@@ -1,6 +1,6 @@
 import { findLast } from 'lodash'
 
-import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, type AuthStatus } from '../chat/protocol'
@@ -24,6 +24,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -163,6 +165,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

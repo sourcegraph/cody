@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { DOTCOM_URL, isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL, isDotCom } from '@sourcegraph/cody-shared'
 
 import { newAuthStatus } from '../chat/utils'
 import { decGaMockFeatureFlagProvider, emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'

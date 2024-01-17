@@ -1,7 +1,6 @@
 import { type Position, type TextDocument } from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { tokensToChars, type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { type DocumentContext } from '../get-current-doc-context'
 import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
