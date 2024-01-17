@@ -4,8 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentManager
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -25,18 +24,11 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
-            if (ConfigUtil.isCodyEnabled()) {
-              // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
-              CodyAgentManager.startAgent(project)
-            } else {
-              // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
-              CodyAgentManager.stopAgent(project)
-            }
-
             // Notify Cody Agent about config changes.
-            val agentServer = CodyAgent.getServer(project)
-            if (ConfigUtil.isCodyEnabled() && agentServer != null) {
-              agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+            CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+              if (ConfigUtil.isCodyEnabled()) {
+                agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+              }
             }
 
             val codyToolWindowContent = CodyToolWindowContent.getInstance(project)

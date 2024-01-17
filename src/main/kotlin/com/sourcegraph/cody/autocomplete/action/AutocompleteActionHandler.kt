@@ -6,7 +6,6 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
@@ -23,7 +22,7 @@ open class AutocompleteActionHandler : EditorActionHandler() {
   }
 
   private fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
-      CodyAgent.isConnected(project) && getCurrentAutocompleteItem(caret) != null
+      getCurrentAutocompleteItem(caret) != null
 
   private fun getAutocompleteRenderers(caret: Caret): List<CodyAutocompleteElementRenderer> =
       InlayModelUtil.getAllInlaysForEditor(caret.editor)

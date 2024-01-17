@@ -1,34 +1,22 @@
-package com.sourcegraph.cody.agent
-
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.editor.EditorFactory
-import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.util.system.CpuArch
-import com.sourcegraph.cody.CodyAgentFocusListener
+import com.sourcegraph.cody.agent.CodyAgentClient
+import com.sourcegraph.cody.agent.CodyAgentException
+import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.ClientInfo
 import com.sourcegraph.cody.agent.protocol.CompletionItemID
 import com.sourcegraph.cody.agent.protocol.CompletionItemIDSerializer
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.IOException
 import java.io.PrintWriter
 import java.nio.file.*
 import java.util.*
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Function
+import java.util.concurrent.*
 import org.eclipse.lsp4j.jsonrpc.Launcher
 
 /**
@@ -36,190 +24,124 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
  * Cody. The agent communicates via a JSON-RPC protocol that is documented in the file
  * "cody/agent/src/protocol.ts".
  */
-@Service(Service.Level.PROJECT)
-class CodyAgent(private val project: Project) : Disposable {
-  var disposable = Disposer.newDisposable("CodyAgent")
-  private val client = CodyAgentClient()
-  private var agentNotRunningExplanation = ""
-  private var initialized = CompletableFuture<CodyAgentServer>()
-  private val firstConnection = AtomicBoolean(true)
-  private var listeningToJsonRpc: Future<Void?> = CompletableFuture.completedFuture(null)
-  private var agentProcess: Process? = null
+class CodyAgent
+private constructor(
+    val client: CodyAgentClient,
+    val server: CodyAgentServer,
+    val launcher: Launcher<CodyAgentServer>,
+    private val agentProcess: Process,
+    private val listeningToJsonRpc: Future<Void?>
+) {
 
-  fun initialize() {
-    if ("true" != System.getProperty("cody-agent.enabled", "true")) {
-      logger.info("Cody agent is disabled due to system property '-Dcody-agent.enabled=false'")
-      return
-    }
-    try {
-      val isFirstConnection = firstConnection.getAndSet(false)
-      if (!isFirstConnection) {
-        // Restart `initialized` future so that new callers can subscribe to the next instance of
-        // the Cody agent server.
-        initialized = CompletableFuture()
-      }
-      agentNotRunningExplanation = ""
-      startListeningToAgent()
-      executorService.submit {
-        try {
-          val server = client.server ?: return@submit
-          val info =
-              server
-                  .initialize(
-                      ClientInfo(
-                          version = ConfigUtil.getPluginVersion(),
-                          workspaceRootUri = ConfigUtil.getWorkspaceRootPath(project).toUri(),
-                          extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
-                  .get()
-          logger.info("connected to Cody agent " + info.name)
-          server.initialized()
-          subscribeToFocusEvents()
-          initialized.complete(server)
-        } catch (e: Exception) {
-          agentNotRunningExplanation = "failed to send 'initialize' JSON-RPC request Cody agent"
-          logger.warn(agentNotRunningExplanation, e)
-        }
-      }
-    } catch (e: Exception) {
-      agentNotRunningExplanation = "unable to start Cody agent"
-      logger.warn(agentNotRunningExplanation, e)
-      CodyAutocompleteStatusService.resetApplication(project)
+  fun shutdown(): CompletableFuture<Void> {
+    return server.shutdown().thenAccept {
+      server.exit()
+      logger.warn("Cody Agent shut down")
+      listeningToJsonRpc.cancel(true)
+      agentProcess.destroyForcibly()
     }
   }
 
-  private fun subscribeToFocusEvents() {
-    // Code example taken from
-    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/4578776718354/comments/4594838404882
-    // This listener is registered programmatically because it was not working via plugin.xml
-    // listeners.
-    val multicaster = EditorFactory.getInstance().eventMulticaster
-    if (multicaster is EditorEventMulticasterEx) {
-      try {
-        multicaster.addFocusChangeListener(CodyAgentFocusListener(), disposable)
-      } catch (ignored: Exception) {
-        // Ignore exception https://github.com/sourcegraph/sourcegraph/issues/56032
-      }
-    }
-  }
-
-  fun shutdown(): Future<out CompletableFuture<Void>?>? {
-    val server = getServer(project) ?: return null
-    return executorService.submit<CompletableFuture<Void>> {
-      server.shutdown().thenAccept {
-        server.exit()
-        agentNotRunningExplanation = "Cody Agent shut down"
-        listeningToJsonRpc.cancel(true)
-      }
-    }
-  }
-
-  @Throws(IOException::class, CodyAgentException::class)
-  private fun startListeningToAgent() {
-    val binary = agentBinary()
-    logger.info("starting Cody agent " + binary.absolutePath)
-    val command: List<String> =
-        if (System.getenv("CODY_DIR") != null) {
-          val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
-          logger.info("using Cody agent script " + script.absolutePath)
-          listOf("node", "--enable-source-maps", script.absolutePath)
-        } else {
-          listOf(binary.absolutePath)
-        }
-
-    val processBuilder = ProcessBuilder(command)
-    if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
-        ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
-      processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
-    }
-
-    val process =
-        processBuilder
-            .redirectErrorStream(false)
-            .redirectError(ProcessBuilder.Redirect.PIPE)
-            .start()
-    process.onExit().thenApplyAsync {
-      if (it.exitValue() != 0) {
-        CodyAutocompleteStatusService.resetApplication(project)
-      }
-    }
-
-    // Redirect agent stderr into idea.log by buffering line by line into `logger.warn()`
-    // statements. Without this logic, the stderr output of the agent process is lost if the process
-    // fails to start for some reason. We use `logger.warn()` because the agent shouldn't print much
-    // normally (excluding a few noisy messages during initialization), it's mostly used to report
-    // unexpected errors.
-    Thread { process.errorStream.bufferedReader().forEachLine { line -> logger.warn(line) } }
-        .start()
-
-    agentProcess = process
-    val launcher =
-        Launcher.Builder<CodyAgentServer>()
-            .configureGson { gsonBuilder ->
-              gsonBuilder
-                  // emit `null` instead of leaving fields undefined because Cody
-                  // in VSC has
-                  // many `=== null` checks that return false for undefined fields.
-                  .serializeNulls()
-                  .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
-            }
-            .setRemoteInterface(CodyAgentServer::class.java)
-            .traceMessages(traceWriter())
-            .setExecutorService(executorService)
-            .setInput(process.inputStream)
-            .setOutput(process.outputStream)
-            .setLocalService(client)
-            .create()
-    val server = launcher.remoteProxy
-    client.server = server
-    client.codebase = CodyAgentCodebase(server, project)
-    listeningToJsonRpc = launcher.startListening()
-  }
-
-  override fun dispose() {
-    shutdown()
-    disposable.dispose()
+  fun isConnected(): Boolean {
+    // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
+    // because we don't know 100% yet what exactly constitutes a "connected" state. Out of
+    // abundance of caution, we check everything we can think of.
+    return agentProcess.isAlive && !listeningToJsonRpc.isDone && !listeningToJsonRpc.isCancelled
   }
 
   companion object {
-    var logger = Logger.getInstance(CodyAgent::class.java)
+    private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
-    @JvmStatic
-    fun getClient(project: Project): CodyAgentClient {
-      return project.service<CodyAgent>().client
+    fun create(project: Project): CompletableFuture<CodyAgent> {
+      try {
+        val agentProcess = startAgentProcess()
+        val client = CodyAgentClient()
+        val launcher = startAgentLauncher(agentProcess, client)
+        val server = launcher.remoteProxy
+        val listeningToJsonRpc = launcher.startListening()
+
+        try {
+          return server
+              .initialize(
+                  ClientInfo(
+                      version = ConfigUtil.getPluginVersion(),
+                      workspaceRootUri = ConfigUtil.getWorkspaceRootPath(project).toUri(),
+                      extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
+              .thenApply { info ->
+                logger.info("Connected to Cody agent " + info.name)
+                server.initialized()
+                CodyAgent(client, server, launcher, agentProcess, listeningToJsonRpc)
+              }
+        } catch (e: Exception) {
+          logger.warn("Failed to send 'initialize' JSON-RPC request Cody agent", e)
+          throw e
+        }
+      } catch (e: Exception) {
+        logger.warn("Unable to start Cody agent", e)
+        throw e
+      }
     }
 
-    @JvmStatic
-    fun getInitializedServer(project: Project): CompletableFuture<CodyAgentServer> {
-      return project.service<CodyAgent>().initialized
+    private fun startAgentProcess(): Process {
+      val binary = agentBinary()
+      logger.info("starting Cody agent " + binary.absolutePath)
+      val command: List<String> =
+          if (System.getenv("CODY_DIR") != null) {
+            val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
+            logger.info("using Cody agent script " + script.absolutePath)
+            listOf("node", "--enable-source-maps", script.absolutePath)
+          } else {
+            listOf(binary.absolutePath)
+          }
+
+      val processBuilder = ProcessBuilder(command)
+      if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
+          ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
+        processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+      }
+
+      val process =
+          processBuilder
+              .redirectErrorStream(false)
+              .redirectError(ProcessBuilder.Redirect.PIPE)
+              .start()
+
+      // Redirect agent stderr into idea.log by buffering line by line into `logger.warn()`
+      // statements. Without this logic, the stderr output of the agent process is lost if the
+      // process
+      // fails to start for some reason. We use `logger.warn()` because the agent shouldn't print
+      // much
+      // normally (excluding a few noisy messages during initialization), it's mostly used to report
+      // unexpected errors.
+      Thread { process.errorStream.bufferedReader().forEachLine { line -> logger.warn(line) } }
+          .start()
+
+      return process
     }
 
-    @JvmStatic
-    fun isConnected(project: Project): Boolean {
-      val agent = project.service<CodyAgent>()
-      // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
-      // because we don't know 100% yet what exactly constitutes a "connected" state. Out of
-      // abundance of caution, we check everything we can think of.
-      return (agent.agentProcess?.isAlive == true &&
-          !agent.listeningToJsonRpc.isDone &&
-          !agent.listeningToJsonRpc.isCancelled &&
-          agent.client.server != null)
-    }
-
-    @JvmStatic
-    fun <T> withServer(
-        project: Project,
-        callback: Function<CodyAgentServer, CompletableFuture<T>?>
-    ): CompletableFuture<T> {
-      return getInitializedServer(project).thenCompose(callback)
-    }
-
-    @JvmStatic
-    fun getServer(project: Project): CodyAgentServer? {
-      return if (!isConnected(project)) {
-        null
-      } else getClient(project).server
+    @Throws(IOException::class, CodyAgentException::class)
+    private fun startAgentLauncher(
+        agentProcess: Process,
+        client: CodyAgentClient
+    ): Launcher<CodyAgentServer> {
+      return Launcher.Builder<CodyAgentServer>()
+          .configureGson { gsonBuilder ->
+            gsonBuilder
+                // emit `null` instead of leaving fields undefined because Cody
+                // in VSC has
+                // many `=== null` checks that return false for undefined fields.
+                .serializeNulls()
+                .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
+          }
+          .setRemoteInterface(CodyAgentServer::class.java)
+          .traceMessages(traceWriter())
+          .setExecutorService(executorService)
+          .setInput(agentProcess.inputStream)
+          .setOutput(agentProcess.outputStream)
+          .setLocalService(client)
+          .create()
     }
 
     private fun binarySuffix(): String {

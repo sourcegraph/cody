@@ -2,9 +2,10 @@ package com.sourcegraph.cody
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -19,11 +20,8 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
 import com.intellij.xml.util.XmlStringUtil
-import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
-import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
-import com.sourcegraph.cody.agent.CodyAgentManager
-import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.CodyAgentServer
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener
 import com.sourcegraph.cody.chat.*
@@ -38,6 +36,7 @@ import com.sourcegraph.telemetry.GraphQlLogger
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.util.*
+import java.util.concurrent.ExecutionException
 import java.util.stream.Collectors
 import javax.swing.*
 import javax.swing.plaf.ButtonUI
@@ -125,15 +124,14 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
   @RequiresBackgroundThread
   fun refreshSubscriptionTab() {
-    tryRestartingAgentIfNotRunning(project)
-    getInitializedServer(project).thenAccept { server ->
+    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
-        addNewSubscriptionTab(server)
+        addNewSubscriptionTab(agent.server)
       } else {
         ApplicationManager.getApplication().invokeLater {
           tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
         }
-        addNewSubscriptionTab(server)
+        addNewSubscriptionTab(agent.server)
       }
     }
   }
@@ -146,14 +144,21 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       promptPanel.textArea.emptyText.text = "Connecting to agent..."
     }
 
-    ApplicationManager.getApplication().executeOnPooledThread {
-      getInitializedServer(project).thenAccept { server ->
-        id = server.chatNew().get()
+    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+      try {
+        id = agent.server.chatNew().get()
         ApplicationManager.getApplication().invokeLater {
           promptPanel.textArea.isEnabled = true
           promptPanel.textArea.emptyText.text = "Ask a question about this code..."
         }
         callback.invoke()
+      } catch (e: ExecutionException) {
+        // Agent cannot gracefully recover when connection is lost, we need to restart it
+        // TODO https://github.com/sourcegraph/jetbrains/issues/306
+        logger.warn("Failed to load new chat, restarting agent", e)
+        CodyAgentService.getInstance(project).restartAgent(project)
+        Thread.sleep(5000)
+        loadNewChatId(callback)
       }
     }
   }
@@ -173,7 +178,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       if (jetbrainsUserId != agentUserId) {
         if (agentUserId != null) {
           logger.warn("User id in JetBrains is different from agent: restarting agent...")
-          CodyAgentManager.restartAgent(project)
+          CodyAgentService.getInstance(project).restartAgent(project)
           refreshSubscriptionTab()
           return
         }
@@ -214,21 +219,19 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   private fun refreshRecipes() {
-    recipesPanel.removeAll()
-    recipesPanel.emptyText.text = "Loading commands..."
-    recipesPanel.revalidate()
-    recipesPanel.repaint()
-    ApplicationManager.getApplication().executeOnPooledThread { loadCommands() }
+    ApplicationManager.getApplication().invokeLater {
+      recipesPanel.removeAll()
+      recipesPanel.emptyText.text = "Loading commands..."
+      recipesPanel.revalidate()
+      recipesPanel.repaint()
+    }
+    loadCommands()
   }
 
   private fun loadCommands() {
-    tryRestartingAgentIfNotRunning(project)
-    getInitializedServer(project).thenAccept { server ->
-      if (server == null) {
-        setRecipesPanelError()
-      }
+    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       try {
-        server.recipesList().thenAccept { recipes: List<RecipeInfo> ->
+        agent.server.recipesList().thenAccept { recipes: List<RecipeInfo> ->
           ApplicationManager.getApplication().invokeLater {
             updateUIWithRecipeList(recipes)
           } // Update on EDT
@@ -280,9 +283,11 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         ApplicationManager.getApplication().executeOnPooledThread {
           GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
         }
-        val editorManager = FileEditorManager.getInstance(project)
-        CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
-            editorManager.selectedTextEditor)
+        val selectedEditor = FileEditorManager.getInstance(project).selectedTextEditor
+        if (selectedEditor != null) {
+          CodyEditorFactoryListener.Util.informAgentAboutEditorChange(selectedEditor)
+        }
+
         sendMessage(project, recipe.title, recipe.id)
       }
       recipesPanel.add(recipeButton)
@@ -305,8 +310,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             override fun actionPerformed(e: AnActionEvent) {
               GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
               val editorManager = FileEditorManager.getInstance(project)
-              CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
-                  editorManager.selectedTextEditor)
+              editorManager.selectedTextEditor?.let {
+                CodyEditorFactoryListener.Util.informAgentAboutEditorChange(it)
+              }
+
               sendMessage(project, recipe.title, recipe.id)
             }
           }
@@ -489,15 +496,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     // messages streamed back to us.
     ApplicationManager.getApplication().executeOnPooledThread {
       val chat = Chat()
-      tryRestartingAgentIfNotRunning(project)
-      if (isConnected(project)) {
-        try {
-          chat.sendMessageViaAgent(project, humanMessage, recipeId, this, inProgressChat)
-        } catch (e: Exception) {
-          logger.warn("Error sending message '$humanMessage' to chat", e)
-        }
-      } else {
-        logger.warn("Agent is disabled, can't use chat.")
+      try {
+        chat.sendMessageViaAgent(project, humanMessage, recipeId, this, inProgressChat)
+      } catch (e: Exception) {
+        logger.error("Error sending message '$humanMessage' to chat", e)
         addMessageToChat(
             ChatMessage(
                 Speaker.ASSISTANT,
@@ -506,8 +508,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
                     "and include as many details as possible to help troubleshoot the problem."))
         finishMessageProcessing()
       }
-      GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed")
     }
+    GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed")
   }
 
   override fun displayUsedContext(contextMessages: List<ContextMessage>) {

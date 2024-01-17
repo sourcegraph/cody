@@ -5,8 +5,8 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentServer
+import com.sourcegraph.cody.agent.CodyAgentCodebase
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetRepoIDResponse
 import com.sourcegraph.cody.auth.ui.EditCodebaseContextAction
 import com.sourcegraph.cody.chat.ChatUIConstants
@@ -54,26 +54,23 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   }
 
   fun updateEmbeddingStatus() {
-    val client = CodyAgent.getClient(project)
-    val repoName = client.codebase?.getUrl()
+    val repoName = CodyAgentCodebase.getInstance(project).getUrl()
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
-      ApplicationManager.getApplication().executeOnPooledThread {
-        CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
-          server?.getRepoIdIfEmbeddingExists(GetRepoIDResponse(repoName))?.thenCompose {
-              repoIdWithEmbeddings ->
-            if (repoIdWithEmbeddings != null) {
-              CompletableFuture.runAsync {
-                setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
-              }
-            } else {
-              server.getRepoId(GetRepoIDResponse(repoName)).thenAccept { repoId ->
-                if (repoId != null) {
-                  setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
-                } else {
-                  setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
-                }
+      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+        agent.server.getRepoIdIfEmbeddingExists(GetRepoIDResponse(repoName)).thenApply {
+            repoIdWithEmbeddings ->
+          if (repoIdWithEmbeddings != null) {
+            CompletableFuture.runAsync {
+              setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
+            }
+          } else {
+            agent.server.getRepoId(GetRepoIDResponse(repoName)).thenAccept { repoId ->
+              if (repoId != null) {
+                setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
+              } else {
+                setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
               }
             }
           }
@@ -83,21 +80,23 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   }
 
   private fun updateViewBasedOnStatus() {
-    val codebaseName = embeddingStatus.getMainText()
-    codebaseSelector.text = codebaseName.ifEmpty { "No repository" }
-    val icon = embeddingStatus.getIcon()
-    if (icon != null) {
-      embeddingStatusContent.icon = icon
-      embeddingStatusContent.preferredSize =
-          Dimension(icon.iconWidth + 10, embeddingStatusContent.height)
-    }
-    val tooltip = embeddingStatus.getTooltip(project)
-    if (tooltip.isNotEmpty()) {
-      embeddingStatusContent.setToolTipText(tooltip)
+    ApplicationManager.getApplication().invokeLater {
+      val codebaseName = embeddingStatus.getMainText()
+      codebaseSelector.text = codebaseName.ifEmpty { "No repository" }
+      val icon = embeddingStatus.getIcon()
+      if (icon != null) {
+        embeddingStatusContent.icon = icon
+        embeddingStatusContent.preferredSize =
+            Dimension(icon.iconWidth + 10, embeddingStatusContent.height)
+      }
+      val tooltip = embeddingStatus.getTooltip(project)
+      if (tooltip.isNotEmpty()) {
+        embeddingStatusContent.setToolTipText(tooltip)
+      }
     }
   }
 
-  fun setEmbeddingStatus(embeddingStatus: EmbeddingStatus) {
+  private fun setEmbeddingStatus(embeddingStatus: EmbeddingStatus) {
     this.embeddingStatus = embeddingStatus
     updateViewBasedOnStatus()
   }

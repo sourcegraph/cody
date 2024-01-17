@@ -9,8 +9,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.util.Disposer
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgent.Companion.getClient
+import com.sourcegraph.cody.agent.CodyAgentCodebase
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.Range
@@ -39,7 +39,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       return
     }
     val editor = event.editor
-    Util.informAgentAboutEditorChange(editor, skipCodebaseOnFileOpened = false)
+    Util.informAgentAboutEditorChange(editor, hasFileChanged = true)
     val project = editor.project
     if (project == null || project.isDisposed) {
       return
@@ -98,9 +98,9 @@ class CodyEditorFactoryListener : EditorFactoryListener {
 
         // This notification must be sent after the above, see tracker comment for more details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-          CodyAgent.getServer(editor.project!!)?.let { server ->
-            server.completionAccepted(CompletionItemParams(completionID))
-            server.autocompleteClearLastCandidate()
+          CodyAgentService.applyAgentOnBackgroundThread(editor.project!!) { agent ->
+            agent.server.completionAccepted(CompletionItemParams(completionID))
+            agent.server.autocompleteClearLastCandidate()
           }
         }
 
@@ -157,21 +157,17 @@ class CodyEditorFactoryListener : EditorFactoryListener {
     }
 
     // Sends a textDocument/didChange notification to the agent server.
-    fun informAgentAboutEditorChange(editor: Editor?, skipCodebaseOnFileOpened: Boolean = true) {
-      if (editor?.project?.let(CodyAgent.Companion::isConnected) != true) {
-        return
-      }
-      val client = getClient(editor.project!!)
-      if (client.server == null) {
-        return
-      }
+    fun informAgentAboutEditorChange(editor: Editor, hasFileChanged: Boolean = false) {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
       val document = TextDocument.fromPath(file.path, editor.document.text, getSelection(editor))
-      client.server!!.textDocumentDidChange(document)
-      if (client.codebase == null || skipCodebaseOnFileOpened) {
-        return
+      val project = editor.project!!
+      CodyAgentService.applyAgentOnBackgroundThread(project) {
+        it.server.textDocumentDidChange(document)
       }
-      client.codebase!!.onFileOpened(editor.project!!, file)
+
+      if (hasFileChanged) {
+        CodyAgentCodebase.getInstance(project).onFileOpened(project, file)
+      }
     }
   }
 }

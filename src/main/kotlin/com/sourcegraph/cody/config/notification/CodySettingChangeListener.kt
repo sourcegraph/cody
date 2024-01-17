@@ -5,8 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentManager
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtil
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
@@ -24,18 +23,19 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
-            // Notify Cody Agent about config changes.
-            val agentServer = CodyAgent.getServer(project)
-            if (ConfigUtil.isCodyEnabled() && agentServer != null) {
-              agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+            if (context.oldCodyEnabled != context.newCodyEnabled) {
+              if (context.newCodyEnabled) {
+                CodyAgentService.getInstance(project).startAgent(project)
+              } else {
+                CodyAgentService.getInstance(project).stopAgent(project)
+              }
             }
 
-            if (context.newCodyEnabled) {
-              // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
-              CodyAgentManager.startAgent(project)
-            } else {
-              // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
-              CodyAgentManager.stopAgent(project)
+            // Notify Cody Agent about config changes.
+            CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+              if (ConfigUtil.isCodyEnabled()) {
+                agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+              }
             }
 
             // clear autocomplete suggestions if freshly disabled
@@ -77,7 +77,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             if (context.oldShouldAcceptNonTrustedCertificatesAutomatically !=
                 context.newShouldAcceptNonTrustedCertificatesAutomatically)
-                CodyAgentManager.restartAgent(project)
+                CodyAgentService.getInstance(project).restartAgent(project)
           }
         })
   }

@@ -5,7 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -23,7 +23,7 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
     autocompleteItemsCache[cacheKey] = allAutocompleteItems
     val isActionEnabled =
         CodyEditorUtil.isEditorInstanceSupported(editor) &&
-            CodyAgent.isConnected(project) &&
+            CodyAgentService.isConnected(project) &&
             allAutocompleteItems.isNotEmpty()
     if (!isActionEnabled) autocompleteItemsCache.clear()
     return isActionEnabled

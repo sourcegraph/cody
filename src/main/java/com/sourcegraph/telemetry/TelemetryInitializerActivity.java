@@ -4,7 +4,6 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginInstaller;
 import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.notification.AccountSettingChangeListener;
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener;
@@ -34,7 +33,6 @@ public class TelemetryInitializerActivity implements Activity {
     PluginInstaller.addStateListener(
         new PluginStateListener() {
           public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
-            CodyAgentManager.startAgent(project);
             GraphQlLogger.logInstallEvent(project)
                 .thenAccept(
                     wasSuccessful -> {
@@ -46,7 +44,6 @@ public class TelemetryInitializerActivity implements Activity {
 
           @Override
           public void uninstall(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
-            CodyAgentManager.stopAgent(project);
             if (ideaPluginDescriptor
                 .getPluginId()
                 .getIdString()

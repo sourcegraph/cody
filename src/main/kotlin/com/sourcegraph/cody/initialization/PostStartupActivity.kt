@@ -2,7 +2,9 @@ package com.sourcegraph.cody.initialization
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.sourcegraph.cody.agent.CodyAgentManager
+import com.sourcegraph.cody.CodyFocusChangeListener
+import com.sourcegraph.cody.agent.CodyAgentCodebase
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
 import com.sourcegraph.cody.config.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
@@ -24,7 +26,9 @@ class PostStartupActivity : StartupActivity.DumbAware {
     SelectOneOfTheAccountsAsActive().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
     CheckUpdatesTask(project).queue()
-    if (ConfigUtil.isCodyEnabled()) CodyAgentManager.startAgent(project)
+    if (ConfigUtil.isCodyEnabled()) CodyAgentService.getInstance(project).startAgent(project)
     CodyAutocompleteStatusService.resetApplication(project)
+    CodyFocusChangeListener().runActivity(project)
+    CodyAgentCodebase.getInstance(project).initializeRepoName()
   }
 }

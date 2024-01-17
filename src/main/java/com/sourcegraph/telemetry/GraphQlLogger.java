@@ -2,7 +2,7 @@ package com.sourcegraph.telemetry;
 
 import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentService;
 import com.sourcegraph.cody.agent.protocol.Event;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
@@ -65,7 +65,8 @@ public class GraphQlLogger {
   // This could be exposed later (as public), but currently, we don't use it externally.
   private static CompletableFuture<Boolean> logEvent(
       @NotNull Project project, @NotNull Event event) {
-    return CodyAgent.withServer(project, server -> server.logEvent(event))
+    return CodyAgentService.getAgent(project)
+        .thenApply(agent -> agent.getServer().logEvent(event))
         .thenApply((ignored) -> true)
         .exceptionally((ignored) -> false);
   }

@@ -5,7 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAccountManager
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -58,7 +58,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
             CodyAutocompleteStatus.CodyDisabled
           } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
             CodyAutocompleteStatus.AutocompleteDisabled
-          } else if (!CodyAgent.isConnected(project)) {
+          } else if (!CodyAgentService.isConnected(project)) {
             CodyAutocompleteStatus.CodyAgentNotRunning
           } else if (token == null) {
             CodyAutocompleteStatus.CodyNotSignedIn

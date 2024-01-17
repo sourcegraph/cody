@@ -11,7 +11,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.panel
-import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentCodebase
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetRepoIDResponse
 import com.sourcegraph.cody.ui.LoadingLayerUI
 import java.awt.event.ActionEvent
@@ -27,7 +28,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
   private val currentIndicator: AtomicReference<ProgressIndicator> = AtomicReference()
 
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
-    val gitURL = ExtendableTextField(CodyAgent.getClient(project).codebase?.getUrl() ?: "", 40)
+    val gitURL = ExtendableTextField(CodyAgentCodebase.getInstance(project).getUrl() ?: "", 40)
     val loadingLayerUI = LoadingLayerUI()
     val layeredGitURL = JLayer(gitURL, loadingLayerUI)
 
@@ -59,10 +60,14 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
                   }
                   try {
                     loadingLayerUI.startLoading()
-                    val server = CodyAgent.getInitializedServer(project).get(1, TimeUnit.SECONDS)
                     val isRepoIdValid =
-                        server?.getRepoId(GetRepoIDResponse(repoName))?.get(4, TimeUnit.SECONDS) !=
-                            null
+                        CodyAgentService.getAgent(project)
+                            .thenCompose { agent ->
+                              agent.server.getRepoId(GetRepoIDResponse(repoName))
+                            }
+                            .completeOnTimeout(null, 4, TimeUnit.SECONDS)
+                            .get() != null
+
                     setOKButtonIcon(null)
                     loadingLayerUI.stopLoading()
                     ApplicationManager.getApplication().invokeLater {
@@ -93,7 +98,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
     }
 
     override fun doOKAction() {
-      CodyAgent.getClient(project).codebase?.setUrl(gitURL.text)
+      CodyAgentCodebase.getInstance(project).setUrl(gitURL.text)
       super.doOKAction()
     }
 

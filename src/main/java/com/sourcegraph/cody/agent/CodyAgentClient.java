@@ -19,8 +19,6 @@ import org.jetbrains.annotations.Nullable;
 public class CodyAgentClient {
 
   private static final Logger logger = Logger.getInstance(CodyAgentClient.class);
-  @Nullable public CodyAgentServer server;
-  @Nullable public CodyAgentCodebase codebase;
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable public Consumer<ChatMessage> onChatUpdateMessageInProgress;
   @NotNull public Runnable onFinishedProcessing = () -> {};

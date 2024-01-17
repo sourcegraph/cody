@@ -10,7 +10,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -85,12 +85,15 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
     fun isCodyProJetbrains(project: Project): Boolean {
       val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
       if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-        val server = CodyAgent.getServer(project)
-        if (server != null) {
-          val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-          return codyProFeatureFlag.get()!!
-        }
+        return CodyAgentService.getAgent(project)
+            .thenCompose { agent ->
+              agent.server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+            }
+            // TODO We should avoid using getNow if possible
+            // https://github.com/sourcegraph/jetbrains/issues/307
+            .getNow(false) == true
       }
+
       return false
     }
 

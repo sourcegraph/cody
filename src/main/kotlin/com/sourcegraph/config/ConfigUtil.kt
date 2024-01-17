@@ -9,7 +9,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.ExtensionConfiguration
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -32,7 +32,6 @@ object ConfigUtil {
   @JvmStatic
   fun getAgentConfiguration(project: Project): ExtensionConfiguration {
     val serverAuth = ServerAuthLoader.loadServerAuth(project)
-    val codyAgentCodebase = CodyAgent.getClient(project).codebase
 
     return ExtensionConfiguration(
         anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
@@ -46,7 +45,7 @@ object ConfigUtil {
             UserLevelConfig.getAutocompleteProviderType()?.vscodeSettingString(),
         debug = isCodyDebugEnabled(),
         verboseDebug = isCodyVerboseDebugEnabled(),
-        codebase = codyAgentCodebase?.getUrl(),
+        codebase = CodyAgentCodebase.getInstance(project).getUrl(),
     )
   }
 

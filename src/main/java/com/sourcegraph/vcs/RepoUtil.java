@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentService;
 import com.sourcegraph.cody.agent.protocol.CloneURL;
 import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.common.ErrorNotification;
@@ -148,9 +148,10 @@ public class RepoUtil {
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
       String codebaseName =
-          CodyAgent.withServer(
-                  project,
-                  server -> server.convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
+          CodyAgentService.getAgent(project)
+              .thenCompose(
+                  agent ->
+                      agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
               .join();
       if (codebaseName == null) {
         throw new Exception(

@@ -13,8 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
@@ -187,14 +186,6 @@ class CodyAutocompleteManager {
       lookupString: String?,
       originalText: String
   ): CompletableFuture<Void?> {
-    if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
-      tryRestartingAgentIfNotRunning(project)
-    }
-    val server = CodyAgent.getServer(project)
-    if (server == null) {
-      logger.warn("Doing nothing, Agent is not running")
-      return CompletableFuture.completedFuture(null)
-    }
     val position = textDocument.positionAt(offset)
     val lineNumber = editor.document.getLineNumber(offset)
     var startPosition = 0
@@ -226,33 +217,43 @@ class CodyAutocompleteManager {
                             com.sourcegraph.cody.vscode.Position(lineNumber, startPosition),
                             position)))
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
-    val completions = server!!.autocompleteExecute(params)
 
-    // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
-    // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
-    // correctly propagate the cancellation to the agent.
-    cancellationToken.onCancellationRequested { completions.cancel(true) }
-    return completions
-        .handle { result, error ->
-          if (error != null) {
-            if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
-                !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
-              handleError(project, error)
+    val result = CompletableFuture<Void?>()
+    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+      val completions = agent.server.autocompleteExecute(params)
+
+      // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
+      // as we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
+      // correctly propagate the cancellation to the agent.
+      cancellationToken.onCancellationRequested { completions.cancel(true) }
+
+      completions
+          .handle { result, error ->
+            if (error != null) {
+              if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
+                  !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
+                handleError(project, error)
+              }
+            } else if (result != null) {
+              UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
+              UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+              processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
             }
-          } else if (result != null) {
-            UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
-            UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-            processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
+            null
           }
-          null
-        }
-        .exceptionally { error: Throwable? ->
-          if (!(error is CancellationException || error is CompletionException)) {
-            logger.warn("failed autocomplete request $params", error)
+          .exceptionally { error: Throwable? ->
+            if (!(error is CancellationException || error is CompletionException)) {
+              logger.warn("failed autocomplete request $params", error)
+            }
+            null
           }
-          null
-        }
-        .thenAccept { resetApplication(project) }
+          .thenAccept {
+            resetApplication(project)
+            result.complete(null)
+          }
+    }
+
+    return result
   }
 
   private fun handleError(project: Project, error: Throwable?) {
@@ -348,8 +349,10 @@ class CodyAutocompleteManager {
       return
     }
 
-    editor.project?.let {
-      CodyAgent.getServer(it)?.completionSuggested(CompletionItemParams(defaultItem.id))
+    project?.let {
+      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+        agent.server.completionSuggested(CompletionItemParams(defaultItem.id))
+      }
     }
 
     // Insert one inlay hint per delta in the first line.
