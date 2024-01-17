@@ -31,7 +31,7 @@ const MULTI_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG]
 const SINGLE_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopRequences: SINGLE_LINE_STOP_SEQUENCES,
+    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
     multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
 })
 

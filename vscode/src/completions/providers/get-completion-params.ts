@@ -19,12 +19,12 @@ interface LineNumberDependentCompletionParamsByType {
 }
 
 interface Params {
-    singlelineStopRequences: string[]
+    singlelineStopSequences: string[]
     multilineStopSequences: string[]
 }
 
 export function getLineNumberDependentCompletionParams(params: Params): LineNumberDependentCompletionParamsByType {
-    const { singlelineStopRequences, multilineStopSequences } = params
+    const { singlelineStopSequences, multilineStopSequences } = params
 
     return {
         singlelineParams: {
@@ -32,7 +32,7 @@ export function getLineNumberDependentCompletionParams(params: Params): LineNumb
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             maxTokensToSample: 30,
-            stopSequences: singlelineStopRequences,
+            stopSequences: singlelineStopSequences,
         },
         multilineParams: {
             timeoutMs: 15_000,

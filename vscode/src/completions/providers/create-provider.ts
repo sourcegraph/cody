@@ -91,7 +91,7 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return createAnthropicProviderConfig({ client })
+                return createAnthropicProviderConfig({ client, model: codyLLMSiteConfig.completionModel })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null

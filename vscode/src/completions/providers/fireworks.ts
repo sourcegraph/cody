@@ -76,7 +76,7 @@ function getMaxContextTokens(model: FireworksModel): number {
 const MAX_RESPONSE_TOKENS = 256
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopRequences: ['\n'],
+    singlelineStopSequences: ['\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
