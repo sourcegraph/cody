@@ -1,27 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { convertFileUriToTestFileUri, createDefaultTestFileNameByLanguageExt } from './new-test-file'
+import { convertFileUriToTestFileUri, createDefaultTestFile } from './new-test-file'
 
-describe('createDefaultTestFileNameByLanguageExt', () => {
-    // All test should work with ext including . or not
-    it('should create a test file name with .test suffix for js and ts files', () => {
-        expect(createDefaultTestFileNameByLanguageExt('file', 'ts')).toBe('file.test.ts')
-        expect(createDefaultTestFileNameByLanguageExt('file', '.js')).toBe('file.test.js')
-    })
-
-    it('should create a test file name with _test suffix for py and go files', () => {
-        expect(createDefaultTestFileNameByLanguageExt('file', '.py')).toBe('file_test.py')
-        expect(createDefaultTestFileNameByLanguageExt('file', 'go')).toBe('file_test.go')
-    })
-
-    it('should create a test file name with _spec suffix for rb files', () => {
-        expect(createDefaultTestFileNameByLanguageExt('file', '.rb')).toBe('file_spec.rb')
-    })
-
-    it('should create a test file name with Test suffix for other files', () => {
-        expect(createDefaultTestFileNameByLanguageExt('file', '.cpp')).toBe('fileTest.cpp')
-        expect(createDefaultTestFileNameByLanguageExt('file', 'java')).toBe('fileTest.java')
+describe('createDefaultTestFile', () => {
+    it.each([
+        ['/path/to/file.java', '/path/to/fileTest.java'],
+        ['/path/to/file.js', '/path/to/file.test.js'],
+        ['/path/to/file.go', '/path/to/file_test.go'],
+        ['/path/to/test_file.py', '/path/to/test_file.py'],
+        ['/path/to/test-file.js', '/path/to/test-file.test.js'],
+        ['/path/to/node_modules/file.js', '/path/to/node_modules/file.test.js'],
+        ['/path/to/node_modules/file_test.ts', '/path/to/node_modules/file_test.ts'],
+        ['/path/to/fileTest.js', '/path/to/fileTest.js'],
+        ['test_example.py', 'test_example.py'],
+        ['example.cpp', 'exampleTest.cpp'],
+        ['example.test.js', 'example.test.js'],
+        ['Example.java', 'ExampleTest.java'],
+        ['ExampleTest.java', 'ExampleTest.java'],
+        ['example.rb', 'example_spec.rb'],
+        ['Example.cs', 'ExampleTest.cs'],
+        ['ExampleTest.php', 'ExampleTest.php'],
+        ['ExampleSpec.scala', 'ExampleSpec.scala'],
+        ['file.rb', 'file_spec.rb'],
+        ['contest.ts', 'contest.test.ts'],
+    ])('for file %j it returns %j', (file, test) => {
+        expect(createDefaultTestFile(URI.file(file)).toString()).toBe(URI.file(test).toString())
     })
 })
 

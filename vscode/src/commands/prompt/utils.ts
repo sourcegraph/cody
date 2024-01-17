@@ -40,13 +40,7 @@ export function toSlashCommand(command: string): string {
  * Also returns false for any files in node_modules directory.
  */
 export function isValidTestFile(uri: URI): boolean {
-    const uriPath = uri.path
-    // Check if file path contains 'node_modules'
-    if (uriPath.includes('node_modules')) {
-        return false
-    }
-
-    const fileNameWithoutExt = path.posix.basename(uriPath, path.posix.extname(uriPath))
+    const fileNameWithoutExt = path.posix.basename(uri.path, path.posix.extname(uri.path))
 
     const suffixTest = /([._-](test|spec))|Test|Spec$/
 

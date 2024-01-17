@@ -48,6 +48,7 @@ describe('isValidTestFile', () => {
         ['/path/to/test_file.py', true],
         ['/path/to/test-file.js', false],
         ['/path/to/node_modules/file.js', false],
+        ['/path/to/node_modules/file_test.ts', true],
         ['/path/to/file.js', false],
 
         // Examples from various programming languages
