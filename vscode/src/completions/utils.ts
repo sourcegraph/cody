@@ -70,7 +70,7 @@ export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncG
 
 export async function* generatorWithErrorObserver<T>(
     generator: AsyncGenerator<T>,
-    errorCallback: (error: unknown) => void
+    errorObserver: (error: unknown) => void
 ): AsyncGenerator<T> {
     while (true) {
         try {
@@ -80,7 +80,7 @@ export async function* generatorWithErrorObserver<T>(
             }
             yield res.value
         } catch (error: unknown) {
-            errorCallback(error)
+            errorObserver(error)
             throw error
         }
     }
