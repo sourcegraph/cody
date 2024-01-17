@@ -188,6 +188,21 @@ class FireworksProvider extends Provider {
             })
         })
 
+        /**
+         * This implementation requires waiting for all generators to yield values
+         * before passing them to the consumer (request-manager). While this may appear
+         * as a performance bottleneck, it's necessary for the current design.
+         *
+         * The consumer operates on promises, allowing only a single resolve call
+         * from `requestManager.request`. Therefore, we must wait for the initial
+         * batch of completions before returning them collectively, ensuring all
+         * are included as suggested completions.
+         *
+         * To circumvent this performance issue, a method for adding completions to
+         * the existing suggestion list is needed. Presently, this feature is not
+         * available, and the switch to async generators maintains the same behavior
+         * as with promises.
+         */
         return zipGenerators(completionsGenerators)
     }
 
