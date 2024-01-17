@@ -6,7 +6,6 @@ import * as vscode from 'vscode'
 import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
-    ContextWindowLimitError,
     FeatureFlag,
     hydrateAfterPostMessage,
     isCodyIgnoredFile,
@@ -762,7 +761,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const warningMsg = contextLimitWarnings
                     .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
                     .join(' ')
-                this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
+                logDebug('SimpleChatPanelProvider', 'generateAssistantResponse > contextLimitWarnings', warningMsg)
             }
 
             if (sendTelemetry) {
