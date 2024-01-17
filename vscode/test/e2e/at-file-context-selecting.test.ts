@@ -83,7 +83,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     )
 
     // Send the message and check it was included
-    await chatInput.press('Enter')
+    await chatInput.press('Meta+Enter')
     await expect(chatInput).toBeEmpty()
     await expect(
         chatPanelFrame.getByText(
