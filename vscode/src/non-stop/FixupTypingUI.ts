@@ -127,50 +127,36 @@ export class FixupTypingUI {
         if (initialValue) {
             quickPick.value = initialValue
         }
-        const commandItems: vscode.QuickPickItem[] = [
+
+        quickPick.matchOnDescription = false
+        quickPick.matchOnDetail = false
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        ;(quickPick as any).matchOnLabel = false
+
+        const defaultItems: vscode.QuickPickItem[] = [
             {
-                label: 'actions',
+                label: 'Change Range',
                 kind: vscode.QuickPickItemKind.Separator,
             },
             {
-                label: 'Generate documentation for getActiveName',
-                buttons: [{ iconPath: new vscode.ThemeIcon('book') }],
+                label: 'Range',
+                detail: '$(code) Selection',
                 alwaysShow: true,
                 picked: false,
-            },
-            {
-                label: 'Generate a unit test for getActiveName',
-                buttons: [{ iconPath: new vscode.ThemeIcon('package') }],
-                alwaysShow: true,
-                picked: false,
-            },
-            {
-                label: 'config',
-                kind: vscode.QuickPickItemKind.Separator,
             },
             {
                 label: 'Change Model',
-                description: 'Claude 2.1',
-                alwaysShow: true,
-                picked: false,
-            },
-            {
-                label: 'Edit Settings',
-                description: 'Claude 2.1',
-                alwaysShow: true,
-                picked: false,
-            },
-            {
-                label: 'more',
                 kind: vscode.QuickPickItemKind.Separator,
             },
             {
-                label: 'Advanced Edit',
+                label: 'Model',
+                detail: '$(anthropic-logo) Claude 2.1',
                 alwaysShow: true,
                 picked: false,
             },
         ]
-        quickPick.items = commandItems
+
+        quickPick.items = defaultItems
         quickPick.activeItems = []
 
         // ContextItems to store possible context
@@ -204,11 +190,6 @@ export class FixupTypingUI {
                 return
             }
 
-            if (newValue.startsWith('/')) {
-                quickPick.items = commandItems
-                return
-            }
-
             // If we have the beginning of a file or symbol match, show a helpful label
             if (newValue.endsWith('@')) {
                 quickPick.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
@@ -222,7 +203,7 @@ export class FixupTypingUI {
             const matchingContext = await this.getMatchingContext(newValue)
             if (matchingContext === null) {
                 // Nothing to match, clear existing items
-                quickPick.items = []
+                quickPick.items = defaultItems
                 return
             }
 
