@@ -14,7 +14,7 @@ interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsPara
  * 2. If the updated document context has the multiline trigger, returns the updated document context.
  * 3. Otherwise, returns the initial document context.
  */
-export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
+export function getDynamicMultilineDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
     const { initialCompletion, providerOptions } = params
     const {
         position,

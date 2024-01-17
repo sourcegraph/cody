@@ -6,7 +6,7 @@ export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_FILENAME_POSIX_GLOB } from './chat/ignore-helper'
+export { CODY_IGNORE_FILENAME_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -75,8 +75,6 @@ export type {
 } from './editor'
 export { displayPath, setDisplayPathEnvInfo, type DisplayPathEnvInfo } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
-export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
-export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 export { FeatureFlag, FeatureFlagProvider, featureFlagProvider } from './experimentation/FeatureFlagProvider'
 export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
@@ -123,7 +121,7 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export { SourcegraphGraphQLAPIClient, graphqlClient, type EmbeddingsSearchResults } from './sourcegraph-api/graphql'
+export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,

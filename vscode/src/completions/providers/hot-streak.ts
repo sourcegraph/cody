@@ -6,19 +6,21 @@ import {
     type InlineCompletionItemWithAnalytics,
 } from '../text-processing/process-inline-completions'
 
-import { getUpdatedDocContext } from './dynamic-multiline'
-import { type FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
+import { getDynamicMultilineDocContext } from './dynamic-multiline'
+import { type FetchAndProcessCompletionsParams, type FetchCompletionResult } from './fetch-and-process-completions'
 
 interface HotStreakExtractorParams extends FetchAndProcessCompletionsParams {
     completedCompletion: InlineCompletionItemWithAnalytics
 }
 
+export const STOP_REASON_HOT_STREAK = 'cody-hot-streak'
+
 export interface HotStreakExtractor {
-    extract(rawCompletion: string, isRequestEnd: boolean): void
+    extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult>
 }
 
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
-    const { completedCompletion, providerOptions, onHotStreakCompletionReady } = params
+    const { completedCompletion, providerOptions } = params
     const {
         docContext,
         document: { languageId },
@@ -43,11 +45,11 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
         return updatedDocContext
     }
 
-    function extract(rawCompletion: string, isRequestEnd: boolean): void {
-        do {
+    function* extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult> {
+        while (true) {
             const unprocessedCompletion = rawCompletion.slice(alreadyInsertedLength)
             if (unprocessedCompletion.length === 0) {
-                break
+                return undefined
             }
 
             const updatedProviderOptions = {
@@ -58,7 +60,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
             const eventualDynamicMultilineProviderOptions = providerOptions.dynamicMultilineCompletions
                 ? {
                       ...updatedProviderOptions,
-                      docContext: getUpdatedDocContext({
+                      docContext: getDynamicMultilineDocContext({
                           ...params,
                           initialCompletion: unprocessedCompletion,
                       }),
@@ -71,10 +73,13 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 // streak...
                 const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
 
-                onHotStreakCompletionReady(updatedDocContext, {
-                    ...processedCompletion,
-                    stopReason: 'hot-streak',
-                })
+                yield {
+                    docContext: updatedDocContext,
+                    completion: {
+                        ...processedCompletion,
+                        stopReason: STOP_REASON_HOT_STREAK,
+                    },
+                }
 
                 updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
             } else if (isRequestEnd) {
@@ -86,20 +91,25 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                     eventualDynamicMultilineProviderOptions
                 )
                 if (completion.insertText.trim().length === 0) {
-                    break
+                    return undefined
                 }
                 const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
-                onHotStreakCompletionReady(updatedDocContext, {
-                    ...processedCompletion,
-                    stopReason: 'hot-streak-end',
-                })
+
+                yield {
+                    docContext: updatedDocContext,
+                    completion: {
+                        ...processedCompletion,
+                        stopReason: STOP_REASON_HOT_STREAK,
+                    },
+                }
+
                 updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
             } else {
                 // ... otherwise we don't have enough in the remaining completion text to generate a full
                 // hot-streak completion and yield to wait for the next chunk (or abort).
-                break
+                return undefined
             }
-        } while (true)
+        }
     }
 
     return {

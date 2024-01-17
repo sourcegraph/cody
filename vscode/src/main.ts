@@ -11,7 +11,6 @@ import {
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
-import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { type ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -25,6 +24,7 @@ import {
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { newCodyCommandArgs, type CodyCommandArgs } from './commands'
+import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
@@ -184,22 +184,24 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
-    const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsClient,
         localEmbeddings || null,
         symfRunner || null,
         guardrails,
         commandsController
     )
 
-    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
-    disposables.push(new CodeActionProvider({ contextProvider }))
+    const ghostHintDecorator = new GhostHintDecorator()
+    disposables.push(
+        ghostHintDecorator,
+        new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
+        new CodeActionProvider({ contextProvider })
+    )
 
     let oldConfig = JSON.stringify(initialConfig)
     function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
@@ -216,7 +218,6 @@ const register = async (
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-        embeddingsClient.updateConfiguration(newConfig)
         setupAutocomplete()
     }
 

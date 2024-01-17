@@ -58,14 +58,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         checkValidEnumValues(key, value)
     }
 
-    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
+    const autocompleteExperimentalGraphContext: 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
     )
-    // Handle the old `true` option
-    if (autocompleteExperimentalGraphContext === true) {
-        autocompleteExperimentalGraphContext = 'lsp-light'
-    }
 
     return {
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
