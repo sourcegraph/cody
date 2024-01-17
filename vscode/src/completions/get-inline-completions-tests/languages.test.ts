@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { type CompletionParameters } from '@sourcegraph/cody-shared'
 
@@ -9,7 +9,7 @@ import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
 import { getInlineCompletionsInsertText, params } from './helpers'
 
 describe('[getInlineCompletions] languages', () => {
-    test('works with python', async () => {
+    it('works with python', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -31,8 +31,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'python',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -48,7 +48,7 @@ describe('[getInlineCompletions] languages', () => {
         `)
     })
 
-    test('works with java', async () => {
+    it('works with java', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -73,8 +73,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'java',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -92,7 +92,7 @@ describe('[getInlineCompletions] languages', () => {
     })
 
     // TODO: Detect `}\nelse\n{` pattern for else skip logic
-    test('works with csharp', async () => {
+    it('works with csharp', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -124,8 +124,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'csharp',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -138,7 +138,7 @@ describe('[getInlineCompletions] languages', () => {
             `)
     })
 
-    test('works with c++', async () => {
+    it('works with c++', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -163,8 +163,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'cpp',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -181,7 +181,7 @@ describe('[getInlineCompletions] languages', () => {
         `)
     })
 
-    test('works with c', async () => {
+    it('works with c', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -206,8 +206,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'c',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -224,7 +224,7 @@ describe('[getInlineCompletions] languages', () => {
         `)
     })
 
-    test('works with php', async () => {
+    it('works with php', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -249,8 +249,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'c',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
@@ -268,7 +268,7 @@ describe('[getInlineCompletions] languages', () => {
         `)
     })
 
-    test('works with dart', async () => {
+    it('works with dart', async () => {
         const requests: CompletionParameters[] = []
         const items = await getInlineCompletionsInsertText(
             params(
@@ -293,8 +293,8 @@ describe('[getInlineCompletions] languages', () => {
                 ],
                 {
                     languageId: 'dart',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 }
             )
