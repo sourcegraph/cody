@@ -117,7 +117,7 @@ export class FixupTypingUI {
         filePath,
         range,
         source,
-        placeholder = 'Instructions (@ to include code, / for commands)',
+        placeholder = 'Instructions (@ to include code)',
         initialValue,
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
@@ -135,18 +135,49 @@ export class FixupTypingUI {
         }
         const commandItems: vscode.QuickPickItem[] = [
             {
-                label: 'Write documentation for getActiveName',
+                label: 'actions',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: 'Generate documentation for getActiveName',
                 buttons: [{ iconPath: new vscode.ThemeIcon('book') }],
                 alwaysShow: true,
                 picked: false,
             },
             {
                 label: 'Generate a unit test for getActiveName',
-                buttons: [{ iconPath: new vscode.ThemeIcon('book') }],
+                buttons: [{ iconPath: new vscode.ThemeIcon('package') }],
+                alwaysShow: true,
+                picked: false,
+            },
+            {
+                label: 'config',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: 'Change Model',
+                description: 'Claude 2.1',
+                alwaysShow: true,
+                picked: false,
+            },
+            {
+                label: 'Edit Settings',
+                description: 'Claude 2.1',
+                alwaysShow: true,
+                picked: false,
+            },
+            {
+                label: 'more',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: 'Advanced Edit',
                 alwaysShow: true,
                 picked: false,
             },
         ]
+        quickPick.items = commandItems
+        quickPick.activeItems = []
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
