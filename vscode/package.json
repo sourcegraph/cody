@@ -1010,11 +1010,11 @@
           "fontCharacter": "\\0042"
         }
       },
-      "new-comment-icon": {
-        "description": "Cody logo heavy",
+      "openai-logo": {
+        "description": "OpenAI logo",
         "default": {
           "fontPath": "resources/cody-icons.woff",
-          "fontCharacter": "\\0048"
+          "fontCharacter": "\\0043"
         }
       },
       "anthropic-logo": {
@@ -1022,6 +1022,20 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0044"
+        }
+      },
+      "mixtral-logo": {
+        "description": "Mixtral logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0045"
+        }
+      },
+      "new-comment-icon": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0048"
         }
       }
     }
