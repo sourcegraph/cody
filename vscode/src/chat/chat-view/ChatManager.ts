@@ -1,7 +1,14 @@
 import { debounce } from 'lodash'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type ChatClient, type CodyCommand, type Guardrails } from '@sourcegraph/cody-shared'
+import {
+    ChatModelProvider,
+    type ChatClient,
+    type ChatEventSource,
+    type CodyCommand,
+    type Guardrails,
+} from '@sourcegraph/cody-shared'
 
 import { type View } from '../../../webviews/NavBar'
 import { type CodyCommandArgs } from '../../commands'
@@ -64,6 +71,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Register Commands
         this.disposables.push(
+            vscode.commands.registerCommand('cody.action.chat', (input, args) => this.executeChat(input, args)),
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
@@ -94,6 +102,16 @@ export class ChatManager implements vscode.Disposable {
         const chatProvider = await this.getChatProvider()
         await chatProvider?.setWebviewView(view)
     }
+
+    // Execute a chat request in a new chat panel
+    public async executeChat(question: string, args?: { source?: ChatEventSource }): Promise<void> {
+        const requestID = uuid.v4()
+        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, ...args })
+        const chatProvider = await this.getChatProvider()
+        await chatProvider.handleHumanMessageSubmitted(requestID, question, 'user', [], false)
+    }
+
+    // Execute a command request in a new chat panel
 
     public async executeCommand(
         command: CodyCommand,

@@ -308,10 +308,7 @@ const register = async (
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
-        // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input, args) =>
-            executeCommand(`/ask ${input}`, args)
-        ),
+        // Cody Commands
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await commandsController?.menu('default')
         }),
