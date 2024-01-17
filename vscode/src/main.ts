@@ -279,7 +279,7 @@ const register = async (
         args?: Partial<CodyCommandArgs>
     ): Promise<ChatSession | undefined> => {
         const commandArgs = newCodyCommandArgs(args)
-        const command = await commandsController?.findCommand(commandKey, commandArgs)
+        const command = await commandsController?.startCommand(commandKey, commandArgs)
         if (!command) {
             return
         }

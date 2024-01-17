@@ -40,8 +40,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
-    public commandRunners = new Map<string, CommandRunner>()
-
     public enableExperimentalCommands = false
 
     constructor(private readonly editor: VSCodeEditor) {
@@ -71,7 +69,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.enableExperimentalCommands = enable
     }
 
-    public async findCommand(text: string, args: CodyCommandArgs): Promise<CodyCommand | null> {
+    public async startCommand(text: string, args: CodyCommandArgs): Promise<CodyCommand | null> {
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
@@ -85,32 +83,22 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
         // Additional instruction that will be added to end of prompt in the custom command prompt
-        const commandInput = commandKey === text ? '' : commandSplit.join(' ')
+        const additionalInput = commandKey === text ? '' : commandSplit.join(' ')
+
         const command = this.default.get(commandKey)
         if (!command) {
             return null
         }
-
-        const runner = await this.startCodyCommandRunner(command, args, commandInput)
-        if (runner?.isFixupRequest || !runner?.command) {
-            return null
-        }
-        return runner?.command
-    }
-
-    private async startCodyCommandRunner(
-        command: CodyCommand,
-        args: CodyCommandArgs,
-        input: string
-    ): Promise<CommandRunner | undefined> {
-        logDebug('CommandsController:createCodyCommandRunner:creating', command.slashCommand)
-
-        // Start the command runner
-        const runner = new CommandRunner(this.editor, command, args, input)
-        this.commandRunners.set(runner.id, runner)
+        command.additionalInput = additionalInput
 
         // Save command to command history
-        this.lastUsedCommands.add(command.slashCommand)
+        this.lastUsedCommands.add(commandKey)
+
+        // Start the command runner
+        const runner = new CommandRunner(this.editor, command, args)
+        if (!runner?.command) {
+            return null
+        }
 
         // TODO bee runs tools in runner instead
         // Run shell command if any
@@ -119,14 +107,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             await runner.runShell(this.tools.exeCommand(shellCommand))
         }
 
-        // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (runner.command.mode !== 'ask') {
-            return undefined
-        }
-
-        this.commandRunners.delete(runner.id)
-
-        return runner
+        return runner.command
     }
 
     /**
@@ -227,7 +208,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
             }
 
-            await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
+            const inputText = [selectedCommandID, userPrompt].join(' ')
+            await vscode.commands.executeCommand('cody.action.commands.exec', inputText)
         } catch (error) {
             logError('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }
@@ -460,16 +442,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
-        for (const runner of this.commandRunners) {
-            runner[1].dispose()
-        }
         for (const disposable of this.fileWatcherDisposables) {
             disposable.dispose()
         }
         this.fileWatcherDisposables = []
         this.disposables = []
         this.userCustomCommandsMap = new Map<string, CodyCommand>()
-        this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }
 }
