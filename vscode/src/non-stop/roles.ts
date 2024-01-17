@@ -37,7 +37,7 @@ export interface FixupIdleTaskRunner {
  */
 export interface FixupTaskFactory {
     createTask(
-        documentUri: vscode.Uri,
+        documentUri: vscode.TextDocument,
         instruction: string,
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,

@@ -4,7 +4,7 @@ import { type ChatEventSource, type ContextFile, type ContextMessage } from '@so
 
 import { type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'
-import { getSmartSelection } from '../editor/utils'
+import { getEditSmartSelection } from '../edit/utils/edit-selection'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -145,7 +145,7 @@ export class FixupController
     }
 
     public async createTask(
-        documentUri: vscode.Uri,
+        document: vscode.TextDocument,
         instruction: string,
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
@@ -154,10 +154,10 @@ export class FixupController
         source?: ChatEventSource,
         contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {
-        const fixupFile = this.files.forUri(documentUri)
+        const fixupFile = this.files.forUri(document.uri)
         // Support expanding the selection range for intents where it is useful
         if (intent !== 'add') {
-            selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
+            selectionRange = await getEditSmartSelection(document, selectionRange)
         }
         const task = new FixupTask(
             fixupFile,
@@ -223,51 +223,6 @@ export class FixupController
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
         return undefined
-    }
-
-    /**
-     * This function retrieves a "smart" selection for a FixupTask when selectionRange is not available.
-     *
-     * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
-     * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
-     *
-     * The function does the following:
-     * 1. Finds the document URI from it's fileName
-     * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
-     * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
-     * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
-     */
-    private async getFixupTaskSmartSelection(
-        documentUri: vscode.Uri,
-        selectionRange: vscode.Range
-    ): Promise<vscode.Range> {
-        // Use selectionRange when it's available
-        if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
-            return selectionRange
-        }
-
-        // Retrieve the start position of the current selection
-        const activeCursorStartPosition = selectionRange.start
-        // If we find a new expanded selection position then we set it as the new start position
-        // and if we don't then we fallback to the original selection made by the user
-        const newSelectionStartingPosition =
-            (await getSmartSelection(documentUri, activeCursorStartPosition.line))?.start || selectionRange.start
-
-        // Retrieve the ending line of the current selection
-        const activeCursorEndPosition = selectionRange.end
-        // If we find a new expanded selection position then we set it as the new ending position
-        // and if we don't then we fallback to the original selection made by the user
-        const newSelectionEndingPosition =
-            (await getSmartSelection(documentUri, activeCursorEndPosition.line))?.end || selectionRange.end
-
-        // Create a new range that starts from the beginning of the folding range at the start position
-        // and ends at the end of the folding range at the end position.
-        return new vscode.Range(
-            newSelectionStartingPosition.line,
-            newSelectionStartingPosition.character,
-            newSelectionEndingPosition.line,
-            newSelectionEndingPosition.character
-        )
     }
 
     private logTaskCompletion(task: FixupTask, editOk: boolean): void {

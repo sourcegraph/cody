@@ -24,6 +24,7 @@ import {
     type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
+import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
@@ -195,8 +196,12 @@ const register = async (
         commandsController
     )
 
-    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
-    disposables.push(new CodeActionProvider({ contextProvider }))
+    const ghostHintDecorator = new GhostHintDecorator()
+    disposables.push(
+        ghostHintDecorator,
+        new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
+        new CodeActionProvider({ contextProvider })
+    )
 
     let oldConfig = JSON.stringify(initialConfig)
     function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
