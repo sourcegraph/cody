@@ -26,31 +26,31 @@ describe('createDefaultTestFileNameByLanguageExt', () => {
 })
 
 describe('convertFileUriToTestFileUri', () => {
-    it('should return the current file path if it is already a test file', () => {
+    it('should return the current file uri if it is already a test file', () => {
         const testFile = URI.file('/path/to/testFile.test.ts')
         expect(convertFileUriToTestFileUri(testFile)).toStrictEqual(testFile)
     })
 
-    it('should return the current file path if it is already a spec file', () => {
+    it('should return the current file uri if it is already a spec file', () => {
         const testFile = URI.file('/path/to/testFile.spec.rb')
         expect(convertFileUriToTestFileUri(testFile)).toStrictEqual(testFile)
     })
 
-    it('should generate a test file path from a non-test file path', () => {
+    it('should generate a test file uri from a non-test file uri', () => {
         const currentFile = URI.file('/path/to/file.ts')
         const existingTestFile = URI.file('/path/to/testFile.ts')
         const expected = URI.file('/path/to/file.test.ts')
         expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
     })
 
-    it('should generate the default spec file path from a non-test file path for ruby', () => {
+    it('should generate the default spec file uri from a non-test file uri for ruby', () => {
         const currentFile = URI.file('/path/to/file.rb')
         const existingTestFile = URI.file('/path/to/testFile.ts')
         const expected = URI.file('/path/to/file_spec.rb')
         expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
     })
 
-    it('should follow an existing test file path', () => {
+    it('should follow an existing test file uri', () => {
         const currentFile = URI.file('/path/to/file.ts')
         const existingTestFile = URI.file('/path/to/existingTestFile.test.ts')
         const expected = URI.file('/path/to/file.test.ts')
@@ -71,23 +71,37 @@ describe('convertFileUriToTestFileUri', () => {
         expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
     })
 
-    it('should generate a test file path for a non-test file path in python', () => {
+    it('should generate a test file uri for a non-test file uri in python', () => {
         const currentFile = URI.file('/path/to/file.py')
         const existingTestFile = URI.file('/path/to/testFile_test.py')
         const expected = URI.file('/path/to/file_test.py')
         expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
     })
 
-    it('should generate a test file path for a non-test file path in python when no exisiting test path provided', () => {
+    it('should generate a test file uri for a non-test file uri in python when no exisiting test path provided', () => {
         const currentFile = URI.file('/path/to/test-file.py')
         const expected = URI.file('/path/to/test-file_test.py')
         expect(convertFileUriToTestFileUri(currentFile)).toStrictEqual(expected)
     })
 
-    it('should generate the default spec file path for ruby when no exisiting test files is found', () => {
+    it('should generate the default spec file uri for ruby when no exisiting test files is found', () => {
         const currentFile = URI.file('/path/to/file.rb')
         const existingTestFile = undefined
         const expected = URI.file('/path/to/file_spec.rb')
+        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+    })
+
+    it('should generate the corrent test file uri for window files', () => {
+        const currentFile = URI.file('\\path\\to\\file.ts')
+        const existingTestFile = URI.file('\\path\\to\\testFile.test.ts')
+        const expected = URI.file('\\path\\to\\file.test.ts')
+        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+    })
+
+    it('should follow an existing test file uri format to generate new test file uri on windows', () => {
+        const currentFile = URI.file('\\server\\c$\\folder\\current-file.go')
+        const existingTestFile = URI.file('\\path\\to\\file_test.go')
+        const expected = URI.file('\\server\\c$\\folder\\current-file_test.go')
         expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
     })
 })

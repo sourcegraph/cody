@@ -202,7 +202,8 @@ export class EditProvider {
             if (cbTestFileUri) {
                 const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
                 const fileExists = await doesFileExist(testFileUri)
-                const newFileUri = URI.parse(fileExists ? testFileUri.fsPath : `untitled:${testFileUri.fsPath}`)
+                // create a file uri with untitled scheme that would work on windows
+                const newFileUri = fileExists ? testFileUri : URI.parse(`untitled:${testFileUri.fsPath}`)
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
             }
             return
