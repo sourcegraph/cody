@@ -89,7 +89,7 @@ describe('getConfiguration', () => {
                             url: 'http://localhost:11434',
                         }
                     case 'cody.autocomplete.experimental.graphContext':
-                        return 'lsp-light'
+                        return 'bfg'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
@@ -136,7 +136,7 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
-            autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: 'http://localhost:11434',
