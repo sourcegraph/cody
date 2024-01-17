@@ -538,11 +538,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
+        // Reset current chat panel title
+        this.handleChatTitle()
         this.postViewTranscript()
+        // Update the provider map with the new sessionID
+        void vscode.commands.executeCommand('cody.chat.providers.refresh')
     }
 
-    public handleChatTitle(title: string): void {
-        this.chatModel.setChatTitle(title)
+    public handleChatTitle(title = 'New Chat'): void {
+        // setChatTitle handles title changed by user
+        // once set, the title will not be updated to the next submitted question
+        if (title !== 'New Chat') {
+            this.chatModel.setChatTitle(title)
+        }
         if (this.webviewPanel) {
             this.webviewPanel.title = title
         }

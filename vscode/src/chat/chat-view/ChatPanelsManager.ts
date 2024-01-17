@@ -13,6 +13,8 @@ import { type CommandsController } from '../../commands/CommandsController'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { type MessageProviderOptions } from '../MessageProvider'
@@ -262,17 +264,33 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.treeViewProvider.reset()
     }
 
-    public async clearAndRestartSession(): Promise<void> {
-        logDebug('ChatPanelsManager', 'clearAndRestartSession')
-        // Clear and restart chat session in current panel
-        if (this.activePanelProvider) {
-            await this.activePanelProvider.clearAndRestartSession()
+    /**
+     * Clear the current chat view and start a new chat session in panel with matching ID
+     *  If no sessionID is provided, reset the chat view in active panel with warnings
+     */
+    public async resetPanel(id?: string): Promise<void> {
+        logDebug('ChatPanelsManager', 'resetPanel')
+        // NOTE: the editor title button click returns a uri instead of id string
+        const sessionID = typeof id === 'string' ? id : undefined
+        const provider = sessionID ? this.panelProvidersMap.get(sessionID) : this.activePanelProvider
+        if (!provider) {
             return
         }
+        if (!sessionID) {
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+            // Show confirmation dialog
+            const confirmation = await vscode.window.showWarningMessage(
+                'Restart Chat Session',
+                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
+                'Restart Chat Session'
+            )
+            if (!confirmation) {
+                return
+            }
+        }
 
-        // Create and restart in new panel
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.clearAndRestartSession()
+        await provider.clearAndRestartSession()
     }
 
     public async restorePanel(chatID: string, chatQuestion?: string): Promise<SimpleChatPanelProvider | undefined> {
@@ -288,6 +306,16 @@ export class ChatPanelsManager implements vscode.Disposable {
         } catch (error) {
             console.error(error, 'errored restoring panel')
             return undefined
+        }
+    }
+
+    // Refresh the provider map
+    public refresh(): void {
+        for (const [id, provider] of [...this.panelProvidersMap]) {
+            if (id !== provider.sessionID) {
+                this.panelProvidersMap.set(provider.sessionID, provider)
+                this.panelProvidersMap.delete(id)
+            }
         }
     }
 

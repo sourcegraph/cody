@@ -300,20 +300,7 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.status', () => authProvider.getAuthStatus()), // Used by the agent
-        // Commands
-        vscode.commands.registerCommand('cody.chat.restart', async () => {
-            const confirmation = await vscode.window.showWarningMessage(
-                'Restart Chat Session',
-                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
-                'Restart Chat Session'
-            )
-            if (!confirmation) {
-                return
-            }
-            await chatManager.clearAndRestartSession()
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
-        }),
+        // Chat
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })

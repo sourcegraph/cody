@@ -465,7 +465,7 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.restart",
+        "command": "cody.chat.panel.reset",
         "category": "Cody",
         "title": "Restart Chat Session...",
         "group": "Cody",
@@ -696,7 +696,7 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.restart",
+          "command": "cody.chat.panel.reset",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@0",
           "visibility": "visible"
