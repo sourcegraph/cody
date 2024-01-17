@@ -24,7 +24,3 @@ The VS Code extension has _Cody commands_, which are pre-formed prompts you can 
 Relevant context from many different sources (the open file in your editor, tree-sitter, precise code intel, and more) is included in the prompt when asking Cody a question. Different LLMs handle context in different ways, some LLMs might do better with more context, while that might simply confuse others.
 
 We can influence chat performance by altering prompting AND context amount/relevancy.
-
-### LLM Judge
-
-[LLM judge tool](../e2e/README.md)

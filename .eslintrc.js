@@ -79,7 +79,7 @@ const config = {
       },
     },
     {
-      files: ['*.test.ts?(x)', '**/testutils/**', '**/e2e/**'],
+      files: ['*.test.ts?(x)', '**/testutils/**'],
       rules: {
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',
