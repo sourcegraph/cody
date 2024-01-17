@@ -3,7 +3,7 @@ import { type InteractionMessage } from '../chat/transcript/messages'
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
 const hallucinate =
     'If context is available: never make any assumptions nor provide any misleading or hypothetical examples.'
-export const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
+const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.

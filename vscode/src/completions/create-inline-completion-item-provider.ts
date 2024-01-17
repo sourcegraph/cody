@@ -64,9 +64,7 @@ export async function createInlineCompletionItemProvider({
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'lsp-light'
-                ? 'lsp-light'
-                : config.autocompleteExperimentalGraphContext === 'bfg'
+            config.autocompleteExperimentalGraphContext === 'bfg'
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'

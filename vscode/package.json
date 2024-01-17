@@ -941,7 +941,6 @@
           "default": null,
           "enum": [
             null,
-            "lsp-light",
             "bfg",
             "bfg-mixed"
           ],
