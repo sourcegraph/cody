@@ -1,15 +1,10 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import {
-    ChatModelProvider,
-    type ChatClient,
-    type ChatEventSource,
-    type CodyCommand,
-    type Guardrails,
-} from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type ChatClient, type CodyCommand, type Guardrails } from '@sourcegraph/cody-shared'
 
 import { type View } from '../../../webviews/NavBar'
+import { type CodyCommandArgs } from '../../commands'
 import { type CommandsController } from '../../commands/CommandsController'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
@@ -100,13 +95,14 @@ export class ChatManager implements vscode.Disposable {
 
     public async executeCommand(
         command: CodyCommand,
-        source: ChatEventSource,
-        enabled?: boolean
+        args: CodyCommandArgs,
+        enabled = true
     ): Promise<ChatSession | undefined> {
         if (!enabled) {
             void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
             return
         }
+
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -115,7 +111,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
-        await chatProvider.handleCommands(command, source)
+        await chatProvider.handleCommands(command, args)
         return chatProvider
     }
 

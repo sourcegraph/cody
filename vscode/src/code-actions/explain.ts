@@ -24,7 +24,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
             command: 'cody.action.chat',
-            arguments: [instruction, 'code-action:explain'],
+            arguments: [instruction, { source: 'code-action:explain' }],
             title: 'Ask Cody to Explain',
         }
         action.diagnostics = diagnostics

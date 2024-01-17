@@ -8,7 +8,6 @@ import {
     isDotCom,
     newPromptMixin,
     PromptMixin,
-    type ChatEventSource,
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
@@ -24,6 +23,7 @@ import {
     type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
+import { newCodyCommandArgs, type CodyCommandArgs } from './commands'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -276,20 +276,16 @@ const register = async (
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = async (
         commandKey: string,
-        source: ChatEventSource = 'editor'
+        args?: Partial<CodyCommandArgs>
     ): Promise<ChatSession | undefined> => {
-        const command = await commandsController?.findCommand(commandKey)
+        const commandArgs = newCodyCommandArgs(args)
+        const command = await commandsController?.findCommand(commandKey, commandArgs)
         if (!command) {
             return
         }
-        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
-        // This is because findCommand will start the CommandRunner,
-        // which would send all fixup requests to the FixupController
-        if (command.mode !== 'ask') {
-            return
-        }
+
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        return chatManager.executeCommand(command, source, configFeatures.commands)
+        return chatManager.executeCommand(command, commandArgs, configFeatures.commands)
     }
 
     const statusBar = createStatusBar()
@@ -326,20 +322,22 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) =>
-            executeCommand(`/ask ${input}`, source)
+        vscode.commands.registerCommand('cody.action.chat', async (input, args) =>
+            executeCommand(`/ask ${input}`, args)
         ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await commandsController?.menu('default')
         }),
         vscode.commands.registerCommand('cody.action.commands.custom.menu', () => commandsController?.menu('custom')),
         vscode.commands.registerCommand('cody.settings.commands', () => commandsController?.menu('config')),
-        vscode.commands.registerCommand('cody.action.commands.exec', async title => executeCommand(title)),
-        vscode.commands.registerCommand('cody.command.explain-code', async () => executeCommand('/explain')),
-        vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
-        vscode.commands.registerCommand('cody.command.unit-tests', async () => executeCommand('/unit')),
-        vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
-        vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
+        vscode.commands.registerCommand('cody.action.commands.exec', async (title, args) =>
+            executeCommand(title, args)
+        ),
+        vscode.commands.registerCommand('cody.command.explain-code', async args => executeCommand('/explain', args)),
+        vscode.commands.registerCommand('cody.command.generate-tests', async args => executeCommand('/test', args)),
+        vscode.commands.registerCommand('cody.command.unit-tests', async args => executeCommand('/unit', args)),
+        vscode.commands.registerCommand('cody.command.document-code', async args => executeCommand('/doc', args)),
+        vscode.commands.registerCommand('cody.command.smell-code', async args => executeCommand('/smell', args)),
 
         // Account links
         vscode.commands.registerCommand('cody.show-page', (page: string) => {
