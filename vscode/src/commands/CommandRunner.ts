@@ -11,6 +11,7 @@ import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
+import { type CodyCommandArgs } from '.'
 import { getContextForCommand } from './utils/get-context'
 
 /**
@@ -30,46 +31,40 @@ export class CommandRunner implements vscode.Disposable {
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
     private kind: string
-    private isFixupRequest = false
+    public isFixupRequest = false
 
     constructor(
         private readonly vscodeEditor: VSCodeEditor,
         public readonly command: CodyCommand,
+        private readonly args: CodyCommandArgs,
+        // instruction that goes after the command key
+        // e.g. 'in Japanese' from '/explain in Japanese'
         public instruction?: string
     ) {
+        logDebug('CommandRunner:constructor', command.slashCommand, { verbose: { command, args } })
         // use commandKey to identify default command in telemetry
         const commandKey = command.slashCommand
         // all user and workspace custom command should be logged under 'custom'
         this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
 
-        if (instruction?.startsWith('/edit ')) {
-            command.mode = 'edit'
+        // remove '/ask' command key from the prompt, if any
+        if (commandKey === '/ask') {
+            command.prompt = command.prompt.replace('/ask', '')
+        }
+
+        if (args.runInChatMode) {
+            command.mode = 'ask'
         } else {
-            command.mode = command.mode || 'ask'
+            const isEditPrompt = promptStatsWithEdit(command, instruction)
+            // Default mode to 'ask' if not specified
+            command.mode = isEditPrompt ? 'edit' : command.mode || 'ask'
         }
 
-        // Log non-edit commands usage
-        if (command.mode === 'ask') {
-            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
-                mode: command.mode,
-                useCodebaseContex: !!command.context?.codebase,
-                useShellCommand: !!command.context?.command,
-                requestID: command.requestID,
-            })
-            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
-                metadata: {
-                    useCodebaseContex: command.context?.codebase ? 1 : 0,
-                    useShellCommand: command.context?.command ? 1 : 0,
-                },
-                interactionID: command.requestID,
-                privateMetadata: {
-                    mode: command.mode,
-                    requestID: command.requestID,
-                },
-            })
-        }
+        command.additionalInput = instruction
+        this.isFixupRequest = command.mode !== 'ask'
+        this.command = command
 
-        logDebug('CommandRunner:init', this.kind)
+        this.logRequest()
 
         // Commands only work in active editor / workspace unless context specifies otherwise
         const editor = getEditor()
@@ -89,9 +84,33 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        this.isFixupRequest = isFixupCommand(command, instruction)
         if (this.isFixupRequest) {
             void this.handleFixupRequest(command.mode === 'insert')
+        }
+    }
+
+    private logRequest(): void {
+        // Log non-edit commands usage
+        if (this.command.mode === 'ask') {
+            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
+                mode: this.command.mode,
+                useCodebaseContex: !!this.command.context?.codebase,
+                useShellCommand: !!this.command.context?.command,
+                requestID: this.args.requestID,
+                source: this.args.source,
+            })
+            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+                metadata: {
+                    useCodebaseContex: this.command.context?.codebase ? 1 : 0,
+                    useShellCommand: this.command.context?.command ? 1 : 0,
+                },
+                interactionID: this.args.requestID,
+                privateMetadata: {
+                    mode: this.command.mode,
+                    requestID: this.args.requestID,
+                    source: this.args.source,
+                },
+            })
         }
     }
 
@@ -216,6 +235,6 @@ function getDocCommandRange(
     return new vscode.Selection(adjustedStartPosition, selection.end)
 }
 
-function isFixupCommand(command: CodyCommand, instruction?: string): boolean {
-    return instruction?.startsWith('/edit ') || command.mode !== 'ask'
+function promptStatsWithEdit(command: CodyCommand, instruction?: string): boolean {
+    return command.prompt.startsWith('/edit ') || instruction?.startsWith('/edit ') || false
 }

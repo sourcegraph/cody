@@ -57,7 +57,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
+    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
 
     /**

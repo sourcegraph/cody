@@ -2,36 +2,48 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
+import { type FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { Provider } from './providers/provider'
 import { RequestManager, type RequestManagerResult, type RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { type ContextSnippet } from './types'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
     public didAbort = false
-    protected resolve: (completion: InlineCompletionItemWithAnalytics[]) => void = () => {}
+    protected resolve: (value?: unknown) => void = () => {}
+    protected mockedCompletions: FetchCompletionResult[] = []
 
     public resolveRequest(completions: string[]): void {
         this.didFinishNetworkRequest = true
-        this.resolve(completions.map(content => ({ insertText: content, stopReason: 'test' })))
+
+        this.mockedCompletions = completions.map(content => ({
+            completion: { insertText: content, stopReason: 'test' },
+            docContext: this.options.docContext,
+        }))
+
+        this.resolve()
     }
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void
-    ): Promise<void> {
+        snippets: ContextSnippet[]
+    ): AsyncGenerator<FetchCompletionResult[]> {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
-        return new Promise(resolve => {
-            this.resolve = (completions: InlineCompletionItemWithAnalytics[]) => {
-                onCompletionReady(completions)
-                resolve()
+
+        async function* generateMockedCompletions(this: MockProvider) {
+            while (true) {
+                if (this.mockedCompletions.length === 0) {
+                    // Wait for mock values to be enqueued
+                    await new Promise(resolve => (this.resolve = resolve))
+                }
+                yield [this.mockedCompletions.shift()]
             }
-        })
+        }
+
+        return generateMockedCompletions.bind(this)()
     }
 }
 
@@ -72,7 +84,7 @@ describe('RequestManager', () => {
         createRequest = (prefix: string, provider: Provider, suffix?: string) =>
             requestManager.request({
                 requestParams: docState(prefix, suffix),
-                providers: [provider],
+                provider,
                 context: [],
                 isCacheEnabled: true,
             })

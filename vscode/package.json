@@ -94,6 +94,7 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": [
+    "onLanguage",
     "onStartupFinished",
     "onWebviewPanel:cody.chatPanel"
   ],
@@ -494,10 +495,22 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.chat.panel.new",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "cody.activated && config.cody.internal.unstable"
+      },
+      {
         "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.edit-code",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.action.commands.menu",
@@ -941,7 +954,6 @@
           "default": null,
           "enum": [
             null,
-            "lsp-light",
             "bfg",
             "bfg-mixed"
           ],

@@ -19,8 +19,6 @@ import {
     type Client,
     type LogEventMode,
 } from '@sourcegraph/cody-shared'
-// eslint-disable-next-line no-restricted-imports
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
@@ -34,7 +32,6 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
 import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -479,15 +476,6 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
-            if (result instanceof Error) {
-                console.error('getRepoIdIfEmbeddingExists', result)
-            }
-            return typeof result === 'string' ? result : null
-        })
-
         this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
             const client = await this.client
             const result = await client?.graphqlClient.getRepoId(repoName)
@@ -520,16 +508,19 @@ export class Agent extends MessageHandler {
             return Promise.resolve(null)
         })
 
+        // The arguments to pass to the command to make sure edit commands would also run in chat mode
+        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+
         this.registerRequest('commands/explain', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code', commandArgs))
         })
 
         this.registerRequest('commands/test', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests', commandArgs))
         })
 
         this.registerRequest('commands/smell', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code'))
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code', commandArgs))
         })
 
         this.registerRequest('chat/new', () => {
@@ -710,7 +701,6 @@ export class Agent extends MessageHandler {
 
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
-            editor: new AgentEditor(this),
             config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
@@ -718,7 +708,6 @@ export class Agent extends MessageHandler {
             setTranscript: () => {
                 // Not supported yet by agent.
             },
-            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
         this.oldClient = client
         return client

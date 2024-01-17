@@ -1,11 +1,8 @@
-import { dirname } from 'path'
-
 import * as vscode from 'vscode'
 
-import { CODY_IGNORE_FILENAME_POSIX_GLOB, ignores } from '@sourcegraph/cody-shared'
+import { CODY_IGNORE_FILENAME_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -68,37 +65,17 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 
     // Get the codebase name from the git clone URL on each refresh
     // NOTE: This is needed because the ignore rules are mapped to workspace addreses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
-    const codebaseName = getCodebaseFromWorkspaceUri(wf.uri)
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB).pattern
     const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern)
-    const codebases = new Map<string, string>()
-    const filesWithContent = await Promise.all(
-        ignoreFiles.map(async fileUri => {
-            const codebase = codebaseName || getCodebaseFromWorkspaceUri(fileUri)
-            if (codebase) {
-                // file root is two level above the fileUri location
-                const fileRoot = dirname(dirname(fileUri.fsPath))
-                const storedRoot = codebases.get(codebase)
-                if (!storedRoot || storedRoot?.split('/').length > fileRoot.split('/').length) {
-                    codebases.set(codebase, fileRoot)
-                }
-            }
-            return {
-                filePath: fileUri.fsPath,
-                content: await tryReadFile(fileUri),
-                codebase,
-            }
-        })
+    const filesWithContent: IgnoreFileContent[] = await Promise.all(
+        ignoreFiles.map(async fileUri => ({
+            filePath: fileUri.fsPath,
+            content: await tryReadFile(fileUri),
+        }))
     )
 
     logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
-
-    // Main workspace root
     ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
-    // Nested codebases
-    for (const cb of codebases) {
-        ignores.setIgnoreFiles(cb[1], filesWithContent)
-    }
 }
 
 /**

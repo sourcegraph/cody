@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
-import { completion, initTreeSitterParser } from '../test-helpers'
+import { completion, initTreeSitterParser, nextTick } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
 
@@ -46,6 +46,9 @@ describe('[getInlineCompletions] hot streak', () => {
                 }
             )
             const firstRequest = await getInlineCompletions(firstParams)
+            // TODO(valery): expose a way to wait for a completions generator to finish in tests.
+            // Wait for hot streak completions be yielded and cached.
+            await nextTick()
 
             expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
 

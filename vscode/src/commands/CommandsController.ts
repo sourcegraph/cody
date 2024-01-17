@@ -9,6 +9,7 @@ import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
+import { type CodyCommandArgs } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -70,7 +71,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.enableExperimentalCommands = enable
     }
 
-    public async findCommand(text: string, requestID?: string): Promise<CodyCommand | null> {
+    public async findCommand(text: string, args: CodyCommandArgs): Promise<CodyCommand | null> {
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
@@ -85,29 +86,27 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandKey = commandSplit.shift() || text
         // Additional instruction that will be added to end of prompt in the custom command prompt
         const commandInput = commandKey === text ? '' : commandSplit.join(' ')
-
         const command = this.default.get(commandKey)
         if (!command) {
             return null
         }
-        if (command.slashCommand === '/ask') {
-            command.prompt = command.prompt.replace('/ask', '')
+
+        const runner = await this.startCodyCommandRunner(command, args, commandInput)
+        if (runner?.isFixupRequest || !runner?.command) {
+            return null
         }
-        command.additionalInput = commandInput
-        // Default mode to /ask if not specified
-        command.mode = command.prompt.startsWith('/edit') ? 'edit' : command.mode || 'ask'
-        command.requestID = requestID
-        await this.createCodyCommandRunner(command, commandInput)
-        return command
+        return runner?.command
     }
 
-    private async createCodyCommandRunner(command: CodyCommand, input = ''): Promise<CommandRunner | undefined> {
-        const commandKey = command.slashCommand
-
-        logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
+    private async startCodyCommandRunner(
+        command: CodyCommand,
+        args: CodyCommandArgs,
+        input: string
+    ): Promise<CommandRunner | undefined> {
+        logDebug('CommandsController:createCodyCommandRunner:creating', command.slashCommand)
 
         // Start the command runner
-        const runner = new CommandRunner(this.editor, command, input)
+        const runner = new CommandRunner(this.editor, command, args, input)
         this.commandRunners.set(runner.id, runner)
 
         // Save command to command history
@@ -216,11 +215,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
-                        return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
+                        return await vscode.commands.executeCommand('cody.action.chat', input, { source: 'command' })
                     }
                     input = await showAskQuestionQuickPick()
                     await vscode.commands.executeCommand('cody.chat.panel.new')
-                    return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
+                    return await vscode.commands.executeCommand('cody.action.chat', input, { source: 'command' })
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     const source = 'menu'

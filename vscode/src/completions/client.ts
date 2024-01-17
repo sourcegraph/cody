@@ -8,9 +8,7 @@ import {
     isRateLimitError,
     NetworkError,
     RateLimitError,
-    TimeoutError,
     TracedError,
-    wrapInActiveSpan,
     type CompletionLogger,
     type CompletionParameters,
     type CompletionResponse,
@@ -19,49 +17,31 @@ import {
 
 import { fetch } from '../fetch'
 
-import { forkSignal } from './utils'
-
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
+export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(
-        params: T,
-        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse>
+    complete(params: T, abortController: AbortController): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }
+
+/**
+ * Marks the yielded value as an incomplete response.
+ *
+ * TODO: migrate to union of multiple `CompletionResponse` types to explicitly document
+ * all possible response types.
+ */
+export const STOP_REASON_STREAMING_CHUNK = 'cody-streaming-chunk'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
 export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
-    function getCodeCompletionsEndpoint(): string {
-        return new URL('/.api/completions/code', config.serverEndpoint).href
-    }
-
-    function completeWithTimeout(
+    async function* complete(
         params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const abortController = signal ? forkSignal(signal) : new AbortController()
-        return Promise.race([
-            complete(params, onPartialResponse, abortController.signal),
-            createTimeout(params.timeoutMs).finally(() => {
-                // We abort the network request in the next run loop so that the race promise can be
-                // rejected with the timeout error before that.
-                setTimeout(() => abortController.abort(), 0)
-            }),
-        ])
-    }
-
-    async function complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const url = getCodeCompletionsEndpoint()
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
@@ -101,7 +81,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 stream: enableStreaming,
             }),
             headers,
-            signal,
+            signal: abortController.signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
@@ -148,15 +128,17 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     }
 
                     if (event === 'completion') {
-                        if (signal?.aborted) {
+                        if (abortController.signal.aborted) {
                             break // Stop processing the already received chunks.
                         }
 
                         lastResponse = JSON.parse(data) as CompletionResponse
-                        wrapInActiveSpan(
-                            `autocomplete.onPartialResponse.${chunkIndex}`,
-                            () => onPartialResponse?.(lastResponse!)
-                        )
+
+                        if (!lastResponse.stopReason) {
+                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
+                        }
+
+                        yield lastResponse
                     }
 
                     chunkIndex += 1
@@ -202,7 +184,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
     }
 
     return {
-        complete: completeWithTimeout,
+        complete,
         onConfigurationChange(newConfig) {
             config = newConfig
         },
@@ -268,8 +250,4 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
-}
-
-export function createTimeout(timeoutMs: number): Promise<never> {
-    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

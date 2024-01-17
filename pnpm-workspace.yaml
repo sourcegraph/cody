@@ -1,8 +1,4 @@
 packages:
-  - e2e-inspector
-  - e2e
   - agent
   - lib/*
   - vscode
-  - completions-review-tool
-  - snippet-extractor
