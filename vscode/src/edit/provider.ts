@@ -213,10 +213,10 @@ export class EditProvider {
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
         const currentFileUri = this.config.task.fixupFile.uri.fsPath
-        const currentFileName = path.basename(currentFileUri)
+        const currentFileName = path.posix.basename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
-        const haveSameExtensions = path.extname(currentFileName) === path.extname(newFileName)
+        const haveSameExtensions = path.posix.extname(currentFileName) === path.posix.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         const newFileFsPath = currentFileUri.replace(currentFileName, newFileName.trim())

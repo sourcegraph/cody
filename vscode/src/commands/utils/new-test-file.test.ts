@@ -28,80 +28,86 @@ describe('createDefaultTestFileNameByLanguageExt', () => {
 describe('convertFileUriToTestFileUri', () => {
     it('should return the current file uri if it is already a test file', () => {
         const testFile = URI.file('/path/to/testFile.test.ts')
-        expect(convertFileUriToTestFileUri(testFile)).toStrictEqual(testFile)
+        expect(convertFileUriToTestFileUri(testFile)).toBe(testFile)
     })
 
     it('should return the current file uri if it is already a spec file', () => {
         const testFile = URI.file('/path/to/testFile.spec.rb')
-        expect(convertFileUriToTestFileUri(testFile)).toStrictEqual(testFile)
+        expect(convertFileUriToTestFileUri(testFile)).toBe(testFile)
     })
 
     it('should generate a test file uri from a non-test file uri', () => {
-        const currentFile = URI.file('/path/to/file.ts')
-        const existingTestFile = URI.file('/path/to/testFile.ts')
-        const expected = URI.file('/path/to/file.test.ts')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(URI.file('/path/to/file.ts'), URI.file('/path/to/testFile.ts')).toString()
+        ).toBe(URI.file('/path/to/file.test.ts').toString())
     })
 
     it('should generate the default spec file uri from a non-test file uri for ruby', () => {
-        const currentFile = URI.file('/path/to/file.rb')
-        const existingTestFile = URI.file('/path/to/testFile.ts')
-        const expected = URI.file('/path/to/file_spec.rb')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(URI.file('/path/to/file.rb'), URI.file('/path/to/testFile.ts')).toString()
+        ).toBe(URI.file('/path/to/file_spec.rb').toString())
     })
 
     it('should follow an existing test file uri', () => {
-        const currentFile = URI.file('/path/to/file.ts')
-        const existingTestFile = URI.file('/path/to/existingTestFile.test.ts')
-        const expected = URI.file('/path/to/file.test.ts')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.ts'),
+                URI.file('/path/to/existingTestFile.test.ts')
+            ).toString()
+        ).toBe(URI.file('/path/to/file.test.ts').toString())
     })
 
     it('should respect test file with different naming conventions', () => {
-        const currentFile = URI.file('/path/to/file.ts')
-        const existingTestFile = URI.file('/path/to/testExistingFile.test.ts')
-        const expected = URI.file('/path/to/file.test.ts')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.ts'),
+                URI.file('/path/to/testExistingFile.test.ts')
+            ).toString()
+        ).toBe(URI.file('/path/to/file.test.ts').toString())
     })
 
     it('should handle a non-alphanumeric character at the test character index', () => {
-        const currentFile = URI.file('/path/to/file.ts')
-        const existingTestFile = URI.file('/path/to/test-ExistingFile.test.ts')
-        const expected = URI.file('/path/to/file.test.ts')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.ts'),
+                URI.file('/path/to/test-ExistingFile.test.ts')
+            ).toString()
+        ).toBe(URI.file('/path/to/file.test.ts').toString())
     })
 
     it('should generate a test file uri for a non-test file uri in python', () => {
-        const currentFile = URI.file('/path/to/file.py')
-        const existingTestFile = URI.file('/path/to/testFile_test.py')
-        const expected = URI.file('/path/to/file_test.py')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(URI.file('/path/to/file.py'), URI.file('/path/to/testFile_test.py')).toString()
+        ).toBe(URI.file('/path/to/file_test.py').toString())
     })
 
     it('should generate a test file uri for a non-test file uri in python when no exisiting test path provided', () => {
-        const currentFile = URI.file('/path/to/test-file.py')
-        const expected = URI.file('/path/to/test-file_test.py')
-        expect(convertFileUriToTestFileUri(currentFile)).toStrictEqual(expected)
+        expect(convertFileUriToTestFileUri(URI.file('/path/to/test-file.py')).toString()).toBe(
+            URI.file('/path/to/test-file_test.py').toString()
+        )
     })
 
     it('should generate the default spec file uri for ruby when no exisiting test files is found', () => {
-        const currentFile = URI.file('/path/to/file.rb')
-        const existingTestFile = undefined
-        const expected = URI.file('/path/to/file_spec.rb')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(convertFileUriToTestFileUri(URI.file('/path/to/file.rb'), undefined).toString()).toBe(
+            URI.file('/path/to/file_spec.rb').toString()
+        )
     })
 
     it('should generate the corrent test file uri for window files', () => {
-        const currentFile = URI.file('\\path\\to\\file.ts')
-        const existingTestFile = URI.file('\\path\\to\\testFile.test.ts')
-        const expected = URI.file('\\path\\to\\file.test.ts')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(
+                URI.file('\\path\\to\\file.ts'),
+                URI.file('\\path\\to\\testFile.test.ts')
+            ).toString()
+        ).toBe(URI.file('\\path\\to\\file.test.ts').toString())
     })
 
     it('should follow an existing test file uri format to generate new test file uri on windows', () => {
-        const currentFile = URI.file('\\server\\c$\\folder\\current-file.go')
-        const existingTestFile = URI.file('\\path\\to\\file_test.go')
-        const expected = URI.file('\\server\\c$\\folder\\current-file_test.go')
-        expect(convertFileUriToTestFileUri(currentFile, existingTestFile)).toStrictEqual(expected)
+        expect(
+            convertFileUriToTestFileUri(
+                URI.file('\\server\\c$\\folder\\current-file.go'),
+                URI.file('\\path\\to\\file_test.go')
+            ).toString()
+        ).toBe(URI.file('\\server\\c$\\folder\\current-file_test.go').toString())
     })
 })
