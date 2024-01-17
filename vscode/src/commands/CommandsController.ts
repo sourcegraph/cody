@@ -96,7 +96,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         // Start the command runner
         const runner = new CommandRunner(this.editor, command, args)
-        if (!runner?.command) {
+        if (!runner) {
             return null
         }
 

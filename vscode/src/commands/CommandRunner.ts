@@ -57,7 +57,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // update prompt with additional input added at the end
-        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')
+        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
         this.isFixupRequest = command.mode !== 'ask'
         this.command = command
 
