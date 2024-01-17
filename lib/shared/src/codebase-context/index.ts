@@ -3,18 +3,13 @@ import { URI } from 'vscode-uri'
 import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
-import { type GraphContextFetcher } from '../graph-context'
 import {
     type ContextResult,
     type FilenameContextFetcher,
     type IndexedKeywordContextFetcher,
     type LocalEmbeddingsFetcher,
 } from '../local-context'
-import {
-    populateCodeContextTemplate,
-    populateMarkdownContextTemplate,
-    populatePreciseCodeContextTemplate,
-} from '../prompt/templates'
+import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { type Message } from '../sourcegraph-api'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -39,7 +34,6 @@ export class CodebaseContext {
         private codebase: string | undefined,
         private getServerEndpoint: () => string,
         private filenames: FilenameContextFetcher | null,
-        private graph: GraphContextFetcher | null,
         public localEmbeddings: LocalEmbeddingsFetcher | null,
         public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
@@ -48,18 +42,6 @@ export class CodebaseContext {
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
-    }
-
-    /**
-     * Returns context messages from both generic contexts and graph-based contexts.
-     * The final list is a combination of these two sets of messages.
-     */
-    public async getCombinedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const contextMessages = this.getContextMessages(query, options)
-        const graphContextMessages = this.getGraphContextMessages()
-
-        // TODO(efritz) - open problem to figure out how to best rank these into a unified list
-        return [...(await contextMessages), ...(await graphContextMessages)]
     }
 
     /**
@@ -185,24 +167,6 @@ export class CodebaseContext {
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
         return results
-    }
-
-    private async getGraphContextMessages(): Promise<ContextMessage[]> {
-        if (!this.config.experimentalLocalSymbols || !this.graph) {
-            return []
-        }
-        const contextMessages: ContextMessage[] = []
-        for (const preciseContext of await this.graph.getContext()) {
-            const text = populatePreciseCodeContextTemplate(
-                preciseContext.symbol.fuzzyName || 'unknown',
-                URI.file(preciseContext.filePath),
-                preciseContext.definitionSnippet
-            )
-
-            contextMessages.push({ speaker: 'human', preciseContext, text }, { speaker: 'assistant', text: 'okay' })
-        }
-
-        return contextMessages
     }
 }
 

@@ -1,8 +1,5 @@
 import { type URI } from 'vscode-uri'
 
-import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
-import { type ChatQuestionContext } from '../chat/OldChatQuestion'
-import { CodebaseContext } from '../codebase-context'
 import {
     type ActiveTextEditor,
     type ActiveTextEditorDiagnostic,
@@ -81,23 +78,3 @@ export class MockEditor implements Editor {
 export const defaultIntentDetector = new MockIntentDetector()
 
 export const defaultEditor = new MockEditor()
-
-export function newChatQuestionContext(args?: Partial<ChatQuestionContext>): ChatQuestionContext {
-    args = args || {}
-    return {
-        editor: args.editor || defaultEditor,
-        intentDetector: args.intentDetector || defaultIntentDetector,
-        codebaseContext:
-            args.codebaseContext ||
-            new CodebaseContext(
-                { useContext: 'none', experimentalLocalSymbols: false },
-                'dummy-codebase',
-                () => 'https://example.com',
-                null,
-                null,
-                null
-            ),
-        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
-        addEnhancedContext: args.addEnhancedContext ?? false,
-    }
-}

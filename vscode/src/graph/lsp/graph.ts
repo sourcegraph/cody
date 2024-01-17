@@ -5,7 +5,6 @@ import {
     dedupeWith,
     isDefined,
     type ActiveTextEditorSelectionRange,
-    type Editor,
     type HoverContext,
     type PreciseContext,
 } from '@sourcegraph/cody-shared'
@@ -16,9 +15,6 @@ import { logDebug } from '../../log'
 import { commonKeywords, identifierPattern, isCommonImport } from './languages'
 import { createLimiter } from './limiter'
 
-// TODO(efritz) - move to options object
-const recursionLimit = 2
-
 const limiter = createLimiter(
     // The concurrent requests limit is chosen very conservatively to avoid blocking the language
     // server.
@@ -26,37 +22,6 @@ const limiter = createLimiter(
     // If any language server API takes more than 2 seconds to answer, we should cancel the request
     2000
 )
-
-/**
- * Return the definitions of symbols that occur within the editor's active document. If there is
- * an active selection, we will cull the symbols to those referenced in intersecting document symbol
- * ranges.
- *
- * NOTE: used only in chat, see `getGraphContextFromRange` for the new completions hotness.
- */
-export const getGraphContextFromEditor = async (editor: Editor): Promise<PreciseContext[]> => {
-    const activeEditor = editor.getActiveTextEditor()
-    const workspaceRootUri = editor.getWorkspaceRootUri()
-    if (!activeEditor || !workspaceRootUri) {
-        return []
-    }
-
-    const label = 'getGraphContextFromEditor'
-    performance.mark(label)
-
-    const uri = activeEditor.fileUri
-    const contexts = await getGraphContextFromSelection(
-        [{ uri, range: activeEditor.selectionRange }],
-        new Map([[uri.fsPath, activeEditor.content.split('\n')]]),
-        recursionLimit
-    )
-
-    const filteredContexts = contexts.filter(({ filePath }) => filePath !== uri.fsPath)
-
-    logDebug('GraphContext:filteredSnippetsRetrieved', `Retrieved ${filteredContexts.length} filtered context snippets`)
-    performance.mark(label)
-    return filteredContexts
-}
 
 /**
  * Return the definitions of symbols that occur within a specific range.

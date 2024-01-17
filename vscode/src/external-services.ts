@@ -90,7 +90,6 @@ export async function configureExternalServices(
         () => initialConfig.serverEndpoint,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
-        null,
         symfRunner,
         undefined
     )
