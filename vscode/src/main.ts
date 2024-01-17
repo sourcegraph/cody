@@ -8,6 +8,7 @@ import {
     isDotCom,
     newPromptMixin,
     PromptMixin,
+    setLogger,
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
@@ -32,7 +33,7 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
-import { logDebug } from './log'
+import { logDebug, logError } from './log'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -57,6 +58,8 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
         secretStorage.setStorage(context.secrets)
     }
 
+    setLogger({ logDebug, logError })
+
     const rgPath = platform.getRgPath ? await platform.getRgPath() : null
 
     const disposables: vscode.Disposable[] = []
@@ -69,7 +72,7 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
                 const config = await getFullConfig()
-                onConfigurationChange(config)
+                await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
                 if (config.chatPreInstruction) {
                     PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
@@ -89,7 +92,7 @@ const register = async (
     platform: Omit<PlatformContext, 'getRgPath'>
 ): Promise<{
     disposable: vscode.Disposable
-    onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
+    onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     const disposables: vscode.Disposable[] = []
 
@@ -204,21 +207,25 @@ const register = async (
     )
 
     let oldConfig = JSON.stringify(initialConfig)
-    function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
+    async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
         if (oldConfig === JSON.stringify(newConfig)) {
-            return
+            return Promise.resolve()
         }
+        const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
 
-        featureFlagProvider.syncAuthStatus()
+        promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
-        contextProvider.onConfigurationChange(newConfig)
+        promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
-        void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-        void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-        setupAutocomplete()
+        promises.push(
+            localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ?? Promise.resolve()
+        )
+        promises.push(setupAutocomplete())
+        await Promise.all(promises)
     }
 
     // Register tree views
@@ -230,7 +237,7 @@ const register = async (
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
-            onConfigurationChange(newConfig)
+            await onConfigurationChange(newConfig)
         })
     )
 
@@ -255,20 +262,22 @@ const register = async (
         await chatManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
+        const parallelPromises: Promise<void>[] = []
+        parallelPromises.push(featureFlagProvider.syncAuthStatus())
         // feature flag provider
-        featureFlagProvider.syncAuthStatus()
         // Symf
         if (symfRunner && authStatus.isLoggedIn) {
-            getAccessToken()
-                .then(token => {
-                    symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
-                })
-                .catch(() => {})
+            parallelPromises.push(
+                getAccessToken()
+                    .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
+                    .catch(() => {})
+            )
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
 
-        setupAutocomplete()
+        parallelPromises.push(setupAutocomplete())
+        await Promise.all(parallelPromises)
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
@@ -300,6 +309,18 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.status', () => authProvider.getAuthStatus()), // Used by the agent
+        vscode.commands.registerCommand(
+            'cody.agent.auth.authenticate',
+            async ({ serverEndpoint, accessToken, customHeaders }) => {
+                if (typeof serverEndpoint !== 'string') {
+                    throw new TypeError('serverEndpoint is required')
+                }
+                if (typeof accessToken !== 'string') {
+                    throw new TypeError('accessToken is required')
+                }
+                return (await authProvider.auth(serverEndpoint, accessToken, customHeaders)).authStatus
+            }
+        ),
         // Chat
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
@@ -431,9 +452,6 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('agent.auth.reload', async () => {
-            await authProvider.reloadAuthStatus()
-        }),
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
@@ -476,7 +494,7 @@ const register = async (
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    function setupAutocomplete(): void {
+    function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
@@ -512,9 +530,12 @@ const register = async (
             .catch(error => {
                 console.error('Error creating inline completion item provider:', error)
             })
+        return setupAutocompleteQueue
     }
 
-    setupAutocomplete()
+    const promises: Promise<void>[] = []
+
+    promises.push(setupAutocomplete().catch(() => {}))
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
@@ -525,7 +546,9 @@ const register = async (
         )
     }
 
-    void showSetupNotification(initialConfig)
+    promises.push(showSetupNotification(initialConfig))
+
+    await Promise.all(promises)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

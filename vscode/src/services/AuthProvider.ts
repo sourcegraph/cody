@@ -307,7 +307,7 @@ export class AuthProvider {
         uri: string,
         token: string | null,
         customHeaders?: {} | null
-    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
+    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const endpoint = formatURL(uri) || ''
         const config = {
             serverEndpoint: endpoint,

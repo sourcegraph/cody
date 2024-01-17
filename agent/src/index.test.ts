@@ -16,6 +16,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc-alias'
 import {
     type ClientInfo,
+    type ExtensionConfiguration,
     type ProgressReportParams,
     type ProgressStartParams,
     type ServerInfo,
@@ -125,7 +126,7 @@ export class TestClient extends MessageHandler {
         }).finally(() => vscode.Disposable.from(...disposables).dispose())
     }
 
-    public async initialize() {
+    public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
         this.agentProcess = this.spawnAgentProcess()
 
         this.connectProcess(this.agentProcess, error => {
@@ -138,8 +139,9 @@ export class TestClient extends MessageHandler {
         })
 
         try {
-            const serverInfo = await this.handshake(this.info)
+            const serverInfo = await this.handshake(this.info, additionalConfig)
             assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+            return serverInfo
         } catch (error) {
             if (error === undefined) {
                 throw new Error('Agent failed to initialize, error is undefined')
@@ -208,7 +210,10 @@ export class TestClient extends MessageHandler {
         return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
     }
 
-    private async handshake(clientInfo: ClientInfo): Promise<ServerInfo> {
+    private async handshake(
+        clientInfo: ClientInfo,
+        additionalConfig?: Partial<ExtensionConfiguration>
+    ): Promise<ServerInfo> {
         return new Promise((resolve, reject) => {
             setTimeout(
                 () =>
@@ -221,7 +226,16 @@ export class TestClient extends MessageHandler {
                     ),
                 10_000
             )
-            this.request('initialize', clientInfo).then(
+            this.request('initialize', {
+                ...clientInfo,
+                extensionConfiguration: {
+                    serverEndpoint: 'https://invalid',
+                    accessToken: 'invalid',
+                    customHeaders: {},
+                    ...clientInfo.extensionConfiguration,
+                    ...additionalConfig,
+                },
+            }).then(
                 info => {
                     this.notify('initialized', null)
                     resolve(info)
@@ -307,15 +321,6 @@ const workspaceRootPath = workspaceRootUri.fsPath
 const mayRecord = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
-    // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
-    // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
-    // post in #wg-cody-agent to let the team know the tests have been disabled so that we can
-    // investigate the problem and get the passing again.
-    // if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
-    //     it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
-    //     return
-    // }
-
     const dotcom = 'https://sourcegraph.com'
     if (mayRecord) {
         execSync('src login', { stdio: 'inherit' })
@@ -327,7 +332,14 @@ describe('Agent', () => {
         return
     }
 
-    const client = new TestClient('defaultClient', process.env.SRC_ACCESS_TOKEN)
+    const client = new TestClient(
+        'defaultClient',
+        // The redacted ID below is copy-pasted from the recording file and
+        // needs to be updated whenever we change the underlying access token.
+        // We can't return a random string here because then Polly won't be able
+        // to associate the HTTP requests between record mode and replay mode.
+        process.env.SRC_ACCESS_TOKEN ?? 'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
+    )
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     //
@@ -341,29 +353,15 @@ describe('Agent', () => {
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
         await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
-        await client.initialize()
+        const serverInfo = await client.initialize({
+            serverEndpoint: 'https://sourcegraph.com',
+            // Initialization should always succeed even if authentication fails
+            // because otherwise clients need to restart the process to test
+            // with a new access token.
+            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
+        })
+        expect(serverInfo?.authStatus?.isLoggedIn).toBeFalsy()
     }, 10_000)
-
-    it('handles config changes correctly', () => {
-        // Send two config change notifications because this is what the
-        // JetBrains client does and there was a bug where everything worked
-        // fine as long as we didn't send the second unauthenticated config
-        // change.
-        client.notify('extensionConfiguration/didChange', {
-            ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
-            accessToken: '',
-            serverEndpoint: 'https://sourcegraph.com/',
-            customHeaders: {},
-        })
-        client.notify('extensionConfiguration/didChange', {
-            ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
-            accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
-            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
-            customHeaders: {},
-        })
-    })
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
@@ -396,11 +394,41 @@ describe('Agent', () => {
         })
     }
 
-    it('accepts textDocument/didOpen notifications', async () => {
-        await openFile(sumUri)
-    })
+    it('handles config changes correctly', async () => {
+        // Send two config change notifications because this is what the
+        // JetBrains client does and there was a bug where everything worked
+        // fine as long as we didn't send the second unauthenticated config
+        // change.
+        const invalid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEEE',
+            serverEndpoint: 'https://sourcegraph.com/',
+            customHeaders: {},
+        })
+        expect(invalid?.isLoggedIn).toBeFalsy()
+        const valid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            customHeaders: {},
+        })
+        expect(valid?.isLoggedIn).toBeTruthy()
+
+        // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
+        // When changing an account, you also need to update the REDACTED_ hash above.
+        //
+        // To update the recordings with the correct account, run `source` on
+        // the script here:
+        //    https://sourcegraph.sourcegraph.com/github.com/sourcegraph/dev-private/-/blob/scripts/export-cody-http-recording-tokens.sh
+        // If you don't have access to this private file then you need to ask
+        // for sombody on the Sourcegraph team to help you update the HTTP requests.
+        expect(valid?.username).toStrictEqual('olafurpg-testing')
+    }, 10_000)
 
     it('returns non-empty autocomplete', async () => {
+        await openFile(sumUri)
         const completions = await client.request('autocomplete/execute', {
             uri: sumUri.toString(),
             position: { line: 1, character: 3 },
@@ -423,16 +451,16 @@ describe('Agent', () => {
         const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
         expect(lastMessage).toMatchInlineSnapshot(
             `
-              {
-                "contextFiles": [],
-                "displayText": " Hello!",
-                "speaker": "assistant",
-                "text": " Hello!",
-              }
-            `,
+          {
+            "contextFiles": [],
+            "displayText": " Hello! Nice to meet you.",
+            "speaker": "assistant",
+            "text": " Hello! Nice to meet you.",
+          }
+        `,
             explainPollyError
         )
-    }, 20_000)
+    }, 30_0000)
 
     it('allows us to restore a chat', async () => {
         // Step 1: create a chat session where I share my name.
@@ -475,7 +503,7 @@ describe('Agent', () => {
             '" You told me your name is Lars Monsen."',
             explainPollyError
         )
-    }, 20_000)
+    }, 30_0000)
 
     it('allows us to send a longer chat message', async () => {
         const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
@@ -494,21 +522,27 @@ describe('Agent', () => {
           }
           \`\`\`
 
-          This program prints "Hello World!" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
+          This program defines a Main class with a main method, which is the entry point for a Java program.
 
-          To run this:
+          Inside the main method, it uses System.out.println to print "Hello World!" to the console.
 
-          1. Save the code in a file called Main.java
-          2. Compile it with: javac Main.java
-          3. Run it with: java Main
+          To run this program, you would need to:
 
-          The "Hello World!" text will be printed to the console.
+          1. Save it as Main.java
+          2. Compile it with \`javac Main.java\`
+          3. Run it with \`java Main\`
 
-          Let me know if you need any clarification or have additional requirements for the Java program!"
+          The output would be:
+
+          \`\`\`
+          Hello World!
+          \`\`\`
+
+          Let me know if you need any clarification or have additional requirements for the Hello World program!"
         `,
             explainPollyError
         )
-    }, 20_000)
+    }, 30_0000)
 
     // This test is skipped because it shells out to `symf expand-query`, which
     // requires an access token to send an llm request and is, therefore, not
@@ -530,7 +564,7 @@ describe('Agent', () => {
         expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
             `
           " \`\`\`typescript
-          export class Dog implements Animal {
+          class Dog implements Animal {
             name: string;
 
             constructor(name: string) {
@@ -538,7 +572,7 @@ describe('Agent', () => {
             }
 
             makeAnimalSound() {
-              return 'Woof!';
+              return "Woof!";
             }
 
             isMammal = true;
@@ -547,7 +581,7 @@ describe('Agent', () => {
         `,
             explainPollyError
         )
-    }, 20_000)
+    }, 30_0000)
 
     describe('Commands', () => {
         it('explain', async () => {
@@ -556,27 +590,43 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " The selected code defines an Animal interface in TypeScript.
+              " The selected TypeScript code defines an interface called Animal.
 
-              An interface in TypeScript is a way to define a "contract" that other classes or objects can implement. This allows enforcing certain properties and methods on objects that implement the interface.
+              An interface in TypeScript is like a blueprint or contract that defines the structure of an object. This Animal interface defines the properties and methods that any object implementing Animal should have.
 
-              Specifically, this Animal interface defines:
+              Specifically, the Animal interface requires an object to have:
 
-              1. A name property of type string. This will be used to store the animal's name.
+              1. A name property that is a string
+              2. A makeAnimalSound() method that returns a string
+              3. An isMammal property that is a boolean
 
-              2. A makeAnimalSound() method that returns a string. This will be implemented by classes to make an animal noise unique to that animal.
+              So any object that implements the Animal interface needs to have these 3 members defined. For example:
 
-              3. An isMammal property of type boolean. This indicates whether the animal is a mammal or not.
+              \`\`\`
+              class Dog implements Animal {
 
-              So in summary, this Animal interface defines the blueprint for an object representing an animal. Anything implementing this interface would need to have a name, have a way to make a sound, and specify whether it's a mammal or not. This allows enforcing a consistent API for animal objects in the codebase.
+                name: string;
 
-              The interface itself doesn't contain any implementation logic. It just defines the contract. Concrete classes would then implement the Animal interface to provide the actual logic and data for specific animal instances. Those classes would ensure they fulfill the contract by matching the interface's property and method signatures.
+                makeAnimalSound() {
+                  return "Bark!";
+                }
 
-              So in essence, this interface sets up a reusable way to model animal objects in a standardized way. The consuming code can just rely on the Animal interface without worrying about the details of specific animal types."
+                isMammal: boolean = true;
+
+              }
+              \`\`\`
+
+              The Dog class implements Animal by having the required name, makeAnimalSound(), and isMammal properties.
+
+              By defining this interface, we can ensure that any Animal object has a certain consistent structure. We can rely on those properties and methods being available when working with Animal objects.
+
+              Interfaces like this are useful for defining contracts in TypeScript. They allow you to define requirements for objects, enforce a consistent structure, and catch errors if the contract is not fulfilled. This makes the code more robust and maintainable.
+
+              So in summary, the selected Animal interface defines a blueprint for objects to standardize their structure. It doesn't contain implementation details - just the requirements. This allows us to make assumptions about what members Animal objects will have available throughout our codebase."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_0000)
 
         it('test', async () => {
             await openFile(animalUri)
@@ -584,49 +634,48 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " No test framework or libraries are imported in the shared context code. Since this is TypeScript code, I will generate Jest tests:
+              " No test framework or libraries detected in the shared context. Since this is TypeScript code, I will generate Jest tests:
 
-              \`\`\`typescript
+              \`\`\`ts
               import { Animal } from './animal';
 
               describe('Animal', () => {
-                it('should return the animal sound', () => {
-                  const dog: Animal = {
-                    name: 'Dog',
-                    makeAnimalSound: () => 'Woof',
-                    isMammal: true
-                  };
 
-                  expect(dog.makeAnimalSound()).toBe('Woof');
-                });
-
-                it('should have a boolean isMammal property', () => {
-                  const cat: Animal = {
+                test('makeAnimalSound returns string', () => {
+                  const animal: Animal = {
                     name: 'Cat',
                     makeAnimalSound: () => 'Meow',
                     isMammal: true
                   };
-
-                  expect(typeof cat.isMammal).toBe('boolean');
+                  expect(typeof animal.makeAnimalSound()).toBe('string');
                 });
 
-                it('should throw if makeAnimalSound is not a function', () => {
-                  const invalidAnimal: Animal = {
-                    name: 'Fish',
-                    makeAnimalSound: 'Blub',
-                    isMammal: false
+                test('isMammal returns boolean', () => {
+                  const animal: Animal = {
+                    name: 'Cat',
+                    makeAnimalSound: () => 'Meow',
+                    isMammal: true
                   };
-
-                  expect(() => invalidAnimal.makeAnimalSound()).toThrow();
+                  expect(typeof animal.isMammal).toBe('boolean');
                 });
+
+                test('name returns string', () => {
+                  const animal: Animal = {
+                    name: 'Cat',
+                    makeAnimalSound: () => 'Meow',
+                    isMammal: true
+                  };
+                  expect(typeof animal.name).toBe('string');
+                });
+
               });
               \`\`\`
 
-              This adds Jest and generates a basic test suite that validates the Animal interface contract. It tests the makeAnimalSound method returns the expected sound, isMammal is a boolean, and makeAnimalSound throws if not a function. There may be more edge cases to cover, but this provides a starting set of tests."
+              This covers basic validation of the Animal interface properties with Jest assertions. Additional tests could be added for more complex logic if the interface methods were implemented."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_0000)
 
         it('smell', async () => {
             await openFile(animalUri)
@@ -647,29 +696,41 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              Adding type annotations makes the code more self-documenting and enables stronger type checking.
+              Adding type annotations improves understandability and enables stronger type checking.
 
-              2. Make interface name PascalCase:
+              2. Make \`name\` property readonly:
+
+              \`\`\`
+              export interface Animal {
+                readonly name: string;
+                // ...
+              }
+              \`\`\`
+
+              This prevents the name from being reassigned elsewhere, making the code more robust.
+
+              3. Consider making \`isMammal\` readonly:
 
               \`\`\`
               export interface Animal {
                 // ...
+                readonly isMammal: boolean;
               }
               \`\`\`
 
-              The PascalCase convention is standard for TypeScript interfaces.
+              Since mammal classification shouldn't change, making it readonly prevents accidental modification.
 
-              3. Make method names camelCase:
+              4. Export as \`type\` instead of \`interface\` if no class implements it:
 
               \`\`\`
-              makeAnimalSound() {
+              export type Animal = {
                 // ...
-              }
+              };
               \`\`\`
 
-              camelCase is the standard naming convention for methods in TypeScript.
+              Using a \`type\` denotes it is a pure data structure without method obligations.
 
-              4. Add JSDoc comments for documentation:
+              5. Add JSDoc comments for documentation:
 
               \`\`\`
               /**
@@ -680,31 +741,14 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              JSDoc comments improve documentation and discoverability.
+              JSDoc improves discoverability and understanding for future maintainers.
 
-              5. Export class instead of interface:
-
-              \`\`\`
-              export class Animal {
-                // ...
-              }
-              \`\`\`
-
-              A class is more standard and flexible than an interface for this use case.
-
-              Overall, the selected code follows reasonable design practices. The suggestions above are minor enhancements to improve type safety, conventions, documentation and flexibility. Aside from those opportunities, the code is well-structured."
+              Overall the code is well-designed, though some minor tweaks like adding readonly and documentation could make it more robust and maintainable. The type annotations and export type suggestions help strengthen the typing."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_000)
     })
-
-    // TODO Fix test - fails intermittently on CI
-    // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
-    it.skip('allows us to cancel chat', async () => {
-        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('chat/new', null)
-    }, 600)
 
     describe('progress bars', () => {
         it('messages are sent', async () => {
@@ -790,7 +834,7 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
                 expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
             }
-        })
+        }, 30_0000)
 
         it('resets the chat', async () => {
             const id = await client.request('chat/new', null)
@@ -837,28 +881,38 @@ describe('Agent', () => {
     })
 
     describe('RateLimitedAgent', () => {
-        const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
+        const rateLimitedClient = new TestClient(
+            'rateLimitedClient',
+            process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5'
+        )
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            await rateLimitedClient.initialize()
+            const serverInfo = await rateLimitedClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('david.veszelovszki')
         }, 10_000)
 
         it('get rate limit error if exceeding usage on rate limited account', async () => {
             const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
-            expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
-        }, 20_000)
+            // Intentionally not a snapshot assertion because we should never
+            // automatically update 'RateLimitError' to become another value.
+            expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
+        }, 30_000)
 
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 20_000)
+        }, 30_0000)
     })
 
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
-    }, 20_000)
+    }, 30_0000)
 })
 
 function trimEndOfLine(text: string): string {

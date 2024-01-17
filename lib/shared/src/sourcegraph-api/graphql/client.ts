@@ -4,6 +4,7 @@ import type { Response as NodeResponse } from 'node-fetch'
 import { type TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { type ConfigurationWithAccessToken } from '../../configuration'
+import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -676,7 +677,7 @@ export class ConfigFeaturesSingleton {
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore a fetcherror as older SG instances will always face this because their GQL is outdated
             if (!error.message.includes('FetchError')) {
-                console.error(error.message)
+                logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
             return previousConfigFeatures
