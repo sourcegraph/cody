@@ -21,14 +21,11 @@ import {
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_FEATURE_FLAGS_QUERY,
-    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     RECORD_TELEMETRY_EVENTS_MUTATION,
-    REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -104,18 +101,6 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
-interface RepositoryEmbeddingExistsResponse {
-    repository: { id: string; embeddingExists: boolean } | null
-}
-
-interface EmbeddingsSearchResponse {
-    embeddingsSearch: EmbeddingsSearchResults
-}
-
-interface EmbeddingsMultiSearchResponse {
-    embeddingsMultiSearch: EmbeddingsSearchResults
-}
-
 interface SearchAttributionResponse {
     snippetAttribution: {
         limitHit: boolean
@@ -132,11 +117,6 @@ export interface EmbeddingsSearchResult {
     startLine: number
     endLine: number
     content: string
-}
-
-export interface EmbeddingsSearchResults {
-    codeResults: EmbeddingsSearchResult[]
-    textResults: EmbeddingsSearchResult[]
 }
 
 interface SearchAttributionResults {
@@ -261,8 +241,7 @@ export class SourcegraphGraphQLAPIClient {
         return isDotCom(this.config.serverEndpoint)
     }
 
-    // Gets the server endpoint for this client. The UI uses this to display
-    // which endpoint provides embeddings.
+    // Gets the server endpoint for this client.
     public get endpoint(): string {
         return this.config.serverEndpoint
     }
@@ -383,17 +362,6 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
-    }
-
-    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
-            REPOSITORY_EMBEDDING_EXISTS_QUERY,
-            {
-                name: repoName,
-            }
-        ).then(response =>
-            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
-        )
     }
 
     /**
@@ -565,35 +533,6 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         return initialDataOrError
-    }
-
-    public async searchEmbeddings(
-        repos: string[],
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
-            repos,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
-    }
-
-    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
-    public async legacySearchEmbeddings(
-        repo: string,
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
-            repo,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
     }
 
     public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {

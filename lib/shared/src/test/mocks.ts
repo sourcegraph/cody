@@ -11,39 +11,7 @@ import {
     type ActiveTextEditorVisibleContent,
     type Editor,
 } from '../editor'
-import { type EmbeddingsSearch } from '../embeddings'
 import { type IntentClassificationOption, type IntentDetector } from '../intent-detector'
-import { type EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
-
-export class MockEmbeddingsClient implements EmbeddingsSearch {
-    public readonly repoId = 'test-repo-id'
-
-    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
-
-    public get endpoint(): string {
-        return this.mocks.endpoint || 'https://host.example:3000'
-    }
-
-    public search(
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return (
-            this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
-            Promise.resolve({ codeResults: [], textResults: [] })
-        )
-    }
-
-    public onDidChangeStatus(): { dispose: () => void } {
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        return { dispose() {} }
-    }
-
-    public get status(): never[] {
-        return []
-    }
-}
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
@@ -110,8 +78,6 @@ export class MockEditor implements Editor {
     }
 }
 
-export const defaultEmbeddingsClient = new MockEmbeddingsClient()
-
 export const defaultIntentDetector = new MockIntentDetector()
 
 export const defaultEditor = new MockEditor()
@@ -127,7 +93,6 @@ export function newChatQuestionContext(args?: Partial<ChatQuestionContext>): Cha
                 { useContext: 'none', experimentalLocalSymbols: false },
                 'dummy-codebase',
                 () => 'https://example.com',
-                defaultEmbeddingsClient,
                 null,
                 null,
                 null
