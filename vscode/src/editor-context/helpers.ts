@@ -2,7 +2,7 @@ import { basename, extname } from 'path'
 
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import { Utils, type URI } from 'vscode-uri'
 
 import {
     getContextMessageWithResponse,
@@ -67,8 +67,8 @@ export const getFilesFromDir = async (
                 return !isDirectory && !isHiddenFile
             }
 
-            const isFileNameIncludesTest = isValidTestFile(vscode.Uri.file(fileName))
-            return !isDirectory && !isHiddenFile && isFileNameIncludesTest
+            const isTestFile = isValidTestFile(Utils.joinPath(dirUri, fileName))
+            return !isDirectory && !isHiddenFile && isTestFile
         })
     } catch (error) {
         console.error(error)
