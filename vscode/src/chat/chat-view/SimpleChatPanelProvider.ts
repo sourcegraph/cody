@@ -577,7 +577,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'user-followup' | 'suggestion' | 'example',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -643,7 +643,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleChatRequest(
         requestID: string,
         inputText: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'suggestion' | 'example' | 'user-followup',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
         command?: CodyCommand
@@ -659,7 +659,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             : inputText
         // The text we will use to send to LLM
         const promptText = command ? command.prompt : inputText
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        if (submitType === 'user-followup' || this.chatModel.isEmpty()) {
+            this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        } else {
+            this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+            this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        }
 
         await this.saveSession(inputText)
         // trigger the context progress indicator

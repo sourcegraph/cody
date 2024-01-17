@@ -834,6 +834,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- New chats are now the default when the user submits a new quesetion. Previously, follow-up questions were the default, but this frequently led to exceeding the LLM context window, which users interpreted as an error state. Follow-up questions are still accessible via ⌘-Enter or Ctrl-Enter.
 - Removed the experimental hallucination detection that highlighted nonexistent file paths.
 - Hide the feedback button in case of error assistant response. [pull/448](https://github.com/sourcegraph/cody/pull/448)
 
