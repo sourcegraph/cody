@@ -90,54 +90,6 @@ query Repository($name: String!) {
 	}
 }`
 
-export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
-query Repository($name: String!) {
-	repository(name: $name) {
-                id
-                embeddingExists
-	}
-}`
-
-export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
-}`
-
-export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
-query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
-}`
-
 export const SEARCH_ATTRIBUTION_QUERY = `
 query SnippetAttribution($snippet: String!) {
     snippetAttribution(snippet: $snippet) {

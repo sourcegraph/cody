@@ -75,8 +75,6 @@ export type {
 } from './editor'
 export { displayPath, setDisplayPathEnvInfo, type DisplayPathEnvInfo } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
-export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
-export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 export { FeatureFlag, FeatureFlagProvider, featureFlagProvider } from './experimentation/FeatureFlagProvider'
 export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
@@ -123,7 +121,7 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export { SourcegraphGraphQLAPIClient, graphqlClient, type EmbeddingsSearchResults } from './sourcegraph-api/graphql'
+export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
