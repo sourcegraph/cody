@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri'
 
 import { BotResponseMultiplexer, isAbortError, Typewriter } from '@sourcegraph/cody-shared'
 
-import { convertFsPathToTestFile } from '../commands/utils/new-test-file'
+import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { doesFileExist } from '../editor-context/helpers'
 import { logError } from '../log'
 import { type FixupController } from '../non-stop/FixupController'
@@ -197,12 +197,12 @@ export class EditProvider {
         const task = this.config.task
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
-            const cbTestFile = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))?.file?.uri
-                ?.fsPath
-            if (cbTestFile) {
-                const testFsPath = convertFsPathToTestFile(task.fixupFile.uri.fsPath, cbTestFile)
-                const fileExists = await doesFileExist(URI.file(testFsPath))
-                const newFileUri = URI.parse(fileExists ? testFsPath : `untitled:${testFsPath}`)
+            // an exisiting test file from codebase
+            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))?.file?.uri
+            if (cbTestFileUri) {
+                const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
+                const fileExists = await doesFileExist(testFileUri)
+                const newFileUri = URI.parse(fileExists ? testFileUri.fsPath : `untitled:${testFileUri.fsPath}`)
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
             }
             return
