@@ -152,7 +152,7 @@ export class IgnoreHelper {
     }
 }
 
-interface IgnoreFileContent {
+export interface IgnoreFileContent {
     filePath: string
     content: string
 }
