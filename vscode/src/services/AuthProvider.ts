@@ -179,11 +179,8 @@ export class AuthProvider {
             return
         }
 
-        const codyProEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const detail = codyProEnabled ? `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : undefined
-        const options = codyProEnabled
-            ? ['Manage Account', 'Switch Account...', 'Sign Out']
-            : ['Switch Account...', 'Sign Out']
+        const detail = `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
+        const options = ['Manage Account', 'Switch Account...', 'Sign Out']
         const displayName = this.authStatus.displayName || this.authStatus.username
         const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(

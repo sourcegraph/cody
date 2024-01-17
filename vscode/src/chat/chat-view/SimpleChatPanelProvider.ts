@@ -565,14 +565,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        // selection is available to pro only at Dec GA
-        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
-            return {
-                ...model,
-                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
-            }
-        })
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',

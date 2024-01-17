@@ -73,11 +73,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 continue
             }
 
-            if (
-                item.requireUpgradeAvailable &&
-                (await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
-                !(this.authStatus?.userCanUpgrade ?? false)
-            ) {
+            if (item.requireUpgradeAvailable && !(this.authStatus?.userCanUpgrade ?? false)) {
                 continue
             }
 

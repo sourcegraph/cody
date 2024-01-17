@@ -79,14 +79,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.show-page', args: ['upgrade'] },
         requireDotCom: true,
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Settings',
