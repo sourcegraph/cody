@@ -300,7 +300,7 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.status', () => authProvider.getAuthStatus()), // Used by the agent
-        // Commands
+        // Chat
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
                 'Restart Chat Session',
@@ -321,10 +321,7 @@ const register = async (
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
-        // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input, args) =>
-            executeCommand(`/ask ${input}`, args)
-        ),
+        // Cody Commands
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await commandsController?.menu('default')
         }),
