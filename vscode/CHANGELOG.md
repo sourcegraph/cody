@@ -23,6 +23,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Removed recipes, which were replaced by commands in November 2023 (version 0.18.0).
 - Edit: Updated the codelens display to be more descriptive. [pull/2710](https://github.com/sourcegraph/cody/pull/2710)
 - [Internal] New generate unit test available behind `cody.internal.unstable`. [pull/2646](https://github.com/sourcegraph/cody/pull/2646)
+- New chats are now the default when the user submits a new quesetion. Previously, follow-up questions were the default, but this frequently led to exceeding the LLM context window, which users interpreted as an error state. Follow-up questions are still accessible via ⌘-Enter or Ctrl-Enter.
+- We now allocate no more than 60% of the overall LLM context window for enhanced context. This preserves more room for follow-up questions and context.
 
 ## [1.1.3]
 
@@ -834,7 +836,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
-- New chats are now the default when the user submits a new quesetion. Previously, follow-up questions were the default, but this frequently led to exceeding the LLM context window, which users interpreted as an error state. Follow-up questions are still accessible via ⌘-Enter or Ctrl-Enter.
 - Removed the experimental hallucination detection that highlighted nonexistent file paths.
 - Hide the feedback button in case of error assistant response. [pull/448](https://github.com/sourcegraph/cody/pull/448)
 
