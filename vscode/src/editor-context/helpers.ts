@@ -13,7 +13,7 @@ import {
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
-import { isValidTestFileName } from '../commands/prompt/utils'
+import { isValidTestFile } from '../commands/prompt/utils'
 
 /**
  * Checks if a file URI is part of the current workspace.
@@ -67,7 +67,7 @@ export const getFilesFromDir = async (
                 return !isDirectory && !isHiddenFile
             }
 
-            const isFileNameIncludesTest = isValidTestFileName(fileName)
+            const isFileNameIncludesTest = isValidTestFile(vscode.Uri.file(fileName))
             return !isDirectory && !isHiddenFile && isFileNameIncludesTest
         })
     } catch (error) {
@@ -326,7 +326,7 @@ async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean):
     // pattern to search for test files with same name
     const searchPattern = createVSCodeTestSearchPattern(file.fsPath)
     const foundFiles = await findVSCodeFiles(searchPattern, excludePattern, 5)
-    const testFile = foundFiles.find(file => isValidTestFileName(file.fsPath))
+    const testFile = foundFiles.find(uri => isValidTestFile(uri))
     if (testFile) {
         const context = await getFilePathContext(testFile)
         return createFileContextResponseMessage(context, testFile)
@@ -350,7 +350,7 @@ async function getCodebaseTestFilesContext(file: vscode.Uri, isUnitTest: boolean
 
     const testFilesPattern = createVSCodeTestSearchPattern(file.fsPath, true)
     const testFilesMatches = await findVSCodeFiles(testFilesPattern, excludePattern, 5)
-    const filteredTestFiles = testFilesMatches.filter(file => isValidTestFileName(file.fsPath))
+    const filteredTestFiles = testFilesMatches.filter(uri => isValidTestFile(uri))
 
     return getContextMessageFromFiles(filteredTestFiles)
 }

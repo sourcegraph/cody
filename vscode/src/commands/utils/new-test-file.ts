@@ -2,7 +2,7 @@ import { basename, dirname, extname, join } from 'path'
 
 import { URI } from 'vscode-uri'
 
-import { isValidTestFileName } from '../prompt/utils'
+import { isValidTestFile } from '../prompt/utils'
 
 // Language extension that uses '.test' suffix for test files
 const TEST_FILE_DOT_SUFFIX_EXTENSIONS = new Set(['js', 'ts', 'jsx', 'tsx'])
@@ -47,7 +47,7 @@ export function createDefaultTestFileNameByLanguageExt(fileName: string, ext: st
  * @returns The uri of the converted test file
  */
 export function convertFileUriToTestFileUri(currentFileUri: URI, existingTestFileUri?: URI): URI {
-    if (isValidTestFileName(currentFileUri.fsPath)) {
+    if (isValidTestFile(currentFileUri)) {
         return currentFileUri
     }
 
@@ -57,7 +57,7 @@ export function convertFileUriToTestFileUri(currentFileUri: URI, existingTestFil
     const dirPath = dirname(currentFileUri.fsPath)
 
     // If there is an existing test file path, use its naming convention
-    if (existingTestFileUri?.fsPath && isValidTestFileName(existingTestFileUri.fsPath)) {
+    if (existingTestFileUri?.fsPath && isValidTestFile(existingTestFileUri)) {
         const existingFileName = basename(existingTestFileUri.fsPath)
         const existingFileExt = extname(existingTestFileUri.fsPath)
         const existingFileNameWithoutExt = existingFileName.replace(existingFileExt, '')
