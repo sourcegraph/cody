@@ -68,6 +68,7 @@ interface FixupMatchingContext {
 }
 
 interface QuickPickParams {
+    editor?: vscode.TextEditor
     filePath: string
     range: vscode.Range
     source: ChatEventSource
@@ -110,10 +111,11 @@ export class FixupTypingUI {
     }
 
     public async getInputFromQuickPick({
+        editor,
         filePath,
         range,
         source,
-        placeholder = 'Instructions (@ to include code)',
+        placeholder = 'Instructions (@ to include code, ? for options)',
         initialValue,
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
@@ -122,7 +124,10 @@ export class FixupTypingUI {
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
+        const relativeFilePath = vscode.workspace.asRelativePath(filePath)
+        const fileRange = getTitleRange(range)
+        const title = `Edit ${relativeFilePath}:${fileRange} with Cody`
+        quickPick.title = title
         quickPick.placeholder = placeholder
         if (initialValue) {
             quickPick.value = initialValue
@@ -133,7 +138,7 @@ export class FixupTypingUI {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ;(quickPick as any).matchOnLabel = false
 
-        const defaultItems: vscode.QuickPickItem[] = [
+        const options: vscode.QuickPickItem[] = [
             {
                 label: 'Change Range',
                 kind: vscode.QuickPickItemKind.Separator,
@@ -142,7 +147,6 @@ export class FixupTypingUI {
                 label: 'Range',
                 detail: '$(code) Selection',
                 alwaysShow: true,
-                picked: false,
             },
             {
                 label: 'Change Model',
@@ -152,12 +156,95 @@ export class FixupTypingUI {
                 label: 'Model',
                 detail: '$(anthropic-logo) Claude 2.1',
                 alwaysShow: true,
-                picked: false,
             },
         ]
 
-        quickPick.items = defaultItems
+        quickPick.items = options
         quickPick.activeItems = []
+
+        // Change model quick pick
+        const modelQuickPick = vscode.window.createQuickPick()
+        modelQuickPick.title = title
+        modelQuickPick.placeholder = 'Select the model Cody should use to generate Edits'
+        modelQuickPick.items = [
+            {
+                label: 'active',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: '$(anthropic-logo) Claude 2.1',
+                description: 'by Anthropic',
+            },
+            {
+                label: 'options',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: '$(anthropic-logo) Claude Instant',
+                description: 'by Anthropic',
+            },
+            {
+                label: '$(openai-logo) GPT-3.5',
+                description: 'by OpenAI',
+            },
+            {
+                label: '$(openai-logo) GPT-4',
+                description: 'by OpenAI',
+            },
+            {
+                label: '$(mixtral-logo) Mixtral 8x7B',
+                description: 'by Mistral',
+            },
+        ]
+
+        // Change range quick pick
+        const rangeQuickPick = vscode.window.createQuickPick()
+        rangeQuickPick.title = title
+        rangeQuickPick.placeholder = 'Change range'
+        rangeQuickPick.items = [
+            {
+                label: 'active',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: '$(code) Selection',
+                description: `${relativeFilePath}:${fileRange}`,
+            },
+            {
+                label: 'options',
+                kind: vscode.QuickPickItemKind.Separator,
+            },
+            {
+                label: '$(symbol-file) Entire file',
+                description: `${relativeFilePath}`,
+            },
+            {
+                label: '$(file-code) Expanded selection',
+                description: 'Expand the selection to the nearest block of code',
+            },
+        ]
+        rangeQuickPick.onDidChangeActive(activeItems => {
+            const item = activeItems[0]
+
+            if (!editor) {
+                return
+            }
+
+            if (item.label === '$(code) Selection') {
+                editor.selection = new vscode.Selection(range.start, range.end)
+                return
+            }
+
+            if (item.label === '$(symbol-file) Entire file') {
+                const fullRange = new vscode.Range(0, 0, editor.document.lineCount, 0)
+                editor.selection = new vscode.Selection(fullRange.start, fullRange.end)
+                return
+            }
+
+            // if (item.label === '$(file-code) Expanded selection') {
+            //     const smartSelection = getSmartSelection(editor.document, range)
+            // }
+        })
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
@@ -190,12 +277,20 @@ export class FixupTypingUI {
                 return
             }
 
+            const isFileSearch = newValue.endsWith('@')
+            const isSymbolSearch = newValue.endsWith('@#')
+            if (!isFileSearch && !isSymbolSearch) {
+                // Nothing to match, clear existing items
+                quickPick.items = options
+                quickPick.activeItems = []
+            }
+
             // If we have the beginning of a file or symbol match, show a helpful label
-            if (newValue.endsWith('@')) {
+            if (isFileSearch) {
                 quickPick.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
                 return
             }
-            if (newValue.endsWith('@#')) {
+            if (isSymbolSearch) {
                 quickPick.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
                 return
             }
@@ -203,7 +298,8 @@ export class FixupTypingUI {
             const matchingContext = await this.getMatchingContext(newValue)
             if (matchingContext === null) {
                 // Nothing to match, clear existing items
-                quickPick.items = defaultItems
+                quickPick.items = options
+                quickPick.activeItems = []
                 return
             }
 
@@ -227,19 +323,62 @@ export class FixupTypingUI {
             return
         })
 
+        // // Hack to ensure that the active items is not changed.
+        // quickPick.onDidChangeActive(event => {
+        //     const isFileSearch = quickPick.value.endsWith('@')
+        //     const isSymbolSearch = quickPick.value.endsWith('@#')
+        //     if (!isFileSearch && !isSymbolSearch) {
+        //         setTimeout(() => (quickPick.activeItems = []), 0)
+        //     }
+        // })
+
         quickPick.show()
+
+        modelQuickPick.onDidAccept(() => {
+            this.getInputFromQuickPick({
+                editor,
+                filePath,
+                range,
+                source,
+                initialValue: quickPick.value,
+                initialSelectedContextFiles: [...selectedContextItems.values()],
+            })
+            modelQuickPick.hide()
+        })
+
+        rangeQuickPick.onDidAccept(() => {
+            this.getInputFromQuickPick({
+                editor,
+                filePath,
+                range,
+                source,
+                initialValue: quickPick.value,
+                initialSelectedContextFiles: [...selectedContextItems.values()],
+            })
+            rangeQuickPick.hide()
+        })
 
         return new Promise(resolve =>
             quickPick.onDidAccept(() => {
                 const instruction = quickPick.value.trim()
+
+                // Selected item flow, update the input and store it for submission
+                const selectedItem = quickPick.selectedItems[0]
+                if (selectedItem.label === 'Model') {
+                    modelQuickPick.show()
+                    return
+                }
+
+                if (selectedItem.label === 'Range') {
+                    rangeQuickPick.show()
+                    return
+                }
 
                 // Empty input flow, do nothing
                 if (!instruction) {
                     return
                 }
 
-                // Selected item flow, update the input and store it for submission
-                const selectedItem = quickPick.selectedItems[0]
                 // The `key` is provided as the `description` for symbol items, use this if available.
                 const key = selectedItem?.description || selectedItem?.label
                 if (selectedItem) {
@@ -269,8 +408,8 @@ export class FixupTypingUI {
         if (!editor) {
             return null
         }
-        const document = args.document || editor?.document
-        let range = args.range || editor?.selection
+        const document = args.document || editor.document
+        let range = args.range || editor.selection
         if (!document || !range) {
             return null
         }
@@ -290,6 +429,7 @@ export class FixupTypingUI {
         })
 
         const input = await this.getInputFromQuickPick({
+            editor,
             filePath: document.uri.fsPath,
             range,
             source,
