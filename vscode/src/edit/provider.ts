@@ -202,7 +202,8 @@ export class EditProvider {
             if (cbTestFileUri) {
                 const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
                 const fileExists = await doesFileExist(testFileUri)
-                const newFileUri = URI.parse(fileExists ? testFileUri.fsPath : `untitled:${testFileUri.fsPath}`)
+                // create a file uri with untitled scheme that would work on windows
+                const newFileUri = fileExists ? testFileUri : URI.parse(`untitled:${testFileUri.fsPath}`)
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
             }
             return
@@ -212,10 +213,10 @@ export class EditProvider {
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
         const currentFileUri = this.config.task.fixupFile.uri.fsPath
-        const currentFileName = path.basename(currentFileUri)
+        const currentFileName = path.posix.basename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
-        const haveSameExtensions = path.extname(currentFileName) === path.extname(newFileName)
+        const haveSameExtensions = path.posix.extname(currentFileName) === path.posix.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         const newFileFsPath = currentFileUri.replace(currentFileName, newFileName.trim())

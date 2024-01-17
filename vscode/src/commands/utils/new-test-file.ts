@@ -1,8 +1,8 @@
-import { basename, dirname, extname, join } from 'path'
+import { posix } from 'path'
 
 import { URI } from 'vscode-uri'
 
-import { isValidTestFileName } from '../prompt/utils'
+import { isValidTestFile } from '../prompt/utils'
 
 // Language extension that uses '.test' suffix for test files
 const TEST_FILE_DOT_SUFFIX_EXTENSIONS = new Set(['js', 'ts', 'jsx', 'tsx'])
@@ -47,19 +47,19 @@ export function createDefaultTestFileNameByLanguageExt(fileName: string, ext: st
  * @returns The uri of the converted test file
  */
 export function convertFileUriToTestFileUri(currentFileUri: URI, existingTestFileUri?: URI): URI {
-    if (isValidTestFileName(currentFileUri.fsPath)) {
+    if (isValidTestFile(currentFileUri)) {
         return currentFileUri
     }
 
-    const currentFileName = basename(currentFileUri.fsPath)
-    const currentFileExt = extname(currentFileUri.fsPath)
+    const currentFileName = posix.basename(currentFileUri.path)
+    const currentFileExt = posix.extname(currentFileUri.path)
     const currentFileNameWithoutExt = currentFileName.replace(currentFileExt, '')
-    const dirPath = dirname(currentFileUri.fsPath)
+    const dirPath = posix.dirname(currentFileUri.path)
 
     // If there is an existing test file path, use its naming convention
-    if (existingTestFileUri?.fsPath && isValidTestFileName(existingTestFileUri.fsPath)) {
-        const existingFileName = basename(existingTestFileUri.fsPath)
-        const existingFileExt = extname(existingTestFileUri.fsPath)
+    if (existingTestFileUri?.path && isValidTestFile(existingTestFileUri)) {
+        const existingFileName = posix.basename(existingTestFileUri.path)
+        const existingFileExt = posix.extname(existingTestFileUri.path)
         const existingFileNameWithoutExt = existingFileName.replace(existingFileExt, '')
 
         // Check if the existing test file has a non-alphanumeric character at the test character index
@@ -68,16 +68,19 @@ export function convertFileUriToTestFileUri(currentFileUri: URI, existingTestFil
             existingFileNameWithoutExt.toLowerCase().lastIndexOf('test') ||
             existingFileNameWithoutExt.toLowerCase().lastIndexOf('spec')
         if (testCharIndex > -1 && !/^[\da-z]$/i.test(existingFileNameWithoutExt[testCharIndex - 1])) {
-            const uri = join(dirPath, createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt))
-            return URI.file(uri)
+            return URI.file(
+                posix.join(dirPath, createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt))
+            )
         }
 
         // Use the existing file's naming convention
         // Assuming that 'existing' should be replaced with the current file name without extension
         const newTestFileName = existingFileNameWithoutExt.replace(/existing/i, currentFileNameWithoutExt)
-        return URI.file(join(dirPath, `${newTestFileName}${existingFileExt}`))
+        return URI.file(posix.join(dirPath, `${newTestFileName}${existingFileExt}`))
     }
 
     // If no existing test file path is provided, or it's not a valid test file name, create a generic test file name
-    return URI.file(join(dirPath, createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt)))
+    return URI.file(
+        posix.join(dirPath, createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt))
+    )
 }
