@@ -133,7 +133,6 @@ class Chat {
       chat.addMessageToChat(chatMessage)
       chat.finishMessageProcessing()
     }
-    return
   }
 
   private fun handleError(project: Project, throwable: Throwable, chat: UpdatableChat) {
@@ -141,6 +140,7 @@ class Chat {
       val errorCode = throwable.toErrorCode()
       if (errorCode == ErrorCode.RateLimitError) {
         handleRateLimitError(project, chat, throwable.toRateLimitError())
+        return
       }
     }
     RateLimitStateManager.invalidateForChat(project)

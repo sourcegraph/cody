@@ -48,6 +48,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private val tabbedPane = JBTabbedPane()
   private val messagesPanel = JPanel()
   private val promptPanel: PromptPanel
+  private val subscriptionPanel: SubscriptionTabPanel
   private val sendButton: JButton
   private var inProgressChat = CancellationToken()
   private val stopGeneratingButton =
@@ -62,11 +63,21 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   init {
     // Tabs
     val contentPanel = JPanel()
-    tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX)
+    tabbedPane.insertTab(
+        /* title = */ "Chat",
+        /* icon = */ null,
+        /* component = */ contentPanel,
+        /* tip = */ null,
+        CHAT_TAB_INDEX)
     recipesPanel = JBPanelWithEmptyText(GridLayout(0, 1))
     recipesPanel.layout = BoxLayout(recipesPanel, BoxLayout.Y_AXIS)
-    tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX)
-
+    tabbedPane.insertTab(
+        /* title = */ "Commands",
+        /* icon = */ null,
+        /* component = */ recipesPanel,
+        /* tip = */ null,
+        RECIPES_TAB_INDEX)
+    subscriptionPanel = SubscriptionTabPanel()
     // Chat panel
     messagesPanel.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true)
     val chatPanel = ChatScrollPane(messagesPanel)
@@ -125,14 +136,28 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   @RequiresBackgroundThread
   fun refreshSubscriptionTab() {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-      if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
-        addNewSubscriptionTab(agent.server)
-      } else {
-        ApplicationManager.getApplication().invokeLater {
-          tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
+      fetchSubscriptionPanelData(project, agent.server).thenAccept {
+        if (it != null) {
+          ApplicationManager.getApplication().invokeLater { refreshSubscriptionTab(it) }
         }
-        addNewSubscriptionTab(agent.server)
       }
+    }
+  }
+
+  @RequiresEdt
+  private fun refreshSubscriptionTab(data: SubscriptionTabPanelData) {
+    if (data.isDotcomAccount && data.codyProFeatureFlag) {
+      if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
+        tabbedPane.insertTab(
+            /* title = */ "Subscription",
+            /* icon = */ null,
+            /* component = */ subscriptionPanel,
+            /* tip = */ null,
+            SUBSCRIPTION_TAB_INDEX)
+      }
+      subscriptionPanel.update(data.isCurrentUserPro)
+    } else {
+      tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
     }
   }
 
@@ -159,51 +184,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         CodyAgentService.getInstance(project).restartAgent(project)
         Thread.sleep(5000)
         loadNewChatId(callback)
-      }
-    }
-  }
-
-  private fun addNewSubscriptionTab(server: CodyAgentServer) {
-    val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-    if (activeAccountType != null) {
-      val jetbrainsUserId = activeAccountType.id
-      var agentUserId = getUserId(server)
-      var retryCount = 3
-      while (jetbrainsUserId != agentUserId && retryCount > 0) {
-        Thread.sleep(200)
-        retryCount--
-        logger.warn("Retrying call for userId from agent")
-        agentUserId = getUserId(server)
-      }
-      if (jetbrainsUserId != agentUserId) {
-        if (agentUserId != null) {
-          logger.warn("User id in JetBrains is different from agent: restarting agent...")
-          CodyAgentService.getInstance(project).restartAgent(project)
-          refreshSubscriptionTab()
-          return
-        }
-        return
-      }
-
-      if (activeAccountType.isDotcomAccount()) {
-        val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-        if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
-          val isCurrentUserPro =
-              server
-                  .isCurrentUserPro()
-                  .exceptionally { e ->
-                    logger.warn("Error getting user pro status", e)
-                    null
-                  }
-                  .get()
-          if (isCurrentUserPro != null) {
-            ApplicationManager.getApplication().invokeLater {
-              val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-              tabbedPane.insertTab(
-                  "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
-            }
-          }
-        }
       }
     }
   }

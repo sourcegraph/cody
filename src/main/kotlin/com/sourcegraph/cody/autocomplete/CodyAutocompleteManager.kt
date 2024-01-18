@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
@@ -237,6 +238,9 @@ class CodyAutocompleteManager {
             } else if (result != null && result.items.isNotEmpty()) {
               UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
               UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+              ApplicationManager.getApplication().executeOnPooledThread {
+                CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+              }
               processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
             }
             null
@@ -263,7 +267,10 @@ class CodyAutocompleteManager {
         val rateLimitError = error.toRateLimitError()
         UpgradeToCodyProNotification.autocompleteRateLimitError.set(rateLimitError)
         UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
-        UpgradeToCodyProNotification.notify(rateLimitError, project)
+        ApplicationManager.getApplication().executeOnPooledThread {
+          UpgradeToCodyProNotification.notify(rateLimitError, project)
+          CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+        }
       }
     }
   }
