@@ -125,7 +125,8 @@ export class DefaultPrompter implements IPrompter {
                 : await contextProvider.getEnhancedContext(lastMessage.message.text)
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,
-                (item: ContextItem) => this.renderContextItem(item)
+                (item: ContextItem) => this.renderContextItem(item),
+                Math.floor(byteLimit * 0.6) // Allocate no more than 60% of context window to enhanced context
             )
             newContextUsed.push(...used)
             if (limitReached) {
@@ -221,13 +222,15 @@ class PromptBuilder {
      */
     public tryAddContext(
         contextItems: ContextItem[],
-        renderContextItem: (contextItem: ContextItem) => Message[]
+        renderContextItem: (contextItem: ContextItem) => Message[],
+        byteLimit?: number
     ): {
         limitReached: boolean
         used: ContextItem[]
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
+        const effectiveByteLimit = byteLimit ? this.bytesUsed + byteLimit : this.byteLimit
         let limitReached = false
         const used: ContextItem[] = []
         const ignored: ContextItem[] = []
@@ -247,7 +250,7 @@ class PromptBuilder {
                 (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
                 0
             )
-            if (this.bytesUsed + contextLen > this.byteLimit) {
+            if (this.bytesUsed + contextLen > effectiveByteLimit) {
                 ignored.push(contextItem)
                 limitReached = true
                 continue

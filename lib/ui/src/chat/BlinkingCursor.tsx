@@ -4,9 +4,12 @@ import styles from './BlinkingCursor.module.css'
 
 export const BlinkingCursor: React.FunctionComponent = () => <span className={styles.cursor} />
 
-export const LoadingContext: React.FunctionComponent = () => (
+export const LoadingContext: React.FunctionComponent<{ isEnhancedContextEnabled: boolean }> = ({
+    isEnhancedContextEnabled,
+}) => (
     <div className={styles.loadingContainer}>
-        ✨ <LoadingDots />
+        {isEnhancedContextEnabled ? '✨' : ''}
+        <LoadingDots />
     </div>
 )
 
