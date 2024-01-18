@@ -1,6 +1,6 @@
 import { findLast } from 'lodash'
 
-import { FeatureFlag } from '@sourcegraph/cody-shared'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, type AuthStatus } from '../chat/protocol'
@@ -79,14 +79,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.show-page', args: ['upgrade'] },
         requireDotCom: true,
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Settings',

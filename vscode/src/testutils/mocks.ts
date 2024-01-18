@@ -12,7 +12,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
+import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Disposable } from './Disposable'
@@ -741,7 +741,6 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
 
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,

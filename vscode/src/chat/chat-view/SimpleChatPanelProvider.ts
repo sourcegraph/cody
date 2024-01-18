@@ -7,7 +7,6 @@ import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
     ContextWindowLimitError,
-    FeatureFlag,
     hydrateAfterPostMessage,
     isCodyIgnoredFile,
     isDefined,
@@ -138,8 +137,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
-    private readonly featureFlagProvider: FeatureFlagProvider
-
     // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
@@ -147,7 +144,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     constructor({
         config,
         extensionUri,
-        featureFlagProvider,
         authProvider,
         chatClient,
         embeddingsClient,
@@ -161,7 +157,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
-        this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
@@ -401,7 +396,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
-                await this.postChatModels()
+                this.postChatModels()
                 break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
@@ -492,7 +487,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             chatID: this.sessionID,
         })
 
-        await this.postChatModels()
+        this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
         this.initDoer.signalInitialized()
@@ -557,7 +552,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async postChatModels(): Promise<void> {
+    private postChatModels(): void {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
             return
@@ -565,14 +560,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        // selection is available to pro only at Dec GA
-        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
-            return {
-                ...model,
-                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
-            }
-        })
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
