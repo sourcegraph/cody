@@ -404,7 +404,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "New Chat",
+        "title": "New Chat Panel",
         "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -467,7 +467,7 @@
       {
         "command": "cody.chat.panel.reset",
         "category": "Cody",
-        "title": "Restart Chat Session...",
+        "title": "New Chat Session",
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory"

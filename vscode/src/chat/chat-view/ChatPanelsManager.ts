@@ -268,32 +268,15 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     /**
-     * Clear the current chat view and start a new chat session in panel with matching ID
-     *  If no sessionID is provided, reset the chat view in active panel with warnings
+     * Clear the current chat view and start a new chat session in the active panel
      */
-    public async resetPanel(chatID?: string): Promise<void> {
+    public async resetPanel(): Promise<void> {
         logDebug('ChatPanelsManager', 'resetPanel')
-        // NOTE: the editor title button click returns a uri instead of id string
-        const sessionID = typeof chatID === 'string' ? chatID : undefined
-        const provider = sessionID ? this.panelProviders.find(p => p.sessionID === chatID) : this.activePanelProvider
-        if (!provider) {
-            return
+        telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+        if (this.activePanelProvider) {
+            return this.activePanelProvider.clearAndRestartSession()
         }
-        if (!sessionID) {
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
-            // Show confirmation dialog
-            const confirmation = await vscode.window.showWarningMessage(
-                'Restart Chat Session',
-                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
-                'Restart Chat Session'
-            )
-            if (!confirmation) {
-                return
-            }
-        }
-
-        await provider.clearAndRestartSession()
     }
 
     public async restorePanel(chatID: string, chatQuestion?: string): Promise<SimpleChatPanelProvider | undefined> {
