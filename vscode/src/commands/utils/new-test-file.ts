@@ -66,15 +66,16 @@ export function convertFileUriToTestFileUri(currentFile: URI, testFile?: URI): U
         const parsedTestFile = posix.parse(testFile.path)
         if (parsedCurrentFile.ext === parsedTestFile.ext) {
             const testFileName = parsedTestFile.name
-            const testIndex = testFileName.toLowerCase().lastIndexOf('test')
-            const specIndex = testFileName.toLowerCase().lastIndexOf('spec')
-            const index = testIndex || specIndex
-            // Check if the existing test file has a non-alphanumeric character at the test character index
-            // e.g. "_test" or "test_"
+            const index = testFileName.lastIndexOf('test') || testFileName.lastIndexOf('spec')
+            const endsWithCapitalTest = testFileName.endsWith('Test') || testFileName.endsWith('Spec')
+            // This checks if the existing test file has a non-alphanumeric character at the test character index
+            // e.g. "_test", ".test", "test_"
             // This is because files with 'test' in the name are not always a test file, while
             // file with non-alphanumeric character before 'test' are more likely to be test files
+            // e.g. "testPath" or "test-helper" are not likely test files
+            const hasVerifiedTestPath = index > -1 && !/^[\da-z]$/i.test(testFileName[index - 1])
             // If yes, generate a test file by replacing existing test file name with current file name
-            if (index > -1 && !/^[\da-z]$/i.test(testFileName[index - 1])) {
+            if (endsWithCapitalTest || hasVerifiedTestPath) {
                 // Remove everything after the test character index from the existing test file name
                 // then replace it with the current file name
                 // e.g. "current_file" & "existing_test" => "current_file_test"
