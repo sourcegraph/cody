@@ -137,10 +137,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
-    // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
-    // as it is necessary to satisfy the IChatPanelProvider interface.
-    public sessionID: string
-
     constructor({
         config,
         extensionUri,
@@ -166,7 +162,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
-        this.sessionID = this.chatModel.sessionID
         this.guardrails = guardrails
 
         commandsController?.setEnableExperimentalCommands(config.internalUnstable)
@@ -190,6 +185,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             this.config.experimentalSymfContext ? this.symf : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+    }
+
+    public get sessionID(): string {
+        return this.chatModel.sessionID
     }
 
     // Select the chat model to use in Chat
@@ -512,7 +511,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
-        this.sessionID = newModel.sessionID
 
         this.postViewTranscript()
     }
@@ -541,7 +539,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await this.saveSession()
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
-        this.sessionID = this.chatModel.sessionID
         this.postViewTranscript()
     }
 
@@ -577,7 +574,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'user-newchat' | 'suggestion' | 'example',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -602,6 +599,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (command) {
                 return this.handleCommands(command, commandArgs)
             }
+        }
+
+        // HACK
+        if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
+            await this.clearAndRestartSession()
         }
 
         await this.handleChatRequest(requestID, text, submitType, userContextFiles, addEnhancedContext)
@@ -643,7 +645,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleChatRequest(
         requestID: string,
         inputText: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'suggestion' | 'example' | 'user-newchat',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
         command?: CodyCommand
@@ -669,7 +671,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             userContextFiles,
             addEnhancedContext,
             contextSummary => {
-                if (submitType !== 'user') {
+                if (submitType !== 'user' && submitType !== 'user-newchat') {
                     return
                 }
 
