@@ -175,7 +175,7 @@ export class TestClient extends MessageHandler {
                 message: {
                     command: 'submit',
                     text,
-                    submitType: 'user-followup',
+                    submitType: 'user',
                     addEnhancedContext: params?.addEnhancedContext ?? false,
                     contextFiles: params?.contextFiles,
                 },
@@ -513,7 +513,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'My name is Lars Monsen',
-                        submitType: 'user-followup',
+                        submitType: 'user',
                         addEnhancedContext: false,
                     },
                 })
@@ -536,7 +536,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What is my name?',
-                        submitType: 'user-followup',
+                        submitType: 'user',
                         addEnhancedContext: false,
                     },
                 })

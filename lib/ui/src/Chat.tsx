@@ -156,7 +156,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export type ChatSubmitType = 'user' | 'suggestion' | 'example' | 'user-followup'
+export type ChatSubmitType = 'user' | 'suggestion' | 'example' | 'user-newchat'
 
 export interface ChatModelDropdownMenuProps {
     models: ChatModelProvider[]
@@ -350,7 +350,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Submit chat only when input is not empty and not in progress
             if (formInput.trim() && !messageInProgress) {
                 setInputRows(1)
-                submitInput(formInput, isFollowUp ? 'user-followup' : 'user')
+                submitInput(formInput, isFollowUp ? 'user' : 'user-newchat')
                 setFormInput('')
             }
         },

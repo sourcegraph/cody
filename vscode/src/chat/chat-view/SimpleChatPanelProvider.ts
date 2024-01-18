@@ -574,7 +574,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
-        submitType: 'user' | 'user-followup' | 'suggestion' | 'example',
+        submitType: 'user' | 'user-newchat' | 'suggestion' | 'example',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -602,7 +602,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         // HACK
-        if (submitType === 'user' && !this.chatModel.isEmpty()) {
+        if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
             await this.clearAndRestartSession()
         }
 
@@ -645,7 +645,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleChatRequest(
         requestID: string,
         inputText: string,
-        submitType: 'user' | 'suggestion' | 'example' | 'user-followup',
+        submitType: 'user' | 'suggestion' | 'example' | 'user-newchat',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
         command?: CodyCommand
@@ -671,7 +671,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             userContextFiles,
             addEnhancedContext,
             contextSummary => {
-                if (submitType !== 'user') {
+                if (submitType !== 'user' && submitType !== 'user-newchat') {
                     return
                 }
 
