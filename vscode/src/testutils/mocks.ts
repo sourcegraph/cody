@@ -368,11 +368,28 @@ export class Range implements VSCodeRange {
 }
 
 export class Selection extends Range {
+    public readonly anchor: Position
+    public readonly active: Position
     constructor(
-        public readonly anchor: Position,
-        public readonly active: Position
+        anchorLine: number | Position,
+        anchorCharacter: number | Position,
+        activeLine?: number,
+        activeCharacter?: number
     ) {
-        super(anchor, active)
+        if (
+            typeof anchorLine === 'number' &&
+            typeof anchorCharacter === 'number' &&
+            typeof activeLine === 'number' &&
+            typeof activeCharacter === 'number'
+        ) {
+            super(anchorLine, anchorCharacter, activeLine, activeCharacter)
+        } else if (typeof anchorLine === 'object' && typeof anchorCharacter === 'object') {
+            super(anchorLine, anchorCharacter)
+        } else {
+            throw new TypeError('this version of the constructor is not implemented')
+        }
+        this.anchor = this.start
+        this.active = this.end
     }
 
     /**
