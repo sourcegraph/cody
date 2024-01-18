@@ -135,9 +135,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
 
         // Reuse existing "New Chat" panel if there is an empty one
-        const emptyNewChatProvider = Array.from(this.panelProviders.values()).find(
-            p => p.webviewPanel?.title === 'New Chat'
-        )
+        const emptyNewChatProvider = this.panelProviders.find(p => p.webviewPanel?.title === 'New Chat')
         if (!chatID && !panel && this.panelProviders.length && emptyNewChatProvider) {
             emptyNewChatProvider.webviewPanel?.reveal()
             this.activePanelProvider = emptyNewChatProvider
@@ -285,11 +283,9 @@ export class ChatPanelsManager implements vscode.Disposable {
             logDebug('ChatPanelsManager', 'restorePanel')
             // Panel already exists, just reveal it
             const provider = this.panelProviders.find(p => p.sessionID === chatID)
-            if (provider) {
-                if (provider.sessionID === chatID) {
-                    provider.webviewPanel?.reveal()
-                    return provider
-                }
+            if (provider?.sessionID === chatID) {
+                provider.webviewPanel?.reveal()
+                return provider
             }
             return await this.createWebviewPanel(chatID, chatQuestion)
         } catch (error) {
@@ -319,12 +315,12 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposeProvider(activePanelID)
         }
         // loop through the panel provider map
-        const panelsProvider = Array.from(this.panelProviders.values())
-        for (const provider of panelsProvider) {
+        const oldPanelProviders = this.panelProviders
+        this.panelProviders = []
+        for (const provider of oldPanelProviders) {
             provider.webviewPanel?.dispose()
             provider.dispose()
         }
-        this.panelProviders = []
         void this.updateTreeViewHistory()
     }
 
