@@ -7,7 +7,6 @@ import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
     ContextWindowLimitError,
-    FeatureFlag,
     hydrateAfterPostMessage,
     isCodyIgnoredFile,
     isDefined,
@@ -138,8 +137,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
-    private readonly featureFlagProvider: FeatureFlagProvider
-
     // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
@@ -147,7 +144,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     constructor({
         config,
         extensionUri,
-        featureFlagProvider,
         authProvider,
         chatClient,
         embeddingsClient,
@@ -161,7 +157,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
-        this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient

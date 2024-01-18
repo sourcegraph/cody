@@ -2,8 +2,6 @@ import * as vscode from 'vscode'
 
 import {
     DOTCOM_URL,
-    FeatureFlag,
-    featureFlagProvider,
     isDotCom,
     isError,
     LOCAL_APP_URL,
