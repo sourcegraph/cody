@@ -23,7 +23,6 @@ import {
     type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
-import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
@@ -254,6 +253,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    onKeyUp,
     onFocus,
     chatModels,
 }) => {
@@ -288,6 +288,13 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         },
         [inputRef, onKeyDown]
     )
+    const onTextAreaKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            onKeyUp?.(event, inputRef.current?.selectionStart ?? null)
+        },
+        [inputRef, onKeyUp]
+    )
+
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
 
@@ -309,6 +316,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 required={required}
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
+                onKeyUp={onTextAreaKeyUp}
                 onFocus={onFocus}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
@@ -323,6 +331,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
     className,
     disabled,
     onClick,
+    isFollowUp,
     onAbortMessageInProgress,
 }) => (
     <VSCodeButton
@@ -332,7 +341,13 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
         onClick={onAbortMessageInProgress ?? onClick}
         title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
     >
-        {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
+        {onAbortMessageInProgress ? (
+            <i className="codicon codicon-debug-stop" />
+        ) : isFollowUp ? (
+            <i className="codicon codicon-comment-discussion" />
+        ) : (
+            <i className="codicon codicon-comment" />
+        )}
     </VSCodeButton>
 )
 

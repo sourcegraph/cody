@@ -105,6 +105,7 @@ export interface ChatUITextAreaProps {
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
+    onKeyUp?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
     onFocus?: (event: React.FocusEvent<HTMLElement>) => void
     chatModels?: ChatModelProvider[]
 }
@@ -113,6 +114,7 @@ export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+    isFollowUp: boolean
     onAbortMessageInProgress?: () => void
 }
 
@@ -345,6 +347,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHandler]
     )
 
+    const [isFollowUpKeyPressed, setIsFollowUpKeyPressed] = useState(false)
     const onChatSubmit = useCallback(
         (isFollowUp: boolean): void => {
             // Submit chat only when input is not empty and not in progress
@@ -357,11 +360,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [formInput, messageInProgress, setFormInput, submitInput]
     )
     const onChatButtonSubmit = useCallback((): void => {
-        onChatSubmit(false)
-    }, [onChatSubmit])
+        onChatSubmit(isFollowUpKeyPressed)
+    }, [onChatSubmit, isFollowUpKeyPressed])
 
+    const onChatKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
+        },
+        [setIsFollowUpKeyPressed]
+    )
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
+            setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
+
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
             if (event.altKey && event.key === 'c') {
                 event.preventDefault()
@@ -508,6 +519,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
+            setIsFollowUpKeyPressed,
         ]
     )
 
@@ -633,6 +645,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             onInput={onChatInput}
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
+                            onKeyUp={onChatKeyUp}
                             setValue={inputHandler}
                             chatEnabled={chatEnabled}
                             chatModels={chatModels}
@@ -649,6 +662,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatButtonSubmit}
+                        isFollowUp={isFollowUpKeyPressed}
                         disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
                         onAbortMessageInProgress={
                             !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined

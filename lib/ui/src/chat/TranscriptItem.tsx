@@ -126,6 +126,7 @@ export const TranscriptItem: React.FunctionComponent<
                 />
                 <SubmitButton
                     className={styles.submitButton}
+                    isFollowUp={false}
                     onClick={() => {
                         setBeingEdited(false)
                         editButtonOnSubmit(formInput)
