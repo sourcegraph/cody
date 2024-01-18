@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
-import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import { isDotCom, type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
 
 import { type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'
 import { getEditSmartSelection } from '../edit/utils/edit-selection'
 import { logDebug } from '../log'
+import { type AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
@@ -45,7 +46,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor() {
+    constructor(private authProvider: AuthProvider) {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -669,6 +670,8 @@ export class FixupController
 
     public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
+        const authStatus = this.authProvider.getAuthStatus()
+
         if (!task) {
             return
         }
@@ -692,9 +695,18 @@ export class FixupController
                 hasV2Event: true,
             })
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                metadata: countCode(replacementText),
+                metadata: {
+                    ...countCode(replacementText),
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
                 privateMetadata: {
                     source: task.source,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? replacementText : undefined,
                 },
             })
             return this.streamTask(task, state)

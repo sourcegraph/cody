@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
+import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource, isDotCom } from '@sourcegraph/cody-shared'
 
 import { type ContextProvider } from '../chat/ContextProvider'
 import { type GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -8,6 +8,7 @@ import { getEditor } from '../editor/active-editor'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import { type FixupTask } from '../non-stop/FixupTask'
+import { type AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
@@ -20,6 +21,7 @@ export interface EditManagerOptions {
     chat: ChatClient
     contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
+    authProvider: AuthProvider
 }
 
 export class EditManager implements vscode.Disposable {
@@ -28,7 +30,8 @@ export class EditManager implements vscode.Disposable {
     private editProviders = new Map<FixupTask, EditProvider>()
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController()
+        const authProvider = this.options.authProvider
+        this.controller = new FixupController(authProvider)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand(
@@ -47,19 +50,27 @@ export class EditManager implements vscode.Disposable {
         )
     }
 
-    public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
+        public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
             void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
             return
         }
         const commandEventName = source === 'doc' ? 'doc' : 'edit'
+        const authStatus = this.options.authProvider.getAuthStatus()
         telemetryService.log(
             `CodyVSCodeExtension:command:${commandEventName}:executed`,
             { source },
             { hasV2Event: true }
         )
-        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', { privateMetadata: { source } })
+        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', {
+            // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+            // See https://github.com/sourcegraph/sourcegraph/pull/59524
+            metadata: {
+                recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+            },
+            privateMetadata: { source },
+        })
 
         const editor = getEditor()
         if (editor.ignored) {
