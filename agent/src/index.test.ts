@@ -954,7 +954,7 @@ describe('Agent', () => {
             'enterpriseClient',
             process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
                 // See comment above `const client =` about how this value is derived.
-                'REDACTED_1a3d082d4043886913e3b62989b70673065fb49c8b0ef8a93001906d3fdf7a83',
+                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
             'https://demo.sourcegraph.com'
         )
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -962,7 +962,7 @@ describe('Agent', () => {
             const serverInfo = await enterpriseClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('olafurpg')
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
         it('chat/submitMessage', async () => {
