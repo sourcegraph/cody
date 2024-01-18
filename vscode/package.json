@@ -1087,7 +1087,7 @@
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/yaml": "^1.9.7",
-    "@vscode/test-electron": "^2.3.2",
+    "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
     "blueimp-md5": "^2.19.0",
