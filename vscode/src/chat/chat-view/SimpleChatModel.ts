@@ -112,7 +112,7 @@ export class SimpleChatModel {
      * expectedSpeaker is the expected speaker of the message at the given index
      * to ensure the correct messages are being removed.
      */
-    public removeMessagesAfterIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
+    public removeMessagesFromIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
         const messageAtIndex = this.messagesWithContext[index]
         if (messageAtIndex?.message?.speaker !== expectedSpeaker) {
             throw new Error(`SimpleChatModel.removeHumanMessageByIndex: ${expectedSpeaker} is not the expected speaker`)

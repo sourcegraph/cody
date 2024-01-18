@@ -711,31 +711,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.updateWebviewPanelTitle(inputText)
     }
 
+    // TODO (bee) support userContextFiles and addEnhancedContext
     private async handleEdit(requestID: string, text: string, humanMessageIndex?: number): Promise<void> {
         try {
-            // if it's a command, we will handle it in handleCommands in case the command is an edit command
-            // in this case, we will need to remove the human message at index and return early
-            // Otherwise, we will handle it as a regular edit and remove the existing bot response (index + 1) instead
-            const isCommand = text.startsWith('/')
+            // Remove all messages from the humanMessageIndex before submitting the edit as new question
             if (humanMessageIndex !== undefined) {
-                const updatedIndex = isCommand ? humanMessageIndex : humanMessageIndex + 1
-                const expectedSpeaker = isCommand ? 'human' : 'assistant'
-                this.chatModel.removeMessagesAfterIndex(updatedIndex, expectedSpeaker)
+                this.chatModel.removeMessagesFromIndex(humanMessageIndex, 'human')
             }
-            // save new input text to input history
-            await this.saveSession(text)
-            // Handle command input
-            if (isCommand) {
-                const command = await this.commandsController?.findCommand(text)
-                if (command) {
-                    return await this.handleCommands(command, 'chat', requestID)
-                }
-            }
-            // Handle regular chat input
-            this.chatModel.updateLastHumanMessage({ text })
-            this.postViewTranscript()
-            // TODO (bee) add support for userContextFiles and addEnhancedContext options when updating edit UI
-            await this.generateAssistantResponse(requestID)
+            await this.handleHumanMessageSubmitted(requestID, text, 'user', [], true)
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
