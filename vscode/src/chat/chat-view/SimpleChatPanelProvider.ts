@@ -610,7 +610,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
             const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.findCommand(text, commandArgs)
+            const command = await this.commandsController?.startCommand(text, commandArgs)
             if (command) {
                 return this.handleCommands(command, commandArgs)
             }
@@ -628,7 +628,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     public async handleCommands(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
         // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
-        // This is because findCommand will start the CommandRunner,
+        // This is because startCommand will start the CommandRunner,
         // which would send all fixup requests to the FixupController
         if (command.mode !== 'ask') {
             return
@@ -670,7 +670,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
         // The text we will use to send to LLM
-        const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
+        const promptText = command ? command.prompt : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
 
         await this.saveSession(inputText)
@@ -1034,12 +1034,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 allCommands?.filter(([id, { mode }]) => {
                     /** The /ask command is only useful outside of chat */
                     const isRedundantCommand = id === '/ask'
-                    /**
-                     * Hack: Custom edit commands are currently broken in this chat.
-                     * We filter our anything that has this mode, apart from our own internal doc command - which we override ourselves
-                     */
-                    const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
-                    return !isRedundantCommand && !isCustomEdit
+                    return !isRedundantCommand
                 }) || []
             void this.postMessage({
                 type: 'custom-prompts',

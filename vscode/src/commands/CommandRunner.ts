@@ -36,10 +36,7 @@ export class CommandRunner implements vscode.Disposable {
     constructor(
         private readonly vscodeEditor: VSCodeEditor,
         public readonly command: CodyCommand,
-        private readonly args: CodyCommandArgs,
-        // instruction that goes after the command key
-        // e.g. 'in Japanese' from '/explain in Japanese'
-        public instruction?: string
+        private readonly args: CodyCommandArgs
     ) {
         logDebug('CommandRunner:constructor', command.slashCommand, { verbose: { command, args } })
         // use commandKey to identify default command in telemetry
@@ -51,16 +48,16 @@ export class CommandRunner implements vscode.Disposable {
         if (commandKey === '/ask') {
             command.prompt = command.prompt.replace('/ask', '')
         }
-
+        // Set commmand mode - default mode to 'ask' if not specified
         if (args.runInChatMode) {
             command.mode = 'ask'
         } else {
-            const isEditPrompt = promptStatsWithEdit(command, instruction)
-            // Default mode to 'ask' if not specified
+            const isEditPrompt = promptStatsWithEdit(command.prompt)
             command.mode = isEditPrompt ? 'edit' : command.mode || 'ask'
         }
 
-        command.additionalInput = instruction
+        // update prompt with additional input added at the end
+        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
         this.isFixupRequest = command.mode !== 'ask'
         this.command = command
 
@@ -235,6 +232,6 @@ function getDocCommandRange(
     return new vscode.Selection(adjustedStartPosition, selection.end)
 }
 
-function promptStatsWithEdit(command: CodyCommand, instruction?: string): boolean {
-    return command.prompt.startsWith('/edit ') || instruction?.startsWith('/edit ') || false
+function promptStatsWithEdit(prompt: string): boolean {
+    return prompt.startsWith('/edit ')
 }
