@@ -7,9 +7,7 @@ import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.agent.CodyAgentClient
 import com.sourcegraph.cody.agent.CodyAgentException
 import com.sourcegraph.cody.agent.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol.ClientInfo
-import com.sourcegraph.cody.agent.protocol.CompletionItemID
-import com.sourcegraph.cody.agent.protocol.CompletionItemIDSerializer
+import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.IOException
@@ -134,6 +132,7 @@ private constructor(
                 // many `=== null` checks that return false for undefined fields.
                 .serializeNulls()
                 .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
+                .registerTypeAdapter(ContextFile::class.java, contextFileDeserializer)
           }
           .setRemoteInterface(CodyAgentServer::class.java)
           .traceMessages(traceWriter())

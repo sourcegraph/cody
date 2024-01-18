@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
@@ -16,6 +15,7 @@ import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import com.sourcegraph.common.CodyBundle.fmt
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
@@ -61,8 +61,7 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
 
   companion object {
     fun notify(rateLimitError: RateLimitError, project: Project) {
-      ApplicationManager.getApplication().executeOnPooledThread {
-        val codyProJetbrains = isCodyProJetbrains(project)
+      isCodyProJetbrains(project).thenApply { codyProJetbrains ->
         val shouldShowUpgradeOption = codyProJetbrains && rateLimitError.upgradeIsAvailable
         val content =
             when {
@@ -77,24 +76,24 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
                   CodyBundle.getString("UpgradeToCodyProNotification.title.upgrade")
               else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
             }
-        UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
+
+        ApplicationManager.getApplication().invokeLater {
+          UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
+        }
       }
     }
 
-    @RequiresEdt
-    fun isCodyProJetbrains(project: Project): Boolean {
+    fun isCodyProJetbrains(project: Project): CompletableFuture<Boolean> {
       val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
       if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
         return CodyAgentService.getAgent(project)
             .thenCompose { agent ->
               agent.server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
             }
-            // TODO We should avoid using getNow if possible
-            // https://github.com/sourcegraph/jetbrains/issues/307
-            .getNow(false) == true
+            .thenApply { it == true }
       }
 
-      return false
+      return CompletableFuture.completedFuture(false)
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

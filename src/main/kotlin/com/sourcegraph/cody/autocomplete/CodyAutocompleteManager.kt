@@ -234,7 +234,7 @@ class CodyAutocompleteManager {
                   !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
                 handleError(project, error)
               }
-            } else if (result != null) {
+            } else if (result != null && result.items.isNotEmpty()) {
               UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
               UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
               processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)

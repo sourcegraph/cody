@@ -33,9 +33,9 @@ class ContextFilesMessage(val project: Project, contextMessages: List<ContextMes
             .mapNotNull(ContextMessage::file)
             .map {
               if (it.repoName != null) {
-                "${project.basePath}/${it.fileName}"
+                "${project.basePath}/${it.uri.path}"
               } else {
-                it.fileName
+                it.uri.path
               }
             }
             .toSet()

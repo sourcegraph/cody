@@ -25,10 +25,11 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
             // Notify Cody Agent about config changes.
-            CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-              if (ConfigUtil.isCodyEnabled()) {
+            if (ConfigUtil.isCodyEnabled()) {
+              CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
                 agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
               }
+              CodyAgentService.getInstance(project).restartAgent(project)
             }
 
             val codyToolWindowContent = CodyToolWindowContent.getInstance(project)

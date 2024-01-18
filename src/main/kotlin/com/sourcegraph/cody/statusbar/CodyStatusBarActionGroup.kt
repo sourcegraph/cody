@@ -8,6 +8,7 @@ import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
+import java.util.concurrent.TimeUnit
 
 class CodyStatusBarActionGroup : DefaultActionGroup() {
   override fun update(e: AnActionEvent) {
@@ -22,9 +23,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
           AboutAction().apply { templatePresentation.text = "Open About To Troubleshoot Issue" },
           ReportCodyBugAction())
     } else {
-
       val warningActions = deriveWarningAction(e.project!!)
-
       addAll(listOfNotNull(warningActions))
       addSeparator()
       addAll(
@@ -40,11 +39,13 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
   private fun deriveWarningAction(project: Project): RateLimitErrorWarningAction? {
     val autocompleteRLE = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
     val chatRLE = UpgradeToCodyProNotification.chatRateLimitError.get()
+    val isCodyPro =
+        UpgradeToCodyProNotification.isCodyProJetbrains(project)
+            .completeOnTimeout(false, 500, TimeUnit.MILLISECONDS)
+            .get()
 
-    val codyProJetbrains = UpgradeToCodyProNotification.isCodyProJetbrains(project)
     val shouldShowUpgradeOption =
-        codyProJetbrains &&
-            autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
+        isCodyPro && autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
 
     val suggestionOrExplanation =
         if (shouldShowUpgradeOption) CodyBundle.getString("status-widget.warning.upgrade")
