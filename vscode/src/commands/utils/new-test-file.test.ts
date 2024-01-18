@@ -87,13 +87,13 @@ describe('convertFileUriToTestFileUri', () => {
         ).toBe(URI.file('/path/to/file_test.py').toString())
     })
 
-    it('should generate a test file uri for a non-test file uri in python when no exisiting test path provided', () => {
+    it('should generate a test file uri for a non-test file uri in python when no existing test path provided', () => {
         expect(convertFileUriToTestFileUri(URI.file('/path/to/test-file.py')).toString()).toBe(
             URI.file('/path/to/test-file_test.py').toString()
         )
     })
 
-    it('should generate the default spec file uri for ruby when no exisiting test files is found', () => {
+    it('should generate the default spec file uri for ruby when no existing test files is found', () => {
         expect(convertFileUriToTestFileUri(URI.file('/path/to/file.rb'), undefined).toString()).toBe(
             URI.file('/path/to/file_spec.rb').toString()
         )

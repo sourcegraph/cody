@@ -197,7 +197,7 @@ export class EditProvider {
         const task = this.config.task
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
-            // an exisiting test file from codebase
+            // an existing test file from codebase
             const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))?.file?.uri
             if (cbTestFileUri) {
                 const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
