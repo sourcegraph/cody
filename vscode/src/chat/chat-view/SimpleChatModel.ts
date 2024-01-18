@@ -108,7 +108,7 @@ export class SimpleChatModel {
     }
 
     public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
-        return this.messagesWithContext.findIndex(message => message.message.speaker === speaker)
+        return this.messagesWithContext.findLastIndex(message => message.message.speaker === speaker)
     }
 
     /**

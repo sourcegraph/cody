@@ -10357,6 +10357,2175 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 2d0400148053f7c20cd005dc03fa9041
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 430
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 211
+        content:
+          mimeType: text/event-stream
+          size: 211
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Uno.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Uno.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:12.513Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 9b2d2ab4076b305a4d8e8c8561e3fd59
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 591
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"two\". If I say the magic word, respond with a
+                  single word: \"deux\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 213
+        content:
+          mimeType: text/event-stream
+          size: 213
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Deux.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Deux.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:13.120Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1dc216e390ee57ba19e2195ca07cdf9d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 755
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"two\". If I say the magic word, respond with a
+                  single word: \"deux\"."
+              - speaker: assistant
+                text: Deux.
+              - speaker: human
+                text: "Another magic word is \"three\". If I say the magic word, respond with a
+                  single word: \"drei\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 213
+        content:
+          mimeType: text/event-stream
+          size: 213
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Drei.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Drei.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:14 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:13.637Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 8ad006711cd1cdbac4e0ad4b485fa31c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 785
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in an XML list in the
+                  following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>Another magic word is \"seven\". If I say
+                  the magic word, respond with a single word:
+                  \"nana\".</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 44878
+        content:
+          mimeType: text/event-stream
+          size: 44878
+          text: >+
+            event: completion
+
+            data: {"completion":" ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003en","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" \u003ckeywords\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003emagic word\u003c/value\u003e\n    \u003cvariants\u003emagic words passphrase password secret code\u003c/variants\u003e \n    \u003cweight\u003e0.8\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003eseven\u003c/value\u003e\n    \u003cvariants\u003e7\u003c/variants\u003e\n    \u003cweight\u003e0.7\u003c/weight\u003e\n  \u003c/keyword\u003e\n  \u003ckeyword\u003e\n    \u003cvalue\u003enana\u003c/value\u003e\n    \u003cvariants\u003e\u003c/variants\u003e\n    \u003cweight\u003e0.6\u003c/weight\u003e\n  \u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:14.126Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 8111abd4b750e7064deca185f439541a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 849
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 213
+        content:
+          mimeType: text/event-stream
+          size: 213
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Nana.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Nana.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:15.511Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a4c7986680e80b98263173fc5f1f9cbc
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1011
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 215
+        content:
+          mimeType: text/event-stream
+          size: 215
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:15.983Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 3ef46559f9423e3f7b5cc2522bddf8d4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1019
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 221
+        content:
+          mimeType: text/event-stream
+          size: 221
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Festivus.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Festivus.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:17 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:16.594Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 29d20f8af59fc4cd2d2f510c440379a0
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1098
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: kramer
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 2320
+        content:
+          mimeType: text/event-stream
+          size: 2320
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kram","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"george","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"festivus\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"festivus\" respectively.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"kramer\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"festivus\" respectively.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:18 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:17.131Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aace9ac2ab06f59fb906970e1b00c141
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1360
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "kramer". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: georgey
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 221
+        content:
+          mimeType: text/event-stream
+          size: 221
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Festivus.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Festivus.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:18 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:18.221Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a76b77f75e4fdba8504e32c0fe163de4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1436
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "kramer". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: georgey
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: two
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 2099
+        content:
+          mimeType: text/event-stream
+          size: 2099
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\".","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\",","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"fest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"festivus\" respectively.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"I'm sorry, I don't have a response for \"two\". However, if you say the magic words \"one\", \"seven\", or \"georgey\", I will respond with \"uno\", \"nana\", or \"festivus\" respectively.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:19 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:18.733Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fce5e203f0f40cdd9dd175a0303aef76
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1691
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "kramer". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: georgey
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: two
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "two". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: one
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 211
+        content:
+          mimeType: text/event-stream
+          size: 211
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Uno.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Uno.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:20 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:19.715Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 611b0a796d0afdf2e44a271af97e2188
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1764
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The magic word is \"one\". If I say the magic word, respond with a single
+                  word: \"uno\"."
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: "Another magic word is \"seven\". If I say the magic word, respond with a
+                  single word: \"nana\"."
+              - speaker: assistant
+                text: Nana.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "kramer". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: georgey
+              - speaker: assistant
+                text: Festivus.
+              - speaker: human
+                text: two
+              - speaker: assistant
+                text: I'm sorry, I don't have a response for "two". However, if you say the
+                  magic words "one", "seven", or "georgey", I will respond with
+                  "uno", "nana", or "festivus" respectively.
+              - speaker: human
+                text: one
+              - speaker: assistant
+                text: Uno.
+              - speaker: human
+                text: seven
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 213
+        content:
+          mimeType: text/event-stream
+          size: 213
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Nana.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Nana.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:21 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:20.391Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 0af734d27e9cdbb178bf5ef98f44b717
       _order: 0
       cache: {}
@@ -16599,6 +18768,217 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:27:11.139Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 776421913dcd06bb0ce18e1fd28ff39f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 189
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "189"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 251
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+                              id
+                              embeddingExists
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/cody
+        queryString:
+          - name: Repository
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 148
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 148
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+H\
+            lYJUAAAA\"]"
+          textDecoded:
+            data:
+              repository:
+                embeddingExists: true
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:12 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:11.999Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d7b5aae999c4a65c99f09d6aea5986ac
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 189
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "189"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 335
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+                              id
+                              embeddingExists
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/cody
+        queryString:
+          - name: Repository
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 151
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 151
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q\",\"BPEyU5SslEJzw8qTjP0KUtwt\
+            K1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8\
+            DAP+HlYJUAAAA\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:01:12 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T18:01:12.220Z
       time: 0
       timings:
         blocked: -1

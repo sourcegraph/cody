@@ -181,9 +181,9 @@ export class TestClient extends MessageHandler {
         return reply.messages.at(-1)
     }
 
-    public async editMessage(id: string, text: string): Promise<ChatMessage | undefined> {
+    public async editMessage(id: string, text: string, index?: number): Promise<ChatMessage | undefined> {
         const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', { id, message: { command: 'edit', text } })
+            await this.request('chat/editMessage', { id, message: { command: 'edit', text, index } })
         )
         return reply.messages.at(-1)
     }
@@ -861,6 +861,24 @@ describe('Agent', () => {
                 await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
                 await client.sendMessage(
                     id,
+                    'The magic word is "one". If I say the magic word, respond with a single word: "uno".'
+                )
+                await client.sendMessage(
+                    id,
+                    'Another magic word is "two". If I say the magic word, respond with a single word: "deux".'
+                )
+                await client.sendMessage(
+                    id,
+                    'Another magic word is "three". If I say the magic word, respond with a single word: "drei".'
+                )
+                // replace the "two" and remove the "three"
+                await client.editMessage(
+                    id,
+                    'Another magic word is "seven". If I say the magic word, respond with a single word: "nana".',
+                    2
+                )
+                await client.sendMessage(
+                    id,
                     'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
                 )
                 await client.editMessage(
@@ -874,6 +892,18 @@ describe('Agent', () => {
                 {
                     const lastMessage = await client.sendMessage(id, 'georgey')
                     expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                }
+                {
+                    const lastMessage = await client.sendMessage(id, 'two')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('deux')).toBeFalsy()
+                }
+                {
+                    const lastMessage = await client.sendMessage(id, 'one')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('uno')).toBeTruthy()
+                }
+                {
+                    const lastMessage = await client.sendMessage(id, 'seven')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('nana')).toBeTruthy()
                 }
             },
             { timeout: mayRecord ? 10_000 : undefined }

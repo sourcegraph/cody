@@ -722,8 +722,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleEdit(requestID: string, text: string, humanMessageIndex?: number): Promise<void> {
         try {
             // Remove all messages from the humanMessage before submitting the new text as a new question
-            // Default to removing the last message if no index provided
-            const lastHumanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human') ?? -1
+            // Default to removing the last human message index to -2 if no index provided (will fail if -2 is not human)
+            const lastHumanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human') ?? -2
             const index = humanMessageIndex === undefined ? lastHumanMessageIndex : humanMessageIndex
             this.chatModel.removeMessagesFromIndex(index, 'human')
             return await this.handleHumanMessageSubmitted(requestID, text, 'user', [], true)
