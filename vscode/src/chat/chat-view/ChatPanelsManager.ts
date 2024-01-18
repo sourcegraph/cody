@@ -44,7 +44,7 @@ interface ChatPanelProviderOptions extends MessageProviderOptions {
 export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels
     private activePanelProvider: SimpleChatPanelProvider | undefined = undefined
-    private panelProvidersMap: Map<ChatID, SimpleChatPanelProvider> = new Map()
+    private panelProviders: SimpleChatPanelProvider[] = []
 
     private options: ChatPanelProviderOptions
 
@@ -124,8 +124,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<SimpleChatPanelProvider> {
-        if (chatID && this.panelProvidersMap.has(chatID)) {
-            const provider = this.panelProvidersMap.get(chatID)
+        if (chatID && this.panelProviders.map(p => p.sessionID).includes(chatID)) {
+            const provider = this.panelProviders.find(p => p.sessionID === chatID)
             if (provider?.webviewPanel) {
                 provider.webviewPanel?.reveal()
                 this.activePanelProvider = provider
@@ -135,10 +135,10 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
 
         // Reuse existing "New Chat" panel if there is an empty one
-        const emptyNewChatProvider = Array.from(this.panelProvidersMap.values()).find(
+        const emptyNewChatProvider = Array.from(this.panelProviders.values()).find(
             p => p.webviewPanel?.title === 'New Chat'
         )
-        if (!chatID && !panel && this.panelProvidersMap.size && emptyNewChatProvider) {
+        if (!chatID && !panel && this.panelProviders.length && emptyNewChatProvider) {
             emptyNewChatProvider.webviewPanel?.reveal()
             this.activePanelProvider = emptyNewChatProvider
             this.options.contextProvider.webview = emptyNewChatProvider.webview
@@ -146,7 +146,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             return emptyNewChatProvider
         }
 
-        logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
+        logDebug('ChatPanelsManager:createWebviewPanel', this.panelProviders.length.toString())
 
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
@@ -177,7 +177,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         })
 
         this.activePanelProvider = provider
-        this.panelProvidersMap.set(sessionID, provider)
+        this.panelProviders.push(provider)
 
         // Selects the corresponding tree view item.
         this.selectTreeItem(sessionID)
@@ -243,7 +243,9 @@ export class ChatPanelsManager implements vscode.Disposable {
                     await chatHistory.saveChat(authStatus, history)
                     await this.updateTreeViewHistory()
                     const chatIDUTC = new Date(chatID).toUTCString()
-                    const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)
+                    const provider =
+                        this.panelProviders.find(p => p.sessionID === chatID) ||
+                        this.panelProviders.find(p => p.sessionID === chatIDUTC)
                     provider?.handleChatTitle(title)
                 }
             })
@@ -282,10 +284,12 @@ export class ChatPanelsManager implements vscode.Disposable {
         try {
             logDebug('ChatPanelsManager', 'restorePanel')
             // Panel already exists, just reveal it
-            const provider = this.panelProvidersMap.get(chatID)
+            const provider = this.panelProviders.find(p => p.sessionID === chatID)
             if (provider) {
-                provider.webviewPanel?.reveal()
-                return provider
+                if (provider.sessionID === chatID) {
+                    provider.webviewPanel?.reveal()
+                    return provider
+                }
             }
             return await this.createWebviewPanel(chatID, chatQuestion)
         } catch (error) {
@@ -299,11 +303,11 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.activePanelProvider = undefined
         }
 
-        const provider = this.panelProvidersMap.get(chatID)
-        if (provider) {
-            this.panelProvidersMap.delete(chatID)
-            provider.webviewPanel?.dispose()
-            provider.dispose()
+        const providerIndex = this.panelProviders.findIndex(p => p.sessionID === chatID)
+        if (providerIndex !== -1) {
+            const removedProvider = this.panelProviders.splice(providerIndex, 1)[0]
+            removedProvider.webviewPanel?.dispose()
+            removedProvider.dispose()
         }
     }
 
@@ -315,12 +319,12 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposeProvider(activePanelID)
         }
         // loop through the panel provider map
-        const panelsProvider = Array.from(this.panelProvidersMap.values())
+        const panelsProvider = Array.from(this.panelProviders.values())
         for (const provider of panelsProvider) {
             provider.webviewPanel?.dispose()
             provider.dispose()
         }
-        this.panelProvidersMap.clear()
+        this.panelProviders = []
         void this.updateTreeViewHistory()
     }
 
