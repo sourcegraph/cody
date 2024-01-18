@@ -66,6 +66,7 @@ interface ChatProps extends ChatClassNames {
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
+    isEnhancedContextEnabled: boolean
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo: UserAccountInfo
@@ -106,11 +107,12 @@ export interface ChatUITextAreaProps {
     setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
     onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
+    onKeyUp?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
     chatModels?: ChatModelProvider[]
 }
 
 export interface ChatUISubmitButtonProps {
-    type: 'edit' | 'chat'
+    type: 'edit' | 'chat' | 'follow-up'
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
@@ -157,7 +159,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export type ChatSubmitType = 'user' | 'suggestion' | 'example'
+export type ChatSubmitType = 'user' | 'suggestion' | 'example' | 'user-newchat'
 
 export interface ChatModelDropdownMenuProps {
     models: ChatModelProvider[]
@@ -223,6 +225,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
+    isEnhancedContextEnabled,
     chatEnabled,
     onCurrentChatModelChange,
     userInfo,
@@ -345,17 +348,34 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHandler]
     )
 
-    const onChatSubmit = useCallback((): void => {
-        // Submit chat only when input is not empty and not in progress
-        if (formInput.trim() && !messageInProgress) {
-            setInputRows(1)
-            submitInput(formInput, 'user')
-            setFormInput('')
-        }
-    }, [formInput, messageInProgress, setFormInput, submitInput])
+    const [isFollowUpKeyPressed, setIsFollowUpKeyPressed] = useState(false)
 
+    const onChatSubmit = useCallback(
+        (isFollowUp: boolean): void => {
+            // Submit chat only when input is not empty and not in progress
+            if (formInput.trim() && !messageInProgress) {
+                setInputRows(1)
+                submitInput(formInput, isFollowUp ? 'user' : 'user-newchat')
+                setFormInput('')
+            }
+        },
+        [formInput, messageInProgress, setFormInput, submitInput]
+    )
+
+    const onChatButtonSubmit = useCallback((): void => {
+        onChatSubmit(isFollowUpKeyPressed)
+    }, [onChatSubmit, isFollowUpKeyPressed])
+
+    const onChatKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
+        },
+        [setIsFollowUpKeyPressed]
+    )
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
+            setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
+
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
             if (event.altKey && event.key === 'c') {
                 event.preventDefault()
@@ -419,7 +439,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     if (formInput.startsWith(selectedCommand?.slashCommand)) {
                         // submit message if the input has slash command already completed
                         setMessageBeingEdited(false)
-                        onChatSubmit()
+                        onChatSubmit(event.metaKey || event.ctrlKey)
                     } else {
                         const newInput = selectedCommand?.slashCommand
                         setFormInput(newInput || formInput)
@@ -465,7 +485,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
                 setMessageBeingEdited(false)
-                onChatSubmit()
+                onChatSubmit(event.metaKey || event.ctrlKey)
                 return
             }
 
@@ -502,6 +522,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
+            setIsFollowUpKeyPressed,
         ]
     )
 
@@ -521,6 +542,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
 
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+    const isMac = isMacOS()
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
@@ -564,6 +586,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
+                    isEnhancedContextEnabled={isEnhancedContextEnabled}
                 />
             )}
 
@@ -626,6 +649,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             onInput={onChatInput}
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
+                            onKeyUp={onChatKeyUp}
                             setValue={inputHandler}
                             chatEnabled={chatEnabled}
                             chatModels={chatModels}
@@ -640,18 +664,25 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                     <SubmitButton
-                        type="chat"
+                        type={isFollowUpKeyPressed ? 'follow-up' : 'chat'}
                         className={styles.submitButton}
-                        onClick={onChatSubmit}
+                        onClick={onChatButtonSubmit}
                         disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
                         onAbortMessageInProgress={
                             !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
                         }
                     />
                 </div>
+                <div className={styles.chatInputBottomText}>
+                    ⏎ new question &nbsp; {isMac ? '⌘' : 'Ctrl'}⏎ follow-up question
+                </div>
             </form>
         </div>
     )
+}
+
+export function isMacOS(): boolean {
+    return window.navigator.userAgent?.includes('Mac')
 }
 
 interface WelcomeTextOptions {

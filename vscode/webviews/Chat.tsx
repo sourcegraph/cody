@@ -23,7 +23,6 @@ import {
     type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
-import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
@@ -232,6 +231,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            isEnhancedContextEnabled={addEnhancedContext}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
         />
@@ -254,6 +254,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    onKeyUp,
     onFocus,
     chatModels,
 }) => {
@@ -301,6 +302,13 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         [onFocus]
     )
 
+    const onTextAreaKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            onKeyUp?.(event, inputRef.current?.selectionStart ?? null)
+        },
+        [inputRef, onKeyUp]
+    )
+
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
 
@@ -322,6 +330,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
                 onFocus={onTextAreaFocus}
+                onKeyUp={onTextAreaKeyUp}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
@@ -349,8 +358,10 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
             <i className="codicon codicon-check" />
         ) : onAbortMessageInProgress ? (
             <i className="codicon codicon-debug-stop" />
+        ) : type === 'follow-up' ? (
+            <i className="codicon codicon-comment-discussion" />
         ) : (
-            <SubmitSvg />
+            <i className="codicon codicon-arrow-up" />
         )}
     </VSCodeButton>
 )

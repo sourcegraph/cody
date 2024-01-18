@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('editing message in chat view', async ({ page, sidebar }) => {
+test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -13,11 +13,11 @@ test('editing message in chat view', async ({ page, sidebar }) => {
 
     // Submit three messages
     await chatInput.fill('One')
-    await chatInput.press('Enter')
+    await chatInput.press('Meta+Enter')
     await chatInput.fill('Two')
-    await chatInput.press('Enter')
+    await chatInput.press('Meta+Enter')
     await chatInput.fill('Three')
-    await chatInput.press('Enter')
+    await chatInput.press('Meta+Enter')
 
     // Three edit buttons should show up, one per each message submitted
     const editButtons = chatFrame.locator('.codicon-edit')
@@ -52,7 +52,7 @@ test('editing message in chat view', async ({ page, sidebar }) => {
     const editTextArea = chatFrame.getByText('Two')
     await editTextArea.click()
     await editTextArea.fill('Four')
-    await page.keyboard.press('Enter')
+    await page.keyboard.press('Meta+Enter')
 
     // Only two messages are left after the edit (e.g. "One", "Four"),
     // as all the messages after the edited message have be removed
