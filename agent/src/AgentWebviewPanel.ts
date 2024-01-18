@@ -2,6 +2,7 @@ import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
 import { type ChatModelProvider } from '@sourcegraph/cody-shared'
+import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
 
 import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 
@@ -40,6 +41,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public receiveMessage = new EventEmitter<WebviewMessage>()
     public postMessage = new EventEmitter<ExtensionMessage>()
     public onDidPostMessage = this.postMessage.event
+    public guardrails: GuardrailsPost
     constructor(
         viewType: string,
         title: string,
@@ -53,6 +55,9 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
             options,
             onDidReceiveMessage: this.receiveMessage,
             onDidPostMessage: this.postMessage,
+        })
+        this.guardrails = new GuardrailsPost((snippet: string) => {
+            this.receiveMessage.fire({ command: 'attribution-search', snippet })
         })
     }
 

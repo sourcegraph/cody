@@ -373,6 +373,7 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('autocomplete/execute', async (params, token) => {
             await this.client // To let configuration changes propagate
+            // TODO INTEGRATE GUARDRAILS WITH COMPLETIONS HERE LOL
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized')
@@ -652,6 +653,21 @@ export class Agent extends MessageHandler {
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
+
+        this.registerRequest('attribution/search', async ({ id, snippet }) => {
+            // get any value of webPanels.panels Map
+            // TODO WHAT IF MAP IS EMPTY?
+            let panel: AgentWebviewPanel | undefined = this.webPanels.panels.values().next().value
+            if (id !== null) {
+                panel = this.webPanels.panels.get(id)
+            }
+            if (panel === undefined) {
+                // BAIL OUT !
+                return Promise.reject(new Error('No panel found'))
+            }
+            const attribution = await panel.guardrails.searchAttribution(snippet)
+            return { repoNames: attribution.repositories.map(r => r.name), limitHit: attribution.limitHit }
+        })
     }
 
     private registerWebviewHandlers(): void {
@@ -685,6 +701,19 @@ export class Agent extends MessageHandler {
                     panel.models = message.models
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
+                } else if (message.type === 'attribution') {
+                    if (message.error !== undefined) {
+                        panel.guardrails.notifyAttributionFailure(message.snippet, new Error(message.error))
+                    } else if (message.attribution === undefined) {
+                        // TODO HANDLE THIS EDGE CASE
+                    } else {
+                        panel.guardrails.notifyAttributionSuccess(message.snippet, {
+                            repositories: message.attribution.repositoryNames.map(name => {
+                                return { name }
+                            }),
+                            limitHit: message.attribution.limitHit,
+                        })
+                    }
                 }
 
                 this.notify('webview/postMessage', {

@@ -120,6 +120,8 @@ export type Requests = {
     // the client sends progress/cancel.
     'testing/progressCancelation': [{ title: string }, { result: string }]
 
+    'attribution/search': [{ id: string | null; snippet: string }, { repoNames: string[]; limitHit: boolean }]
+
     // ================
     // Server -> Client
     // ================
