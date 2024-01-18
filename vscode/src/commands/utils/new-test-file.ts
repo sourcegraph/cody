@@ -65,20 +65,26 @@ export function convertFileUriToTestFileUri(currentFile: URI, testFile?: URI): U
         const parsedCurrentFile = posix.parse(currentFile.path)
         const parsedTestFile = posix.parse(testFile.path)
         if (parsedCurrentFile.ext === parsedTestFile.ext) {
+            const testFileName = parsedTestFile.name
+            const testIndex = testFileName.toLowerCase().lastIndexOf('test')
+            const specIndex = testFileName.toLowerCase().lastIndexOf('spec')
+            const index = testIndex || specIndex
             // Check if the existing test file has a non-alphanumeric character at the test character index
-            // If so, we will create a test file following the generic naming convention
-            // else, create one follow the existing test file's naming convention
-            const testFileName = parsedTestFile.name.toLowerCase()
-            const index = testFileName.lastIndexOf('test') || testFileName.lastIndexOf('spec')
-            if (!(index > -1 && !/^[\da-z]$/i.test(testFileName[index - 1]))) {
-                // Use the existing file's naming convention
-                // Assuming that 'existing' should be replaced with the current file name without extension
-                const newTestFileName = parsedTestFile.name.replace(/existing/i, parsedCurrentFile.name)
+            // e.g. "_test" or "test_"
+            // This is because files with 'test' in the name are not always a test file, while
+            // file with non-alphanumeric character before 'test' are more likely to be test files
+            // If yes, generate a test file by replacing existing test file name with current file name
+            if (index > -1 && !/^[\da-z]$/i.test(testFileName[index - 1])) {
+                // Remove everything after the test character index from the existing test file name
+                // then replace it with the current file name
+                // e.g. "current_file" & "existing_test" => "current_file_test"
+                const strippedTestFileName = testFileName.slice(0, index - 1)
+                const newTestFileName = testFileName.replace(strippedTestFileName, parsedCurrentFile.name)
                 return Utils.joinPath(currentFile, '..', `${newTestFileName}${parsedCurrentFile.ext}`)
             }
         }
     }
 
-    // If no existing test file path is provided, or it's not a valid test file name, create a generic test file name
+    // else, generate a generic test file
     return createDefaultTestFile(currentFile)
 }
