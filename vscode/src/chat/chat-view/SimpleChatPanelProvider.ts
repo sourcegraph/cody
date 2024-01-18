@@ -542,8 +542,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
         // Reset current chat panel title
         this.handleChatTitle('New Chat')
-        // Update the provider map with the new sessionID
-        void vscode.commands.executeCommand('cody.chat.providers.refresh')
     }
 
     /**
@@ -554,6 +552,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * This allows users to manually edit the title for each chat session (via sidebar).
      */
     public handleChatTitle(title: string): void {
+        // Skip storing default chat title
         if (title !== 'New Chat') {
             this.chatModel.setChatTitle(title)
         }
