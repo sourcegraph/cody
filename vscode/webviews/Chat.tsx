@@ -350,7 +350,7 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
         <VSCodeButton
             className={classNames(styles.editButton)}
             appearance="icon"
-            title={messageBeingEdited ? 'cancel' : 'edit and resend your message'}
+            title={messageBeingEdited ? 'cancel edit' : 'edit your message'}
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >
