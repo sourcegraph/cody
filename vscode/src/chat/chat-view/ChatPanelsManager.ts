@@ -15,6 +15,7 @@ import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type MessageProviderOptions } from '../MessageProvider'
 import { type AuthStatus, type ExtensionMessage } from '../protocol'
 
@@ -62,6 +63,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
         private readonly guardrails: Guardrails,
@@ -198,6 +200,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             ...this.options,
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
+            embeddingsClient: this.embeddingsClient,
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
             models,

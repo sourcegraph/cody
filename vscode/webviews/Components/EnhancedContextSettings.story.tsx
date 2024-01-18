@@ -35,8 +35,10 @@ interface SingleTileArgs {
     isOpen: boolean
     name: string
     kind: 'embeddings' | 'graph' | 'search'
-    type: 'local'
+    type: 'local' | 'remote'
     state: 'indeterminate' | 'unconsented' | 'indexing' | 'ready' | 'no-match'
+    origin: string
+    remoteName: string
 }
 
 export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArgs> = {
@@ -44,8 +46,10 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
         isOpen: true,
         name: '~/sourcegraph',
         kind: 'embeddings',
-        type: 'local',
+        type: 'remote',
         state: 'ready',
+        origin: 'https://sourcegraph.com',
+        remoteName: 'github.com/sourcegraph/sourcegraph',
     },
     argTypes: {
         isOpen: { control: 'boolean' },
@@ -55,7 +59,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
             control: 'select',
         },
         type: {
-            options: ['local'],
+            options: ['local', 'remote'],
             control: 'select',
             if: {
                 arg: 'kind',
@@ -66,6 +70,8 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
             options: ['indeterminate', 'unconsented', 'indexing', 'ready', 'no-match'],
             control: 'select',
         },
+        origin: { control: 'text' },
+        remoteName: { control: 'text' },
     },
     render: function Render() {
         const [args, updateArgs] = useArgs<SingleTileArgs>()
@@ -95,6 +101,8 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                                     kind: args.kind,
                                     type: args.type,
                                     state: args.state,
+                                    origin: args.origin,
+                                    remoteName: args.remoteName,
                                 } as ContextProvider,
                             ],
                         },
@@ -137,7 +145,9 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                             providers: [
                                 {
                                     kind: 'embeddings',
-                                    type: 'local',
+                                    type: 'remote',
+                                    remoteName: 'gitlab.com/my/repo',
+                                    origin: 'sourcegraph.com',
                                     state: 'ready',
                                 },
                             ],
@@ -147,7 +157,9 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                             providers: [
                                 {
                                     kind: 'embeddings',
-                                    type: 'local',
+                                    type: 'remote',
+                                    remoteName: 'github.com/sourcegraph/bar',
+                                    origin: 'sourcegraph.sourcegraph.com',
                                     state: 'no-match',
                                 },
                             ],

@@ -150,6 +150,13 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'indeterminate':
             return <></>
         case 'ready':
+            if (provider.kind === 'embeddings' && provider.type === 'remote') {
+                return (
+                    <p className={classNames(styles.providerExplanatoryText, styles.lineBreakAll)}>
+                        Inherited {provider.remoteName}
+                    </p>
+                )
+            }
             return <span className={styles.providerInlineState}>&mdash; Indexed</span>
         case 'indexing':
             return <span className={styles.providerInlineState}>&mdash; Indexing&hellip;</span>
@@ -157,6 +164,13 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
             return <EmbeddingsConsentComponent provider={provider} />
         case 'no-match':
             if (provider.kind === 'embeddings') {
+                if (provider.type === 'remote') {
+                    return (
+                        <p className={styles.providerExplanatoryText}>
+                            No repository matching {provider.remoteName} on {provider.origin}
+                        </p>
+                    )
+                }
                 // Error messages for local embeddings missing.
                 switch (provider.errorReason) {
                     case 'not-a-git-repo':

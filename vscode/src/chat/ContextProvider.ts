@@ -2,11 +2,15 @@ import * as vscode from 'vscode'
 
 import {
     CodebaseContext,
+    EmbeddingsDetector,
+    isError,
+    SourcegraphGraphQLAPIClient,
     type ChatClient,
     type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
     type Editor,
+    type GraphQLAPIClientConfig,
     type IndexedKeywordContextFetcher,
 } from '@sourcegraph/cody-shared'
 
@@ -160,6 +164,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             this.editor,
             this.chat,
             this.platform,
+            await this.getEmbeddingClientCandidates(this.config),
             this.localEmbeddings
         )
         if (!codebaseContext) {
@@ -173,8 +178,15 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         this.codebaseContext = codebaseContext
 
         this.statusEmbeddings?.dispose()
-        if (this.localEmbeddings) {
+        if (this.localEmbeddings && !this.codebaseContext.embeddings) {
+            // Add status from local embeddings when:
+            // - CodebaseContext has *no* embeddings. This lets us display the
+            //   promotion to set up local embeddings.
+            // - CodebaseContext has local embeddings (in this case,
+            //   this.codebaseContext.embeddings will be null.)
             this.statusEmbeddings = this.statusAggregator.addProvider(this.localEmbeddings)
+        } else if (this.codebaseContext.embeddings) {
+            this.statusEmbeddings = this.statusAggregator.addProvider(this.codebaseContext.embeddings)
         }
     }
 
@@ -196,6 +208,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 this.editor,
                 this.chat,
                 this.platform,
+                await this.getEmbeddingClientCandidates(newConfig),
                 this.localEmbeddings
             )
             if (codebaseContext) {
@@ -255,6 +268,12 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         this.disposables = []
     }
 
+    // Gets a list of GraphQL clients to interrogate for embeddings
+    // availability.
+    private getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
+        return Promise.resolve([new SourcegraphGraphQLAPIClient(config)])
+    }
+
     // ContextStatusProvider implementation
     private contextStatusChangeEmitter = new vscode.EventEmitter<ContextStatusProvider>()
 
@@ -279,6 +298,7 @@ async function getCodebaseContext(
     editor: Editor,
     chatClient: ChatClient,
     platform: PlatformContext,
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[],
     localEmbeddings: LocalEmbeddingsController | undefined
 ): Promise<CodebaseContext | null> {
     const workspaceRoot = editor.getWorkspaceRootUri()
@@ -297,11 +317,25 @@ async function getCodebaseContext(
     // should be updated to invoke localEmbeddings.load when the codebase changes
     const repoDirUri = gitDirectoryUri(workspaceRoot)
     const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
+    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(
+        embeddingsClientCandidates,
+        codebase,
+        workspaceRoot.fsPath
+    )
+    if (isError(embeddingsSearch)) {
+        logDebug(
+            'ContextProvider:getCodebaseContext',
+            `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance`
+        )
+        embeddingsSearch = undefined
+    }
 
     return new CodebaseContext(
         config,
         codebase,
         () => authStatus.endpoint ?? '',
+        // Use embeddings search if there are no local embeddings.
+        (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         // Use local embeddings if we have them.
         ((await hasLocalEmbeddings) && localEmbeddings) || null,

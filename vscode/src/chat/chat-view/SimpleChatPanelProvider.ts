@@ -63,6 +63,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type MessageErrorType } from '../MessageProvider'
 import {
     type AuthStatus,
@@ -87,6 +88,7 @@ interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+    embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
     symf: SymfRunner | null
     editor: VSCodeEditor
@@ -121,6 +123,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private config: Config
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
+    private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly symf: SymfRunner | null
@@ -147,6 +150,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         featureFlagProvider,
         authProvider,
         chatClient,
+        embeddingsClient,
         localEmbeddings,
         symf,
         editor,
@@ -160,6 +164,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
+        this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
         this.commandsController = commandsController
@@ -184,7 +189,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
         }
-        this.codebaseStatusProvider = new CodebaseStatusProvider(this.config.experimentalSymfContext ? this.symf : null)
+        this.codebaseStatusProvider = new CodebaseStatusProvider(
+            this.editor,
+            embeddingsClient,
+            this.config.experimentalSymfContext ? this.symf : null
+        )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
     }
 
@@ -740,8 +749,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const contextProvider = new ContextProvider(
                 userContextItems,
                 this.editor,
+                this.embeddingsClient,
                 this.localEmbeddings,
-                this.config.experimentalSymfContext ? this.symf : null
+                this.config.experimentalSymfContext ? this.symf : null,
+                this.codebaseStatusProvider
             )
             const { prompt, contextLimitWarnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
@@ -1071,8 +1082,10 @@ class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
         private editor: VSCodeEditor,
+        private embeddingsClient: CachedRemoteEmbeddingsClient | null,
         private localEmbeddings: LocalEmbeddingsController | null,
-        private symf: SymfRunner | null
+        private symf: SymfRunner | null,
+        private codebaseStatusProvider: CodebaseStatusProvider
     ) {}
 
     public getExplicitContext(): ContextItem[] {
@@ -1170,12 +1183,20 @@ class ContextProvider implements IContextProvider {
         if (useContextConfig !== 'keyword') {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
             const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+            const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
             try {
                 const r = await localEmbeddingsResults
                 hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
                 searchContext.push(...r)
             } catch (error) {
                 logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            }
+            try {
+                const r = await remoteEmbeddingsResults
+                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+                searchContext.push(...r)
+            } catch (error) {
+                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
             }
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
         }
@@ -1329,6 +1350,72 @@ class ContextProvider implements IContextProvider {
                 })
             }
         }
+        return contextItems
+    }
+
+    // Note: does not throw error if remote embeddings are not available, just returns empty array
+    private async searchEmbeddingsRemote(text: string): Promise<ContextItem[]> {
+        if (!this.embeddingsClient) {
+            return []
+        }
+        const codebase = await this.codebaseStatusProvider?.currentCodebase()
+        if (!codebase?.remote) {
+            return []
+        }
+        const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(codebase.remote)
+        if (isError(repoId)) {
+            throw new Error(`Error retrieving repo ID: ${repoId}`)
+        } else if (!repoId) {
+            return []
+        }
+
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
+        const contextItems: ContextItem[] = []
+        const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+        if (isError(embeddings)) {
+            throw new Error(`Error retrieving embeddings: ${embeddings}`)
+        }
+        for (const codeResult of embeddings.codeResults) {
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, codeResult.fileName)
+            const range = new vscode.Range(
+                new vscode.Position(codeResult.startLine, 0),
+                new vscode.Position(codeResult.endLine, 0)
+            )
+            if (!isCodyIgnoredFile(uri)) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: codeResult.content,
+                    source: 'embeddings',
+                })
+            }
+        }
+
+        for (const textResult of embeddings.textResults) {
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, textResult.fileName)
+            const range = new vscode.Range(
+                new vscode.Position(textResult.startLine, 0),
+                new vscode.Position(textResult.endLine, 0)
+            )
+            if (!isCodyIgnoredFile(uri)) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: textResult.content,
+                    source: 'embeddings',
+                })
+            }
+        }
+
         return contextItems
     }
 
