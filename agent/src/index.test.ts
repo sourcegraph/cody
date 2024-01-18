@@ -256,7 +256,6 @@ export class TestClient extends MessageHandler {
             env: {
                 CODY_SHIM_TESTING: 'true',
                 CODY_TEMPERATURE_ZERO: 'true',
-                CODY_LOCAL_EMBEDDINGS_DISABLED: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: this.name,
