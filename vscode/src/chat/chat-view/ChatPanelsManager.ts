@@ -13,6 +13,8 @@ import { type CommandsController } from '../../commands/CommandsController'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
@@ -265,17 +267,16 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.treeViewProvider.reset()
     }
 
-    public async clearAndRestartSession(): Promise<void> {
-        logDebug('ChatPanelsManager', 'clearAndRestartSession')
-        // Clear and restart chat session in current panel
+    /**
+     * Clear the current chat view and start a new chat session in the active panel
+     */
+    public async resetPanel(): Promise<void> {
+        logDebug('ChatPanelsManager', 'resetPanel')
+        telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
         if (this.activePanelProvider) {
-            await this.activePanelProvider.clearAndRestartSession()
-            return
+            return this.activePanelProvider.clearAndRestartSession()
         }
-
-        // Create and restart in new panel
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.clearAndRestartSession()
     }
 
     public async restorePanel(chatID: string, chatQuestion?: string): Promise<SimpleChatPanelProvider | undefined> {
