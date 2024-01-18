@@ -463,7 +463,7 @@ describe('Agent', () => {
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
             const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
@@ -502,7 +502,7 @@ describe('Agent', () => {
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('chat/restore', async () => {
             // Step 1: create a chat session where I share my name.
@@ -545,7 +545,7 @@ describe('Agent', () => {
                 '" You told me your name is Lars Monsen."',
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         // This test is skipped because it shells out to `symf expand-query`, which
         // requires an access token to send an llm request and is, therefore, not
@@ -584,7 +584,7 @@ describe('Agent', () => {
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -598,7 +598,7 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
                 expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
             }
-        }, 30_0000)
+        }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
             const id = await client.request('chat/new', null)
@@ -681,7 +681,7 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('commands/test', async () => {
             await openFile(animalUri)
@@ -767,7 +767,7 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('commands/smell', async () => {
             await openFile(animalUri)
@@ -946,7 +946,7 @@ describe('Agent', () => {
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_0000)
+        }, 30_000)
     })
 
     describe('Enterprise', () => {
@@ -973,14 +973,14 @@ describe('Agent', () => {
         afterAll(async () => {
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_0000)
+        }, 30_000)
     })
 
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
-    }, 30_0000)
+    }, 30_000)
 })
 
 function trimEndOfLine(text: string): string {
