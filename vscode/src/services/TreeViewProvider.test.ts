@@ -73,7 +73,7 @@ describe('TreeViewProvider', () => {
     }
 
     describe('Cody Pro Upgrade', () => {
-        it('is shown when GA + user can upgrade', async () => {
+        it('is shown when user can upgrade', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
             expect(findTreeItem('Upgrade')).not.toBeUndefined()
@@ -82,12 +82,6 @@ describe('TreeViewProvider', () => {
         it('is not shown when user cannot upgrade', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: false, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Upgrade')).toBeUndefined()
-        })
-
-        it('is not shown when not GA', async () => {
-            tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
-            await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
             expect(findTreeItem('Upgrade')).toBeUndefined()
         })
 
