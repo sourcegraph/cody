@@ -107,18 +107,27 @@ export class SimpleChatModel {
         return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
     }
 
+    public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
+        return this.messagesWithContext.findIndex(message => message.message.speaker === speaker)
+    }
+
     /**
-     * Removes all messages after the given index if it matches the expected speaker.
+     * Removes all messages from the given index only if it matches the expected speaker.
      * expectedSpeaker is the expected speaker of the message at the given index
      * to ensure the correct messages are being removed.
      */
     public removeMessagesFromIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
-        const messageAtIndex = this.messagesWithContext[index]
+        // nothing to remove
+        if (this.isEmpty()) {
+            return
+        }
+
+        const messageAtIndex = this.messagesWithContext.at(index)
         if (messageAtIndex?.message?.speaker !== expectedSpeaker) {
             throw new Error(`SimpleChatModel.removeHumanMessageByIndex: ${expectedSpeaker} is not the expected speaker`)
         }
 
-        // Remove everything after the index
+        // Remove everything from the index
         this.messagesWithContext.splice(index)
     }
 

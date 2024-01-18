@@ -711,14 +711,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.updateWebviewPanelTitle(inputText)
     }
 
-    // TODO (bee) support userContextFiles and addEnhancedContext
+    /**
+     * TODO (bee) support userContextFiles and addEnhancedContext
+     * Handles editing a previous chat message.
+     *
+     * Removes any existing messages at the provided index before submitting
+     * the new text as a new question. If no index provided, updates the
+     * last human message with the new text.
+     */
     private async handleEdit(requestID: string, text: string, humanMessageIndex?: number): Promise<void> {
         try {
-            // Remove all messages from the humanMessageIndex before submitting the edit as new question
-            if (humanMessageIndex !== undefined) {
-                this.chatModel.removeMessagesFromIndex(humanMessageIndex, 'human')
-            }
-            await this.handleHumanMessageSubmitted(requestID, text, 'user', [], true)
+            // Remove all messages from the humanMessage before submitting the new text as a new question
+            // Default to removing the last message if no index provided
+            const lastHumanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human') ?? -1
+            const index = humanMessageIndex === undefined ? lastHumanMessageIndex : humanMessageIndex
+            this.chatModel.removeMessagesFromIndex(index, 'human')
+            return await this.handleHumanMessageSubmitted(requestID, text, 'user', [], true)
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
