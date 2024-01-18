@@ -113,63 +113,77 @@ export const TranscriptItem: React.FunctionComponent<
         [setBeingEdited]
     )
 
-    const EditTextArea = TextArea && beingEdited && editButtonOnSubmit && SubmitButton && isItemBeingEdited && (
-        <div className={styles.textAreaContainer}>
-            <TextArea
-                className={classNames(styles.chatInput, chatInputClassName)}
-                rows={1}
-                value={editFormInput}
-                autoFocus={true}
-                required={true}
-                onInput={event => setEditFormInput((event.target as HTMLInputElement).value)}
-                onKeyDown={event => {
-                    if (event.key === 'Escape') {
-                        onEditCurrentMessage(false)
-                    }
+    const onEditKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            if (!editButtonOnSubmit || !isItemBeingEdited) {
+                return
+            }
 
-                    if (
-                        event.key === 'Enter' &&
-                        !event.shiftKey &&
-                        !event.nativeEvent.isComposing &&
-                        editFormInput.trim()
-                    ) {
-                        event.preventDefault()
+            if (event.key === 'Escape') {
+                onEditCurrentMessage(false)
+            }
+
+            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && editFormInput.trim()) {
+                event.preventDefault()
+                onEditCurrentMessage(false)
+                editButtonOnSubmit(editFormInput, index)
+            }
+        },
+        [editButtonOnSubmit, editFormInput, index, isItemBeingEdited, onEditCurrentMessage]
+    )
+
+    const EditTextArea = EditButtonContainer &&
+        TextArea &&
+        beingEdited &&
+        editButtonOnSubmit &&
+        SubmitButton &&
+        isItemBeingEdited && (
+            <div className={styles.textAreaContainer}>
+                <EditButtonContainer
+                    className={styles.cancelEditButton}
+                    messageBeingEdited={beingEdited}
+                    setMessageBeingEdited={onEditCurrentMessage}
+                />
+                <TextArea
+                    type="edit"
+                    className={classNames(styles.chatInput)}
+                    rows={1}
+                    value={editFormInput}
+                    autoFocus={true}
+                    required={true}
+                    onInput={event => setEditFormInput((event.target as HTMLInputElement).value)}
+                    onKeyDown={onEditKeyDown}
+                    chatEnabled={true}
+                />
+                <SubmitButton
+                    type="edit"
+                    className={classNames(styles.submitButton, styles.activeSubmitButton)}
+                    onClick={() => {
                         onEditCurrentMessage(false)
                         editButtonOnSubmit(editFormInput, index)
-                    }
-                }}
-                chatEnabled={true}
-            />
-            <SubmitButton
-                className={styles.submitButton}
-                onClick={() => {
-                    onEditCurrentMessage(false)
-                    editButtonOnSubmit(editFormInput, index)
-                }}
-                disabled={editFormInput.length === 0}
-            />
-        </div>
-    )
+                    }}
+                    disabled={editFormInput.length === 0}
+                />
+            </div>
+        )
 
     return (
         <div
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow,
+                beingEdited && !isItemBeingEdited && styles.unfocusedRow
             )}
         >
-            {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && (
-                <div className={isItemBeingEdited ? styles.editingContainer : styles.editingButtonContainer}>
+            {showEditButton && !beingEdited && EditButtonContainer && !isItemBeingEdited && TextArea && (
+                <div className={styles.editingButtonContainer}>
                     <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
-                        {isItemBeingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
-                        {!isItemBeingEdited && beingEdited ? null : (
-                            <EditButtonContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                messageBeingEdited={isItemBeingEdited}
-                                setMessageBeingEdited={onEditCurrentMessage}
-                            />
-                        )}
+                        <EditButtonContainer
+                            className={styles.FeedbackEditButtonsContainer}
+                            messageBeingEdited={beingEdited}
+                            setMessageBeingEdited={onEditCurrentMessage}
+                        />
                     </header>
                 </div>
             )}
@@ -216,7 +230,7 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {message.speaker === 'human' && (
+            {!isItemBeingEdited && showEditButton && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext

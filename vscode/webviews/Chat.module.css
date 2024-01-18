@@ -40,7 +40,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 .transcript-item pre,
-.transcript-item pre>code {
+.transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--vscode-editor-background);
     color: var(--vscode-editor-foreground);
@@ -55,7 +55,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 body[data-vscode-theme-kind='vscode-light'] .transcript-item pre,
-body[data-vscode-theme-kind='vscode-light'] .transcript-item pre>code {
+body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
@@ -117,9 +117,10 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre>code {
     font: inherit;
     width: 100%;
     overflow: hidden;
-    min-height: 3.5rem;
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
+
+    resize: none;
 }
 
 /* Unset for the new chat ui */
@@ -147,7 +148,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre>code {
     pointer-events: none;
 }
 
-.chat-input-actions>* {
+.chat-input-actions > * {
     /* We have to set this explicitly, otherwise it will use the parent's value */
     pointer-events: auto;
 }
@@ -174,6 +175,15 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre>code {
 
 .edit-button {
     border-radius: 0.5rem;
+}
+
+.edit-button:hover {
+    background: none;
+}
+
+.edit-button-disabled {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
 }
 
 .suggestion-button {

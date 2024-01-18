@@ -376,7 +376,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             case 'edit': {
                 const requestID = uuid.v4()
-                await this.handleEdit(requestID, message.text, message.index)
+                await this.handleEdit(requestID, message.text, message.addEnhancedContext, message.index)
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
@@ -700,21 +700,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     /**
-     * TODO (bee) support userContextFiles and addEnhancedContext
+     * TODO (bee) support userContextFiles
      * Handles editing a previous chat message.
      *
      * Removes any existing messages at the provided index before submitting
      * the new text as a new question. If no index provided, updates the
      * last human message with the new text.
      */
-    private async handleEdit(requestID: string, text: string, humanMessageIndex?: number): Promise<void> {
+    private async handleEdit(
+        requestID: string,
+        text: string,
+        addEnhancedContext = true,
+        humanMessageIndex?: number
+    ): Promise<void> {
         try {
             // Remove all messages from the humanMessage before submitting the new text as a new question
             // Default to removing the last human message index to -2 if no index provided (will fail if -2 is not human)
             const lastHumanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human') ?? -2
             const index = humanMessageIndex === undefined ? lastHumanMessageIndex : humanMessageIndex
             this.chatModel.removeMessagesFromIndex(index, 'human')
-            return await this.handleHumanMessageSubmitted(requestID, text, 'user', [], true)
+            return await this.handleHumanMessageSubmitted(requestID, text, 'user', [], addEnhancedContext)
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }

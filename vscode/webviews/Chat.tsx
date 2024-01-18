@@ -131,9 +131,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onEditBtnClick = useCallback(
         (text: string, index?: number) => {
-            vscodeAPI.postMessage({ command: 'edit', text, index })
+            vscodeAPI.postMessage({ command: 'edit', text, index, addEnhancedContext })
         },
-        [vscodeAPI]
+        [addEnhancedContext, vscodeAPI]
     )
 
     const onFeedbackBtnClick = useCallback(
@@ -245,6 +245,7 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 )
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
+    type,
     className,
     autoFocus,
     value,
@@ -257,7 +258,9 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = 'Message (@ to include code, / for commands)'
+    const defaultPlaceholder = 'Message (@ to include code, / for commands)'
+    const editPlaceholder = 'Edit message'
+    const placeholder = type === 'edit' ? editPlaceholder : defaultPlaceholder
     const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 
     useEffect(() => {
@@ -282,23 +285,33 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     }, [])
 
     const onTextAreaKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>): void => {
+        (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
             onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
         },
         [inputRef, onKeyDown]
     )
+
+    const onTextAreaFocus = useCallback(
+        (event: React.FocusEvent<HTMLTextAreaElement>): void => {
+            // move cursor to end of line
+            const length = event.target.value.length
+            event.target.setSelectionRange(length, length)
+            onFocus?.(event)
+        },
+        [onFocus]
+    )
+
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
 
     return (
         <div
-            className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
+            className={classNames(styles.chatInputContainer, className, chatModels && styles.newChatInputContainer)}
             data-value={value || actualPlaceholder}
         >
             <textarea
                 className={classNames(
                     styles.chatInput,
-                    className,
                     chatModels && styles.newChatInput,
                     isDisabled && styles.textareaDisabled
                 )}
@@ -308,7 +321,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 required={required}
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
-                onFocus={onFocus}
+                onFocus={onTextAreaFocus}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
@@ -323,15 +336,22 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
     disabled,
     onClick,
     onAbortMessageInProgress,
+    type,
 }) => (
     <VSCodeButton
         className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}
-        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
+        title={onAbortMessageInProgress ? 'Stop Generating' : type === 'edit' ? 'Update Message' : 'Send Message'}
     >
-        {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
+        {type === 'edit' ? (
+            <i className="codicon codicon-check" />
+        ) : onAbortMessageInProgress ? (
+            <i className="codicon codicon-debug-stop" />
+        ) : (
+            <SubmitSvg />
+        )}
     </VSCodeButton>
 )
 
@@ -341,22 +361,21 @@ const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = (
     </button>
 )
 
+// This turns into a cancel button when message is being edited
 const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
     messageBeingEdited,
     setMessageBeingEdited,
 }) => (
-    <div className={className}>
-        <VSCodeButton
-            className={classNames(styles.editButton)}
-            appearance="icon"
-            title={messageBeingEdited ? 'cancel edit' : 'edit your message'}
-            type="button"
-            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
-        >
-            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
-        </VSCodeButton>
-    </div>
+    <VSCodeButton
+        className={classNames(messageBeingEdited ? styles.editButtonDisabled : styles.editButton, className)}
+        appearance="icon"
+        title={messageBeingEdited ? 'cancel edit' : 'edit your message'}
+        type="button"
+        onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+    >
+        <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+    </VSCodeButton>
 )
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {

@@ -94,6 +94,7 @@ export interface ChatButtonProps {
 }
 
 export interface ChatUITextAreaProps {
+    type: 'chat' | 'edit'
     className: string
     rows: number
     autoFocus: boolean
@@ -101,14 +102,15 @@ export interface ChatUITextAreaProps {
     required: boolean
     chatEnabled: boolean
     disabled?: boolean
-    onInput: React.FormEventHandler<HTMLElement>
+    onInput: React.FormEventHandler<HTMLTextAreaElement>
     setValue?: (value: string) => void
-    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
-    onFocus?: (event: React.FocusEvent<HTMLElement>) => void
+    onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
     chatModels?: ChatModelProvider[]
 }
 
 export interface ChatUISubmitButtonProps {
+    type: 'edit' | 'chat'
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
@@ -614,10 +616,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     )}
                     <div className={styles.chatInputContainer}>
                         <TextArea
+                            type="chat"
                             className={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            autoFocus={true}
+                            autoFocus={!messageBeingEdited}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
@@ -637,6 +640,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                     <SubmitButton
+                        type="chat"
                         className={styles.submitButton}
                         onClick={onChatSubmit}
                         disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
