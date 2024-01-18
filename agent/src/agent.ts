@@ -453,7 +453,15 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerAuthenticatedRequest('graphql/getRepoId', async ({ repoName }) => {
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
+            const result = await graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+            if (result instanceof Error) {
+                console.error('getRepoIdIfEmbeddingExists', result)
+            }
+            return typeof result === 'string' ? result : null
+        })
+
+        this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
             const result = await graphqlClient.getRepoId(repoName)
             if (result instanceof Error) {
                 console.error('getRepoId', result)

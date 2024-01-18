@@ -145,6 +145,7 @@ export class ContextStatusAggregator implements vscode.Disposable, ContextStatus
 
     // TODO: Create a publisher to push into the webview
     // TODO: Hook in local embeddings
+    // TODO: Hook in cloud embeddings
     // TODO: Hook in symf
     // TODO: Hook in graph
     // TODO: Hook in the Cody: building code index ... notification pusher's

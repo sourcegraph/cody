@@ -5,6 +5,7 @@ import {
     CodebaseContext,
     graphqlClient,
     isError,
+    SourcegraphEmbeddingsSearchClient,
     SourcegraphGuardrailsClient,
     SourcegraphIntentDetectorClient,
     type ConfigurationWithAccessToken,
@@ -80,6 +81,10 @@ export async function configureExternalServices(
                 'Please check that the repository exists. You can override the repository with the "cody.codebase" setting.'
         )
     }
+    const embeddingsSearch =
+        repoId && !isError(repoId)
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
+            : null
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
@@ -88,6 +93,7 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         () => initialConfig.serverEndpoint,
+        embeddingsSearch,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symfRunner,

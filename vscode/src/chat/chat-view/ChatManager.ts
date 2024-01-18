@@ -21,6 +21,7 @@ import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type AuthStatus } from '../protocol'
 
 import { ChatPanelsManager } from './ChatPanelsManager'
@@ -46,6 +47,7 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
         private guardrails: Guardrails,
@@ -63,6 +65,7 @@ export class ChatManager implements vscode.Disposable {
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
             this.chatClient,
+            this.embeddingsClient,
             this.localEmbeddings,
             this.symf,
             this.guardrails,

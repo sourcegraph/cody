@@ -12,6 +12,7 @@ import {
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
+import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { type ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -187,12 +188,14 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
+    const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
         chatClient,
+        embeddingsClient,
         localEmbeddings || null,
         symfRunner || null,
         guardrails,
@@ -224,6 +227,7 @@ const register = async (
         promises.push(
             localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ?? Promise.resolve()
         )
+        embeddingsClient.updateConfiguration(newConfig)
         promises.push(setupAutocomplete())
         await Promise.all(promises)
     }

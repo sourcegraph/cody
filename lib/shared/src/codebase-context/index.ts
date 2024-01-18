@@ -3,6 +3,7 @@ import { URI } from 'vscode-uri'
 import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
+import { type EmbeddingsSearch } from '../embeddings'
 import {
     type ContextResult,
     type FilenameContextFetcher,
@@ -33,6 +34,7 @@ export class CodebaseContext {
         private config: Pick<Configuration, 'useContext' | 'experimentalLocalSymbols'>,
         private codebase: string | undefined,
         private getServerEndpoint: () => string,
+        public embeddings: EmbeddingsSearch | null,
         private filenames: FilenameContextFetcher | null,
         public localEmbeddings: LocalEmbeddingsFetcher | null,
         public symf?: IndexedKeywordContextFetcher,
@@ -57,7 +59,7 @@ export class CodebaseContext {
             case 'none':
                 return []
             default: {
-                return this.localEmbeddings
+                return this.localEmbeddings || this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getLocalContextMessages(query, options)
             }
@@ -88,6 +90,18 @@ export class CodebaseContext {
             // this repo before relying on it.
             // TODO(dpc): Fetch code and text results.
             return this.localEmbeddings.getContext(query, options.numCodeResults)
+        }
+        if (this.embeddings) {
+            const embeddingsSearchResults = await this.embeddings.search(
+                query,
+                options.numCodeResults,
+                options.numTextResults
+            )
+            if (isError(embeddingsSearchResults)) {
+                console.error('Error retrieving embeddings:', embeddingsSearchResults)
+                return []
+            }
+            return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
         }
         return []
     }

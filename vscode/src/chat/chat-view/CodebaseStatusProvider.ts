@@ -1,13 +1,21 @@
+import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
+    isDotCom,
+    isError,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
     type Disposable,
+    type Editor,
 } from '@sourcegraph/cody-shared'
 
+import { getConfiguration } from '../../configuration'
+import { getEditor } from '../../editor/active-editor'
 import { type SymfRunner } from '../../local-context/symf'
+import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 interface CodebaseIdentifiers {
     local: string
@@ -30,7 +38,11 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     // undefined means symf is not active or there is no current codebase
     private symfIndexStatus?: 'unindexed' | 'indexing' | 'ready' | 'failed'
 
-    constructor(private readonly symf: SymfRunner | null) {
+    constructor(
+        private readonly editor: Editor,
+        private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
+        private readonly symf: SymfRunner | null
+    ) {
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus()),
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatus()),
@@ -77,6 +89,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         }
 
         const providers: ContextProvider[] = []
+        providers.push(...this.getRemoteEmbeddingsStatus())
         providers.push(...this.getSymfIndexStatus())
 
         if (providers.length === 0) {
@@ -103,6 +116,38 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         ]
     }
 
+    private getRemoteEmbeddingsStatus(): ContextProvider[] {
+        const codebase = this._currentCodebase
+        if (!codebase) {
+            return []
+        }
+        if (codebase?.remote && codebase?.remoteRepoId) {
+            return [
+                {
+                    kind: 'embeddings',
+                    type: 'remote',
+                    state: 'ready',
+                    origin: this.embeddingsClient.getEndpoint(),
+                    remoteName: codebase.remote,
+                },
+            ]
+        }
+        if (!codebase?.remote || isDotCom(this.embeddingsClient.getEndpoint())) {
+            // Dotcom users or no remote codebase name: remote embeddings omitted from context
+            return []
+        }
+        // Enterprise users where no repo ID is found for the desired remote codebase name: no-match context group
+        return [
+            {
+                kind: 'embeddings',
+                type: 'remote',
+                state: 'no-match',
+                origin: this.embeddingsClient.getEndpoint(),
+                remoteName: codebase.remote,
+            },
+        ]
+    }
+
     public async currentCodebase(): Promise<CodebaseIdentifiers | null> {
         if (this._currentCodebase === undefined) {
             // lazy initialization
@@ -112,10 +157,45 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     }
 
     private async updateStatus(): Promise<void> {
+        const didCodebaseChange = await this._updateCodebase_NoFire()
         const didSymfStatusChange = await this._updateSymfStatus_NoFire()
-        if (didSymfStatusChange) {
+        if (didCodebaseChange || didSymfStatusChange) {
             this.eventEmitter.fire(this)
         }
+    }
+
+    private async _updateCodebase_NoFire(): Promise<boolean> {
+        const workspaceRoot = this.editor.getWorkspaceRootUri()
+        const config = getConfiguration()
+        if (
+            this._currentCodebase !== undefined &&
+            workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            config.codebase === this._currentCodebase?.setting &&
+            this._currentCodebase?.remoteRepoId
+        ) {
+            // do nothing if local codebase identifier is unchanged and we have a remote repo ID
+            return false
+        }
+
+        let newCodebase: CodebaseIdentifiers | null = null
+        if (workspaceRoot) {
+            newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
+            const currentFile = getEditor()?.active?.document?.uri
+            // Get codebase from config or fallback to getting codebase name from current file URL
+            // Always use the codebase from config as this is manually set by the user
+            newCodebase.remote =
+                config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+            if (newCodebase.remote) {
+                const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
+                if (!isError(repoId)) {
+                    newCodebase.remoteRepoId = repoId ?? undefined
+                }
+            }
+        }
+
+        const didCodebaseChange = !isEqual(this._currentCodebase, newCodebase)
+        this._currentCodebase = newCodebase
+        return didCodebaseChange
     }
 
     private async _updateSymfStatus_NoFire(): Promise<boolean> {
