@@ -3,12 +3,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import {
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type ContextFile,
+    type Guardrails,
+    type TelemetryService,
+} from '@sourcegraph/cody-shared'
 import {
     Chat as ChatUI,
     type ChatButtonProps,
@@ -26,11 +28,9 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
-import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { type OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
 import { type VSCodeWrapper } from './utils/VSCodeApi'
@@ -39,11 +39,11 @@ import styles from './Chat.module.css'
 
 interface ChatboxProps {
     welcomeMessage?: string
+    chatEnabled: boolean
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
-    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -54,11 +54,6 @@ interface ChatboxProps {
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
-    applessOnboarding: {
-        endpoint: string | null
-        embeddingsEndpoint?: string
-        props: { onboardingPopupProps: OnboardingPopupProps }
-    }
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelProvider[]) => void
     chatModels?: ChatModelProvider[]
@@ -72,7 +67,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -83,11 +77,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
     chatCommands,
     isTranscriptError,
-    applessOnboarding,
     contextSelection,
     setChatModels,
     chatModels,
     enableNewChatUI,
+    chatEnabled,
     userInfo,
     guardrails,
 }) => {
@@ -103,10 +97,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
             if (contextFiles?.size) {
-                for (const file of contextFiles) {
-                    if (text.includes(file[0])) {
-                        file[1].fileName = file[0]
-                        userContextFiles.push(file[1])
+                for (const [fileName, contextFile] of contextFiles) {
+                    if (text.includes(fileName)) {
+                        userContextFiles.push(contextFile)
                     }
                 }
             }
@@ -153,13 +146,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 transcript: '',
             }
 
-            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+            if (userInfo.isDotComUser) {
                 eventData.transcript = JSON.stringify(transcript)
             }
 
             telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript, applessOnboarding]
+        [telemetryService, transcript, userInfo]
     )
 
     const onCopyBtnClick = useCallback(
@@ -191,7 +184,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
-            contextStatus={contextStatus}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
@@ -232,17 +224,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={ChatInputContextSimplified}
-            contextStatusComponentProps={{
-                contextStatus,
-                ...applessOnboarding.props,
-            }}
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
+            chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
@@ -261,6 +249,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     autoFocus,
     value,
     setValue,
+    chatEnabled,
     required,
     onInput,
     onKeyDown,
@@ -269,6 +258,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (@ to include code, / for commands)'
+    const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 
     useEffect(() => {
         if (autoFocus) {
@@ -297,14 +287,21 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         },
         [inputRef, onKeyDown]
     )
+    const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
+    const isDisabled = !chatEnabled
 
     return (
         <div
             className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
-            data-value={value || placeholder}
+            data-value={value || actualPlaceholder}
         >
             <textarea
-                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
+                className={classNames(
+                    styles.chatInput,
+                    className,
+                    chatModels && styles.newChatInput,
+                    isDisabled && styles.textareaDisabled
+                )}
                 rows={1}
                 ref={inputRef}
                 value={value}
@@ -312,9 +309,10 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
                 onFocus={onFocus}
-                placeholder={placeholder}
+                placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+                disabled={isDisabled} // Disable the textarea if the chat is disabled and change the background color to grey
             />
         </div>
     )

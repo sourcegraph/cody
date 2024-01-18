@@ -1,11 +1,9 @@
 import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { tokensToChars, type Message } from '@sourcegraph/cody-shared'
 
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -16,15 +14,11 @@ import {
     trimLeadingWhitespaceUntilNewline,
     type PrefixComponents,
 } from '../text-processing'
-import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
-import { messagesToText } from '../utils'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
 
-import {
-    generateCompletions,
-    getCompletionParamsAndFetchImpl,
-    getLineNumberDependentCompletionParams,
-} from './generate-completions'
+import { type FetchCompletionResult } from './fetch-and-process-completions'
+import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -39,23 +33,31 @@ export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopRequences: SINGLE_LINE_STOP_SEQUENCES,
+    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
     multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
 })
 
-export interface AnthropicOptions {
+let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
+
+interface AnthropicOptions {
+    model?: string // The model identifier that is being used by the server's site config.
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
 }
 
-export class AnthropicProvider extends Provider {
+class AnthropicProvider extends Provider {
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private model: string | undefined
 
-    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { maxContextTokens, client, model }: Required<Omit<AnthropicOptions, 'model'>> & Pick<AnthropicOptions, 'model'>
+    ) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
+        this.model = model
     }
 
     public emptyPromptLength(): number {
@@ -136,16 +138,11 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
             providerOptions: this.options,
             lineNumberDependentCompletionParams,
@@ -155,19 +152,59 @@ export class AnthropicProvider extends Provider {
             ...partialRequestParams,
             messages: this.createPrompt(snippets).messages,
             temperature: 0.5,
+
+            // Pass forward the unmodified model identifier that is set in the server's site
+            // config. This allows us to keep working even if the site config was updated since
+            // we read the config value.
+            //
+            // Note: This behavior only works when Cody Gateway is used (as that's the only backend
+            //       that supports switching between providers at the same time). We also only allow
+            //       models that are allowlisted on a recent SG server build to avoid regressions.
+            model:
+                !isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist && isAllowlistedModel(this.model)
+                    ? this.model
+                    : undefined,
         }
 
-        await generateCompletions({
-            client: this.client,
-            requestParams,
-            abortSignal,
-            providerSpecificPostProcess: this.postProcess,
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithErrorObserver(
+                generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                ),
+                error => {
+                    if (error instanceof Error) {
+                        // If an "unsupported code completion model" error is thrown for Anthropic,
+                        // it's most likely because we started adding the `model` identifier to
+                        // requests to ensure the clients does not crash when the default site
+                        // config value changes.
+                        //
+                        // Older instances do not allow for the `model` to be set, even to
+                        // identifiers it supports and thus the error.
+                        //
+                        // If it happens once, we disable the behavior where the client includes a
+                        // `model` parameter.
+                        if (error.message.includes('Unsupported code completion model')) {
+                            isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                        }
+                    }
+                }
+            )
+
+            return fetchAndProcessCompletionsImpl({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: this.postProcess,
+                providerOptions: this.options,
+            })
         })
+
+        return zipGenerators(completionsGenerators)
     }
 
     private postProcess = (rawResponse: string): string => {
@@ -191,13 +228,30 @@ export class AnthropicProvider extends Provider {
     }
 }
 
-export function createProviderConfig({ maxContextTokens = 2048, ...otherOptions }: AnthropicOptions): ProviderConfig {
+export function createProviderConfig({
+    maxContextTokens = 2048,
+    model,
+    ...otherOptions
+}: AnthropicOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, { maxContextTokens, ...otherOptions })
+            return new AnthropicProvider(options, { maxContextTokens, model, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: 'anthropic',
-        model: 'claude-instant-1.2',
+        model: model ?? 'claude-instant-1.2',
     }
+}
+
+// All the Anthropic version identifiers that are allowlisted as being able to be passed as the
+// model identifier on a Sourcegraph Server
+function isAllowlistedModel(model: string | undefined): boolean {
+    switch (model) {
+        case 'anthropic/claude-instant-1.2-cyan':
+        case 'anthropic/claude-instant-1.2':
+        case 'anthropic/claude-instant-v1':
+        case 'anthropic/claude-instant-1':
+            return true
+    }
+    return false
 }

@@ -1,9 +1,13 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import {
+    ConfigFeaturesSingleton,
+    FeatureFlag,
+    featureFlagProvider,
+    isCodyIgnoredFile,
+    RateLimitError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
@@ -35,6 +39,7 @@ import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
 import {
     analyticsItemToAutocompleteItem,
     suggestedAutocompleteItemsCache,
+    updateInsertRangeForVSCode,
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
@@ -186,6 +191,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const completionRequest: CompletionRequest = { document, position, context }
             this.lastCompletionRequest = completionRequest
 
+            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+            try {
+                if (!configFeatures.autoComplete) {
+                    // If Configfeatures exists and autocomplete is disabled then raise
+                    // the error banner for autocomplete config turned off
+                    throw new Error('AutocompleteConfigTurnedOff')
+                }
+            } catch (error) {
+                this.onError(error as Error)
+                throw error
+            }
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {
@@ -293,6 +310,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     setIsLoading,
                     abortSignal: abortController.signal,
                     tracer,
+                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
@@ -331,16 +349,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     this.handleUnwantedCompletionItem(getRequestParamsFromLastCandidate(document, this.lastCandidate))
                 }
 
-                const items = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    result.items,
-                    context
-                )
-
-                const visibleItems = items.filter(item =>
+                const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
@@ -375,24 +384,33 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     }
                 }
 
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    visibleItems,
+                    context
+                )
+
                 // Store the log ID for each completion item so that we can later map to the selected
                 // item from the ID alone
-                for (const item of visibleItems) {
+                for (const item of autocompleteItems) {
                     suggestedAutocompleteItemsCache.add(item)
+                }
+
+                // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+                const autocompleteResult: AutocompleteResult = {
+                    logId: result.logId,
+                    items: updateInsertRangeForVSCode(autocompleteItems),
+                    completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
                 if (!this.config.isRunningInsideAgent) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
-                }
-
-                // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
-                const autocompleteResult: AutocompleteResult = {
-                    logId: result.logId,
-                    items: visibleItems,
-                    completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+                    this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
                 return autocompleteResult
@@ -604,6 +622,26 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
+        if (error.message === 'AutocompleteConfigTurnedOff') {
+            const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
+            // If there's already an existing error, don't add another one.
+            const hasAutocompleteDisabledBanner = this.config.statusBar.hasError('AutoCompleteDisabledByAdmin')
+            if (hasAutocompleteDisabledBanner) {
+                return
+            }
+            let shown = false
+            this.config.statusBar.addError({
+                title: errorTitle,
+                description: 'Contact your Sourcegraph site admin to enable autocomplete',
+                errorType: 'AutoCompleteDisabledByAdmin',
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                },
+            })
+        }
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459

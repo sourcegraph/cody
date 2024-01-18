@@ -1,11 +1,12 @@
 import { type Position, type TextDocument } from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { tokensToChars, type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { type DocumentContext } from '../get-current-doc-context'
 import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
+
+import { type FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
     /**
@@ -33,9 +34,9 @@ export interface ProviderConfig {
     model: string
 }
 
-export interface ProviderContextSizeHints {
-    /** Total max length of all file context (prefix + suffix + snippets). */
-    totalFileContextChars: number
+interface ProviderContextSizeHints {
+    /** Total max length of all context (prefix + suffix + snippets). */
+    totalChars: number
 
     /** Max length of the document prefix (text before the cursor). */
     prefixChars: number
@@ -46,7 +47,7 @@ export interface ProviderContextSizeHints {
 
 export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
     return {
-        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        totalChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
         prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
         suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
     }
@@ -74,13 +75,8 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completions: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void>
+    ): AsyncGenerator<FetchCompletionResult[]>
 }
 
 /**

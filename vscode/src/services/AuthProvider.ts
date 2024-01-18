@@ -1,10 +1,13 @@
 import * as vscode from 'vscode'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import {
+    DOTCOM_URL,
+    isDotCom,
+    isError,
+    LOCAL_APP_URL,
+    SourcegraphGraphQLAPIClient,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
@@ -174,11 +177,8 @@ export class AuthProvider {
             return
         }
 
-        const codyProEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const detail = codyProEnabled ? `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : undefined
-        const options = codyProEnabled
-            ? ['Manage Account', 'Switch Account...', 'Sign Out']
-            : ['Switch Account...', 'Sign Out']
+        const detail = `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
+        const options = ['Manage Account', 'Switch Account...', 'Sign Out']
         const displayName = this.authStatus.displayName || this.authStatus.username
         const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(
@@ -302,7 +302,7 @@ export class AuthProvider {
         uri: string,
         token: string | null,
         customHeaders?: {} | null
-    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
+    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const endpoint = formatURL(uri) || ''
         const config = {
             serverEndpoint: endpoint,

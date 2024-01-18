@@ -3,9 +3,9 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
+    displayPath,
     isDefined,
     type ChatButton,
-    type ChatContextStatus,
     type ChatMessage,
     type ChatModelProvider,
     type CodyCommand,
@@ -15,7 +15,6 @@ import {
 
 import { type CodeBlockMeta } from './chat/CodeBlocks'
 import { type FileLinkProps } from './chat/components/EnhancedContext'
-import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { type SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import { type TranscriptItemClassNames } from './chat/TranscriptItem'
@@ -27,14 +26,11 @@ interface ChatProps extends ChatClassNames {
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
-    contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
-    contextStatusComponent?: React.FunctionComponent<any>
-    contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
     gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
@@ -60,6 +56,7 @@ interface ChatProps extends ChatClassNames {
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
+    chatEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     chatCommands?: [string, CodyCommand][] | null
     filterChatCommands?: (chatCommands: [string, CodyCommand][], input: string) => [string, CodyCommand][]
@@ -102,6 +99,7 @@ export interface ChatUITextAreaProps {
     autoFocus: boolean
     value: string
     required: boolean
+    chatEnabled: boolean
     disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
@@ -174,7 +172,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -209,8 +206,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerification = false,
     codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
-    contextStatusComponent: ContextStatusComponent,
-    contextStatusComponentProps = {},
     gettingStartedComponent: GettingStartedComponent,
     gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
@@ -226,6 +221,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
+    chatEnabled,
     onCurrentChatModelChange,
     userInfo,
     postMessage,
@@ -259,10 +255,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputPrefix = input.slice(0, lastAtIndex)
-                const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
-                const symbolName = isFileType ? '' : `#${selected.fileName}`
-                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
+                const symbolName = selected.type === 'file' ? '' : `#${selected.symbolName}`
+                const fileDisplayText = `@${displayPath(selected.uri)}${range}${symbolName}`
                 // Add empty space at the end to end the file matching process
                 const newInput = `${inputPrefix}${fileDisplayText} `
 
@@ -629,6 +624,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
                             setValue={inputHandler}
+                            chatEnabled={chatEnabled}
                             chatModels={chatModels}
                         />
                         {EnhancedContextSettings && (
@@ -649,12 +645,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {!EnhancedContextSettings && ContextStatusComponent && (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                )}
-                {!EnhancedContextSettings && !ContextStatusComponent && contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                )}
             </form>
         </div>
     )

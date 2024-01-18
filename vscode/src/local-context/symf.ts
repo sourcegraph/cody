@@ -1,21 +1,24 @@
 import { execFile as _execFile, spawn } from 'node:child_process'
-import fs from 'node:fs'
-import { rename, rm, writeFile } from 'node:fs/promises'
+import fs, { access, rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 
 import { Mutex } from 'async-mutex'
-import { XMLParser } from 'fast-xml-parser'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
-import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
-import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import {
+    isWindows,
+    type IndexedKeywordContextFetcher,
+    type Result,
+    type SourcegraphCompletionsClient,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
 import { getSymfPath } from './download-symf'
+import { symfExpandQuery } from './symfExpandQuery'
 
 const execFile = promisify(_execFile)
 
@@ -33,31 +36,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         private completionsClient: SourcegraphCompletionsClient
     ) {
         const indexRoot = path.join(context.globalStorageUri.fsPath, 'symf', 'indexroot')
-        void SymfRunner.removeOldIndexRoot(indexRoot)
         this.indexRoot = indexRoot
-    }
-
-    // TODO(beyang): remove after GA
-    private static removeOldIndexRoot(newIndexRoot: string): void {
-        const oldIndexRoot = path.join(os.homedir(), '.cody-symf')
-        try {
-            fs.stat(oldIndexRoot, (oldIndexRootStatErr, stats) => {
-                if (oldIndexRootStatErr) {
-                    return
-                }
-                fs.stat(newIndexRoot, newIndexRootStatErr => {
-                    if (!newIndexRootStatErr) {
-                        return
-                    }
-                    if (!stats.isDirectory()) {
-                        return
-                    }
-                    void rm(oldIndexRoot, { recursive: true, force: true })
-                })
-            })
-        } catch {
-            logDebug('SymfRunner.removeOldIndexRoot', 'Failed to remove old index root', oldIndexRoot)
-        }
     }
 
     public dispose(): void {
@@ -94,7 +73,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
-        const expandedQuery = expandQuery(this.completionsClient, userQuery)
+        const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
         return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
     }
 
@@ -247,7 +226,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         // On Windows, we can't use an absolute path with a dirve letter inside another path
         // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
         // sub-path in the index.
-        if (path.sep === path.win32.sep && absIndexedDir[1] === ':') {
+        if (isWindows() && absIndexedDir[1] === ':') {
             absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
         }
         return {
@@ -383,7 +362,7 @@ export interface IndexStartEvent {
     done: Promise<void>
 }
 
-export interface IndexEndEvent {
+interface IndexEndEvent {
     scopeDir: string
 }
 
@@ -422,7 +401,7 @@ class IndexStatus implements vscode.Disposable {
 
 async function fileExists(filePath: string): Promise<boolean> {
     try {
-        await fs.promises.access(filePath, fs.constants.F_OK)
+        await access(filePath, fs.constants.F_OK)
         return true
     } catch {
         return false
@@ -524,58 +503,4 @@ function toSymfError(error: unknown): Error {
         errorMessage = `symf index creation failed: ${error}`
     }
     return new EvalError(errorMessage)
-}
-
-export function expandQuery(completionsClient: SourcegraphCompletionsClient, query: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const streamingText: string[] = []
-        completionsClient.stream(
-            {
-                messages: [
-                    {
-                        speaker: 'human',
-                        text: `You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
-                    },
-                    { speaker: 'assistant' },
-                ],
-                maxTokensToSample: 400,
-                temperature: 0,
-                topK: 1,
-                fast: true,
-            },
-            {
-                onChange(text) {
-                    streamingText.push(text)
-                },
-                onComplete() {
-                    const text = streamingText.at(-1) ?? ''
-                    try {
-                        const parser = new XMLParser()
-                        const document = parser.parse(text)
-                        const keywords: { value?: string; variants?: string; weight?: number }[] =
-                            document?.keywords?.keyword ?? []
-                        const result = new Set<string>()
-                        for (const { value, variants } of keywords) {
-                            if (typeof value === 'string' && value) {
-                                result.add(value)
-                            }
-                            if (typeof variants === 'string') {
-                                for (const variant of variants.split(' ')) {
-                                    if (variant) {
-                                        result.add(variant)
-                                    }
-                                }
-                            }
-                        }
-                        resolve([...result].sort().join(' '))
-                    } catch (error) {
-                        reject(error)
-                    }
-                },
-                onError(error) {
-                    reject(error)
-                },
-            }
-        )
-    })
 }

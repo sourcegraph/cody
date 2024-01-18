@@ -1,6 +1,9 @@
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+    type CodyLLMSiteConfiguration,
+    type Configuration,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
 import { type CodeCompletionsClient } from '../client'
@@ -88,7 +91,11 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return createAnthropicProviderConfig({ client })
+                return createAnthropicProviderConfig({
+                    client,
+                    // Only pass through the upstream-defined model if we're using Cody Gateway
+                    model: codyLLMSiteConfig.provider === 'sourcegraph' ? codyLLMSiteConfig.completionModel : undefined,
+                })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null

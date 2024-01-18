@@ -1,16 +1,18 @@
 import type * as vscode from 'vscode'
 
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
-import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import {
+    ChatClient,
+    CodebaseContext,
+    graphqlClient,
+    isError,
+    SourcegraphEmbeddingsSearchClient,
+    SourcegraphGuardrailsClient,
+    SourcegraphIntentDetectorClient,
+    type ConfigurationWithAccessToken,
+    type Editor,
+    type Guardrails,
+    type IntentDetector,
+} from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClint, type CodeCompletionsClient } from './completions/client'
 import { type PlatformContext } from './extension.common'
@@ -94,7 +96,6 @@ export async function configureExternalServices(
         embeddingsSearch,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
-        null,
         symfRunner,
         undefined
     )
@@ -102,7 +103,7 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(graphqlClient, completionsClient),
+        intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
         codebaseContext,
         chatClient,
         codeCompletionsClient,

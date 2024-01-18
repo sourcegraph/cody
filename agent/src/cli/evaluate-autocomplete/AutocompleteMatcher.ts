@@ -8,7 +8,7 @@ import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationD
 import { type Queries } from './Queries'
 
 export type AutocompleteMatchKind = 'if_statement' | 'call_expression' | 'assignment_statement' | 'function_declaration'
-export interface AutocompleteMatch {
+interface AutocompleteMatch {
     kind: AutocompleteMatchKind
     newText: string
     removedText: string

@@ -1,14 +1,12 @@
-import type { OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
+import type { OllamaOptions } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import type { DocumentContext } from '../get-current-doc-context'
-import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import type { ContextSnippet } from '../types'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { fetchAndProcessCompletions } from './fetch-and-process-completions'
-import { generateCompletions } from './generate-completions'
-import { createOllamaClient, type OllamaClientParams } from './ollama-client'
+import { fetchAndProcessCompletions, type FetchCompletionResult } from './fetch-and-process-completions'
+import { createOllamaClient, type OllamaGenerateParams } from './ollama-client'
 import { Provider, type CompletionProviderTracer, type ProviderConfig, type ProviderOptions } from './provider'
 
 interface LlamaCodePrompt {
@@ -108,21 +106,16 @@ class UnstableOllamaProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         // Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
+        let timeoutMs = 5_0000
 
         const requestParams = {
-            timeoutMs: 5_0000,
             prompt: llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill, this.ollamaOptions.model),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
@@ -133,10 +126,10 @@ class UnstableOllamaProvider extends Provider {
                 top_p: -1,
                 num_predict: 30,
             },
-        } satisfies OllamaClientParams
+        } satisfies OllamaGenerateParams
 
         if (this.options.multiline) {
-            requestParams.timeoutMs = 15_0000
+            timeoutMs = 15_0000
 
             Object.assign(requestParams.options, {
                 num_predict: 256,
@@ -152,18 +145,24 @@ class UnstableOllamaProvider extends Provider {
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
 
-        await generateCompletions({
-            // TODO(valery): remove `any` casts
-            client: ollamaClient as any,
-            requestParams: requestParams as any,
-            abortSignal,
-            providerSpecificPostProcess: insertText => insertText.trim(),
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl: fetchAndProcessCompletions,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                ollamaClient.complete(requestParams, abortController),
+                timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletions({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: insertText => insertText.trim(),
+                providerOptions: this.options,
+            })
         })
+
+        return zipGenerators(completionsGenerators)
     }
 }
 
@@ -197,7 +196,7 @@ export function createProviderConfig(ollamaOptions: OllamaOptions): ProviderConf
         },
         contextSizeHints: {
             // We don't use other files as context yet in Ollama, so this doesn't matter.
-            totalFileContextChars: 0,
+            totalChars: 0,
 
             // Ollama evaluates the prompt at ~50 tok/s for codellama:7b-code on a MacBook Air M2.
             // If the prompt has a common prefix across inference requests, subsequent requests do

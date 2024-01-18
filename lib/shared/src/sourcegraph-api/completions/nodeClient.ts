@@ -1,6 +1,7 @@
 import http from 'http'
 import https from 'https'
 
+import { logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
@@ -10,8 +11,17 @@ import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
 import { type CompletionCallbacks, type CompletionParameters } from './types'
 
+const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
+
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+        if (isTemperatureZero) {
+            params = {
+                ...params,
+                temperature: 0,
+            }
+        }
+
         const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
@@ -122,7 +132,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
-                        console.error(parseResult)
+                        logError('SourcegraphNodeCompletionsClient', 'isError(parseEvents(bufferText))', parseResult)
                         return
                     }
 

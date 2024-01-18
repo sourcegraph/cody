@@ -1,16 +1,20 @@
 import { type URI } from 'vscode-uri'
 
-import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import {
+    type ActiveTextEditorSelectionRange,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type CodyLLMSiteConfiguration,
+    type ConfigurationWithAccessToken,
+    type ContextFile,
+    type ContextFileType,
+    type CustomCommandType,
+    type EnhancedContextContextT,
+    type SearchPanelFile,
+    type TelemetryEventProperties,
+    type UserLocalHistory,
+} from '@sourcegraph/cody-shared'
 import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
@@ -27,14 +31,7 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | {
-          command: 'submit'
-          text: string
-          submitType: ChatSubmitType
-          addEnhancedContext?: boolean
-          contextFiles?: ContextFile[]
-      }
-    | { command: 'executeRecipe'; recipe: RecipeID }
+    | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
@@ -47,9 +44,8 @@ export type WebviewMessage =
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
-          filePath: string
+          uri: URI
           range?: ActiveTextEditorSelectionRange
-          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'
@@ -88,7 +84,7 @@ export type WebviewMessage =
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
-          uriJSON: unknown
+          uri: URI
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
     | {
@@ -103,11 +99,14 @@ export type WebviewMessage =
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
+    | {
+          type: 'config'
+          config: ConfigurationSubsetForWebview & LocalEnv
+          authStatus: AuthStatus
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
-    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
-    | { type: 'contextStatus'; contextStatus: ChatContextStatus }
+    | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
@@ -119,15 +118,30 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
-    | {
-          type: 'attribution'
-          snippet: string
-          attribution?: {
-              repositoryNames: string[]
-              limitHit: boolean
-          }
-          error?: string
-      }
+    | ({ type: 'attribution' } & ExtensionAttributionMessage)
+    | { type: 'setChatEnabledConfigFeature'; data: boolean }
+
+interface ExtensionAttributionMessage {
+    snippet: string
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
+interface WebviewSubmitMessage {
+    text: string
+    submitType: ChatSubmitType
+    addEnhancedContext?: boolean
+    contextFiles?: ContextFile[]
+}
+
+export interface ExtensionTranscriptMessage {
+    messages: ChatMessage[]
+    isMessageInProgress: boolean
+    chatID: string
+}
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -138,7 +152,6 @@ export interface ConfigurationSubsetForWebview
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support

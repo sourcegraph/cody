@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { execFileSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -55,6 +56,7 @@ if (customDefaultSettingsFile) {
     // key-value properties.
     const settingsDefaults = loadJsonFileSync(customDefaultSettingsFile)
     console.log(`Applying custom default settings from ${customDefaultSettingsFile}`)
+
     const configurationProperties = packageJSON.contributes.configuration.properties
 
     const missingSettings = []

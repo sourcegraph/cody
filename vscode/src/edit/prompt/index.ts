@@ -1,12 +1,16 @@
 import * as vscode from 'vscode'
 
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { type CompletionParameters, type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import {
+    BotResponseMultiplexer,
+    getSimplePreamble,
+    Interaction,
+    MAX_CURRENT_FILE_TOKENS,
+    Transcript,
+    truncateText,
+    type CodebaseContext,
+    type CompletionParameters,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type FixupTask } from '../../non-stop/FixupTask'
@@ -18,7 +22,7 @@ import { type EditLLMInteraction, type GetLLMInteractionOptions, type LLMInterac
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
 
-export const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
 } as const
@@ -37,6 +41,8 @@ const getInteractionArgsFromIntent = (
             return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
             return INTERACTION_MODELS[model].getEdit(options)
+        case 'new':
+            return INTERACTION_MODELS[model].getNew(options)
     }
 }
 
@@ -95,9 +101,10 @@ export const buildInteraction = async ({
         { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
         getContext({
             intent: task.intent,
-            fileName: task.fixupFile.uri.fsPath,
+            uri: task.fixupFile.uri,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
+            contextMessages: task.contextMessages,
             context,
             editor,
             followingText,
@@ -107,7 +114,8 @@ export const buildInteraction = async ({
         []
     )
     transcript.addInteraction(interaction)
-    const completePrompt = await transcript.getPromptForLastInteraction()
+    const preamble = getSimplePreamble()
+    const completePrompt = await transcript.getPromptForLastInteraction(preamble)
 
     return {
         messages: completePrompt.prompt,

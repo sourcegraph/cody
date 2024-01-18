@@ -3,24 +3,17 @@ import { type InteractionMessage } from '../chat/transcript/messages'
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
 const hallucinate =
     'If context is available: never make any assumptions nor provide any misleading or hypothetical examples.'
-export const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
+const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
- * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
+ * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple commands.
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
     private static customMixin: PromptMixin[] = []
     // The prompt that instructs Cody to identify itself and avoid hallucinations.
     private static defaultMixin: PromptMixin = new PromptMixin(CODY_INTRO_PROMPT)
-
-    /**
-     * Adds a prompt mixin to the global set.
-     */
-    public static add(mixin: PromptMixin): void {
-        this.mixins.push(mixin)
-    }
 
     /**
      * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
@@ -48,15 +41,6 @@ export class PromptMixin {
      * Creates a mixin with the given, fixed prompt to insert.
      */
     constructor(private readonly prompt: string) {}
-}
-
-/**
- * Creates a prompt mixin to get Cody to reply in the given language, for example "en-AU" for "Australian English".
- * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
- */
-export function languagePromptMixin(languageCode: string): PromptMixin {
-    const languagePrompt = `Reply in the language with RFC5646/ISO language code "${languageCode}".`
-    return new PromptMixin(languageCode ? languagePrompt : '')
 }
 
 export function newPromptMixin(text: string): PromptMixin {

@@ -10,6 +10,7 @@ import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
     recordingDirectory?: string
+    keepUnusedRecordings?: boolean
     recordingMode?: MODE
     recordIfMissing?: boolean
     recordingExpiryStrategy?: EXPIRY_STRATEGY
@@ -56,6 +57,14 @@ export const jsonrpcCommand = new Command('jsonrpc')
     )
     .addOption(
         new Option(
+            '--keep-unused-recordings <bool>',
+            'If true, unused recordings are not removed from the recording file'
+        )
+            .env('CODY_KEEP_UNUSED_RECORDINGS')
+            .default(false)
+    )
+    .addOption(
+        new Option(
             '--recording-mode <mode>',
             'What kind of recording mode to use. Valid values are to the directory where network traffic is recorded or replayed from. This option should only be used in testing environments.'
         )
@@ -98,16 +107,16 @@ export const jsonrpcCommand = new Command('jsonrpc')
             polly = startPollyRecording({
                 recordingName: options.recordingName ?? 'CodyAgent',
                 recordingDirectory: options.recordingDirectory,
+                keepUnusedRecordings: options.keepUnusedRecordings,
                 recordingMode: options.recordingMode,
                 expiresIn: options.expiresIn,
                 recordIfMissing: options.recordIfMissing,
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
-            // Automatically pass through requests to download bfg binaries
-            // because we don't want to record the binary downloads for
-            // macOS/Windows/Linux
-            polly.server.get('https://github.com/sourcegraph/bfg/*path').passthrough()
-            polly.server.get('https://github.com/sourcegraph/symf/*path').passthrough()
+            // Automatically pass through requests to GitHub because we
+            // don't want to record huge binary downloads.
+            polly.server.get('https://github.com/*path').passthrough()
+            polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)

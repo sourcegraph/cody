@@ -21,8 +21,6 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build && cp -R src/* dist/",
-    "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "vitest",
     "storybook": "storybook dev -p 6006 --no-open --no-version-updates --no-release-notes",
     "prepublishOnly": "tsc --build --clean && pnpm run build"

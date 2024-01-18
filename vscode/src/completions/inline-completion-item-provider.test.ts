@@ -2,9 +2,7 @@ import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
@@ -27,11 +25,6 @@ vi.mock('vscode', () => ({
         onDidChangeTextDocument() {
             return null
         },
-    },
-    window: {
-        ...vsCodeMocks.window,
-        visibleTextEditors: [],
-        tabGroups: { all: [] },
     },
 }))
 
@@ -69,10 +62,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+
             statusBar: null as any,
             providerConfig: createProviderConfig({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
             }),
             triggerNotice: null,

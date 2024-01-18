@@ -1,10 +1,10 @@
 import type * as vscode from 'vscode'
 
 import { type DocumentContext } from './get-current-doc-context'
-import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 export function isCompletionVisible(
-    completion: AutocompleteItem,
+    completion: InlineCompletionItemWithAnalytics,
     document: vscode.TextDocument,
     position: vscode.Position,
     docContext: DocumentContext,
@@ -35,7 +35,7 @@ export function isCompletionVisible(
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
-        : completionMatchesPopupItem(completion, position, document, context)
+        : completionMatchesPopupItem(completion, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
@@ -47,8 +47,7 @@ export function isCompletionVisible(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completion: AutocompleteItem,
-    position: vscode.Position,
+    completion: InlineCompletionItemWithAnalytics,
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
 ): boolean {
@@ -61,12 +60,7 @@ function completionMatchesPopupItem(
             return true
         }
 
-        // To ensure a good experience, the VS Code insertion might have the range start at the
-        // beginning of the line. When this happens, the insertText needs to be adjusted to only
-        // contain the insertion after the current position.
-        const offset = position.character - (completion.range?.start.character ?? position.character)
-        const correctInsertText = insertText.slice(offset)
-        if (!(currentText + correctInsertText).startsWith(selectedText)) {
+        if (!(currentText + insertText).startsWith(selectedText)) {
             return false
         }
     }
@@ -74,7 +68,7 @@ function completionMatchesPopupItem(
 }
 
 export function completionMatchesSuffix(
-    completion: Pick<AutocompleteItem, 'insertText'>,
+    completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
     currentLineSuffix: string
 ): boolean {
     if (typeof completion.insertText !== 'string') {

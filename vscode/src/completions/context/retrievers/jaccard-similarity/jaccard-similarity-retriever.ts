@@ -3,7 +3,7 @@ import path from 'path'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
@@ -17,7 +17,7 @@ import { VSCodeDocumentHistory, type DocumentHistory } from './history'
  * that is most similar to the 'targetText'. In essence, it sets the maximum number
  * of lines that the best match can be. A larger 'windowSize' means larger potential matches
  */
-export const SNIPPET_WINDOW_SIZE = 50
+const SNIPPET_WINDOW_SIZE = 50
 
 /**
  * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local
@@ -130,6 +130,7 @@ async function getRelevantFiles(
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
     const allUris: vscode.Uri[] = vscode.window.tabGroups.all
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 

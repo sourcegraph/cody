@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
 import { type ChildProcessWithoutNullStreams } from 'child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
@@ -7,7 +6,7 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
@@ -25,7 +24,7 @@ type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifi
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
 // String literal types for the names of the Cody Agent protocol methods.
-type RequestMethodName = keyof Requests
+export type RequestMethodName = keyof Requests
 type NotificationMethodName = keyof Notifications
 type MethodName = RequestMethodName | NotificationMethodName
 
@@ -178,7 +177,6 @@ class MessageDecoder extends Writable {
             } else {
                 if (this.contentLengthRemaining === 0) {
                     try {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const data = JSON.parse(this.contentBuffer.toString())
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null
@@ -244,7 +242,7 @@ class MessageEncoder extends Readable {
     }
 }
 
-type RequestCallback<M extends RequestMethodName> = (
+export type RequestCallback<M extends RequestMethodName> = (
     params: ParamsOf<M>,
     cancelToken: vscode.CancellationToken
 ) => Promise<ResultOf<M>>
@@ -256,7 +254,7 @@ type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<
  */
 export class MessageHandler {
     public id = 0
-    private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
+    public requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true
@@ -285,7 +283,9 @@ export class MessageHandler {
             this.exit()
         })
         child.on('close', () => {
-            reject?.(new Error('close'))
+            if (this.isAlive()) {
+                reject?.(new Error('close'))
+            }
             this.exit()
         })
         child.on('error', error => {
@@ -330,7 +330,7 @@ export class MessageHandler {
                             const data: ResponseMessage<any> = {
                                 jsonrpc: '2.0',
                                 id: msg.id,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
                                 result,
                             }
                             this.messageEncoder.send(data)
@@ -386,9 +386,12 @@ export class MessageHandler {
             if (
                 msg.method === '$/cancelRequest' &&
                 msg.params &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 (typeof msg.params.id === 'string' || typeof msg.params.id === 'number')
             ) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.get(msg.params.id)?.cancel()
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.delete(msg.params.id)
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)
@@ -457,7 +460,7 @@ export class MessageHandler {
 /**
  * A client for a JSON-RPC {@link MessageHandler} running in the same process.
  */
-export class InProcessClient {
+class InProcessClient {
     constructor(
         private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
         private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>

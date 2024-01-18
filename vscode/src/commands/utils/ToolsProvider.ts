@@ -50,13 +50,6 @@ export class ToolsProvider {
     }
 
     /**
-     * Open a folder in the file explorer
-     */
-    public async openFolder(): Promise<void> {
-        await vscode.commands.executeCommand('vscode.openFolder', rootPath())
-    }
-
-    /**
      * Execute a command in the terminal
      */
     public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {

@@ -1,11 +1,13 @@
+import { partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { type DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from './get-inline-completions'
 import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
+import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import { type CompletionProviderTracer, type Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -38,7 +40,7 @@ export interface RequestManagerResult {
 
 interface RequestsManagerParams {
     requestParams: RequestParams
-    providers: Provider[]
+    provider: Provider
     context: ContextSnippet[]
     isCacheEnabled: boolean
     tracer?: CompletionProviderTracer
@@ -59,7 +61,7 @@ export class RequestManager {
     private readonly inflightRequests: Set<InflightRequest> = new Set()
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
-        const { requestParams, providers, context, isCacheEnabled, tracer } = params
+        const { requestParams, provider, context, isCacheEnabled, tracer } = params
 
         const cachedCompletions = this.cache.get(requestParams)
         if (isCacheEnabled && cachedCompletions) {
@@ -74,64 +76,60 @@ export class RequestManager {
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
 
-        Promise.all(
-            providers.map(provider => {
-                return wrapInActiveSpan('autocomplete.generate', () => {
-                    const completionReadyPromise = new Promise<InlineCompletionItemWithAnalytics[]>(
-                        (resolve, reject) => {
-                            provider
-                                .generateCompletions(
-                                    request.abortController.signal,
-                                    context,
-                                    resolve,
-                                    (docContext, hotStreakCompletions) => {
-                                        this.cache.set(
-                                            { docContext },
-                                            {
-                                                completions: [hotStreakCompletions],
-                                                source: InlineCompletionsResultSource.HotStreak,
-                                            }
-                                        )
-                                    },
-                                    tracer
-                                )
-                                .catch(error => reject(error))
-                        }
+        const generateCompletions = async (): Promise<void> => {
+            try {
+                for await (const fetchCompletionResults of provider.generateCompletions(
+                    request.abortController.signal,
+                    context,
+                    tracer
+                )) {
+                    const [hotStreakCompletions, currentCompletions] = partition(
+                        fetchCompletionResults.filter(isDefined),
+                        result => result.completion.stopReason === STOP_REASON_HOT_STREAK
                     )
 
-                    return completionReadyPromise
-                })
-            })
-        )
-            .then(res => res.flat())
-            .then(completions => {
-                // Shared post-processing logic
-                return wrapInActiveSpan('autocomplete.post-process', () =>
-                    processInlineCompletions(completions, requestParams)
-                )
-            })
-            .then(processedCompletions => {
-                // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(requestParams, {
-                    completions: processedCompletions,
-                    source: InlineCompletionsResultSource.Cache,
-                })
+                    // Process regular completions that will shown to the user.
+                    const completions = currentCompletions.map(result => result.completion)
 
-                // A promise will never resolve twice, so we do not need to
-                // check if the request was already fulfilled.
-                request.resolve({ completions: processedCompletions, source: InlineCompletionsResultSource.Network })
+                    // Shared post-processing logic
+                    const processedCompletions = wrapInActiveSpan('autocomplete.shared-post-process', () =>
+                        processInlineCompletions(completions, requestParams)
+                    )
 
-                this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                    // Cache even if the request was aborted or already fulfilled.
+                    this.cache.set(requestParams, {
+                        completions: processedCompletions,
+                        source: InlineCompletionsResultSource.Cache,
+                    })
 
-                return processedCompletions
-            })
-            .catch(error => {
-                request.reject(error)
-            })
-            .finally(() => {
+                    // A promise will never resolve twice, so we do not need to
+                    // check if the request was already fulfilled.
+                    request.resolve({
+                        completions: processedCompletions,
+                        source: InlineCompletionsResultSource.Network,
+                    })
+
+                    this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+
+                    // Save hot streak completions for later use.
+                    hotStreakCompletions.forEach(result => {
+                        this.cache.set(
+                            { docContext: result.docContext },
+                            {
+                                completions: [result.completion],
+                                source: InlineCompletionsResultSource.HotStreak,
+                            }
+                        )
+                    })
+                }
+            } catch (error) {
+                request.reject(error as Error)
+            } finally {
                 this.inflightRequests.delete(request)
-            })
+            }
+        }
 
+        void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
     }
 

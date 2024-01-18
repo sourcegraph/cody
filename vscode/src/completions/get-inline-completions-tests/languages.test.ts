@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { completion } from '../test-helpers'
 import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
@@ -40,12 +40,12 @@ describe('[getInlineCompletions] languages', () => {
         expect(requests).toHaveLength(3)
         expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         expect(items[0]).toMatchInlineSnapshot(`
-                "print(i)
-                    elif i % 3 == 0:
-                        print(f\\"Multiple of 3: {i}\\")
-                    else:
-                        print(f\\"ODD {i}\\")"
-            `)
+          "print(i)
+              elif i % 3 == 0:
+                  print(f"Multiple of 3: {i}")
+              else:
+                  print(f"ODD {i}")"
+        `)
     })
 
     test('works with java', async () => {
@@ -82,13 +82,13 @@ describe('[getInlineCompletions] languages', () => {
         expect(requests).toHaveLength(3)
         expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         expect(items[0]).toMatchInlineSnapshot(`
-                "System.out.println(i);
-                    } else if (i % 3 == 0) {
-                        System.out.println(\\"Multiple of 3: \\" + i);
-                    } else {
-                        System.out.println(\\"ODD \\" + i);
-                    }"
-            `)
+          "System.out.println(i);
+              } else if (i % 3 == 0) {
+                  System.out.println("Multiple of 3: " + i);
+              } else {
+                  System.out.println("ODD " + i);
+              }"
+        `)
     })
 
     // TODO: Detect `}\nelse\n{` pattern for else skip logic
@@ -172,13 +172,13 @@ describe('[getInlineCompletions] languages', () => {
         expect(requests).toHaveLength(3)
         expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         expect(items[0]).toMatchInlineSnapshot(`
-                "std::cout << i;
-                    } else if (i % 3 == 0) {
-                        std::cout << \\"Multiple of 3: \\" << i;
-                    } else  {
-                        std::cout << \\"ODD \\" << i;
-                    }"
-            `)
+          "std::cout << i;
+              } else if (i % 3 == 0) {
+                  std::cout << "Multiple of 3: " << i;
+              } else  {
+                  std::cout << "ODD " << i;
+              }"
+        `)
     })
 
     test('works with c', async () => {
@@ -215,13 +215,13 @@ describe('[getInlineCompletions] languages', () => {
         expect(requests).toHaveLength(3)
         expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         expect(items[0]).toMatchInlineSnapshot(`
-                "printf(\\"%d\\", i);
-                    } else if (i % 3 == 0) {
-                        printf(\\"Multiple of 3: %d\\", i);
-                    } else {
-                        printf(\\"ODD %d\\", i);
-                    }"
-            `)
+          "printf("%d", i);
+              } else if (i % 3 == 0) {
+                  printf("Multiple of 3: %d", i);
+              } else {
+                  printf("ODD %d", i);
+              }"
+        `)
     })
 
     test('works with php', async () => {
@@ -259,13 +259,13 @@ describe('[getInlineCompletions] languages', () => {
         expect(requests).toHaveLength(3)
         expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         expect(items[0]).toMatchInlineSnapshot(`
-              "echo $i;
-                  } else if ($i % 3 == 0) {
-                      echo \\"Multiple of 3: \\" . $i;
-                  } else {
-                      echo \\"ODD \\" . $i;
-                  }"
-            `)
+          "echo $i;
+              } else if ($i % 3 == 0) {
+                  echo "Multiple of 3: " . $i;
+              } else {
+                  echo "ODD " . $i;
+              }"
+        `)
     })
 
     test('works with dart', async () => {

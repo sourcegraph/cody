@@ -1,4 +1,4 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 import { releaseNotesURL, releaseType } from '../release'
@@ -19,6 +19,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -43,14 +45,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.show-page', args: ['upgrade'] },
         requireDotCom: true,
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Settings',
@@ -129,6 +129,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

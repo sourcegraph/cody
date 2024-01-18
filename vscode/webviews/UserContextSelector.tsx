@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
+import { displayPath } from '@sourcegraph/cody-shared'
 import { type UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
@@ -34,7 +35,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
 
     let headingTitle
     if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols..'
+        headingTitle = 'Search for a file to include, or type # to search symbols...'
     } else if (formInput.endsWith('@#')) {
         headingTitle = 'Search for a symbol to include...'
     } else if (formInput.match(/@[^ #]+$/)) {
@@ -67,9 +68,9 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                     {contextSelection?.map((match, i) => {
                         const icon =
                             match.type === 'file' ? null : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-                        const title = match.type === 'file' ? match.path?.relative : match.fileName
+                        const title = match.type === 'file' ? displayPath(match.uri) : match.symbolName
                         const range = match.range ? `:${match.range.start.line + 1}-${match.range.end.line + 1}` : ''
-                        const description = match.type === 'file' ? undefined : match.path?.relative + range
+                        const description = match.type === 'file' ? undefined : displayPath(match.uri) + range
                         return (
                             <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
@@ -78,7 +79,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                     onClick={() => onSelected(match, formInput)}
                                     type="button"
                                 >
-                                    {icon && (
+                                    {match.type === 'symbol' && icon && (
                                         <>
                                             <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
                                         </>

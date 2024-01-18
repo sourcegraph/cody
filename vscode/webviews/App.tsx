@@ -2,13 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
+import {
+    GuardrailsPost,
+    type ChatHistory,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type Configuration,
+    type ContextFile,
+    type EnhancedContextContextT,
+} from '@sourcegraph/cody-shared'
 import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
@@ -24,6 +27,7 @@ import { LoadingPage } from './LoadingPage'
 import { type View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -31,7 +35,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<
         (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
     >(null)
-    const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
@@ -47,7 +50,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
-    const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -58,6 +60,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+
+    const [chatEnabled, setChatEnabled] = useState<boolean>(true)
 
     const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
@@ -98,7 +102,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'config':
                         setConfig(message.config)
-                        setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
@@ -107,17 +110,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             isDotComUser: message.authStatus.isDotCom,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
                         // Get chat models
                         if (message.authStatus.isLoggedIn) {
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
                         break
+                    case 'setChatEnabledConfigFeature':
+                        setChatEnabled(message.data)
+                        break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
-                        break
-                    case 'contextStatus':
-                        setContextStatus(message.contextStatus)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.context)
@@ -237,13 +241,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Callbacks used checking whether Enterprise admin has enabled embeddings
-    const onboardingPopupProps = {
-        reloadStatus: () => {
-            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'reload-state' })
-        },
-    }
-
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -278,12 +275,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
                                 <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                                     <Chat
+                                        chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
                                         messageBeingEdited={messageBeingEdited}
                                         setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
-                                        contextStatus={contextStatus}
                                         contextSelection={contextSelection}
                                         formInput={formInput}
                                         setFormInput={setFormInput}
@@ -295,11 +292,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         telemetryService={telemetryService}
                                         chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
-                                        applessOnboarding={{
-                                            endpoint,
-                                            embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
-                                            props: { onboardingPopupProps },
-                                        }}
                                         chatModels={chatModels}
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}

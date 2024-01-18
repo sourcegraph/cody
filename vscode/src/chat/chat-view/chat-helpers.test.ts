@@ -1,19 +1,19 @@
 import { describe, expect, test } from 'vitest'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
+    CodebaseContext,
     populateCurrentEditorSelectedContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
+    testFileUri,
+    type ContextFile,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from '../../testutils/mocks'
 
 import {
     contextItemsToContextFiles,
     contextMessageToContextItem,
-    fragmentToRange,
     getChatPanelTitle,
-    rangeToFragment,
     stripContextWrapper,
 } from './chat-helpers'
 import { type ContextItem } from './SimpleChatModel'
@@ -27,7 +27,7 @@ describe('unwrap context snippets', () => {
         const testCases: TestCase[] = [
             {
                 contextItem: {
-                    uri: vscode.Uri.file('test.ts'),
+                    uri: testFileUri('test.ts'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
                     text: '// This is code context',
@@ -35,7 +35,7 @@ describe('unwrap context snippets', () => {
             },
             {
                 contextItem: {
-                    uri: vscode.Uri.file('doc.md'),
+                    uri: testFileUri('doc.md'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
                     text: 'This is markdown context',
@@ -46,7 +46,7 @@ describe('unwrap context snippets', () => {
         for (const testCase of testCases) {
             const contextFiles = contextItemsToContextFiles([testCase.contextItem])
             const contextMessages = CodebaseContext.makeContextMessageWithResponse({
-                file: contextFiles[0],
+                file: contextFiles[0] as ContextFile & Required<Pick<ContextFile, 'uri'>>,
                 results: [contextFiles[0].content || ''],
             })
             const contextItem = contextMessageToContextItem(contextMessages[0])
@@ -62,11 +62,11 @@ describe('unwrap context snippets', () => {
 
         const testCases: TestCase[] = [
             {
-                input: populateCurrentEditorSelectedContextTemplate('// This is the code', 'test.ts'),
+                input: populateCurrentEditorSelectedContextTemplate('// This is the code', testFileUri('test.ts')),
                 expOut: '// This is the code',
             },
             {
-                input: populateCurrentSelectedCodeContextTemplate('// This is the code', 'test.ts'),
+                input: populateCurrentSelectedCodeContextTemplate('// This is the code', testFileUri('test.ts')),
                 expOut: '// This is the code',
             },
         ]
@@ -128,27 +128,5 @@ describe('getChatPanelTitle', () => {
         const title = 'Explain the relationship...'
         const result = getChatPanelTitle(title)
         expect(result).toEqual('Explain the relationship....')
-    })
-})
-
-describe('range-fragment conversion', () => {
-    test('converts a valid range to a string fragment', () => {
-        const range = { start: { line: 10, character: 5 }, end: { line: 20, character: 15 } }
-        const result = rangeToFragment(range)
-        expect(result).toEqual('L10-20')
-    })
-    test('converts a valid fragment to a range', () => {
-        const fragment = 'L10-20'
-        const expectedRange = {
-            start: {
-                line: 10,
-                character: 0,
-            },
-            end: {
-                line: 20,
-                character: 0,
-            },
-        }
-        expect(fragmentToRange(fragment)).toEqual(expectedRange)
     })
 })

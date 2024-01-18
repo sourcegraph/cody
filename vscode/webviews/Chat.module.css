@@ -1,6 +1,10 @@
 .inner-container {
     height: 100%;
-    overflow: auto;
+
+    /* popups use a screen to capture clicks outside the popups; this is
+       necessary so that the screen can extend to the extent of the view without
+       scrollbars */
+    overflow: clip;
 }
 
 .transcript-item {
@@ -15,12 +19,14 @@
 /* Apply a slight tint to the assistant transcript item. */
 body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
-    background-color: rgba(0, 0, 0, 0.04); /* slight dark tint */
+    background-color: rgba(0, 0, 0, 0.04);
+    /* slight dark tint */
 }
 
 body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
-    background-color: rgba(255, 255, 255, 0.04); /* slight light tint */
+    background-color: rgba(255, 255, 255, 0.04);
+    /* slight light tint */
 }
 
 .human-transcript-item:before {
@@ -34,7 +40,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 .transcript-item pre,
-.transcript-item pre > code {
+.transcript-item pre>code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--vscode-editor-background);
     color: var(--vscode-editor-foreground);
@@ -49,7 +55,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 body[data-vscode-theme-kind='vscode-light'] .transcript-item pre,
-body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
+body[data-vscode-theme-kind='vscode-light'] .transcript-item pre>code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
@@ -141,7 +147,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     pointer-events: none;
 }
 
-.chat-input-actions > * {
+.chat-input-actions>* {
     /* We have to set this explicitly, otherwise it will use the parent's value */
     pointer-events: auto;
 }
@@ -225,4 +231,10 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
        not-allowed after you submit feedback. So we reset it back to the
        default cursor to fit in nicer with standard VS Code native behaviour */
     cursor: default;
+}
+
+.textarea-disabled {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
 }

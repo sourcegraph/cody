@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDefined } from '@sourcegraph/cody-shared'
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
+import { isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
 
 import {
     registerDebugListener as registerSectionObserverDebugListener,
@@ -247,7 +246,6 @@ function codeDetailsWithSummary(
                   .replaceAll('<', '&lt;')
                   .replaceAll('>', '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
     return `
-<details>
 <details${open ? ' open' : ''}>
 <summary>${title}${excerptMarkdown}</summary>
 

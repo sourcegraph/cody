@@ -7,11 +7,39 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Chat: Add a history quick in the editor panel for chats grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
+- Commands: Custom edit commands are now executable from the Chat panel. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
+- [Internal] Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
+- [Internal] Edit/Chat: Added Cmd/Ctrl+K and Cmd/Ctrl+L commands to trigger Edit and Chat [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
+- Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
+
 ### Fixed
+
+- Edit: Fixed an issue where concurrent applying edits could result in the incorrect insertion point for a new edit. [pull/2707](https://github.com/sourcegraph/cody/pull/2707)
+- Edit: Fixed an issue where the file/symbol hint would remain even after the file/symbol prefix had been deleted. [pull/2712](https://github.com/sourcegraph/cody/pull/2712)
+- Commands: Fixed an issue where Cody failed to register additional instructions followed by the command key when submitted from the command menu. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
+
+### Changed
+
+- Changed code block UI to show actions immediately instead of waiting for Cody's response to be completed. [pull/2737](https://github.com/sourcegraph/cody/pull/2737)
+- Removed recipes, which were replaced by commands in November 2023 (version 0.18.0).
+- Edit: Updated the codelens display to be more descriptive. [pull/2710](https://github.com/sourcegraph/cody/pull/2710)
+- [Internal] New generate unit test available behind `cody.internal.unstable`. [pull/2646](https://github.com/sourcegraph/cody/pull/2646)
+
+## [1.1.3]
+
+### Added
+
+### Fixed
+
+- Autocomplete: Fixes an issue where the context retriever would truncate the results too aggressively. [pull/2652](https://github.com/sourcegraph/cody/pull/2652)
+- Autocomplete: Improve the stability of multiline completion truncation during streaming by gracefully handling missing brackets in incomplete code segments. [pull/2682](https://github.com/sourcegraph/cody/pull/2682)
+- Autocomplete: Improves the jaccard similarity retriever to find better matches. [pull/2662](https://github.com/sourcegraph/cody/pull/2662)
+- Fixed prompt construction issue for the edit command. [pull/2716](https://github.com/sourcegraph/cody/pull/2716)
 
 ### Changed
 
 - Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)
+- Edit: Cody will now always generate new code when the cursor is on an empty line. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 
 ## [1.1.2]
 

@@ -1,10 +1,7 @@
-import { useArgs } from '@storybook/preview-api'
+import { useArgs, useState } from '@storybook/preview-api'
 import { type Meta, type StoryObj } from '@storybook/react'
 
-import {
-    type LocalEmbeddingsProvider,
-    type SearchProvider,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ContextProvider, type LocalEmbeddingsProvider, type SearchProvider } from '@sourcegraph/cody-shared'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
@@ -35,6 +32,7 @@ const meta: Meta<typeof EnhancedContextSettings> = {
 export default meta
 
 interface SingleTileArgs {
+    isOpen: boolean
     name: string
     kind: 'embeddings' | 'graph' | 'search'
     type: 'local' | 'remote'
@@ -76,7 +74,8 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
         remoteName: { control: 'text' },
     },
     render: function Render() {
-        const [args, updateArgs] = useArgs()
+        const [args, updateArgs] = useArgs<SingleTileArgs>()
+        const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
             onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
@@ -97,13 +96,14 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                         {
                             name: args.name,
                             providers: [
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 {
                                     kind: args.kind,
                                     type: args.type,
                                     state: args.state,
                                     origin: args.origin,
                                     remoteName: args.remoteName,
-                                },
+                                } as ContextProvider,
                             ],
                         },
                     ],
@@ -117,7 +117,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                             right: 20,
                         }}
                     >
-                        <EnhancedContextSettings isOpen={args.isOpen} setOpen={() => {}} />
+                        <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
@@ -126,54 +126,57 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
 }
 
 export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
-    render: () => (
-        <EnhancedContextContext.Provider
-            value={{
-                groups: [
-                    {
-                        name: '~/projects/foo',
-                        providers: [
-                            { kind: 'embeddings', type: 'local', state: 'unconsented' },
-                            { kind: 'graph', state: 'ready' },
-                            { kind: 'search', state: 'indexing' },
-                        ],
-                    },
-                    {
-                        name: 'gitlab.com/my/repo',
-                        providers: [
-                            {
-                                kind: 'embeddings',
-                                type: 'remote',
-                                remoteName: 'gitlab.com/my/repo',
-                                origin: 'sourcegraph.com',
-                                state: 'ready',
-                            },
-                        ],
-                    },
-                    {
-                        name: 'github.com/sourcegraph/bar',
-                        providers: [
-                            {
-                                kind: 'embeddings',
-                                type: 'remote',
-                                remoteName: 'github.com/sourcegraph/bar',
-                                origin: 'sourcegraph.sourcegraph.com',
-                                state: 'no-match',
-                            },
-                        ],
-                    },
-                ],
-            }}
-        >
-            <div
-                style={{
-                    position: 'absolute',
-                    bottom: 20,
-                    right: 20,
+    render: function Render() {
+        const [isOpen, setIsOpen] = useState<boolean>(true)
+        return (
+            <EnhancedContextContext.Provider
+                value={{
+                    groups: [
+                        {
+                            name: '~/projects/foo',
+                            providers: [
+                                { kind: 'embeddings', type: 'local', state: 'unconsented' },
+                                { kind: 'graph', state: 'ready' },
+                                { kind: 'search', state: 'indexing' },
+                            ],
+                        },
+                        {
+                            name: 'gitlab.com/my/repo',
+                            providers: [
+                                {
+                                    kind: 'embeddings',
+                                    type: 'remote',
+                                    remoteName: 'gitlab.com/my/repo',
+                                    origin: 'sourcegraph.com',
+                                    state: 'ready',
+                                },
+                            ],
+                        },
+                        {
+                            name: 'github.com/sourcegraph/bar',
+                            providers: [
+                                {
+                                    kind: 'embeddings',
+                                    type: 'remote',
+                                    remoteName: 'github.com/sourcegraph/bar',
+                                    origin: 'sourcegraph.sourcegraph.com',
+                                    state: 'no-match',
+                                },
+                            ],
+                        },
+                    ],
                 }}
             >
-                <EnhancedContextSettings isOpen={true} setOpen={() => {}} />
-            </div>
-        </EnhancedContextContext.Provider>
-    ),
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 20,
+                        right: 20,
+                    }}
+                >
+                    <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
+                </div>
+            </EnhancedContextContext.Provider>
+        )
+    },
 }

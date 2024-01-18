@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { FeatureFlag, featureFlagProvider, isDotCom, type Configuration } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -24,6 +22,22 @@ interface InlineCompletionItemProviderArgs {
     createBfgRetriever?: () => BfgRetriever
 }
 
+/**
+ * Inline completion item providers that always returns an empty reply.
+ * Implemented as a class instead of anonymous function so that you can identify
+ * it with `console.log()` debugging.
+ */
+class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+    public provideInlineCompletionItems(
+        _document: vscode.TextDocument,
+        _position: vscode.Position,
+        _context: vscode.InlineCompletionContext,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+        return { items: [] }
+    }
+}
+
 export async function createInlineCompletionItemProvider({
     config,
     client,
@@ -39,9 +53,7 @@ export async function createInlineCompletionItemProvider({
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
-            return vscode.languages.registerInlineCompletionItemProvider('*', {
-                provideInlineCompletionItems: () => Promise.resolve({ items: [] }),
-            })
+            return vscode.languages.registerInlineCompletionItemProvider('*', new NoopCompletionItemProvider())
         }
 
         return {
@@ -51,17 +63,22 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, bfgMixedContextFlag, dynamicMultilineCompletionsFlag, hotStreakFlag] = await Promise.all([
+    const [
+        providerConfig,
+        bfgMixedContextFlag,
+        newJaccardSimilarityContextFlag,
+        dynamicMultilineCompletionsFlag,
+        hotStreakFlag,
+    ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'lsp-light'
-                ? 'lsp-light'
-                : config.autocompleteExperimentalGraphContext === 'bfg'
+            config.autocompleteExperimentalGraphContext === 'bfg'
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'
@@ -69,8 +86,12 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
                 ? 'jaccard-similarity'
+                : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
+                ? 'new-jaccard-similarity'
                 : bfgMixedContextFlag
                 ? 'bfg-mixed'
+                : newJaccardSimilarityContextFlag
+                ? 'new-jaccard-similarity'
                 : 'jaccard-similarity'
 
         const dynamicMultilineCompletions =

@@ -17,6 +17,9 @@ export enum FeatureFlag {
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
+    // Enables the new-jaccard-similarity context strategy that can find more than one match per
+    // open file and includes matches from the same file.
+    CodyAutocompleteContextNewJaccardSimilarity = 'cody-autocomplete-new-jaccard-similarity',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     // Dynamically decide wether to show a single line or multiple lines for completions.
@@ -25,8 +28,6 @@ export enum FeatureFlag {
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
 
-    // Enable Cody PLG features
-    CodyPro = 'cody-pro',
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
 
@@ -73,9 +74,9 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint][flagName]
     }
 
-    public syncAuthStatus(): void {
+    public async syncAuthStatus(): Promise<void> {
         this.featureFlags = {}
-        void this.refreshFeatureFlags()
+        await this.refreshFeatureFlags()
     }
 
     private async refreshFeatureFlags(): Promise<void> {

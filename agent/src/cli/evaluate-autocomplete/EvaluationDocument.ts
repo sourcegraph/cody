@@ -160,7 +160,7 @@ export class EvaluationDocument {
  * An AutocompleteItem represents one row in the final CSV file that
  * evaluate-autocomplete emits.
  */
-export interface EvaluationItem {
+interface EvaluationItem {
     languageid: string
     workspace: string
     fixture: string

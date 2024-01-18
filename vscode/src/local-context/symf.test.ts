@@ -1,11 +1,12 @@
 import { type Polly } from '@pollyjs/core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { startPollyRecording } from '../testutils/polly'
 
-import { expandQuery } from './symf'
+import { symfExpandQuery } from './symfExpandQuery'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
@@ -23,13 +24,13 @@ describe('symf', () => {
 
         function check(query: string, expectedHandler: (expandedTerm: string) => void): void {
             it(query, async () => {
-                expectedHandler(await expandQuery(client, query))
+                expectedHandler(await symfExpandQuery(client, query))
             })
         }
 
         check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"current flow ocean salinity salt saltiness sea stream surf tidal tide water wave waves"'
+                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"'
             )
         )
 
@@ -51,7 +52,7 @@ describe('symf', () => {
 
         check('scan tokens in C++', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"c cin f getline in scan scan_f scanf stream string stringstream token tokenization tokenize tokens"'
+                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"'
             )
         )
         afterAll(async () => {

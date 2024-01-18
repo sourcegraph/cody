@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import http from 'http'
 import https from 'https'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { agent } from './fetch'

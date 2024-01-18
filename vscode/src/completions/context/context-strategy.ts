@@ -4,10 +4,16 @@ import { type ContextRetriever } from '../types'
 
 import { type BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
-import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
+import { JaccardSimilarityRetriever as NewJaccardSimilarityRetriever } from './retrievers/new-jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
-export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'bfg-mixed' | 'local-mixed' | 'none'
+export type ContextStrategy =
+    | 'bfg'
+    | 'jaccard-similarity'
+    | 'new-jaccard-similarity'
+    | 'bfg-mixed'
+    | 'local-mixed'
+    | 'none'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
@@ -37,13 +43,12 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                     this.disposables.push(this.graphRetriever)
                 }
                 break
-            case 'lsp-light':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.graphRetriever = new LspLightRetriever()
-                this.disposables.push(this.localRetriever, this.graphRetriever)
-                break
             case 'jaccard-similarity':
                 this.localRetriever = new JaccardSimilarityRetriever()
+                this.disposables.push(this.localRetriever)
+                break
+            case 'new-jaccard-similarity':
+                this.localRetriever = new NewJaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 break
             case 'local-mixed':
@@ -60,17 +65,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
 
         switch (this.contextStrategy) {
             case 'none': {
-                break
-            }
-
-            // The lsp-light strategy mixes local and graph based retrievers
-            case 'lsp-light': {
-                if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(document.languageId)) {
-                    retrievers.push(this.graphRetriever)
-                }
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
                 break
             }
 
@@ -103,8 +97,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 }
                 break
 
-            // The jaccard similarity strategy only uses the local retriever
-            case 'jaccard-similarity': {
+            // The jaccard similarity strategies only uses the local retriever
+            case 'jaccard-similarity':
+            case 'new-jaccard-similarity': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
                 }

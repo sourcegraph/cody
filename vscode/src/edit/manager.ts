@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
 
 import { type ContextProvider } from '../chat/ContextProvider'
+import { type GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
@@ -13,12 +13,13 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { type ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { type EditIntent } from './types'
+import { type EditIntent, type EditMode } from './types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     contextProvider: ContextProvider
+    ghostHintDecorator: GhostHintDecorator
 }
 
 export class EditManager implements vscode.Disposable {
@@ -38,7 +39,7 @@ export class EditManager implements vscode.Disposable {
                         instruction?: string
                         intent?: EditIntent
                         document?: vscode.TextDocument
-                        insertMode?: boolean
+                        mode?: EditMode
                     },
                     source?: ChatEventSource
                 ) => this.executeEdit(args, source)
@@ -47,6 +48,11 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (!configFeatures.commands) {
+            void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
+            return
+        }
         const commandEventName = source === 'doc' ? 'doc' : 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${commandEventName}:executed`,
@@ -72,15 +78,21 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
+        if (editor.active) {
+            // Clear out any active ghost text
+            this.options.ghostHintDecorator.clearGhostText(editor.active)
+        }
+
         const task = args.instruction?.trim()
             ? await this.controller.createTask(
-                  document.uri,
+                  document,
                   args.instruction,
                   args.userContextFiles ?? [],
                   range,
                   args.intent,
-                  args.insertMode,
-                  source
+                  args.mode,
+                  source,
+                  args.contextMessages
               )
             : await this.controller.promptUserForTask(args, source)
         if (!task) {

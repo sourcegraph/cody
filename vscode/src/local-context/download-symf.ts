@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as fs from 'fs'
 import fspromises from 'fs/promises'
 import * as os from 'os'
@@ -11,7 +13,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
-const symfVersion = 'v0.0.2'
+const symfVersion = 'v0.0.4'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.

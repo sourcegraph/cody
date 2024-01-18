@@ -21,7 +21,7 @@ let lastClipboardText = ''
  *
  * This is used to track code generation events in VS Code.
  */
-export function setLastStoredCode(
+function setLastStoredCode(
     code: string,
     eventName: string,
     source = 'chat',
@@ -54,7 +54,7 @@ export function setLastStoredCode(
     return codeCount
 }
 
-export async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
+async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
     lastClipboardText = clipboardText || (await vscode.env.clipboard.readText())
 }
 
@@ -101,24 +101,6 @@ export async function handleCopiedCode(text: string, isButtonClickEvent: boolean
     if (copiedCode) {
         setLastStoredCode(copiedCode, eventName, meta?.source, meta?.requestID)
     }
-}
-
-/**
- * Checks if the provided code matches the last code stored from copy events.
- */
-export function isLastStoredCode(code: string): boolean {
-    return code === lastStoredCode.code || code === lastClipboardText
-}
-
-/**
- * Checks if the provided code matches the last code stored from copy events.
- */
-export function matchCodeInStore(code: string): boolean {
-    if (insertInProgress) {
-        insertInProgress = false
-        return false
-    }
-    return matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, lastStoredCode.code)
 }
 
 // For tracking paste events for inline-chat

@@ -3,7 +3,12 @@ import * as path from 'path'
 
 import * as vscode from 'vscode'
 
-import { type Result, type SearchPanelFile, type SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
+import {
+    hydrateAfterPostMessage,
+    type Result,
+    type SearchPanelFile,
+    type SearchPanelSnippet,
+} from '@sourcegraph/cody-shared'
 
 import { type WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
@@ -210,7 +215,11 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             .replaceAll('{cspSource}', webviewView.webview.cspSource)
 
         // Register to receive messages from webview
-        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.disposables.push(
+            webviewView.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
+            )
+        )
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -220,9 +229,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 break
             }
             case 'show-search-result': {
-                const { range, uriJSON } = message
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const uri = vscode.Uri.from(uriJSON as any)
+                const { range, uri } = message
                 const vscodeRange = new vscode.Range(
                     range.start.line,
                     range.start.character,
@@ -371,9 +378,7 @@ async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFi
                     const contents = await vscode.workspace.fs.readFile(uri)
                     const { base, dir, wsName } = getRenderableComponents(group.file)
                     return {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                        uriJSON: uri.toJSON(),
-                        uriString: uri.toString(),
+                        uri,
                         basename: base,
                         dirname: dir,
                         wsname: wsName,

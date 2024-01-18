@@ -345,7 +345,6 @@ export interface GitExtension {
      * Throws error if git extension is disabled. You can listen to the
      * [GitExtension.onDidChangeEnablement](#GitExtension.onDidChangeEnablement) event
      * to know when the extension becomes enabled/disabled.
-     *
      * @param version Version number.
      * @returns API instance
      */

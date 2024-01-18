@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared'
 
 import { TriggerKind } from '../get-inline-completions'
 import { completion } from '../test-helpers'
@@ -24,7 +24,7 @@ async function getInlineCompletionAfterAccepting(
             triggerKind,
             lastAcceptedCompletionItem: {
                 requestParams: initialRequestParams,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
                 analyticsItem: item!.items[0]!,
             },
         })

@@ -6,41 +6,36 @@ import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
-import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
-import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import {
+    convertGitCloneURLToCodebaseName,
+    FeatureFlag,
+    featureFlagProvider,
+    graphqlClient,
+    isRateLimitError,
+    NoOpTelemetryRecorderProvider,
+    setUserAgent,
+    type BillingCategory,
+    type BillingProduct,
+} from '@sourcegraph/cody-shared'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
+import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { type ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
+import { type AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
+import { AgentGlobalState } from './AgentGlobalState'
 import { newTextEditor } from './AgentTextEditor'
-import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
+import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { AgentEditor } from './editor'
-import { MessageHandler } from './jsonrpc-alias'
-import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
+import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
-const secretStorage = new Map<string, string>()
-
-const globalStorage = new Map<string, any>()
-
-// Disable the feature that opens a webview when the user accepts their first
-// autocomplete request.  Removing this line should fail the agent integration
-// tests with the following error message "chat/new: command finished executing
-// without creating a webview" because we reuse the webview when sending
-// chat/new.
-globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
+const inMemorySecretStorageMap = new Map<string, string>()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -51,7 +46,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     } catch {
         /* ignore */
     }
-    await activate({
+    const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
         },
@@ -63,49 +58,32 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: {
-            keys: () => [localStorage.ANONYMOUS_USER_ID_KEY, ...globalStorage.keys()],
-            get: key => {
-                switch (key) {
-                    case localStorage.ANONYMOUS_USER_ID_KEY:
-                        return vscode_shim.extensionConfiguration?.anonymousUserID
-                    case localStorage.LAST_USED_ENDPOINT:
-                        return vscode_shim.extensionConfiguration?.serverEndpoint
-                    default:
-                        return globalStorage.get(key)
-                }
-            },
-            update: (key, value) => {
-                globalStorage.set(key, value)
-                return Promise.resolve()
-            },
-            setKeysForSync: () => {},
-        },
+        globalState: new AgentGlobalState(),
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
             onDidChange: vscode_shim.emptyEvent(),
             get(key) {
-                if (key === 'cody.access-token' && vscode_shim.extensionConfiguration) {
-                    return Promise.resolve(vscode_shim.extensionConfiguration.accessToken)
-                }
-                return Promise.resolve(secretStorage.get(key))
+                return Promise.resolve(inMemorySecretStorageMap.get(key))
             },
             store(key, value) {
-                secretStorage.set(key, value)
+                inMemorySecretStorageMap.set(key, value)
                 return Promise.resolve()
             },
-            delete(key) {
+            delete() {
                 return Promise.resolve()
             },
         },
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
+
         workspaceState: {} as any,
         globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: paths.data,
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
-    })
+    }
+
+    await activate(context)
 }
 
 export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: string }): Promise<MessageHandler> {
@@ -148,10 +126,9 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
 }
 
 export class Agent extends MessageHandler {
-    private client: Promise<Client | null> = Promise.resolve(null)
-    private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
-    public webPanels = new AgentWebPanels()
+    public webPanels = new AgentWebviewPanels()
+    private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
     private clientInfo: ClientInfo | null = null
 
@@ -173,8 +150,6 @@ export class Agent extends MessageHandler {
         },
     ])
 
-    private resolveChatPanelId: ((chatPanelId: string) => void) | null = null
-
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setAgent(this)
@@ -187,46 +162,41 @@ export class Agent extends MessageHandler {
                 )
             }
 
+            const anonymousDotcomUser: ExtensionConfiguration = {
+                ...clientInfo.extensionConfiguration,
+                serverEndpoint: '',
+                accessToken: '',
+                customHeaders: {},
+            }
+            const extensionConfiguration = clientInfo.extensionConfiguration ?? anonymousDotcomUser
+            clientInfo.extensionConfiguration = anonymousDotcomUser
             vscode_shim.setClientInfo(clientInfo)
-            // Register client info
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
-            if (clientInfo.extensionConfiguration) {
-                // this must be done before initializing the vscode extension below, as extensionConfiguration
-                // is queried in a number of places.
-                await this.setClientAndTelemetry(clientInfo.extensionConfiguration)
-            }
+            this.agentTelemetryRecorderProvider?.unsubscribe()
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(this.clientInfo, {
+                getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
+            })
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
             try {
                 await initializeVscodeExtension(this.workspace.workspaceRootUri)
-
-                // must be done here, as the commands are not registered when calling setClientAndTelemetry above
-                // but setClientAndTelemetry must called before initializing the vscode extension.
-                await this.reloadAuth()
-
-                const codyClient = await this.client
-                if (!codyClient) {
-                    return {
-                        name: 'cody-agent',
-                        authenticated: false,
-                        codyEnabled: false,
-                        codyVersion: null,
-                    }
-                }
-
                 this.registerWebviewHandlers()
 
-                const codyStatus = codyClient.codyStatus
+                this.authenticationPromise = this.handleConfigChanges(extensionConfiguration, {
+                    forceAuthentication: true,
+                })
+                const authStatus = await this.authenticationPromise
+
                 return {
                     name: 'cody-agent',
-                    authenticated: codyClient.sourcegraphStatus.authenticated,
-                    codyEnabled:
-                        codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
-                    codyVersion: codyStatus.version,
+                    authenticated: authStatus?.authenticated,
+                    codyEnabled: authStatus?.siteHasCodyEnabled,
+                    codyVersion: authStatus?.siteVersion,
+                    authStatus,
                 }
             } catch (error) {
                 process.stderr.write(
@@ -269,7 +239,7 @@ export class Agent extends MessageHandler {
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
                 reason: undefined,
             })
         })
@@ -284,9 +254,18 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
-            this.setClientAndTelemetry(config).catch(() => {
-                process.stderr.write('Cody Agent: failed to update configuration\n')
-            })
+            this.authenticationPromise = this.handleConfigChanges(config)
+        })
+
+        this.registerRequest('extensionConfiguration/change', async config => {
+            this.authenticationPromise = this.handleConfigChanges(config)
+            const result = await this.authenticationPromise
+            return result ?? null
+        })
+
+        this.registerRequest('extensionConfiguration/status', async () => {
+            const result = await this.authenticationPromise
+            return result ?? null
         })
 
         this.registerNotification('progress/cancel', ({ id }) => {
@@ -298,7 +277,7 @@ export class Agent extends MessageHandler {
             }
         })
 
-        this.registerRequest('testing/progress', async ({ title }) => {
+        this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
                 { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
                 progress => {
@@ -311,7 +290,7 @@ export class Agent extends MessageHandler {
             return thenable
         })
 
-        this.registerRequest('testing/progressCancelation', async ({ title }) => {
+        this.registerAuthenticatedRequest('testing/progressCancelation', async ({ title }) => {
             const message = await vscode.window.withProgress<string>(
                 {
                     title: 'testing/progressCancelation',
@@ -342,60 +321,11 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
-        this.registerRequest('recipes/list', () =>
-            Promise.resolve(
-                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
-                    id,
-                    title,
-                }))
-            )
-        )
-
-        this.registerNotification('transcript/reset', async () => {
-            const client = await this.client
-            client?.reset()
-        })
-
-        this.registerRequest('command/execute', async params => {
+        this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
 
-        this.registerRequest('recipes/execute', async (data, token) => {
-            const client = await this.client
-            if (!client) {
-                return null
-            }
-
-            const abortController = new AbortController()
-            if (token) {
-                if (token.isCancellationRequested) {
-                    abortController.abort()
-                }
-                token.onCancellationRequested(() => {
-                    abortController.abort()
-                })
-            }
-
-            await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
-            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
-            try {
-                await client.executeRecipe(data.id, {
-                    signal: abortController.signal,
-                    humanChatInput: data.humanChatInput,
-                    data: data.data,
-                })
-            } catch (error) {
-                // can happen when the client cancels the request
-                if (isRateLimitError(error)) {
-                    throw error
-                }
-                console.log('recipe failed', error)
-            }
-            return null
-        })
-
-        this.registerRequest('autocomplete/execute', async (params, token) => {
-            await this.client // To let configuration changes propagate
+        this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized')
@@ -464,29 +394,17 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
-            const client = await this.client
-            if (!client) {
-                throw new Error('Cody client not initialized')
-            }
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
-            const client = await this.client
-            if (!client) {
-                throw new Error('Cody client not initialized')
-            }
             const provider = await vscode_shim.completionProvider()
             provider.unstable_handleDidShowCompletionItem(completionID)
         })
 
-        this.registerRequest('graphql/currentUserId', async () => {
-            const client = await this.client
-            if (!client) {
-                throw new Error('Cody client not initialized')
-            }
-            const id = await client.graphqlClient.getCurrentUserId()
+        this.registerAuthenticatedRequest('graphql/currentUserId', async () => {
+            const id = await graphqlClient.getCurrentUserId()
             if (typeof id === 'string') {
                 return id
             }
@@ -494,12 +412,8 @@ export class Agent extends MessageHandler {
             throw id
         })
 
-        this.registerRequest('graphql/currentUserIsPro', async () => {
-            const client = await this.client
-            if (!client) {
-                throw new Error('Cody client not initialized')
-            }
-            const res = await client.graphqlClient.getCurrentUserCodyProEnabled()
+        this.registerAuthenticatedRequest('graphql/currentUserIsPro', async () => {
+            const res = await graphqlClient.getCurrentUserCodyProEnabled()
             if (res instanceof Error) {
                 throw res
             }
@@ -507,7 +421,7 @@ export class Agent extends MessageHandler {
             return res.codyProEnabled
         })
 
-        this.registerRequest('telemetry/recordEvent', async event => {
+        this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
                 // so we depend on client implementations to give type guidance
@@ -528,21 +442,19 @@ export class Agent extends MessageHandler {
         /**
          * @deprecated use 'telemetry/recordEvent' instead.
          */
-        this.registerRequest('graphql/logEvent', async event => {
-            const client = await this.client
+        this.registerAuthenticatedRequest('graphql/logEvent', async event => {
             if (typeof event.argument === 'object') {
                 event.argument = JSON.stringify(event.argument)
             }
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            await client?.graphqlClient.logEvent(event, 'all')
+            await graphqlClient.logEvent(event, 'all')
             return null
         })
 
         this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+            const result = await graphqlClient.getRepoIdIfEmbeddingExists(repoName)
             if (result instanceof Error) {
                 console.error('getRepoIdIfEmbeddingExists', result)
             }
@@ -550,15 +462,14 @@ export class Agent extends MessageHandler {
         })
 
         this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoId(repoName)
+            const result = await graphqlClient.getRepoId(repoName)
             if (result instanceof Error) {
                 console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
         })
 
-        this.registerRequest('git/codebaseName', ({ url }) => {
+        this.registerAuthenticatedRequest('git/codebaseName', ({ url }) => {
             const result = convertGitCloneURLToCodebaseName(url)
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
@@ -571,7 +482,7 @@ export class Agent extends MessageHandler {
             provider.clearLastCandidate()
         })
 
-        this.registerRequest('webview/didDispose', ({ id }) => {
+        this.registerAuthenticatedRequest('webview/didDispose', ({ id }) => {
             const panel = this.webPanels.panels.get(id)
             if (!panel) {
                 console.log(`No panel with id ${id} found`)
@@ -581,44 +492,58 @@ export class Agent extends MessageHandler {
             return Promise.resolve(null)
         })
 
-        this.registerRequest('chat/new', async () => {
-            const id = await new Promise<string>((resolve, reject) => {
-                // HACK: when triggering this command, Cody creates a webview under the hood and there's
-                // no clean way for us (yet) to pair the webview with this command invocation.
-                // To work around this limitation, we hijack the `webview/create` handler to capture
-                // the webview that's created from executing this command.
-                this.resolveChatPanelId = resolve
+        // The arguments to pass to the command to make sure edit commands would also run in chat mode
+        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
 
-                vscode.commands.executeCommand('cody.chat.panel.new').then(
-                    () => reject(new Error('chat/new: command finished executing without creating a webview')),
-                    error => reject(error)
-                )
-
-                setTimeout(() => {
-                    reject(new Error('chat/new: timed out waiting for chat panel to be created'))
-                }, 1000)
-            })
-
-            // Important: this request never responds if we await on the messages here.
-            this.receiveWebviewMessage(id, { command: 'ready' }).then(
-                () => {},
-                () => {}
-            )
-            this.receiveWebviewMessage(id, { command: 'initialized' }).then(
-                () => {},
-                () => {}
-            )
-            return id
+        this.registerAuthenticatedRequest('commands/explain', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code', commandArgs))
         })
 
-        this.registerRequest('chat/submitMessage', async ({ id, message }, token) => {
-            if (message.command !== 'submit') {
+        this.registerAuthenticatedRequest('commands/test', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests', commandArgs))
+        })
+
+        this.registerAuthenticatedRequest('commands/smell', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code', commandArgs))
+        })
+
+        this.registerAuthenticatedRequest('chat/new', () => {
+            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.new'))
+        })
+
+        this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
+            const chatModel = new SimpleChatModel(modelID, [], chatID, undefined)
+            for (const message of messages) {
+                if (message.error) {
+                    chatModel.addErrorAsBotMessage(message.error)
+                } else if (message.speaker === 'assistant') {
+                    chatModel.addBotMessage(message)
+                } else if (message.speaker === 'human') {
+                    chatModel.addHumanMessage(message)
+                }
+            }
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
+            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]))
+        })
+
+        this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            if (panel.models) {
+                return { models: panel.models }
+            }
+            await this.receiveWebviewMessage(id, { command: 'get-chat-models' })
+            return { models: panel.models ?? [] }
+        })
+
+        const submitOrEditHandler = async (
+            { id, message }: { id: string; message: WebviewMessage },
+            token: vscode.CancellationToken
+        ): Promise<ExtensionMessage> => {
+            if (message.command !== 'submit' && message.command !== 'edit') {
                 throw new Error('Invalid message, must have a command of "submit"')
             }
-            const panel = this.webPanels.panels.get(id)
-            if (!panel) {
-                return Promise.resolve({ type: 'errors', errors: `No panel with id ${id} found` } as ExtensionMessage)
-            }
+            const panel = this.webPanels.getPanelOrError(id)
             if (panel.isMessageInProgress) {
                 throw new Error('Message is already in progress')
             }
@@ -652,23 +577,61 @@ export class Agent extends MessageHandler {
             return result.finally(() => {
                 vscode.Disposable.from(...disposables).dispose()
             })
-        })
+        }
+        this.registerAuthenticatedRequest('chat/submitMessage', submitOrEditHandler)
+        this.registerAuthenticatedRequest('chat/editMessage', submitOrEditHandler)
 
-        this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
+        this.registerAuthenticatedRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
             return null
         })
 
-        this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
+        this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
     }
 
+    private async handleConfigChanges(
+        config: ExtensionConfiguration,
+        params?: { forceAuthentication: boolean }
+    ): Promise<AuthStatus | undefined> {
+        const isAuthChange = vscode_shim.isAuthenticationChange(config)
+        vscode_shim.setExtensionConfiguration(config)
+        // If this is an authentication change we need to reauthenticate prior to firing events
+        // that update the clients
+        if (isAuthChange || params?.forceAuthentication) {
+            try {
+                const authStatus = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
+                    'cody.agent.auth.authenticate',
+                    [config]
+                )
+                // Critical: we need to await for the handling of `onDidChangeConfiguration` to
+                // let the new credentials propagate. If we remove the statement below, then
+                // autocomplete may return empty results because we can't await for the updated
+                // `InlineCompletionItemProvider` to register.
+                await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
+                    affectsConfiguration: () =>
+                        // assuming the return value below only impacts performance (not
+                        // functionality), we return true to always triggger the callback.
+                        true,
+                })
+                // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
+                // TODO(#56621): JetBrains: persistent chat history:
+                // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
+                this.webPanels.panels.clear()
+                return authStatus
+            } catch (error) {
+                console.log('Authentication failed', error)
+            }
+        }
+
+        return vscode_shim.commands.executeCommand<AuthStatus>('cody.auth.status')
+    }
+
     private registerWebviewHandlers(): void {
-        const webPanels = this.webPanels
         vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
-            const panel = new AgentWebPanel(viewType, title, showOptions, options)
-            webPanels.add(panel)
+            const panel = new AgentWebviewPanel(viewType, title, showOptions, options)
+            this.webPanels.add(panel)
 
             panel.onDidPostMessage(message => {
                 if (message.type === 'transcript') {
@@ -691,6 +654,10 @@ export class Agent extends MessageHandler {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
+                } else if (message.type === 'chatModels') {
+                    panel.models = message.models
+                } else if (message.type === 'errors') {
+                    panel.messageInProgressChange.fire(message)
                 }
 
                 this.notify('webview/postMessage', {
@@ -699,18 +666,6 @@ export class Agent extends MessageHandler {
                 })
             })
 
-            if (this.resolveChatPanelId) {
-                this.resolveChatPanelId(panel.panelID)
-                this.resolveChatPanelId = null
-            } else {
-                this.request('webview/create', {
-                    id: panel.panelID,
-                    data: { viewType, title, showOptions, options },
-                }).then(
-                    () => {},
-                    () => {}
-                )
-            }
             return panel
         })
     }
@@ -724,115 +679,33 @@ export class Agent extends MessageHandler {
         await panel.receiveMessage.cody_fireAsync(message)
     }
 
-    /**
-     * Updates this.client immediately and attempts to update
-     * this.telemetryRecorderProvider as well if prerequisite configuration
-     * is available.
-     */
-    private async setClientAndTelemetry(config: ExtensionConfiguration): Promise<void> {
-        this.client = this.createAgentClient(config)
+    private async createChatPanel(commandResult: Thenable<ChatSession | undefined>): Promise<string> {
+        const { sessionID, webviewPanel } = (await commandResult) ?? {}
+        if (sessionID === undefined || webviewPanel === undefined) {
+            throw new Error('chatID is undefined')
+        }
+        if (!(webviewPanel instanceof AgentWebviewPanel)) {
+            throw new TypeError('')
+        }
 
-        const codyClient = await this.client
-        if (codyClient && this.clientInfo) {
-            // Update telemetry
-            this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
-                codyClient.graphqlClient,
-                this.clientInfo,
-                {
-                    // Add tracking metadata if provided
-                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-                }
+        if (webviewPanel.chatID === undefined) {
+            webviewPanel.chatID = sessionID
+        }
+        if (sessionID !== webviewPanel.chatID) {
+            throw new TypeError(
+                `Mismatching chatID, (sessionID) ${sessionID} !== ${webviewPanel.chatID} (webviewPanel.chatID)`
             )
         }
-
-        return
+        webviewPanel.initialize()
+        return webviewPanel.panelID
     }
 
-    private async createAgentClient(config: ExtensionConfiguration): Promise<Client | null> {
-        const isAuthChange = vscode_shim.isAuthenticationChange(config)
-        vscode_shim.setExtensionConfiguration(config)
-        // If this is an authentication change we need to reauthenticate prior to firing events
-        // that update the clients
-        if (isAuthChange) {
-            await this.reloadAuth()
-        }
-        vscode_shim.onDidChangeConfiguration.fire({
-            affectsConfiguration: () =>
-                // assuming the return value below only impacts performance (not
-                // functionality), we return true to always triggger the callback.
-                true,
+    // Alternative to `registerRequest` that awaits on authentication changes to
+    // propagate before calling the method handler.
+    public registerAuthenticatedRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
+        this.registerRequest(method, async (params, token) => {
+            await this.authenticationPromise
+            return callback(params, token)
         })
-
-        const client = await createClient({
-            initialTranscript: this.oldClient?.transcript,
-            editor: new AgentEditor(this),
-            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
-            setMessageInProgress: messageInProgress => {
-                this.notify('chat/updateMessageInProgress', messageInProgress)
-            },
-            setTranscript: () => {
-                // Not supported yet by agent.
-            },
-            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
-        })
-        this.oldClient = client
-        return client
-    }
-
-    private async reloadAuth(): Promise<void> {
-        await vscode_shim.commands.executeCommand('agent.auth.reload').then(() => {
-            // TODO(#56621): JetBrains: persistent chat history:
-            // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
-            this.webPanels.panels.clear()
-        })
-    }
-
-    /**
-     * @deprecated use `this.telemetryRecorderProvider.getRecorder()` instead.
-     */
-    public async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
-        const client = await this.client
-        if (!client) {
-            return null
-        }
-
-        const clientInfo = this.clientInfo
-        if (!clientInfo) {
-            return null
-        }
-
-        const extensionConfiguration = clientInfo.extensionConfiguration
-        if (!extensionConfiguration) {
-            return null
-        }
-
-        const eventProperties = extensionConfiguration.eventProperties
-        if (!eventProperties) {
-            return null
-        }
-
-        const event = `${eventProperties.prefix}:${feature}:${action}`
-        await client.graphqlClient.logEvent(
-            {
-                event,
-                url: '',
-                client: eventProperties.client,
-                userCookieID:
-                    this.clientInfo?.extensionConfiguration?.anonymousUserID || eventProperties.anonymousUserID,
-                source: eventProperties.source,
-                publicArgument: JSON.stringify({
-                    serverEndpoint: extensionConfiguration.serverEndpoint,
-                    extensionDetails: {
-                        ide: clientInfo.name,
-                        ideExtensionType: 'Cody',
-                        version: clientInfo.version,
-                    },
-                }),
-            },
-            mode
-        )
-
-        return null
     }
 }

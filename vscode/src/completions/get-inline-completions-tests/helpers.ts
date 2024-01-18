@@ -1,17 +1,12 @@
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
-import { URI } from 'vscode-uri'
 
-import {
-    type CompletionParameters,
-    type CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { testFileUri, type CompletionParameters, type CompletionResponse } from '@sourcegraph/cody-shared'
 
-import { testFilePath } from '../../testutils/textDocument'
 import { type SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { type CodeCompletionsClient } from '../client'
+import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
@@ -30,7 +25,7 @@ import { documentAndPosition } from '../test-helpers'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = URI.file(testFilePath('test.ts'))
+const URI_FIXTURE = testFileUri('test.ts')
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
@@ -60,14 +55,27 @@ export function params(
     }: Params = {}
 ): InlineCompletionsParams {
     let requestCounter = 0
+
     const client: Pick<CodeCompletionsClient, 'complete'> = {
-        async complete(params, onPartialResponse): Promise<CompletionResponse> {
-            await onNetworkRequest?.(params, onPartialResponse)
-            return responses === 'never-resolve'
-                ? new Promise(() => {})
-                : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
+        async *complete(params) {
+            const partialResponses: CompletionResponse[] = []
+
+            await onNetworkRequest?.(params, (incompleteResponse: CompletionResponse): void => {
+                partialResponses.push(incompleteResponse)
+            })
+
+            for (const response of partialResponses) {
+                yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+            }
+
+            if (responses === 'never-resolve') {
+                await new Promise(() => {})
+            }
+
+            return responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' }
         },
     }
+
     const providerConfig = createProviderConfig({ client })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())

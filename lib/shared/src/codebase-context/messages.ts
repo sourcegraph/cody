@@ -26,30 +26,30 @@ export type ContextFileType = 'file' | 'symbol'
 
 export type SymbolKind = 'class' | 'function' | 'method'
 
-export interface ContextFile {
-    // Name of the context
-    // for file, this is usually the relative path
-    // for symbol, this is usually the fuzzy name of the symbol
-    fileName: string
-
-    content?: string
-
+interface ContextFileCommon {
+    uri: URI
+    range?: ActiveTextEditorSelectionRange
     repoName?: string
     revision?: string
 
-    // Location
-    uri?: URI
-    path?: {
-        basename?: string
-        dirname?: string
-        relative?: string
-    }
-    range?: ActiveTextEditorSelectionRange
+    /**
+     * For anything other than a file or symbol, the title to display (e.g., "Terminal Output").
+     */
+    title?: string
 
-    // metadata
     source?: ContextFileSource
-    type?: ContextFileType
-    kind?: SymbolKind
+    content?: string
+}
+
+export type ContextFile = ContextFileFile | ContextFileSymbol
+export type ContextFileFile = ContextFileCommon & { type: 'file' }
+export type ContextFileSymbol = ContextFileCommon & {
+    type: 'symbol'
+
+    /** The fuzzy name of the symbol (if this represents a symbol). */
+    symbolName: string
+
+    kind: SymbolKind
 }
 
 export interface ContextMessage extends Message {
@@ -85,10 +85,6 @@ export interface HoverContext {
     }
 }
 
-export interface OldContextMessage extends Message {
-    fileName?: string
-}
-
 export function getContextMessageWithResponse(
     text: string,
     file: ContextFile,
@@ -108,12 +104,15 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
     if (!code) {
         return []
     }
-    // Replace exisiting leading @ if any
-    const fileMessage = `Context from file path @${file.fileName.replace(/^@/, '')}:\n${code}`
-    const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`
-    const text = file.type === 'symbol' ? symbolMessage : fileMessage
     return [
-        { speaker: 'human', text, file },
+        {
+            speaker: 'human',
+            text:
+                file.type === 'file'
+                    ? `Context from file path @${file.uri?.path}:\n${code}`
+                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`,
+            file,
+        },
         { speaker: 'assistant', text: 'OK.' },
     ]
 }

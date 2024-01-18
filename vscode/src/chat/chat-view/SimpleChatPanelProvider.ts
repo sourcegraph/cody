@@ -2,36 +2,42 @@ import * as path from 'path'
 
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import {
+    ChatModelProvider,
+    ConfigFeaturesSingleton,
+    ContextWindowLimitError,
+    hydrateAfterPostMessage,
+    isCodyIgnoredFile,
     isDefined,
+    isDotCom,
+    isError,
+    isRateLimitError,
+    MAX_BYTES_PER_FILE,
+    NUM_CODE_RESULTS,
+    NUM_TEXT_RESULTS,
+    reformatBotMessageForChat,
+    truncateTextNearestLine,
+    Typewriter,
     type ActiveTextEditorSelectionRange,
+    type ChatClient,
     type ChatMessage,
     type CodyCommand,
     type ContextFile,
+    type ContextMessage,
+    type CustomCommandType,
+    type Editor,
+    type FeatureFlagProvider,
+    type Guardrails,
+    type InteractionJSON,
+    type Message,
+    type Result,
+    type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
-import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
-import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommandContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { type Result } from '@sourcegraph/cody-shared/src/local-context'
-import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
+import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
+import { type CommandsController } from '../../commands/CommandsController'
 import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../../commands/prompt/display-text'
 import { getContextForCommand } from '../../commands/utils/get-context'
 import { getFullConfig } from '../../configuration'
@@ -53,7 +59,7 @@ import {
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
-import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type MessageErrorType } from '../MessageProvider'
@@ -66,13 +72,7 @@ import {
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import {
-    getChatPanelTitle,
-    legacyContextFileUri,
-    relativeFileUri,
-    remoteEmbeddingSnippetUri,
-    stripContextWrapper,
-} from './chat-helpers'
+import { getChatPanelTitle, openFile, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { type ChatViewProviderWebview, type Config } from './ChatPanelsManager'
@@ -93,9 +93,16 @@ interface SimpleChatPanelProviderOptions {
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
     models: ChatModelProvider[]
+    guardrails: Guardrails
+    commandsController?: CommandsController
 }
 
-export class SimpleChatPanelProvider implements vscode.Disposable {
+export interface ChatSession {
+    webviewPanel?: vscode.WebviewPanel
+    sessionID: string
+}
+
+export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private _webviewPanel?: vscode.WebviewPanel
     public get webviewPanel(): vscode.WebviewPanel | undefined {
         return this._webviewPanel
@@ -121,13 +128,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
+    private readonly guardrails: Guardrails
+    private readonly commandsController?: CommandsController
 
     private history = new ChatHistoryManager()
     private prompter: IPrompter = new DefaultPrompter()
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
-
-    private readonly featureFlagProvider: FeatureFlagProvider
 
     // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
@@ -136,7 +143,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
     constructor({
         config,
         extensionUri,
-        featureFlagProvider,
         authProvider,
         chatClient,
         embeddingsClient,
@@ -145,19 +151,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         editor,
         treeView,
         models,
+        commandsController,
+        guardrails,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
-        this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
+        this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
+        this.guardrails = guardrails
+
+        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -292,10 +303,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             panel.dispose()
         })
 
-        this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.disposables.push(
+            panel.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
+            )
+        )
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void this.postMessage({
+            type: 'setChatEnabledConfigFeature',
+            data: configFeatures.chat,
+        })
 
         return panel
     }
@@ -347,7 +368,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     requestID,
                     message.text,
                     message.submitType,
-                    message.contextFiles || [],
+                    message.contextFiles ?? [],
                     message.addEnhancedContext || false
                 )
                 break
@@ -374,7 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
-                await this.postChatModels()
+                this.postChatModels()
                 break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
@@ -399,7 +420,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, message.uri, this.webviewPanel?.viewColumn, message.range)
+                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
@@ -419,16 +440,34 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                setTimeout(() => {
-                    void this.postMessage({
-                        type: 'attribution',
-                        snippet: message.snippet,
-                        attribution: {
-                            repositoryNames: [],
-                            limitHit: true,
-                        },
+                this.guardrails
+                    .searchAttribution(message.snippet)
+                    .then((attribution): void => {
+                        if (isError(attribution)) {
+                            void this.postMessage({
+                                type: 'attribution',
+                                snippet: message.snippet,
+                                error: attribution.message,
+                            })
+                            return
+                        }
+                        void this.postMessage({
+                            type: 'attribution',
+                            snippet: message.snippet,
+                            attribution: {
+                                repositoryNames: attribution.repositories.map(r => r.name),
+                                limitHit: attribution.limitHit,
+                            },
+                        })
                     })
-                }, 1000)
+                    .catch(error => {
+                        void this.postMessage({
+                            type: 'attribution',
+                            snippet: message.snippet,
+                            error: `${error}`,
+                        })
+                    })
+
                 break
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
@@ -447,7 +486,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             chatID: this.sessionID,
         })
 
-        await this.postChatModels()
+        this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
         this.initDoer.signalInitialized()
@@ -512,14 +551,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         }
     }
 
-    public triggerNotice(notice: { key: string }): void {
-        void this.postMessage({
-            type: 'notice',
-            notice,
-        })
-    }
-
-    private async postChatModels(): Promise<void> {
+    private postChatModels(): void {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
             return
@@ -527,14 +559,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        // selection is available to pro only at Dec GA
-        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
-            return {
-                ...model,
-                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
-            }
-        })
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
@@ -559,7 +584,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-        // If this is a slash command, run it with custom prompt recipe instead
+        // If this is a slash command, run it with custom command instead
         if (text.startsWith('/')) {
             if (text.match(/^\/r(eset)?$/)) {
                 return this.clearAndRestartSession()
@@ -571,9 +596,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const command = await this.editor.controllers.command?.findCommand(text)
+            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
+            const command = await this.commandsController?.startCommand(text, commandArgs)
             if (command) {
-                return this.handleCommands(command, 'chat', requestID)
+                return this.handleCommands(command, commandArgs)
             }
         }
 
@@ -587,19 +613,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      * generates a chat request from the command,
      * and sends it to be handled like a regular chat request.
      */
-    public async handleCommands(command: CodyCommand, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
+    public async handleCommands(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
+        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
+        // This is because startCommand will start the CommandRunner,
+        // which would send all fixup requests to the FixupController
+        if (command.mode !== 'ask') {
+            return
+        }
+
+        // If editor is not active, post error and return early
         if (command && !this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
             if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
                 return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
             }
         }
-        // Returns early if it's an edit command as edit command is redirected to edits in findCommand
-        if (command.mode !== 'ask') {
-            return
-        }
+
         const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
 
-        await this.handleChatRequest(requestID, inputText, 'user', [], false, command)
+        await this.handleChatRequest(args.requestID, inputText, 'user', [], false, command)
     }
 
     /**
@@ -621,13 +652,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         // - Append @-file selection for commands
         // Otherwise, use the input text
         const displayText = userContextFiles?.length
-            ? createDisplayTextWithFileLinks(userContextFiles, inputText)
+            ? createDisplayTextWithFileLinks(inputText, userContextFiles)
             : command
             ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
         // The text we will use to send to LLM
-        const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
+        const promptText = command ? command.prompt : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
+
         await this.saveSession(inputText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
@@ -682,7 +714,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
         }
-        await this.postMessage({ type: 'config', config: configForWebview, authStatus })
+        const workspaceFolderUris = vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+        await this.postMessage({ type: 'config', config: configForWebview, authStatus, workspaceFolderUris })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
@@ -950,23 +983,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         }
     }
 
-    public setConfiguration(newConfig: Config): void {
-        this.config = newConfig
-    }
-
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
         const customPromptActions = ['add', 'get', 'menu']
         if (customPromptActions.includes(title)) {
             title = title.trim()
             switch (title) {
                 case 'menu':
-                    await this.editor.controllers.command?.menu('custom')
+                    await this.commandsController?.menu('custom')
                     break
                 case 'add':
                     if (!type) {
                         break
                     }
-                    await this.editor.controllers.command?.configFileAction('add', type)
+                    await this.commandsController?.configFileAction('add', type)
                     telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked', undefined, {
                         hasV2Event: true,
                     })
@@ -985,27 +1014,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      */
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.command?.refresh()
-            const allCommands = await this.editor.controllers.command?.getAllCommands(true)
+            await this.commandsController?.refresh()
+            const allCommands = await this.commandsController?.getAllCommands(true)
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id, { mode }]) => {
                     /** The /ask command is only useful outside of chat */
                     const isRedundantCommand = id === '/ask'
-                    /**
-                     * Hack: Custom edit commands are currently broken in this chat.
-                     * We filter our anything that has this mode, apart from our own internal doc command - which we override ourselves
-                     */
-                    const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
-                    return !isRedundantCommand && !isCustomEdit
+                    return !isRedundantCommand
                 }) || []
-
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
             })
         }
-        this.editor.controllers.command?.setMessenger(send)
+        this.commandsController?.setMessenger(send)
         await send()
     }
 
@@ -1058,7 +1081,7 @@ class ContextProvider implements IContextProvider {
     public async getSmartSelectionContext(): Promise<ContextItem[]> {
         const smartSelection = await this.editor.getActiveTextEditorSmartSelection()
         const selection = smartSelection || this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        if (!selection?.selectedText || isCodyIgnoredFile(selection.fileUri)) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1074,7 +1097,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: vscode.Uri.file(selection.fileUri?.fsPath || selection.fileName),
+                uri: selection.fileUri,
                 range,
                 source: 'selection',
             },
@@ -1083,7 +1106,7 @@ class ContextProvider implements IContextProvider {
 
     public getCurrentSelectionContext(): ContextItem[] {
         const selection = this.editor.getActiveTextEditorSelection()
-        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        if (!selection?.selectedText || isCodyIgnoredFile(selection.fileUri)) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1099,7 +1122,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: vscode.Uri.file(selection.fileName),
+                uri: selection.fileUri,
                 range,
                 source: 'selection',
             },
@@ -1196,16 +1219,13 @@ class ContextProvider implements IContextProvider {
         return priorityContext.concat(searchContext)
     }
 
-    public async getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]> {
-        logDebug('SimpleChatPanelProvider.getCommandContext', promptText)
+    public async getCommandContext(command: CodyCommand): Promise<ContextItem[]> {
+        logDebug('SimpleChatPanelProvider.getCommandContext', command.slashCommand)
 
         const contextMessages: ContextMessage[] = []
         const contextItems: ContextItem[] = []
 
-        if (contextConfig.none) {
-            return []
-        }
-        contextMessages.push(...(await getContextForCommand(this.editor, promptText, contextConfig)))
+        contextMessages.push(...(await getContextForCommand(this.editor, command)))
         // Turn ContextMessages to ContextItems
         for (const msg of contextMessages) {
             if (msg.file?.uri && msg.file?.content) {
@@ -1218,8 +1238,8 @@ class ContextProvider implements IContextProvider {
             }
         }
         // Add codebase ContextItems last
-        if (contextConfig.codebase) {
-            contextItems.push(...(await this.getEnhancedContext(promptText)))
+        if (command.context?.codebase) {
+            contextItems.push(...(await this.getEnhancedContext(command.prompt)))
         }
 
         return contextItems
@@ -1256,12 +1276,7 @@ class ContextProvider implements IContextProvider {
                     result.range.endPoint.col
                 )
 
-                // HACK: we should standardize URI schemes at some point. The way
-                // in which this is handed to the view and received back is a bit
-                // jank
-                const displayUri = relativeFileUri(workspaceRoot, path.relative(workspaceRoot, result.file), range)
-
-                let text
+                let text: string | undefined
                 try {
                     text = await this.editor.getTextEditorContentForFile(uri, range)
                     if (!text) {
@@ -1272,7 +1287,7 @@ class ContextProvider implements IContextProvider {
                     return []
                 }
                 return {
-                    uri: displayUri,
+                    uri,
                     range,
                     source: 'search',
                     text,
@@ -1287,6 +1302,12 @@ class ContextProvider implements IContextProvider {
         if (!this.localEmbeddings) {
             return []
         }
+
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
@@ -1296,7 +1317,10 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(result.startLine, 0),
                 new vscode.Position(result.endLine, 0)
             )
-            const uri = relativeFileUri('', result.fileName, range)
+
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, result.fileName)
 
             // Filter out ignored files
             if (!isCodyIgnoredFile(vscode.Uri.file(result.fileName))) {
@@ -1327,6 +1351,11 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
         const contextItems: ContextItem[] = []
         const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
@@ -1334,12 +1363,14 @@ class ContextProvider implements IContextProvider {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         }
         for (const codeResult of embeddings.codeResults) {
-            const uri = remoteEmbeddingSnippetUri(codebase, codeResult)
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, codeResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(codeResult.startLine, 0),
                 new vscode.Position(codeResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, codeResult.fileName)))) {
+            if (!isCodyIgnoredFile(uri)) {
                 contextItems.push({
                     uri,
                     range,
@@ -1350,12 +1381,14 @@ class ContextProvider implements IContextProvider {
         }
 
         for (const textResult of embeddings.textResults) {
-            const uri = remoteEmbeddingSnippetUri(codebase, textResult)
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, textResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(textResult.startLine, 0),
                 new vscode.Position(textResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, textResult.fileName)))) {
+            if (!isCodyIgnoredFile(uri)) {
                 contextItems.push({
                     uri,
                     range,
@@ -1442,18 +1475,9 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
-        let readmeDisplayUri = readmeUri
-        const wsFolder = vscode.workspace.getWorkspaceFolder(readmeUri)
-        if (wsFolder) {
-            const readmeRelPath = path.relative(wsFolder.uri.fsPath, readmeUri.fsPath)
-            if (readmeRelPath) {
-                readmeDisplayUri = relativeFileUri(wsFolder.uri.fsPath, readmeRelPath, range)
-            }
-        }
-
         return [
             {
-                uri: readmeDisplayUri,
+                uri: readmeUri,
                 text: truncatedReadmeText,
                 range: viewRangeToRange(range),
                 source: 'editor',
@@ -1471,28 +1495,19 @@ export async function contextFilesToContextItems(
         await Promise.all(
             files.map(async (file: ContextFile): Promise<ContextItem | null> => {
                 const range = viewRangeToRange(file.range)
-                const uri = file.uri
-                    ? // This object may have came via postMessage and might not be a
-                      // real vscode.Uri instance so convert it if required (otherwise
-                      // toString() later will be '[Object object]' and not what we
-                      // expect).
-                      file.uri instanceof vscode.Uri || file.uri instanceof URI
-                        ? file.uri
-                        : vscode.Uri.from(file.uri)
-                    : vscode.Uri.file(file.fileName)
                 let text = file.content
                 if (!text && fetchContent) {
                     try {
-                        text = await editor.getTextEditorContentForFile(uri, range)
+                        text = await editor.getTextEditorContentForFile(file.uri, range)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${uri}. (Reason: ${error})`
+                            `Cody could not include context from ${file.uri}. (Reason: ${error})`
                         )
                         return null
                     }
                 }
                 return {
-                    uri,
+                    uri: file.uri,
                     range,
                     text: text || '',
                     source: file.source,
@@ -1541,27 +1556,25 @@ function deserializedContextFilesToContextItems(
     files: ContextFile[],
     contextMessages: ContextMessage[]
 ): ContextItem[] {
-    const contextByFile = new Map<string, ContextMessage>()
+    const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
     for (const contextMessage of contextMessages) {
-        if (!contextMessage.file?.fileName) {
+        if (!contextMessage.file) {
             continue
         }
-        contextByFile.set(contextMessage.file.fileName, contextMessage)
+        contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
     }
 
     return files.map((file: ContextFile): ContextItem => {
         const range = viewRangeToRange(file.range)
-        const fallbackURI = legacyContextFileUri(file.fileName, range)
-        const uri = file.uri || fallbackURI
         let text = file.content
         if (!text) {
-            const contextMessage = contextByFile.get(file.fileName)
+            const contextMessage = contextByFile.get(file.uri.toString())
             if (contextMessage) {
                 text = stripContextWrapper(contextMessage.text || '')
             }
         }
         return {
-            uri,
+            uri: file.uri,
             range,
             text: text || '',
             source: file.source,
