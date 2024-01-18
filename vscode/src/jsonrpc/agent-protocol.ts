@@ -114,7 +114,7 @@ export type Requests = {
 
     // Returns the result of an attribution search for given snippets.
     // The result ordering DOES NOT MATCH the request ordering.
-    // However each result contains the verbatim snnippet from the request.
+    // However each result contains the verbatim snippet from the request.
     'attribution/search': [
         { snippets: string[] },
         {
