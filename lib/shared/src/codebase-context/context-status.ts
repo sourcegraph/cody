@@ -14,12 +14,25 @@ export interface ContextStatusProvider {
 
 export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider
 
-type EmbeddingsProvider = IndeterminateEmbeddingsProvider | LocalEmbeddingsProvider
+type EmbeddingsProvider = IndeterminateEmbeddingsProvider | LocalEmbeddingsProvider | RemoteEmbeddingsProvider
 
 interface IndeterminateEmbeddingsProvider {
     kind: 'embeddings'
     type: 'indeterminate'
     state: 'indeterminate'
+}
+
+interface RemoteEmbeddingsProvider {
+    kind: 'embeddings'
+    type: 'remote'
+    state: 'ready' | 'no-match'
+    // The host name of the provider. This is displayed to the user *and*
+    // used to construct a URL to the settings page.
+    origin: string
+    // The name of the repository in the remote provider. For example the
+    // context group may be "~/projects/frobbler" but the remote name is
+    // "host.example/universal/frobbler".
+    remoteName: string
 }
 
 export interface LocalEmbeddingsProvider {

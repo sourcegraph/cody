@@ -6,32 +6,22 @@ import fspromises from 'fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
-    Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
     Location as VSCodeLocation,
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
+import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
+import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export class Disposable implements VSCodeDisposable {
-    public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
-        return new Disposable(() => {
-            for (const disposable of disposableLikes) {
-                disposable.dispose()
-            }
-        })
-    }
-    constructor(private readonly callOnDispose: () => any) {}
-    public dispose(): void {
-        this.callOnDispose()
-    }
-}
+export { Disposable } from './Disposable'
+export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -378,11 +368,28 @@ export class Range implements VSCodeRange {
 }
 
 export class Selection extends Range {
+    public readonly anchor: Position
+    public readonly active: Position
     constructor(
-        public readonly anchor: Position,
-        public readonly active: Position
+        anchorLine: number | Position,
+        anchorCharacter: number | Position,
+        activeLine?: number,
+        activeCharacter?: number
     ) {
-        super(anchor, active)
+        if (
+            typeof anchorLine === 'number' &&
+            typeof anchorCharacter === 'number' &&
+            typeof activeLine === 'number' &&
+            typeof activeCharacter === 'number'
+        ) {
+            super(anchorLine, anchorCharacter, activeLine, activeCharacter)
+        } else if (typeof anchorLine === 'object' && typeof anchorCharacter === 'object') {
+            super(anchorLine, anchorCharacter)
+        } else {
+            throw new TypeError('this version of the constructor is not implemented')
+        }
+        this.anchor = this.start
+        this.active = this.end
     }
 
     /**
@@ -433,57 +440,7 @@ export class WorkspaceEdit {
     }
 }
 
-interface Callback {
-    handler: (arg?: any) => any
-    thisArg?: any
-}
-function invokeCallback(callback: Callback, arg?: any): any {
-    return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
-}
 export const emptyDisposable = new Disposable(() => {})
-
-export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
-    public on = (): undefined => undefined
-
-    constructor() {
-        this.on = () => undefined
-    }
-
-    private readonly listeners = new Set<Callback>()
-    event: vscode_types.Event<T> = (listener, thisArgs) => {
-        const value: Callback = { handler: listener, thisArg: thisArgs }
-        this.listeners.add(value)
-        return new Disposable(() => {
-            this.listeners.delete(value)
-        })
-    }
-
-    fire(data: T): void {
-        for (const listener of this.listeners) {
-            invokeCallback(listener, data)
-        }
-    }
-
-    /**
-     * Custom extension of the VS Code API to make it possible to `await` on the
-     * result of `EventEmitter.fire()`.  Most event listeners return a
-     * meaningful `Promise` that is discarded in the signature of the `fire()`
-     * function.  Being able to await on returned promise makes it possible to
-     * write more robust tests because we don't need to rely on magic timeouts.
-     */
-    public async cody_fireAsync(data: T): Promise<void> {
-        const promises: Promise<void>[] = []
-        for (const listener of this.listeners) {
-            const value = invokeCallback(listener, data)
-            promises.push(Promise.resolve(value))
-        }
-        await Promise.all(promises)
-    }
-
-    dispose(): void {
-        this.listeners.clear()
-    }
-}
 
 export enum EndOfLine {
     LF = 1,
@@ -795,13 +752,12 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
-    public syncAuthStatus(): void {
-        return
+    public syncAuthStatus(): Promise<void> {
+        return Promise.resolve()
     }
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
 
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,

@@ -21,6 +21,7 @@ import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type AuthStatus } from '../protocol'
 
 import { ChatPanelsManager } from './ChatPanelsManager'
@@ -46,6 +47,7 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
         private guardrails: Guardrails,
@@ -63,6 +65,7 @@ export class ChatManager implements vscode.Disposable {
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
             this.chatClient,
+            this.embeddingsClient,
             this.localEmbeddings,
             this.symf,
             this.guardrails,
@@ -78,8 +81,7 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
-            vscode.commands.registerCommand('cody.chat.panel.reset', async id => this.chatPanelsManager.resetPanel(id)),
-            vscode.commands.registerCommand('cody.chat.providers.refresh', () => this.chatPanelsManager.refresh()),
+            vscode.commands.registerCommand('cody.chat.panel.reset', id => this.chatPanelsManager.resetPanel(id)),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             )

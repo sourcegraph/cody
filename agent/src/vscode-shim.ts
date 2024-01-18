@@ -5,6 +5,8 @@ import path from 'path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
+import { logDebug } from '@sourcegraph/cody-shared'
+
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
@@ -21,6 +23,7 @@ import type * as vscode from 'vscode'
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
+import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import {
     CancellationTokenSource,
     CommentThreadCollapsibleState,
@@ -28,7 +31,6 @@ import {
     Disposable,
     emptyDisposable,
     emptyEvent,
-    EventEmitter,
     ExtensionKind,
     FileType,
     LogLevel,
@@ -52,6 +54,8 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // traffic.
 const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
+export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
+
 export {
     CancellationTokenSource,
     CodeAction,
@@ -65,7 +69,6 @@ export {
     emptyDisposable,
     emptyEvent,
     EndOfLine,
-    EventEmitter,
     ExtensionMode,
     FileType,
     InlineCompletionItem,
@@ -116,6 +119,10 @@ export function setExtensionConfiguration(newConfig: ExtensionConfiguration): vo
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!extensionConfiguration) {
         return true
+    }
+
+    if (!newConfig.accessToken || !newConfig.serverEndpoint) {
+        return false
     }
 
     return (
@@ -220,9 +227,10 @@ const _workspace: typeof vscode.workspace = {
                         await loop(folder.uri, folder.uri)
                     }
                 } catch (error) {
-                    console.log(new Error().stack)
-                    console.error(`workspace.workspace.finFiles: failed to stat workspace folder ${folder.uri}`, error)
-                    // ignore invalid workspace folders
+                    console.error(
+                        `workspace.workspace.findFiles: failed to stat workspace folder ${folder.uri}. Error ${error}`,
+                        new Error().stack
+                    )
                 }
             })
         )
@@ -616,6 +624,7 @@ interface RegisteredCommand {
     callback: (...args: any[]) => any
     thisArg?: any
 }
+const context = new Map<string, any>()
 const registeredCommands = new Map<string, RegisteredCommand>()
 
 const _commands: Partial<typeof vscode.commands> = {
@@ -642,9 +651,21 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         }
 
+        // We only log a debug warning when unknown commands are invoked because
+        // the extension triggers quite a few commands that are not getting activated
+        // inside the agent yet.
+        logDebug('vscode.commands.executeCommand', 'not found', command)
+
         return Promise.resolve(undefined)
     },
 }
+
+_commands?.registerCommand?.('setContext', (key, value) => {
+    if (typeof key !== 'string') {
+        throw new TypeError('setContext: first argument must be string. Got: ' + key)
+    }
+    context.set(key, value)
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)

@@ -1,5 +1,6 @@
 import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
 
+import { logError } from '../../logger'
 import { isError } from '../../utils'
 
 const MOCK_URL = 'http://localhost:49300'
@@ -15,7 +16,7 @@ export class MockServerTelemetryExporter implements TelemetryExporter {
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
         const resultOrError = await this.postTestEventRecording(events)
         if (isError(resultOrError)) {
-            console.error('Error exporting telemetry events:', resultOrError)
+            logError('MockServerTelemetryExporter', 'Error exporting telemetry events:', resultOrError)
         }
     }
 

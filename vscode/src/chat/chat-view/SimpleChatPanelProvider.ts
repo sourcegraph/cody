@@ -7,7 +7,6 @@ import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
     ContextWindowLimitError,
-    FeatureFlag,
     hydrateAfterPostMessage,
     isCodyIgnoredFile,
     isDefined,
@@ -63,6 +62,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type MessageErrorType } from '../MessageProvider'
 import {
     type AuthStatus,
@@ -87,6 +87,7 @@ interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+    embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
     symf: SymfRunner | null
     editor: VSCodeEditor
@@ -121,6 +122,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private config: Config
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
+    private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly symf: SymfRunner | null
@@ -135,18 +137,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
-    private readonly featureFlagProvider: FeatureFlagProvider
-
-    // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
-    // as it is necessary to satisfy the IChatPanelProvider interface.
-    public sessionID: string
-
     constructor({
         config,
         extensionUri,
-        featureFlagProvider,
         authProvider,
         chatClient,
+        embeddingsClient,
         localEmbeddings,
         symf,
         editor,
@@ -157,16 +153,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
-        this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
+        this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
         this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
-        this.sessionID = this.chatModel.sessionID
         this.guardrails = guardrails
 
         commandsController?.setEnableExperimentalCommands(config.internalUnstable)
@@ -184,8 +179,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
         }
-        this.codebaseStatusProvider = new CodebaseStatusProvider(this.config.experimentalSymfContext ? this.symf : null)
+        this.codebaseStatusProvider = new CodebaseStatusProvider(
+            this.editor,
+            embeddingsClient,
+            this.config.experimentalSymfContext ? this.symf : null
+        )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+    }
+
+    public get sessionID(): string {
+        return this.chatModel.sessionID
     }
 
     // Select the chat model to use in Chat
@@ -392,7 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
-                await this.postChatModels()
+                this.postChatModels()
                 break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
@@ -483,7 +486,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             chatID: this.sessionID,
         })
 
-        await this.postChatModels()
+        this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
         this.initDoer.signalInitialized()
@@ -508,7 +511,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
-        this.sessionID = newModel.sessionID
 
         this.postViewTranscript()
     }
@@ -537,17 +539,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await this.saveSession()
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
-        this.sessionID = this.chatModel.sessionID
-        // Reset current chat panel title
-        this.handleChatTitle()
         this.postViewTranscript()
+        // Reset current chat panel title
+        this.handleChatTitle('New Chat')
         // Update the provider map with the new sessionID
         void vscode.commands.executeCommand('cody.chat.providers.refresh')
     }
 
-    public handleChatTitle(title = 'New Chat'): void {
-        // setChatTitle handles title changed by user
-        // once set, the title will not be updated to the next submitted question
+    /**
+     * Handles setting the chat title.
+     *
+     * Sets the title to the given string. Once set, the title will not update
+     * automatically to the next question.
+     * This allows users to manually edit the title for each chat session (via sidebar).
+     */
+    public handleChatTitle(title: string): void {
         if (title !== 'New Chat') {
             this.chatModel.setChatTitle(title)
         }
@@ -556,7 +562,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async postChatModels(): Promise<void> {
+    private postChatModels(): void {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
             return
@@ -564,14 +570,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        // selection is available to pro only at Dec GA
-        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
-            return {
-                ...model,
-                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
-            }
-        })
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
@@ -588,7 +587,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'user-newchat' | 'suggestion' | 'example',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -609,10 +608,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
             const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.findCommand(text, commandArgs)
+            const command = await this.commandsController?.startCommand(text, commandArgs)
             if (command) {
                 return this.handleCommands(command, commandArgs)
             }
+        }
+
+        // HACK
+        if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
+            await this.clearAndRestartSession()
         }
 
         await this.handleChatRequest(requestID, text, submitType, userContextFiles, addEnhancedContext)
@@ -627,7 +631,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     public async handleCommands(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
         // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
-        // This is because findCommand will start the CommandRunner,
+        // This is because startCommand will start the CommandRunner,
         // which would send all fixup requests to the FixupController
         if (command.mode !== 'ask') {
             return
@@ -654,7 +658,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleChatRequest(
         requestID: string,
         inputText: string,
-        submitType: 'user' | 'suggestion' | 'example',
+        submitType: 'user' | 'suggestion' | 'example' | 'user-newchat',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
         command?: CodyCommand
@@ -669,7 +673,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
         // The text we will use to send to LLM
-        const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
+        const promptText = command ? command.prompt : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
 
         await this.saveSession(inputText)
@@ -680,7 +684,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             userContextFiles,
             addEnhancedContext,
             contextSummary => {
-                if (submitType !== 'user') {
+                if (submitType !== 'user' && submitType !== 'user-newchat') {
                     return
                 }
 
@@ -748,8 +752,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const contextProvider = new ContextProvider(
                 userContextItems,
                 this.editor,
+                this.embeddingsClient,
                 this.localEmbeddings,
-                this.config.experimentalSymfContext ? this.symf : null
+                this.config.experimentalSymfContext ? this.symf : null,
+                this.codebaseStatusProvider
             )
             const { prompt, contextLimitWarnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
@@ -1031,12 +1037,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 allCommands?.filter(([id, { mode }]) => {
                     /** The /ask command is only useful outside of chat */
                     const isRedundantCommand = id === '/ask'
-                    /**
-                     * Hack: Custom edit commands are currently broken in this chat.
-                     * We filter our anything that has this mode, apart from our own internal doc command - which we override ourselves
-                     */
-                    const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
-                    return !isRedundantCommand && !isCustomEdit
+                    return !isRedundantCommand
                 }) || []
             void this.postMessage({
                 type: 'custom-prompts',
@@ -1079,8 +1080,10 @@ class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
         private editor: VSCodeEditor,
+        private embeddingsClient: CachedRemoteEmbeddingsClient | null,
         private localEmbeddings: LocalEmbeddingsController | null,
-        private symf: SymfRunner | null
+        private symf: SymfRunner | null,
+        private codebaseStatusProvider: CodebaseStatusProvider
     ) {}
 
     public getExplicitContext(): ContextItem[] {
@@ -1178,12 +1181,20 @@ class ContextProvider implements IContextProvider {
         if (useContextConfig !== 'keyword') {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
             const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+            const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
             try {
                 const r = await localEmbeddingsResults
                 hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
                 searchContext.push(...r)
             } catch (error) {
                 logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            }
+            try {
+                const r = await remoteEmbeddingsResults
+                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+                searchContext.push(...r)
+            } catch (error) {
+                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
             }
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
         }
@@ -1337,6 +1348,72 @@ class ContextProvider implements IContextProvider {
                 })
             }
         }
+        return contextItems
+    }
+
+    // Note: does not throw error if remote embeddings are not available, just returns empty array
+    private async searchEmbeddingsRemote(text: string): Promise<ContextItem[]> {
+        if (!this.embeddingsClient) {
+            return []
+        }
+        const codebase = await this.codebaseStatusProvider?.currentCodebase()
+        if (!codebase?.remote) {
+            return []
+        }
+        const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(codebase.remote)
+        if (isError(repoId)) {
+            throw new Error(`Error retrieving repo ID: ${repoId}`)
+        } else if (!repoId) {
+            return []
+        }
+
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
+        const contextItems: ContextItem[] = []
+        const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+        if (isError(embeddings)) {
+            throw new Error(`Error retrieving embeddings: ${embeddings}`)
+        }
+        for (const codeResult of embeddings.codeResults) {
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, codeResult.fileName)
+            const range = new vscode.Range(
+                new vscode.Position(codeResult.startLine, 0),
+                new vscode.Position(codeResult.endLine, 0)
+            )
+            if (!isCodyIgnoredFile(uri)) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: codeResult.content,
+                    source: 'embeddings',
+                })
+            }
+        }
+
+        for (const textResult of embeddings.textResults) {
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, textResult.fileName)
+            const range = new vscode.Range(
+                new vscode.Position(textResult.startLine, 0),
+                new vscode.Position(textResult.endLine, 0)
+            )
+            if (!isCodyIgnoredFile(uri)) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: textResult.content,
+                    source: 'embeddings',
+                })
+            }
+        }
+
         return contextItems
     }
 

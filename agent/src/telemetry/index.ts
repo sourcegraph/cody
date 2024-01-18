@@ -1,8 +1,8 @@
 import {
+    graphqlClient,
     GraphQLTelemetryExporter,
     type BillingCategory,
     type BillingProduct,
-    type SourcegraphGraphQLAPIClient,
 } from '@sourcegraph/cody-shared'
 import {
     defaultEventRecordingOptions,
@@ -19,17 +19,17 @@ import { type ClientInfo } from '../protocol-alias'
  * handler only.
  */
 export class AgentHandlerTelemetryRecorderProvider extends TelemetryRecorderProvider<BillingProduct, BillingCategory> {
-    constructor(
-        graphql: SourcegraphGraphQLAPIClient,
-        clientInfo: ClientInfo,
-        marketingTrackingProvider: MarketingTrackingProvider
-    ) {
+    constructor(clientInfo: ClientInfo, marketingTrackingProvider: MarketingTrackingProvider) {
         super(
             {
                 client: clientInfo.name,
                 clientVersion: clientInfo.version,
             },
-            new GraphQLTelemetryExporter(graphql, clientInfo.extensionConfiguration?.anonymousUserID || '', 'all'),
+            new GraphQLTelemetryExporter(
+                graphqlClient,
+                clientInfo.extensionConfiguration?.anonymousUserID || '',
+                'all'
+            ),
             [
                 new MarketingTrackingTelemetryProcessor(marketingTrackingProvider),
                 // Generate timestamps when recording events, instead of serverside
