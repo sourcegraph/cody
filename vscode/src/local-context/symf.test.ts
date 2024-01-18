@@ -1,6 +1,7 @@
 import { type Polly } from '@pollyjs/core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { startPollyRecording } from '../testutils/polly'
@@ -29,7 +30,7 @@ describe('symf', () => {
 
         check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"current flow ocean salinity salt saltiness sea stream surf tidal tide water wave waves"'
+                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"'
             )
         )
 
@@ -51,7 +52,7 @@ describe('symf', () => {
 
         check('scan tokens in C++', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"c cin f getline in scan scan_f scanf stream string stringstream token tokenization tokenize tokens"'
+                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"'
             )
         )
         afterAll(async () => {

@@ -4,7 +4,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { isDefined } from '@sourcegraph/cody-shared'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import {

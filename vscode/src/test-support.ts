@@ -1,4 +1,4 @@
-import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatMessage } from '@sourcegraph/cody-shared'
 
 import { type SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 

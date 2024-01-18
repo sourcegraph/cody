@@ -1,8 +1,8 @@
 import {
     SourcegraphGraphQLAPIClient,
     type EmbeddingsSearchResults,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+    type GraphQLAPIClientConfig,
+} from '@sourcegraph/cody-shared'
 
 export class CachedRemoteEmbeddingsClient {
     private client: SourcegraphGraphQLAPIClient

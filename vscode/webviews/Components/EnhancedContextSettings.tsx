@@ -9,7 +9,7 @@ import {
     type EnhancedContextContextT,
     type LocalEmbeddingsProvider,
     type SearchProvider,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+} from '@sourcegraph/cody-shared'
 
 import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'

@@ -4,13 +4,14 @@ import * as path from 'path'
 import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ContextFileSource, type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import {
+    type ChatClient,
+    type ContextFileSource,
+    type ContextFileType,
     type ContextResult,
+    type Editor,
     type FilenameContextFetcher as IFilenameContextFetcher,
-} from '@sourcegraph/cody-shared/src/local-context'
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 

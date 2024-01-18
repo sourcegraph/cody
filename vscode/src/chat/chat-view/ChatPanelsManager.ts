@@ -1,12 +1,13 @@
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type Guardrails } from '@sourcegraph/cody-shared'
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
+    ChatModelProvider,
     featureFlagProvider,
+    type ChatClient,
+    type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
-} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+    type Guardrails,
+} from '@sourcegraph/cody-shared'
 
 import { type CommandsController } from '../../commands/CommandsController'
 import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'

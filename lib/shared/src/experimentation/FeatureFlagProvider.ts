@@ -76,9 +76,9 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint][flagName]
     }
 
-    public syncAuthStatus(): void {
+    public async syncAuthStatus(): Promise<void> {
         this.featureFlags = {}
-        void this.refreshFeatureFlags()
+        await this.refreshFeatureFlags()
     }
 
     private async refreshFeatureFlags(): Promise<void> {

@@ -1,6 +1,6 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { TimeoutError, type Message } from '@sourcegraph/cody-shared'
 
 export function messagesToText(messages: Message[]): string {
     return messages
@@ -54,4 +54,46 @@ export function createSubscriber<T>(): Subscriber<T> {
         subscribe,
         notify,
     }
+}
+
+export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncGenerator<T[]> {
+    while (true) {
+        const res = await Promise.all(generators.map(generator => generator.next()))
+
+        if (res.every(r => r.done)) {
+            return
+        }
+
+        yield res.map(r => r.value)
+    }
+}
+
+export async function* generatorWithTimeout<T>(
+    generator: AsyncGenerator<T>,
+    timeoutMs: number,
+    abortController: AbortController
+): AsyncGenerator<T> {
+    if (timeoutMs === 0) {
+        return
+    }
+
+    const timeoutPromise = createTimeout(timeoutMs).finally(() => {
+        abortController.abort()
+    })
+
+    while (true) {
+        const { value, done } = await Promise.race([generator.next(), timeoutPromise])
+
+        if (value) {
+            yield value
+        }
+
+        if (done) {
+            break
+        }
+    }
+}
+
+function createTimeout(timeoutMs: number): Promise<never> {
+    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

@@ -1,17 +1,17 @@
 import * as vscode from 'vscode'
 
-import { languageFromFilename } from '@sourcegraph/cody-shared'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { ProgrammingLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import {
+    getSimplePreamble,
+    isCodyIgnoredFile,
+    languageFromFilename,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+    ProgrammingLanguage,
+    type CodyCommand,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
 

@@ -8,9 +8,12 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
-import { isWindows } from '@sourcegraph/cody-shared'
-import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
-import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import {
+    isWindows,
+    type IndexedKeywordContextFetcher,
+    type Result,
+    type SourcegraphCompletionsClient,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 

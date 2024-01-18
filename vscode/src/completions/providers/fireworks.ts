@@ -1,20 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { type ContextSnippet } from '../types'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import {
-    generateCompletions,
-    getCompletionParamsAndFetchImpl,
-    getLineNumberDependentCompletionParams,
-} from './generate-completions'
+import { type FetchCompletionResult } from './fetch-and-process-completions'
+import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -148,16 +143,11 @@ class FireworksProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
             providerOptions: this.options,
             timeouts: this.timeouts,
@@ -176,17 +166,41 @@ class FireworksProvider extends Provider {
                     : MODEL_MAP[this.model],
         }
 
-        await generateCompletions({
-            client: this.client,
-            requestParams,
-            abortSignal,
-            providerSpecificPostProcess: this.postProcess,
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                this.client.complete(requestParams, abortController),
+                requestParams.timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletionsImpl({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: this.postProcess,
+                providerOptions: this.options,
+            })
         })
+
+        /**
+         * This implementation waits for all generators to yield values
+         * before passing them to the consumer (request-manager). While this may appear
+         * as a performance bottleneck, it's necessary for the current design.
+         *
+         * The consumer operates on promises, allowing only a single resolve call
+         * from `requestManager.request`. Therefore, we must wait for the initial
+         * batch of completions before returning them collectively, ensuring all
+         * are included as suggested completions.
+         *
+         * To circumvent this performance issue, a method for adding completions to
+         * the existing suggestion list is needed. Presently, this feature is not
+         * available, and the switch to async generators maintains the same behavior
+         * as with promises.
+         */
+        return zipGenerators(completionsGenerators)
     }
 
     private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {

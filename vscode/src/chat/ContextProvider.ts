@@ -1,18 +1,18 @@
 import * as vscode from 'vscode'
 
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
+    CodebaseContext,
+    EmbeddingsDetector,
+    isError,
+    SourcegraphGraphQLAPIClient,
+    type ChatClient,
+    type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
-import { type IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+    type Editor,
+    type GraphQLAPIClientConfig,
+    type IndexedKeywordContextFetcher,
+} from '@sourcegraph/cody-shared'
 
 import { getFullConfig } from '../configuration'
 import { getEditor } from '../editor/active-editor'
@@ -26,9 +26,9 @@ import { type AuthProvider } from '../services/AuthProvider'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
 import { type SidebarChatWebview } from './chat-view/SidebarViewController'
-import { GraphContextProvider } from './GraphContextProvider'
 import { type AuthStatus, type ConfigurationSubsetForWebview, type LocalEnv } from './protocol'
 
 export type Config = Pick<
@@ -121,14 +121,23 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         await this.updateCodebaseContext()
     }
 
-    public onConfigurationChange(newConfig: Config): void {
+    public onConfigurationChange(newConfig: Config): Promise<void> {
         logDebug('ContextProvider:onConfigurationChange', 'using codebase', newConfig.codebase)
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
         }
+
+        if (this.configurationChangeEvent instanceof AgentEventEmitter) {
+            // NOTE: we must return a promise here from the event handlers to
+            // allow the agent to await on changes to authentication
+            // credentials.
+            return this.configurationChangeEvent.cody_fireAsync(null)
+        }
+
         this.configurationChangeEvent.fire()
+        return Promise.resolve()
     }
 
     public async forceUpdateCodebaseContext(): Promise<void> {
@@ -207,7 +216,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             }
         }
         await this.publishConfig()
-        this.onConfigurationChange(newConfig)
+        await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
@@ -328,7 +337,6 @@ async function getCodebaseContext(
         // Use embeddings search if there are no local embeddings.
         (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        new GraphContextProvider(editor),
         // Use local embeddings if we have them.
         ((await hasLocalEmbeddings) && localEmbeddings) || null,
         symf,

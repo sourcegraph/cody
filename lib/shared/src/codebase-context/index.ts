@@ -4,18 +4,13 @@ import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import { type Configuration } from '../configuration'
 import { type ActiveTextEditorSelectionRange } from '../editor'
 import { type EmbeddingsSearch } from '../embeddings'
-import { type GraphContextFetcher } from '../graph-context'
 import {
     type ContextResult,
     type FilenameContextFetcher,
     type IndexedKeywordContextFetcher,
     type LocalEmbeddingsFetcher,
 } from '../local-context'
-import {
-    populateCodeContextTemplate,
-    populateMarkdownContextTemplate,
-    populatePreciseCodeContextTemplate,
-} from '../prompt/templates'
+import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { type Message } from '../sourcegraph-api'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -41,7 +36,6 @@ export class CodebaseContext {
         private getServerEndpoint: () => string,
         public embeddings: EmbeddingsSearch | null,
         private filenames: FilenameContextFetcher | null,
-        private graph: GraphContextFetcher | null,
         public localEmbeddings: LocalEmbeddingsFetcher | null,
         public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
@@ -50,18 +44,6 @@ export class CodebaseContext {
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
-    }
-
-    /**
-     * Returns context messages from both generic contexts and graph-based contexts.
-     * The final list is a combination of these two sets of messages.
-     */
-    public async getCombinedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const contextMessages = this.getContextMessages(query, options)
-        const graphContextMessages = this.getGraphContextMessages()
-
-        // TODO(efritz) - open problem to figure out how to best rank these into a unified list
-        return [...(await contextMessages), ...(await graphContextMessages)]
     }
 
     /**
@@ -103,12 +85,13 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (isDotCom(this.getServerEndpoint()) && this.localEmbeddings) {
-            // TODO(dpc): Check whether the local embeddings index exists for
-            // this repo before relying on it.
-            // TODO(dpc): Fetch code and text results.
-            return this.localEmbeddings.getContext(query, options.numCodeResults)
+        // For dotcom users, only use local embeddings. The remote embeddings impl remains for
+        // enterprise users below until it can be replaced by context search, but not for dotcom
+        // users as they have a better replacement already (local embeddings).
+        if (isDotCom(this.getServerEndpoint())) {
+            return this.localEmbeddings?.getContext(query, options.numCodeResults) ?? []
         }
+
         if (this.embeddings) {
             const embeddingsSearchResults = await this.embeddings.search(
                 query,
@@ -199,24 +182,6 @@ export class CodebaseContext {
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
         return results
-    }
-
-    private async getGraphContextMessages(): Promise<ContextMessage[]> {
-        if (!this.config.experimentalLocalSymbols || !this.graph) {
-            return []
-        }
-        const contextMessages: ContextMessage[] = []
-        for (const preciseContext of await this.graph.getContext()) {
-            const text = populatePreciseCodeContextTemplate(
-                preciseContext.symbol.fuzzyName || 'unknown',
-                URI.file(preciseContext.filePath),
-                preciseContext.definitionSnippet
-            )
-
-            contextMessages.push({ speaker: 'human', preciseContext, text }, { speaker: 'assistant', text: 'okay' })
-        }
-
-        return contextMessages
     }
 }
 

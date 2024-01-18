@@ -37,6 +37,7 @@ const config = {
     'unicorn/prefer-dom-node-remove': 'off',
     'ban/ban': 'off',
     'react/no-array-index-key': 'off',
+    'jsdoc/require-yields': 'off',
 
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
@@ -54,6 +55,19 @@ const config = {
       {
         fixStyle: 'inline-type-imports',
         disallowTypeAnnotations: false,
+      },
+    ],
+
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['@sourcegraph/cody-shared/*'],
+            message:
+              'Please import from @sourcegraph/cody-shared instead of subpaths. If you need to use something that is not exported by @sourcegraph/cody-shared, just update lib/shared/src/index.ts to export the thing you need. Reasons for this restriction: (1) enforce a clean boundary between the internal and external API of the shared lib, (2) avoid accidentally bundling multiple copies of the shared lib.',
+          },
+        ],
       },
     ],
   },

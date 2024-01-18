@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
-import { type ChatModelProvider } from '@sourcegraph/cody-shared'
-import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import type { BillingCategory, BillingProduct, ChatMessage, ChatModelProvider, event } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
     KnownString,
@@ -11,7 +8,7 @@ import type {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -106,6 +103,15 @@ export type Requests = {
     // the client sends progress/cancel.
     'testing/progressCancelation': [{ title: string }, { result: string }]
 
+    // Updates the extension configuration and returns the new
+    // authentication status, which indicates whether the provided credentials are
+    // valid or not. The agent can't support autocomplete or chat if the credentials
+    // are invalid.
+    'extensionConfiguration/change': [ExtensionConfiguration, AuthStatus | null]
+
+    // Returns the current authentication status without making changes to it.
+    'extensionConfiguration/status': [null, AuthStatus | null]
+
     // ================
     // Server -> Client
     // ================
@@ -130,6 +136,10 @@ export type Notifications = {
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
 
+    // Deprecated: use the `extensionConfiguration/change` request instead so
+    // that you can handle authentication errors in case the credentials are
+    // invalid. The `extensionConfiguration/didChange` method does not support
+    // error handling because it's a notification.
     // The server should use the provided connection configuration for all
     // subsequent requests/notifications. The previous extension configuration
     // should no longer be used.
@@ -160,10 +170,6 @@ export type Notifications = {
     // The completion was accepted by the user, and will be logged for telemetry
     // purposes.
     'autocomplete/completionAccepted': [CompletionItemParams]
-    // Resets the chat transcript and clears any in-progress interactions.
-    // This notification should be sent when the user starts a new conversation.
-    // The chat transcript grows indefinitely if this notification is never sent.
-    'transcript/reset': [null]
 
     // User requested to cancel this progress bar. Only supported for progress
     // bars with `cancelable: true`.
@@ -172,10 +178,6 @@ export type Notifications = {
     // ================
     // Server -> Client
     // ================
-    // The server received new messages for the ongoing 'chat/executeRecipe'
-    // request. The server should never send this notification outside of a
-    // 'chat/executeRecipe' request.
-    'chat/updateMessageInProgress': [ChatMessage | null]
 
     'debug/message': [DebugMessage]
 
@@ -259,10 +261,11 @@ interface ClientCapabilities {
 
 export interface ServerInfo {
     name: string
-    authenticated: boolean
-    codyEnabled: boolean
-    codyVersion: string | null
+    authenticated?: boolean
+    codyEnabled?: boolean
+    codyVersion?: string | null
     capabilities?: ServerCapabilities
+    authStatus?: AuthStatus
 }
 interface ServerCapabilities {}
 

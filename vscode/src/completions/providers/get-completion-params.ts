@@ -1,11 +1,9 @@
-import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
+import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
 
-import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
-import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type CodeCompletionsParams } from '../client'
 
 import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
-import { type CompletionProviderTracer, type ProviderOptions } from './provider'
+import { type ProviderOptions } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
 
@@ -109,65 +107,4 @@ export function getCompletionParamsAndFetchImpl(
         partialRequestParams,
         fetchAndProcessCompletionsImpl,
     }
-}
-
-interface GenerateCompletionsParams {
-    client: Pick<CodeCompletionsClient, 'complete'>
-    requestParams: CodeCompletionsParams
-    abortSignal: AbortSignal
-    providerSpecificPostProcess: (insertText: string) => string
-    providerOptions: Readonly<ProviderOptions>
-    tracer?: CompletionProviderTracer
-    fetchAndProcessCompletionsImpl: typeof fetchAndProcessCompletions
-
-    onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void
-    onHotStreakCompletionReady: (docContext: DocumentContext, completions: InlineCompletionItemWithAnalytics) => void
-}
-
-/**
- * The generate completions logic shared between providers.
- */
-export function generateCompletions(params: GenerateCompletionsParams): Promise<void[]> {
-    const {
-        client,
-        requestParams,
-        abortSignal,
-        providerSpecificPostProcess,
-        providerOptions,
-        providerOptions: { n: completionCount },
-        tracer,
-        fetchAndProcessCompletionsImpl,
-        onHotStreakCompletionReady,
-        onCompletionReady,
-    } = params
-
-    if (requestParams.timeoutMs === 0) {
-        onCompletionReady([])
-        return Promise.resolve([])
-    }
-
-    tracer?.params(requestParams)
-
-    const completions: InlineCompletionItemWithAnalytics[] = []
-    const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-        completions.push(completion)
-        if (completions.length === completionCount) {
-            tracer?.result({ completions })
-            onCompletionReady(completions)
-        }
-    }
-
-    return Promise.all(
-        Array.from({ length: completionCount }).map(() => {
-            return fetchAndProcessCompletionsImpl({
-                client,
-                requestParams,
-                abortSignal,
-                providerSpecificPostProcess,
-                providerOptions,
-                onCompletionReady: onCompletionReadyImpl,
-                onHotStreakCompletionReady,
-            })
-        })
-    )
 }

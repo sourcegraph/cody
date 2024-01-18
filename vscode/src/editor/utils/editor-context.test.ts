@@ -3,8 +3,7 @@ import { basename } from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import { testFileUri } from '@sourcegraph/cody-shared'
-import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { ignores, testFileUri } from '@sourcegraph/cody-shared'
 
 import { getFileContextFiles } from './editor-context'
 

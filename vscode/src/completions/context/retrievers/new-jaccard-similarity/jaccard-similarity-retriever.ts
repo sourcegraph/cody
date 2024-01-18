@@ -3,7 +3,7 @@ import path from 'path'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getContextRange } from '../../../doc-context-getters'
 import { type ContextRetriever, type ContextRetrieverOptions } from '../../../types'

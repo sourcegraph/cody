@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { type EditIntent, type EditMode } from '../edit/types'
 
@@ -38,7 +37,7 @@ export interface FixupIdleTaskRunner {
  */
 export interface FixupTaskFactory {
     createTask(
-        documentUri: vscode.Uri,
+        documentUri: vscode.TextDocument,
         instruction: string,
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
