@@ -22,6 +22,7 @@ import java.awt.Insets
 import java.nio.file.Paths
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
+import kotlin.io.path.absolutePathString
 
 class ContextFilesMessage(val project: Project, contextMessages: List<ContextMessage>) :
     PanelWithGradientBorder(ASSISTANT_MESSAGE_GRADIENT_WIDTH, Speaker.ASSISTANT) {
@@ -35,7 +36,7 @@ class ContextFilesMessage(val project: Project, contextMessages: List<ContextMes
               if (it.repoName != null) {
                 "${project.basePath}/${it.uri.path}"
               } else {
-                it.uri.path
+                Paths.get(it.uri).absolutePathString()
               }
             }
             .toSet()

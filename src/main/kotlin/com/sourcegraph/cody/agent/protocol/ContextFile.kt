@@ -22,7 +22,7 @@ val contextFileDeserializer =
               uriObj["scheme"]?.asString,
               uriObj["host"]?.asString,
               uriObj["path"]?.asString,
-              uriObj["fragment"]?.asString)
+              /* fragment= */ null)
       val repoName = jsonObject["repoName"]?.asString
       val revision = jsonObject["revision"]?.asString
 
