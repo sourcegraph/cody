@@ -98,8 +98,8 @@ export const TranscriptItem: React.FunctionComponent<
     // Only returns command name if it is the first word in the message to remove markdown links
     const initValue = message.displayText?.startsWith('/')
         ? message.displayText.replaceAll(/\[_@.*\)/g, '') || message.displayText.split(' ')?.[0]
-        : message.text
-    const [editFormInput, setEditFormInput] = useState<string>(initValue?.trim() ?? '')
+        : message.text ?? ''
+    const [editFormInput, setEditFormInput] = useState<string>(initValue?.trim())
 
     // To identify if the current message is the one being edited when beingEdited is true
     // This is used to display EditTextArea only for the message being edited
@@ -109,8 +109,9 @@ export const TranscriptItem: React.FunctionComponent<
         (status: boolean) => {
             setBeingEdited(status)
             setIsItemBeingEdited(status)
+            setEditFormInput(initValue?.trim())
         },
-        [setBeingEdited]
+        [initValue, setBeingEdited]
     )
 
     const onEditKeyDown = useCallback(
