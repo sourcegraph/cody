@@ -10,6 +10,10 @@ export function isGenerateIntent(document: vscode.TextDocument, selection: vscod
     return selection.isEmpty && document.lineAt(selection.start.line).isEmptyOrWhitespace
 }
 
+interface SmartSelectionOptions {
+    ignoreSelection?: boolean
+}
+
 /**
  * This function retrieves a "smart" selection for a FixupTask when selectionRange is not available.
  *
@@ -24,10 +28,11 @@ export function isGenerateIntent(document: vscode.TextDocument, selection: vscod
  */
 export async function getEditSmartSelection(
     document: vscode.TextDocument,
-    selectionRange: vscode.Range
+    selectionRange: vscode.Range,
+    options: SmartSelectionOptions = {}
 ): Promise<vscode.Range> {
     // Use selectionRange when it's available
-    if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
+    if (!options.ignoreSelection && selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
         return selectionRange
     }
 
