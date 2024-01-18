@@ -283,7 +283,9 @@ export class MessageHandler {
             this.exit()
         })
         child.on('close', () => {
-            reject?.(new Error('close'))
+            if (this.isAlive()) {
+                reject?.(new Error('close'))
+            }
             this.exit()
         })
         child.on('error', error => {
