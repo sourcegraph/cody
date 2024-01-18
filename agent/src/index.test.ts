@@ -48,12 +48,15 @@ export class TestClient extends MessageHandler {
     public progressMessages: ProgressMessage[] = []
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
+    public readonly serverEndpoint: string
 
     constructor(
         public readonly name: string,
-        public readonly accessToken?: string
+        public readonly accessToken?: string,
+        serverEndpoint?: string
     ) {
         super()
+        this.serverEndpoint = serverEndpoint ?? 'https://sourcegraph.com'
 
         this.name = name
         this.info = this.getClientInfo()
@@ -279,7 +282,7 @@ export class TestClient extends MessageHandler {
             extensionConfiguration: {
                 anonymousUserID: this.name + 'abcde1234',
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: 'https://sourcegraph.com',
+                serverEndpoint: this.serverEndpoint,
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
@@ -903,6 +906,33 @@ describe('Agent', () => {
 
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_0000)
+    })
+
+    describe('Enterprise', () => {
+        const enterpriseClient = new TestClient(
+            'enterpriseClient',
+            process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_1a3d082d4043886913e3b62989b70673065fb49c8b0ef8a93001906d3fdf7a83',
+            'https://demo.sourcegraph.com'
+        )
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('olafurpg')
+        }, 10_000)
+
+        it('chat/submitMessage works', async () => {
+            const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
+            expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
+        }, 20_000)
+
+        afterAll(async () => {
+            await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_0000)
     })
