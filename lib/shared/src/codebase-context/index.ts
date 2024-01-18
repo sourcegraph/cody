@@ -85,12 +85,13 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (isDotCom(this.getServerEndpoint()) && this.localEmbeddings) {
-            // TODO(dpc): Check whether the local embeddings index exists for
-            // this repo before relying on it.
-            // TODO(dpc): Fetch code and text results.
-            return this.localEmbeddings.getContext(query, options.numCodeResults)
+        // For dotcom users, only use local embeddings. The remote embeddings impl remains for
+        // enterprise users below until it can be replaced by context search, but not for dotcom
+        // users as they have a better replacement already (local embeddings).
+        if (isDotCom(this.getServerEndpoint())) {
+            return this.localEmbeddings?.getContext(query, options.numCodeResults) ?? []
         }
+
         if (this.embeddings) {
             const embeddingsSearchResults = await this.embeddings.search(
                 query,
