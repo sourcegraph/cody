@@ -7,7 +7,7 @@ import {
     type ProgressReport,
 } from '@vscode/test-electron'
 
-const vscodeVersion = '1.81.1'
+const vscodeVersion = '1.85.1'
 
 // A custom version of the VS Code download reporter that silences matching installation
 // notifications as these otherwise are emitted on every test run
