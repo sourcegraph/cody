@@ -112,6 +112,11 @@ export type Requests = {
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
 
+    'attribution/search': [
+        { snippets: string[] },
+        { results: { snippet: string; repoNames: string[]; limitHit: boolean }[] },
+    ]
+
     // ================
     // Server -> Client
     // ================

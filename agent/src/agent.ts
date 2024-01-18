@@ -11,9 +11,11 @@ import {
     FeatureFlag,
     featureFlagProvider,
     graphqlClient,
+    isError,
     isRateLimitError,
     NoOpTelemetryRecorderProvider,
     setUserAgent,
+    SourcegraphGuardrailsClient,
     type BillingCategory,
     type BillingProduct,
 } from '@sourcegraph/cody-shared'
@@ -588,6 +590,27 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
+        })
+
+        this.registerAuthenticatedRequest('attribution/search', async ({ snippets }) => {
+            const client = new SourcegraphGuardrailsClient(graphqlClient)
+            const ss: string[] = snippets
+            console.log('ATTRIBUTION SEARCH RUNNING')
+            const all = await Promise.all(
+                ss.map(async (s: string) => {
+                    const response = await client.searchAttribution(s)
+                    console.log(`GOT ATTRIBUTION SEARCH RESPONSE ${JSON.stringify(response)}`)
+                    if (isError(response)) {
+                        throw response
+                    }
+                    return {
+                        snippet: s,
+                        repoNames: response.repositories.map(r => r.name),
+                        limitHit: response.limitHit,
+                    }
+                })
+            )
+            return { results: all }
         })
     }
 
