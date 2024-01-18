@@ -396,7 +396,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
-                await this.postChatModels()
+                this.postChatModels()
                 break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
@@ -487,7 +487,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             chatID: this.sessionID,
         })
 
-        await this.postChatModels()
+        this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
         this.initDoer.signalInitialized()
@@ -552,7 +552,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async postChatModels(): Promise<void> {
+    private postChatModels(): void {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
             return
