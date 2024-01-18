@@ -10,7 +10,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - [Internal] Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 - [Internal] Edit/Chat: Added Cmd/Ctrl+K and Cmd/Ctrl+L commands to trigger Edit and Chat [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 - Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
-- Chat: Added the ability for users to edit any chat message they have previously submitted to Cody, instead of only being able to edit the last message. [pull/2739](https://github.com/sourcegraph/cody/pull/2739)
+- Chat: Added "Edit" buttons next to each chat message, enabling users to modify their messages and effectively restart a conversation at any point during their chat session with Cody. [pull/2739](https://github.com/sourcegraph/cody/pull/2739)
 
 ### Fixed
 

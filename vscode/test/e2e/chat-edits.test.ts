@@ -20,8 +20,8 @@ test('editing message in chat view', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
 
     // Three edit buttons should show up, one for each message submitted
-    const editButtons = await chatFrame.locator('.codicon-edit')
-    expect(editButtons).toHaveCount(3)
+    const editButtons = chatFrame.locator('.codicon-edit')
+    await expect(editButtons).toHaveCount(3)
 
     // Click on the first edit button to get into the editing mode
     await editButtons.nth(0).click()
@@ -30,11 +30,11 @@ test('editing message in chat view', async ({ page, sidebar }) => {
     // Only one close button should be displayed on the message that's being edited
     // All the edit buttons will be invisible during editing,
     // on close, edit buttons should up on each message again
-    const closeButtons = await chatFrame.getByTitle('cancel edit').locator('i')
-    expect(closeButtons).toHaveCount(1)
-    expect(editButtons).toHaveCount(0)
+    const closeButtons = chatFrame.getByTitle('cancel edit').locator('i')
+    await expect(closeButtons).toHaveCount(1)
+    await expect(editButtons).toHaveCount(0)
     await closeButtons.click()
-    expect(await chatFrame.locator('.codicon-edit')).toHaveCount(3)
+    await expect(chatFrame.locator('.codicon-edit')).toHaveCount(3)
 
     // click on the second edit button to get into the editing mode again
     // edit the message from "Two" to "Four"
@@ -48,7 +48,7 @@ test('editing message in chat view', async ({ page, sidebar }) => {
 
     // Only two messages are left after the edit (e.g. "One", "Four"),
     // as all the messages after the edited message have be removed
-    expect(await chatFrame.locator('.codicon-edit')).toHaveCount(2)
+    await expect(chatFrame.locator('.codicon-edit')).toHaveCount(2)
     await expect(chatFrame.getByText('One')).toBeVisible()
     await expect(chatFrame.getByText('Two')).not.toBeVisible()
     await expect(chatFrame.getByText('Three')).not.toBeVisible()
