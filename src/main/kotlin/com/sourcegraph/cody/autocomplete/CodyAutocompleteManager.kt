@@ -47,6 +47,7 @@ import difflib.Patch
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
@@ -219,7 +220,7 @@ class CodyAutocompleteManager {
                             position)))
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
 
-    val result = CompletableFuture<Void?>()
+    val resultOuter = CompletableFuture<Void?>()
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       val completions = agent.server.autocompleteExecute(params)
 
@@ -228,36 +229,39 @@ class CodyAutocompleteManager {
       // correctly propagate the cancellation to the agent.
       cancellationToken.onCancellationRequested { completions.cancel(true) }
 
-      completions
-          .handle { result, error ->
-            if (error != null) {
-              if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
-                  !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
-                handleError(project, error)
+      ApplicationManager.getApplication().executeOnPooledThread {
+        completions
+            .handle { result, error ->
+              if (error != null) {
+                if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
+                    !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
+                  handleError(project, error)
+                }
+              } else if (result != null && result.items.isNotEmpty()) {
+                UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
+                UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+                ApplicationManager.getApplication().executeOnPooledThread {
+                  CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+                }
+                processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
               }
-            } else if (result != null && result.items.isNotEmpty()) {
-              UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
-              UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-              ApplicationManager.getApplication().executeOnPooledThread {
-                CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+              null
+            }
+            .exceptionally { error: Throwable? ->
+              if (!(error is CancellationException || error is CompletionException)) {
+                logger.warn("failed autocomplete request $params", error)
               }
-              processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
+              null
             }
-            null
-          }
-          .exceptionally { error: Throwable? ->
-            if (!(error is CancellationException || error is CompletionException)) {
-              logger.warn("failed autocomplete request $params", error)
-            }
-            null
-          }
-          .thenAccept {
-            resetApplication(project)
-            result.complete(null)
-          }
+            .completeOnTimeout(null, 3, TimeUnit.SECONDS)
+            .get()
+
+        resetApplication(project)
+        resultOuter.complete(null)
+      }
     }
 
-    return result
+    return resultOuter
   }
 
   private fun handleError(project: Project, error: Throwable?) {
