@@ -369,17 +369,19 @@ describe('Agent', () => {
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
+    const nestedPath = path.join(workspaceRootPath, 'src', 'nested.ts')
+    const nestedUri = Uri.file(nestedPath)
 
-    async function openFile(uri: Uri) {
+    async function openFile(uri: Uri, useSecondSelection: boolean = false) {
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStart = content.indexOf('/* SELECTION_START */')
-        const selectionEnd = content.indexOf('/* SELECTION_END */')
+        const selectionStart = useSecondSelection ? content.lastIndexOf('/* SELECTION_START */') : content.indexOf('/* SELECTION_START */')
+        const selectionEnd = useSecondSelection ? content.lastIndexOf('/* SELECTION_END */') : content.indexOf('/* SELECTION_END */')
         const cursor = content.indexOf('/* CURSOR */')
 
         content = content
-            .replace('/* CURSOR */', '')
-            .replace('/* SELECTION_START */', '')
-            .replace('/* SELECTION_END */', '')
+            .replaceAll('/* CURSOR */', '')
+            .replaceAll('/* SELECTION_START */', '')
+            .replaceAll('/* SELECTION_END */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
@@ -587,47 +589,30 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('explain', async () => {
-            await openFile(animalUri)
+            await openFile(nestedUri)
+            // Change selection
+            await openFile(nestedUri, true)
             const id = await client.request('commands/explain', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              " The selected TypeScript code defines an interface called Animal.
+            const message = await client.firstNonEmptyTranscript(id)
 
-              An interface in TypeScript is like a blueprint or contract that defines the structure of an object. This Animal interface defines the properties and methods that any object implementing Animal should have.
+            expect(trimEndOfLine(message.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " The selected code is a part of the outer function that returns an inner function.
 
-              Specifically, the Animal interface requires an object to have:
+              1) The purpose of this code is to define and return an inner function called inner from within the outer function.
 
-              1. A name property that is a string
-              2. A makeAnimalSound() method that returns a string
-              3. An isMammal property that is a boolean
+              2) This code does not take any direct inputs. The outer function likely takes some inputs, but they are not shown in the selected code.
 
-              So any object that implements the Animal interface needs to have these 3 members defined. For example:
+              3) The output of this code is the inner function definition. By returning the inner function, outer is able to provide access to inner from outside its own scope.
 
-              \`\`\`
-              class Dog implements Animal {
+              4) It achieves its purpose by using a function declaration to define a new function called inner, and then returning that function definition. The return statement passes the inner function back to wherever outer was called from.
 
-                name: string;
+              5) This demonstrates closure in JavaScript/TypeScript. The inner function can access the scope of outer even after outer has returned. This allows inner to share state and access variables from the outer scope that would normally be out of reach after outer exited.
 
-                makeAnimalSound() {
-                  return "Bark!";
-                }
-
-                isMammal: boolean = true;
-
-              }
-              \`\`\`
-
-              The Dog class implements Animal by having the required name, makeAnimalSound(), and isMammal properties.
-
-              By defining this interface, we can ensure that any Animal object has a certain consistent structure. We can rely on those properties and methods being available when working with Animal objects.
-
-              Interfaces like this are useful for defining contracts in TypeScript. They allow you to define requirements for objects, enforce a consistent structure, and catch errors if the contract is not fulfilled. This makes the code more robust and maintainable.
-
-              So in summary, the selected Animal interface defines a blueprint for objects to standardize their structure. It doesn't contain implementation details - just the requirements. This allows us to make assumptions about what members Animal objects will have available throughout our codebase."
-            `,
+              So in summary, the selected code defines an inner function within an outer function, and returns it so that inner can be called later while retaining access to the outer scope. This is a common pattern in JavaScript/TypeScript for creating closures."
+            `, 
                 explainPollyError
             )
+
         }, 30_0000)
 
         it('test', async () => {
