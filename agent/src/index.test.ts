@@ -48,12 +48,15 @@ export class TestClient extends MessageHandler {
     public progressMessages: ProgressMessage[] = []
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
+    public readonly serverEndpoint: string
 
     constructor(
         public readonly name: string,
-        public readonly accessToken?: string
+        public readonly accessToken?: string,
+        serverEndpoint?: string
     ) {
         super()
+        this.serverEndpoint = serverEndpoint ?? 'https://sourcegraph.com'
 
         this.name = name
         this.info = this.getClientInfo()
@@ -256,7 +259,6 @@ export class TestClient extends MessageHandler {
             env: {
                 CODY_SHIM_TESTING: 'true',
                 CODY_TEMPERATURE_ZERO: 'true',
-                CODY_LOCAL_EMBEDDINGS_DISABLED: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: this.name,
@@ -280,7 +282,7 @@ export class TestClient extends MessageHandler {
             extensionConfiguration: {
                 anonymousUserID: this.name + 'abcde1234',
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: 'https://sourcegraph.com',
+                serverEndpoint: this.serverEndpoint,
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
@@ -394,7 +396,7 @@ describe('Agent', () => {
         })
     }
 
-    it('handles config changes correctly', async () => {
+    it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
@@ -427,7 +429,7 @@ describe('Agent', () => {
         expect(valid?.username).toStrictEqual('olafurpg-testing')
     }, 10_000)
 
-    it('returns non-empty autocomplete', async () => {
+    it('autocomplete/execute (non-empty result)', async () => {
         await openFile(sumUri)
         const completions = await client.request('autocomplete/execute', {
             uri: sumUri.toString(),
@@ -447,10 +449,11 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    it('allows us to send a very short chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
-        expect(lastMessage).toMatchInlineSnapshot(
-            `
+    describe('Chat', () => {
+        it('chat/submitMessage (short message)', async () => {
+            const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
+            expect(lastMessage).toMatchInlineSnapshot(
+                `
           {
             "contextFiles": [],
             "displayText": " Hello! Nice to meet you.",
@@ -458,58 +461,15 @@ describe('Agent', () => {
             "text": " Hello! Nice to meet you.",
           }
         `,
-            explainPollyError
-        )
-    }, 30_0000)
+                explainPollyError
+            )
+        }, 30_0000)
 
-    it('allows us to restore a chat', async () => {
-        // Step 1: create a chat session where I share my name.
-        const id1 = await client.request('chat/new', null)
-        const reply1 = asTranscriptMessage(
-            await client.request('chat/submitMessage', {
-                id: id1,
-                message: {
-                    command: 'submit',
-                    text: 'My name is Lars Monsen',
-                    submitType: 'user',
-                    addEnhancedContext: false,
-                },
-            })
-        )
-
-        // Step 2: restore a new chat session with a transcript including my name, and
-        //  and assert that it can retrieve my name from the transcript.
-        const {
-            models: [model],
-        } = await client.request('chat/models', { id: id1 })
-
-        const id2 = await client.request('chat/restore', {
-            modelID: model.model,
-            messages: reply1.messages,
-            chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
-        })
-        const reply2 = asTranscriptMessage(
-            await client.request('chat/submitMessage', {
-                id: id2,
-                message: {
-                    command: 'submit',
-                    text: 'What is my name?',
-                    submitType: 'user',
-                    addEnhancedContext: false,
-                },
-            })
-        )
-        expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-            '" You told me your name is Lars Monsen."',
-            explainPollyError
-        )
-    }, 30_0000)
-
-    it('allows us to send a longer chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
-        const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
-        expect(trimmedMessage).toMatchInlineSnapshot(
-            `
+        it('chat/submitMessage (long message)', async () => {
+            const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
+            const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
+            expect(trimmedMessage).toMatchInlineSnapshot(
+                `
           " Here is a simple Hello World program in Java:
 
           \`\`\`java
@@ -540,29 +500,72 @@ describe('Agent', () => {
 
           Let me know if you need any clarification or have additional requirements for the Hello World program!"
         `,
-            explainPollyError
-        )
-    }, 30_0000)
+                explainPollyError
+            )
+        }, 30_0000)
 
-    // This test is skipped because it shells out to `symf expand-query`, which
-    // requires an access token to send an llm request and is, therefore, not
-    // able to return stable results in replay mode. Also, we don't have an
-    // access token in ci so this test can only pass when running locally (for
-    // now).
-    it('allows us to send a chat message with enhanced context enabled', async () => {
-        await openFile(animalUri)
-        await client.request('command/execute', { command: 'cody.search.index-update' })
-        const lastMessage = await client.sendSingleMessageToNewChat(
-            'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
-            {
-                addEnhancedContext: true,
-            }
-        )
-        // TODO: make this test return a TypeScript implementation of
-        // `animal.ts`. It currently doesn't do this because the workspace root
-        // is not a git directory and symf reports some git-related error.
-        expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
-            `
+        it('chat/restore', async () => {
+            // Step 1: create a chat session where I share my name.
+            const id1 = await client.request('chat/new', null)
+            const reply1 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id1,
+                    message: {
+                        command: 'submit',
+                        text: 'My name is Lars Monsen',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+
+            // Step 2: restore a new chat session with a transcript including my name, and
+            //  and assert that it can retrieve my name from the transcript.
+            const {
+                models: [model],
+            } = await client.request('chat/models', { id: id1 })
+
+            const id2 = await client.request('chat/restore', {
+                modelID: model.model,
+                messages: reply1.messages,
+                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
+            })
+            const reply2 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id2,
+                    message: {
+                        command: 'submit',
+                        text: 'What is my name?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+            expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
+                '" You told me your name is Lars Monsen."',
+                explainPollyError
+            )
+        }, 30_0000)
+
+        // This test is skipped because it shells out to `symf expand-query`, which
+        // requires an access token to send an llm request and is, therefore, not
+        // able to return stable results in replay mode. Also, we don't have an
+        // access token in ci so this test can only pass when running locally (for
+        // now).
+        it('chat/submitMessage (addEnhancedContext: true)', async () => {
+            await openFile(animalUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const lastMessage = await client.sendSingleMessageToNewChat(
+                'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+                {
+                    addEnhancedContext: true,
+                }
+            )
+            // TODO: make this test return a TypeScript implementation of
+            // `animal.ts`. It currently doesn't do this because the workspace root
+            // is not a git directory and symf reports some git-related error.
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
+                `
           " \`\`\`typescript
           class Dog implements Animal {
             name: string;
@@ -579,250 +582,11 @@ describe('Agent', () => {
           }
           \`\`\`"
         `,
-            explainPollyError
-        )
-    }, 30_0000)
-
-    describe('Commands', () => {
-        it('explain', async () => {
-            await openFile(animalUri)
-            const id = await client.request('commands/explain', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              " The selected TypeScript code defines an interface called Animal.
-
-              An interface in TypeScript is like a blueprint or contract that defines the structure of an object. This Animal interface defines the properties and methods that any object implementing Animal should have.
-
-              Specifically, the Animal interface requires an object to have:
-
-              1. A name property that is a string
-              2. A makeAnimalSound() method that returns a string
-              3. An isMammal property that is a boolean
-
-              So any object that implements the Animal interface needs to have these 3 members defined. For example:
-
-              \`\`\`
-              class Dog implements Animal {
-
-                name: string;
-
-                makeAnimalSound() {
-                  return "Bark!";
-                }
-
-                isMammal: boolean = true;
-
-              }
-              \`\`\`
-
-              The Dog class implements Animal by having the required name, makeAnimalSound(), and isMammal properties.
-
-              By defining this interface, we can ensure that any Animal object has a certain consistent structure. We can rely on those properties and methods being available when working with Animal objects.
-
-              Interfaces like this are useful for defining contracts in TypeScript. They allow you to define requirements for objects, enforce a consistent structure, and catch errors if the contract is not fulfilled. This makes the code more robust and maintainable.
-
-              So in summary, the selected Animal interface defines a blueprint for objects to standardize their structure. It doesn't contain implementation details - just the requirements. This allows us to make assumptions about what members Animal objects will have available throughout our codebase."
-            `,
                 explainPollyError
             )
         }, 30_0000)
 
-        it('test', async () => {
-            await openFile(animalUri)
-            const id = await client.request('commands/test', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              " No test framework or libraries detected in the shared context. Since this is TypeScript code, I will generate Jest tests:
-
-              \`\`\`ts
-              import { Animal } from './animal';
-
-              describe('Animal', () => {
-
-                test('makeAnimalSound returns string', () => {
-                  const animal: Animal = {
-                    name: 'Cat',
-                    makeAnimalSound: () => 'Meow',
-                    isMammal: true
-                  };
-                  expect(typeof animal.makeAnimalSound()).toBe('string');
-                });
-
-                test('isMammal returns boolean', () => {
-                  const animal: Animal = {
-                    name: 'Cat',
-                    makeAnimalSound: () => 'Meow',
-                    isMammal: true
-                  };
-                  expect(typeof animal.isMammal).toBe('boolean');
-                });
-
-                test('name returns string', () => {
-                  const animal: Animal = {
-                    name: 'Cat',
-                    makeAnimalSound: () => 'Meow',
-                    isMammal: true
-                  };
-                  expect(typeof animal.name).toBe('string');
-                });
-
-              });
-              \`\`\`
-
-              This covers basic validation of the Animal interface properties with Jest assertions. Additional tests could be added for more complex logic if the interface methods were implemented."
-            `,
-                explainPollyError
-            )
-        }, 30_0000)
-
-        it('smell', async () => {
-            await openFile(animalUri)
-            const id = await client.request('commands/smell', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              " Here are 5 potential improvements for the selected TypeScript code:
-
-              1. Add type annotations for method parameters and return types:
-
-              \`\`\`
-              export interface Animal {
-                name: string;
-                makeAnimalSound(volume?: number): string;
-                isMammal: boolean;
-              }
-              \`\`\`
-
-              Adding type annotations improves understandability and enables stronger type checking.
-
-              2. Make \`name\` property readonly:
-
-              \`\`\`
-              export interface Animal {
-                readonly name: string;
-                // ...
-              }
-              \`\`\`
-
-              This prevents the name from being reassigned elsewhere, making the code more robust.
-
-              3. Consider making \`isMammal\` readonly:
-
-              \`\`\`
-              export interface Animal {
-                // ...
-                readonly isMammal: boolean;
-              }
-              \`\`\`
-
-              Since mammal classification shouldn't change, making it readonly prevents accidental modification.
-
-              4. Export as \`type\` instead of \`interface\` if no class implements it:
-
-              \`\`\`
-              export type Animal = {
-                // ...
-              };
-              \`\`\`
-
-              Using a \`type\` denotes it is a pure data structure without method obligations.
-
-              5. Add JSDoc comments for documentation:
-
-              \`\`\`
-              /**
-               * Represents an animal.
-               */
-              export interface Animal {
-                // ...
-              }
-              \`\`\`
-
-              JSDoc improves discoverability and understanding for future maintainers.
-
-              Overall the code is well-designed, though some minor tweaks like adding readonly and documentation could make it more robust and maintainable. The type annotations and export type suggestions help strengthen the typing."
-            `,
-                explainPollyError
-            )
-        }, 30_000)
-    })
-
-    describe('progress bars', () => {
-        it('messages are sent', async () => {
-            const { result } = await client.request('testing/progress', { title: 'Susan' })
-            expect(result).toStrictEqual('Hello Susan')
-            let progressID: string | undefined
-            for (const message of client.progressMessages) {
-                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
-                    progressID = message.message.id
-                    break
-                }
-            }
-            assert(progressID !== undefined, JSON.stringify(client.progressMessages))
-            const messages = client.progressMessages
-                .filter(message => message.id === progressID)
-                .map(({ method, message }) => [method, { ...message, id: 'THE_ID' }])
-            expect(messages).toMatchInlineSnapshot(`
-              [
-                [
-                  "progress/start",
-                  {
-                    "id": "THE_ID",
-                    "options": {
-                      "cancellable": true,
-                      "location": "Notification",
-                      "title": "testing/progress",
-                    },
-                  },
-                ],
-                [
-                  "progress/report",
-                  {
-                    "id": "THE_ID",
-                    "message": "message1",
-                  },
-                ],
-                [
-                  "progress/report",
-                  {
-                    "id": "THE_ID",
-                    "increment": 50,
-                  },
-                ],
-                [
-                  "progress/report",
-                  {
-                    "id": "THE_ID",
-                    "increment": 50,
-                  },
-                ],
-                [
-                  "progress/end",
-                  {
-                    "id": "THE_ID",
-                  },
-                ],
-              ]
-            `)
-        })
-        it('progress can be cancelled', async () => {
-            const disposable = client.progressStartEvents.event(params => {
-                if (params.options.title === 'testing/progressCancelation') {
-                    client.notify('progress/cancel', { id: params.id })
-                }
-            })
-            try {
-                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
-                expect(result).toStrictEqual("request with title 'Leona' cancelled")
-            } finally {
-                disposable.dispose()
-            }
-        })
-
-        it('allows us to set the chat model', async () => {
+        it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
@@ -836,7 +600,7 @@ describe('Agent', () => {
             }
         }, 30_0000)
 
-        it('resets the chat', async () => {
+        it('webview/receiveMessage (type: reset)', async () => {
             const id = await client.request('chat/new', null)
             await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
             await client.sendMessage(
@@ -910,6 +674,283 @@ describe('Agent', () => {
         )
     })
 
+    describe('Commands', () => {
+        it('commands/explain', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/explain', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              "The Selected Code: Animal Interface in TypeScript
+
+              Purpose:
+              In this TypeScript code, an interface named "Animal" is being defined, which is a common blueprint for creating objects that represent animals in a program. The purpose of using an interface is to establish a contract that specifies the structure and behavior an object implementing this interface must adhere to.
+
+              Inputs:
+              There are no explicit inputs in this code. However, when other parts of the code define concrete classes implementing this "Animal" interface, they must provide values for the following properties:
+
+              1. name: a string representing the name of the animal.
+              2. makeAnimalSound(): a function to simulate the animal's sound.
+              3. isMammal: a boolean indicating if the animal is a mammal or not.
+
+              Outputs:
+              This particular code snippet does not produce any output, as it only defines the "Animal" interface. The output is the creation and implementation of animal objects that conform to this structure.
+
+              How it achieves its purpose:
+              The interface defines the required structure of an object that represents an animal. Each property and method included in the interface acts as a contract that concrete animal classes agree to follow.
+
+              The algorithm can be broken down as follows:
+
+              1. Create the "Animal" interface.
+              2. Define the required properties:
+                 a. "name": a string to store the animal's name.
+                 b. "makeAnimalSound": a function to simulate the animal's sound.
+                 c. "isMammal": a boolean indicating if the animal is a mammal or not.
+
+              Upon implementing this interface in a concrete class, the program ensures that the object follows a consistent and predictable structure, resulting in code that is maintainable, reusable, and less prone to errors."
+            `,
+                explainPollyError
+            )
+        }, 30_0000)
+
+        it('commands/test', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/test', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              "To write the tests for the shared TypeScript code, I will be using Jest testing framework as it is a popular testing library for TypeScript. I will create a new file \`animal.test.ts\` in the same directory as \`animal.ts\`. The test suite will include multiple tests to cover the key functionality and edge cases.
+
+              Here's the full completed code for the new unit tests in a markdown codeblock:
+              \`\`\`typescript
+              import { Animal } from './animal';
+
+              describe('Animal', () => {
+                  let animal: Animal;
+
+                  beforeEach(() => {
+                      animal = {
+                          name: 'Test Animal',
+                          makeAnimalSound: jest.fn(() => 'Test sound'),
+                          isMammal: true
+                      };
+                  });
+
+                  it('should create an instance of Animal', () => {
+                      expect(animal).toBeDefined();
+                  });
+
+                  it('should have a name property', () => {
+                      expect(animal.name).toBe('Test Animal');
+                  });
+
+                  it('should have a makeAnimalSound function', () => {
+                      expect(animal.makeAnimalSound).toBeDefined();
+                  });
+
+                  it('should have a isMammal boolean property', () => {
+                      expect(animal.isMammal).toBe(true);
+                  });
+
+                  it('should be able to make animal sound', () => {
+                      const sound = animal.makeAnimalSound();
+                      expect(sound).toBe('Test sound');
+                  });
+
+                  it('should initialize name property correctly', () => {
+                      const testAnimal = new AnimalImpl('Test Animal');
+                      expect(testAnimal.name).toBe('Test Animal');
+                  });
+
+                  it('should initialize isMammal property correctly', () => {
+                      const testAnimal = new AnimalImpl('Test Animal');
+                      expect(testAnimal.isMammal).toBe(true);
+                  });
+
+                  it('should initialize makeAnimalSound correctly', () => {
+                      const testAnimal = new AnimalImpl('Test Animal');
+                      const sound = testAnimal.makeAnimalSound();
+                      expect(sound).toBe('I am a test animal, hear me make a test sound');
+                  });
+              });
+
+              class AnimalImpl implements Animal {
+                  name: string;
+                  isMammal: boolean;
+
+                  constructor(name: string) {
+                      this.name = name;
+                      this.isMammal = true;
+                  }
+
+                  makeAnimalSound(): string {
+                      return \`I am a \${this.name}, hear me make a test sound\`;
+                  }
+              }
+              \`\`\`
+              Test Coverage and Limitations:
+
+              * This test suite validates the expected functionality of the \`Animal\` interface and covers the key functionality of creating an instance of \`Animal\`, checking its properties, and making animal sound.
+              * The tests cover edge cases by using a mock \`Animal\` instance with a predefined name, isMammal, and makeAnimalSound methods.
+              * The test suite does not perform any integration testing with external dependencies as there are none defined in the code sample.
+              * The mock implementation of \`Animal\` provided in the tests is a best-effort approximation of the expected behavior defined in the interface. The actual implementation may differ."
+            `,
+                explainPollyError
+            )
+        }, 30_0000)
+
+        it('commands/smell', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/smell', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              "Based on the provided TypeScript code, here are some suggestions for improvement:
+
+              1. Add access modifiers to members: By default, all members in an interface are public. Explicitly specifying the access modifier can make the code more readable. Additionally, it is a good practice to follow as it makes it clear to other developers that the member is intended to be accessed from outside the module. For example:
+              \`\`\`typescript
+              export interface Animal {
+                  name: string;
+                  makeAnimalSound(): string;
+                  isMammal: boolean;
+              }
+              \`\`\`
+              could be changed to:
+              \`\`\`typescript
+              export interface Animal {
+                  readonly name: string;
+                  makeAnimalSound(): string;
+                  isMammal: boolean;
+              }
+              \`\`\`
+              2. Add type constraints to function parameters: It's a good practice to add type constraints to function parameters. This can improve type safety and make the code more robust. For example:
+              \`\`\`typescript
+              makeAnimalSound(): string;
+              \`\`\`
+              could be changed to:
+              \`\`\`typescript
+              makeAnimalSound(): void;
+              \`\`\`
+              3. Use consistent spacing: Consistent spacing can improve the readability of the code. Make sure to follow the same spacing conventions throughout the file. For example, make sure there is consistent spacing around the \`:\` symbol:
+              \`\`\`typescript
+              name: string
+              makeAnimalSound(): string
+              isMammal: boolean
+              \`\`\`
+              could be changed to:
+              \`\`\`typescript
+              name: string;
+              makeAnimalSound(): string;
+              isMammal: boolean;
+              \`\`\`
+              4. Consider using an abstract class: If the \`Animal\` interface is meant to be implemented by concrete classes, consider using an abstract class instead. This can help ensure that the implementing classes have common behavior and properties. For example:
+              \`\`\`typescript
+              export abstract class Animal {
+                  public readonly name: string;
+                  public isMammal: boolean;
+
+                  constructor(name: string, isMammal: boolean) {
+                      this.name = name;
+                      this.isMammal = isMammal;
+                  }
+
+                  public makeAnimalSound(): void {
+                      // Implement the logic here.
+                  }
+              }
+              \`\`\`
+              5. Use TypeScript features such as type aliases: TypeScript has many features that can make the code more readable and maintainable. Consider using type aliases for boolean properties, for example:
+              \`\`\`typescript
+              type IsMammal = boolean;
+
+              export interface Animal {
+                  readonly name: string;
+                  makeAnimalSound(): void;
+                  isMammal: IsMammal;
+              }
+              \`\`\`
+              Overall, the code follows good design principles but there are some opportunities to enhance the code quality. The proposed changes can make the code more robust, efficient, and align with best practices."
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+    })
+
+    describe('Progress bars', () => {
+        it('progress/report', async () => {
+            const { result } = await client.request('testing/progress', { title: 'Susan' })
+            expect(result).toStrictEqual('Hello Susan')
+            let progressID: string | undefined
+            for (const message of client.progressMessages) {
+                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
+                    progressID = message.message.id
+                    break
+                }
+            }
+            assert(progressID !== undefined, JSON.stringify(client.progressMessages))
+            const messages = client.progressMessages
+                .filter(message => message.id === progressID)
+                .map(({ method, message }) => [method, { ...message, id: 'THE_ID' }])
+            expect(messages).toMatchInlineSnapshot(`
+              [
+                [
+                  "progress/start",
+                  {
+                    "id": "THE_ID",
+                    "options": {
+                      "cancellable": true,
+                      "location": "Notification",
+                      "title": "testing/progress",
+                    },
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "message": "message1",
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "increment": 50,
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "increment": 50,
+                  },
+                ],
+                [
+                  "progress/end",
+                  {
+                    "id": "THE_ID",
+                  },
+                ],
+              ]
+            `)
+        })
+
+        it('progress/cancel', async () => {
+            const disposable = client.progressStartEvents.event(params => {
+                if (params.options.title === 'testing/progressCancelation') {
+                    client.notify('progress/cancel', { id: params.id })
+                }
+            })
+            try {
+                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
+                expect(result).toStrictEqual("request with title 'Leona' cancelled")
+            } finally {
+                disposable.dispose()
+            }
+        })
+    })
+
     describe('RateLimitedAgent', () => {
         const rateLimitedClient = new TestClient(
             'rateLimitedClient',
@@ -925,7 +966,7 @@ describe('Agent', () => {
             expect(serverInfo.authStatus?.username).toStrictEqual('david.veszelovszki')
         }, 10_000)
 
-        it('get rate limit error if exceeding usage on rate limited account', async () => {
+        it('chat/submitMessage (RateLimitError)', async () => {
             const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
             // Intentionally not a snapshot assertion because we should never
             // automatically update 'RateLimitError' to become another value.
@@ -934,6 +975,33 @@ describe('Agent', () => {
 
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_0000)
+    })
+
+    describe('Enterprise', () => {
+        const enterpriseClient = new TestClient(
+            'enterpriseClient',
+            process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
+            'https://demo.sourcegraph.com'
+        )
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }, 10_000)
+
+        it('chat/submitMessage', async () => {
+            const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
+            expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
+        }, 20_000)
+
+        afterAll(async () => {
+            await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_0000)
     })

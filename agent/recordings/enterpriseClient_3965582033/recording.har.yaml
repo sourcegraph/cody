@@ -1,15 +1,15 @@
 log:
-  _recordingName: rateLimitedClient
+  _recordingName: enterpriseClient
   creator:
     comment: persister:cody-fs
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 4d222a2ba3b6822dc44b193d8bc3e886
+    - _id: 6d99b7548134a5e127e06ba883c6f45d
       _order: 0
       cache: {}
       request:
-        bodySize: 336
+        bodySize: 345
         cookies: []
         headers:
           - name: content-type
@@ -18,12 +18,12 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - name: host
-            value: sourcegraph.com
-        headersSize: 267
+            value: demo.sourcegraph.com
+        headersSize: 265
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -37,62 +37,62 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: sqrt(9)
+                text: Reply with "Yes"
               - speaker: assistant
-            model: anthropic/claude-2.0
+            model: anthropic/claude-2
             temperature: 0
             topK: -1
             topP: -1
         queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
+        url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 0
+        bodySize: 161
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 0
+          mimeType: text/event-stream
+          size: 161
+          text: |+
+            event: completion
+            data: {"completion":" Yes","stopReason":""}
+
+            event: completion
+            data: {"completion":" Yes","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:19 GMT
+            value: Thu, 18 Jan 2024 15:07:30 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "0"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "385"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
+            value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-cloud-trace-context
-            value: 2d7189fa18cd2f9d669d3f3ff3a5edd2
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
             value: DENY
-          - name: x-is-cody-pro-user
-            value: "true"
-          - name: x-ratelimit-limit
-            value: "1"
-          - name: x-ratelimit-remaining
-            value: "0"
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1633
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1204
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 429
+        status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.843Z
+      startedDateTime: 2024-01-18T15:07:29.762Z
       time: 0
       timings:
         blocked: -1
@@ -102,7 +102,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9675521acc12098a8fdbb37e95fe09fb
+    - _id: 46324f20881a46ddd421afd1aca81fb2
       _order: 0
       cache: {}
       request:
@@ -112,13 +112,13 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -132,8 +132,8 @@ log:
             name: connection
             value: close
           - name: host
-            value: sourcegraph.com
-        headersSize: 355
+            value: demo.sourcegraph.com
+        headersSize: 353
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -141,7 +141,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -155,36 +155,27 @@ log:
         queryString:
           - name: CodyConfigFeaturesResponse
             value: null
-        url: https://sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
+        url: https://demo.sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
       response:
-        bodySize: 140
+        bodySize: 219
         content:
           encoding: base64
           mimeType: application/json
-          size: 140
-          text:
-            "[\"H4sIAAAAAAAAAySLQQrAIAzA/tLzXuBV2D+K7TZhtUPrYUj/PpynkEAGEBpCGNCy8WRSe\
-            qOWI587o/XK7a8XGgSrnTfAbhpVnpvnsVpSESzUlru7fwAAAP//AwCKjSZ9WgAAAA==\
-            \"]"
-          textDecoded:
-            data:
-              site:
-                codyConfigFeatures:
-                  autoComplete: true
-                  chat: true
-                  commands: true
+          size: 219
+          text: "[\"H4sIAAAAAAAAAyzNrQ7CMBSG4Vs5+fSCwlCDGEENhaQTzXa2NOnOgf6IZum9kzDkK568O\
+            zhGjQnmtWPjlNzKMOidiGb6FI6VFs9hJotJ59qrLH69s8slcrIgFcr1zWTx9A==\",\
+            \"mS1OdPMzVS20sZO/GobHAUt02atYXNEh6PSrYx68MMy5w6ShbAJzaWMb2xcAAP//A\
+            wDS/lDDoQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "385"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -192,8 +183,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -204,12 +195,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1233
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.636Z
+      startedDateTime: 2024-01-18T15:07:29.633Z
       time: 0
       timings:
         blocked: -1
@@ -219,7 +210,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 18431d78873228944b5ace2d8e68d31a
+    - _id: a7f73f577ec825962be7b3003873378c
       _order: 0
       cache: {}
       request:
@@ -229,13 +220,13 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -249,8 +240,8 @@ log:
             name: connection
             value: close
           - name: host
-            value: sourcegraph.com
-        headersSize: 360
+            value: demo.sourcegraph.com
+        headersSize: 358
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -258,7 +249,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -275,40 +266,27 @@ log:
         queryString:
           - name: CurrentSiteCodyLlmConfiguration
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 212
+        bodySize: 215
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text:
-            "[\"H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3\
-            AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140f\
-            nhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQ\
-            BAAA=\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: anthropic/claude-2.0
-                  chatModelMaxTokens: 12000
-                  completionModel: anthropic/claude-instant-1
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-instant-1
-                  fastChatModelMaxTokens: 9000
+          size: 215
+          text: "[\"H4sIAAAAAAAAA4yOwQqDMBBE/2XPitFbc/Vqbv2BJYkamu6KWcEi+feil5YcSk8Dw5vHH\
+            OBQEPQBKYg/07J7DYPpmcYwbStKYLr6GcWw8xE0IMm88hJsYyNuztcdVB/A4A==\",\
+            \"fueHpwS67ZRSFYyYpP+1D5QESeoWCvjLdbtUlp9L9Oepv2QFXuhyzvkNAAD//wMAQ\
+            HxMmAIBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -316,8 +294,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -328,12 +306,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1233
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.633Z
+      startedDateTime: 2024-01-18T15:07:28.935Z
       time: 0
       timings:
         blocked: -1
@@ -343,7 +321,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73f9874594cc0e95992e4ffe5cae0cb9
+    - _id: b65ff73c0b9a34b07da801d1c70d8c56
       _order: 0
       cache: {}
       request:
@@ -353,13 +331,13 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -373,8 +351,8 @@ log:
             name: connection
             value: close
           - name: host
-            value: sourcegraph.com
-        headersSize: 360
+            value: demo.sourcegraph.com
+        headersSize: 358
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -382,7 +360,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -394,28 +372,30 @@ log:
         queryString:
           - name: CurrentSiteCodyLlmConfiguration
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 131
+        bodySize: 128
         content:
           encoding: base64
           mimeType: application/json
-          size: 131
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
-            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"]"
+          size: 128
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  provider: sourcegraph
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -423,8 +403,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -435,12 +415,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1233
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.634Z
+      startedDateTime: 2024-01-18T15:07:28.937Z
       time: 0
       timings:
         blocked: -1
@@ -450,7 +430,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fb4a846f5c5ea447852d936121ea707d
+    - _id: 3ec34ed6dc417828a259a9dd9236c0f8
       _order: 0
       cache: {}
       request:
@@ -460,13 +440,13 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -480,8 +460,8 @@ log:
             name: connection
             value: close
           - name: host
-            value: sourcegraph.com
-        headersSize: 340
+            value: demo.sourcegraph.com
+        headersSize: 338
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -489,7 +469,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -506,42 +486,27 @@ log:
         queryString:
           - name: CurrentUser
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentUser
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 344
+        bodySize: 203
         content:
           encoding: base64
           mimeType: application/json
-          size: 344
-          text:
-            "[\"H4sIAAAAAAAAA2yOzUrDQBSF3+Wu84PYljhQMGgXBYmoTdBVuZ25JlNnMunMZLAJeRifx\
-            ReT0C7dnR8O5xtBoEdgI/DeWmp96cjOVgpgUL0Xih/N9/OuvCkGvoYIGnQVWfkpSWw0\
-            SgXM254iENJ1Cs8FagIGj78/QQqIoHdk20smMEiRBHIDKRPc8CUhAgzo0ZavT8Cg8b5\
-            zLE1Vc5vUxtSK5jU3rafWJ9zoFNP8oc4M3+aL2OxV1p3iPj7mzZvamuViZ18qn1Ur+j\
-            gM4aT7uNkf1u5uFXOIoLNSoz1fmUegi/iH6r6eq/kPpmma/gAAAP//AwAWfOcnIgEAA\
-            A==\"]"
-          textDecoded:
-            data:
-              currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
-                displayName: Dávid
-                hasVerifiedEmail: true
-                id: VXNlcjoxOTU1Nzc=
-                primaryEmail:
-                  email: david.veszelovszki@gmail.com
-                username: david.veszelovszki
+          size: 203
+          text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
+            A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GEkC7Ewhs4GXvAZqjiLDpg==\",\
+            \"GoJBzazpy5gW3wrnIukOA3pRIR0up3+5qkTS9jvurvf+AQAA//8DAD+3K/CYAAAA\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -549,8 +514,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -561,12 +526,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1233
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.861Z
+      startedDateTime: 2024-01-18T15:07:29.315Z
       time: 0
       timings:
         blocked: -1
@@ -576,29 +541,29 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9abaeba25ccf930a1c0681c60a9aeb2a
+    - _id: 963524d76e46750e23ce56589f4be825
       _order: 0
       cache: {}
       request:
-        bodySize: 115
+        bodySize: 177
         cookies: []
         headers:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "115"
+            value: "177"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -606,51 +571,41 @@ log:
             name: connection
             value: close
           - name: host
-            value: sourcegraph.com
-        headersSize: 354
+            value: demo.sourcegraph.com
+        headersSize: 346
         httpVersion: HTTP/1.1
         method: POST
         postData:
           mimeType: application/json; charset=utf-8
           params: []
           textJSON:
-            query: |-
-
-              query CurrentUserCodyProEnabled {
-                  currentUser {
-                      codyProEnabled
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
                   }
-              }
-            variables: {}
+            variables:
+              flagName: cody-autocomplete-tracing
         queryString:
-          - name: CurrentUserCodyProEnabled
+          - name: EvaluateFeatureFlag
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentUserCodyProEnabled
+        url: https://demo.sourcegraph.com/.api/graphql?EvaluateFeatureFlag
       response:
-        bodySize: 100
+        bodySize: 37
         content:
-          encoding: base64
           mimeType: application/json
-          size: 100
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1OLQJz81MqA4ryXfMSk3JSU5SsSopKU\
-            2trawEAAAD//wMAqqwCpjAAAAA=\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codyProEnabled: true
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
-          - name: transfer-encoding
-            value: chunked
+          - name: content-length
+            value: "37"
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -658,8 +613,502 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.463Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a1ca8df29a3b5cdf61852e99801bb224
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 187
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "187"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-context-bfg-mixed
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.466Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f75e0cd3bc54a776ce07032b111a9be1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 192
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "192"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-new-jaccard-similarity
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.468Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c5425fe5637c04a840c9b244fad64df1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 199
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "199"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-dynamic-multiline-completions
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.469Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c2ebdeaa01c598520ffe127316cd4e61
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 180
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "180"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-hot-streak
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.471Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 578c7548bc2790e341deea1e2cbc4e07
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 147
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "147"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 339
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query FeatureFlags {
+                      evaluatedFeatureFlags() {
+                          name
+                          value
+                        }
+                  }
+            variables: {}
+        queryString:
+          - name: FeatureFlags
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?FeatureFlags
+      response:
+        bodySize: 132
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 132
+          text: "[\"H4sIAAAAAAAAAxTLwQmAMBAEwF72rQ1cAWlCfCxk8ZOonBdRQnoX5z8dmUFYh26WxlBOY\
+            jRXKtwu2NKxswqGUFFV+DvrOQ8PTPiLYOFNYx3jAwAA//8DAHxh3HJNAAAA\"]"
+          textDecoded:
+            data:
+              evaluatedFeatureFlags:
+                - name: telemetry-export
+                  value: true
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -670,12 +1119,1109 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1233
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.100Z
+      startedDateTime: 2024-01-18T15:07:29.623Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1ea9261b2d65e7f3832378812f084d71
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 734
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "734"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 343
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 26
+        content:
+          mimeType: application/json
+          size: 26
+          text: "{\"data\":{\"logEvent\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "26"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.620Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 0d48c349fec2c199bff1def3c34508c4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 756
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "756"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 366
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: 8895d5ac-676c-4eac-b964-85c1687a12f0
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:10:32 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1161
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-01-18T18:10:32.360Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: da1ca98ec798fc4346502307980a6757
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 585
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "585"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 366
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: 8895d5ac-676c-4eac-b964-85c1687a12f0
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 18:12:39 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1161
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-01-18T18:12:39.209Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e4ae9b3ce4528acef8067a179ece8244
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 342
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "342"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: connected
+                  feature: cody.auth
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.756Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6b3a541ad7e0f5d4628adb5da3a38c6d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.chat-question
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.763Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 342d97e3e74473b28755f6aa34c197ca
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 189
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "189"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 337
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+                              id
+                              embeddingExists
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/cody
+        queryString:
+          - name: Repository
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 151
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 151
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            qv8qjyNfANtbZV0lFJzk1JTUjLz0l0rMotLipWsSopKU2trawEAAAD//wMAKw==\",\
+            \"RAaLUAAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.472Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 570c1a8e665e8bb39edf65bc3da9f573
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 141
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "141"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteGraphQLFields {
+                  __type(name: "Site") {
+                      fields {
+                          name
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteGraphQLFields
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteGraphQLFields
+      response:
+        bodySize: 607
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 607
+          text: "[\"H4sIAAAAAAAAA3yS0W5aMQyG3+Vc7wm4q05hq8SkDUZ3MU2ViX/Aak5yFjvQI8S7T6HtR\
+            M6gd4n/P4792ceGyaiZHJunJxt6lNNG4Fmbya9jE6hDM2mEm9OnfzcVw8P9\",\"ZcT\
+            FsJFtTmQSw6XgyaC2hJmErVZJ3mItqSPGNWm1mFefUFjAR+KlWOXfCw5ILYU77iSIGt\
+            KlTM5B9Ud8RqgqoGy7bynuhZEqAS+GFMjfORdzsEpbZ/H8iKSjRvsUOTu7ouSeydDu4\
+            J4vwwFgXaCPKhbT0N4i+F7MEmkvDjpLsZuJrwCQ9/EwZbHpyPxTbDc2jxO2//W4ScBK\
+            kXT64gAG138h1fYdaRsZD8HgvWwR3GiagXXakfhHJNmIO7d4DugVgsu8VpekH3PISls\
+            sjUzUxNWDDOSHcTDraKpdDIW0hO2NLAViWa33bS1A65T9NhFjAWIJ0PEyxdWrPg209i\
+            Noff+lUAoBzsD30drYva1XxQCpgG9j13sUAvo9R6OrFsZHtoQ/WRL0lTn4zHsWy7vh0\
+            idldsOVkl3kYT7/enMvi/6ZDAcaFmSYSydWwGZtTr9Pp9NfAAAA//8DAMCXY1pZBAAA\
+            \"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.076Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: be19d9417d36e9a166b17ce300a46f59
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 100
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "100"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 345
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteHasCodyEnabled {
+                  site {
+                      isCodyEnabled
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteHasCodyEnabled
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteHasCodyEnabled
+      response:
+        bodySize: 40
+        content:
+          mimeType: application/json
+          size: 40
+          text: "{\"data\":{\"site\":{\"isCodyEnabled\":true}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "40"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.192Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5d654013a5d5769adf1b01e3463a67b9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 164
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "164"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 345
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteIdentification {
+              	site {
+              		siteID
+              		productSubscription {
+              			license {
+              				hashedKey
+              			}
+              		}
+              	}
+              }
+            variables: {}
+        queryString:
+          - name: SiteIdentification
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteIdentification
+      response:
+        bodySize: 235
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 235
+          text: "[\"H4sIAAAAAAAAAzTMTQrDIBBA4bvMuoK/o2bdTemyJxh1JEJJQjWLEnr3kkLf5u2+AwoNg\
+            umA3gb/f7vCBCFEVxxlgR6zsExZpIhWBJcVBk9KVwkX2F5r2fN47KnnV9tGWw==\",\
+            \"l5N5tsxL/4kz9ZnLnd8wQXKhVh2d1MZ4E1Vl1MlXtOyUyTZKSxi8UZ64ckIy0jMGb\
+            WxRCZND+Jx9AQAA//8DADbnxC62AAAA\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:29.464Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1951d7c2f154045a0e432063202ea21e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 345
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 44
+        content:
+          mimeType: application/json
+          size: 44
+          text: "{\"data\":{\"site\":{\"productVersion\":\"5.2.6\"}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Jan 2024 15:07:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "44"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1201
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-18T15:07:28.934Z
       time: 0
       timings:
         blocked: -1
@@ -697,10 +2243,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: x-sourcegraph-actor-anonymous-uid
-            value: rateLimitedClientabcde1234
+            value: enterpriseClientabcde1234
           - _fromType: array
             name: accept
             value: "*/*"
@@ -715,7 +2261,7 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 327
+        headersSize: 325
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -723,7 +2269,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -738,19 +2284,17 @@ log:
         content:
           mimeType: application/json
           size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:28 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -768,507 +2312,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
+        headersSize: 1286
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.364Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 1dc02f9183b7301196e17df853129955
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 177
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "177"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-tracing
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        bodySize: 38
-        content:
-          mimeType: application/json
-          size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "38"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.372Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 7621f48cb457ad1d8c74d87c4d231f1f
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 187
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "187"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-context-bfg-mixed
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        bodySize: 37
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.374Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 3bbd694b8902f45c5975ba165a477fb9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 192
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "192"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-new-jaccard-similarity
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        bodySize: 37
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.376Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 8048390b42729cfee0cbdb517ff797c0
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 199
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "199"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-dynamic-multiline-completions
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        bodySize: 37
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.377Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 4ec193b0f8a5f8ab8c74ee6597b2ee49
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 180
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "180"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-hot-streak
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        bodySize: 37
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.378Z
+      startedDateTime: 2024-01-18T15:07:28.682Z
       time: 0
       timings:
         blocked: -1
@@ -1290,10 +2339,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: x-sourcegraph-actor-anonymous-uid
-            value: rateLimitedClientabcde1234
+            value: enterpriseClientabcde1234
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1308,7 +2357,7 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 320
+        headersSize: 318
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1316,7 +2365,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -1329,36 +2378,24 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?FeatureFlags
       response:
-        bodySize: 176
+        bodySize: 186
         content:
           encoding: base64
           mimeType: application/json
-          size: 176
-          text:
-            "[\"H4sIAAAAAAAAA2TLwQ0CIRAF0F7mvDRAAduE8fAzfFcj7GxgMDGE3o0no97fG5LgkDiED\
-            +QOZ1oJ75VrxtYknobsKJQoaukZjmqyyJtSotfOuXwDvcJDMb0HZ/OPvSC3P4zuplaO\
-            TGfwCr3t2285z/kCAAD//wMA6iaiYqUAAAA=\"]"
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: cody-pro
-                  value: true
-                - name: cody-chat-mock-test
-                  value: false
-                - name: cody-autocomplete-tracing
-                  value: false
+          size: 186
+          text: "[\"H4sIAAAAAAAAA4TLsQ3CMBAF0F2ujhfwAFkCUXyd\",\"PwFh5yL7jIQs746oIir694Yk\
+            OCQO4Qu5w5lWwnvlmrE1iZchOwolilp6B3Q3tXJkOoNX6GPfZJHvpcQbcuNcfove4aG\
+            YPoOz+R98VDuF1855nfMDAAD//w==\",\"AwBNf9A5pQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:28 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1378,12 +2415,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1318
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.360Z
+      startedDateTime: 2024-01-18T15:07:28.681Z
       time: 0
       timings:
         blocked: -1
@@ -1393,146 +2430,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3d6bf876a5b8bd7487b614b1d3bb1866
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 147
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "147"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 341
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-
-                  query FeatureFlags {
-                      evaluatedFeatureFlags() {
-                          name
-                          value
-                        }
-                  }
-            variables: {}
-        queryString:
-          - name: FeatureFlags
-            value: null
-        url: https://sourcegraph.com/.api/graphql?FeatureFlags
-      response:
-        bodySize: 392
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 392
-          text:
-            "[\"H4sIAAAAAAAAA6SSQW4CMQxF75I1XnTTxRyAS1RdeJLPJJBJRrYDRIi7V7Boi9Shqrp//\
-            8n/yxcX2NgNF4cj58aGsAVbE2wzT+qGt4srPMMNTtNU2kLa5IhOKDxmBLdxtxzcsOOs\
-            uG4+cUPGDJNOOC9V7Is0ad9BX0MnblZ9nZcMA5mwT2Vad98jPrLRXP2BDGrrsILFRyo\
-            40QH9VCX8In64JWDHLRupsfgaIBT7KCk8r7NIXQWEDZTTnEwJZw8EBNpVudd4qL1ipj\
-            1sFE5F/7Dprf6evWcJpGlOmSVZXxWMuY608ATSUzIfiQWspLGK+Wb6vwlfXsdngmLCa\
-            nQXJC5G2ovxmWKaYk5TtB+e4/16/QAAAP//AwAusk/5zAIAAA==\"]"
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: signup-survey-enabled
-                  value: false
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-tracing
-                  value: false
-                - name: cody-chat-mock-test
-                  value: false
-                - name: search-new-keyword
-                  value: false
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
-                - name: cody-pro
-                  value: true
-                - name: rate-limits-exceeded-for-testing
-                  value: true
-                - name: cody-pro-jetbrains
-                  value: true
-                - name: cody-autocomplete-new-jaccard-similarity
-                  value: true
-                - name: blob-page-switch-areas-shortcuts
-                  value: false
-                - name: cody-autocomplete-default-starcoder-16b
-                  value: false
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1425
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.382Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 9124ee9eed22dee2aa6619ccf68eb99c
+    - _id: b8f55243289db13d851007b0386605f7
       _order: 0
       cache: {}
       request:
@@ -1540,15 +2438,11 @@ log:
         cookies: []
         headers:
           - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+            name: user-agent
+            value: enterpriseClient / v1
           - _fromType: array
             name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
+            value: text/plain;charset=UTF-8
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1563,15 +2457,15 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 253
         httpVersion: HTTP/1.1
         method: POST
         postData:
-          mimeType: application/json; charset=utf-8
+          mimeType: text/plain;charset=UTF-8
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -1603,19 +2497,17 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
+            value: Thu, 18 Jan 2024 15:07:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "385"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1633,12 +2525,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1393
+        headersSize: 1286
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.380Z
+      startedDateTime: 2024-01-18T15:07:29.621Z
       time: 0
       timings:
         blocked: -1
@@ -1648,29 +2540,25 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b2b87eccbfe9ce3a7d738e8684276aa5
+    - _id: 57dead9db0e913172da9c7eef1ffbd09
       _order: 0
       cache: {}
       request:
-        bodySize: 342
+        bodySize: 756
         cookies: []
         headers:
           - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+            name: user-agent
+            value: enterpriseClient / v1
           - _fromType: array
             name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
+            value: text/plain;charset=UTF-8
           - _fromType: array
             name: accept
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "342"
+            value: "756"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -1679,62 +2567,57 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 350
+        headersSize: 253
         httpVersion: HTTP/1.1
         method: POST
         postData:
-          mimeType: application/json; charset=utf-8
+          mimeType: text/plain;charset=UTF-8
           params: []
           textJSON:
-            query: |
-
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
               	}
               }
             variables:
-              events:
-                - action: connected
-                  feature: cody.auth
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.1.3
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: 8895d5ac-676c-4eac-b964-85c1687a12f0
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
         queryString:
-          - name: RecordTelemetryEvents
+          - name: LogEventMutation
             value: null
-        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
       response:
-        bodySize: 112
+        bodySize: 26
         content:
-          encoding: base64
           mimeType: application/json
-          size: 112
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 26
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
+            value: Thu, 18 Jan 2024 18:10:32 GMT
           - name: content-type
             value: application/json
-          - name: transfer-encoding
-            value: chunked
+          - name: content-length
+            value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "385"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1752,135 +2635,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1425
+        headersSize: 1286
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.598Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 650891afc69a53c45dfa3d7673fae09f
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 350
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "350"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 350
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: executed
-                  feature: cody.chat-question
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.1.3
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:19 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1425
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.844Z
+      startedDateTime: 2024-01-18T18:10:32.377Z
       time: 0
       timings:
         blocked: -1
@@ -1902,10 +2662,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: x-sourcegraph-actor-anonymous-uid
-            value: rateLimitedClientabcde1234
+            value: enterpriseClientabcde1234
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1920,7 +2680,7 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 318
+        headersSize: 316
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1928,7 +2688,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -1941,30 +2701,23 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?Repository
       response:
-        bodySize: 120
+        bodySize: 123
         content:
           encoding: base64
           mimeType: application/json
-          size: 120
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
-            o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
-          textDecoded:
-            data:
-              repository:
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 123
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q\",\"BPEyU5SslEJzw8qTjP0KUtwt\
+            K1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:28 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1984,12 +2737,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1318
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.362Z
+      startedDateTime: 2024-01-18T15:07:28.680Z
       time: 0
       timings:
         blocked: -1
@@ -2011,7 +2764,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -2026,7 +2779,7 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 254
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -2034,113 +2787,7 @@ log:
           params: []
           textJSON:
             query: |-
-
-              query Repository($name: String!) {
-              	repository(name: $name) {
-                              id
-                              embeddingExists
-              	}
-              }
-            variables:
-              name: github.com/sourcegraph/cody
-        queryString:
-          - name: Repository
-            value: null
-        url: https://sourcegraph.com/.api/graphql?Repository
-      response:
-        bodySize: 151
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 151
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q\",\"BPEyU5SslEJzw8qTjP0KUtwt\
-            K1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8\
-            DAP+HlYJUAAAA\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 18 Jan 2024 18:01:22 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1318
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-18T18:01:21.708Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c05aaa2c537f6063bf1ad6a5b18f540b
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 189
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "189"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 339
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -2159,8 +2806,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 148
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
             o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+H\
             lYJUAAAA\"]"
           textDecoded:
@@ -2171,7 +2817,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jan 2024 18:01:22 GMT
+            value: Thu, 18 Jan 2024 15:07:28 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2202,7 +2848,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-18T18:01:21.917Z
+      startedDateTime: 2024-01-18T15:07:28.815Z
       time: 0
       timings:
         blocked: -1
@@ -2224,7 +2870,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: rateLimitedClient / v1
+            value: enterpriseClient / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -2239,7 +2885,7 @@ log:
             value: close
           - name: host
             value: sourcegraph.com
-        headersSize: 263
+        headersSize: 262
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -2247,7 +2893,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -2269,8 +2915,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 212
-          text:
-            "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIl\
+          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIl\
             aA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cf\
             sONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFq\
             gAAAA\"]"
@@ -2284,15 +2929,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
+            value: Thu, 18 Jan 2024 15:07:28 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "386"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2312,240 +2955,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1425
+        headersSize: 1318
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.340Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: e4135fccc8dc86ca58dd7e5d8a845443
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 164
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "164"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 347
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-
-              query SiteIdentification {
-              	site {
-              		siteID
-              		productSubscription {
-              			license {
-              				hashedKey
-              			}
-              		}
-              	}
-              }
-            variables: {}
-        queryString:
-          - name: SiteIdentification
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteIdentification
-      response:
-        bodySize: 212
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 212
-          text:
-            "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIl\
-            aA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cf\
-            sONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFq\
-            gAAAA\"]"
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: bd8965b2eef3a61b4e05647a401026066c88116c8594a0c10b09cfb38b9e1669
-                siteID: SourcegraphWeb
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:18 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "385"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1425
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:18.373Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 12d7cb26f4604f09e8bd878a2c0ba362
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 347
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 136
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 136
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkamFkYWFvFGB\
-            kYmugaGuobm8aZ6RrppBkbJ5gYGiWbmxkZKtbW1AAAAAP//AwCwU+rrSQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                productVersion: 258288_2024-01-17_5.2-f02c700a6732
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Jan 2024 17:28:17 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "386"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1425
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-01-17T17:28:17.631Z
+      startedDateTime: 2024-01-18T15:07:28.657Z
       time: 0
       timings:
         blocked: -1

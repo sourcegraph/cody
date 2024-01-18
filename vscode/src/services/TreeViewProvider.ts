@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlag, isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
+import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
 import { type AuthStatus } from '../chat/protocol'
 import { getFullConfig } from '../configuration'
@@ -73,11 +73,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 continue
             }
 
-            if (
-                item.requireUpgradeAvailable &&
-                (await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
-                !(this.authStatus?.userCanUpgrade ?? false)
-            ) {
+            if (item.requireUpgradeAvailable && !(this.authStatus?.userCanUpgrade ?? false)) {
                 continue
             }
 

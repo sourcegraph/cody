@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { type URI } from 'vscode-uri'
+
 /**
  * Extracts the test type from the given text.
  * @param text - The text to extract the test type from.
@@ -30,21 +32,15 @@ export function toSlashCommand(command: string): string {
 }
 
 /**
- * Checks if the given file path is a valid test file name.
- * @param fsPath - The file system path to check
- * @returns boolean - True if the path is a valid test file name, false otherwise.
+ * Checks if the given file uri has a valid test file name.
+ * @param uri - The file uri to check
  *
  * Removes file extension and checks if file name starts with 'test' or
  * ends with 'test', excluding files starting with 'test-'.
  * Also returns false for any files in node_modules directory.
  */
-export function isValidTestFileName(fsPath: string): boolean {
-    // Check if file path contains 'node_modules'
-    if (fsPath.includes('node_modules')) {
-        return false
-    }
-
-    const fileNameWithoutExt = path.basename(fsPath, path.extname(fsPath))
+export function isValidTestFile(uri: URI): boolean {
+    const fileNameWithoutExt = path.posix.basename(uri.path, path.posix.extname(uri.path))
 
     const suffixTest = /([._-](test|spec))|Test|Spec$/
 
