@@ -3,7 +3,7 @@ import { expect, type Frame, type FrameLocator, type Locator, type Page } from '
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { test as baseTest, ExtraWorkspaceSettings, type DotcomUrlOverride } from './helpers'
+import { test as baseTest, type DotcomUrlOverride, type ExtraWorkspaceSettings } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExtraWorkspaceSettings>({
     extraWorkspaceSettings: {
