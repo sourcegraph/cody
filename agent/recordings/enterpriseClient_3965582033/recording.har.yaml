@@ -1134,11 +1134,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1ea9261b2d65e7f3832378812f084d71
+    - _id: 0d48c349fec2c199bff1def3c34508c4
       _order: 0
       cache: {}
       request:
-        bodySize: 734
+        bodySize: 756
         cookies: []
         headers:
           - _fromType: array
@@ -1156,7 +1156,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "734"
+            value: "756"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -1191,7 +1191,7 @@ log:
               }
             variables:
               client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
+              connectedSiteID: 8895d5ac-676c-4eac-b964-85c1687a12f0
               event: CodyVSCodeExtension:Auth:connected
               source: IDEEXTENSION
               url: ""
@@ -1209,7 +1209,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jan 2024 15:07:29 GMT
+            value: Fri, 19 Jan 2024 07:16:13 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1238,7 +1238,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-18T15:07:29.620Z
+      startedDateTime: 2024-01-19T07:16:13.108Z
       time: 0
       timings:
         blocked: -1
@@ -2205,11 +2205,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b8f55243289db13d851007b0386605f7
+    - _id: 57dead9db0e913172da9c7eef1ffbd09
       _order: 0
       cache: {}
       request:
-        bodySize: 734
+        bodySize: 756
         cookies: []
         headers:
           - _fromType: array
@@ -2223,7 +2223,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "734"
+            value: "756"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -2258,7 +2258,7 @@ log:
               }
             variables:
               client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
+              connectedSiteID: 8895d5ac-676c-4eac-b964-85c1687a12f0
               event: CodyVSCodeExtension:Auth:connected
               source: IDEEXTENSION
               url: ""
@@ -2276,7 +2276,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jan 2024 15:07:29 GMT
+            value: Fri, 19 Jan 2024 07:16:13 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -2305,7 +2305,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-18T15:07:29.621Z
+      startedDateTime: 2024-01-19T07:16:13.124Z
       time: 0
       timings:
         blocked: -1
