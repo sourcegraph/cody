@@ -189,7 +189,10 @@ class AnthropicProvider extends Provider {
                         //
                         // If it happens once, we disable the behavior where the client includes a
                         // `model` parameter.
-                        if (error.message.includes('Unsupported code completion model')) {
+                        if (
+                            error.message.includes('Unsupported code completion model') ||
+                            error.message.includes('Unsupported custom model')
+                        ) {
                             isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
                         }
                     }
