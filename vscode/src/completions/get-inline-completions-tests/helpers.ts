@@ -6,7 +6,7 @@ import { testFileUri, type CompletionParameters, type CompletionResponse } from 
 import { type SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient } from '../client'
+import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient, type CompletionResponseGenerator } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
@@ -29,11 +29,20 @@ const URI_FIXTURE = testFileUri('test.ts')
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
-    onNetworkRequest?: (
-        params: CompletionParameters,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void
-    ) => void | Promise<void>
     takeSuggestWidgetSelectionIntoAccount?: boolean
+    onNetworkRequest?: (params: CompletionParameters) => void
+    completionResponseGenerator?: (
+        params: CompletionParameters
+    ) => CompletionResponseGenerator | Generator<CompletionResponse>
+}
+
+interface ParamsResult extends InlineCompletionsParams {
+    /**
+     * A promise that's resolved once `completionResponseGenerator` is done.
+     * Used to wait for all the completion response chunks to be processed by the
+     * request manager in autocomplete tests.
+     */
+    completionResponseGeneratorPromise: Promise<unknown>
 }
 
 /**
@@ -44,28 +53,34 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
 export function params(
     code: string,
     responses: CompletionResponse[] | 'never-resolve',
-    {
+    params: Params = {}
+): ParamsResult {
+    const {
         languageId = 'typescript',
         onNetworkRequest,
+        completionResponseGenerator,
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
-        ...params
-    }: Params = {}
-): InlineCompletionsParams {
+        ...restParams
+    } = params
+
     let requestCounter = 0
+    let resolveCompletionResponseGenerator: (value?: unknown) => void
+    const completionResponseGeneratorPromise = new Promise(resolve => (resolveCompletionResponseGenerator = resolve))
 
     const client: Pick<CodeCompletionsClient, 'complete'> = {
-        async *complete(params) {
-            const partialResponses: CompletionResponse[] = []
+        async *complete(completeParams) {
+            onNetworkRequest?.(completeParams)
 
-            await onNetworkRequest?.(params, (incompleteResponse: CompletionResponse): void => {
-                partialResponses.push(incompleteResponse)
-            })
+            if (completionResponseGenerator) {
+                for await (const response of completionResponseGenerator(completeParams)) {
+                    yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                }
 
-            for (const response of partialResponses) {
-                yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                // Signal to tests that all streaming chunks are processed.
+                resolveCompletionResponseGenerator?.()
             }
 
             if (responses === 'never-resolve') {
@@ -118,7 +133,10 @@ export function params(
             prefix: docContext.prefix,
         }),
         isDotComUser,
-        ...params,
+        ...restParams,
+
+        // Test-specific helpers
+        completionResponseGeneratorPromise,
     }
 }
 

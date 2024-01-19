@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
-import { completion, initTreeSitterParser } from '../test-helpers'
+import { completion, initTreeSitterParser, sleep } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
 
@@ -28,26 +28,34 @@ describe('[getInlineCompletions] dynamic multiline', () => {
                 `,
             ],
             {
-                onNetworkRequest(_params, onPartialResponse) {
-                    onPartialResponse?.(completion`
+                async *completionResponseGenerator() {
+                    yield completion`
                         ├myFunction() {
                         console.log(1)
-                    ┤`)
-                    onPartialResponse?.(completion`
+                    ┤`
+
+                    // Add paused between completion chunks to emulate
+                    // the production behaviour where packets come with a delay.
+                    await sleep(100)
+
+                    yield completion`
                         ├myFunction() {
                         console.log(1)
                         console.log(2)
                         console.log(3)
                         console.┤
-                    ┴┴┴┴`)
-                    onPartialResponse?.(completion`
+                    ┴┴┴┴`
+
+                    await sleep(100)
+
+                    yield completion`
                         ├myFunction() {
                         console.log(1)
                         console.log(2)
                         console.log(3)
                         console.log(4)
                     }
-                    console.log(5)┤`)
+                    console.log(5)┤`
                 },
                 dynamicMultilineCompletions: true,
             }
@@ -80,27 +88,29 @@ describe('[getInlineCompletions] dynamic multiline', () => {
                 `,
             ],
             {
-                onNetworkRequest(_params, onPartialResponse) {
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                        ┤`)
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                                console.log(2)
-                                console.log(3)
-                                console.┤
-                        `)
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                                console.log(2)
-                                console.log(3)
-                                console.log(4)
-                            }
+                *completionResponseGenerator() {
+                    yield completion`├Test {
+                        constructor() {
+                            console.log(1)
+                    ┤`
+
+                    yield completion`├Test {
+                        constructor() {
+                            console.log(1)
+                            console.log(2)
+                            console.log(3)
+                            console.┤
+                    `
+
+                    yield completion`├Test {
+                        constructor() {
+                            console.log(1)
+                            console.log(2)
+                            console.log(3)
+                            console.log(4)
                         }
-                        console.log(5)┤`)
+                    }
+                    console.log(5)┤`
                 },
                 dynamicMultilineCompletions: true,
             }

@@ -62,3 +62,7 @@ export function documentAndPosition(
 export async function nextTick(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 0))
 }
+
+export async function sleep(ms: number): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, ms))
+}
