@@ -499,7 +499,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     if (formInput.startsWith(selectedCommand?.slashCommand)) {
                         // submit message if the input has slash command already completed
                         setMessageBeingEdited(false)
-                        onChatSubmit(event.metaKey || event.ctrlKey)
+                        onChatSubmit(!(event.metaKey || event.ctrlKey))
                     } else {
                         const newInput = selectedCommand?.slashCommand
                         setFormInput(newInput || formInput)
@@ -544,7 +544,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // trim the formInput to make sure input value is not empty.
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
-                onChatSubmit(event.metaKey || event.ctrlKey)
+                onChatSubmit(!(event.metaKey || event.ctrlKey))
                 return
             }
 
