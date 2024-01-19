@@ -6,10 +6,16 @@ import type { Message } from '../../sourcegraph-api'
 import type { Interaction, InteractionJSON } from './interaction'
 import { errorToChatError, type ChatMessage } from './messages'
 
-interface TranscriptJSONScope {
+interface DeprecatedTranscriptJSONScope {
     includeInferredRepository: boolean
     includeInferredFile: boolean
     repositories: string[]
+}
+
+interface EnhancedContextJSON {
+    // For enterprise multi-repo search, the manually selected repository names
+    // (for example "github.com/sourcegraph/sourcegraph") and IDs
+    selectedRepos: { id: string; name: string }[]
 }
 
 export interface TranscriptJSON {
@@ -19,7 +25,8 @@ export interface TranscriptJSON {
     chatTitle?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
-    scope?: TranscriptJSONScope
+    scope?: DeprecatedTranscriptJSONScope
+    enhancedContext?: EnhancedContextJSON
 }
 
 /**

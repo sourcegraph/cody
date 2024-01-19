@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import type { ContextFile } from '../codebase-context/messages'
+import type { ContextFile, ContextFileFile } from '../codebase-context/messages'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 export type ContextResult = ContextFile & {
@@ -15,6 +15,12 @@ export interface FilenameContextFetcher {
 
 export interface LocalEmbeddingsFetcher {
     getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
+}
+
+// Minimal interface so inline edit can use remote search for context.
+export interface IRemoteSearch {
+    setWorkspaceUri(uri: URI): Promise<void>
+    search(query: string): Promise<ContextFileFile[]>
 }
 
 interface Point {

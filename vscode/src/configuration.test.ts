@@ -118,7 +118,6 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
-            experimentalLocalSymbols: true,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,

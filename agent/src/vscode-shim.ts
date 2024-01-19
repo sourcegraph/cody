@@ -584,9 +584,36 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showInputBox')
     },
-    createQuickPick: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.createQuickPick')
+    createQuickPick: <T extends vscode.QuickPickItem>() => {
+        console.log('creating stub quickpick', new Error().stack)
+        const quickPick: vscode.QuickPick<T> = {
+            title: '',
+            items: [],
+            activeItems: [],
+            selectedItems: [],
+            busy: false,
+            enabled: false,
+            step: 1,
+            totalSteps: 1,
+            canSelectMany: false,
+            matchOnDescription: false,
+            matchOnDetail: false,
+            placeholder: '',
+            ignoreFocusOut: false,
+            value: '',
+            buttons: [],
+            onDidAccept: new EventEmitter<void>().event,
+            onDidChangeActive: new EventEmitter<readonly T[]>().event,
+            onDidTriggerItemButton: new EventEmitter<vscode.QuickPickItemButtonEvent<T>>().event,
+            onDidChangeValue: new EventEmitter<string>().event,
+            onDidTriggerButton: new EventEmitter<vscode.QuickInputButton>().event,
+            onDidHide: new EventEmitter<void>().event,
+            onDidChangeSelection: new EventEmitter<T[]>().event,
+            show: () => {},
+            hide: () => {},
+            dispose: () => {},
+        }
+        return quickPick
     },
     createInputBox: () => {
         console.log(new Error().stack)

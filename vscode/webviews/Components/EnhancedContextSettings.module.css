@@ -26,8 +26,41 @@
     display: block;
 }
 
-.folders-list {
+.folders-list, .enterprise-repo-list {
     margin: 1rem 0 0.25rem;
+}
+
+.enterprise-repo-list h1 {
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: inherit;
+}
+
+.enterprise-repo-list-item {
+    display: flex;
+    align-items: center;
+    margin: 0.5rem 0;
+}
+
+.enterprise-repo-list-item .info-close {
+    flex: 0 1em;
+}
+
+.enterprise-repo-list-item .repo-name {
+    flex: 1
+}
+
+.enterprise-repo-list-item button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.no-repos-message {
+    display: block;
+    text-align: center;
+    padding: 1em;
 }
 
 .folders-list > dt {
@@ -176,7 +209,8 @@
         transform: scale(300%);
         opacity: 0;
     }
-    to {
+
+    100% {
         transform: scale(300%);
         opacity: 0;
     }

@@ -84,6 +84,21 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const REPOSITORY_LIST_QUERY = `
+query Repositories($first: Int!, $after: String) {
+    repositories(first: $first, after: $after) {
+        nodes {
+            id
+            name
+            url
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
@@ -91,52 +106,37 @@ query Repository($name: String!) {
 	}
 }`
 
-export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
-query Repository($name: String!) {
-	repository(name: $name) {
-                id
-                embeddingExists
-	}
-}`
+export const REPOSITORY_IDS_QUERY = `
+query Repositories($names: [String!]!, $first: Int!) {
+    repositories(names: $names, first: $first) {
+      nodes {
+        name
+        id
+      }
+    }
+  }
+`
 
-export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
-}`
-
-export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
-query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
+export const CONTEXT_SEARCH_QUERY = `
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+        ...on FileChunkContext {
+            blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+        }
+    }
 }`
 
 export const SEARCH_ATTRIBUTION_QUERY = `

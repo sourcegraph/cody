@@ -804,7 +804,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
