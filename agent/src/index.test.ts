@@ -657,27 +657,23 @@ export class Dog implements Animal {
             { timeout: mayRecord ? 10_000 : undefined }
         )
 
-        it(
-            'chat/editMessage with index',
-            async () => {
-                // edits by index replaces message at index, and erases all subsequent messages
-                const id = await client.request('chat/new', null)
-                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
-                await client.sendMessage(id, 'I have a turtle named "potter", reply "ok" if you understand.')
-                await client.sendMessage(id, 'I have a bird named "skywalker", reply "ok" if you understand.')
-                await client.sendMessage(id, 'I have a dog named "happy", reply "ok" if you understand.')
-                await client.editMessage(id, 'I have a tiger named "zorro", reply "ok" if you understand', 2)
-                {
-                    const lastMessage = await client.sendMessage(id, 'What pets do I have?')
-                    const answer = lastMessage?.text?.toLocaleLowerCase()
-                    expect(answer?.includes('turtle')).toBeTruthy()
-                    expect(answer?.includes('tiger')).toBeTruthy()
-                    expect(answer?.includes('bird')).toBeFalsy()
-                    expect(answer?.includes('dog')).toBeFalsy()
-                }
-            },
-            { timeout: mayRecord ? 10_000 : undefined }
-        )
+        it('chat/editMessage with index', async () => {
+            const id = await client.request('chat/new', null)
+            await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+            // edits by index replaces message at index, and erases all subsequent messages
+            await client.sendMessage(id, 'I have a turtle named "potter", reply single "ok" if you understand.')
+            await client.sendMessage(id, 'I have a bird named "skywalker", reply single "ok" if you understand.')
+            await client.sendMessage(id, 'I have a dog named "happy", reply single "ok" if you understand.')
+            await client.editMessage(id, 'I have a tiger named "zorro", reply single "ok" if you understand', 2)
+            {
+                const lastMessage = await client.sendMessage(id, 'What pets do I have?')
+                const answer = lastMessage?.text?.toLocaleLowerCase()
+                expect(answer?.includes('turtle')).toBeTruthy()
+                expect(answer?.includes('tiger')).toBeTruthy()
+                expect(answer?.includes('bird')).toBeFalsy()
+                expect(answer?.includes('dog')).toBeFalsy()
+            }
+        }, 30_000)
     })
 
     describe('Commands', () => {
