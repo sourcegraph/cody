@@ -598,7 +598,7 @@ describe('Agent', () => {
                 name: string;
 
                 makeAnimalSound() {
-                  return "Bark!";
+                  return "Woof!";
                 }
 
                 isMammal = true;
