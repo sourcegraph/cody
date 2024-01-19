@@ -1,3 +1,5 @@
+import fspromises from 'fs/promises'
+
 import type * as vscode from 'vscode'
 
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -6,6 +8,10 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import * as vscode_shim from './vscode-shim'
 
+/**
+ * Manages document-related operations for the agent such as opening, closing,
+ * and changing text contents, selections and visible ranges.
+ */
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     // Keys are `vscode.Uri.toString()` formatted. We don't use `vscode.Uri` as
     // keys because hashcode/equals behave unreliably.
@@ -104,7 +110,13 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         } as any
     }
 
-    public openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
-        return Promise.resolve(this.loadedDocument(new TextDocumentWithUri(uri)))
+    public async openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
+        const document = new TextDocumentWithUri(uri)
+        if (!this.agentDocuments.has(document.underlying.uri)) {
+            // Read the file content from disk if the user hasn't opened this file before.
+            const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
+            document.underlying.content = buffer.toString()
+        }
+        return Promise.resolve(this.loadedDocument(document))
     }
 }

@@ -6,7 +6,7 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared'
+import { isRateLimitError, logError } from '@sourcegraph/cody-shared'
 
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
@@ -25,7 +25,7 @@ type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifi
 
 // String literal types for the names of the Cody Agent protocol methods.
 export type RequestMethodName = keyof Requests
-type NotificationMethodName = keyof Notifications
+export type NotificationMethodName = keyof Notifications
 type MethodName = RequestMethodName | NotificationMethodName
 
 // Parameter type of a request or notification. Note: JSON-RPC methods can only
@@ -396,7 +396,11 @@ export class MessageHandler {
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)
                 if (notificationHandler) {
-                    void notificationHandler(msg.params)
+                    try {
+                        void notificationHandler(msg.params)
+                    } catch (error) {
+                        logError('JSON-RPC', `Uncaught error in notification handler for method '${msg.method}'`, error)
+                    }
                 } else {
                     console.error(`No handler for notification with method ${msg.method}`)
                 }

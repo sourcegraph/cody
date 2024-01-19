@@ -14,7 +14,7 @@ import * as vscode_shim from './vscode-shim'
 // all references have a consistent view on a document. Use AgentWorkspaceDocuments
 // to get a reference to a new or existing instance.
 export class AgentTextDocument implements vscode.TextDocument {
-    constructor(public readonly textDocument: TextDocumentWithUri) {
+    constructor(public textDocument: TextDocumentWithUri) {
         this.content = textDocument.content ?? ''
         this.uri = textDocument.uri
         this.fileName = textDocument.uri.fsPath
@@ -22,10 +22,12 @@ export class AgentTextDocument implements vscode.TextDocument {
         this.languageId = getLanguageForFileName(this.fileName)
         this.offsets = new DocumentOffsets(textDocument.underlying)
         this.lineCount = this.offsets.lineCount()
-        this.underlying = textDocument
     }
 
-    public underlying: TextDocumentWithUri
+    public get underlying(): TextDocumentWithUri {
+        return this.textDocument
+    }
+
     private content: string
     private offsets: DocumentOffsets
     public uri: vscode.Uri
@@ -56,7 +58,7 @@ export class AgentTextDocument implements vscode.TextDocument {
         this.languageId = getLanguageForFileName(this.fileName)
         this.offsets = new DocumentOffsets(textDocument.underlying)
         this.lineCount = this.offsets.lineCount()
-        this.underlying = textDocument
+        this.textDocument = textDocument
         this.version++
     }
 

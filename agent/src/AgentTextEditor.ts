@@ -3,16 +3,13 @@ import * as vscode from 'vscode'
 import { type AgentTextDocument } from './AgentTextDocument'
 
 export function newTextEditor(document: AgentTextDocument): vscode.TextEditor {
-    const selection: vscode.Selection = document.textDocument.selection
+    const selection: vscode.Selection = document.underlying.selection
         ? new vscode.Selection(
               new vscode.Position(
-                  document.textDocument.selection.start.line,
-                  document.textDocument.selection.start.character
+                  document.underlying.selection.start.line,
+                  document.underlying.selection.start.character
               ),
-              new vscode.Position(
-                  document.textDocument.selection.end.line,
-                  document.textDocument.selection.end.character
-              )
+              new vscode.Position(document.underlying.selection.end.line, document.underlying.selection.end.character)
           )
         : new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
 
