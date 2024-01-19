@@ -1,4 +1,5 @@
 import { pluralize } from '../common'
+import { ConfigFeaturesSingleton } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
 export interface Attribution {
@@ -22,7 +23,7 @@ export class GuardrailsPost implements Guardrails {
     private currentRequests: Map<string, AttributionSearchSync> = new Map()
     constructor(private postSnippet: (txt: string) => void) {}
 
-    public searchAttribution(snippet: string): Promise<Attribution> {
+    public async searchAttribution(snippet: string): Promise<Attribution> {
         let request = this.currentRequests.get(snippet)
         if (request === undefined) {
             request = new AttributionSearchSync()

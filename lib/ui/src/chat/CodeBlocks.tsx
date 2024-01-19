@@ -216,7 +216,12 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                             attributionContainer.title = 'Attribution not found.'
                         })
                         .catch(error => {
-                            console.error('promise failed', error)
+                            attributionContainer.classList.add(styles.attributionIconUnavailable)
+                            if (isError(error)) {
+                                attributionContainer.title = error.message
+                            } else {
+                                attributionContainer.title = 'Attribution unavailable.'
+                            }
                         })
                 }
 
