@@ -363,12 +363,24 @@ describe('Agent', () => {
             accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
         })
         expect(serverInfo?.authStatus?.isLoggedIn).toBeFalsy()
+
+        // Log in so test cases are authenticated by default
+        const valid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            customHeaders: {},
+        })
+        expect(valid?.isLoggedIn).toBeTruthy()
     }, 10_000)
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
+    const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
+    const squirrelUri = Uri.file(squirrelPath)
 
     async function openFile(uri: Uri) {
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
@@ -547,11 +559,6 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        // This test is skipped because it shells out to `symf expand-query`, which
-        // requires an access token to send an llm request and is, therefore, not
-        // able to return stable results in replay mode. Also, we don't have an
-        // access token in ci so this test can only pass when running locally (for
-        // now).
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await openFile(animalUri)
             await client.request('command/execute', { command: 'cody.search.index-update' })
@@ -567,23 +574,27 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
           " \`\`\`typescript
-          class Dog implements Animal {
-            name: string;
-
-            constructor(name: string) {
-              this.name = name;
-            }
-
-            makeAnimalSound() {
-              return "Woof!";
-            }
-
-            isMammal = true;
-          }
+export class Dog implements Animal {
+  name: string;
+  makeAnimalSound(): string {
+    return "Bark!";
+  }
+  isMammal: boolean = true;
+}
           \`\`\`"
         `,
                 explainPollyError
             )
+        }, 30_000)
+
+        it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
+            await openFile(squirrelUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
+                addEnhancedContext: true,
+            })
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
