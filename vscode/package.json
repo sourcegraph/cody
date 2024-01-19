@@ -35,7 +35,8 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
   "categories": [
     "Programming Languages",
