@@ -233,7 +233,7 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {!isItemBeingEdited && showEditButton && (
+            {!isItemBeingEdited && message.speaker === 'human' && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext

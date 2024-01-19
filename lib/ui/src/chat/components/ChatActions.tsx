@@ -24,7 +24,7 @@ export const ChatActions: React.FunctionComponent<{
                 disabled={disabled}
                 title={disabled ? warning : 'Edit and re-send your last message'}
             >
-                <span className={styles.chatActionButtonTitle}>Edit & Retry</span> {metaKeyIcon} E
+                <span className={styles.chatActionButtonTitle}>Edit Last Message</span> {metaKeyIcon} E
             </button>
             <button
                 type="button"
