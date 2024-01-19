@@ -37,6 +37,7 @@ import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const inMemorySecretStorageMap = new Map<string, string>()
+const globalState = new AgentGlobalState()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -59,7 +60,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: new AgentGlobalState(),
+        globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
@@ -329,6 +330,12 @@ export class Agent extends MessageHandler {
                 }
             )
             return { result: message }
+        })
+
+        this.registerAuthenticatedRequest('testing/reset', async () => {
+            await this.workspace.reset()
+            globalState.reset()
+            return null
         })
 
         this.registerAuthenticatedRequest('command/execute', async params => {
