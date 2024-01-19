@@ -26,8 +26,8 @@ export const Transcript: React.FunctionComponent<
     {
         transcript: ChatMessage[]
         messageInProgress: ChatMessage | null
-        messageBeingEdited: boolean
-        setMessageBeingEdited: (input: boolean) => void
+        messageBeingEdited?: number
+        setMessageBeingEdited: (index?: number) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         className?: string
@@ -155,10 +155,11 @@ export const Transcript: React.FunctionComponent<
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
+            const messageIndex = index + offset - 1 // remove the welcome message
             return (
                 <TranscriptItem
                     key={index + offset}
-                    index={index + offset - 1} // remove the welcome message
+                    index={messageIndex}
                     message={message}
                     inProgress={
                         offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
@@ -216,7 +217,7 @@ export const Transcript: React.FunctionComponent<
                         index={transcript.length}
                         message={messageInProgress}
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
-                        beingEdited={false}
+                        beingEdited={undefined}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}
                         symbolLinkComponent={symbolLinkComponent}

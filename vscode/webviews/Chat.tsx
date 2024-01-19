@@ -247,6 +247,7 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     type,
     className,
+    rows,
     autoFocus,
     value,
     setValue,
@@ -268,7 +269,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (autoFocus) {
             inputRef.current?.focus()
         }
-    }, [autoFocus, value])
+    }, [autoFocus, value, rows])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat

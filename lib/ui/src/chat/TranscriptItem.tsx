@@ -44,8 +44,8 @@ export const TranscriptItem: React.FunctionComponent<
         index: number
         message: ChatMessage
         inProgress: boolean
-        beingEdited: boolean
-        setBeingEdited: (input: boolean) => void
+        beingEdited?: number
+        setBeingEdited: (index?: number) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
@@ -103,17 +103,17 @@ export const TranscriptItem: React.FunctionComponent<
         : message.text ?? ''
     const [editFormInput, setEditFormInput] = useState<string>(initValue?.trim())
 
-    // To identify if the current message is the one being edited when beingEdited is true
-    // This is used to display EditTextArea only for the message being edited
-    const [isItemBeingEdited, setIsItemBeingEdited] = useState<boolean>(false)
+    // To identify if the current message is the one being edited when beingEdit is set
+    // This is used to display EditTextArea only for the message that is being edited
+    const hasItemBeingEdited = beingEdited !== undefined
+    const isItemBeingEdited = beingEdited === index
 
-    const onEditCurrentMessage = useCallback(
+    const setItemAsBeingEdited = useCallback(
         (status: boolean) => {
-            setBeingEdited(status)
-            setIsItemBeingEdited(status)
+            setBeingEdited(status ? index : undefined)
             setEditFormInput(initValue?.trim())
         },
-        [initValue, setBeingEdited]
+        [index, initValue, setBeingEdited]
     )
 
     const onEditKeyDown = useCallback(
@@ -123,21 +123,21 @@ export const TranscriptItem: React.FunctionComponent<
             }
 
             if (event.key === 'Escape') {
-                onEditCurrentMessage(false)
+                setItemAsBeingEdited(false)
             }
 
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && editFormInput.trim()) {
                 event.preventDefault()
-                onEditCurrentMessage(false)
+                setItemAsBeingEdited(false)
                 editButtonOnSubmit(editFormInput, index)
             }
         },
-        [editButtonOnSubmit, editFormInput, index, isItemBeingEdited, onEditCurrentMessage]
+        [editButtonOnSubmit, editFormInput, index, isItemBeingEdited, setItemAsBeingEdited]
     )
 
     const EditTextArea = EditButtonContainer &&
         TextArea &&
-        beingEdited &&
+        hasItemBeingEdited &&
         editButtonOnSubmit &&
         SubmitButton &&
         isItemBeingEdited && (
@@ -145,7 +145,7 @@ export const TranscriptItem: React.FunctionComponent<
                 <EditButtonContainer
                     className={styles.cancelEditButton}
                     messageBeingEdited={beingEdited}
-                    setMessageBeingEdited={onEditCurrentMessage}
+                    setMessageBeingEdited={setItemAsBeingEdited}
                 />
                 <TextArea
                     type="edit"
@@ -162,7 +162,7 @@ export const TranscriptItem: React.FunctionComponent<
                     type="edit"
                     className={classNames(styles.submitButton, styles.activeSubmitButton)}
                     onClick={() => {
-                        onEditCurrentMessage(false)
+                        setItemAsBeingEdited(false)
                         editButtonOnSubmit(editFormInput, index)
                     }}
                     disabled={editFormInput.length === 0}
@@ -176,16 +176,16 @@ export const TranscriptItem: React.FunctionComponent<
                 styles.row,
                 transcriptItemClassName,
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow,
-                beingEdited && !isItemBeingEdited && styles.unfocusedRow
+                hasItemBeingEdited && !isItemBeingEdited && styles.unfocusedRow
             )}
         >
-            {showEditButton && !beingEdited && EditButtonContainer && !isItemBeingEdited && TextArea && (
+            {showEditButton && !hasItemBeingEdited && EditButtonContainer && !isItemBeingEdited && TextArea && (
                 <div className={styles.editingButtonContainer}>
                     <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
                         <EditButtonContainer
                             className={styles.FeedbackEditButtonsContainer}
                             messageBeingEdited={beingEdited}
-                            setMessageBeingEdited={onEditCurrentMessage}
+                            setMessageBeingEdited={setItemAsBeingEdited}
                         />
                     </header>
                 </div>
