@@ -144,7 +144,7 @@ export const TranscriptItem: React.FunctionComponent<
             <div className={styles.textAreaContainer}>
                 <EditButtonContainer
                     className={styles.cancelEditButton}
-                    messageBeingEdited={beingEdited}
+                    messageBeingEdited={isItemBeingEdited}
                     setMessageBeingEdited={setItemAsBeingEdited}
                 />
                 <TextArea
@@ -184,7 +184,7 @@ export const TranscriptItem: React.FunctionComponent<
                     <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
                         <EditButtonContainer
                             className={styles.FeedbackEditButtonsContainer}
-                            messageBeingEdited={beingEdited}
+                            messageBeingEdited={isItemBeingEdited}
                             setMessageBeingEdited={setItemAsBeingEdited}
                         />
                     </header>

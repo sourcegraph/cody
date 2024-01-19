@@ -128,7 +128,7 @@ export interface ChatUISuggestionButtonProps {
 export interface EditButtonProps {
     className: string
     disabled?: boolean
-    messageBeingEdited?: number
+    messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
 }
 
