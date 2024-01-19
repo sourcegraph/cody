@@ -647,10 +647,14 @@ describe('Agent', () => {
             }
         })
 
+        if (process.env.CODY_NODE_VERSION === '16') {
+            it('Skipping edit chat test in Node.js v16 because of unsupported API used', () => {})
+            return
+        }
+
         it(
-            'chat/editMessage',
+            'edits the chat',
             async () => {
-                // edits the last human message
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
                 await client.sendMessage(
@@ -689,7 +693,7 @@ describe('Agent', () => {
                 expect(answer?.includes('bird')).toBeFalsy()
                 expect(answer?.includes('dog')).toBeFalsy()
             }
-        }, 30_000)
+        })
     })
 
     describe('Text documents', () => {
