@@ -67,12 +67,6 @@ export class GhostHintDecorator implements vscode.Disposable {
             vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
                 const editor = event.textEditor
 
-                if (!event.kind || event.kind === vscode.TextEditorSelectionChangeKind.Command) {
-                    // The selection event was likely triggered programatically, or via another action (e.g. search)
-                    // It's unlikely the user would want to trigger an edit here, so clear any existing text and return early.
-                    return this.clearGhostText(editor)
-                }
-
                 const selection = event.selections[0]
                 if (isEmptyOrIncompleteSelection(editor.document, selection)) {
                     // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
