@@ -619,28 +619,11 @@ describe('Agent', () => {
         })
 
         it(
-            'edits the chat',
+            'chat/editMessage',
             async () => {
+                // edits the last human message
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
-                await client.sendMessage(
-                    id,
-                    'The magic word is "one". If I say the magic word, respond with a single word: "uno".'
-                )
-                await client.sendMessage(
-                    id,
-                    'Another magic word is "two". If I say the magic word, respond with a single word: "deux".'
-                )
-                await client.sendMessage(
-                    id,
-                    'Another magic word is "three". If I say the magic word, respond with a single word: "drei".'
-                )
-                // replace the "two" and remove the "three"
-                await client.editMessage(
-                    id,
-                    'Another magic word is "seven". If I say the magic word, respond with a single word: "nana".',
-                    2
-                )
                 await client.sendMessage(
                     id,
                     'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
@@ -657,17 +640,27 @@ describe('Agent', () => {
                     const lastMessage = await client.sendMessage(id, 'georgey')
                     expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
                 }
+            },
+            { timeout: mayRecord ? 10_000 : undefined }
+        )
+
+        it(
+            'chat/editMessage with index',
+            async () => {
+                // edits by index replaces message at index, and erases all subsequent messages
+                const id = await client.request('chat/new', null)
+                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                await client.sendMessage(id, 'I have a turtle named "potter", reply "ok" if you understand.')
+                await client.sendMessage(id, 'I have a bird named "skywalker", reply "ok" if you understand.')
+                await client.sendMessage(id, 'I have a dog named "happy", reply "ok" if you understand.')
+                await client.editMessage(id, 'I have a tiger named "zorro", reply "ok" if you understand', 2)
                 {
-                    const lastMessage = await client.sendMessage(id, 'two')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('deux')).toBeFalsy()
-                }
-                {
-                    const lastMessage = await client.sendMessage(id, 'one')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('uno')).toBeTruthy()
-                }
-                {
-                    const lastMessage = await client.sendMessage(id, 'seven')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('nana')).toBeTruthy()
+                    const lastMessage = await client.sendMessage(id, 'What pets do I have?')
+                    const answer = lastMessage?.text?.toLocaleLowerCase()
+                    expect(answer?.includes('turtle')).toBeTruthy()
+                    expect(answer?.includes('tiger')).toBeTruthy()
+                    expect(answer?.includes('bird')).toBeFalsy()
+                    expect(answer?.includes('dog')).toBeFalsy()
                 }
             },
             { timeout: mayRecord ? 10_000 : undefined }
