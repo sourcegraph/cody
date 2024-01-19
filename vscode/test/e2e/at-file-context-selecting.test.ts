@@ -9,6 +9,8 @@ import { test } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
+const followUpChatSubmitKey = isWindows() ? 'Control+Enter' : 'Meta+Enter'
+
 test('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -83,7 +85,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     )
 
     // Send the message and check it was included
-    await chatInput.press('Meta+Enter')
+    await chatInput.press(followUpChatSubmitKey)
     await expect(chatInput).toBeEmpty()
     await expect(
         chatPanelFrame.getByText(
