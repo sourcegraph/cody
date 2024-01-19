@@ -670,7 +670,7 @@ describe('Agent', () => {
                     expect(lastMessage?.text?.toLocaleLowerCase().includes('nana')).toBeTruthy()
                 }
             },
-            { timeout: mayRecord ? 10_000 : undefined }
+            { timeout: mayRecord ? 30_000 : undefined }
         )
     })
 
