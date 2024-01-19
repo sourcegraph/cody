@@ -50,18 +50,18 @@ function extractSection(changelog: string, version: string): { changes: Change[]
     for (const line of lines) {
         if (found) {
             if (line.startsWith('## ')) {
-                const versionMatches = /^## \[(\d+\.\d+\.\d+)]$/.exec(line)
-                if (!versionMatches) {
+                const versionMatches = /^## \[(?<dottedVersion>\d+\.\d+\.\d+)]$/.exec(line)
+                if (!versionMatches?.groups) {
                     throw new Error(`Malformed version line: ${line}`)
                 }
-                previousVersion = versionMatches[1]
+                previousVersion = versionMatches.groups?.dottedVersion
                 break
             }
 
             if (line.startsWith('- ')) {
                 const change = line.slice(2)
 
-                const linkRegex = /\[(pull|pulls|issue|issues).*]\((.*)\)/
+                const linkRegex = /\[(pull|pulls|issue|issues).*]\((?<link>.*)\)/
                 const firstLink = linkRegex.exec(change)
 
                 let text = change.slice(0, firstLink?.index ?? -1).trim()
@@ -70,7 +70,7 @@ function extractSection(changelog: string, version: string): { changes: Change[]
                     text = text.slice(0, -1)
                 }
 
-                const link = firstLink?.[2] ?? undefined
+                const link = firstLink?.groups?.link ?? undefined
 
                 changes.push({ text, link })
             }
@@ -83,14 +83,14 @@ function extractSection(changelog: string, version: string): { changes: Change[]
 }
 
 function extractRepoAndNumberFromLink(link: string): { owner: string; repo: string; number: string } | undefined {
-    const matches = /https:\/\/github\.com\/([^/]+)\/([^/]+)\/(pull|issues)\/(\d+)/.exec(link)
-    if (!matches) {
+    const matches = /https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/]+)\/(pull|issues)\/(?<number>\d+)/.exec(link)
+    if (!matches?.groups) {
         throw new Error(`Malformed link: ${link}`)
     }
     return {
-        owner: matches[1],
-        repo: matches[2],
-        number: matches[4],
+        owner: matches.groups.owner,
+        repo: matches.groups.repo,
+        number: matches.groups.number,
     }
 }
 
