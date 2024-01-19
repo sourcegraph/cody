@@ -692,8 +692,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const properties = {
                     requestID,
                     chatModel: this.chatModel.modelID,
-                    // 🚨 SECURITY: included only for DotCom users.
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
 
@@ -703,7 +701,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         hasV2Event: true,
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: { ...contextSummary },
+                        metadata: {
+                            ...contextSummary,
+                            // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                            // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                            recordsPrivateMetadataTranscript:
+                                authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            properties,
+                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                            // V2 telemetry exports privateMetadata only for DotCom users
+                            // the condition below is an aditional safegaurd measure
+                            promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
+                        },
                     })
                 }
             },
@@ -981,6 +992,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         void this.saveSession()
         this.postViewTranscript()
 
+        const authStatus = this.authProvider.getAuthStatus()
+
         // Count code generated from response
         const codeCount = countGeneratedCode(rawResponse)
         if (codeCount?.charCount) {
@@ -993,6 +1006,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                 metadata: {
                     ...codeCount,
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    requestID,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
                 },
             })
         }
