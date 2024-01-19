@@ -10,6 +10,7 @@ import {
     type LocalEmbeddingsProvider,
     type SearchProvider,
 } from '@sourcegraph/cody-shared'
+import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -32,8 +33,6 @@ export const EnhancedContextContext: React.Context<EnhancedContextContextT> = Re
     defaultEnhancedContextContext()
 )
 
-export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
-
 export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHandlersT> = React.createContext({
     onConsentToEmbeddings: (_): void => {},
     onEnabledChange: (_): void => {},
@@ -48,10 +47,6 @@ export interface EnhancedContextEventHandlersT {
 
 function useEnhancedContextContext(): EnhancedContextContextT {
     return React.useContext(EnhancedContextContext)
-}
-
-export function useEnhancedContextEnabled(): boolean {
-    return React.useContext(EnhancedContextEnabled)
 }
 
 function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {

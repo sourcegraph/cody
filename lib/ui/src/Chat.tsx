@@ -66,7 +66,6 @@ interface ChatProps extends ChatClassNames {
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
-    isEnhancedContextEnabled: boolean
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo: UserAccountInfo
@@ -224,7 +223,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
-    isEnhancedContextEnabled,
     chatEnabled,
     onCurrentChatModelChange,
     userInfo,
@@ -583,7 +581,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
-                    isEnhancedContextEnabled={isEnhancedContextEnabled}
                 />
             )}
 

@@ -13,16 +13,13 @@ import {
     type EnhancedContextContextT,
 } from '@sourcegraph/cody-shared'
 import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
+import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
 import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
 
 import { Chat } from './Chat'
-import {
-    EnhancedContextContext,
-    EnhancedContextEnabled,
-    EnhancedContextEventHandlers,
-} from './Components/EnhancedContextSettings'
+import { EnhancedContextContext, EnhancedContextEventHandlers } from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
 import { type View } from './NavBar'
 import { Notices } from './Notices'

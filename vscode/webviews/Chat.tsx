@@ -23,12 +23,13 @@ import {
     type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
+import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
@@ -231,7 +232,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
-            isEnhancedContextEnabled={addEnhancedContext}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
         />
