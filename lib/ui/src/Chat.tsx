@@ -676,13 +676,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                <ChatActions
-                    // disable the buttons when there are no messages
-                    disabled={!transcript.length}
-                    onChatResetClick={onHandleChatReset}
-                    // transcript.length - 2 should be the index of the last human message if any
-                    editLastMessage={() => onSetEditMessageIndexClick(transcript.length - 2)}
-                />
+                {transcript.length > 0 && (
+                    <ChatActions
+                        // disable the buttons when there are no messages
+                        disabled={!transcript.length}
+                        onChatResetClick={onHandleChatReset}
+                        // transcript.length - 2 should be the index of the last human message if any
+                        editLastMessage={() => onSetEditMessageIndexClick(transcript.length - 2)}
+                    />
+                )}
                 <div className={styles.textAreaContainer}>
                     {displayCommands && ChatCommandsComponent && formInput.startsWith('/') && (
                         <ChatCommandsComponent
