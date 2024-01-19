@@ -13,6 +13,7 @@ import {
     reformatBotMessageForChat,
     Typewriter,
     type ChatClient,
+    type ChatInputHistory,
     type ChatMessage,
     type CodyCommand,
     type ContextFile,
@@ -391,7 +392,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             : inputText
         const promptText = inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
+        await this.saveSession({ inputText, inputContextFiles: userContextFiles })
 
         this.postEmptyMessageInProgress()
 
@@ -528,7 +529,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         )
         const promptText = command.prompt
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
+        await this.saveSession({ inputText, inputContextFiles: [] })
 
         this.postEmptyMessageInProgress()
 
@@ -959,7 +960,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
     }
 
-    private async saveSession(humanInput?: string): Promise<void> {
+    private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toTranscriptJSON(),

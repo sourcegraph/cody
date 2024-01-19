@@ -1,13 +1,13 @@
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
+import { type ChatHistory, type ChatInputHistory, type UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import type { AuthStatus } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
-    [key: ChatHistoryKey]: UserLocalHistory
+    [key: ChatHistoryKey]: PersistedUserLocalHistory
 } & {
     // For backward compatibility, we do not want to delete the `chat` and `input` keys.
     // As otherwise, downgrading to a prior version would completely block the startup
@@ -16,6 +16,15 @@ type AccountKeyedChatHistory = {
     // TODO: This can be removed in a future version
     chat: ChatHistory
     input: []
+}
+
+/**
+ * Persisted chat history may contain string inputs without context
+ * that we must migrate during loading.
+ */
+interface PersistedUserLocalHistory {
+    chat: ChatHistory
+    input: (ChatInputHistory | string)[]
 }
 
 class LocalStorage {
@@ -83,7 +92,7 @@ class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        let history = this.storage.get<AccountKeyedChatHistory | UserLocalHistory | null>(
+        let history = this.storage.get<AccountKeyedChatHistory | PersistedUserLocalHistory | null>(
             this.KEY_LOCAL_HISTORY,
             null
         )
@@ -114,7 +123,28 @@ class LocalStorage {
         if (!Object.hasOwn(history, key)) {
             return { chat: {}, input: [] }
         }
-        return (history as any)[key]
+
+        const accountHistory = (history as AccountKeyedChatHistory)[key]
+
+        // Persisted history might contain only string inputs without context so these may need converting too.
+        const inputs = accountHistory?.input
+        if (inputs?.length) {
+            let didUpdate = false
+            for (let i = 0; i < inputs.length; i++) {
+                const input = inputs[i]
+                // Convert strings to ChatInputHistory
+                if (typeof input === 'string') {
+                    inputs[i] = { inputText: input, inputContextFiles: [] }
+                    didUpdate = true
+                }
+            }
+            // Persist back to disk if we made any changes.
+            if (didUpdate) {
+                this.storage.update(this.KEY_LOCAL_HISTORY, history).then(() => {}, console.error)
+            }
+        }
+
+        return accountHistory as UserLocalHistory
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
@@ -245,7 +275,7 @@ function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
  * separator between endpoint and email in the new format).
  */
 function isMigratedChatHistory2261(
-    history: AccountKeyedChatHistory | UserLocalHistory
+    history: AccountKeyedChatHistory | PersistedUserLocalHistory
 ): history is AccountKeyedChatHistory {
     return !!Object.keys(history).find(k => k.includes('-'))
 }

@@ -20,6 +20,7 @@ export type {
     ChatEventSource,
     ChatHistory,
     ChatMessage,
+    ChatInputHistory,
     InteractionMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
