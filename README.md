@@ -46,7 +46,7 @@ _We also welcome also pull request contributions for new, useful commands!_
 
 ### Swappable LLMs
 
-On entreprise plans, Cody supports Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5 models, with more coming soon.
+On enterprise plans, Cody supports Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5 models, with more coming soon.
 
 ### Free usage
 
