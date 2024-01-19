@@ -15,7 +15,7 @@ import {
     type PrefixComponents,
 } from '../text-processing'
 import { type ContextSnippet } from '../types'
-import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, messagesToText } from '../utils'
 
 import { type FetchCompletionResult } from './fetch-and-process-completions'
 import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
@@ -191,6 +191,7 @@ class AnthropicProvider extends Provider {
                         // `model` parameter.
                         if (
                             error.message.includes('Unsupported code completion model') ||
+                            error.message.includes('Unsupported chat model') ||
                             error.message.includes('Unsupported custom model')
                         ) {
                             isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
@@ -206,8 +207,6 @@ class AnthropicProvider extends Provider {
                 providerOptions: this.options,
             })
         })
-
-        return zipGenerators(completionsGenerators)
     }
 
     private postProcess = (rawResponse: string): string => {
