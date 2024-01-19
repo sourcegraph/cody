@@ -81,6 +81,7 @@ interface CodyConfigFeatures {
     chat: boolean
     autoComplete: boolean
     commands: boolean
+    attribution: boolean
 }
 
 interface CodyConfigFeaturesResponse {
@@ -339,20 +340,12 @@ export class SourcegraphGraphQLAPIClient {
     /**
      * Fetches the Site Admin enabled/disable Cody config features for the current instance.
      */
-    public async getCodyConfigFeatures(): Promise<
-        | {
-              chat: boolean
-              autoComplete: boolean
-              commands: boolean
-          }
-        | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
+    public async getCodyConfigFeatures(): Promise<CodyConfigFeatures | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
             CURRENT_SITE_CODY_CONFIG_FEATURES,
             {}
-        ).then(response =>
-            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
         )
+        return extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
@@ -702,11 +695,7 @@ export const graphqlClient = new SourcegraphGraphQLAPIClient()
  */
 export class ConfigFeaturesSingleton {
     private static instance: ConfigFeaturesSingleton
-    private configFeatures: Promise<{
-        chat: boolean
-        autoComplete: boolean
-        commands: boolean
-    }>
+    private configFeatures: Promise<CodyConfigFeatures>
 
     // Constructor is private to prevent creating new instances outside of the class
     private constructor() {
@@ -715,6 +704,7 @@ export class ConfigFeaturesSingleton {
             chat: true,
             autoComplete: true,
             commands: true,
+            attribution: false,
         })
         // Initiate the first fetch and set up a recurring fetch every 30 seconds
         this.refreshConfigFeatures()
@@ -745,20 +735,12 @@ export class ConfigFeaturesSingleton {
         })
     }
 
-    public getConfigFeatures(): Promise<{
-        chat: boolean
-        autoComplete: boolean
-        commands: boolean
-    }> {
+    public getConfigFeatures(): Promise<CodyConfigFeatures> {
         return this.configFeatures
     }
 
     // Fetches the config features from the server and handles errors
-    private async fetchConfigFeatures(): Promise<{
-        chat: boolean
-        autoComplete: boolean
-        commands: boolean
-    }> {
+    private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
         // Execute the GraphQL query to fetch the configuration features
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {
