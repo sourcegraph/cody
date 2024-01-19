@@ -109,29 +109,11 @@ async function main(): Promise<void> {
 
     const minor = currentVersion.split('.').slice(0, 2).join('.')
 
-    let intro = dedent`
-        ✨ See the [What’s new in v${minor}](https://about.sourcegraph.com/blog/cody-vscode-${minor.replace(
-            '.',
-            '-'
-        )}-release) blog post for what’s new in this release since v${minor} ✨
+    const intro = dedent`
+        ✨ See the [What’s new in v${minor}](https://about.sourcegraph.com/blog/cody-vscode-${minor}.0-release) blog post for what’s new in this release since v${minor} ✨
 
         ## v${currentVersion} Changes
     `
-    if (minor === '1.0') {
-        intro = dedent`
-            #### [Cody is now generally available](https://sourcegraph.com/blog/cody-is-generally-available) 🎉
-
-            Cody for VS Code now includes embeddings generation without needing the Cody desktop app, introduces a new Search Context engine for higher quality chat responses, and includes a range of improvements to all the built-in commands.
-
-            Until February you can upgrade to Cody Pro for free. To upgrade your account, head to your [Account Page](http://sourcegraph.com/cody/manage), or see our [Pricing Plans](https://sourcegraph.com/pricing) and [Documentation](https://sourcegraph.com/docs/cody/usage-and-pricing) for details.
-
-            👉 For the full announcement, read the [Cody v1.0.0 blog post](https://sourcegraph.com/blog/cody-is-generally-available)
-
-            A finally a big thank you to you, our beta testers, for using Cody in beta, giving feedback, and helping shape Cody v1.0 💖
-
-            ## v${currentVersion} Changes
-        `
-    }
 
     output += intro + '\n\n'
 
