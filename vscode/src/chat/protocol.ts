@@ -58,6 +58,8 @@ export type WebviewMessage =
           }
       }
     | ({ command: 'edit' } & WebviewEditMessage)
+    | { command: 'context/add-remote-search-repo' }
+    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
@@ -85,7 +87,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'reload-state' | 'web-sign-in-token'
+          type: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }

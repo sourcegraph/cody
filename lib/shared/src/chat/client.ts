@@ -12,7 +12,6 @@ type ClientInitConfig = Pick<
     | 'useContext'
     | 'accessToken'
     | 'customHeaders'
-    | 'experimentalLocalSymbols'
 >
 
 interface ClientInit {

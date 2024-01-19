@@ -8,39 +8,7 @@ import type {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '../editor'
-import type { EmbeddingsSearch } from '../embeddings'
-import type { IntentClassificationOption, IntentDetector } from '../intent-detector'
-import type { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
-
-export class MockEmbeddingsClient implements EmbeddingsSearch {
-    public readonly repoId = 'test-repo-id'
-
-    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
-
-    public get endpoint(): string {
-        return this.mocks.endpoint || 'https://host.example:3000'
-    }
-
-    public search(
-        workspaceFolderUri: URI,
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return (
-            this.mocks.search?.(workspaceFolderUri, query, codeResultsCount, textResultsCount) ??
-            Promise.resolve({ codeResults: [], textResults: [] })
-        )
-    }
-
-    public onDidChangeStatus(): { dispose: () => void } {
-        return { dispose() {} }
-    }
-
-    public get status(): never[] {
-        return []
-    }
-}
+import { type IntentClassificationOption, type IntentDetector } from '../intent-detector'
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
@@ -106,8 +74,6 @@ export class MockEditor implements Editor {
         return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
     }
 }
-
-export const defaultEmbeddingsClient = new MockEmbeddingsClient()
 
 export const defaultIntentDetector = new MockIntentDetector()
 

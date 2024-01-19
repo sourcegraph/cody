@@ -8,6 +8,7 @@ import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
+    EnhancedContextPresentationMode,
     EnhancedContextSettings,
     type EnhancedContextEventHandlersT,
 } from './EnhancedContextSettings'
@@ -33,59 +34,72 @@ export default meta
 
 interface SingleTileArgs {
     isOpen: boolean
+    presentationMode: EnhancedContextPresentationMode
     name: string
-    kind: 'embeddings' | 'graph' | 'search'
+    kind: 'embeddings' | 'search'
     type: 'local' | 'remote'
     state: 'indeterminate' | 'unconsented' | 'indexing' | 'ready' | 'no-match'
-    origin: string
-    remoteName: string
+    id: string
+    inclusion: 'auto' | 'manual'
 }
 
 export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArgs> = {
     args: {
+        presentationMode: EnhancedContextPresentationMode.Consumer,
         isOpen: true,
         name: '~/sourcegraph',
-        kind: 'embeddings',
-        type: 'remote',
+        kind: 'search',
+        type: 'local',
         state: 'ready',
-        origin: 'https://sourcegraph.com',
-        remoteName: 'github.com/sourcegraph/sourcegraph',
     },
     argTypes: {
+        presentationMode: {
+            options: ['consumer', 'enterprise'],
+            control: 'radio',
+        },
         isOpen: { control: 'boolean' },
         name: { control: 'text' },
         kind: {
-            options: ['embeddings', 'graph', 'search'],
-            control: 'select',
+            options: ['embeddings', 'search'],
+            control: 'radio',
         },
         type: {
             options: ['local', 'remote'],
-            control: 'select',
+            control: 'radio',
             if: {
                 arg: 'kind',
-                eq: 'embeddings',
+                eq: 'search',
             },
         },
         state: {
             options: ['indeterminate', 'unconsented', 'indexing', 'ready', 'no-match'],
             control: 'select',
         },
-        origin: { control: 'text' },
-        remoteName: { control: 'text' },
+        id: { control: 'text' },
+        inclusion: {
+            options: ['auto', 'manual'],
+            control: 'radio',
+        },
     },
     render: function Render() {
         const [args, updateArgs] = useArgs<SingleTileArgs>()
         const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
-            onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
-                updateArgs({ state: 'indexing' })
+            onAddRemoteSearchRepo(): void {
+                alert('Add a repository')
             },
-            onShouldBuildSymfIndex(provider: SearchProvider): void {
+            onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
                 updateArgs({ state: 'indexing' })
             },
             onEnabledChange(enabled: boolean): void {
                 console.log(`Thank you for ${enabled ? 'enabling' : 'disabling'} the enhanced context!`)
+            },
+            onRemoveRemoteSearchRepo(id): void {
+                alert(`Remove remote search repo "${id}"`)
+            },
+            onShouldBuildSymfIndex(provider: SearchProvider): void {
+                updateArgs({ state: 'indexing' })
             },
         }
 
@@ -100,8 +114,9 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                                     kind: args.kind,
                                     type: args.type,
                                     state: args.state,
-                                    origin: args.origin,
-                                    remoteName: args.remoteName,
+                                    name: args.name,
+                                    id: args.id,
+                                    inclusion: args.inclusion,
                                 } as ContextProvider,
                             ],
                         },
@@ -116,7 +131,11 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                             right: 20,
                         }}
                     >
-                        <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
+                        <EnhancedContextSettings
+                            isOpen={isOpen}
+                            setOpen={() => setIsOpen(!isOpen)}
+                            presentationMode={args.presentationMode}
+                        />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
@@ -124,7 +143,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
     },
 }
 
-export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
+export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings> = {
     render: function Render() {
         const [isOpen, setIsOpen] = useState<boolean>(true)
         return (
@@ -134,32 +153,71 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                         {
                             displayName: '~/projects/foo',
                             providers: [
-                                { kind: 'embeddings', type: 'local', state: 'unconsented' },
-                                { kind: 'graph', state: 'ready' },
-                                { kind: 'search', state: 'indexing' },
+                                { kind: 'embeddings', state: 'unconsented' },
+                                { kind: 'search', type: 'local', state: 'indexing' },
                             ],
                         },
+                    ],
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 20,
+                        right: 20,
+                    }}
+                >
+                    <EnhancedContextSettings
+                        isOpen={isOpen}
+                        setOpen={() => setIsOpen(!isOpen)}
+                        presentationMode={EnhancedContextPresentationMode.Consumer}
+                    />
+                </div>
+            </EnhancedContextContext.Provider>
+        )
+    },
+}
+
+export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSettings> = {
+    render: function Render() {
+        const [isOpen, setIsOpen] = useState<boolean>(true)
+        return (
+            <EnhancedContextContext.Provider
+                value={{
+                    groups: [
                         {
-                            displayName: 'gitlab.com/my/repo',
+                            displayName: 'github.com/megacorp/foo',
                             providers: [
                                 {
-                                    kind: 'embeddings',
+                                    kind: 'search',
                                     type: 'remote',
-                                    remoteName: 'gitlab.com/my/repo',
-                                    origin: 'sourcegraph.com',
                                     state: 'ready',
+                                    id: 'pqrxy',
+                                    inclusion: 'manual',
                                 },
                             ],
                         },
                         {
-                            displayName: 'github.com/sourcegraph/bar',
+                            displayName: 'github.com/megacorp/bar',
                             providers: [
                                 {
-                                    kind: 'embeddings',
+                                    kind: 'search',
                                     type: 'remote',
-                                    remoteName: 'github.com/sourcegraph/bar',
-                                    origin: 'sourcegraph.sourcegraph.com',
-                                    state: 'no-match',
+                                    state: 'ready',
+                                    id: 'xgzwa',
+                                    inclusion: 'auto',
+                                },
+                            ],
+                        },
+                        {
+                            displayName: 'github.com/subsidiarycorp/handbook',
+                            providers: [
+                                {
+                                    kind: 'search',
+                                    type: 'remote',
+                                    state: 'ready',
+                                    id: 'pffty',
+                                    inclusion: 'manual',
                                 },
                             ],
                         },
@@ -173,7 +231,11 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                         right: 20,
                     }}
                 >
-                    <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
+                    <EnhancedContextSettings
+                        presentationMode={EnhancedContextPresentationMode.Enterprise}
+                        isOpen={isOpen}
+                        setOpen={() => setIsOpen(!isOpen)}
+                    />
                 </div>
             </EnhancedContextContext.Provider>
         )

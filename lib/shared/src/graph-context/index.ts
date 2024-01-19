@@ -1,6 +1,5 @@
-import type { ContextStatusProvider } from '../codebase-context/context-status'
-import type { PreciseContext } from '../codebase-context/messages'
+import { type PreciseContext } from '../codebase-context/messages'
 
-export interface GraphContextFetcher extends ContextStatusProvider {
+export interface GraphContextFetcher {
     getContext(): Promise<PreciseContext[]>
 }

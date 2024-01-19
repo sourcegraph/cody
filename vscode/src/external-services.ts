@@ -3,7 +3,6 @@ import type * as vscode from 'vscode'
 import {
     ChatClient,
     CodebaseContext,
-    SourcegraphEmbeddingsSearchClient,
     SourcegraphGuardrailsClient,
     SourcegraphIntentDetectorClient,
     graphqlClient,
@@ -13,6 +12,7 @@ import {
     type Editor,
     type Guardrails,
     type IntentDetector,
+    isDotCom,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
@@ -42,7 +42,6 @@ type ExternalServicesConfiguration = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'debugEnable'
-    | 'experimentalLocalSymbols'
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig
@@ -50,12 +49,10 @@ type ExternalServicesConfiguration = Pick<
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
     initialConfig: ExternalServicesConfiguration,
-    rgPath: string | null,
     editor: Editor,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
-        | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
         | 'createOpenTelemetryService'
@@ -74,34 +71,22 @@ export async function configureExternalServices(
         completionsClient
     )
 
-    const repoId = initialConfig.codebase ? await graphqlClient.getRepoId(initialConfig.codebase) : null
-    if (isError(repoId)) {
+    if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(
             'external-services:configureExternalServices',
             `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\nPlease check that the repository exists. You can override the repository with the "cody.codebase" setting.`
         )
     }
-    const embeddingsSearch =
-        repoId && !isError(repoId)
-            ? new SourcegraphEmbeddingsSearchClient(
-                  graphqlClient,
-                  initialConfig.codebase || repoId,
-                  repoId
-              )
-            : null
 
+    const isConsumer = isDotCom(initialConfig.serverEndpoint)
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
         initialConfig.codebase,
-        () => initialConfig.serverEndpoint,
-        embeddingsSearch,
-        rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        null,
-        symfRunner,
-        undefined
+        isConsumer ? localEmbeddings : undefined,
+        isConsumer ? symfRunner : undefined
     )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)

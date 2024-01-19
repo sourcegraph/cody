@@ -13,7 +13,6 @@ import {
     isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
-import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -51,6 +50,7 @@ import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './se
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import type { FixupTask } from './non-stop/FixupTask'
+import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -67,14 +67,11 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
-    const rgPath = platform.getRgPath ? await platform.getRgPath() : null
-
     const disposables: vscode.Disposable[] = []
 
     const { disposable, onConfigurationChange } = await register(
         context,
         await getFullConfig(),
-        rgPath,
         platform
     )
     disposables.push(disposable)
@@ -100,8 +97,7 @@ export async function start(
 const register = async (
     context: vscode.ExtensionContext,
     initialConfig: ConfigurationWithAccessToken,
-    rgPath: string | null,
-    platform: Omit<PlatformContext, 'getRgPath'>
+    platform: PlatformContext
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
@@ -166,21 +162,19 @@ const register = async (
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, rgPath, editor, platform)
+    } = await configureExternalServices(context, initialConfig, editor, platform)
 
     if (symfRunner) {
         disposables.push(symfRunner)
     }
 
+    // TODO(dpc): Introduce remoteSearch to ContextProvider for inline edits
     const contextProvider = new ContextProvider(
         initialConfig,
-        chatClient,
         initialCodebaseContext,
         editor,
-        rgPath,
         symfRunner,
         authProvider,
-        platform,
         localEmbeddings
     )
     disposables.push(contextProvider)
@@ -199,14 +193,16 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
-    const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
+    const enterpriseContextFactory = new EnterpriseContextFactory(initialConfig)
+    disposables.push(enterpriseContextFactory)
+
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsClient,
+        enterpriseContextFactory,
         localEmbeddings || null,
         symfRunner || null,
         guardrails,
@@ -240,11 +236,11 @@ const register = async (
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+        enterpriseContextFactory.updateConfiguration(newConfig)
         promises.push(
             localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ??
                 Promise.resolve()
         )
-        embeddingsClient.updateConfiguration(newConfig)
         promises.push(setupAutocomplete())
         await Promise.all(promises)
     }
@@ -478,7 +474,7 @@ const register = async (
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {
-                    await chatManager.simplifiedOnboardingReloadEmbeddingsState()
+                    // This is an old re-entrypoint from App that is a no-op now.
                 } else {
                     await authProvider.tokenCallbackHandler(uri, config.customHeaders)
                 }
