@@ -47,8 +47,13 @@ test('shows chat history in sidebar and update chat panel correctly', async ({ p
     await expect(page.getByRole('tab', { name: 'Hey' })).toBeVisible()
 
     // Click the delete chat button twice to remove the chats we submitted
+    // Check for counts to ensure we wait for the delete to be completed before
+    // trying to click again, or we might quickly click the last one twice
+    await expect(page.getByLabel('Delete Chat')).toHaveCount(2)
+    await page.getByLabel('Delete Chat').last().click()
+    await expect(page.getByLabel('Delete Chat')).toHaveCount(1)
+    await page.getByLabel('Delete Chat').last().click()
+
     // Once the chat history is empty, the 'New Chat' button should show up
-    await page.getByLabel('Delete Chat').last().click()
-    await page.getByLabel('Delete Chat').last().click()
     await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
 })
