@@ -186,6 +186,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     flexFiller.classList.add(styles.flexFiller)
                     buttons.append(flexFiller)
                     const attributionContainer = document.createElement('div')
+                    attributionContainer.setAttribute('data-testid', 'attribution-indicator')
                     attributionContainer.innerHTML = ShieldIcon
                     attributionContainer.classList.add(styles.attributionIcon)
                     attributionContainer.title = 'Attribution search running...'
