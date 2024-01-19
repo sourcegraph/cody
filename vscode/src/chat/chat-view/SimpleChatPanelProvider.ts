@@ -375,7 +375,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             case 'edit': {
                 const requestID = uuid.v4()
-                await this.handleEdit(requestID, message.text, message.addEnhancedContext, message.index)
+                await this.handleEdit(
+                    requestID,
+                    message.text,
+                    message.index,
+                    message.addEnhancedContext,
+                    message.contextFiles
+                )
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
@@ -724,8 +730,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleEdit(
         requestID: string,
         text: string,
+        humanMessageIndex: number | undefined,
         addEnhancedContext = true,
-        humanMessageIndex?: number
+        userContextFiles: ContextFile[] = []
     ): Promise<void> {
         try {
             // Remove all messages from the humanMessage before submitting the new text as a new question
@@ -733,7 +740,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const lastHumanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human') ?? -2
             const index = humanMessageIndex === undefined ? lastHumanMessageIndex : humanMessageIndex
             this.chatModel.removeMessagesFromIndex(index, 'human')
-            return await this.handleHumanMessageSubmitted(requestID, text, 'user', [], addEnhancedContext)
+            return await this.handleHumanMessageSubmitted(requestID, text, 'user', userContextFiles, addEnhancedContext)
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }

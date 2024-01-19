@@ -54,7 +54,7 @@ export type WebviewMessage =
           // tends ot munge the type in a weird way (nested fields become array indices).
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
-    | { command: 'edit'; text: string; index?: number; addEnhancedContext?: boolean }
+    | { command: 'edit'; text: string; index?: number; addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }

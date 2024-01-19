@@ -164,7 +164,7 @@ export const Transcript: React.FunctionComponent<
                     inProgress={
                         offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
                     }
-                    showEditButton={!messageInProgress?.speaker && message.speaker === 'human'}
+                    showEditButton={message.speaker === 'human'}
                     beingEdited={messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
                     EditButtonContainer={EditButtonContainer}

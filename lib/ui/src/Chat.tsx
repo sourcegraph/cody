@@ -44,7 +44,7 @@ interface ChatProps extends ChatClassNames {
     gettingStartedButtons?: ChatButton[]
     className?: string
     EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-    editButtonOnSubmit?: (text: string) => void
+    editButtonOnSubmit?: (text: string, index?: number, userContextFiles?: Map<string, ContextFile>) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -326,12 +326,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onSetEditMessageIndexClick = useCallback(
         (index?: number): void => {
-            if (messageInProgress || !transcript.length) {
-                return
-            }
             if (index === undefined) {
                 setMessageBeingEdited(false)
                 setMessageBeingEditedIndex(undefined)
+                setFormInput('')
                 return
             }
             if (index > transcript.length) {
@@ -339,8 +337,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
             setMessageBeingEditedIndex(index)
             setMessageBeingEdited(true)
+            const messageAtIndex = transcript[index]
+            const displayText = messageAtIndex?.displayText
+            // Only returns command name if it is the first word in the message
+            // also attempts to remove markdown links
+            const inputText = displayText?.startsWith('/')
+                ? displayText.replaceAll(/\[_@.*\)/g, '') || displayText?.split(' ')?.[0]
+                : messageAtIndex?.text
+            setFormInput(inputText ?? '')
         },
-        [messageInProgress, setMessageBeingEdited, transcript.length]
+        [setFormInput, setMessageBeingEdited, transcript]
     )
 
     const onHandleChatReset = useCallback(() => {
@@ -397,35 +403,70 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (isFollowUp: boolean): void => {
             // Submit chat only when input is not empty and not in progress
             if (formInput.trim() && !messageInProgress) {
-                setInputRows(1)
                 submitInput(formInput, isFollowUp ? 'user' : 'user-newchat')
                 setFormInput('')
             }
+            setInputRows(1)
             onSetEditMessageIndexClick()
         },
         [formInput, messageInProgress, onSetEditMessageIndexClick, setFormInput, submitInput]
     )
 
+    const onChatButtonSubmitEdit = useCallback(
+        (index?: number): void => {
+            if (!formInput.trim() || !editButtonOnSubmit) {
+                return
+            }
+            if (messageInProgress) {
+                onAbortMessageInProgress()
+            }
+
+            editButtonOnSubmit(formInput, index, chatContextFiles)
+            setFormInput('')
+            setInputRows(1)
+            onSetEditMessageIndexClick()
+        },
+        [
+            chatContextFiles,
+            editButtonOnSubmit,
+            formInput,
+            messageInProgress,
+            onAbortMessageInProgress,
+            onSetEditMessageIndexClick,
+            setFormInput,
+        ]
+    )
+
     const onChatButtonSubmit = useCallback((): void => {
+        if (messageBeingEdited) {
+            onChatButtonSubmitEdit(messageBeingEditedIndex)
+            return
+        }
         onChatSubmit(sendAsFollowUp)
-    }, [onChatSubmit, sendAsFollowUp])
+    }, [messageBeingEdited, messageBeingEditedIndex, onChatButtonSubmitEdit, onChatSubmit, sendAsFollowUp])
 
     const onChatKeyUp = useCallback(
         (event: React.KeyboardEvent<HTMLElement>): void => {
-            setSendAsFollowUp(!(event.metaKey || event.ctrlKey))
-        },
-        [setSendAsFollowUp]
-    )
+            setSendAsFollowUp(!(event.metaKey || event.ctrlKey) && !messageBeingEdited)
 
-    const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
-            setSendAsFollowUp(!(event.metaKey || event.ctrlKey))
-
-            if (event.key === 'Escape') {
+            if (messageInProgress && event.key === 'Escape') {
                 event.preventDefault()
                 onAbortMessageInProgress()
                 return
             }
+
+            if (messageBeingEdited && event.key === 'Escape') {
+                event.preventDefault()
+                onSetEditMessageIndexClick()
+                return
+            }
+        },
+        [messageBeingEdited, messageInProgress, onAbortMessageInProgress, onSetEditMessageIndexClick]
+    )
+
+    const onChatKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
+            setSendAsFollowUp(!(event.metaKey || event.ctrlKey) && !messageBeingEdited)
 
             if (event.ctrlKey || event.metaKey) {
                 // Clear & reset session on CMD+/
@@ -544,6 +585,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // trim the formInput to make sure input value is not empty.
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
+                if (messageBeingEdited) {
+                    onChatButtonSubmitEdit(messageBeingEditedIndex)
+                    return
+                }
                 onChatSubmit(!(event.metaKey || event.ctrlKey))
                 return
             }
@@ -568,12 +613,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
         },
         [
+            messageBeingEdited,
             displayCommands,
             formInput,
             contextSelection,
             inputHistory,
             historyIndex,
-            onAbortMessageInProgress,
             onHandleChatReset,
             onSetEditMessageIndexClick,
             lastHumanMessageIndex,
@@ -583,6 +628,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
+            messageBeingEditedIndex,
+            onChatButtonSubmitEdit,
         ]
     )
 
@@ -678,11 +725,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 )}
                 {transcript.length > 0 && (
                     <ChatActions
-                        // disable the buttons when there are no messages
-                        disabled={!transcript.length}
+                        isInProgress={!!messageInProgress?.speaker}
+                        isEditing={messageBeingEdited}
                         onChatResetClick={onHandleChatReset}
-                        // transcript.length - 2 should be the index of the last human message if any
-                        editLastMessage={() => onSetEditMessageIndexClick(transcript.length - 2)}
+                        updateEditMessageIndex={() =>
+                            onSetEditMessageIndexClick(messageBeingEdited ? undefined : lastHumanMessageIndex)
+                        }
                     />
                 )}
                 <div className={styles.textAreaContainer}>
@@ -711,7 +759,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             className={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            autoFocus={!messageBeingEdited && !messageBeingEditedIndex}
+                            autoFocus={!messageInProgress?.speaker}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
@@ -732,7 +780,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                     <SubmitButton
-                        type={sendAsFollowUp ? 'follow-up' : 'chat'}
+                        type={messageBeingEdited ? 'edit' : sendAsFollowUp ? 'follow-up' : 'chat'}
                         className={styles.submitButton}
                         onClick={onChatButtonSubmit}
                         disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}

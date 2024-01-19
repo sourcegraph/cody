@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
@@ -97,11 +97,7 @@ export const TranscriptItem: React.FunctionComponent<
     guardrails,
     isEnhancedContextEnabled,
 }) {
-    // Only returns command name if it is the first word in the message to remove markdown links
-    const initValue = message.displayText?.startsWith('/')
-        ? message.displayText.replaceAll(/\[_@.*\)/g, '') || message.displayText.split(' ')?.[0]
-        : message.text ?? ''
-    const [editFormInput, setEditFormInput] = useState<string>(initValue?.trim())
+    // TODO bee clean up
 
     // To identify if the current message is the one being edited when beingEdit is set
     // This is used to display EditTextArea only for the message that is being edited
@@ -111,64 +107,9 @@ export const TranscriptItem: React.FunctionComponent<
     const setItemAsBeingEdited = useCallback(
         (status: boolean) => {
             setBeingEdited(status ? index : undefined)
-            setEditFormInput(initValue?.trim())
         },
-        [index, initValue, setBeingEdited]
+        [index, setBeingEdited]
     )
-
-    const onEditKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-            if (!editButtonOnSubmit || !isItemBeingEdited) {
-                return
-            }
-
-            if (event.key === 'Escape') {
-                setItemAsBeingEdited(false)
-            }
-
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && editFormInput.trim()) {
-                event.preventDefault()
-                setItemAsBeingEdited(false)
-                editButtonOnSubmit(editFormInput, index)
-            }
-        },
-        [editButtonOnSubmit, editFormInput, index, isItemBeingEdited, setItemAsBeingEdited]
-    )
-
-    const EditTextArea = EditButtonContainer &&
-        TextArea &&
-        hasItemBeingEdited &&
-        editButtonOnSubmit &&
-        SubmitButton &&
-        isItemBeingEdited && (
-            <div className={styles.textAreaContainer}>
-                <EditButtonContainer
-                    className={styles.cancelEditButton}
-                    messageBeingEdited={isItemBeingEdited}
-                    setMessageBeingEdited={setItemAsBeingEdited}
-                />
-                <TextArea
-                    type="edit"
-                    className={classNames(styles.chatInput)}
-                    rows={1}
-                    value={editFormInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={event => setEditFormInput((event.target as HTMLInputElement).value)}
-                    onKeyDown={onEditKeyDown}
-                    chatEnabled={true}
-                />
-                <SubmitButton
-                    type="edit"
-                    className={classNames(styles.submitButton, styles.activeSubmitButton)}
-                    onClick={() => {
-                        setItemAsBeingEdited(false)
-                        editButtonOnSubmit(editFormInput, index)
-                    }}
-                    disabled={editFormInput.length === 0}
-                />
-            </div>
-        )
 
     return (
         <div
@@ -176,7 +117,7 @@ export const TranscriptItem: React.FunctionComponent<
                 styles.row,
                 transcriptItemClassName,
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow,
-                hasItemBeingEdited && !isItemBeingEdited && styles.unfocusedRow
+                hasItemBeingEdited && (isItemBeingEdited ? styles.focused : styles.unfocused)
             )}
         >
             {showEditButton && !hasItemBeingEdited && EditButtonContainer && !isItemBeingEdited && TextArea && (
@@ -211,21 +152,17 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 )
             ) : null}
-            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+            <div className={classNames(styles.contentPadding, styles.content)}>
                 {message.displayText ? (
-                    EditTextArea ? (
-                        !inProgress && EditTextArea
-                    ) : (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            guardrails={guardrails}
-                        />
-                    )
+                    <CodeBlocks
+                        displayText={message.displayText}
+                        copyButtonClassName={codeBlocksCopyButtonClassName}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonClassName={codeBlocksInsertButtonClassName}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        metadata={message.metadata}
+                        guardrails={guardrails}
+                    />
                 ) : (
                     inProgress && <BlinkingCursor />
                 )}

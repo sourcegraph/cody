@@ -128,9 +128,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [chatModels, setChatModels, vscodeAPI]
     )
 
+    // TODO bee clean up
     const onEditBtnClick = useCallback(
-        (text: string, index?: number) => {
-            vscodeAPI.postMessage({ command: 'edit', text, index, addEnhancedContext })
+        (text: string, index?: number, userContextFiles?: Map<string, ContextFile>) => {
+            const contextFiles: ContextFile[] = []
+
+            // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
+            if (userContextFiles?.size) {
+                for (const [fileName, contextFile] of userContextFiles) {
+                    if (text.includes(fileName)) {
+                        contextFiles.push(contextFile)
+                    }
+                }
+            }
+
+            vscodeAPI.postMessage({ command: 'edit', text, index, addEnhancedContext, contextFiles })
         },
         [addEnhancedContext, vscodeAPI]
     )
