@@ -540,10 +540,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+        // Reset current chat panel title
+        this.handleChatTitle('New Chat')
     }
 
+    /**
+     * Handles setting the chat title.
+     *
+     * Sets the title to the given string. Once set, the title will not update
+     * automatically to the next question.
+     * This allows users to manually edit the title for each chat session (via sidebar).
+     */
     public handleChatTitle(title: string): void {
-        this.chatModel.setChatTitle(title)
+        // Skip storing default chat title
+        if (title !== 'New Chat') {
+            this.chatModel.setChatTitle(title)
+        }
         if (this.webviewPanel) {
             this.webviewPanel.title = title
         }
