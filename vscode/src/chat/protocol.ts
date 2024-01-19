@@ -119,7 +119,13 @@ export type ExtensionMessage =
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'setChatEnabledConfigFeature'; data: boolean }
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
