@@ -95,6 +95,13 @@ export class ThemeIcon {
     ) {}
 }
 
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3,
+    HighContrastLight = 4,
+}
+
 export class MarkdownString implements vscode_types.MarkdownString {
     constructor(public readonly value: string) {}
     isTrusted?: boolean | { readonly enabledCommands: readonly string[] } | undefined

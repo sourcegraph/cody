@@ -155,7 +155,7 @@ export type Notifications = {
     'textDocument/didChange': [TextDocument]
     // The user focused on a document without changing the document's content.
     // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didFocus': [TextDocument]
+    'textDocument/didFocus': [{ uri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [TextDocument]

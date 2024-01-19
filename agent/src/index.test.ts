@@ -13,7 +13,7 @@ import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
-import { MessageHandler } from './jsonrpc-alias'
+import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import {
     type ClientInfo,
     type ExtensionConfiguration,
@@ -381,27 +381,41 @@ describe('Agent', () => {
     const animalUri = Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
     const squirrelUri = Uri.file(squirrelPath)
+    const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
+    const multipleSelectionsUri = Uri.file(multipleSelections)
 
-    async function openFile(uri: Uri) {
+    function openFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didOpen', params)
+    }
+    function changeFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didChange', params)
+    }
+
+    async function textDocumentEvent(
+        uri: Uri,
+        method: NotificationMethodName,
+        params?: { selectionName?: string }
+    ): Promise<void> {
+        const selectionName = params?.selectionName ?? 'SELECTION'
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStart = content.indexOf('/* SELECTION_START */')
-        const selectionEnd = content.indexOf('/* SELECTION_END */')
+        const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionStart = content.indexOf(selectionStartMarker)
+        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
         const cursor = content.indexOf('/* CURSOR */')
-
-        content = content
-            .replace('/* CURSOR */', '')
-            .replace('/* SELECTION_START */', '')
-            .replace('/* SELECTION_END */', '')
+        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
+            throw new Error(`No selection found for name ${params.selectionName}`)
+        }
+        content = content.replace('/* CURSOR */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionStart)
+                ? document.positionAt(selectionStart + selectionStartMarker.length)
                 : undefined
         const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        client.notify('textDocument/didOpen', {
+        client.notify(method, {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
@@ -575,16 +589,18 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-          " \`\`\`typescript
-export class Dog implements Animal {
-  name: string;
-  makeAnimalSound(): string {
-    return "Bark!";
-  }
-  isMammal: boolean = true;
-}
-          \`\`\`"
-        `,
+              " \`\`\`typescript
+              class Dog implements Animal {
+                name: string;
+
+                makeAnimalSound() {
+                  return "Woof!";
+                }
+
+                isMammal = true;
+              }
+              \`\`\`"
+            `,
                 explainPollyError
             )
         }, 30_000)
@@ -657,6 +673,32 @@ export class Dog implements Animal {
         )
     })
 
+    describe('Text documents', () => {
+        // This test fails when running in replay mode with `it.only`. This seems to happen
+        // due to some non-determinism how we construct the prompt. I'm keeping the test in
+        // for now but feel free to `it.skip` it if it's causing problems.
+        it('chat/submitMessage (understands the selected text)', async () => {
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+
+            await openFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            const reply = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply?.text?.trim()).includes('anotherFunction')
+            expect(reply?.text?.trim()).not.includes('inner')
+            await changeFile(multipleSelectionsUri)
+            const reply2 = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply2?.text?.trim()).includes('inner')
+            expect(reply2?.text?.trim()).not.includes('anotherFunction')
+        }, 20_000)
+    })
+
     describe('Commands', () => {
         it('commands/explain', async () => {
             await openFile(animalUri)
@@ -667,30 +709,28 @@ export class Dog implements Animal {
               "The Selected Code: Animal Interface in TypeScript
 
               Purpose:
-              In this TypeScript code, an interface named "Animal" is being defined, which is a common blueprint for creating objects that represent animals in a program. The purpose of using an interface is to establish a contract that specifies the structure and behavior an object implementing this interface must adhere to.
+              The selected code defines an interface called "Animal" in TypeScript. An interface is a blueprint for creating objects or classes in TypeScript. This interface describes specific properties and methods that an object or class must-have to be considered an "Animal."
 
               Inputs:
-              There are no explicit inputs in this code. However, when other parts of the code define concrete classes implementing this "Animal" interface, they must provide values for the following properties:
-
-              1. name: a string representing the name of the animal.
-              2. makeAnimalSound(): a function to simulate the animal's sound.
-              3. isMammal: a boolean indicating if the animal is a mammal or not.
+              The Animal interface doesn't take any inputs directly. However, if you create an object or class implementing this interface, you must provide the required properties and methods. The properties can be assigned values when you create the implementing object, and the methods should have their logic implemented as well.
 
               Outputs:
-              This particular code snippet does not produce any output, as it only defines the "Animal" interface. The output is the creation and implementation of animal objects that conform to this structure.
+              The Animal interface itself doesn't produce any output or value directly, but objects and classes created using this interface will give output based on the provided property values and implemented method functionalities.
 
               How it achieves its purpose:
-              The interface defines the required structure of an object that represents an animal. Each property and method included in the interface acts as a contract that concrete animal classes agree to follow.
+              The Animal interface defines three required elements or members:
 
-              The algorithm can be broken down as follows:
+              1. name (property): This is a string type that stores the animal's name.
+              2. makeAnimalSound (method): This is a function that returns a string representing the sound an animal makes when prompted.
+              3. isMammal (property): This is a boolean type representing whether or not the animal is a mammal.
 
-              1. Create the "Animal" interface.
-              2. Define the required properties:
-                 a. "name": a string to store the animal's name.
-                 b. "makeAnimalSound": a function to simulate the animal's sound.
-                 c. "isMammal": a boolean indicating if the animal is a mammal or not.
+              When you create an object or class implementing this interface, you must include these three members in the implementing entity.
 
-              Upon implementing this interface in a concrete class, the program ensures that the object follows a consistent and predictable structure, resulting in code that is maintainable, reusable, and less prone to errors."
+              Important Logic Flows or Data Transformations:
+              The Animal interface is a static definition and doesn't encompass any active logic flow or data transformation. Implementing classes and objects will contain their logic for individual methods and properties, and the interface is simply a guide.
+
+              Summary:
+              In summary, the Animal interface is a simple TypeScript blueprint for classes or objects representing various animals. It defines three members, including two properties and one method. By using the Animal interface to build classes or objects, developers can ensure consistency in their code and provide structure for interacting with and defining animals."
             `,
                 explainPollyError
             )
@@ -702,81 +742,48 @@ export class Dog implements Animal {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "To write the tests for the shared TypeScript code, I will be using Jest testing framework as it is a popular testing library for TypeScript. I will create a new file \`animal.test.ts\` in the same directory as \`animal.ts\`. The test suite will include multiple tests to cover the key functionality and edge cases.
+              "No new imports needed - using existing libs.
 
-              Here's the full completed code for the new unit tests in a markdown codeblock:
+              Test coverage includes:
+
+              1. Check if the animal sound is correctly returned
+              2. Check if the animal is a mammal
+              3. Check if the animal name is correctly set
+
+              Test limitations:
+
+              1. Assumes that the \`makeAnimalSound()\` method returns consistent values for the same animal
+              2. Assumes that the \`isMammal\` property does not change
+
+              Here is the completed unit test code:
+
               \`\`\`typescript
-              import { Animal } from './animal';
+              import { Animal } from "../src/animal";
 
-              describe('Animal', () => {
+              describe("Animal", () => {
                   let animal: Animal;
 
                   beforeEach(() => {
                       animal = {
-                          name: 'Test Animal',
-                          makeAnimalSound: jest.fn(() => 'Test sound'),
+                          name: "Test Animal",
+                          makeAnimalSound: () => "Test Sound",
                           isMammal: true
                       };
                   });
 
-                  it('should create an instance of Animal', () => {
-                      expect(animal).toBeDefined();
+                  it("checks if the animal sound is correctly returned", () => {
+                      expect(animal.makeAnimalSound()).toBe("Test Sound");
                   });
 
-                  it('should have a name property', () => {
-                      expect(animal.name).toBe('Test Animal');
+                  it("checks if the animal is a mammal", () => {
+                      expect(animal.isMammal).toBeTrue();
                   });
 
-                  it('should have a makeAnimalSound function', () => {
-                      expect(animal.makeAnimalSound).toBeDefined();
-                  });
-
-                  it('should have a isMammal boolean property', () => {
-                      expect(animal.isMammal).toBe(true);
-                  });
-
-                  it('should be able to make animal sound', () => {
-                      const sound = animal.makeAnimalSound();
-                      expect(sound).toBe('Test sound');
-                  });
-
-                  it('should initialize name property correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      expect(testAnimal.name).toBe('Test Animal');
-                  });
-
-                  it('should initialize isMammal property correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      expect(testAnimal.isMammal).toBe(true);
-                  });
-
-                  it('should initialize makeAnimalSound correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      const sound = testAnimal.makeAnimalSound();
-                      expect(sound).toBe('I am a test animal, hear me make a test sound');
+                  it("checks if the animal name is correctly set", () => {
+                      expect(animal.name).toBe("Test Animal");
                   });
               });
-
-              class AnimalImpl implements Animal {
-                  name: string;
-                  isMammal: boolean;
-
-                  constructor(name: string) {
-                      this.name = name;
-                      this.isMammal = true;
-                  }
-
-                  makeAnimalSound(): string {
-                      return \`I am a \${this.name}, hear me make a test sound\`;
-                  }
-              }
-              \`\`\`
-              Test Coverage and Limitations:
-
-              * This test suite validates the expected functionality of the \`Animal\` interface and covers the key functionality of creating an instance of \`Animal\`, checking its properties, and making animal sound.
-              * The tests cover edge cases by using a mock \`Animal\` instance with a predefined name, isMammal, and makeAnimalSound methods.
-              * The test suite does not perform any integration testing with external dependencies as there are none defined in the code sample.
-              * The mock implementation of \`Animal\` provided in the tests is a best-effort approximation of the expected behavior defined in the interface. The actual implementation may differ."
+              \`\`\`"
             `,
                 explainPollyError
             )
