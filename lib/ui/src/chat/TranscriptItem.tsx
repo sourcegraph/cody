@@ -64,7 +64,6 @@ export const TranscriptItem: React.FunctionComponent<
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
-        isEnhancedContextEnabled: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     index,
@@ -95,7 +94,6 @@ export const TranscriptItem: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
-    isEnhancedContextEnabled,
 }) {
     // Only returns command name if it is the first word in the message to remove markdown links
     const initValue = message.displayText?.startsWith('/')
@@ -228,7 +226,7 @@ export const TranscriptItem: React.FunctionComponent<
                             className={transcriptActionClassName}
                         />
                     ) : (
-                        inProgress && <LoadingContext isEnhancedContextEnabled={isEnhancedContextEnabled} />
+                        inProgress && <LoadingContext />
                     )}
                 </div>
             )}

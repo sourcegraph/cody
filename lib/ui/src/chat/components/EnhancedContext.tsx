@@ -6,6 +6,12 @@ import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegr
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
+export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
+
+export function useEnhancedContextEnabled(): boolean {
+    return React.useContext(EnhancedContextEnabled)
+}
+
 export interface FileLinkProps {
     uri: URI
     repoName?: string

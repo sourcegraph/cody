@@ -1,5 +1,5 @@
 import * as child_process from 'child_process'
-import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
+import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile, type PathLike, type RmOptions } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
@@ -127,11 +127,11 @@ export const test = base
 
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
-                rmSync(videoDirectory, { recursive: true })
+                await rmSyncWithRetries(videoDirectory, { recursive: true })
             }
 
-            rmSync(userDataDirectory, { recursive: true })
-            rmSync(extensionsDirectory, { recursive: true })
+            await rmSyncWithRetries(userDataDirectory, { recursive: true })
+            await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
     })
     .extend<{ sidebar: Frame }>({
@@ -140,6 +140,31 @@ export const test = base
             await use(sidebar)
         },
     })
+
+/**
+ * Calls rmSync(path, options) and retries a few times if it fails before throwing.
+ *
+ * This reduces the chance of errors caused by timing of other processes that may have files locked, such as
+ *
+ *    Error: EBUSY: resource busy or locked,
+ *      unlink '\\?\C:\Users\RUNNER~1\AppData\Local\Temp\cody-vsced30WGT\Crashpad\metadata'
+ */
+async function rmSyncWithRetries(path: PathLike, options?: RmOptions): Promise<void> {
+    const maxAttempts = 5
+    let attempts = maxAttempts
+    while (attempts-- >= 0) {
+        try {
+            rmSync(path, options)
+            break
+        } catch (error) {
+            if (attempts === 1) {
+                throw new Error(`Failed to rmSync ${path} after ${maxAttempts} attempts: ${error}`)
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100))
+        }
+    }
+}
 
 async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {

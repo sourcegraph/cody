@@ -684,17 +684,19 @@ cases.forEach(isTreeSitterEnabled => {
 
                 it('handles missing brackets gracefully to truncate the completion correctly', async () => {
                     const requestParams = params('console.log(1); const █', [completion``], {
-                        onNetworkRequest(_params, onPartialResponse) {
-                            onPartialResponse?.(completion`
+                        *completionResponseGenerator() {
+                            yield completion`
                                 ├MyCoolObject = {
-                                constructor() {`)
-                            onPartialResponse?.(completion`
+                                constructor() {`
+
+                            yield completion`
                                 ├MyCoolObject = {
                                 constructor() {
                                     console.log(1)
 
-                                    if (false`)
-                            onPartialResponse?.(completion`
+                                    if (false`
+
+                            yield completion`
                                 ├MyCoolObject = {
                                 constructor() {
                                     console.log(1)
@@ -704,8 +706,9 @@ cases.forEach(isTreeSitterEnabled => {
                                     }
 
                                     const result = {
-                                        value:`)
-                            onPartialResponse?.(completion`
+                                        value:`
+
+                            yield completion`
                                 ├MyCoolObject = {
                                 constructor() {
                                     console.log(1)
@@ -721,7 +724,7 @@ cases.forEach(isTreeSitterEnabled => {
                                     return result
                                 }
                             }
-                            console.log(5)┤`)
+                            console.log(5)┤`
                         },
                         dynamicMultilineCompletions: true,
                     })

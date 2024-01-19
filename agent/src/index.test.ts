@@ -363,12 +363,24 @@ describe('Agent', () => {
             accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
         })
         expect(serverInfo?.authStatus?.isLoggedIn).toBeFalsy()
+
+        // Log in so test cases are authenticated by default
+        const valid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            customHeaders: {},
+        })
+        expect(valid?.isLoggedIn).toBeTruthy()
     }, 10_000)
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
+    const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
+    const squirrelUri = Uri.file(squirrelPath)
 
     async function openFile(uri: Uri) {
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
@@ -421,9 +433,11 @@ describe('Agent', () => {
         // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
         // When changing an account, you also need to update the REDACTED_ hash above.
         //
-        // To update the recordings with the correct account, run `source` on
-        // the script here:
-        //    https://sourcegraph.sourcegraph.com/github.com/sourcegraph/dev-private/-/blob/scripts/export-cody-http-recording-tokens.sh
+        // To update the recordings with the correct account, run the following command
+        // from the root of this repository:
+        //
+        //    source agent/scripts/export-cody-http-recording-tokens.sh
+        //
         // If you don't have access to this private file then you need to ask
         // for sombody on the Sourcegraph team to help you update the HTTP requests.
         expect(valid?.username).toStrictEqual('olafurpg-testing')
@@ -463,7 +477,7 @@ describe('Agent', () => {
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
             const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
@@ -502,7 +516,7 @@ describe('Agent', () => {
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('chat/restore', async () => {
             // Step 1: create a chat session where I share my name.
@@ -545,13 +559,8 @@ describe('Agent', () => {
                 '" You told me your name is Lars Monsen."',
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
-        // This test is skipped because it shells out to `symf expand-query`, which
-        // requires an access token to send an llm request and is, therefore, not
-        // able to return stable results in replay mode. Also, we don't have an
-        // access token in ci so this test can only pass when running locally (for
-        // now).
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await openFile(animalUri)
             await client.request('command/execute', { command: 'cody.search.index-update' })
@@ -567,24 +576,28 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
           " \`\`\`typescript
-          class Dog implements Animal {
-            name: string;
-
-            constructor(name: string) {
-              this.name = name;
-            }
-
-            makeAnimalSound() {
-              return "Woof!";
-            }
-
-            isMammal = true;
-          }
+export class Dog implements Animal {
+  name: string;
+  makeAnimalSound(): string {
+    return "Bark!";
+  }
+  isMammal: boolean = true;
+}
           \`\`\`"
         `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
+
+        it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
+            await openFile(squirrelUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
+                addEnhancedContext: true,
+            })
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+        }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -598,7 +611,7 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
                 expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
             }
-        }, 30_0000)
+        }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
             const id = await client.request('chat/new', null)
@@ -704,7 +717,7 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('commands/test', async () => {
             await openFile(animalUri)
@@ -790,7 +803,7 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
-        }, 30_0000)
+        }, 30_000)
 
         it('commands/smell', async () => {
             await openFile(animalUri)
@@ -969,7 +982,7 @@ describe('Agent', () => {
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_0000)
+        }, 30_000)
     })
 
     describe('Enterprise', () => {
@@ -996,14 +1009,14 @@ describe('Agent', () => {
         afterAll(async () => {
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_0000)
+        }, 30_000)
     })
 
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
-    }, 30_0000)
+    }, 30_000)
 })
 
 function trimEndOfLine(text: string): string {
