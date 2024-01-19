@@ -433,9 +433,11 @@ describe('Agent', () => {
         // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
         // When changing an account, you also need to update the REDACTED_ hash above.
         //
-        // To update the recordings with the correct account, run `source` on
-        // the script here:
-        //    https://sourcegraph.sourcegraph.com/github.com/sourcegraph/dev-private/-/blob/scripts/export-cody-http-recording-tokens.sh
+        // To update the recordings with the correct account, run the following command
+        // from the root of this repository:
+        //
+        //    source agent/scripts/export-cody-http-recording-tokens.sh
+        //
         // If you don't have access to this private file then you need to ask
         // for sombody on the Sourcegraph team to help you update the HTTP requests.
         expect(valid?.username).toStrictEqual('olafurpg-testing')

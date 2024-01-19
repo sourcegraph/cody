@@ -38,6 +38,16 @@ The following commands assume you are in the `agent` directory:
 | (optional) `src login`                                                   | Make sure you are logged into your Sourcegraph instance, which is required to run the e2e test in `index.test.ts`                            |
 | `pnpm run test src/index.test.ts`                                        | Run e2e test, requires `src login` to work.                                                                                                  |
 
+The following commands assume you are in the root directory of this repository:
+
+| Command                                                                                                              | What                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test agent/src/index.test.ts`                                                                                  | Run agent tests in replay mode                                                                                                                                |
+| `source agent/scripts/export-cody-http-recording-tokens.sh`                                                          | Export access tokens to enable recording mode                                                                                                                 |
+| `pnpm update-agent-tests`                                                                                            | Update HTTP recordings for all tests. Run this before opening a PR                                                                                            |
+| `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts`                 | Run this when iterating on a feature and you only want to run an individual test via `it.only`. Remember to run `pnpm update-agent-tests` before sending a PR |
+| `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
+
 ## Debugging the agent
 
 - The best way to troubleshoot a problem with the agent is to run
