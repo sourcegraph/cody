@@ -1,5 +1,4 @@
 import * as assert from 'assert'
-import path from 'path'
 
 import * as vscode from 'vscode'
 
@@ -35,8 +34,8 @@ suite('API tests', () => {
             },
         })
         assert.deepStrictEqual(
-            h.lastN(20).map(h => h.document.uri.fsPath),
-            [path.sep + 'foo.ts', path.sep + 'bar.ts']
+            h.lastN(20).map(h => h.document.uri.toString()),
+            [testFileUri('foo.ts').toString(), testFileUri('bar.ts').toString()]
         )
     })
 })
