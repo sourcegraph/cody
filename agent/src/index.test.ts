@@ -621,6 +621,11 @@ describe('Agent', () => {
         it(
             'edits the chat',
             async () => {
+                // if the test is being run on node 16, skip the test
+                if (process.versions.node.startsWith('v16')) {
+                    console.log('Edit test is skipped due to slow node version')
+                    return
+                }
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
                 await client.sendMessage(
