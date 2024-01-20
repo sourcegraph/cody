@@ -387,29 +387,46 @@ describe('Agent', () => {
     const squirrelUri = Uri.file(squirrelPath)
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
     const multipleSelectionsUri = Uri.file(multipleSelections)
+    const nestedPath = path.join(workspaceRootPath, 'src', 'nested.ts')
+    const nestedUri = Uri.file(nestedPath)
 
-    function openFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+    interface FileSelectionParams {
+        selectionName?: string
+        useSecondSelection?: boolean
+    }
+
+    function openFile(uri: Uri, params?: FileSelectionParams): Promise<void> {
         return textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
-    function changeFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+    function changeFile(uri: Uri, params?: FileSelectionParams): Promise<void> {
         return textDocumentEvent(uri, 'textDocument/didChange', params)
     }
 
     async function textDocumentEvent(
         uri: Uri,
         method: NotificationMethodName,
-        params?: { selectionName?: string }
+        params?: FileSelectionParams
     ): Promise<void> {
         const selectionName = params?.selectionName ?? 'SELECTION'
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
+
         const selectionStartMarker = `/* ${selectionName}_START */`
-        const selectionStart = content.indexOf(selectionStartMarker)
-        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
+        const selectionEndMarker = `/* ${selectionName}_END */`
+        const selectionStart = params?.useSecondSelection
+            ? content.lastIndexOf(selectionStartMarker)
+            : content.indexOf(selectionStartMarker)
+        const selectionEnd = params?.useSecondSelection
+            ? content.lastIndexOf(selectionEndMarker)
+            : content.indexOf(selectionEndMarker)
         const cursor = content.indexOf('/* CURSOR */')
+
         if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
             throw new Error(`No selection found for name ${params.selectionName}`)
         }
-        content = content.replace('/* CURSOR */', '')
+        content = content
+            .replaceAll('/* CURSOR */', '')
+            .replaceAll('/* SELECTION_START */', '')
+            .replaceAll('/* SELECTION_END */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
@@ -702,28 +719,28 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            await openFile(animalUri)
+            await openFile(nestedUri)
+            // change selection
+            await openFile(nestedUri, { useSecondSelection: true })
+
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
+
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " The Animal interface:
+                " The selected code is a part of the outer function that returns an inner function.
 
-              The Animal interface defines the shape of objects that represent animals. Interfaces in TypeScript are used to define the structure of an object - what properties and methods it should have.
-
-              This interface has three properties:
-
-              1. name - This will be a string property to represent the animal's name.
-
-              2. makeAnimalSound() - This is a method that will be implemented by classes that implement the Animal interface. It allows each animal to have its own implementation of making a sound.
-
-              3. isMammal - This is a boolean property that will specify if the animal is a mammal or not.
-
-              The interface does not contain any actual implementation, just the definition of what properties and methods any class implementing Animal should have. This allows us to define a consistent structure that can be reused across different animal classes.
-
-              By defining an Animal interface, we can then create multiple classes like Dog, Cat, Bird etc that implement the interface and provide their own specific logic while ensuring they match the general Animal structure.
-
-              Interfaces are a powerful way to define contracts in TypeScript code and allow different implementations to guarantee they can work together smoothly. This Animal interface creates a reusable way to model animals in a type-safe way."
+                1) The purpose of this code is to define and return an inner function called inner from within the outer function.
+  
+                2) This code does not take any direct inputs. The outer function likely takes some inputs, but they are not shown in the selected code.
+  
+                3) The output of this code is the inner function definition. By returning the inner function, outer is able to provide access to inner from outside its own scope.
+  
+                4) It achieves its purpose by using a function declaration to define a new function called inner, and then returning that function definition. The return statement passes the inner function back to wherever outer was called from.
+  
+                5) This demonstrates closure in JavaScript/TypeScript. The inner function can access the scope of outer even after outer has returned. This allows inner to share state and access variables from the outer scope that would normally be out of reach after outer exited.
+  
+                So in summary, the selected code defines an inner function within an outer function, and returns it so that inner can be called later while retaining access to the outer scope. This is a common pattern in JavaScript/TypeScript for creating closures."
             `,
                 explainPollyError
             )

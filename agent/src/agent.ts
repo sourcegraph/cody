@@ -222,24 +222,50 @@ export class Agent extends MessageHandler {
             process.exit(0)
         })
 
-        this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.setActiveTextEditor(
-                newTextEditor(this.workspace.addDocument(TextDocumentWithUri.fromDocument(document)))
-            )
-        })
-
-        this.registerNotification('textDocument/didOpen', document => {
-            const documentWithUri = TextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
-            vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
-        })
-
-        this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+        const changeEditorAndNotifyAboutSelectionChange = (
+            documentWithUri: TextDocumentWithUri
+        ): {
+            textDocument: vscode.TextDocument
+            textEditor: vscode.TextEditor
+        } => {
             const textDocument = this.workspace.addDocument(documentWithUri)
             const textEditor = newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
+
+            const selectionStart = documentWithUri.selection?.start
+            const selectionEnd = documentWithUri.selection?.end
+            if (selectionStart && selectionEnd) {
+                const selection = new vscode.Selection(
+                    selectionStart.line,
+                    selectionStart.character,
+                    selectionEnd.line,
+                    selectionEnd.character
+                )
+                vscode_shim.onDidChangeTextEditorSelection.fire({
+                    textEditor,
+                    selections: [selection],
+                    kind: undefined,
+                })
+            }
+
+            return { textDocument, textEditor }
+        }
+
+        this.registerNotification('textDocument/didFocus', document => {
+            changeEditorAndNotifyAboutSelectionChange(TextDocumentWithUri.fromDocument(document))
+        })
+
+        this.registerNotification('textDocument/didOpen', document => {
+            const { textDocument } = changeEditorAndNotifyAboutSelectionChange(
+                TextDocumentWithUri.fromDocument(document)
+            )
+            vscode_shim.onDidOpenTextDocument.fire(textDocument)
+        })
+
+        this.registerNotification('textDocument/didChange', document => {
+            const { textDocument, textEditor } = changeEditorAndNotifyAboutSelectionChange(
+                TextDocumentWithUri.fromDocument(document)
+            )
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
