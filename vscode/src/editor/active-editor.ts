@@ -28,6 +28,11 @@ interface LastActiveTextEditor {
  */
 let lastActiveTextEditor: LastActiveTextEditor = { active: undefined, ignored: false }
 
+// Used for testing purposes
+export function resetActiveEditor(): void {
+    lastActiveTextEditor = { active: undefined, ignored: false }
+}
+
 // Support file, untitled, and notebooks
 const validFileSchemes = new Set(['file', 'untitled', 'vscode-notebook', 'vscode-notebook-cell'])
 

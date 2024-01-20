@@ -103,6 +103,10 @@ export type Requests = {
     // the client sends progress/cancel.
     'testing/progressCancelation': [{ title: string }, { result: string }]
 
+    // Only used for testing purposes. Does a best-effort to reset the state
+    // if the agent server. For example, closes all open documents.
+    'testing/reset': [null, null]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials

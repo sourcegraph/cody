@@ -82,6 +82,8 @@ import { InitDoer } from './InitDoer'
 import { DefaultPrompter, type IContextProvider, type IPrompter } from './prompt'
 import { SimpleChatModel, toViewMessage, type ContextItem, type MessageWithContext } from './SimpleChatModel'
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 interface SimpleChatPanelProviderOptions {
     config: Config
     extensionUri: vscode.Uri
@@ -1333,19 +1335,21 @@ class ContextProvider implements IContextProvider {
             })
             return (await Promise.all(items)).flat()
         })
+
         const allResults = (await Promise.all(r0)).flat()
 
-        // Sort results for deterministic ordering for stable tests. Ideally, we
-        // could sort by some numerical score from symf based on how relevant
-        // the matches are for the query.
-        // Feel free to change this behavior to only sort while running tests.
-        allResults.sort((a, b) => {
-            const byUri = a.uri.fsPath.localeCompare(b.uri.fsPath)
-            if (byUri !== 0) {
-                return byUri
-            }
-            return a.text.localeCompare(b.text)
-        })
+        if (isAgentTesting) {
+            // Sort results for deterministic ordering for stable tests. Ideally, we
+            // could sort by some numerical score from symf based on how relevant
+            // the matches are for the query.
+            allResults.sort((a, b) => {
+                const byUri = a.uri.fsPath.localeCompare(b.uri.fsPath)
+                if (byUri !== 0) {
+                    return byUri
+                }
+                return a.text.localeCompare(b.text)
+            })
+        }
 
         return allResults
     }

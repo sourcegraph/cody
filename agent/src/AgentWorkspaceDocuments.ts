@@ -1,7 +1,8 @@
 import fspromises from 'fs/promises'
 
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
+import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
@@ -20,6 +21,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public workspaceRootUri: vscode.Uri | undefined
     public activeDocumentFilePath: vscode.Uri | null = null
 
+    public openUri(uri: vscode.Uri): AgentTextDocument {
+        return this.loadedDocument(new TextDocumentWithUri(uri))
+    }
     public loadedDocument(document: TextDocumentWithUri): AgentTextDocument {
         const fromCache = this.agentDocuments.get(document.underlying.uri)
         if (!fromCache) {
@@ -91,8 +95,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
-        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
-
         return agentDocument
     }
 
@@ -118,5 +120,18 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             document.underlying.content = buffer.toString()
         }
         return Promise.resolve(this.loadedDocument(document))
+    }
+
+    public async reset(): Promise<void> {
+        for (const uri of this.agentDocuments.keys()) {
+            const document = this.openUri(vscode.Uri.parse(uri))
+            await vscode_shim.onDidCloseTextDocument.cody_fireAsync(document)
+        }
+        vscode_shim.window.activeTextEditor = undefined
+        while (vscode_shim.visibleTextEditors.length > 0) {
+            vscode_shim.visibleTextEditors.pop()
+        }
+        vscode_shim.tabGroups.reset()
+        resetActiveEditor()
     }
 }

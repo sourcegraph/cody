@@ -10,4 +10,9 @@ export class AgentTabGroups implements vscode.TabGroups {
     public close(): Thenable<boolean> {
         throw new Error('Method not implemented.')
     }
+    public reset(): void {
+        while (this.all.length > 0) {
+            this.all.pop()
+        }
+    }
 }

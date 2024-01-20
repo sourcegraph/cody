@@ -19,6 +19,9 @@ export class AgentGlobalState implements vscode.Memento {
         // chat/new.
         this.globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
     }
+    public reset(): void {
+        this.globalStorage.clear()
+    }
 
     public keys(): readonly string[] {
         return [localStorage.LAST_USED_ENDPOINT, localStorage.ANONYMOUS_USER_ID_KEY, ...this.globalStorage.keys()]
