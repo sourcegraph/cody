@@ -83,6 +83,8 @@ import { InitDoer } from './InitDoer'
 import { DefaultPrompter, type IContextProvider, type IPrompter } from './prompt'
 import { SimpleChatModel, toViewMessage, type ContextItem, type MessageWithContext } from './SimpleChatModel'
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 interface SimpleChatPanelProviderOptions {
     config: Config
     extensionUri: vscode.Uri
@@ -699,8 +701,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const properties = {
                     requestID,
                     chatModel: this.chatModel.modelID,
-                    // 🚨 SECURITY: included only for DotCom users.
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
 
@@ -710,7 +710,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         hasV2Event: true,
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: { ...contextSummary },
+                        metadata: {
+                            ...contextSummary,
+                            // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                            // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                            recordsPrivateMetadataTranscript:
+                                authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            properties,
+                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                            // V2 telemetry exports privateMetadata only for DotCom users
+                            // the condition below is an aditional safegaurd measure
+                            promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
+                        },
                     })
                 }
             },
@@ -1010,6 +1023,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         void this.saveSession()
         this.postViewTranscript()
 
+        const authStatus = this.authProvider.getAuthStatus()
+
         // Count code generated from response
         const codeCount = countGeneratedCode(rawResponse)
         if (codeCount?.charCount) {
@@ -1022,6 +1037,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                 metadata: {
                     ...codeCount,
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    requestID,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
                 },
             })
         }
@@ -1339,7 +1364,23 @@ class ContextProvider implements IContextProvider {
             })
             return (await Promise.all(items)).flat()
         })
-        return (await Promise.all(r0)).flat()
+
+        const allResults = (await Promise.all(r0)).flat()
+
+        if (isAgentTesting) {
+            // Sort results for deterministic ordering for stable tests. Ideally, we
+            // could sort by some numerical score from symf based on how relevant
+            // the matches are for the query.
+            allResults.sort((a, b) => {
+                const byUri = a.uri.fsPath.localeCompare(b.uri.fsPath)
+                if (byUri !== 0) {
+                    return byUri
+                }
+                return a.text.localeCompare(b.text)
+            })
+        }
+
+        return allResults
     }
 
     private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {

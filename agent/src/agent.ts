@@ -12,6 +12,7 @@ import {
     featureFlagProvider,
     graphqlClient,
     isRateLimitError,
+    logError,
     NoOpTelemetryRecorderProvider,
     setUserAgent,
     type BillingCategory,
@@ -36,6 +37,7 @@ import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const inMemorySecretStorageMap = new Map<string, string>()
+const globalState = new AgentGlobalState()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -58,7 +60,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: new AgentGlobalState(),
+        globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
@@ -236,12 +238,21 @@ export class Agent extends MessageHandler {
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
-            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+            const textEditor = newTextEditor(textDocument)
+            this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
                 reason: undefined,
             })
+
+            if (document.selection) {
+                vscode_shim.onDidChangeTextEditorSelection.fire({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -321,6 +332,12 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
+        this.registerAuthenticatedRequest('testing/reset', async () => {
+            await this.workspace.reset()
+            globalState.reset()
+            return null
+        })
+
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
@@ -328,7 +345,7 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
-                console.log('Completion provider is not initialized')
+                logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
                 return { items: [] }
             }
             const uri =
@@ -338,7 +355,9 @@ export class Agent extends MessageHandler {
                     ? vscode.Uri.file(params.filePath)
                     : undefined
             if (!uri) {
-                console.log(
+                logError(
+                    'Agent',
+                    'autocomplete/execute',
                     `No uri provided for autocomplete request ${JSON.stringify(
                         params
                     )}. To fix this problem, set the 'uri' property.`
@@ -347,7 +366,9 @@ export class Agent extends MessageHandler {
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
+                logError('Agent', 'autocomplete/execute', 'No document found for file path', params.uri, [
+                    ...this.workspace.allUris(),
+                ])
                 return { items: [] }
             }
 

@@ -4,7 +4,7 @@ import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
@@ -13,7 +13,7 @@ import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
-import { MessageHandler } from './jsonrpc-alias'
+import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import {
     type ClientInfo,
     type ExtensionConfiguration,
@@ -394,33 +394,51 @@ describe('Agent', () => {
         expect(valid?.isLoggedIn).toBeTruthy()
     }, 10_000)
 
+    beforeEach(async () => {
+        await client.request('testing/reset', null)
+    })
+
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
     const squirrelUri = Uri.file(squirrelPath)
+    const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
+    const multipleSelectionsUri = Uri.file(multipleSelections)
 
-    async function openFile(uri: Uri) {
+    function openFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didOpen', params)
+    }
+    function changeFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didChange', params)
+    }
+
+    async function textDocumentEvent(
+        uri: Uri,
+        method: NotificationMethodName,
+        params?: { selectionName?: string }
+    ): Promise<void> {
+        const selectionName = params?.selectionName ?? 'SELECTION'
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStart = content.indexOf('/* SELECTION_START */')
-        const selectionEnd = content.indexOf('/* SELECTION_END */')
+        const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionStart = content.indexOf(selectionStartMarker)
+        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
         const cursor = content.indexOf('/* CURSOR */')
-
-        content = content
-            .replace('/* CURSOR */', '')
-            .replace('/* SELECTION_START */', '')
-            .replace('/* SELECTION_END */', '')
+        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
+            throw new Error(`No selection found for name ${params.selectionName}`)
+        }
+        content = content.replace('/* CURSOR */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionStart)
+                ? document.positionAt(selectionStart + selectionStartMarker.length)
                 : undefined
         const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        client.notify('textDocument/didOpen', {
+        client.notify(method, {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
@@ -594,16 +612,18 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-          " \`\`\`typescript
-export class Dog implements Animal {
-  name: string;
-  makeAnimalSound(): string {
-    return "Bark!";
-  }
-  isMammal: boolean = true;
-}
-          \`\`\`"
-        `,
+              " \`\`\`typescript
+              class Dog implements Animal {
+                name: string;
+
+                makeAnimalSound() {
+                  return "Woof!";
+                }
+
+                isMammal = true;
+              }
+              \`\`\`"
+            `,
                 explainPollyError
             )
         }, 30_000)
@@ -697,6 +717,29 @@ export class Dog implements Animal {
         })
     })
 
+    describe('Text documents', () => {
+        it('chat/submitMessage (understands the selected text)', async () => {
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+
+            await openFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            const reply = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply?.text?.trim()).includes('anotherFunction')
+            expect(reply?.text?.trim()).not.includes('inner')
+            await changeFile(multipleSelectionsUri)
+            const reply2 = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply2?.text?.trim()).includes('inner')
+            expect(reply2?.text?.trim()).not.includes('anotherFunction')
+        }, 20_000)
+    })
+
     describe('Commands', () => {
         it('commands/explain', async () => {
             await openFile(animalUri)
@@ -704,33 +747,23 @@ export class Dog implements Animal {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The Selected Code: Animal Interface in TypeScript
+              " The Animal interface:
 
-              Purpose:
-              In this TypeScript code, an interface named "Animal" is being defined, which is a common blueprint for creating objects that represent animals in a program. The purpose of using an interface is to establish a contract that specifies the structure and behavior an object implementing this interface must adhere to.
+              The Animal interface defines the shape of objects that represent animals. Interfaces in TypeScript are used to define the structure of an object - what properties and methods it should have.
 
-              Inputs:
-              There are no explicit inputs in this code. However, when other parts of the code define concrete classes implementing this "Animal" interface, they must provide values for the following properties:
+              This interface has three properties:
 
-              1. name: a string representing the name of the animal.
-              2. makeAnimalSound(): a function to simulate the animal's sound.
-              3. isMammal: a boolean indicating if the animal is a mammal or not.
+              1. name - This will be a string property to represent the animal's name.
 
-              Outputs:
-              This particular code snippet does not produce any output, as it only defines the "Animal" interface. The output is the creation and implementation of animal objects that conform to this structure.
+              2. makeAnimalSound() - This is a method that will be implemented by classes that implement the Animal interface. It allows each animal to have its own implementation of making a sound.
 
-              How it achieves its purpose:
-              The interface defines the required structure of an object that represents an animal. Each property and method included in the interface acts as a contract that concrete animal classes agree to follow.
+              3. isMammal - This is a boolean property that will specify if the animal is a mammal or not.
 
-              The algorithm can be broken down as follows:
+              The interface does not contain any actual implementation, just the definition of what properties and methods any class implementing Animal should have. This allows us to define a consistent structure that can be reused across different animal classes.
 
-              1. Create the "Animal" interface.
-              2. Define the required properties:
-                 a. "name": a string to store the animal's name.
-                 b. "makeAnimalSound": a function to simulate the animal's sound.
-                 c. "isMammal": a boolean indicating if the animal is a mammal or not.
+              By defining an Animal interface, we can then create multiple classes like Dog, Cat, Bird etc that implement the interface and provide their own specific logic while ensuring they match the general Animal structure.
 
-              Upon implementing this interface in a concrete class, the program ensures that the object follows a consistent and predictable structure, resulting in code that is maintainable, reusable, and less prone to errors."
+              Interfaces are a powerful way to define contracts in TypeScript code and allow different implementations to guarantee they can work together smoothly. This Animal interface creates a reusable way to model animals in a type-safe way."
             `,
                 explainPollyError
             )
@@ -742,81 +775,35 @@ export class Dog implements Animal {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "To write the tests for the shared TypeScript code, I will be using Jest testing framework as it is a popular testing library for TypeScript. I will create a new file \`animal.test.ts\` in the same directory as \`animal.ts\`. The test suite will include multiple tests to cover the key functionality and edge cases.
+              " Okay, based on the provided code context, it looks like no test framework or libraries are already in use. Since this is TypeScript code, I will generate Jest unit tests for the Animal interface:
 
-              Here's the full completed code for the new unit tests in a markdown codeblock:
-              \`\`\`typescript
+              \`\`\`ts
+              // New imports needed
               import { Animal } from './animal';
 
               describe('Animal', () => {
-                  let animal: Animal;
 
-                  beforeEach(() => {
-                      animal = {
-                          name: 'Test Animal',
-                          makeAnimalSound: jest.fn(() => 'Test sound'),
-                          isMammal: true
-                      };
-                  });
+                it('should have a name property', () => {
+                  const animal = {} as Animal;
+                  expect(animal.name).toBeDefined();
+                });
 
-                  it('should create an instance of Animal', () => {
-                      expect(animal).toBeDefined();
-                  });
+                it('should have a makeAnimalSound method', () => {
+                  const animal = {} as Animal;
+                  expect(animal.makeAnimalSound).toBeDefined();
+                  expect(typeof animal.makeAnimalSound).toBe('function');
+                });
 
-                  it('should have a name property', () => {
-                      expect(animal.name).toBe('Test Animal');
-                  });
+                it('should have an isMammal property', () => {
+                  const animal = {} as Animal;
+                  expect(animal.isMammal).toBeDefined();
+                  expect(typeof animal.isMammal).toBe('boolean');
+                });
 
-                  it('should have a makeAnimalSound function', () => {
-                      expect(animal.makeAnimalSound).toBeDefined();
-                  });
-
-                  it('should have a isMammal boolean property', () => {
-                      expect(animal.isMammal).toBe(true);
-                  });
-
-                  it('should be able to make animal sound', () => {
-                      const sound = animal.makeAnimalSound();
-                      expect(sound).toBe('Test sound');
-                  });
-
-                  it('should initialize name property correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      expect(testAnimal.name).toBe('Test Animal');
-                  });
-
-                  it('should initialize isMammal property correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      expect(testAnimal.isMammal).toBe(true);
-                  });
-
-                  it('should initialize makeAnimalSound correctly', () => {
-                      const testAnimal = new AnimalImpl('Test Animal');
-                      const sound = testAnimal.makeAnimalSound();
-                      expect(sound).toBe('I am a test animal, hear me make a test sound');
-                  });
               });
-
-              class AnimalImpl implements Animal {
-                  name: string;
-                  isMammal: boolean;
-
-                  constructor(name: string) {
-                      this.name = name;
-                      this.isMammal = true;
-                  }
-
-                  makeAnimalSound(): string {
-                      return \`I am a \${this.name}, hear me make a test sound\`;
-                  }
-              }
               \`\`\`
-              Test Coverage and Limitations:
 
-              * This test suite validates the expected functionality of the \`Animal\` interface and covers the key functionality of creating an instance of \`Animal\`, checking its properties, and making animal sound.
-              * The tests cover edge cases by using a mock \`Animal\` instance with a predefined name, isMammal, and makeAnimalSound methods.
-              * The test suite does not perform any integration testing with external dependencies as there are none defined in the code sample.
-              * The mock implementation of \`Animal\` provided in the tests is a best-effort approximation of the expected behavior defined in the interface. The actual implementation may differ."
+              This generates a basic Jest test suite for the Animal interface, validating the name, makeAnimalSound, and isMammal properties. I focused on simple and complete validations of the key functionality. Since no test framework was detected in the context, I imported Jest and created new tests from scratch. Please let me know if you would like me to modify or expand the tests in any way."
             `,
                 explainPollyError
             )
@@ -829,71 +816,72 @@ export class Dog implements Animal {
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the provided TypeScript code, here are some suggestions for improvement:
+              " Here are 5 potential improvements for the selected TypeScript code:
 
-              1. Add access modifiers to members: By default, all members in an interface are public. Explicitly specifying the access modifier can make the code more readable. Additionally, it is a good practice to follow as it makes it clear to other developers that the member is intended to be accessed from outside the module. For example:
-              \`\`\`typescript
+              1. Add type annotations for method parameters and return types:
+
+              \`\`\`
               export interface Animal {
-                  name: string;
-                  makeAnimalSound(): string;
-                  isMammal: boolean;
+                name: string
+                makeAnimalSound(volume?: number): string
+                isMammal: boolean
               }
               \`\`\`
-              could be changed to:
-              \`\`\`typescript
+
+              Adding explicit types for methods makes the interface clearer and allows TypeScript to catch more errors at compile time.
+
+              2. Make name readonly:
+
+              \`\`\`
               export interface Animal {
-                  readonly name: string;
-                  makeAnimalSound(): string;
-                  isMammal: boolean;
+                readonly name: string
+                // ...
               }
               \`\`\`
-              2. Add type constraints to function parameters: It's a good practice to add type constraints to function parameters. This can improve type safety and make the code more robust. For example:
-              \`\`\`typescript
-              makeAnimalSound(): string;
-              \`\`\`
-              could be changed to:
-              \`\`\`typescript
-              makeAnimalSound(): void;
-              \`\`\`
-              3. Use consistent spacing: Consistent spacing can improve the readability of the code. Make sure to follow the same spacing conventions throughout the file. For example, make sure there is consistent spacing around the \`:\` symbol:
-              \`\`\`typescript
-              name: string
-              makeAnimalSound(): string
-              isMammal: boolean
-              \`\`\`
-              could be changed to:
-              \`\`\`typescript
-              name: string;
-              makeAnimalSound(): string;
-              isMammal: boolean;
-              \`\`\`
-              4. Consider using an abstract class: If the \`Animal\` interface is meant to be implemented by concrete classes, consider using an abstract class instead. This can help ensure that the implementing classes have common behavior and properties. For example:
-              \`\`\`typescript
-              export abstract class Animal {
-                  public readonly name: string;
-                  public isMammal: boolean;
 
-                  constructor(name: string, isMammal: boolean) {
-                      this.name = name;
-                      this.isMammal = isMammal;
-                  }
+              This prevents the name from being reassigned after initialization, making the code more robust.
 
-                  public makeAnimalSound(): void {
-                      // Implement the logic here.
-                  }
-              }
+              3. Add alternate method name:
+
               \`\`\`
-              5. Use TypeScript features such as type aliases: TypeScript has many features that can make the code more readable and maintainable. Consider using type aliases for boolean properties, for example:
-              \`\`\`typescript
-              type IsMammal = boolean;
-
               export interface Animal {
-                  readonly name: string;
-                  makeAnimalSound(): void;
-                  isMammal: IsMammal;
+
+                // ...
+
+                getSound(): string
               }
               \`\`\`
-              Overall, the code follows good design principles but there are some opportunities to enhance the code quality. The proposed changes can make the code more robust, efficient, and align with best practices."
+
+              Adding a method like \`getSound()\` as an alias for \`makeAnimalSound()\` improves readability.
+
+              4. Use boolean getter instead of property for isMammal:
+
+              \`\`\`
+              export interface Animal {
+
+                // ...
+
+                get isMammal(): boolean
+              }
+              \`\`\`
+
+              This allows encapsulation of the logic for determining if mammal.
+
+              5. Extend a base interface like LivingThing:
+
+              \`\`\`
+              interface LivingThing {
+                name: string
+              }
+
+              interface Animal extends LivingThing {
+                // ...
+              }
+              \`\`\`
+
+              This improves maintainability by separating common properties into a base interface.
+
+              Overall, the code is well-written but could benefit from some minor changes like adding types, encapsulation, and semantic method names. The interface follows sound principles like read-only properties andboolean getters. No major issues were found."
             `,
                 explainPollyError
             )
