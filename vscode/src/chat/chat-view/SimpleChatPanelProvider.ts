@@ -638,6 +638,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
 
+        console.log('# handleCommands', command.slashCommand, this.editor.getActiveTextEditorSelection())
+
         // If editor is not active, post error and return early
         if (command && !this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
             if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {

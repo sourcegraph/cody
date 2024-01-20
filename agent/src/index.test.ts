@@ -423,10 +423,7 @@ describe('Agent', () => {
         if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
             throw new Error(`No selection found for name ${params.selectionName}`)
         }
-        content = content
-            .replaceAll('/* CURSOR */', '')
-            .replaceAll('/* SELECTION_START */', '')
-            .replaceAll('/* SELECTION_END */', '')
+        content = content.replace('/* CURSOR */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
