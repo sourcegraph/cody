@@ -34,6 +34,7 @@ import {
     type Result,
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
+import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { type View } from '../../../webviews/NavBar'
 import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
@@ -375,7 +376,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             case 'edit': {
                 const requestID = uuid.v4()
-                await this.handleEdit(requestID, message.text)
+                await this.handleEdit(
+                    requestID,
+                    message.text,
+                    message.index,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext || false
+                )
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
@@ -586,7 +593,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
-        submitType: 'user' | 'user-newchat' | 'suggestion' | 'example',
+        submitType: ChatSubmitType,
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -657,7 +664,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleChatRequest(
         requestID: string,
         inputText: string,
-        submitType: 'user' | 'suggestion' | 'example' | 'user-newchat',
+        submitType: ChatSubmitType,
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
         command?: CodyCommand
@@ -713,10 +720,32 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.updateWebviewPanelTitle(inputText)
     }
 
-    private async handleEdit(requestID: string, text: string): Promise<void> {
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-        await this.generateAssistantResponse(requestID)
+    /**
+     * Handles editing a human chat message in current chat session.
+     *
+     * Removes any existing messages from the provided index,
+     * before submitting the replacement text as a new question.
+     * When no index is provided, default to the last human message.
+     *
+     * TODO: (bee) update index to be required once we can confirm the change doesn't affect other clients
+     */
+    private async handleEdit(
+        requestID: string,
+        text: string,
+        index?: number,
+        contextFiles: ContextFile[] = [],
+        addEnhancedContext = true
+    ): Promise<void> {
+        try {
+            const humanMessage = index ?? this.chatModel.getLastSpeakerMessageIndex('human')
+            if (humanMessage === undefined) {
+                return
+            }
+            this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
+            return await this.handleHumanMessageSubmitted(requestID, text, 'user', contextFiles, addEnhancedContext)
+        } catch {
+            this.postError(new Error('Failed to edit prompt'), 'transcript')
+        }
     }
 
     private async postViewConfig(): Promise<void> {

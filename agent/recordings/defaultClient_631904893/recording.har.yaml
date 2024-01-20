@@ -181,6 +181,180 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: bfb61b283124d55635180afacbdfbf44
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1273
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "1273"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 335
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: You are a code completion AI designed to take the surrounding code and
+                  shared context into account in order to predict and suggest
+                  high-quality code to complete the code enclosed in <CODE5711>
+                  tags. You only response with code that works and fits
+                  seamlessly with surrounding code if any or use best practice
+                  and nothing else.
+              - speaker: assistant
+                text: I am a code completion AI with exceptional context-awareness designed to
+                  auto-complete nested code blocks with high-quality code that
+                  seamlessly integrates with surrounding code.
+              - speaker: human
+                text: >-
+                  Below is the code from file path src/sum.ts. Review the code
+                  outside the XML tags to detect the functionality, formats,
+                  style, patterns, and logics in use. Then, use what you detect
+                  and reuse methods/libraries to complete and enclose completed
+                  code only inside XML tags precisely without duplicating
+                  existing implementations. Here is the code: 
+
+                  ```
+
+                  export function sum(a: number, b: number): number {
+                     <CODE5711></CODE5711> 
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: "<CODE5711>export function sum(a: number, b: number): number {"
+            stopSequences:
+              - |-
+                
+
+                Human:
+              - </CODE5711>
+            stream: true
+            temperature: 0.5
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 619
+        content:
+          mimeType: text/event-stream
+          size: 619
+          text: >+
+            event: completion
+
+            data: {"completion":"\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a +","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:51.540Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: d8774263a4b8c066170e2392300b78a3
       _order: 0
       cache: {}
@@ -8971,6 +9145,1277 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 6a5106ea2f2ae826d042b603b8936911
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 414
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 9496
+        content:
+          mimeType: text/event-stream
+          size: 9496
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:54 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:53.228Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 3c95834498b914056e98b6e7d3ee80ef
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1115
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  I am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.
+
+
+                  If you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.
+              - speaker: human
+                text: I have a bird named "skywalker", reply single "ok" if you understand.
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 10025
+        content:
+          mimeType: text/event-stream
+          size: 10025
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker.\" Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.\n\nIf you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:55 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:54.858Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 921987127a76929f1b64b490fd12d40d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1859
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  I am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.
+
+
+                  If you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.
+              - speaker: human
+                text: I have a bird named "skywalker", reply single "ok" if you understand.
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  I understand that you have a bird named "skywalker." Is there a specific question or problem related to programming or coding that you would like my help with? I am here to assist you with any programming-related questions or issues you may have. Please let me know how I can help.
+
+
+                  If you would like some ideas for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.
+              - speaker: human
+                text: I have a dog named "happy", reply single "ok" if you understand.
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 16984
+        content:
+          mimeType: text/event-stream
+          size: 16984
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate, and relevant information to help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy.\" If you have any questions or issues related to programming or coding, please don't hesitate to let me know. I am here to help you with any programming-related questions or problems you may have.\n\nIf you would like some suggestions for programming projects or tasks that you can work on, or if you have any questions about programming in general, please let me know. I will do my best to provide you with useful and accurate information to help you improve your programming skills and complete your projects successfully.\n\nPlease feel free to let me know how I can assist you with your coding and programming needs. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:57 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:56.600Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 46cc8d435c6b8f4c1aee30320eab0e76
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1111
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  I am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.
+
+
+                  If you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.
+              - speaker: human
+                text: I have a tiger named "zorro", reply single "ok" if you understand
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 11235
+        content:
+          mimeType: text/event-stream
+          size: 11235
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintain","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will always strive to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will always strive to provide useful, accurate, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will always strive to provide useful, accurate, and relevant information to assist","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will always strive to provide useful, accurate, and relevant information to assist you.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.\n\nIf you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIn addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.\n\nJust let me know how I can help and I will always strive to provide useful, accurate, and relevant information to assist you.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:58.812Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 84f4c1bb14d0c03375faae25f19a9b91
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1835
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  I am here to help you with coding issues and answer any questions related to programming. If you have a question or need help, please tell me more about the problem or task you're facing. I'll do my best to provide you with the information and guidance you need to accomplish your goals.
+
+
+                  If you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.
+              - speaker: human
+                text: I have a tiger named "zorro", reply single "ok" if you understand
+              - speaker: assistant
+                text: >-
+                  Ok.
+
+
+                  If you have any questions or need help related to programming or coding, please feel free to ask. I will do my best to provide the information and guidance you need to accomplish your goals.
+
+
+                  In addition to answering questions and providing help with code-related tasks, I can also provide information about various programming concepts and techniques, suggest resources for learning new programming skills, and give advice on best practices for writing code that is clean, efficient, and maintainable.
+
+
+                  Just let me know how I can help and I will always strive to provide useful, accurate, and relevant information to assist you.
+              - speaker: human
+                text: What pets do I have?
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 11997
+        content:
+          mimeType: text/event-stream
+          size: 11997
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turt","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on the information you have provided, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\".\n\nI am here to assist you with any questions or problems you have related to programming and coding. If you have a question or need help with a code-related task, please let me know and I will do my best to provide the information and guidance you need to accomplish your goals.\n\nIf you would like to know more about my capabilities as a coding assistant or how I can assist you, please let me know. I will always strive to provide useful, accurate, and relevant information to help you with your coding projects and learn new programming skills.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:55:27 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "574"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1396
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:55:26.168Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 0af734d27e9cdbb178bf5ef98f44b717
       _order: 0
       cache: {}
@@ -9069,6 +10514,120 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:13:18.450Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 818ac1ba639afb328aa6253a26e6b2b8
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 194
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "194"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 351
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CodyConfigFeaturesResponse {
+                  site {
+                      codyConfigFeatures {
+                          chat
+                          autoComplete
+                          commands
+                        }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CodyConfigFeaturesResponse
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
+      response:
+        bodySize: 140
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 140
+          text: "[\"H4sIAAAAAAAAAySLQQrAIAzA/tLzXuBV2D+K7TZhtUPrYUj/PpynkEAGEBpCGNCy8WRSe\
+            qOWI587o/XK7a8XGgSrnTfAbhpVnpvnsVpSESzUlru7fwAAAP//AwCKjSZ9WgAAAA==\
+            \"]"
+          textDecoded:
+            data:
+              site:
+                codyConfigFeatures:
+                  autoComplete: true
+                  chat: true
+                  commands: true
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:51 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:51.270Z
       time: 0
       timings:
         blocked: -1
@@ -9718,6 +11277,231 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: f5950e9054775882496c8ef730a6b5e9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 318
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "318"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 356
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          chatModel
+                          chatModelMaxTokens
+                          fastChatModel
+                          fastChatModelMaxTokens
+                          completionModel
+                          completionModelMaxTokens
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 212
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 212
+          text: "[\"H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3\
+            AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140f\
+            nhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQ\
+            BAAA=\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: anthropic/claude-2.0
+                  chatModelMaxTokens: 12000
+                  completionModel: anthropic/claude-instant-1
+                  completionModelMaxTokens: 9000
+                  fastChatModel: anthropic/claude-instant-1
+                  fastChatModelMaxTokens: 9000
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:49.930Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fa315afdf9676902a7fd9ada8d6e3f80
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 155
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "155"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 356
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          provider
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 131
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 131
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV\",\"Pj6+zvl5aZnppUWJJZn5eSDx\
+            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:49.931Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 6c6658e8e48edbf3202b358137824728
       _order: 0
       cache: {}
@@ -10039,6 +11823,127 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 2aa0d241ea701c1652107adac42645db
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 227
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "227"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 336
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUser {
+                  currentUser {
+                      id
+                      hasVerifiedEmail
+                      displayName
+                      username
+                      avatarURL
+                      primaryEmail {
+                          email
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUser
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentUser
+      response:
+        bodySize: 236
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 236
+          text: "[\"H4sIAAAAAAAAAzSMywrCMBQF/+Wso+C2ILhxp10ILW4v6W2akke5SZRS8u/iazcDw2wYK\
+            BOaDbqIcMhdYnmrHdCgv7dOz/HQzvp5NccjFCZKPYsdLQ9nT9ahyVJYYbBpcbS25BlN\
+            KM4plMQSPo7oaCyymF3mlG0wUKAHZZLudvnni1hPsv6uG/gLSLGIZiO0TCfDVlKKYa+\
+            jR621vgAAAP//AwA9RRnIwAAAAA==\"]"
+          textDecoded:
+            data:
+              currentUser:
+                avatarURL: null
+                displayName: null
+                hasVerifiedEmail: true
+                id: VXNlcjo1NjcwMg==
+                primaryEmail:
+                  email: sourcegraph@geirsson.com
+                username: olafurpg-testing
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.074Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 32948df7ef84dfa9b6f6cd817ebcc4ad
       _order: 0
       cache: {}
@@ -10328,6 +12233,108 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:13:17.978Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 541af336aee72be509a0473c2f453fbe
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 115
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "115"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 350
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUserCodyProEnabled {
+                  currentUser {
+                      codyProEnabled
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUserCodyProEnabled
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentUserCodyProEnabled
+      response:
+        bodySize: 103
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 103
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1O\",\"LQJz81MqA4ryXfMSk3JSU5Ss\
+            SopKU2trawEAAAD//wMAqqwCpjAAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.201Z
       time: 0
       timings:
         blocked: -1
@@ -11213,6 +13220,588 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: d360c17b0b4c5db31a9f5701e7a4cc66
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 177
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "177"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-tracing
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 38
+        content:
+          mimeType: application/json
+          size: 38
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.356Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1fbe4350da67b61c793e7a3a5ab38ad2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 187
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "187"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-context-bfg-mixed
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.359Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7850d8f69cc7d93ddccfd8c048067405
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 192
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "192"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-new-jaccard-similarity
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.361Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5e12d126d38a5c7201c629f942174a5a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 199
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "199"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-dynamic-multiline-completions
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 38
+        content:
+          mimeType: application/json
+          size: 38
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.362Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 82ed8f4c062482de6b54b74e84294dd1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 180
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "180"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-hot-streak
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 38
+        content:
+          mimeType: application/json
+          size: 38
+          text: "{\"data\":{\"evaluateFeatureFlag\":false}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.363Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fb0785dab7c0a7f499acb060bea7274d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 182
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "182"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 344
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-user-latency
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        bodySize: 37
+        content:
+          mimeType: application/json
+          size: 37
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:51 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:51.397Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: f6d7905a604a70014ffa5eb91245f2a1
       _order: 0
       cache: {}
@@ -11668,6 +14257,158 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:27:11.140Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 8ab7dc533629f2451ce58740e12b5739
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 147
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "147"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 337
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query FeatureFlags {
+                      evaluatedFeatureFlags() {
+                          name
+                          value
+                        }
+                  }
+            variables: {}
+        queryString:
+          - name: FeatureFlags
+            value: null
+        url: https://sourcegraph.com/.api/graphql?FeatureFlags
+      response:
+        bodySize: 492
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 492
+          text: "[\"H4sIAAAAAAAAA5STUW4bMQxE76Lv8AI+QC4R5IMrjVeEtdKWpGIvDN89UBq0aFKvkW9yh\
+            sMn6hoSO4fDNeCNS2dHegZ7VzwXni0cXq6h8oJwCFNpE608g+wsHjOxgo0sN/XY3cJT\
+            GBYIhyMXw+3pj9LAGjPlbVJJf9tc+3+6lOtJ6ny3LbbqyuYU27IW4epkW3W+UJY5F5m\
+            z/yP/GgaVpwIyV/AidaZZnKYyivdGKjuoyCJuhEsEEhIdm5LD9ofFljbi7u0jLByUts\
+            qLRFp6cSlSQZ8lafUxwnauUMuy/mRkbv573dNPVK4cd3fjGGEmA+ZRyhAAO6+Wth2ri\
+            bCwFHqDylEiDxrEBep3HWdd46NbGreC6jSxIVHhOlOCIw77ByxWbXfdf3WJJzJndfLW\
+            9eMWuHtG9REeibpB7VG8hKnvAHYULHDdCJe17aD4tJO6dh//8UxZzJt+I/56u70DAAD\
+            //wMA/KEyu/EDAAA=\"]"
+          textDecoded:
+            data:
+              evaluatedFeatureFlags:
+                - name: blob-page-switch-areas-shortcuts
+                  value: false
+                - name: search-hybrid
+                  value: true
+                - name: search-ranking
+                  value: true
+                - name: contrast-compliant-syntax-highlighting
+                  value: false
+                - name: enable-streaming-git-blame
+                  value: true
+                - name: rate-limits-exceeded-for-testing
+                  value: false
+                - name: cody-autocomplete-dynamic-multiline-completions
+                  value: false
+                - name: search-ownership
+                  value: false
+                - name: cody-autocomplete-hot-streak
+                  value: false
+                - name: cody-autocomplete-tracing
+                  value: false
+                - name: accessible-file-tree
+                  value: true
+                - name: cody
+                  value: false
+                - name: ab-email-verification-alert
+                  value: true
+                - name: grpc
+                  value: true
+                - name: search-content-based-lang-detection
+                  value: false
+                - name: cody-pro
+                  value: true
+                - name: quick-start-tour-for-authenticated-users
+                  value: true
+                - name: search-debug
+                  value: false
+                - name: telemetry-export
+                  value: true
+                - name: search-input-show-history
+                  value: false
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.521Z
       time: 0
       timings:
         blocked: -1
@@ -12464,6 +15205,573 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:27:45.746Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 098362fc6dd05cffe4c0f056bdb97281
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 734
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "734"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-01-19T21:54:50.534Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ff6fd5d918793cddffe4d6053b2c5c12
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 563
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "563"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-01-19T21:54:50.667Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5c825c5365625dc2060b497a9e4130bf
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 734
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "734"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 26
+        content:
+          mimeType: application/json
+          size: 26
+          text: "{\"data\":{\"logEvent\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:51 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "26"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:51.257Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aa7fb97d33af87ab866bde60b986f84c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 753
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "753"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:completion:unexpectedNotSuggested
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 26
+        content:
+          mimeType: application/json
+          size: 26
+          text: "{\"data\":{\"logEvent\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "26"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.668Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: cb8b7e5a4531daf1dd92f85688f6ef5e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 739
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "739"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:completion:accepted
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        bodySize: 26
+        content:
+          mimeType: application/json
+          size: 26
+          text: "{\"data\":{\"logEvent\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "26"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1286
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.669Z
       time: 0
       timings:
         blocked: -1
@@ -13742,6 +17050,1147 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 6946233ed09430d6282041aa70aff781
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 342
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "342"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: connected
+                  feature: cody.auth
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-01-19T21:54:50.539Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1628ab7527de45e9077d9a7b8594b05e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 342
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "342"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: connected
+                  feature: cody.auth
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 115
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:51 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:51.402Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fe6cf63d10590283a0f1e8e1e6c0e4d0
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 361
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "361"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: unexpectedNotSuggested
+                  feature: cody.completion
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 115
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.671Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 914a143eb71a256f50192731bab6080d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 347
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "347"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: accepted
+                  feature: cody.completion
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 115
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.672Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 54fb2e70e682d45ea0f8a590cf4ff80b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.chat-question
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 122
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 122
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//w==\",\"AwCEdn1qOgAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.677Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c0ce086ea9e0040c31f372b9132f10c3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 352
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "352"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasCode
+                  feature: cody.chatResponse.new
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:52 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:52.690Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: bdb89f804a0cc4d63620028dc58c8ee6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: clicked
+                  feature: cody.editChatButton
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 115
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:53.218Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d4aa7ae438f1dab67b10494fcd513756
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 352
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "352"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.command.explain
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:58 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:58.241Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 753a19ca0bb0136e88446e1c6a0c0724
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.command.test
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 115
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE\",\"cYpSk/OLUlzLUvNKikH8xJzy\
+            xMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:58 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:58.250Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5d25a03b5fbb3e4ca9cd5031d1c9e04b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 346
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.command.smell
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.1.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:58 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:58.268Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 496af979cd0ad6d436cbc26c727382dd
       _order: 0
       cache: {}
@@ -14052,6 +18501,116 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-18T13:18:13.541Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5fe87fd6b70717c79863193306d6eeb3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 189
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "189"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 335
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+                              id
+                              embeddingExists
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/cody
+        queryString:
+          - name: Repository
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 148
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 148
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+H\
+            lYJUAAAA\"]"
+          textDecoded:
+            data:
+              repository:
+                embeddingExists: true
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.365Z
       time: 0
       timings:
         blocked: -1
@@ -14490,6 +19049,115 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 831dc9c38b0bacf6516ce255c7b000c1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 164
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "164"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 343
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteIdentification {
+              	site {
+              		siteID
+              		productSubscription {
+              			license {
+              				hashedKey
+              			}
+              		}
+              	}
+              }
+            variables: {}
+        queryString:
+          - name: SiteIdentification
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteIdentification
+      response:
+        bodySize: 222
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 222
+          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaR\",\"wfnuekgTA6QtgyG+u8HEf/mn\
+            74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/\
+            QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8=\",\
+            \"AwBhzrhaoAAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:50.358Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 521ccc40108044270489f74646d341d2
       _order: 0
       cache: {}
@@ -14783,6 +19451,109 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-17T17:13:17.551Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 4680de7a0aaa2fe6ad61e23b3daa009c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_5b349e6c55ce73cc26d29598f470cf5150c01ae37e351cbc5502ecc6713ab986
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 343
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 142
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 142
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp\",\"pcklYalFxZn5eUpWSkamFqYW\
+            JvFGBkYmugaGuoaW8aZ6RroWKckGhinJlqYGFslKtbW1AAAAAP//\",\"AwDitCvuSQ\
+            AAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Jan 2024 21:54:50 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1318
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-19T21:54:49.913Z
       time: 0
       timings:
         blocked: -1

@@ -40,6 +40,11 @@ interface ProgressEndMessage {
     message: {}
 }
 
+export function isNode16(): boolean {
+    const [major] = process.versions.node.split('.')
+    return Number.parseInt(major, 10) <= 16
+}
+
 export class TestClient extends MessageHandler {
     public info: ClientInfo
     public agentProcess?: ChildProcessWithoutNullStreams
@@ -184,9 +189,23 @@ export class TestClient extends MessageHandler {
         return reply.messages.at(-1)
     }
 
-    public async editMessage(id: string, text: string): Promise<ChatMessage | undefined> {
+    public async editMessage(
+        id: string,
+        text: string,
+        index?: number,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
         const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', { id, message: { command: 'edit', text } })
+            await this.request('chat/editMessage', {
+                id,
+                message: {
+                    command: 'edit',
+                    text,
+                    index,
+                    contextFiles: params?.contextFiles ?? [],
+                    addEnhancedContext: params?.addEnhancedContext ?? false,
+                },
+            })
         )
         return reply.messages.at(-1)
     }
@@ -631,30 +650,51 @@ export class Dog implements Animal {
             }
         })
 
-        it(
-            'edits the chat',
-            async () => {
+        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
+        describe.skipIf(isNode16())('chat/editMessage', () => {
+            it(
+                'edits the last human chat message',
+                async () => {
+                    const id = await client.request('chat/new', null)
+                    await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                    await client.sendMessage(
+                        id,
+                        'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                    )
+                    await client.editMessage(
+                        id,
+                        'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                    )
+                    {
+                        const lastMessage = await client.sendMessage(id, 'kramer')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    }
+                    {
+                        const lastMessage = await client.sendMessage(id, 'georgey')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                    }
+                },
+                { timeout: mayRecord ? 10_000 : undefined }
+            )
+
+            it('edits messages by index', async () => {
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
-                await client.sendMessage(
-                    id,
-                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
-                )
-                await client.editMessage(
-                    id,
-                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
-                )
+                // edits by index replaces message at index, and erases all subsequent messages
+                await client.sendMessage(id, 'I have a turtle named "potter", reply single "ok" if you understand.')
+                await client.sendMessage(id, 'I have a bird named "skywalker", reply single "ok" if you understand.')
+                await client.sendMessage(id, 'I have a dog named "happy", reply single "ok" if you understand.')
+                await client.editMessage(id, 'I have a tiger named "zorro", reply single "ok" if you understand', 2)
                 {
-                    const lastMessage = await client.sendMessage(id, 'kramer')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    const lastMessage = await client.sendMessage(id, 'What pets do I have?')
+                    const answer = lastMessage?.text?.toLocaleLowerCase()
+                    expect(answer?.includes('turtle')).toBeTruthy()
+                    expect(answer?.includes('tiger')).toBeTruthy()
+                    expect(answer?.includes('bird')).toBeFalsy()
+                    expect(answer?.includes('dog')).toBeFalsy()
                 }
-                {
-                    const lastMessage = await client.sendMessage(id, 'georgey')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
-                }
-            },
-            { timeout: mayRecord ? 10_000 : undefined }
-        )
+            }, 30_000)
+        })
     })
 
     describe('Commands', () => {

@@ -9,7 +9,6 @@ import {
     type ChatButtonProps,
     type ChatModelDropdownMenuProps,
     type ChatUISubmitButtonProps,
-    type ChatUITextAreaProps,
     type CodeBlockActionsProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
@@ -26,14 +25,12 @@ export const Transcript: React.FunctionComponent<
     {
         transcript: ChatMessage[]
         messageInProgress: ChatMessage | null
-        messageBeingEdited: boolean
-        setMessageBeingEdited: (input: boolean) => void
+        messageBeingEdited: number | undefined
+        setMessageBeingEdited: (index?: number) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         className?: string
-        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -62,9 +59,7 @@ export const Transcript: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     transcriptActionClassName,
-    textAreaComponent,
     EditButtonContainer,
-    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -153,15 +148,23 @@ export const Transcript: React.FunctionComponent<
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
+            // The key index includes the Cody welcome message added to the transcript in the webview
+            // as it is not included in the transcript returned from the server, the key index is
+            // offset by 1 to account for this.
+            const keyIndex = index + offset
+            const originalIndex = keyIndex - 1
             return (
                 <TranscriptItem
-                    key={index + offset}
+                    index={originalIndex}
+                    key={keyIndex}
                     message={message}
                     inProgress={
                         offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
                     }
-                    beingEdited={messageBeingEdited && offsetIndex}
+                    showEditButton={message.speaker === 'human'}
+                    beingEdited={messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
+                    EditButtonContainer={EditButtonContainer}
                     fileLinkComponent={fileLinkComponent}
                     symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -170,16 +173,11 @@ export const Transcript: React.FunctionComponent<
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    textAreaComponent={textAreaComponent}
-                    EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText?.startsWith('/')}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
                     showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                    submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     userInfo={userInfo}
@@ -209,9 +207,10 @@ export const Transcript: React.FunctionComponent<
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
+                        index={transcript.length}
                         message={messageInProgress}
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
-                        beingEdited={false}
+                        beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}
                         symbolLinkComponent={symbolLinkComponent}
@@ -224,7 +223,6 @@ export const Transcript: React.FunctionComponent<
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}

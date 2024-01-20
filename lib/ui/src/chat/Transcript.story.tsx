@@ -34,7 +34,7 @@ const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri }) => <>{uri.toS
 export const Simple: StoryObj<typeof meta> = {
     args: {
         messageInProgress: null,
-        messageBeingEdited: false,
+        messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
         fileLinkComponent: FileLink,
         transcriptItemClassName: styles.transcriptItem,

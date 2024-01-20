@@ -1,0 +1,40 @@
+.chat-actions-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.chat-action-button-container {
+    display: flex;
+    padding: 0.15rem 0.5rem;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    align-self: stretch;
+    border-radius: 2px;
+    background: unset;
+    border: 1px solid var(--vscode-disabledForeground);
+    color: var(--vscode-disabledForeground);
+    cursor: pointer;
+}
+
+.chat-action-button-title {
+    color: var(--vscode-icon-foreground);
+}
+
+.disable {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chat-action-button-container:focus,
+.chat-action-button-container:focus-visible,
+.chat-action-button-container:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+    color: var(--vscode-inputOption-activeForeground);
+    border-color: var(--vscode-inputOption-activeBorder, transparent);
+}

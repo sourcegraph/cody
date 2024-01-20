@@ -34,7 +34,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     >(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
