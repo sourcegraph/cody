@@ -3,6 +3,10 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
+const isPlatform = (platform: string) => process.platform === platform
+const isMac = isPlatform('darwin')
+const osKey = isMac ? 'Meta' : 'Control'
+
 test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -78,8 +82,8 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(editLastMessageButton).toBeVisible()
     await expect(newChatButton).toBeVisible()
 
-    // "MetaKey(MacOS)/Control" + "K" should enter the editing mode on the last message
-    await chatInput.press('Meta+k')
+    // "Meta(MacOS)/Control" + "K" should enter the editing mode on the last message
+    await chatInput.press(`${osKey}+k`)
     await expect(chatInput).toHaveValue('Four')
     // There should be no "New Chat" action button in editing mode
     // But will show up again after exiting editing mode
@@ -88,7 +92,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(newChatButton).toBeVisible()
 
     // At-file should work in the edit mode
-    await chatInput.press('Meta+k')
+    await chatInput.press(`${osKey}+k`)
     await expect(chatInput).toHaveValue('Four')
     await chatInput.fill('Explain @mj')
     await expect(chatInput).not.toHaveValue('Four')
@@ -108,12 +112,12 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     // "MetaKey(MacOS)/Control" + "Shift" to toggle "New Chat Mode" on and off
     // When it's on, the submit button will be replaced with "Start New Chat" button
     await expect(submitMessageButton).toBeVisible()
-    await chatInput.press('Meta+Shift')
+    await chatInput.press(`${osKey}+Shift`)
     await expect(submitMessageButton).not.toBeVisible()
     await expect(startNewChatButton).toBeVisible()
-    await chatInput.press('Meta+Shift')
+    await chatInput.press(`${osKey}+Shift`)
     await expect(startNewChatButton).not.toBeVisible()
-    await chatInput.press('Meta+Shift')
+    await chatInput.press(`${osKey}+Shift`)
     await expect(startNewChatButton).toBeVisible()
 
     // With "New Chat Mode" enabled,  submit a new message to start a new chat
@@ -125,6 +129,6 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(chatFrame.getByText('Explain @Main.java')).not.toBeVisible()
 
     // Meta+/ also creates a new chat session
-    await chatInput.press('Meta+/')
+    await chatInput.press(`${osKey}+/`)
     await expect(chatFrame.getByText('The End')).not.toBeVisible()
 })
