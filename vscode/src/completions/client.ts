@@ -2,6 +2,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
+    STOP_REASON_STREAMING_CHUNK,
     TracedError,
     addTraceparent,
     featureFlagProvider,
@@ -9,29 +10,15 @@ import {
     isAbortError,
     isNodeResponse,
     isRateLimitError,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
     type CompletionLogger,
-    type CompletionParameters,
     type CompletionResponse,
+    type CompletionResponseGenerator,
     type CompletionsClientConfig,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
-export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
-
-export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
-}
-
-/**
- * Marks the yielded value as an incomplete response.
- *
- * TODO: migrate to union of multiple `CompletionResponse` types to explicitly document
- * all possible response types.
- */
-export const STOP_REASON_STREAMING_CHUNK = 'cody-streaming-chunk'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.

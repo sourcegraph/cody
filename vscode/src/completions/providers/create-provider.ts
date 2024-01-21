@@ -1,12 +1,12 @@
 import {
     FeatureFlag,
     featureFlagProvider,
+    type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
-import type { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import {

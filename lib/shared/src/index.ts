@@ -107,6 +107,12 @@ export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
+export {
+    STOP_REASON_STREAMING_CHUNK,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type CompletionResponseGenerator,
+} from './inferenceClient/misc'
 export type { IntentClassificationOption, IntentDetector } from './intent-detector'
 export { SourcegraphIntentDetectorClient } from './intent-detector/client'
 export type {
@@ -119,6 +125,7 @@ export type {
     SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
+export { createOllamaClient, type OllamaGenerateParams } from './ollama/ollama-client'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,

@@ -1,12 +1,17 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlag, featureFlagProvider, isDotCom, type Configuration } from '@sourcegraph/cody-shared'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+    isDotCom,
+    type CodeCompletionsClient,
+    type Configuration,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { CodeCompletionsClient } from './client'
 import type { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'

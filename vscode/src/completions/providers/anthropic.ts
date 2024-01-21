@@ -1,16 +1,21 @@
 import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
-import { displayPath, tokensToChars, type Message } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
-import type { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+    OPENING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    MULTILINE_STOP_SEQUENCE,
-    OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
     type PrefixComponents,
 } from '../text-processing'

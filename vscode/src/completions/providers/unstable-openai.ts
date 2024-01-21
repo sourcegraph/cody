@@ -1,8 +1,12 @@
 import * as vscode from 'vscode'
 
-import { displayPath, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+} from '@sourcegraph/cody-shared'
 
-import type { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
     MULTILINE_STOP_SEQUENCE,

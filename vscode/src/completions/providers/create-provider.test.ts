@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import {
     graphqlClient,
+    type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
     type GraphQLAPIClientConfig,
 } from '@sourcegraph/cody-shared'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
-import type { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig } from './create-provider'
 

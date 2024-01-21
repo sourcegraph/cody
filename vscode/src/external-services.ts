@@ -3,21 +3,19 @@ import type * as vscode from 'vscode'
 import {
     ChatClient,
     CodebaseContext,
-    graphqlClient,
-    isError,
     SourcegraphEmbeddingsSearchClient,
     SourcegraphGuardrailsClient,
     SourcegraphIntentDetectorClient,
+    graphqlClient,
+    isError,
+    type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Editor,
     type Guardrails,
     type IntentDetector,
 } from '@sourcegraph/cody-shared'
 
-import {
-    createClient as createCodeCompletionsClint,
-    type CodeCompletionsClient,
-} from './completions/client'
+import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
@@ -67,7 +65,7 @@ export async function configureExternalServices(
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
-    const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
+    const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
     const symfRunner = platform.createSymfRunner?.(
         context,
