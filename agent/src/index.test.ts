@@ -37,7 +37,7 @@ interface ProgressReportMessage {
 interface ProgressEndMessage {
     method: 'progress/end'
     id: string
-    message: {}
+    message: Record<string, never>
 }
 
 export class TestClient extends MessageHandler {

@@ -275,7 +275,7 @@ export interface ServerInfo {
     capabilities?: ServerCapabilities
     authStatus?: AuthStatus
 }
-type ServerCapabilities = {}
+type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string

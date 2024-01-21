@@ -51,7 +51,7 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
-    .extend<{}>({
+    .extend({
         page: async (
             { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl },
             use,

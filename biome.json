@@ -22,9 +22,6 @@
                 "noConfusingVoidType": "off",
                 "noArrayIndexKey": "off"
             },
-            "complexity": {
-                "noBannedTypes": "off"
-            },
             "style": {
                 "noNonNullAssertion": "off",
                 "useTemplate": "off",

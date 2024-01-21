@@ -788,7 +788,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true,
-        sendTelemetry?: (contextSummary: {}) => void,
+        sendTelemetry?: (contextSummary: Record<string, number>) => void,
         command?: CodyCommand
     ): Promise<void> {
         try {

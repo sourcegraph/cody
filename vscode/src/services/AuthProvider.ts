@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     DOTCOM_URL,
-    isDotCom,
-    isError,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    isDotCom,
+    isError,
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
@@ -29,7 +29,7 @@ import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
-type Unsubscribe = () => {}
+type Unsubscribe = () => void
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -304,7 +304,7 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders?: {} | null
+        customHeaders?: Record<string, string> | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const endpoint = formatURL(uri) || ''
         const config = {
@@ -348,7 +348,10 @@ export class AuthProvider {
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token
     // sending back from sourcegraph.com
-    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<void> {
+    public async tokenCallbackHandler(
+        uri: vscode.Uri,
+        customHeaders: Record<string, string>
+    ): Promise<void> {
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
         const endpoint = this.authStatus.endpoint
