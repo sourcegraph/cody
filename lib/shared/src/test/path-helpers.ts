@@ -11,5 +11,5 @@ import { isWindows } from '../common/platform'
  * @param relativePath The name/relative path of the file (with forward slashes).
  */
 export function testFileUri(relativePath: string): URI {
-    return URI.file(isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`)
+    return URI.file(isWindows() ? `c:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`)
 }

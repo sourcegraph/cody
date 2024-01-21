@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
+import { displayPath, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
 
 import {
     registerDebugListener as registerSectionObserverDebugListener,
@@ -132,9 +132,9 @@ ${
         : data.context.context
               .map(contextSnippet =>
                   codeDetailsWithSummary(
-                      `${contextSnippet.fileName}${'symbol' in contextSnippet ? `#${contextSnippet.symbol}` : ''} (${
-                          contextSnippet.content.length
-                      } chars)`,
+                      `${displayPath(contextSnippet.uri)}${
+                          'symbol' in contextSnippet ? `#${contextSnippet.symbol}` : ''
+                      } (${contextSnippet.content.length} chars)`,
                       contextSnippet.content,
                       'start'
                   )
@@ -331,8 +331,10 @@ function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined)
     }
 
     return `{
-        context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
-        fileName: ${JSON.stringify(vscode.workspace.asRelativePath(completer.document.fileName))},
+        context: ${JSON.stringify(
+            data?.context?.context.map(c => ({ fileUri: c.uri.toString(), content: c.content }))
+        )},
+        uri: ${JSON.stringify(completer.document.uri.toString())},
         languageId: ${JSON.stringify(completer.document.languageId)},
         content: \`${completer.docContext.prefix}$\{CURSOR}${completer.docContext.suffix}\`,
     }`

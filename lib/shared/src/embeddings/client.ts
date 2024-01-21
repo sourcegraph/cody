@@ -36,7 +36,7 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     public get status(): status.ContextGroup[] {
         return [
             {
-                name: this.codebaseLocalName || this.repoName,
+                displayName: this.codebaseLocalName || this.repoName,
                 providers: [
                     {
                         kind: 'embeddings',

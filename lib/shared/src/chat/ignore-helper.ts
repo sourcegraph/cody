@@ -1,19 +1,22 @@
-import path from 'path'
-
 import ignore, { type Ignore } from 'ignore'
-import { type URI } from 'vscode-uri'
+import { URI, Utils } from 'vscode-uri'
+
+import { posixAndURIPaths } from '../common/path'
+import { isWindows } from '../common/platform'
+import { uriBasename } from '../common/uri'
+import { uriHasPrefix } from '../editor/displayPath'
 
 /**
- * The Cody ignore file path in the native platform style (backslashes on Windows).
- *
- * e.g: `C:\\Users\\me\\my-project\\.cody\\ignore` or `Users/username/my-project/.cody/ignore`
+ * The Cody ignore URI path.
  */
-export const CODY_IGNORE_FILENAME = path.join('.cody', 'ignore')
+export const CODY_IGNORE_URI_PATH = '.cody/ignore'
 
 /**
- * The Cody ignore file path in POSIX style (always forward slashes).
+ * A glob matching the Cody ignore URI path.
  */
-export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', 'ignore')
+export const CODY_IGNORE_POSIX_GLOB = `**/${CODY_IGNORE_URI_PATH}`
+
+type ClientWorkspaceRootURI = string
 
 /**
  * A helper to efficiently check if a file should be ignored from a set
@@ -25,12 +28,11 @@ export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', 'i
  *
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
-type ClientWorkspaceRoot = string
 export class IgnoreHelper {
     /**
      * A map of workspace roots to their ignore rules.
      */
-    private workspaceIgnores = new Map<ClientWorkspaceRoot, Ignore>()
+    private workspaceIgnores = new Map<ClientWorkspaceRootURI, Ignore>()
 
     /**
      * Check if the configuration is enabled or not
@@ -44,21 +46,20 @@ export class IgnoreHelper {
 
     /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
-     * @param workspaceRoot The full absolute path to the workspace root.
-     * @param ignoreFiles The full absolute paths and content of all ignore files within the root.
+     * @param workspaceRoot The workspace root.
+     * @param ignoreFiles The URIs and content of all ignore files within the root.
      */
-    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[]): void {
+    public setIgnoreFiles(workspaceRoot: URI, ignoreFiles: IgnoreFileContent[]): void {
         this.ensureAbsolute('workspaceRoot', workspaceRoot)
 
         const rules = this.getDefaultIgnores()
         for (const ignoreFile of ignoreFiles) {
-            const ignoreFilePath = ignoreFile.filePath
-            this.ensureValidCodyIgnoreFile('ignoreFile.path', ignoreFilePath)
+            this.ensureValidCodyIgnoreFile('ignoreFile.uri', ignoreFile.uri)
 
             // Compute the relative path from the workspace root to the folder this ignore
             // file applies to.
-            const folderPath = ignoreFilePath.slice(0, -CODY_IGNORE_FILENAME.length)
-            const relativeFolderPath = path.relative(workspaceRoot, folderPath)
+            const effectiveDir = ignoreFileEffectiveDirectory(ignoreFile.uri)
+            const relativeFolderUriPath = posixAndURIPaths.relative(workspaceRoot.path, effectiveDir.path)
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
@@ -76,18 +77,16 @@ export class IgnoreHelper {
                 }
 
                 // Gitignores always use POSIX/forward slashes, even on Windows.
-                const ignoreRule = relativeFolderPath.length
-                    ? relativeFolderPath.replaceAll(path.sep, path.posix.sep) + path.posix.sep + ignoreLine
-                    : ignoreLine
+                const ignoreRule = relativeFolderUriPath.length ? relativeFolderUriPath + '/' + ignoreLine : ignoreLine
                 rules.add((isInverted ? '!' : '') + ignoreRule)
             }
         }
 
-        this.workspaceIgnores.set(workspaceRoot, rules)
+        this.workspaceIgnores.set(workspaceRoot.toString(), rules)
     }
 
-    public clearIgnoreFiles(workspaceRoot: string): void {
-        this.workspaceIgnores.delete(workspaceRoot)
+    public clearIgnoreFiles(workspaceRoot: URI): void {
+        this.workspaceIgnores.delete(workspaceRoot.toString())
     }
 
     public isIgnored(uri: URI): boolean {
@@ -102,30 +101,31 @@ export class IgnoreHelper {
         }
 
         this.ensureFileUri('uri', uri)
-        this.ensureAbsolute('uri.fsPath', uri.fsPath)
-        const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)
+        this.ensureAbsolute('uri', uri)
+        const workspaceRoot = this.findWorkspaceRoot(uri)
 
         // Not in workspace so just use default rules against the filename.
         // This ensures we'll never send something like `.env` but it won't handle
         // if default rules include folders like `a/b` because we have nothing to make
         // a relative path from.
         if (!workspaceRoot) {
-            return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
+            return this.getDefaultIgnores().ignores(uriBasename(uri))
         }
 
-        const relativePath = path.relative(workspaceRoot, uri.fsPath)
-        const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
+        const relativePath = posixAndURIPaths.relative(workspaceRoot.path, uri.path)
+        const rules = this.workspaceIgnores.get(workspaceRoot.toString()) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }
 
-    private findWorkspaceRoot(filePath: string): string | undefined {
+    private findWorkspaceRoot(file: URI): URI | undefined {
         const candidates = Array.from(this.workspaceIgnores.keys()).filter(workspaceRoot =>
-            filePath.toLowerCase().startsWith(workspaceRoot.toLowerCase())
+            uriHasPrefix(file, URI.parse(workspaceRoot), isWindows())
         )
         // If this file was inside multiple workspace roots, take the shortest one since it will include
         // everything the nested one does (plus potentially extra rules).
         candidates.sort((a, b) => a.length - b.length)
-        return candidates.at(0)
+        const selected = candidates.at(0)
+        return selected ? URI.parse(selected) : undefined
     }
 
     private ensureFileUri(name: string, uri: URI): void {
@@ -134,16 +134,16 @@ export class IgnoreHelper {
         }
     }
 
-    private ensureAbsolute(name: string, filePath: string): void {
-        if (!path.isAbsolute(filePath)) {
-            throw new Error(`${name} should be absolute: "${filePath}"`)
+    private ensureAbsolute(name: string, uri: URI): void {
+        if (!uri.path.startsWith('/')) {
+            throw new Error(`${name} should be absolute: "${uri.toString()}"`)
         }
     }
 
-    private ensureValidCodyIgnoreFile(name: string, filePath: string): void {
-        this.ensureAbsolute('ignoreFile.path', filePath)
-        if (!filePath.endsWith(CODY_IGNORE_FILENAME)) {
-            throw new Error(`${name} should end with "${CODY_IGNORE_FILENAME}": "${filePath}"`)
+    private ensureValidCodyIgnoreFile(name: string, uri: URI): void {
+        this.ensureAbsolute('ignoreFile.uri', uri)
+        if (!uri.path.endsWith(CODY_IGNORE_URI_PATH)) {
+            throw new Error(`${name} should end with "${CODY_IGNORE_URI_PATH}": "${uri.toString()}"`)
         }
     }
 
@@ -153,6 +153,13 @@ export class IgnoreHelper {
 }
 
 export interface IgnoreFileContent {
-    filePath: string
+    uri: URI
     content: string
+}
+
+/**
+ * Return the directory that a .cody/ignore file applies to.
+ */
+export function ignoreFileEffectiveDirectory(ignoreFile: URI): URI {
+    return Utils.joinPath(ignoreFile, '..', '..')
 }

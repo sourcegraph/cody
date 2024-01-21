@@ -1,7 +1,7 @@
 import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
-import { tokensToChars, type Message } from '@sourcegraph/cody-shared'
+import { displayPath, tokensToChars, type Message } from '@sourcegraph/cody-shared'
 
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
 import {
@@ -120,7 +120,9 @@ class AnthropicProvider extends Provider {
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
                             ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                            : `Codebase context from file path '${displayPath(snippet.uri)}': ${OPENING_CODE_TAG}${
+                                  snippet.content
+                              }${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',

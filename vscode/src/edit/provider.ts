@@ -1,8 +1,12 @@
-import path from 'path'
+import { Utils } from 'vscode-uri'
 
-import { URI } from 'vscode-uri'
-
-import { BotResponseMultiplexer, isAbortError, Typewriter } from '@sourcegraph/cody-shared'
+import {
+    BotResponseMultiplexer,
+    isAbortError,
+    posixAndURIPaths,
+    Typewriter,
+    uriBasename,
+} from '@sourcegraph/cody-shared'
 
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { doesFileExist } from '../editor-context/helpers'
@@ -203,7 +207,7 @@ export class EditProvider {
                 const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
                 const fileExists = await doesFileExist(testFileUri)
                 // create a file uri with untitled scheme that would work on windows
-                const newFileUri = fileExists ? testFileUri : URI.parse(`untitled:${testFileUri.fsPath}`)
+                const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
             }
             return
@@ -212,18 +216,20 @@ export class EditProvider {
         const opentag = `<${PROMPT_TOPICS.FILENAME}>`
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
-        const currentFileUri = this.config.task.fixupFile.uri.fsPath
-        const currentFileName = path.posix.basename(currentFileUri)
+        const currentFileUri = this.config.task.fixupFile.uri
+        const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
-        const haveSameExtensions = path.posix.extname(currentFileName) === path.posix.extname(newFileName)
+        const haveSameExtensions = posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        const newFileFsPath = currentFileUri.replace(currentFileName, newFileName.trim())
+        let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
 
         if (haveSameExtensions && !NewFixupFileMap.get(task.id)) {
-            const fileIsFound = await doesFileExist(URI.parse(newFileFsPath))
-            const newFileUri = URI.parse(fileIsFound ? newFileFsPath : `untitled:${newFileFsPath}`)
+            const fileIsFound = await doesFileExist(newFileUri)
+            if (!fileIsFound) {
+                newFileUri = newFileUri.with({ scheme: 'untitled' })
+            }
             this.insertionPromise = this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
             try {
                 await this.insertionPromise

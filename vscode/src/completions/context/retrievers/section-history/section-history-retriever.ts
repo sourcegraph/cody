@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
@@ -133,9 +131,8 @@ export class SectionHistoryRetriever implements ContextRetriever {
                         try {
                             const uri = section.location.uri
                             const textDocument = await vscode.workspace.openTextDocument(uri)
-                            const fileName = path.normalize(vscode.workspace.asRelativePath(uri.fsPath))
                             const content = textDocument.getText(section.location.range)
-                            return { fileUri: uri, fileName, content }
+                            return { uri, content }
                         } catch (error) {
                             // Ignore errors opening the text file. This can happen when the file was deleted
                             console.error(error)
@@ -158,14 +155,11 @@ export class SectionHistoryRetriever implements ContextRetriever {
 
     /**
      * A pretty way to print the current state of all cached sections
-     *
-     * Printed paths are always in posix format (forwards slashes) even on windows
-     * for consistency.
      */
     public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
         this.activeDocuments.forEach(document => {
-            lines.push(path.posix.normalize(vscode.workspace.asRelativePath(document.uri)))
+            lines.push(vscode.workspace.asRelativePath(document.uri))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
@@ -185,7 +179,7 @@ export class SectionHistoryRetriever implements ContextRetriever {
             for (let i = 0; i < lastSections.length; i++) {
                 const section = lastSections[i]
                 const isLast = i === lastSections.length - 1
-                const filePath = path.posix.normalize(vscode.workspace.asRelativePath(section.location.uri))
+                const filePath = vscode.workspace.asRelativePath(section.location.uri)
 
                 lines.push(`  ${isLast ? '└' : '├'} ${filePath} ${section.fuzzyName ?? 'unknown'}`)
             }

@@ -65,7 +65,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     public configurationChangeEvent = new vscode.EventEmitter<void>()
 
     // Codebase-context-related state
-    public currentWorkspaceRoot: string
+    public currentWorkspaceRoot: vscode.Uri | undefined
 
     protected disposables: vscode.Disposable[] = []
 
@@ -85,7 +85,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
-        this.currentWorkspaceRoot = ''
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
@@ -141,7 +140,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     }
 
     public async forceUpdateCodebaseContext(): Promise<void> {
-        this.currentWorkspaceRoot = ''
+        this.currentWorkspaceRoot = undefined
         return this.syncAuthStatus()
     }
 
@@ -150,8 +149,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
-        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+        const workspaceRoot = this.editor.getWorkspaceRootUri()
+        if (!workspaceRoot || workspaceRoot.toString() === this.currentWorkspaceRoot?.toString()) {
             return
         }
         this.currentWorkspaceRoot = workspaceRoot
@@ -170,8 +169,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         if (!codebaseContext) {
             return
         }
-        // after await, check we're still hitting the same workspace root
-        if (this.currentWorkspaceRoot !== workspaceRoot) {
+        // After await, check we're still hitting the same workspace root.
+        if (this.currentWorkspaceRoot && this.currentWorkspaceRoot.toString() !== workspaceRoot.toString()) {
             return
         }
 

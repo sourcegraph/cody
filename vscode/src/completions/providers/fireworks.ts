@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
+import { displayPath, tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
@@ -113,7 +113,9 @@ class FireworksProvider extends Provider {
                 if ('symbol' in snippet && snippet.symbol !== '') {
                     intro.push(`Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`)
                 } else {
-                    intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                    intro.push(
+                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${snippet.content}`
+                    )
                 }
             }
 

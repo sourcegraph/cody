@@ -1,5 +1,3 @@
-import { dirname } from 'path'
-
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
@@ -15,6 +13,7 @@ import {
     populateTerminalOutputContextTemplate,
     ProgrammingLanguage,
     truncateText,
+    uriDirname,
     type ActiveTextEditorSelection,
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
@@ -125,11 +124,8 @@ export class VSCodeEditorContext {
         if (!activeEditor?.fileUri) {
             return []
         }
-        if (activeEditor.fileUri && activeEditor.fileUri.scheme === 'file') {
-            const currentDir = dirname(activeEditor.fileUri.fsPath)
-            return this.getEditorDirContext(currentDir, activeEditor.fileUri, isUnitTestRequest)
-        }
-        return []
+        const currentDir = uriDirname(activeEditor.fileUri)
+        return this.getEditorDirContext(currentDir, activeEditor.fileUri, isUnitTestRequest)
     }
 
     /**
@@ -137,16 +133,10 @@ export class VSCodeEditorContext {
      * Optionally filters results to only files matching the given selection file name.
      */
     public async getEditorDirContext(
-        directoryPath: string,
+        directoryUri: vscode.Uri,
         currentFile?: vscode.Uri,
         isUnitTestRequest = false
     ): Promise<ContextMessage[]> {
-        let directoryUri = vscode.Uri.file(directoryPath)
-        const currentWorkspaceUri = this.editor.getWorkspaceRootUri()
-        // Turns relative path into absolute path
-        if (currentWorkspaceUri && !directoryPath.startsWith(currentWorkspaceUri.fsPath)) {
-            directoryUri = vscode.Uri.joinPath(currentWorkspaceUri, directoryPath)
-        }
         const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
         if (isUnitTestRequest && currentFile) {
@@ -236,7 +226,7 @@ export class VSCodeEditorContext {
             contextMessages.push(...rootFileNames)
         }
         // Add package.json content for JavaScript/TypeScript files.
-        const language = languageFromFilename(selection.fileUri.fsPath)
+        const language = languageFromFilename(selection.fileUri)
         if (language === ProgrammingLanguage.JavaScript || language === ProgrammingLanguage.TypeScript) {
             const packageJson = await this.getPackageJsonContext()
             contextMessages.push(...packageJson)

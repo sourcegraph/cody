@@ -1,6 +1,7 @@
 import { type URI } from 'vscode-uri'
 
 import { type ActiveTextEditorSelectionRange } from '../editor'
+import { displayPath } from '../editor/displayPath'
 import { type Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context file.
@@ -110,7 +111,7 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
             text:
                 file.type === 'file'
                     ? `Context from file path @${file.uri?.path}:\n${code}`
-                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`,
+                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${displayPath(file.uri)}:\n${code}`,
             file,
         },
         { speaker: 'assistant', text: 'OK.' },
