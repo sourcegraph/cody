@@ -2,21 +2,24 @@ import * as vscode from 'vscode'
 
 import { displayPath, tokensToChars } from '@sourcegraph/cody-shared'
 
-import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import type { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+    OPENING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    MULTILINE_STOP_SEQUENCE,
-    OPENING_CODE_TAG,
-    trimLeadingWhitespaceUntilNewline,
+    trimLeadingWhitespaceUntilNewline
 } from '../text-processing'
-import { type ContextSnippet } from '../types'
+import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { type FetchCompletionResult } from './fetch-and-process-completions'
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import type { FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -30,10 +33,11 @@ const MAX_RESPONSE_TOKENS = 256
 const MULTI_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG]
 const SINGLE_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
-    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
-})
+const lineNumberDependentCompletionParams =
+    getLineNumberDependentCompletionParams({
+        singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
+        multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
+    })
 
 interface UnstableOpenAIOptions {
     maxContextTokens?: number
@@ -45,16 +49,23 @@ const PROVIDER_IDENTIFIER = 'unstable-openai'
 class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
-    private instructions = `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
+    private instructions =
+        `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 
-    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<UnstableOpenAIOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { maxContextTokens, client }: Required<UnstableOpenAIOptions>,
+    ) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
     }
 
     public emptyPromptLength(): number {
-        const promptNoSnippets = [this.instructions, this.createPromptPrefix()].join('\n\n')
+        const promptNoSnippets = [
+            this.instructions,
+            this.createPromptPrefix(),
+        ].join('\n\n')
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
@@ -67,12 +78,16 @@ class UnstableOpenAIProvider extends Provider {
         const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+        const infillBlock = tail.trimmed.endsWith('{\n')
+            ? tail.trimmed.trimEnd()
+            : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
         const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
-        const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
+        const relativeFilePath = vscode.workspace.asRelativePath(
+            this.options.document.fileName,
+        )
 
         return `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
 
@@ -104,19 +119,24 @@ ${OPENING_CODE_TAG}${infillBlock}`
             remainingChars -= numSnippetChars
         }
 
-        const messages = [this.instructions, ...referenceSnippetMessages, prefix]
+        const messages = [
+            this.instructions,
+            ...referenceSnippetMessages,
+            prefix,
+        ]
         return messages.join('\n\n')
     }
 
     public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        tracer?: CompletionProviderTracer
+        tracer?: CompletionProviderTracer,
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
-            providerOptions: this.options,
-            lineNumberDependentCompletionParams,
-        })
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } =
+            getCompletionParamsAndFetchImpl({
+                providerOptions: this.options,
+                lineNumberDependentCompletionParams,
+            })
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
@@ -126,13 +146,15 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+        const completionsGenerators = Array.from({
+            length: this.options.n,
+        }).map(() => {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
                 this.client.complete(requestParams, abortController),
                 requestParams.timeoutMs,
-                abortController
+                abortController,
             )
 
             return fetchAndProcessCompletionsImpl({
@@ -174,7 +196,10 @@ export function createProviderConfig({
 }: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(options, { maxContextTokens, ...otherOptions })
+            return new UnstableOpenAIProvider(options, {
+                maxContextTokens,
+                ...otherOptions,
+            })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

@@ -1,8 +1,11 @@
 import { XMLParser } from 'fast-xml-parser'
 
-import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 
-export function symfExpandQuery(completionsClient: SourcegraphCompletionsClient, query: string): Promise<string> {
+export function symfExpandQuery(
+    completionsClient: SourcegraphCompletionsClient,
+    query: string,
+): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const streamingText: string[] = []
         completionsClient.stream(
@@ -27,10 +30,18 @@ export function symfExpandQuery(completionsClient: SourcegraphCompletionsClient,
                     const text = streamingText.at(-1) ?? ''
                     try {
                         const parser = new XMLParser()
-                        const document = parser.parse(text)
-                        const keywords: { value?: string; variants?: string; weight?: number }[] =
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                            document?.keywords?.keyword ?? []
+                        const document = parser.parse(text) as
+                            | undefined
+                            | {
+                                  keywords?: {
+                                      keyword?: {
+                                          value?: string
+                                          variants?: string
+                                          weight?: number
+                                      }[]
+                                  }
+                              }
+                        const keywords = document?.keywords?.keyword ?? []
                         const result = new Set<string>()
                         for (const { value, variants } of keywords) {
                             if (typeof value === 'string' && value) {
@@ -52,7 +63,7 @@ export function symfExpandQuery(completionsClient: SourcegraphCompletionsClient,
                 onError(error) {
                     reject(error)
                 },
-            }
+            },
         )
     })
 }

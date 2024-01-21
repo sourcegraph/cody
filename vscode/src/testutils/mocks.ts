@@ -20,8 +20,8 @@ import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export { Disposable } from './Disposable'
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { Disposable } from './Disposable'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
