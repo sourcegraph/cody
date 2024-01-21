@@ -23,7 +23,8 @@
   "eslint.lintTask.enable": true,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit"
+    "source.fixAll": "explicit",
+    "source.organizeImports": false
   },
   "eslint.rules.customizations": [{ "rule": "*", "severity": "error" }],
   "eslint.codeActionsOnSave.mode": "problems",
