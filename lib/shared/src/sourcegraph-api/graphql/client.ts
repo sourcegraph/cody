@@ -125,7 +125,7 @@ interface SearchAttributionResponse {
     }
 }
 
-type LogEventResponse = {}
+type LogEventResponse = unknown
 
 export interface EmbeddingsSearchResult {
     repoName?: string
@@ -199,8 +199,8 @@ export interface event {
     userCookieID: string
     url: string
     source: string
-    argument?: string | {}
-    publicArgument?: string | {}
+    argument?: string | unknown
+    publicArgument?: string | unknown
     client: string
     connectedSiteID?: string
     hashedLicenseKey?: string
@@ -471,11 +471,11 @@ export class SourcegraphGraphQLAPIClient {
      * DO NOT USE THIS DIRECTLY - use an implementation of implementation
      * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
-    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
+    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<unknown | Error> {
         for (const event of events) {
             this.anonymizeTelemetryEventInput(event)
         }
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
             RECORD_TELEMETRY_EVENTS_MUTATION,
             {
                 events,

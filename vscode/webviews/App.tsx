@@ -327,6 +327,7 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
     ({ errors, setErrors }) => (
         <div className="error-container">
             {errors.map((error, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
                 <div key={i} className="error">
                     <span>{error}</span>
                     <button

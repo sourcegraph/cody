@@ -751,7 +751,7 @@ const _commands: Partial<typeof vscode.commands> = {
 
 _commands?.registerCommand?.('setContext', (key, value) => {
     if (typeof key !== 'string') {
-        throw new TypeError('setContext: first argument must be string. Got: ' + key)
+        throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
 })

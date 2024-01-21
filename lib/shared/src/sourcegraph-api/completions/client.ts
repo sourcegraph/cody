@@ -10,7 +10,7 @@ import type {
 
 export interface CompletionLogger {
     startCompletion(
-        params: CompletionParameters | {},
+        params: CompletionParameters | unknown,
         endpoint: string
     ):
         | undefined

@@ -270,10 +270,11 @@ ${markdownCodeBlock(value)}
 }
 
 function markdownInlineCode(value: string): string {
-    return '`' + value.replaceAll('`', '\\`') + '`'
+    return `\`${value.replaceAll('`', '\\`')}\``
 }
 
 function markdownCodeBlock(value: string): string {
+    // biome-ignore lint/style/useTemplate: this is clearer
     return '```\n' + value.replaceAll('`', '\\`') + '\n```\n'
 }
 

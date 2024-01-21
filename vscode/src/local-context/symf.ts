@@ -373,7 +373,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             if (onExit) {
                 process.removeListener('exit', onExit)
             }
-            disposeOnFinish.forEach(d => d.dispose())
+            vscode.Disposable.from(...disposeOnFinish).dispose()
             await rm(tmpIndexDir.fsPath, { recursive: true, force: true })
         }
     }

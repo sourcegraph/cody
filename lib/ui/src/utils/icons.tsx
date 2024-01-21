@@ -9,6 +9,8 @@ export const CodySvg = React.memo<{ className?: string }>(function CodySvg({ cla
             height="30"
             viewBox="0 0 128 128"
             className={className}
+            role="img"
+            aria-label="Cody logo"
         >
             <g transform="translate(0,128) scale(0.100000,-0.100000)" fill="currentColor">
                 <path
@@ -40,6 +42,8 @@ export const SubmitSvg = React.memo<{ className?: string }>(function CodySvg({ c
             viewBox="0 0 24 24"
             fill="currentColor"
             className={className}
+            role="img"
+            aria-label="Submit button"
         >
             <path d="m21.426 11.095-17-8A1 1 0 0 0 3.03 4.242l1.212 4.849L12 12l-7.758 2.909-1.212 4.849a.998.998 0 0 0 1.396 1.147l17-8a1 1 0 0 0 0-1.81z" />
         </svg>

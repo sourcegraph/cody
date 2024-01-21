@@ -46,6 +46,7 @@ const Icon: React.FunctionComponent = () => (
         height="24"
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden={true}
     >
         <path
             d="M18.09 11.77L19.56 18.1L14 14.74L8.44 18.1L9.9 11.77L5 7.5L11.47 6.96L14 1L16.53 6.96L23 7.5L18.09 11.77Z"

@@ -8,7 +8,7 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
-        private prefix: string[] = [],
+        private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
         private dictionary: Record<string, any> = {}

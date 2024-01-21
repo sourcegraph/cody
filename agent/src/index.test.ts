@@ -37,7 +37,7 @@ interface ProgressReportMessage {
 interface ProgressEndMessage {
     method: 'progress/end'
     id: string
-    message: {}
+    message: Record<string, never>
 }
 
 export class TestClient extends MessageHandler {
@@ -282,7 +282,7 @@ export class TestClient extends MessageHandler {
                 progressBars: 'enabled',
             },
             extensionConfiguration: {
-                anonymousUserID: this.name + 'abcde1234',
+                anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
                 serverEndpoint: this.serverEndpoint,
                 customHeaders: {},

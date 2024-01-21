@@ -143,7 +143,7 @@ export function uriHasPrefix(uri: URI, prefix: URI, isWindows: boolean): boolean
         uri.scheme === prefix.scheme &&
         (uri.authority ?? '') === (prefix.authority ?? '') && // different URI impls treat empty different
         (uriPath === prefixPath ||
-            uriPath.startsWith(prefixPath.endsWith('/') ? prefixPath : prefixPath + '/') ||
+            uriPath.startsWith(prefixPath.endsWith('/') ? prefixPath : `${prefixPath}/`) ||
             (prefixPath.endsWith('/') && uriPath === prefixPath.slice(0, -1)))
     )
 }

@@ -52,7 +52,7 @@ export class FixupTask {
         public readonly instruction: string,
         public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: EditIntent = 'edit',
+        public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public mode: EditMode = 'edit',

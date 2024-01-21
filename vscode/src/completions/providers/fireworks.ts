@@ -134,12 +134,11 @@ class FireworksProvider extends Provider {
                 }
             }
 
-            const introString =
-                intro
-                    .join('\n\n')
-                    .split('\n')
-                    .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                    .join('\n') + '\n'
+            const introString = `${intro
+                .join('\n\n')
+                .split('\n')
+                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
+                .join('\n')}\n`
 
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 

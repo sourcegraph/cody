@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import type { ContextRetriever } from '../types'
 
@@ -113,6 +113,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     }
 
     public dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose())
+        vscode.Disposable.from(...this.disposables).dispose()
     }
 }

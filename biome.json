@@ -7,37 +7,22 @@
         "enabled": true,
         "rules": {
             "recommended": true,
-            "correctness": {
-                "noUnnecessaryContinue": "off"
-            },
             "nursery": {
                 "useExportType": "error",
                 "useImportType": "error",
                 "useGroupedTypeImport": "error",
                 "noUnusedImports": "error",
-                "noUnusedPrivateClassMembers": "error"
+                "noUnusedPrivateClassMembers": "error",
+                "noInvalidUseBeforeDeclaration": "error",
+                "noUselessTernary": "error",
+                "noDuplicateJsonKeys": "error"
             },
             "suspicious": {
-                "noExplicitAny": "off",
-                "noConfusingVoidType": "off",
-                "noArrayIndexKey": "off"
-            },
-            "complexity": {
-                "noBannedTypes": "off",
-                "noForEach": "off"
+                "noExplicitAny": "off"
             },
             "style": {
                 "noNonNullAssertion": "off",
-                "useTemplate": "off",
-                "noParameterAssign": "off",
-                "useDefaultParameterLast": "off"
-            },
-            "a11y": {
-                "noSvgWithoutTitle": "off",
-                "useValidAnchor": "off"
-            },
-            "security": {
-                "noDangerouslySetInnerHtml": "off"
+                "noParameterAssign": "off"
             }
         },
         "ignore": [

@@ -93,7 +93,7 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
 }
 
 export const logger: CompletionLogger = {
-    startCompletion(params: CompletionParameters | {}, endpoint: string) {
+    startCompletion(params: CompletionParameters | Record<string, never>, endpoint: string) {
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 

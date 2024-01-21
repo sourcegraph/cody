@@ -176,6 +176,7 @@ export class SectionHistoryRetriever implements ContextRetriever {
         selections?: readonly vscode.Selection[]
     ): string {
         const lines: string[] = []
+        // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
         this.activeDocuments.forEach(document => {
             lines.push(vscode.workspace.asRelativePath(document.uri))
             for (const section of document.sections) {
@@ -185,8 +186,7 @@ export class SectionHistoryRetriever implements ContextRetriever {
                 const isLast = document.sections.at(-1) === section
 
                 lines.push(
-                    `  ${isLast ? '└' : '├'}${isSelected ? '*' : '─'} ` +
-                        (section.fuzzyName ?? 'unknown')
+                    `  ${isLast ? '└' : '├'}${isSelected ? '*' : '─'} ${section.fuzzyName ?? 'unknown'}`
                 )
             }
         })

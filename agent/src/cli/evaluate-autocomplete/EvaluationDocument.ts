@@ -155,7 +155,7 @@ export class EvaluationDocument {
                 : line.length - range.start.character
         const carets = length < 0 ? '<negative length>' : '^'.repeat(length)
         const multilineSuffix = range.isSingleLine ? '' : ` ${range.end.line}:${range.end.character}`
-        const message = diagnostic ? ' ' + diagnostic : ''
+        const message = diagnostic ? ` ${diagnostic}` : ''
         const previousLine = range.start.line > 0 ? this.lines[range.start.line - 1] : ''
         const nextLine = range.start.line < this.lines.length - 1 ? this.lines[range.start.line + 1] : ''
         return `${this.params.filepath}:${range.start.line}:${range.start.character}${message}\n${previousLine}\n${line}\n${indent}${carets}${multilineSuffix}\n${nextLine}`

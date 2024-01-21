@@ -182,12 +182,12 @@ class MessageDecoder extends Writable {
                     this.contentBuffer = Buffer.alloc(0)
                     this.contentLengthRemaining = null
                     if (tracePath) {
-                        appendFileSync(tracePath, '<- ' + JSON.stringify(data, null, 4) + '\n')
+                        appendFileSync(tracePath, `<- ${JSON.stringify(data, null, 4)}\n`)
                     }
                     this.callback(null, data)
                 } catch (error: any) {
                     if (tracePath) {
-                        appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
+                        appendFileSync(tracePath, `<- ${JSON.stringify({ error }, null, 4)}\n`)
                     }
                     process.stderr.write(
                         `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}', contentLengthRemaining=${this.contentLengthRemaining}. Error:\n${error}\n`
@@ -225,7 +225,7 @@ class MessageEncoder extends Readable {
 
     public send(data: any): void {
         if (tracePath) {
-            appendFileSync(tracePath, '-> ' + JSON.stringify(data, null, 4) + '\n')
+            appendFileSync(tracePath, `-> ${JSON.stringify(data, null, 4)}\n`)
         }
         this.pause()
 
@@ -488,7 +488,7 @@ class InProcessClient {
         if (handler) {
             return handler(params, cancelToken)
         }
-        throw new Error('No such request handler: ' + method)
+        throw new Error(`No such request handler: ${method}`)
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
@@ -497,6 +497,6 @@ class InProcessClient {
             void handler(params)
             return
         }
-        throw new Error('No such notification handler: ' + method)
+        throw new Error(`No such notification handler: ${method}`)
     }
 }

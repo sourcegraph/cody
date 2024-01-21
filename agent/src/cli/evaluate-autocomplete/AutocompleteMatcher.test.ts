@@ -65,7 +65,7 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             // vertically aligned. Without this newline, the caret appears one
             // character too early because the inline snapshot start with an
             // opening double quote "
-            assertion('\n' + resultString)
+            assertion(`\n${resultString}`)
         })
     }
 

@@ -183,11 +183,11 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
                 break
             case 'object': {
                 const { metadata } = splitSafeMetadata(value)
-                Object.entries(metadata).forEach(([nestedKey, value]) => {
+                for (const [nestedKey, value] of Object.entries(metadata)) {
                     // We know splitSafeMetadata returns only an object with
                     // numbers as values. Unit tests ensures this property holds.
                     safe[`${key}.${nestedKey}`] = value as number
-                })
+                }
                 // Preserve the entire original value in unsafe
                 unsafe[key] = value
                 break

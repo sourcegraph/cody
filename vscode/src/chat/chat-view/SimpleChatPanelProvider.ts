@@ -513,7 +513,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose())
+        vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
     }
 
@@ -788,7 +788,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true,
-        sendTelemetry?: (contextSummary: {}) => void,
+        sendTelemetry?: (contextSummary: Record<string, number>) => void,
         command?: CodyCommand
     ): Promise<void> {
         try {
@@ -822,7 +822,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
             if (contextLimitWarnings.length > 0) {
                 const warningMsg = contextLimitWarnings
-                    .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
+                    .map(w => (w.trim().endsWith('.') ? w.trim() : `${w.trim()}.`))
                     .join(' ')
                 this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
             }

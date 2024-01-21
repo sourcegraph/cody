@@ -116,7 +116,7 @@ export class RequestManager {
                     this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
 
                     // Save hot streak completions for later use.
-                    hotStreakCompletions.forEach(result => {
+                    for (const result of hotStreakCompletions) {
                         this.cache.set(
                             { docContext: result.docContext },
                             {
@@ -124,7 +124,7 @@ export class RequestManager {
                                 source: InlineCompletionsResultSource.HotStreak,
                             }
                         )
-                    })
+                    }
                 }
             } catch (error) {
                 request.reject(error as Error)

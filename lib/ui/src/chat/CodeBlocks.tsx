@@ -255,6 +255,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
             () => (
                 <div
                     ref={rootRef}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
                     dangerouslySetInnerHTML={{
                         __html: renderCodyMarkdown(displayText),
                     }}
