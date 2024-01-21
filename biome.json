@@ -29,7 +29,6 @@
                 "useDefaultParameterLast": "off"
             },
             "a11y": {
-                "noSvgWithoutTitle": "off",
                 "useValidAnchor": "off"
             },
             "security": {
