@@ -18,8 +18,7 @@
                 "noUnusedPrivateClassMembers": "error"
             },
             "suspicious": {
-                "noExplicitAny": "off",
-                "noArrayIndexKey": "off"
+                "noExplicitAny": "off"
             },
             "style": {
                 "noNonNullAssertion": "off",
