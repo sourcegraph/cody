@@ -1,19 +1,25 @@
+import { isDotCom } from '../sourcegraph-api/environments'
 import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 
 import { SourcegraphEmbeddingsSearchClient } from './client'
 
-// A factory for SourcegraphEmbeddingsSearchClients. Queries the client
-// connection and app (if available) in parallel and returns the one with
-// embeddings available.
+// A factory for SourcegraphEmbeddingsSearchClients. Queries the client connection and app (if
+// available) for remote embeddings in parallel and returns the one with embeddings available.
 export const EmbeddingsDetector = {
-    // Creates an embeddings search client with the first client in `clients`
-    // that has embeddings. If none have embeddings, returns undefined. If all
+    // Creates a remote embeddings search client with the first client in `clients`
+    // that has remote embeddings. If none have remote embeddings, returns undefined. If all
     // fail, returns the first error.
     async newEmbeddingsSearchClient(
         clients: readonly SourcegraphGraphQLAPIClient[],
         codebase: string,
         codebaseLocalName: string
     ): Promise<SourcegraphEmbeddingsSearchClient | Error | undefined> {
+        // Remote embeddings are never used anymore for dotcom.
+        const hasNonDotComClient = clients.some(client => !isDotCom(client.endpoint))
+        if (!hasNonDotComClient) {
+            return undefined
+        }
+
         let firstError: Error | undefined
         let allFailed = true
         for (const promise of clients.map(client => this.detectEmbeddings(client, codebase, codebaseLocalName))) {
