@@ -1,6 +1,11 @@
 import type * as vscode from 'vscode'
 
-import { displayPath, type OllamaOptions } from '@sourcegraph/cody-shared'
+import {
+    createOllamaClient,
+    displayPath,
+    type OllamaGenerateParams,
+    type OllamaOptions,
+} from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
@@ -8,7 +13,6 @@ import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { fetchAndProcessCompletions, type FetchCompletionResult } from './fetch-and-process-completions'
-import { createOllamaClient, type OllamaGenerateParams } from './ollama-client'
 import {
     Provider,
     type CompletionProviderTracer,
