@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite'
+import { mergeConfig } from 'vite'
 
 const config: StorybookConfig = {
     stories: ['../webviews/**/*.story.@(js|jsx|ts|tsx)'],
@@ -7,8 +8,8 @@ const config: StorybookConfig = {
         name: '@storybook/react-vite',
         options: {},
     },
-    docs: {
-        autodocs: 'tag',
+    viteFinal: async config => {
+        return mergeConfig(config, { define: { 'process.env': {} } })
     },
 }
 export default config
