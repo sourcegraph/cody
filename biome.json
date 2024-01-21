@@ -18,6 +18,7 @@
                 "noUnusedPrivateClassMembers": "error",
                 "noInvalidUseBeforeDeclaration": "error",
                 "noUselessTernary": "error",
+                "noDuplicateJsonKeys": "error"
             },
             "suspicious": {
                 "noExplicitAny": "off"
