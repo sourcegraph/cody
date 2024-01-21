@@ -5,10 +5,17 @@ import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import type { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
-import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
+import {
+    AnthropicLogo,
+    MetaLogo,
+    MistralLogo,
+    OpenAILogo,
+    UnrecognizedLogo,
+} from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import type { ChatModelProvider } from '@sourcegraph/cody-shared'
 import styles from './ChatModelDropdownMenu.module.css'
 
 type DropdownProps = ComponentProps<typeof VSCodeDropdown>
@@ -96,7 +103,11 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                 : undefined
                         }
                     >
-                        <ProviderIcon model={option.model} />
+                        <ModelIcon
+                            title={option.title}
+                            model={option.model}
+                            provider={option.provider}
+                        />
                         <span
                             className={classNames(
                                 styles.titleContainer,
@@ -118,7 +129,11 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 ))}
 
                 <div slot="selected-value" className={styles.selectedValue}>
-                    <ProviderIcon model={currentModel.model} />
+                    <ModelIcon
+                        title={currentModel.title}
+                        model={currentModel.model}
+                        provider={currentModel.model}
+                    />
                     <span>
                         <span className={styles.title}>{currentModel.title}</span>
                     </span>
@@ -128,15 +143,45 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     )
 }
 
-const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
-    if (model.startsWith('openai/')) {
+const ModelIcon = ({
+    title,
+    model,
+    provider,
+    className,
+}: Pick<ChatModelProvider, 'title' | 'model' | 'provider'> & { className?: string }): JSX.Element => {
+    if (provider === 'OpenAI' || model.startsWith('openai/')) {
         return <OpenAILogo className={className} />
     }
-    if (model.startsWith('anthropic/')) {
+    if (provider === 'Anthropic' || model.startsWith('anthropic/')) {
         return <AnthropicLogo className={className} />
     }
-    if (model.includes('mixtral')) {
+    if (provider === 'Mistral' || provider.includes('mixtral') || provider.includes('mistral')) {
         return <MistralLogo className={className} />
     }
-    return <></>
+    if (provider === 'Meta' || model.includes('codellama')) {
+        return <MetaLogo className={className} />
+    }
+    return (
+        <UnrecognizedLogo
+            name={model}
+            abbreviation={abbreviationForModel({ title, model, provider })}
+            className={className}
+        />
+    )
+}
+
+function abbreviationForModel({
+    title,
+    provider,
+    model,
+}: Pick<ChatModelProvider, 'title' | 'model' | 'provider'>): string {
+    if (model.match(/\bphi\b/)) {
+        return 'Φ'
+    }
+    return title
+        .split(/[^\w(]+(?=[a-zA-Z])|[a-z](?=[A-Z])/) // split on non-word chars or lowercase before uppercase
+        .map(word => word[0])
+        .slice(0, 3)
+        .join('')
+        .toUpperCase()
 }

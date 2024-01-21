@@ -52,4 +52,20 @@ export const DEFAULT_DOT_COM_MODELS = [
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
     },
+    {
+        title: 'Mixtral 8x7B (Ollama)',
+        model: 'ollama/mixtral',
+        provider: 'Mistral',
+        default: false,
+        codyProOnly: false,
+        usage: [ModelUsage.Chat],
+    },
+    {
+        title: 'Code Llama 13B (Ollama)',
+        model: 'ollama/codellama-13b',
+        provider: 'Meta',
+        default: false,
+        codyProOnly: false,
+        usage: [ModelUsage.Chat],
+    },
 ] as const satisfies ModelProvider[]

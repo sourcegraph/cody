@@ -1,3 +1,4 @@
+import { ollamaChat } from '../ollama/chatClient'
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -6,7 +7,7 @@ import type {
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
 
-type ChatParameters = Omit<CompletionParameters, 'messages'>
+export type ChatParameters = Omit<CompletionParameters, 'messages'>
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
     temperature: 0.2,
@@ -23,6 +24,10 @@ export class ChatClient {
         params: Partial<ChatParameters>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
+        if (params?.model?.startsWith('ollama/')) {
+            return ollamaChat(messages, params, abortSignal)
+        }
+
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =

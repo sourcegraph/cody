@@ -50,7 +50,7 @@ const RESPONSE_SEPARATOR = /\r?\n/
  * `vscode/src/completions/client.ts` with some duplication.
  */
 export function createOllamaClient(
-    ollamaOptions: OllamaOptions,
+    ollamaOptions: Pick<OllamaOptions, 'url'>,
     logger?: CompletionLogger,
     logDebug?: (filterLabel: string, text: string, ...args: unknown[]) => void
 ): CodeCompletionsClient<OllamaGenerateParams> {
