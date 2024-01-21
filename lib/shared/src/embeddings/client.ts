@@ -1,15 +1,15 @@
 import type * as status from '../codebase-context/context-status'
-import { type EmbeddingsSearchResults, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import type { EmbeddingsSearchResults, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import { type EmbeddingsSearch } from '.'
+import type { EmbeddingsSearch } from '.'
 
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     constructor(
         private client: SourcegraphGraphQLAPIClient,
         private repoName: string,
         public readonly repoId: string,
-        private codebaseLocalName: string = '',
-        private web: boolean = false
+        private codebaseLocalName = '',
+        private web = false
     ) {}
 
     public get endpoint(): string {
@@ -28,7 +28,9 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
         return this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
     }
 
-    public onDidChangeStatus(callback: (provider: status.ContextStatusProvider) => void): status.Disposable {
+    public onDidChangeStatus(
+        callback: (provider: status.ContextStatusProvider) => void
+    ): status.Disposable {
         // This does not change, so there is nothing to report.
         return { dispose: () => {} }
     }

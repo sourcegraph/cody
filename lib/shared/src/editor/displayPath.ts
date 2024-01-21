@@ -132,7 +132,9 @@ export function uriHasPrefix(uri: URI, prefix: URI, isWindows: boolean): boolean
     // to lowercase, but many other tools use uppercase and we don't know where the context file came
     // from).
     const uriPath =
-        isWindows && uri.scheme === 'file' ? uri.path.slice(0, 2).toUpperCase() + uri.path.slice(2) : uri.path
+        isWindows && uri.scheme === 'file'
+            ? uri.path.slice(0, 2).toUpperCase() + uri.path.slice(2)
+            : uri.path
     const prefixPath =
         isWindows && prefix.scheme === 'file'
             ? prefix.path.slice(0, 2).toUpperCase() + prefix.path.slice(2)

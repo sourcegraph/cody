@@ -6,7 +6,10 @@ interface ErrorLike {
 }
 
 export const isErrorLike = (value: unknown): value is ErrorLike =>
-    typeof value === 'object' && value !== null && ('stack' in value || 'message' in value) && !('__typename' in value)
+    typeof value === 'object' &&
+    value !== null &&
+    ('stack' in value || 'message' in value) &&
+    !('__typename' in value)
 
 /**
  * Returns true if `val` is not `null` or `undefined`

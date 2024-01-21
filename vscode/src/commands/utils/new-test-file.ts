@@ -80,7 +80,10 @@ export function convertFileUriToTestFileUri(currentFile: URI, testFile?: URI): U
                 // then replace it with the current file name
                 // e.g. "current_file" & "existing_test" => "current_file_test"
                 const strippedTestFileName = testFileName.slice(0, index - 1)
-                const newTestFileName = testFileName.replace(strippedTestFileName, parsedCurrentFile.name)
+                const newTestFileName = testFileName.replace(
+                    strippedTestFileName,
+                    parsedCurrentFile.name
+                )
                 return Utils.joinPath(currentFile, '..', `${newTestFileName}${parsedCurrentFile.ext}`)
             }
         }

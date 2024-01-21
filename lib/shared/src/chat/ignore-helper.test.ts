@@ -197,6 +197,8 @@ describe('IgnoreHelper', () => {
 
 describe('ignoreFileEffectiveDirectory', () => {
     test('', () => {
-        expect(ignoreFileEffectiveDirectory(URI.parse('file:///a/b/.cody/ignore')).toString()).toBe('file:///a/b')
+        expect(ignoreFileEffectiveDirectory(URI.parse('file:///a/b/.cody/ignore')).toString()).toBe(
+            'file:///a/b'
+        )
     })
 })

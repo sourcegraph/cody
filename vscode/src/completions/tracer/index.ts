@@ -1,10 +1,10 @@
 import type * as vscode from 'vscode'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared'
+import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
-import { type GetContextResult } from '../context/context-mixer'
-import { type InlineCompletionsResult, type TriggerKind } from '../get-inline-completions'
-import { type CompletionProviderTracerResultData, type Provider } from '../providers/provider'
+import type { GetContextResult } from '../context/context-mixer'
+import type { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
+import type { CompletionProviderTracerResultData, Provider } from '../providers/provider'
 
 /**
  * Traces invocations of {@link InlineCompletionItemProvider.provideInlineCompletionItems}.

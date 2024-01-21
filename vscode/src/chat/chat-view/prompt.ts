@@ -15,7 +15,12 @@ import {
 
 import { logDebug } from '../../log'
 
-import { contextItemId, type ContextItem, type MessageWithContext, type SimpleChatModel } from './SimpleChatModel'
+import {
+    contextItemId,
+    type ContextItem,
+    type MessageWithContext,
+    type SimpleChatModel,
+} from './SimpleChatModel'
 
 export interface IContextProvider {
     // Context explicitly specified by user
@@ -61,7 +66,9 @@ export class DefaultPrompter implements IPrompter {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
-        const preInstruction: string | undefined = vscode.workspace.getConfiguration('cody.chat').get('preInstruction')
+        const preInstruction: string | undefined = vscode.workspace
+            .getConfiguration('cody.chat')
+            .get('preInstruction')
 
         const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
@@ -75,7 +82,9 @@ export class DefaultPrompter implements IPrompter {
             const messageWithContext = reverseTranscript[i]
             const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
-                warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
+                warnings.push(
+                    `Ignored ${reverseTranscript.length - i} transcript messages due to context limit`
+                )
                 return {
                     prompt: promptBuilder.build(),
                     contextLimitWarnings: warnings,
@@ -156,7 +165,11 @@ export class DefaultPrompter implements IPrompter {
             // This template text works well with prompts in our commands
             // Using populateCodeContextTemplate here will cause confusion to Cody
             const templateText = 'Codebase context from file path {fileName}: '
-            messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri)
+            messageText = populateContextTemplateFromText(
+                templateText,
+                contextItem.text,
+                contextItem.uri
+            )
         } else if (contextItem.source === 'terminal') {
             messageText = contextItem.text
         } else if (languageFromFilename(contextItem.uri) === ProgrammingLanguage.Markdown) {

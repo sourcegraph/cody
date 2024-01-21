@@ -4,7 +4,7 @@ import { testFileUri, uriBasename } from '@sourcegraph/cody-shared'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import { type ContextRetriever, type ContextSnippet } from '../types'
+import type { ContextRetriever, ContextSnippet } from '../types'
 
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
@@ -54,7 +54,12 @@ describe('ContextMixer', () => {
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             expect(normalize(context)).toEqual([])
-            expect(logSummary).toEqual({ duration: 0, retrieverStats: {}, strategy: 'none', totalChars: 0 })
+            expect(logSummary).toEqual({
+                duration: 0,
+                retrieverStats: {},
+                strategy: 'none',
+                totalChars: 0,
+            })
         })
     })
 

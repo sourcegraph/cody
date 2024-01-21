@@ -1,5 +1,5 @@
 import { ANSWER_TOKENS } from '../prompt/constants'
-import { type Message } from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../sourcegraph-api/completions/types'
 
@@ -32,8 +32,8 @@ export class ChatClient {
                     ? messages
                     : messages.slice(0, -1)
                 : isLastMessageFromHuman
-                ? messages.concat([{ speaker: 'assistant' }])
-                : messages
+                  ? messages.concat([{ speaker: 'assistant' }])
+                  : messages
 
         this.completions.stream(
             {

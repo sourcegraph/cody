@@ -1,6 +1,10 @@
 import { window, type QuickPickItem } from 'vscode'
 
-import { defaultCodyCommandContext, type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared'
+import {
+    defaultCodyCommandContext,
+    type CodyCommand,
+    type CustomCommandType,
+} from '@sourcegraph/cody-shared'
 
 import { toSlashCommand } from '../prompt/utils'
 import { customPromptsContextOptions } from '../utils/menu'

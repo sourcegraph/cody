@@ -1,10 +1,10 @@
 import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { type TelemetryEventInput } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { type ConfigurationWithAccessToken } from '../../configuration'
+import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
@@ -125,7 +125,7 @@ interface SearchAttributionResponse {
     }
 }
 
-interface LogEventResponse {}
+type LogEventResponse = {}
 
 export interface EmbeddingsSearchResult {
     repoName?: string
@@ -270,9 +270,14 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteVersion(): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
-            response =>
-                extractDataOrError(response, data => data.site?.productVersion ?? new Error('site version not found'))
+        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+            CURRENT_SITE_VERSION_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(
+                response,
+                data => data.site?.productVersion ?? new Error('site version not found')
+            )
         )
     }
 
@@ -298,7 +303,10 @@ export class SourcegraphGraphQLAPIClient {
             CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
             {}
         ).then(response =>
-            extractDataOrError(response, data => !!data.__type?.fields?.find(field => field.name === 'isCodyEnabled'))
+            extractDataOrError(
+                response,
+                data => !!data.__type?.fields?.find(field => field.name === 'isCodyEnabled')
+            )
         )
     }
 
@@ -310,7 +318,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserId(): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
+            CURRENT_USER_ID_QUERY,
+            {}
+        ).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
             )
@@ -329,11 +340,13 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(CURRENT_USER_INFO_QUERY, {}).then(
-            response =>
-                extractDataOrError(response, data =>
-                    data.currentUser ? { ...data.currentUser } : new Error('current user not found')
-                )
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
+            CURRENT_USER_INFO_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+            )
         )
     }
 
@@ -352,7 +365,10 @@ export class SourcegraphGraphQLAPIClient {
             CURRENT_SITE_CODY_CONFIG_FEATURES,
             {}
         ).then(response =>
-            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
+            extractDataOrError(
+                response,
+                data => data.site?.codyConfigFeatures ?? new Error('cody config not found')
+            )
         )
     }
 
@@ -367,13 +383,19 @@ export class SourcegraphGraphQLAPIClient {
             ),
         ])
 
-        const config = extractDataOrError(configResponse, data => data.site?.codyLLMConfiguration || undefined)
+        const config = extractDataOrError(
+            configResponse,
+            data => data.site?.codyLLMConfiguration || undefined
+        )
         if (!config || isError(config)) {
             return config
         }
 
         let provider: string | undefined
-        const llmProvider = extractDataOrError(providerResponse, data => data.site?.codyLLMConfiguration?.provider)
+        const llmProvider = extractDataOrError(
+            providerResponse,
+            data => data.site?.codyLLMConfiguration?.provider
+        )
         if (llmProvider && !isError(llmProvider)) {
             provider = llmProvider
         }
@@ -384,7 +406,9 @@ export class SourcegraphGraphQLAPIClient {
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
-        }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
+        }).then(response =>
+            extractDataOrError(response, data => (data.repository ? data.repository.id : null))
+        )
     }
 
     public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
@@ -394,7 +418,9 @@ export class SourcegraphGraphQLAPIClient {
                 name: repoName,
             }
         ).then(response =>
-            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
+            extractDataOrError(response, data =>
+                data.repository?.embeddingExists ? data.repository.id : null
+            )
         )
     }
 
@@ -449,9 +475,12 @@ export class SourcegraphGraphQLAPIClient {
         for (const event of events) {
             this.anonymizeTelemetryEventInput(event)
         }
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
-            events,
-        })
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(
+            RECORD_TELEMETRY_EVENTS_MUTATION,
+            {
+                events,
+            }
+        )
         return extractDataOrError(initialResponse, data => data)
     }
 
@@ -504,7 +533,9 @@ export class SourcegraphGraphQLAPIClient {
             this.sendEventLogRequestToDotComAPI(event),
         ])
         if (isError(responses[0]) && isError(responses[1])) {
-            return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
+            return new Error(
+                `Errors logging events: ${responses[0].toString()}, ${responses[1].toString()}`
+            )
         }
         if (isError(responses[0])) {
             return responses[0]
@@ -517,7 +548,7 @@ export class SourcegraphGraphQLAPIClient {
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
         if (isAgentTesting) {
-            delete event.timestamp
+            event.timestamp = undefined
             event.parameters.interactionID = undefined
             event.parameters.billingMetadata = undefined
             event.parameters.metadata = undefined
@@ -537,13 +568,19 @@ export class SourcegraphGraphQLAPIClient {
 
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
         this.anonymizeEvent(event)
-        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(
+            LOG_EVENT_MUTATION,
+            event
+        )
         return extractDataOrError(response, data => data)
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
         this.anonymizeEvent(event)
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
+            LOG_EVENT_MUTATION,
+            event
+        )
         const initialDataOrError = extractDataOrError(initialResponse, data => data)
 
         if (isError(initialDataOrError)) {
@@ -558,11 +595,13 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private async sendEventLogRequestToTestingAPI(event: event): Promise<LogEventResponse | Error> {
-        const initialResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
+        const initialResponse =
+            await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
         const initialDataOrError = extractDataOrError(initialResponse, data => data)
 
         if (isError(initialDataOrError)) {
-            const secondResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
+            const secondResponse =
+                await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
             return extractDataOrError(secondResponse, data => data)
         }
 
@@ -575,12 +614,15 @@ export class SourcegraphGraphQLAPIClient {
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
-            repos,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(
+            SEARCH_EMBEDDINGS_QUERY,
+            {
+                repos,
+                query,
+                codeResultsCount,
+                textResultsCount,
+            }
+        ).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
     }
 
     // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
@@ -590,39 +632,53 @@ export class SourcegraphGraphQLAPIClient {
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
-            repo,
-            query,
-            codeResultsCount,
-            textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(
+            LEGACY_SEARCH_EMBEDDINGS_QUERY,
+            {
+                repo,
+                query,
+                codeResultsCount,
+                textResultsCount,
+            }
+        ).then(response => extractDataOrError(response, data => data.embeddingsSearch))
     }
 
     public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(SEARCH_ATTRIBUTION_QUERY, {
-            snippet,
-        }).then(response => extractDataOrError(response, data => data.snippetAttribution))
+        return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
+            SEARCH_ATTRIBUTION_QUERY,
+            {
+                snippet,
+            }
+        ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
-            response =>
-                extractDataOrError(response, data =>
-                    data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
-                        acc[name] = value
-                        return acc
-                    }, {})
-                )
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
+            GET_FEATURE_FLAGS_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
+                    acc[name] = value
+                    return acc
+                }, {})
+            )
         )
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(EVALUATE_FEATURE_FLAG_QUERY, {
-            flagName,
-        }).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
+        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(
+            EVALUATE_FEATURE_FLAG_QUERY,
+            {
+                flagName,
+            }
+        ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {
+    private fetchSourcegraphAPI<T>(
+        query: string,
+        variables: Record<string, any> = {}
+    ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
@@ -652,7 +708,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     // make an anonymous request to the dotcom API
-    private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+    private fetchSourcegraphDotcomAPI<T>(
+        query: string,
+        variables: Record<string, any>
+    ): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         const headers = new Headers()
         addCustomUserAgent(headers)
@@ -765,10 +824,9 @@ export class ConfigFeaturesSingleton {
         if (features instanceof Error) {
             // If there's an error, throw it to be caught in refreshConfigFeatures
             throw features
-        } else {
-            // If the fetch is successful, store the fetched configuration features
-            return features
         }
+        // If the fetch is successful, store the fetched configuration features
+        return features
     }
 }
 

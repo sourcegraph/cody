@@ -1,4 +1,4 @@
-import { type GetFieldType } from 'lodash'
+import type { GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -16,8 +16,8 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
-import { type IndexHealthResultFound, type IndexRequest } from '../jsonrpc/embeddings-protocol'
-import { type MessageHandler } from '../jsonrpc/jsonrpc'
+import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
+import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 
@@ -28,7 +28,10 @@ export function createLocalEmbeddingsController(
     return new LocalEmbeddingsController(context, config)
 }
 
-export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'> & {
+export type LocalEmbeddingsConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken'
+> & {
     testingLocalEmbeddingsModel: string | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
@@ -53,7 +56,9 @@ interface RepoState {
     errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
-export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable {
+export class LocalEmbeddingsController
+    implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
+{
     private disposables: vscode.Disposable[] = []
 
     // These properties are constants, but may be overridden for testing.
@@ -96,7 +101,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
         this.disposables.push(
-            vscode.commands.registerCommand('cody.embeddings.resolveIssue', () => this.resolveIssueCommand())
+            vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
+                this.resolveIssueCommand()
+            )
         )
 
         // Pick up the initial access token, and whether the account is dotcom.
@@ -104,7 +111,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
         this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
-        this.endpoint = config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
+        this.endpoint =
+            config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
         this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
             ? URI.file(config.testingLocalEmbeddingsIndexLibraryPath)
             : undefined
@@ -133,7 +141,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
         const endpointIsDotcom = isDotCom(serverEndpoint)
-        logDebug('LocalEmbeddingsController', 'setAccessToken', endpointIsDotcom ? 'is dotcom' : 'not dotcom')
+        logDebug(
+            'LocalEmbeddingsController',
+            'setAccessToken',
+            endpointIsDotcom ? 'is dotcom' : 'not dotcom'
+        )
         if (endpointIsDotcom !== this.endpointIsDotcom) {
             // We will show, or hide, status depending on whether we are using
             // dotcom. We do not offer local embeddings to Enterprise.
@@ -384,7 +396,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
     }
@@ -414,7 +425,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 try {
                     await this.getService()
                 } catch (error) {
-                    logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+                    logDebug(
+                        'LocalEmbeddingsController',
+                        'load',
+                        captureException(error),
+                        JSON.stringify(error)
+                    )
                 }
             })()
             return false
@@ -430,7 +446,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     //   results.
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
         try {
-            const { repoName } = await (await this.getService()).request('embeddings/load', repoDir.fsPath)
+            const { repoName } = await (await this.getService()).request(
+                'embeddings/load',
+                repoDir.fsPath
+            )
             this.repoState.set(repoDir.toString(), {
                 repoName,
                 indexable: true,
@@ -443,7 +462,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // Start a health check on the index.
             void (async () => {
                 try {
-                    const health = await (await this.getService()).request('embeddings/index-health', { repoName })
+                    const health = await (await this.getService()).request('embeddings/index-health', {
+                        repoName,
+                    })
                     logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
                     if (health.type !== 'found') {
                         return
@@ -461,12 +482,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
 
-            const noRemoteErrorMessage = "repository does not have a default fetch URL, so can't be named for an index"
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const noRemoteErrorMessage =
+                "repository does not have a default fetch URL, so can't be named for an index"
             const noRemote = error.message === noRemoteErrorMessage
 
             const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const notGit = notAGitRepositoryErrorMessage.test(error.message)
 
             let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
@@ -513,7 +533,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return ''
         }
         const percentDone = Math.floor(
-            (100 * (this.lastHealth.numItems - this.lastHealth.numItemsNeedEmbedding)) / this.lastHealth.numItems
+            (100 * (this.lastHealth.numItems - this.lastHealth.numItemsNeedEmbedding)) /
+                this.lastHealth.numItems
         )
         return `${options?.prefix || ''}Cody Embeddings index for ${
             this.lastRepo?.dir || 'this repository'
@@ -522,9 +543,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     private updateIssueStatusBar(): void {
         this.statusBar?.dispose()
-        this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
+        this.statusBar = vscode.window.createStatusBarItem(
+            'cody-local-embeddings',
+            vscode.StatusBarAlignment.Right,
+            0
+        )
         this.statusBar.text = 'Embeddings Incomplete'
-        const needsEmbeddingMessage = this.getNeedsEmbeddingText({ prefix: '\n\n', suffix: ' Click to resolve.' })
+        const needsEmbeddingMessage = this.getNeedsEmbeddingText({
+            prefix: '\n\n',
+            suffix: ' Click to resolve.',
+        })
         const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
         this.statusBar.tooltip = new vscode.MarkdownString(
             `#### Cody Embeddings Incomplete\n\n${needsEmbeddingMessage}${errorMessage}`
@@ -563,7 +591,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                         JSON.stringify(error)
                     )
                     await vscode.window.showErrorMessage(
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         `Cody Embeddings — Error resolving embeddings issue: ${error?.message}`
                     )
                 }
@@ -582,9 +609,15 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         try {
             const service = await this.getService()
-            const resp = await service.request('embeddings/query', { repoName: lastRepo.repoName, query })
+            const resp = await service.request('embeddings/query', {
+                repoName: lastRepo.repoName,
+                query,
+            })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
-            return resp.results.map(result => ({ ...result, uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName) }))
+            return resp.results.map(result => ({
+                ...result,
+                uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+            }))
         } catch (error) {
             logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
             return []

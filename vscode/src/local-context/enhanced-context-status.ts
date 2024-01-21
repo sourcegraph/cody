@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextGroup, type ContextStatusProvider } from '@sourcegraph/cody-shared'
+import type { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -9,8 +9,10 @@ import { logDebug } from '../log'
 export class ContextStatusAggregator implements vscode.Disposable, ContextStatusProvider {
     private static TAG = 'ContextStatusAggregator'
     private disposables: Set<vscode.Disposable> = new Set()
-    private statusEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter<ContextStatusProvider>()
-    private providerStatusMap: Map<ContextStatusProvider, ContextGroup[] | 'needs-status'> | undefined = new Map()
+    private statusEmitter: vscode.EventEmitter<ContextStatusProvider> =
+        new vscode.EventEmitter<ContextStatusProvider>()
+    private providerStatusMap: Map<ContextStatusProvider, ContextGroup[] | 'needs-status'> | undefined =
+        new Map()
 
     // Whether we have been notified of status changes, but are yet to pass that
     // notification on. We do this to de-bounce updates from multiple status
@@ -38,7 +40,10 @@ export class ContextStatusAggregator implements vscode.Disposable, ContextStatus
         }
         const disposable = provider.onDidChangeStatus(putativeProvider => {
             if (provider !== putativeProvider) {
-                logDebug(ContextStatusAggregator.TAG, 'got onDidChangeStatus event but passed mismatched provider')
+                logDebug(
+                    ContextStatusAggregator.TAG,
+                    'got onDidChangeStatus event but passed mismatched provider'
+                )
             }
             this.providerDidChangeStatus(provider)
         })

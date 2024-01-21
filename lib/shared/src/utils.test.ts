@@ -1,12 +1,18 @@
 import { describe, expect, test } from 'vitest'
 
-import { convertGitCloneURLToCodebaseName, convertGitCloneURLToCodebaseNameOrError, isError } from './utils'
+import {
+    convertGitCloneURLToCodebaseName,
+    convertGitCloneURLToCodebaseNameOrError,
+    isError,
+} from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
     test('converst Azure DevOps URL', () => {
-        expect(convertGitCloneURLToCodebaseName('https://dev.azure.com/organization/project/_git/repository')).toEqual(
-            'dev.azure.com/organization/project/repository'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName(
+                'https://dev.azure.com/organization/project/_git/repository'
+            )
+        ).toEqual('dev.azure.com/organization/project/repository')
     })
 
     test('converts GitHub SSH URL', () => {
@@ -16,15 +22,15 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('converts GitHub SSH URL with different user', () => {
-        expect(convertGitCloneURLToCodebaseName('jdsbcnuqwew@github.com:sourcegraph/sourcegraph.git')).toEqual(
-            'github.com/sourcegraph/sourcegraph'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName('jdsbcnuqwew@github.com:sourcegraph/sourcegraph.git')
+        ).toEqual('github.com/sourcegraph/sourcegraph')
     })
 
     test('converts GitHub SSH URL with the port number', () => {
-        expect(convertGitCloneURLToCodebaseName('ssh://git@gitlab-my-company.net:20022/path/repo.git')).toEqual(
-            'gitlab-my-company.net/path/repo'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName('ssh://git@gitlab-my-company.net:20022/path/repo.git')
+        ).toEqual('gitlab-my-company.net/path/repo')
     })
 
     test('converts GitHub SSH URL no trailing .git', () => {
@@ -40,15 +46,17 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('converts Bitbucket HTTPS URL', () => {
-        expect(convertGitCloneURLToCodebaseName('https://username@bitbucket.org/sourcegraph/sourcegraph.git')).toEqual(
-            'bitbucket.org/sourcegraph/sourcegraph'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName(
+                'https://username@bitbucket.org/sourcegraph/sourcegraph.git'
+            )
+        ).toEqual('bitbucket.org/sourcegraph/sourcegraph')
     })
 
     test('converts Bitbucket SSH URL', () => {
-        expect(convertGitCloneURLToCodebaseName('git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git')).toEqual(
-            'bitbucket.sgdev.org/sourcegraph/sourcegraph'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName('git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git')
+        ).toEqual('bitbucket.sgdev.org/sourcegraph/sourcegraph')
     })
 
     test('converts GitLab SSH URL', () => {
@@ -58,9 +66,9 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('converts GitLab HTTPS URL', () => {
-        expect(convertGitCloneURLToCodebaseName('https://gitlab.com/sourcegraph/sourcegraph.git')).toEqual(
-            'gitlab.com/sourcegraph/sourcegraph'
-        )
+        expect(
+            convertGitCloneURLToCodebaseName('https://gitlab.com/sourcegraph/sourcegraph.git')
+        ).toEqual('gitlab.com/sourcegraph/sourcegraph')
     })
 
     test('converts GitHub SSH URL with Git', () => {

@@ -3,12 +3,12 @@ import * as React from 'react'
 import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import {
-    type ContextGroup,
-    type ContextProvider,
-    type EnhancedContextContextT,
-    type LocalEmbeddingsProvider,
-    type SearchProvider,
+import type {
+    ContextGroup,
+    ContextProvider,
+    EnhancedContextContextT,
+    LocalEmbeddingsProvider,
+    SearchProvider,
 } from '@sourcegraph/cody-shared'
 import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
@@ -33,11 +33,12 @@ export const EnhancedContextContext: React.Context<EnhancedContextContextT> = Re
     defaultEnhancedContextContext()
 )
 
-export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHandlersT> = React.createContext({
-    onConsentToEmbeddings: (_): void => {},
-    onEnabledChange: (_): void => {},
-    onShouldBuildSymfIndex: (_): void => {},
-})
+export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHandlersT> =
+    React.createContext({
+        onConsentToEmbeddings: (_): void => {},
+        onEnabledChange: (_): void => {},
+        onShouldBuildSymfIndex: (_): void => {},
+    })
 
 export interface EnhancedContextEventHandlersT {
     onConsentToEmbeddings: (provider: LocalEmbeddingsProvider) => void
@@ -53,12 +54,12 @@ function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {
     return React.useContext(EnhancedContextEventHandlers)
 }
 
-const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup; allGroups: ContextGroup[] }> = ({
-    group,
-    allGroups,
-}): React.ReactNode => {
+const ContextGroupComponent: React.FunctionComponent<{
+    group: ContextGroup
+    allGroups: ContextGroup[]
+}> = ({ group, allGroups }): React.ReactNode => {
     // if there's a single group, we want the group name's basename
-    let groupName
+    let groupName: string
     if (allGroups.length === 1) {
         const matches = group.displayName.match(/.+[/\\](.+?)$/)
         groupName = matches ? matches[1] : group.displayName
@@ -130,7 +131,8 @@ const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbed
     return (
         <div>
             <p className={styles.providerExplanatoryText}>
-                The repository&apos;s contents will be uploaded to OpenAI&apos;s Embeddings API and then stored locally.
+                The repository&apos;s contents will be uploaded to OpenAI&apos;s Embeddings API and then
+                stored locally.
                 {/* To exclude files, set up a <a href="about:blank#TODO">Cody ignore file.</a> */}
             </p>
             <p>
@@ -169,32 +171,41 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
                 // Error messages for local embeddings missing.
                 switch (provider.errorReason) {
                     case 'not-a-git-repo':
-                        return <p className={styles.providerExplanatoryText}>Folder is not a Git repository.</p>
+                        return (
+                            <p className={styles.providerExplanatoryText}>
+                                Folder is not a Git repository.
+                            </p>
+                        )
                     case 'git-repo-has-no-remote':
                         return (
-                            <p className={styles.providerExplanatoryText}>Git repository is missing a remote origin.</p>
+                            <p className={styles.providerExplanatoryText}>
+                                Git repository is missing a remote origin.
+                            </p>
                         )
                     default:
                         return <></>
                 }
-            } else {
-                return <></>
             }
+            return <></>
         case 'unindexed':
             if (provider.kind === 'search') {
                 return <SearchIndexComponent indexStatus="unindexed" provider={provider} />
             }
+            return ''
         case 'failed':
             if (provider.kind === 'search') {
                 return <SearchIndexComponent indexStatus="failed" provider={provider} />
             }
+            return ''
         default:
             return ''
     }
 }
 
-const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvider }> = ({ provider }) => {
-    let stateIcon
+const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvider }> = ({
+    provider,
+}) => {
+    let stateIcon: string | React.ReactElement
     switch (provider.state) {
         case 'indeterminate':
         case 'indexing':
@@ -236,7 +247,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
         (event: any): void => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
@@ -263,7 +273,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             autofocusTarget.current?.focus()
         }
     }, [isOpen])
@@ -273,13 +282,16 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         restoreFocusTarget.current?.focus()
-    }, [setOpen, restoreFocusTarget])
+    }, [setOpen])
 
     return (
         <div className={classNames(popupStyles.popupHost)}>
-            <PopupFrame isOpen={isOpen} onDismiss={handleDismiss} classNames={[popupStyles.popupTrail, styles.popup]}>
+            <PopupFrame
+                isOpen={isOpen}
+                onDismiss={handleDismiss}
+                classNames={[popupStyles.popupTrail, styles.popup]}
+            >
                 <div className={styles.container}>
                     <div>
                         <VSCodeCheckbox
@@ -310,7 +322,11 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 </div>
             </PopupFrame>
             <VSCodeButton
-                className={classNames(popupStyles.popupHost, styles.settingsBtn, enabled && styles.settingsBtnActive)}
+                className={classNames(
+                    popupStyles.popupHost,
+                    styles.settingsBtn,
+                    enabled && styles.settingsBtnActive
+                )}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!isOpen)}

@@ -9,7 +9,12 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { fetchAndProcessCompletions, type FetchCompletionResult } from './fetch-and-process-completions'
 import { createOllamaClient, type OllamaGenerateParams } from './ollama-client'
-import { Provider, type CompletionProviderTracer, type ProviderConfig, type ProviderOptions } from './provider'
+import {
+    Provider,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
+} from './provider'
 
 interface LlamaCodePrompt {
     snippets: { uri: vscode.Uri; content: string }[]
@@ -118,7 +123,11 @@ class UnstableOllamaProvider extends Provider {
         let timeoutMs = 5_0000
 
         const requestParams = {
-            prompt: llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill, this.ollamaOptions.model),
+            prompt: llamaCodePromptString(
+                this.createPrompt(snippets, useInfill),
+                useInfill,
+                this.ollamaOptions.model
+            ),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
             options: {

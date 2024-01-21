@@ -7,7 +7,10 @@ import { trace, type Attributes, type Span } from '@opentelemetry/api'
  * If `currentLinePrefix` and `text` attributes are present,
  * merges them into one formatted attrbiute (useful for autcomplete events logging).
  */
-export const addAutocompleteDebugEvent = (name: string, attributes: Record<string, unknown> = {}): Span | void => {
+export const addAutocompleteDebugEvent = (
+    name: string,
+    attributes: Record<string, unknown> = {}
+): Span | void => {
     if (process.env.NODE_ENV === 'development') {
         const activeSpan = trace.getActiveSpan()
 

@@ -34,8 +34,7 @@ export interface DotcomUrlOverride {
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
-        // Playwright needs empty pattern to specify "no dependencies".
-        // eslint-disable-next-line no-empty-pattern
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
             const vscodeRoot = path.resolve(__dirname, '..', '..')
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
@@ -53,7 +52,11 @@ export const test = base
         dotcomUrl: undefined,
     })
     .extend<{}>({
-        page: async ({ page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl }, use, testInfo) => {
+        page: async (
+            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl },
+            use,
+            testInfo
+        ) => {
             void _page
 
             const vscodeRoot = path.resolve(__dirname, '..', '..')
@@ -63,7 +66,12 @@ export const test = base
 
             const userDataDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
-            const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
+            const videoDirectory = path.join(
+                vscodeRoot,
+                '..',
+                'playwright',
+                escapeToPath(testInfo.title)
+            )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
 
@@ -90,7 +98,7 @@ export const test = base
                     '--skip-welcome',
                     '--skip-release-notes',
                     '--disable-workspace-trust',
-                    '--extensionDevelopmentPath=' + extensionDevelopmentPath,
+                    `--extensionDevelopmentPath=${extensionDevelopmentPath}`,
                     `--user-data-dir=${userDataDirectory}`,
                     `--extensions-dir=${extensionsDirectory}`,
                     workspaceDirectory,
@@ -200,7 +208,10 @@ function escapeToPath(text: string): string {
 }
 
 // Build a workspace settings file that enables the experimental inline mode
-async function buildWorkSpaceSettings(workspaceDirectory: string, extraSettings: WorkspaceSettings): Promise<void> {
+async function buildWorkSpaceSettings(
+    workspaceDirectory: string,
+    extraSettings: WorkspaceSettings
+): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
@@ -211,7 +222,9 @@ async function buildWorkSpaceSettings(workspaceDirectory: string, extraSettings:
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
     const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
     await new Promise((resolve, reject) => {
-        mkdir(workspaceSettingsDirectory, { recursive: true }, err => (err ? reject(err) : resolve(undefined)))
+        mkdir(workspaceSettingsDirectory, { recursive: true }, err =>
+            err ? reject(err) : resolve(undefined)
+        )
     })
     await new Promise<void>((resolve, reject) => {
         writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {

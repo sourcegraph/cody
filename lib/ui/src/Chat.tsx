@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import type React from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -13,11 +14,11 @@ import {
     type Guardrails,
 } from '@sourcegraph/cody-shared'
 
-import { type CodeBlockMeta } from './chat/CodeBlocks'
-import { type FileLinkProps } from './chat/components/EnhancedContext'
-import { type SymbolLinkProps } from './chat/PreciseContext'
+import type { CodeBlockMeta } from './chat/CodeBlocks'
+import type { FileLinkProps } from './chat/components/EnhancedContext'
+import type { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
-import { type TranscriptItemClassNames } from './chat/TranscriptItem'
+import type { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
@@ -30,7 +31,11 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
+    onSubmit: (
+        text: string,
+        submitType: ChatSubmitType,
+        userContextFiles?: Map<string, ContextFile>
+    ) => void
     gettingStartedComponent?: React.FunctionComponent<any>
     gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
@@ -59,13 +64,19 @@ interface ChatProps extends ChatClassNames {
     chatEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     chatCommands?: [string, CodyCommand][] | null
-    filterChatCommands?: (chatCommands: [string, CodyCommand][], input: string) => [string, CodyCommand][]
+    filterChatCommands?: (
+        chatCommands: [string, CodyCommand][],
+        input: string
+    ) => [string, CodyCommand][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelProvider[]
-    EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
+    EnhancedContextSettings?: React.FunctionComponent<{
+        isOpen: boolean
+        setOpen: (open: boolean) => void
+    }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo: UserAccountInfo
@@ -230,9 +241,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyCommand & { instruction?: string }][] | null>(
-        chatCommands || null
-    )
+    const [displayCommands, setDisplayCommands] = useState<
+        [string, CodyCommand & { instruction?: string }][] | null
+    >(chatCommands || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
@@ -257,7 +268,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputPrefix = input.slice(0, lastAtIndex)
-                const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
+                const range = selected.range
+                    ? `:${selected.range?.start.line}-${selected.range?.end.line}`
+                    : ''
                 const symbolName = selected.type === 'file' ? '' : `#${selected.symbolName}`
                 const fileDisplayText = `@${displayPath(selected.uri)}${range}${symbolName}`
                 // Add empty space at the end to end the file matching process
@@ -361,12 +374,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         onChatSubmit(isFollowUpKeyPressed)
     }, [onChatSubmit, isFollowUpKeyPressed])
 
-    const onChatKeyUp = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>): void => {
-            setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
-        },
-        [setIsFollowUpKeyPressed]
-    )
+    const onChatKeyUp = useCallback((event: React.KeyboardEvent<HTMLElement>): void => {
+        setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
+    }, [])
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             setIsFollowUpKeyPressed(event.metaKey || event.ctrlKey)
@@ -413,8 +423,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     const commandsLength = displayCommands?.length
-                    const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex > commandsLength - 1 ? 0 : curIndex
+                    const curIndex =
+                        event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newIndex =
+                        curIndex < 0 ? commandsLength - 1 : curIndex > commandsLength - 1 ? 0 : curIndex
                     setSelectedChatCommand(newIndex)
                     const newInput = displayCommands?.[newIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
@@ -450,8 +462,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     const selectionLength = contextSelection?.length - 1
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
-                    const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
+                    const newIndex =
+                        event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
+                    const newMatchIndex =
+                        newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
                     setSelectedChatContext(newMatchIndex)
                     return
                 }
@@ -477,7 +491,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput?.trim()
+            ) {
                 event.preventDefault()
                 setMessageBeingEdited(false)
                 onChatSubmit(event.metaKey || event.ctrlKey)
@@ -517,7 +536,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
-            setIsFollowUpKeyPressed,
         ]
     )
 
@@ -534,7 +552,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
-    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
+    const isGettingStartedComponentVisible =
+        transcript.length === 0 && GettingStartedComponent !== undefined
 
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
     const isMac = isMacOS()
@@ -608,7 +627,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 ) : null}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
-                        <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                        <AbortMessageInProgressButton
+                            onAbortMessageInProgress={onAbortMessageInProgress}
+                        />
                     </div>
                 )}
                 <div className={styles.textAreaContainer}>
@@ -660,9 +681,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         className={styles.submitButton}
                         onClick={onChatButtonSubmit}
                         isFollowUp={isFollowUpKeyPressed}
-                        disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
+                        disabled={
+                            needsEmailVerification ||
+                            !isCodyEnabled ||
+                            (!formInput.length && !messageInProgress)
+                        }
                         onAbortMessageInProgress={
-                            !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
+                            !AbortMessageInProgressButton && messageInProgress
+                                ? onAbortMessageInProgress
+                                : undefined
                         }
                     />
                 </div>

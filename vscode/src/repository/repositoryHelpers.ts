@@ -5,7 +5,7 @@ import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { setUpCodyIgnore } from '../services/context-filter'
 
-import { type API, type GitExtension, type Repository } from './builtinGitExtension'
+import type { API, GitExtension, Repository } from './builtinGitExtension'
 
 export function gitDirectoryUri(uri: vscode.Uri): vscode.Uri | undefined {
     return gitAPI()?.getRepository(uri)?.rootUri
@@ -51,7 +51,9 @@ export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
         // Display error message if git extension is disabled
         const errorMessage = `${error}`
         if (extension?.isActive && errorMessage.includes('Git model not found')) {
-            console.warn('Git extension is not available. Please ensure it is enabled for Cody to work properly.')
+            console.warn(
+                'Git extension is not available. Please ensure it is enabled for Cody to work properly.'
+            )
         }
     }
     // Update vscodeGitAPI when the extension becomes enabled/disabled

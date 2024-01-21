@@ -1,8 +1,12 @@
 import * as vscode from 'vscode'
 
-import { type ActiveTextEditorSelectionRange, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import type {
+    ActiveTextEditorSelectionRange,
+    ContextFile,
+    ContextMessage,
+} from '@sourcegraph/cody-shared'
 
-import { type ContextItem } from './SimpleChatModel'
+import type { ContextItem } from './SimpleChatModel'
 
 export async function openFile(
     uri: vscode.Uri,
@@ -16,7 +20,12 @@ export async function openFile(
         viewColumn = currentViewColumn - 1 || currentViewColumn + 1
     }
     const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
-    await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
+    await vscode.window.showTextDocument(doc, {
+        selection,
+        viewColumn,
+        preserveFocus: true,
+        preview: true,
+    })
 }
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
@@ -36,7 +45,14 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
         text: contextText,
         uri: contextMessage.file.uri,
         source: contextMessage.file.source,
-        range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
+        range:
+            range &&
+            new vscode.Range(
+                range.start.line,
+                range.start.character,
+                range.end.line,
+                range.end.character
+            ),
     }
 }
 
@@ -84,7 +100,9 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
     return contextFiles
 }
 
-function rangeToActiveTextEditorSelectionRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
+function rangeToActiveTextEditorSelectionRange(
+    range?: vscode.Range
+): ActiveTextEditorSelectionRange | undefined {
     if (!range) {
         return undefined
     }
@@ -111,5 +129,5 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
         return lastDisplayText
     }
     // truncate title that is too long
-    return lastDisplayText.length > 25 ? lastDisplayText.slice(0, 25).trim() + '...' : lastDisplayText
+    return lastDisplayText.length > 25 ? `${lastDisplayText.slice(0, 25).trim()}...` : lastDisplayText
 }

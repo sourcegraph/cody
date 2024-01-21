@@ -22,11 +22,15 @@ const execPromise = promisify(exec)
 export async function inferGitRepository(uri: vscode.Uri): Promise<SimpleRepository | null> {
     try {
         // invoking `git` like this works on Windows when git.exe is installed in Path.
-        const { stdout: toplevel } = await execPromise('git rev-parse --show-toplevel', { cwd: uri.fsPath })
+        const { stdout: toplevel } = await execPromise('git rev-parse --show-toplevel', {
+            cwd: uri.fsPath,
+        })
         if (!toplevel) {
             return null
         }
-        const { stdout: commit } = await execPromise('git rev-parse --abbrev-ref HEAD', { cwd: uri.fsPath })
+        const { stdout: commit } = await execPromise('git rev-parse --abbrev-ref HEAD', {
+            cwd: uri.fsPath,
+        })
         if (!commit) {
             return null
         }

@@ -68,7 +68,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         this.authToken = authToken
     }
 
-    private async getSymfInfo(): Promise<{ symfPath: string; serverEndpoint: string; accessToken: string }> {
+    private async getSymfInfo(): Promise<{
+        symfPath: string
+        serverEndpoint: string
+        accessToken: string
+    }> {
         const accessToken = this.authToken
         if (!accessToken) {
             throw new Error('SymfRunner.getResults: No access token')
@@ -87,7 +91,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     public getResults(userQuery: string, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
         const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
         return Promise.resolve(
-            scopeDirs.filter(isFileURI).map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+            scopeDirs
+                .filter(isFileURI)
+                .map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
         )
     }
 
@@ -96,7 +102,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * @param keywordQuery is a promise, because query expansion might be an expensive
      * operation that is best done concurrently with querying and (re)building the index.
      */
-    private async getResultsForScopeDir(keywordQuery: Promise<string>, scopeDir: FileURI): Promise<Result[]> {
+    private async getResultsForScopeDir(
+        keywordQuery: Promise<string>,
+        scopeDir: FileURI
+    ): Promise<Result[]> {
         const maxRetries = 10
 
         // Run in a loop in case the index is deleted before we can query it
@@ -129,7 +138,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         })
     }
 
-    public async getIndexStatus(scopeDir: FileURI): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
+    public async getIndexStatus(
+        scopeDir: FileURI
+    ): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
         if (this.status.isInProgress(scopeDir)) {
             // Check this before waiting on the lock
             return 'indexing'
@@ -146,7 +157,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return 'unindexed'
     }
 
-    public async ensureIndex(scopeDir: FileURI, options: { hard: boolean } = { hard: false }): Promise<void> {
+    public async ensureIndex(
+        scopeDir: FileURI,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeEnsureIndex(scopeDir, options)
         })
@@ -169,7 +183,16 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         try {
             const { stdout } = await execFile(
                 symfPath,
-                ['--index-root', indexDir.fsPath, 'query', '--scopes', scopeDir.fsPath, '--fmt', 'json', keywordQuery],
+                [
+                    '--index-root',
+                    indexDir.fsPath,
+                    'query',
+                    '--scopes',
+                    scopeDir.fsPath,
+                    '--fmt',
+                    'json',
+                    keywordQuery,
+                ],
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
@@ -200,7 +223,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         const trashDir = vscode.Uri.joinPath(trashRootDir, `${uriBasename(indexDir)}-${Date.now()}`)
         if (await fileExists(trashDir)) {
             // if trashDir already exists, error
-            throw new Error(`could not delete index ${indexDir}: target trash directory ${trashDir} already exists`)
+            throw new Error(
+                `could not delete index ${indexDir}: target trash directory ${trashDir} already exists`
+            )
         }
 
         await rename(indexDir.fsPath, trashDir.fsPath)
@@ -212,7 +237,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return fileExists(vscode.Uri.joinPath(indexDir, 'index.json'))
     }
 
-    private async unsafeEnsureIndex(scopeDir: FileURI, options: { hard: boolean } = { hard: false }): Promise<void> {
+    private async unsafeEnsureIndex(
+        scopeDir: FileURI,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
             return
@@ -254,7 +282,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
-    private unsafeUpsertIndex(indexDir: FileURI, tmpIndexDir: FileURI, scopeDir: FileURI): Promise<void> {
+    private unsafeUpsertIndex(
+        indexDir: FileURI,
+        tmpIndexDir: FileURI,
+        scopeDir: FileURI
+    ): Promise<void> {
         const cancellation = new vscode.CancellationTokenSource()
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir, cancellation.token)
         this.status.didStart({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
@@ -516,7 +548,8 @@ function toSymfError(error: unknown): Error {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
-        errorMessage = 'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
+        errorMessage =
+            'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {

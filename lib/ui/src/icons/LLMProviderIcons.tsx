@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 export const AnthropicLogo: React.FC<{ className?: string }> = ({ className }) => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className={className}>

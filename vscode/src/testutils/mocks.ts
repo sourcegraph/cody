@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-/* eslint-disable import/no-duplicates */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'fs/promises'
 
@@ -20,8 +17,8 @@ import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export { Disposable } from './Disposable'
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { Disposable } from './Disposable'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -30,7 +27,9 @@ export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
  */
 
 export enum InlineCompletionTriggerKind {
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
 }
 
@@ -209,8 +208,7 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+// biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
@@ -229,7 +227,6 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
@@ -271,7 +268,10 @@ export class Position implements VSCodePosition {
 
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
-    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
+    public with(
+        arg?: number | { line?: number; character?: number },
+        character?: number
+    ): VSCodePosition {
         const newLine = typeof arg === 'number' ? arg : arg?.line
         const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
         return new Position(newLine ?? this.line, newCharacter ?? this.character)
@@ -490,10 +490,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         const type = stat.isFile()
             ? FileType.File
             : stat.isDirectory()
-            ? FileType.Directory
-            : stat.isSymbolicLink()
-            ? FileType.SymbolicLink
-            : FileType.Unknown
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                  ? FileType.SymbolicLink
+                  : FileType.Unknown
 
         return {
             type,
@@ -509,10 +509,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             const type = entry.isFile()
                 ? FileType.File
                 : entry.isDirectory()
-                ? FileType.Directory
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                      ? FileType.SymbolicLink
+                      : FileType.Unknown
 
             return [entry.name, type]
         })

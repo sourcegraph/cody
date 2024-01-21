@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
@@ -12,7 +12,14 @@ import { countCode, matchCodeSnippets } from './code-count'
  * It tracks the last stored code snippet and metadata like lines, chars, event, source etc.
  * This is used to track acceptance of generated code by Cody for Chat and Commands
  */
-let lastStoredCode = { code: 'init', lineCount: 0, charCount: 0, eventName: '', source: '', requestID: '' }
+let lastStoredCode = {
+    code: 'init',
+    lineCount: 0,
+    charCount: 0,
+    eventName: '',
+    source: '',
+    requestID: '',
+}
 let insertInProgress = false
 let lastClipboardText = ''
 
@@ -26,7 +33,14 @@ function setLastStoredCode(
     eventName: string,
     source = 'chat',
     requestID = ''
-): { code: string; lineCount: number; charCount: number; eventName: string; source?: string; requestID?: string } {
+): {
+    code: string
+    lineCount: number
+    charCount: number
+    eventName: string
+    source?: string
+    requestID?: string
+} {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
     insertInProgress = !eventName.includes('copy')
     const { lineCount, charCount } = countCode(code)
@@ -73,12 +87,12 @@ export async function handleCodeFromInsertAtCursor(text: string, meta?: CodeBloc
 
     const edit = new vscode.WorkspaceEdit()
     // trimEnd() to remove new line added by Cody
-    edit.insert(activeEditor.document.uri, selectionRange.start, text + '\n')
+    edit.insert(activeEditor.document.uri, selectionRange.start, `${text}\n`)
     await vscode.workspace.applyEdit(edit)
 
     // Log insert event
     const op = 'insert'
-    const eventName = op + 'Button'
+    const eventName = `${op}Button`
     setLastStoredCode(text, eventName, meta?.source, meta?.requestID)
 }
 
@@ -93,7 +107,11 @@ export function handleCodeFromSaveToNewFile(text: string, meta?: CodeBlockMeta):
 /**
  * Handles copying code and detecting a paste event.
  */
-export async function handleCopiedCode(text: string, isButtonClickEvent: boolean, meta?: CodeBlockMeta): Promise<void> {
+export async function handleCopiedCode(
+    text: string,
+    isButtonClickEvent: boolean,
+    meta?: CodeBlockMeta
+): Promise<void> {
     // If it's a Button event, then the text is already passed in from the whole code block
     const copiedCode = isButtonClickEvent ? text : await vscode.env.clipboard.readText()
     const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown:Copy'

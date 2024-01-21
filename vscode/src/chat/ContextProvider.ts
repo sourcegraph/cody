@@ -16,20 +16,20 @@ import {
 
 import { getFullConfig } from '../configuration'
 import { getEditor } from '../editor/active-editor'
-import { type VSCodeEditor } from '../editor/vscode-editor'
-import { type PlatformContext } from '../extension.common'
+import type { VSCodeEditor } from '../editor/vscode-editor'
+import type { PlatformContext } from '../extension.common'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
-import { type LocalEmbeddingsController } from '../local-context/local-embeddings'
+import type { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
 import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
-import { type AuthProvider } from '../services/AuthProvider'
+import type { AuthProvider } from '../services/AuthProvider'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
-import { type SidebarChatWebview } from './chat-view/SidebarViewController'
-import { type AuthStatus, type ConfigurationSubsetForWebview, type LocalEnv } from './protocol'
+import type { SidebarChatWebview } from './chat-view/SidebarViewController'
+import type { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -170,7 +170,10 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             return
         }
         // After await, check we're still hitting the same workspace root.
-        if (this.currentWorkspaceRoot && this.currentWorkspaceRoot.toString() !== workspaceRoot.toString()) {
+        if (
+            this.currentWorkspaceRoot &&
+            this.currentWorkspaceRoot.toString() !== workspaceRoot.toString()
+        ) {
             return
         }
 
@@ -221,7 +224,9 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         switch (ContextEvent.Auth) {
             case 'auth':
-                telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, { agent: true })
+                telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
+                    agent: true,
+                })
                 telemetryRecorder.recordEvent('cody.auth', eventValue)
                 break
         }
@@ -243,7 +248,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
             }
-            const workspaceFolderUris = vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+            const workspaceFolderUris =
+                vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
             // update codebase context on configuration change
             await this.updateCodebaseContext()
@@ -269,7 +275,9 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
     // Gets a list of GraphQL clients to interrogate for embeddings
     // availability.
-    private getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
+    private getEmbeddingClientCandidates(
+        config: GraphQLAPIClientConfig
+    ): Promise<SourcegraphGraphQLAPIClient[]> {
         return Promise.resolve([new SourcegraphGraphQLAPIClient(config)])
     }
 
@@ -307,7 +315,8 @@ async function getCodebaseContext(
     const currentFile = getEditor()?.active?.document?.uri
     // Get codebase from config or fallback to getting codebase name from current file URL
     // Always use the codebase from config as this is manually set by the user
-    const codebase = config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+    const codebase =
+        config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
     if (!codebase) {
         return null
     }

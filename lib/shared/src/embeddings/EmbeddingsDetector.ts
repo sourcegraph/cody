@@ -1,5 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
-import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 
 import { SourcegraphEmbeddingsSearchClient } from './client'
 
@@ -22,7 +22,9 @@ export const EmbeddingsDetector = {
 
         let firstError: Error | undefined
         let allFailed = true
-        for (const promise of clients.map(client => this.detectEmbeddings(client, codebase, codebaseLocalName))) {
+        for (const promise of clients.map(client =>
+            this.detectEmbeddings(client, codebase, codebaseLocalName)
+        )) {
             const result = await promise
             const isError = result instanceof Error
             allFailed &&= isError
@@ -37,7 +39,11 @@ export const EmbeddingsDetector = {
             return result()
         }
         if (allFailed) {
-            console.log('EmbeddingsDetector', `Error getting embeddings availability for ${codebase}`, firstError)
+            console.log(
+                'EmbeddingsDetector',
+                `Error getting embeddings availability for ${codebase}`,
+                firstError
+            )
             return firstError
         }
         return undefined

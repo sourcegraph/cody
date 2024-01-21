@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-import { type Har } from '@pollyjs/persister'
+import type { Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
 import { decodeCompressedBase64 } from './base64'
@@ -15,7 +15,7 @@ export function redactAccessToken(token: string): string {
     if (token.startsWith('token REDACTED_')) {
         return token
     }
-    return `token REDACTED_${sha256('prefix' + token)}`
+    return `token REDACTED_${sha256(`prefix${token}`)}`
 }
 
 function sha256(input: string): string {
@@ -57,7 +57,11 @@ export class CodyPersister extends FSPersister {
         }
         for (const entry of har.log.entries) {
             const postData = entry?.request?.postData
-            if (postData !== undefined && postData?.text === undefined && (postData as any)?.textJSON !== undefined) {
+            if (
+                postData !== undefined &&
+                postData?.text === undefined &&
+                (postData as any)?.textJSON !== undefined
+            ) {
                 // Format `postData.textJSON` back into the escaped string for the `.text` format.
                 postData.text = JSON.stringify((postData as any).textJSON)
                 ;(postData as any).textJSON = undefined
@@ -131,7 +135,9 @@ export class CodyPersister extends FSPersister {
         return super.onSaveRecording(recordingId, recording)
     }
 
-    private filterHeaders(headers: { name: string; value: string }[]): { name: string; value: string }[] {
+    private filterHeaders(
+        headers: { name: string; value: string }[]
+    ): { name: string; value: string }[] {
         const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
         const removeHeaderPrefixes = ['x-trace', 'cf-']
         return headers.filter(

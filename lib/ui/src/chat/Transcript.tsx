@@ -2,22 +2,22 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type ChatModelProvider, type Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ChatModelProvider, Guardrails } from '@sourcegraph/cody-shared'
 
-import {
-    type ApiPostMessage,
-    type ChatButtonProps,
-    type ChatModelDropdownMenuProps,
-    type ChatUISubmitButtonProps,
-    type ChatUITextAreaProps,
-    type CodeBlockActionsProps,
-    type EditButtonProps,
-    type FeedbackButtonsProps,
-    type UserAccountInfo,
+import type {
+    ApiPostMessage,
+    ChatButtonProps,
+    ChatModelDropdownMenuProps,
+    ChatUISubmitButtonProps,
+    ChatUITextAreaProps,
+    CodeBlockActionsProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
-import { type FileLinkProps } from './components/EnhancedContext'
-import { type SymbolLinkProps } from './PreciseContext'
+import type { FileLinkProps } from './components/EnhancedContext'
+import type { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
@@ -85,6 +85,7 @@ export const Transcript: React.FunctionComponent<
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
     const lastHumanMessageTopRef = useRef<HTMLDivElement>(null)
     const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
+    // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
     useEffect(() => {
         if (transcriptContainerRef.current) {
             lastHumanMessageTopRef.current?.scrollIntoView({
@@ -93,7 +94,7 @@ export const Transcript: React.FunctionComponent<
                 inline: 'nearest',
             })
         }
-    }, [humanMessageCount, transcriptContainerRef])
+    }, [humanMessageCount])
 
     // When the content was not scrollable, then becomes scrollable, manually
     // scroll the anchor into view. This overrides the browser's default
@@ -132,7 +133,7 @@ export const Transcript: React.FunctionComponent<
         return () => {
             observer.disconnect()
         }
-    }, [transcriptContainerRef, scrollAnchoredContainerRef])
+    }, [])
 
     const lastHumanMessageIndex = findLastIndex(
         transcript,
@@ -147,7 +148,6 @@ export const Transcript: React.FunctionComponent<
 
     const messageToTranscriptItem =
         (offset: number) =>
-        // eslint-disable-next-line react/display-name
         (message: ChatMessage, index: number): JSX.Element | null => {
             if (!message?.displayText && !message.error) {
                 return null
@@ -158,7 +158,9 @@ export const Transcript: React.FunctionComponent<
                     key={index + offset}
                     message={message}
                     inProgress={
-                        offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
+                        offsetIndex &&
+                        messageInProgress?.speaker === 'assistant' &&
+                        !messageInProgress?.displayText
                     }
                     beingEdited={messageBeingEdited && offsetIndex}
                     setBeingEdited={setMessageBeingEdited}
@@ -173,7 +175,11 @@ export const Transcript: React.FunctionComponent<
                     textAreaComponent={textAreaComponent}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText?.startsWith('/')}
+                    showEditButton={
+                        offsetIndex &&
+                        !messageInProgress?.speaker &&
+                        !message.displayText?.startsWith('/')
+                    }
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}

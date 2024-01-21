@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
-import { type FetchCompletionResult } from './providers/fetch-and-process-completions'
+import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { Provider } from './providers/provider'
 import { RequestManager, type RequestManagerResult, type RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { type ContextSnippet } from './types'
+import type { ContextSnippet } from './types'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -37,7 +37,9 @@ class MockProvider extends Provider {
             while (true) {
                 if (this.mockedCompletions.length === 0) {
                     // Wait for mock values to be enqueued
-                    await new Promise(resolve => (this.resolve = resolve))
+                    await new Promise(resolve => {
+                        this.resolve = resolve
+                    })
                 }
                 yield [this.mockedCompletions.shift()]
             }
@@ -60,7 +62,7 @@ function createProvider(prefix: string) {
     })
 }
 
-function docState(prefix: string, suffix: string = ';'): RequestParams {
+function docState(prefix: string, suffix = ';'): RequestParams {
     const { document, position } = documentAndPosition(`${prefix}█${suffix}`)
     return {
         document,
@@ -77,7 +79,11 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
 }
 
 describe('RequestManager', () => {
-    let createRequest: (prefix: string, provider: Provider, suffix?: string) => Promise<RequestManagerResult>
+    let createRequest: (
+        prefix: string,
+        provider: Provider,
+        suffix?: string
+    ) => Promise<RequestManagerResult>
     beforeEach(() => {
         const requestManager = new RequestManager()
 

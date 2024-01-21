@@ -80,8 +80,6 @@ interface IndexResult {
 interface LoadResult {
     repoName: string
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {
     'embeddings/echo': [string, string]
     // Instruct local embeddings to index the specified repository path.
@@ -121,8 +119,6 @@ interface ProgressError {
     repoName: string
     message: string
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Notifications = {
     'embeddings/progress': [ProgressValue]
 }

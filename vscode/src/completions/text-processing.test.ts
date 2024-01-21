@@ -21,7 +21,9 @@ describe('extractFromCodeBlock', () => {
 
     it('returns the whole string if the closing tag is not found', () => {
         expect(extractFromCodeBlock('hello world')).toBe('hello world')
-        expect(extractFromCodeBlock('<randomTag>hello world</randomTag>')).toBe('<randomTag>hello world</randomTag>')
+        expect(extractFromCodeBlock('<randomTag>hello world</randomTag>')).toBe(
+            '<randomTag>hello world</randomTag>'
+        )
         expect(extractFromCodeBlock('const isEnabled = true // something else')).toBe(
             'const isEnabled = true // something else'
         )
@@ -36,7 +38,8 @@ describe('extractFromCodeBlock', () => {
 
 describe('trimLeadingWhitespaceUntilNewline', () => {
     test('trims spaces', () => expect(trimLeadingWhitespaceUntilNewline('  \n  a')).toBe('\n  a'))
-    test('preserves carriage returns', () => expect(trimLeadingWhitespaceUntilNewline('\t\r\n  a')).toBe('\r\n  a'))
+    test('preserves carriage returns', () =>
+        expect(trimLeadingWhitespaceUntilNewline('\t\r\n  a')).toBe('\r\n  a'))
 })
 
 describe('collapseDuplicativeWhitespace', () => {

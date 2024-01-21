@@ -101,7 +101,9 @@ function logEvent(
     }
 
     logDebug(
-        `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
+        `logEvent${
+            eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''
+        }`,
         eventName,
         getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
         JSON.stringify({ properties, opts })

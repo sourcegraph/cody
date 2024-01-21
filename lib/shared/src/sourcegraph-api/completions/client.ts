@@ -1,6 +1,6 @@
-import { type ConfigurationWithAccessToken } from '../../configuration'
+import type { ConfigurationWithAccessToken } from '../../configuration'
 
-import { type CompletionCallbacks, type CompletionParameters, type CompletionResponse, type Event } from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export interface CompletionLogger {
     startCompletion(
@@ -10,7 +10,9 @@ export interface CompletionLogger {
         | undefined
         | {
               onError: (error: string, rawError?: unknown) => void
-              onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
+              onComplete: (
+                  response: string | CompletionResponse | string[] | CompletionResponse[]
+              ) => void
               onEvents: (events: Event[]) => void
           }
 }
@@ -60,5 +62,9 @@ export abstract class SourcegraphCompletionsClient {
         }
     }
 
-    public abstract stream(params: CompletionParameters, cb: CompletionCallbacks, signal?: AbortSignal): void
+    public abstract stream(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void
 }

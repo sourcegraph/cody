@@ -6,7 +6,11 @@ describe('isAlmostTheSameString', () => {
     it.each([
         [true, '', ''],
         [true, 'return []', ' return []'],
-        [true, 'const abortController = new AbortController()', 'const networkController = new AbortController()'],
+        [
+            true,
+            'const abortController = new AbortController()',
+            'const networkController = new AbortController()',
+        ],
         [
             true,
             'const currentFilePath = path.normalize(document.fileName)',

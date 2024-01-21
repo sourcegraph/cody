@@ -4,17 +4,20 @@ import type * as vscode from 'vscode'
 
 import { isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
-import { type DocumentContext } from './get-current-doc-context'
-import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from './get-inline-completions'
+import type { DocumentContext } from './get-current-doc-context'
+import {
+    InlineCompletionsResultSource,
+    type LastInlineCompletionCandidate,
+} from './get-inline-completions'
 import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
-import { type CompletionProviderTracer, type Provider } from './providers/provider'
+import type { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
     processInlineCompletions,
     type InlineCompletionItemWithAnalytics,
 } from './text-processing/process-inline-completions'
-import { type ContextSnippet } from './types'
+import type { ContextSnippet } from './types'
 
 export interface RequestParams {
     /** The request's document */
@@ -92,8 +95,9 @@ export class RequestManager {
                     const completions = currentCompletions.map(result => result.completion)
 
                     // Shared post-processing logic
-                    const processedCompletions = wrapInActiveSpan('autocomplete.shared-post-process', () =>
-                        processInlineCompletions(completions, requestParams)
+                    const processedCompletions = wrapInActiveSpan(
+                        'autocomplete.shared-post-process',
+                        () => processInlineCompletions(completions, requestParams)
                     )
 
                     // Cache even if the request was aborted or already fulfilled.

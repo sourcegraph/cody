@@ -1,7 +1,7 @@
 import { useArgs, useState } from '@storybook/preview-api'
-import { type Meta, type StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
-import { type ContextProvider, type LocalEmbeddingsProvider, type SearchProvider } from '@sourcegraph/cody-shared'
+import type { ContextProvider, LocalEmbeddingsProvider, SearchProvider } from '@sourcegraph/cody-shared'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
@@ -96,7 +96,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                         {
                             displayName: args.name,
                             providers: [
-                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 {
                                     kind: args.kind,
                                     type: args.type,

@@ -10,7 +10,7 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { type CompletionCallbacks, type CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -49,12 +49,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // Disable gzip compression since the sg instance will start to batch
                     // responses afterwards.
                     'Accept-Encoding': 'gzip;q=0',
-                    ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...(this.config.accessToken
+                        ? { Authorization: `token ${this.config.accessToken}` }
+                        : null),
                     ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                rejectUnauthorized:
+                    process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
             },
             (res: http.IncomingMessage) => {
                 if (res.statusCode === undefined) {
@@ -72,7 +75,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // Check for explicit false, because if the header is not set, there
                         // is no upgrade available.
                         const upgradeIsAvailable =
-                            typeof res.headers['x-is-cody-pro-user'] !== undefined &&
+                            typeof res.headers['x-is-cody-pro-user'] !== 'undefined' &&
                             res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
 
@@ -133,7 +136,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
-                        logError('SourcegraphNodeCompletionsClient', 'isError(parseEvents(bufferText))', parseResult)
+                        logError(
+                            'SourcegraphNodeCompletionsClient',
+                            'isError(parseEvents(bufferText))',
+                            parseResult
+                        )
                         return
                     }
 

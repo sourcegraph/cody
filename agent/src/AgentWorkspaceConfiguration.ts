@@ -4,7 +4,7 @@ import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
-import { type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(

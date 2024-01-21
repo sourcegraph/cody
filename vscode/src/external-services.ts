@@ -14,10 +14,13 @@ import {
     type IntentDetector,
 } from '@sourcegraph/cody-shared'
 
-import { createClient as createCodeCompletionsClint, type CodeCompletionsClient } from './completions/client'
-import { type PlatformContext } from './extension.common'
-import { type LocalEmbeddingsConfig, type LocalEmbeddingsController } from './local-context/local-embeddings'
-import { type SymfRunner } from './local-context/symf'
+import {
+    createClient as createCodeCompletionsClint,
+    type CodeCompletionsClient,
+} from './completions/client'
+import type { PlatformContext } from './extension.common'
+import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
+import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -77,13 +80,16 @@ export async function configureExternalServices(
     if (isError(repoId)) {
         logDebug(
             'external-services:configureExternalServices',
-            `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
-                'Please check that the repository exists. You can override the repository with the "cody.codebase" setting.'
+            `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\nPlease check that the repository exists. You can override the repository with the "cody.codebase" setting.`
         )
     }
     const embeddingsSearch =
         repoId && !isError(repoId)
-            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
+            ? new SourcegraphEmbeddingsSearchClient(
+                  graphqlClient,
+                  initialConfig.codebase || repoId,
+                  repoId
+              )
             : null
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)

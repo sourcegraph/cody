@@ -9,7 +9,11 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
-import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient, type CompletionResponseGenerator } from '../client'
+import {
+    STOP_REASON_STREAMING_CHUNK,
+    type CodeCompletionsClient,
+    type CompletionResponseGenerator,
+} from '../client'
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
@@ -142,7 +146,9 @@ function formatOllamaTimingInfo(response: OllamaGenerateResponse): string[] {
 
     const promptEvalSpeed =
         response.prompt_eval_count !== undefined && response.prompt_eval_duration !== undefined
-            ? `prompt_eval_tok/sec=${response.prompt_eval_count / (response.prompt_eval_duration / 1000000000)}`
+            ? `prompt_eval_tok/sec=${
+                  response.prompt_eval_count / (response.prompt_eval_duration / 1000000000)
+              }`
             : null
 
     const responseEvalSpeed =
@@ -157,7 +163,6 @@ function browserResponseToAsyncIterable(body: ReadableStream<Uint8Array>): {
     [Symbol.asyncIterator]: () => AsyncGenerator<string, string, unknown>
 } {
     return {
-        // eslint-disable-next-line object-shorthand
         [Symbol.asyncIterator]: async function* () {
             const reader = body.getReader()
             const decoder = new TextDecoder('utf-8')

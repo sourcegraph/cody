@@ -1,13 +1,16 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type ContextMessage } from '@sourcegraph/cody-shared'
+import type { CodyCommand, ContextMessage } from '@sourcegraph/cody-shared'
 
 import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
-import { type VSCodeEditor } from '../../editor/vscode-editor'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { extractTestType } from '../prompt/utils'
 
-export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCommand): Promise<ContextMessage[]> => {
+export const getContextForCommand = async (
+    editor: VSCodeEditor,
+    command: CodyCommand
+): Promise<ContextMessage[]> => {
     logDebug('getContextForCommand', 'getting context')
     const contextConfig = command.context || { codebase: false }
     // Get smart selection if selection is required
@@ -35,7 +38,9 @@ export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCo
         contextMessages.push(...(await editorContext.getFilePathContext(selection.fileUri)))
     }
     if (contextConfig.filePath) {
-        contextMessages.push(...(await editorContext.getFilePathContext(vscode.Uri.file(contextConfig.filePath))))
+        contextMessages.push(
+            ...(await editorContext.getFilePathContext(vscode.Uri.file(contextConfig.filePath)))
+        )
     }
     if (contextConfig.directoryPath) {
         contextMessages.push(
@@ -54,7 +59,9 @@ export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCo
     // Additional context for unit tests requests
     if (isUnitTestRequest && contextMessages.length < 2) {
         if (selection) {
-            contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
+            contextMessages.push(
+                ...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri))
+            )
         }
     }
 

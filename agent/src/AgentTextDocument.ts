@@ -72,7 +72,10 @@ export class AgentTextDocument implements vscode.TextDocument {
             )
         )
         let firstNonWhitespaceCharacterIndex = 0
-        while (firstNonWhitespaceCharacterIndex < text.length && /\s/.test(text[firstNonWhitespaceCharacterIndex])) {
+        while (
+            firstNonWhitespaceCharacterIndex < text.length &&
+            /\s/.test(text[firstNonWhitespaceCharacterIndex])
+        ) {
             firstNonWhitespaceCharacterIndex++
         }
         return {
@@ -110,7 +113,10 @@ export class AgentTextDocument implements vscode.TextDocument {
         return text
     }
 
-    public getWordRangeAtPosition(position: vscode.Position, regex?: RegExp | undefined): vscode.Range | undefined {
+    public getWordRangeAtPosition(
+        position: vscode.Position,
+        regex?: RegExp | undefined
+    ): vscode.Range | undefined {
         throw new Error('Method not implemented.')
     }
 

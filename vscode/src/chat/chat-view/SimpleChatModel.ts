@@ -69,14 +69,13 @@ export class SimpleChatModel {
 
     public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
-        let error
+        let error: any
         // If there is no text, it could be a placeholder message for an error
         if (lastMessage?.speaker === 'assistant') {
             if (lastMessage?.text) {
                 throw new Error('Cannot add a bot message after a bot message')
-            } else {
-                error = this.messagesWithContext.pop()?.error
             }
+            error = this.messagesWithContext.pop()?.error
         }
         this.messagesWithContext.push({
             displayText,
@@ -91,7 +90,8 @@ export class SimpleChatModel {
     public addErrorAsBotMessage(error: Error): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
         // Remove the last assistant message if any
-        const lastAssistantMessage = lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
+        const lastAssistantMessage =
+            lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
         const assistantMessage = lastAssistantMessage || { speaker: 'assistant' }
         // Then add a new assistant message with error added
         this.messagesWithContext.push({
@@ -148,7 +148,10 @@ export class SimpleChatModel {
     }
 }
 
-function messageToInteractionJSON(humanMessage: MessageWithContext, botMessage: MessageWithContext): InteractionJSON {
+function messageToInteractionJSON(
+    humanMessage: MessageWithContext,
+    botMessage: MessageWithContext
+): InteractionJSON {
     if (humanMessage?.message?.speaker !== 'human') {
         throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
     }

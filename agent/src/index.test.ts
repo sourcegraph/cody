@@ -8,19 +8,19 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
-import {
-    type ClientInfo,
-    type ExtensionConfiguration,
-    type ProgressReportParams,
-    type ProgressStartParams,
-    type ServerInfo,
-    type WebviewPostMessageParams,
+import type {
+    ClientInfo,
+    ExtensionConfiguration,
+    ProgressReportParams,
+    ProgressStartParams,
+    ServerInfo,
+    WebviewPostMessageParams,
 } from './protocol-alias'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
@@ -148,11 +148,13 @@ export class TestClient extends MessageHandler {
         } catch (error) {
             if (error === undefined) {
                 throw new Error('Agent failed to initialize, error is undefined')
-            } else if (error instanceof Error) {
-                throw error
-            } else {
-                throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, { cause: error })
             }
+            if (error instanceof Error) {
+                throw error
+            }
+            throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, {
+                cause: error,
+            })
         }
     }
 
@@ -320,13 +322,18 @@ const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
-const mayRecord = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+const mayRecord =
+    process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
     const dotcom = 'https://sourcegraph.com'
     if (mayRecord) {
         execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
+        assert.strictEqual(
+            process.env.SRC_ENDPOINT,
+            dotcom,
+            'SRC_ENDPOINT must be https://sourcegraph.com'
+        )
     }
 
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
@@ -340,7 +347,8 @@ describe('Agent', () => {
         // needs to be updated whenever we change the underlying access token.
         // We can't return a random string here because then Polly won't be able
         // to associate the HTTP requests between record mode and replay mode.
-        process.env.SRC_ACCESS_TOKEN ?? 'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
+        process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
     )
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
@@ -416,9 +424,10 @@ describe('Agent', () => {
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionStart + selectionStartMarker.length)
-                : undefined
-        const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
+                  ? document.positionAt(selectionStart + selectionStartMarker.length)
+                  : undefined
+        const end =
+            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
         client.notify(method, {
             uri: uri.toString(),
             content,
@@ -498,7 +507,9 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
-            const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
+            const lastMessage = await client.sendSingleMessageToNewChat(
+                'Generate simple hello world function in java!'
+            )
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
@@ -623,12 +634,18 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('openai')).toBeTruthy()
             }
             {
                 await client.setChatModel(id, 'anthropic/claude-2.0')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
                 expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
             }
         }, 30_000)
@@ -655,7 +672,10 @@ describe('Agent', () => {
             'edits the chat',
             async () => {
                 const id = await client.request('chat/new', null)
-                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                await client.setChatModel(
+                    id,
+                    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                )
                 await client.sendMessage(
                     id,
                     'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
@@ -854,7 +874,10 @@ describe('Agent', () => {
             expect(result).toStrictEqual('Hello Susan')
             let progressID: string | undefined
             for (const message of client.progressMessages) {
-                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
+                if (
+                    message.method === 'progress/start' &&
+                    message.message.options.title === 'testing/progress'
+                ) {
                     progressID = message.message.id
                     break
                 }
@@ -914,7 +937,9 @@ describe('Agent', () => {
                 }
             })
             try {
-                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
+                const { result } = await client.request('testing/progressCancelation', {
+                    title: 'Leona',
+                })
                 expect(result).toStrictEqual("request with title 'Leona' cancelled")
             } finally {
                 disposable.dispose()

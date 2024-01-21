@@ -11,7 +11,7 @@ interface FormattedSpan extends ReadableSpan {
  */
 export class ConsoleBatchSpanExporter implements SpanExporter {
     private formatDuration(span: ReadableSpan): string {
-        return hrTimeToMilliseconds(span.duration).toString() + 'ms'
+        return `${hrTimeToMilliseconds(span.duration).toString()}ms`
     }
 
     private nestSpans(spans: ReadableSpan[]): FormattedSpan[] {
@@ -45,7 +45,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
         return rootSpans
     }
 
-    private logSpanTree(span: FormattedSpan, depth: number = 0): void {
+    private logSpanTree(span: FormattedSpan, depth = 0): void {
         const { name, events, children, attributes } = span
 
         const hasAttributes = Object.entries(attributes).length > 0
@@ -67,14 +67,19 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
             }
 
             if (hasEvents || hasChildren) {
-                const eventsWithStartTime = events.map(event => Object.assign(event, { startTime: event.time }))
+                const eventsWithStartTime = events.map(event =>
+                    Object.assign(event, { startTime: event.time })
+                )
                 const eventsWithChildren = [...eventsWithStartTime, ...children]
 
                 sortByHrTime(eventsWithChildren).forEach(eventOrSpan => {
                     if (isFormattedSpan(eventOrSpan)) {
                         this.logSpanTree(eventOrSpan, depth + 1)
                     } else {
-                        const { name, attributes: { text, ...attributes } = {} } = eventOrSpan
+                        const {
+                            name,
+                            attributes: { text, ...attributes } = {},
+                        } = eventOrSpan
 
                         const attributesString =
                             Object.keys(attributes).length > 0 ? `: ${JSON.stringify(attributes)}` : ''
@@ -98,7 +103,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
             this.logSpanTree(rootSpan)
         }
 
-        return resultCallback({ code: ExportResultCode.SUCCESS })
+        resultCallback({ code: ExportResultCode.SUCCESS })
     }
 
     public shutdown(): Promise<void> {

@@ -1,6 +1,6 @@
 import { commands, QuickInputButtons, ThemeIcon, window, type QuickPickItem } from 'vscode'
 
-import { type ContextOption } from '.'
+import type { ContextOption } from '.'
 
 export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
 
@@ -55,9 +55,21 @@ export const menu_options = {
     add: addOption,
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'Open or Create Settings File', id: 'open' }
-const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'Delete Settings File', id: 'delete' }
-const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
+const openIconButton = {
+    iconPath: new ThemeIcon('go-to-file'),
+    tooltip: 'Open or Create Settings File',
+    id: 'open',
+}
+const trashIconButton = {
+    iconPath: new ThemeIcon('trash'),
+    tooltip: 'Delete Settings File',
+    id: 'delete',
+}
+const gearIconButton = {
+    iconPath: new ThemeIcon('gear'),
+    tooltip: 'Configure Custom Commands...',
+    id: 'config',
+}
 const backIconButton = QuickInputButtons.Back
 
 export const menu_buttons = {

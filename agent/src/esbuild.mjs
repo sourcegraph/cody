@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import path from 'path'
 import process from 'process'
 
 import { build } from 'esbuild'
-
 ;(async () => {
     const minify = process.argv.includes('--minify')
 
