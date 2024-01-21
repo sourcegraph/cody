@@ -86,7 +86,9 @@ export class EditProvider {
         }
 
         let textConsumed = 0
-        this.cancelCompletionCallback = this.config.chat.chat(
+        const abortController = new AbortController()
+        this.cancelCompletionCallback = () => abortController.abort()
+        this.config.chat.chat(
             messages,
             {
                 onChange: text => {
@@ -117,7 +119,8 @@ export class EditProvider {
                     console.error(`Completion request failed: ${err.message}`)
                 },
             },
-            { model, stopSequences }
+            { model, stopSequences },
+            abortController.signal
         )
     }
 

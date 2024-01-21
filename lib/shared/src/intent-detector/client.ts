@@ -79,7 +79,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
 
         const result = await new Promise<string>(resolve => {
             let responseText = ''
-            return completionsClient.stream(
+            completionsClient.stream(
                 {
                     fast: true,
                     temperature: 0,

@@ -869,7 +869,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
 
         this.cancelInProgressCompletion()
-        this.completionCanceller = this.chatClient.chat(
+        const abortController = new AbortController()
+        this.completionCanceller = () => abortController.abort()
+        this.chatClient.chat(
             prompt,
             {
                 onChange: (content: string) => {
@@ -886,7 +888,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     typewriter.stop(error)
                 },
             },
-            { model: this.chatModel.modelID }
+            { model: this.chatModel.modelID },
+            abortController.signal
         )
     }
 
