@@ -25,9 +25,6 @@
             "style": {
                 "noNonNullAssertion": "off",
                 "noParameterAssign": "off"
-            },
-            "security": {
-                "noDangerouslySetInnerHtml": "off"
             }
         },
         "ignore": [
