@@ -27,9 +27,6 @@ importers:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
     devDependencies:
-      '@ianvs/prettier-plugin-sort-imports':
-        specifier: ^4.1.1
-        version: 4.1.1(prettier@3.0.3)
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
         version: 0.37.1(eslint@8.56.0)(typescript@5.3.3)
@@ -3958,26 +3955,6 @@ packages:
 
   /@humanwhocodes/object-schema@2.0.1:
     resolution: {integrity: sha512-dvuCeX5fC9dXgJn9t+X5atfmgQAzUOWqS1254Gh0m6i8wKd10ebXkfNKiRK+1GWi/yTvvLDHpoxLr0xxxeslWw==}
-    dev: true
-
-  /@ianvs/prettier-plugin-sort-imports@4.1.1(prettier@3.0.3):
-    resolution: {integrity: sha512-kJhXq63ngpTQ2dxgf5GasbPJWsJA3LgoOdd7WGhpUSzLgLgI4IsIzYkbJf9kmpOHe7Vdm/o3PcRA3jmizXUuAQ==}
-    peerDependencies:
-      '@vue/compiler-sfc': '>=3.0.0'
-      prettier: 2 || 3
-    peerDependenciesMeta:
-      '@vue/compiler-sfc':
-        optional: true
-    dependencies:
-      '@babel/core': 7.22.8
-      '@babel/generator': 7.22.7
-      '@babel/parser': 7.22.7
-      '@babel/traverse': 7.22.8
-      '@babel/types': 7.22.5
-      prettier: 3.0.3
-      semver: 7.5.4
-    transitivePeerDependencies:
-      - supports-color
     dev: true
 
   /@isaacs/cliui@8.0.2:
