@@ -6,7 +6,7 @@ import { SourcegraphEmbeddingsSearchClient } from './client'
 // A factory for SourcegraphEmbeddingsSearchClients. Queries the client connection and app (if
 // available) for remote embeddings in parallel and returns the one with embeddings available.
 export const EmbeddingsDetector = {
-    // Creates an remote embeddings search client with the first client in `clients`
+    // Creates a remote embeddings search client with the first client in `clients`
     // that has remote embeddings. If none have remote embeddings, returns undefined. If all
     // fail, returns the first error.
     async newEmbeddingsSearchClient(
