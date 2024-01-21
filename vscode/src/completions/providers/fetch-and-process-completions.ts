@@ -1,6 +1,8 @@
+import { STOP_REASON_STREAMING_CHUNK } from '@sourcegraph/cody-shared'
+
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { STOP_REASON_STREAMING_CHUNK, type CompletionResponseGenerator } from '../client'
+import type { CompletionResponseGenerator } from '../client'
 import type { DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'

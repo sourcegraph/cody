@@ -1,4 +1,5 @@
 import {
+    STOP_REASON_STREAMING_CHUNK,
     isAbortError,
     isDefined,
     isError,
@@ -9,11 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
-import {
-    STOP_REASON_STREAMING_CHUNK,
-    type CodeCompletionsClient,
-    type CompletionResponseGenerator,
-} from '../client'
+import type { CodeCompletionsClient, CompletionResponseGenerator } from '../client'
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35

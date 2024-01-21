@@ -2,6 +2,7 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
+    STOP_REASON_STREAMING_CHUNK,
     testFileUri,
     type CompletionParameters,
     type CompletionResponse,
@@ -10,11 +11,7 @@ import {
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import {
-    STOP_REASON_STREAMING_CHUNK,
-    type CodeCompletionsClient,
-    type CompletionResponseGenerator,
-} from '../client'
+import type { CodeCompletionsClient, CompletionResponseGenerator } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'

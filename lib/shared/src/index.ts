@@ -107,6 +107,7 @@ export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
+export { STOP_REASON_STREAMING_CHUNK } from './inferenceClient/misc'
 export type { IntentClassificationOption, IntentDetector } from './intent-detector'
 export { SourcegraphIntentDetectorClient } from './intent-detector/client'
 export type {
