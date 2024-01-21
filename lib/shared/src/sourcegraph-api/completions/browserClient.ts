@@ -7,7 +7,11 @@ import { SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks, signal?: AbortSignal): void {
+    protected _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void {
         const abort = dependentAbortController(signal)
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         addCustomUserAgent(headersInstance)

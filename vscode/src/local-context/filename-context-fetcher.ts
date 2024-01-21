@@ -105,30 +105,33 @@ export class FilenameContextFetcher implements IFilenameContextFetcher {
     }
 
     private async queryToFileFragments(query: string): Promise<string[]> {
-        const filenameFragments = await new Promise<string[]>((resolve, reject) => {
-            let responseText = ''
-            this.chatClient.chat(
-                [
-                    {
-                        speaker: 'human',
-                        text: `Write 3 filename fragments that would be contained by files in a git repository that are relevant to answering the following user query: <query>${query}</query> Your response should be only a space-delimited list of filename fragments and nothing else.`,
-                    },
-                ],
+        const stream = this.chatClient.chat(
+            [
                 {
-                    onChange: (text: string) => {
-                        responseText = text
-                    },
-                    onComplete: () => {
-                        resolve(responseText.split(/\s+/).filter(e => e.length > 0))
-                    },
-                    onError: (error: Error, statusCode?: number) => reject(error),
+                    speaker: 'human',
+                    text: `Write 3 filename fragments that would be contained by files in a git repository that are relevant to answering the following user query: <query>${query}</query> Your response should be only a space-delimited list of filename fragments and nothing else.`,
                 },
-                {
-                    temperature: 0,
-                    fast: true,
+            ],
+            {
+                temperature: 0,
+                fast: true,
+            }
+        )
+
+        let responseText = ''
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
+                    responseText = message.text
+                    break
                 }
-            )
-        })
+                case 'error': {
+                    throw message.error
+                }
+            }
+        }
+
+        const filenameFragments = responseText.split(/\s+/).filter(e => e.length > 0)
         const uniqueFragments = uniq(filenameFragments.map(e => e.toLocaleLowerCase()))
         return uniqueFragments
     }

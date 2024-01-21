@@ -85,24 +85,28 @@ export class EditProvider {
             })
         }
 
-        let textConsumed = 0
         const abortController = new AbortController()
         this.cancelCompletionCallback = () => abortController.abort()
-        this.config.chat.chat(
-            messages,
-            {
-                onChange: text => {
+        const stream = this.config.chat.chat(messages, { model, stopSequences }, abortController.signal)
+
+        let textConsumed = 0
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
                     if (textConsumed === 0 && responsePrefix) {
                         void multiplexer.publish(responsePrefix)
                     }
-                    text = text.slice(textConsumed)
+                    const text = message.text.slice(textConsumed)
                     textConsumed += text.length
                     void multiplexer.publish(text)
-                },
-                onComplete: () => {
+                    break
+                }
+                case 'complete': {
                     void multiplexer.notifyTurnComplete()
-                },
-                onError: err => {
+                    break
+                }
+                case 'error': {
+                    let err = message.error
                     logError('EditProvider:onError', err.message)
 
                     if (isAbortError(err)) {
@@ -117,11 +121,11 @@ export class EditProvider {
                     // Display error message as assistant response
                     this.handleError(err)
                     console.error(`Completion request failed: ${err.message}`)
-                },
-            },
-            { model, stopSequences },
-            abortController.signal
-        )
+
+                    break
+                }
+            }
+        }
     }
 
     public abortEdit(): void {

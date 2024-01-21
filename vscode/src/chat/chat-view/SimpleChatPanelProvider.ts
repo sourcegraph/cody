@@ -846,7 +846,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
             this.postViewTranscript({ speaker: 'assistant' })
 
-            this.sendLLMRequest(prompt, {
+            await this.sendLLMRequest(prompt, {
                 update: content => {
                     this.postViewTranscript(
                         toViewMessage({
@@ -889,14 +889,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Issue the chat request and stream the results back, updating the model and view
      * with the response.
      */
-    private sendLLMRequest(
+    private async sendLLMRequest(
         prompt: Message[],
         callbacks: {
             update: (response: string) => void
             close: (finalResponse: string) => void
             error: (completedResponse: string, error: Error) => void
         }
-    ): void {
+    ): Promise<void> {
         let lastContent = ''
         const typewriter = new Typewriter({
             update: content => {
@@ -914,26 +914,31 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.cancelInProgressCompletion()
         const abortController = new AbortController()
         this.completionCanceller = () => abortController.abort()
-        this.chatClient.chat(
+        const stream = this.chatClient.chat(
             prompt,
-            {
-                onChange: (content: string) => {
-                    typewriter.update(content)
-                },
-                onComplete: () => {
-                    this.completionCanceller = undefined
-                    typewriter.close()
-                    typewriter.stop()
-                },
-                onError: error => {
-                    this.cancelInProgressCompletion()
-                    typewriter.close()
-                    typewriter.stop(error)
-                },
-            },
             { model: this.chatModel.modelID },
             abortController.signal
         )
+
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
+                    typewriter.update(message.text)
+                    break
+                }
+                case 'complete': {
+                    this.completionCanceller = undefined
+                    typewriter.close()
+                    typewriter.stop()
+                    break
+                }
+                case 'error': {
+                    this.cancelInProgressCompletion()
+                    typewriter.close()
+                    typewriter.stop(message.error)
+                }
+            }
+        }
     }
 
     // Handler to fetch context files candidates
