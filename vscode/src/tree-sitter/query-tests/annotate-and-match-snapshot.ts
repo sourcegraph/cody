@@ -1,4 +1,3 @@
-/* eslint-disable no-sync */
 import fs from 'fs'
 import path from 'path'
 
@@ -113,7 +112,6 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const { code, language, captures, parser } = params
 
     const { delimiter, indent } = getCommentDelimiter(language)
-    // eslint-disable-next-line unicorn/prefer-string-replace-all
     const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
     const caretPoint = getCaretPoint(lines, delimiter)
     if (!caretPoint) {

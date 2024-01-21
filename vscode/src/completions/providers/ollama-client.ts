@@ -157,7 +157,6 @@ function browserResponseToAsyncIterable(body: ReadableStream<Uint8Array>): {
     [Symbol.asyncIterator]: () => AsyncGenerator<string, string, unknown>
 } {
     return {
-        // eslint-disable-next-line object-shorthand
         [Symbol.asyncIterator]: async function* () {
             const reader = body.getReader()
             const decoder = new TextDecoder('utf-8')

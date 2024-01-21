@@ -161,7 +161,6 @@ async function getRelevantFiles(
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
     const allUris: vscode.Uri[] = vscode.window.tabGroups.all
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 

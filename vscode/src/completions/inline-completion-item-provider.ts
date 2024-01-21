@@ -310,7 +310,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     setIsLoading,
                     abortSignal: abortController.signal,
                     tracer,
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),

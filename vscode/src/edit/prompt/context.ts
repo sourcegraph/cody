@@ -45,7 +45,6 @@ const getContextFromIntent = async ({
     const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
-    /* eslint-disable no-case-declarations */
     switch (intent) {
         /**
          * Very broad set of possible instructions.

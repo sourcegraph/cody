@@ -236,7 +236,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
         (event: any): void => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
@@ -263,7 +262,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             autofocusTarget.current?.focus()
         }
     }, [isOpen])
@@ -273,7 +271,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         restoreFocusTarget.current?.focus()
     }, [setOpen, restoreFocusTarget])
 

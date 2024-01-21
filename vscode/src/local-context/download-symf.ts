@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as fs from 'fs'
 import fspromises from 'fs/promises'
 import * as os from 'os'

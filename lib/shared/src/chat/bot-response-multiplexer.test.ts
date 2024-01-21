@@ -229,10 +229,7 @@ and a donut
                 },
             })
         })
-
-        // eslint-disable-next-line no-void
         void multiplexer.publish("Tonight's menu: <")
-        // eslint-disable-next-line no-void
         void multiplexer.publish('food>hamburger\ndonuts</food>')
         const turnDone = multiplexer.notifyTurnComplete()
         finishedEating()

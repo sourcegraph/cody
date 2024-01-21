@@ -18,7 +18,6 @@ const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration =
 })
 
 const dummyCodeCompletionsClient: CodeCompletionsClient = {
-    // eslint-disable-next-line @typescript-eslint/require-await
     async *complete() {
         yield { completion: '', stopReason: '' }
     },

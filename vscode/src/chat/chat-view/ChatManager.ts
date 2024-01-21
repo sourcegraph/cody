@@ -227,7 +227,6 @@ export class ChatManager implements vscode.Disposable {
      * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
      */
     private async passthroughVsCodeOpen(...args: unknown[]): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (args[1] && (args[1] as any).viewColumn === vscode.ViewColumn.Beside) {
             // Make vscode.ViewColumn.Beside work as expected from a webview: open it to the side,
             // instead of always opening a new editor to the right.
@@ -235,18 +234,13 @@ export class ChatManager implements vscode.Disposable {
             // If the active editor is undefined, that means the chat panel is the active editor, so
             // we will open the file in the first visible editor instead.
             const textEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             ;(args[1] as any).viewColumn = textEditor ? textEditor.viewColumn : vscode.ViewColumn.Beside
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (args[1] && Array.isArray((args[1] as any).selection)) {
             // Fix a weird issue where the selection was getting encoded as a JSON array, not an
             // object.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             ;(args[1] as any).selection = new vscode.Selection(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 (args[1] as any).selection[0],
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 (args[1] as any).selection[1]
             )
         }

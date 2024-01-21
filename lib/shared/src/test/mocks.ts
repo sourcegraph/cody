@@ -33,7 +33,6 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
     }
 
     public onDidChangeStatus(): { dispose: () => void } {
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         return { dispose() {} }
     }
 

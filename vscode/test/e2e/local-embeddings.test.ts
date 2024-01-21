@@ -20,7 +20,6 @@ const test = helpers.test
     })
     .extend<helpers.WorkspaceDirectory>({
         // Playwright needs empty pattern to specify "no dependencies".
-        // eslint-disable-next-line no-empty-pattern
         workspaceDirectory: async ({}, use) => {
             await withTempDir(async dir => {
                 // Initialize a git repository there
@@ -42,7 +41,6 @@ const test = helpers.test
     })
     .extend<helpers.ExtraWorkspaceSettings>({
         // Playwright needs empty pattern to specify "no dependencies".
-        // eslint-disable-next-line no-empty-pattern
         extraWorkspaceSettings: async ({}, use) => {
             await withTempDir(async dir =>
                 use({
@@ -60,7 +58,6 @@ test.beforeAll(() => {
 
 test.extend<helpers.WorkspaceDirectory>({
     // Playwright needs empty pattern to specify "no dependencies".
-    // eslint-disable-next-line no-empty-pattern
     workspaceDirectory: async ({}, use) => {
         await withTempDir(async dir => {
             // Write some content to the filesystem. But this is not a git repository.

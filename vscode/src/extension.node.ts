@@ -1,6 +1,4 @@
 import * as vscode from 'vscode'
-
-// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CommandsController } from './commands/CommandsController'

@@ -180,8 +180,6 @@ export function getRangeAdjustedForOverlappingCharacters(
 
 export function getMatchingSuffixLength(insertText: string, currentLineSuffix: string): number {
     let j = 0
-
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < insertText.length; i++) {
         if (insertText[i] === currentLineSuffix[j]) {
             j++

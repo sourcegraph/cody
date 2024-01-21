@@ -5,8 +5,6 @@
 import { type FileContextSnippet, type SymbolContextSnippet } from '../completions/types'
 
 import { type Position, type Range } from './agent-protocol'
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {
     'bfg/initialize': [{ clientName: string }, { serverVersion: string }]
     'bfg/contextAtPosition': [
@@ -19,8 +17,6 @@ export type Requests = {
 
     'embeddings/hello': [null, string]
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Notifications = {
     'bfg/placeholderNotification': [null]
 }

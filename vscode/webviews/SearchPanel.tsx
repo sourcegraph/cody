@@ -2,7 +2,6 @@
  * Disabling the following rule is necessary to be consistent with the behavior of the VS Code search
  * panel, which does not support tabbing through list items and requires using the arrow keys.
  */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useEffect, useMemo, useRef } from 'react'
 
 import { debounce } from 'lodash'

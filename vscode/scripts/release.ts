@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { execFileSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -188,7 +187,6 @@ console.error('Done!')
 
 function loadJsonFileSync(filename: string): any {
     const filepath = path.join(process.cwd(), filename)
-    // eslint-disable-next-line no-sync
     const body = fs.readFileSync(filepath, 'utf-8')
     return JSON.parse(body)
 }
@@ -196,6 +194,5 @@ function loadJsonFileSync(filename: string): any {
 function writeJsonFileSync(filename: string, data: any): void {
     const filepath = path.join(process.cwd(), filename)
     const body = JSON.stringify(data, null, 2)
-    // eslint-disable-next-line no-sync
     return fs.writeFileSync(filepath, body, 'utf8')
 }

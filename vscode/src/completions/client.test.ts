@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { Readable } from 'stream'
 
 import { describe, expect, it } from 'vitest'

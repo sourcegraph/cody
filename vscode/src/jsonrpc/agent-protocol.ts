@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
 
 import type { BillingCategory, BillingProduct, ChatMessage, ChatModelProvider, event } from '@sourcegraph/cody-shared'
 import type {

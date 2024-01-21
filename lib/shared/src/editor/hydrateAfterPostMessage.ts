@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'

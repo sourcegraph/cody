@@ -96,7 +96,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                         {
                             displayName: args.name,
                             providers: [
-                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 {
                                     kind: args.kind,
                                     type: args.type,

@@ -138,7 +138,6 @@ class InMemorySecretStorage implements SecretStorage {
         this.storage.set(key, value)
 
         for (const cb of this.callbacks) {
-            // eslint-disable-next-line callback-return
             void cb(key)
         }
 
@@ -159,7 +158,6 @@ class InMemorySecretStorage implements SecretStorage {
         this.storage.delete(key)
 
         for (const cb of this.callbacks) {
-            // eslint-disable-next-line callback-return
             void cb(key)
         }
 

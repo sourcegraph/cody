@@ -35,7 +35,6 @@ export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
         // Playwright needs empty pattern to specify "no dependencies".
-        // eslint-disable-next-line no-empty-pattern
         workspaceDirectory: async ({}, use) => {
             const vscodeRoot = path.resolve(__dirname, '..', '..')
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')

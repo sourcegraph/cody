@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 

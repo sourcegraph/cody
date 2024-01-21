@@ -386,12 +386,9 @@ export class MessageHandler {
             if (
                 msg.method === '$/cancelRequest' &&
                 msg.params &&
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 (typeof msg.params.id === 'string' || typeof msg.params.id === 'number')
             ) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.get(msg.params.id)?.cancel()
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.delete(msg.params.id)
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)

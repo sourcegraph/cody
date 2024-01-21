@@ -1,7 +1,5 @@
 import type { Polly } from '@pollyjs/core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
-// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { startPollyRecording } from '../testutils/polly'

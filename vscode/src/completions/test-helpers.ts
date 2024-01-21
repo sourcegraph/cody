@@ -21,8 +21,6 @@ export function completion(string: TemplateStringsArray, ...values: unknown[]): 
 
     const start = raw.indexOf('├')
     const end = raw.lastIndexOf('┤')
-
-    // eslint-disable-next-line yoda
     if (0 <= start && start <= end) {
         completion = raw.slice(start + 1, end)
     }

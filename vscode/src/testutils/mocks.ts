@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-/* eslint-disable import/no-duplicates */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'fs/promises'
 
@@ -209,8 +206,6 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
@@ -229,7 +224,6 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }

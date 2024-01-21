@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /**
  * A script to create the GitHub release changelog format from the current
  * CHANGELOG.md.
@@ -127,8 +125,6 @@ async function main(): Promise<void> {
                 const { owner, repo, number } = data
 
                 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${number}`
-
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore: Fetch is available in node :shrug:
                 const json = await fetch(apiUrl).then(res => res.json())
                 if (json?.user?.login) {

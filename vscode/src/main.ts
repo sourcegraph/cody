@@ -260,7 +260,6 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)

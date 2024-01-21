@@ -107,8 +107,6 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const onButtonClick = useCallback(
