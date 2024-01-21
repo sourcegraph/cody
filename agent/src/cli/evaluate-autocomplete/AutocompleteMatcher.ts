@@ -140,8 +140,7 @@ export class AutocompleteMatcher {
                         // biome-ignore lint/style/noUselessElse: <explanation>
                     } else {
                         throw new Error(
-                            'Missing @opening_paren and/or @closing_parent captures for node: ' +
-                                capture.node.text
+                            `Missing @opening_paren and/or @closing_parent captures for node: ${capture.node.text}`
                         )
                     }
                 } else if (capture.name === 'assignment_statement') {
@@ -166,7 +165,7 @@ export class AutocompleteMatcher {
                         continue
                         // biome-ignore lint/style/noUselessElse: <explanation>
                     } else {
-                        throw new Error('Missing @equal_sign capture for node: ' + capture.node.text)
+                        throw new Error(`Missing @equal_sign capture for node: ${capture.node.text}`)
                     }
                 }
             }

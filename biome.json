@@ -24,7 +24,6 @@
             },
             "style": {
                 "noNonNullAssertion": "off",
-                "useTemplate": "off",
                 "noParameterAssign": "off",
                 "useDefaultParameterLast": "off"
             },

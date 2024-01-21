@@ -81,7 +81,7 @@ export class IgnoreHelper {
 
                 // Gitignores always use POSIX/forward slashes, even on Windows.
                 const ignoreRule = relativeFolderUriPath.length
-                    ? relativeFolderUriPath + '/' + ignoreLine
+                    ? `${relativeFolderUriPath}/${ignoreLine}`
                     : ignoreLine
                 rules.add((isInverted ? '!' : '') + ignoreRule)
             }

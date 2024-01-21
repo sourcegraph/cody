@@ -16,7 +16,7 @@ export const isErrorLike = (value: unknown): value is ErrorLike =>
  */
 export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null
 
-export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
+export function pluralize(string: string, count: number | bigint, plural = `${string}s`): string {
     return count === 1 || count === 1n ? string : plural
 }
 

@@ -1007,12 +1007,12 @@ export class FixupController
             'vscode.diff',
             tempDocUri,
             task.fixupFile.uri,
-            'Cody Edit Diff View - ' + task.id,
+            `Cody Edit Diff View - ${task.id}`,
             {
                 preview: true,
                 preserveFocus: false,
                 label: 'Cody Edit Diff View',
-                description: 'Cody Edit Diff View: ' + task.fixupFile.uri.fsPath,
+                description: `Cody Edit Diff View: ${task.fixupFile.uri.fsPath}`,
             }
         )
     }

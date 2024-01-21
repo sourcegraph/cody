@@ -227,7 +227,7 @@ export class EditProvider {
         const currentFileUri = this.config.task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
-        const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
+        const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
             posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
 

@@ -186,8 +186,7 @@ export class SectionHistoryRetriever implements ContextRetriever {
                 const isLast = document.sections.at(-1) === section
 
                 lines.push(
-                    `  ${isLast ? '└' : '├'}${isSelected ? '*' : '─'} ` +
-                        (section.fuzzyName ?? 'unknown')
+                    `  ${isLast ? '└' : '├'}${isSelected ? '*' : '─'} ${section.fuzzyName ?? 'unknown'}`
                 )
             }
         })

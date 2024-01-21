@@ -822,7 +822,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
             if (contextLimitWarnings.length > 0) {
                 const warningMsg = contextLimitWarnings
-                    .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
+                    .map(w => (w.trim().endsWith('.') ? w.trim() : `${w.trim()}.`))
                     .join(' ')
                 this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
             }

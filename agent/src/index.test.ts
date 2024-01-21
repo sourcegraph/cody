@@ -282,7 +282,7 @@ export class TestClient extends MessageHandler {
                 progressBars: 'enabled',
             },
             extensionConfiguration: {
-                anonymousUserID: this.name + 'abcde1234',
+                anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
                 serverEndpoint: this.serverEndpoint,
                 customHeaders: {},

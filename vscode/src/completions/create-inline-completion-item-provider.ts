@@ -139,10 +139,11 @@ export async function createInlineCompletionItemProvider({
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
-            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
-                'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. ' +
-                'To further debug this problem, here is the configuration:\n' +
-                JSON.stringify(config, null, 2)
+            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
+                config,
+                null,
+                2
+            )}`
         )
     }
 
