@@ -1,6 +1,12 @@
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
-import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+import type {
+    CompletionCallbacks,
+    CompletionGeneratorValue,
+    CompletionParameters,
+    CompletionResponse,
+    Event,
+} from './types'
 
 export interface CompletionLogger {
     startCompletion(
@@ -62,9 +68,56 @@ export abstract class SourcegraphCompletionsClient {
         }
     }
 
-    public abstract stream(
+    protected abstract _streamWithCallbacks(
         params: CompletionParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void
+
+    public stream(
+        params: CompletionParameters,
+        signal?: AbortSignal
+    ): AsyncGenerator<CompletionGeneratorValue> {
+        // This is a technique to convert a function that takes callbacks to an async generator.
+
+        const values: Promise<CompletionGeneratorValue>[] = []
+        let resolve: ((value: CompletionGeneratorValue) => void) | undefined
+        values.push(
+            new Promise(r => {
+                resolve = r
+            })
+        )
+
+        const send = (value: CompletionGeneratorValue): void => {
+            resolve!(value)
+            values.push(
+                new Promise(r => {
+                    resolve = r
+                })
+            )
+        }
+        const callbacks: CompletionCallbacks = {
+            onChange(text) {
+                send({ type: 'change', text })
+            },
+            onComplete() {
+                send({ type: 'complete' })
+            },
+            onError(error, statusCode) {
+                send({ type: 'error', error, statusCode })
+            },
+        }
+        this._streamWithCallbacks(params, callbacks, signal)
+
+        return (async function* () {
+            for (let i = 0; ; i++) {
+                const val = await values[i]
+                delete values[i]
+                yield val
+                if (val.type === 'complete' || val.type === 'error') {
+                    break
+                }
+            }
+        })()
+    }
 }

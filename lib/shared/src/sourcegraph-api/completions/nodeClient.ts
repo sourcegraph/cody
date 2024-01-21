@@ -15,7 +15,11 @@ import type { CompletionCallbacks, CompletionParameters } from './types'
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks, signal?: AbortSignal): void {
+    protected _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void {
         if (isTemperatureZero) {
             params = {
                 ...params,

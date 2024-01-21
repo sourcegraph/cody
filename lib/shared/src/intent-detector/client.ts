@@ -82,43 +82,39 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         const preamble = this.buildInitialTranscript(options)
         const examples = this.buildExampleTranscript(options)
 
-        const result = await new Promise<string>(resolve => {
-            let responseText = ''
-            completionsClient.stream(
+        let result = ''
+        const stream = completionsClient.stream({
+            fast: true,
+            temperature: 0,
+            maxTokensToSample: ANSWER_TOKENS,
+            topK: -1,
+            topP: -1,
+            messages: [
+                ...preamble,
+                ...examples,
                 {
-                    fast: true,
-                    temperature: 0,
-                    maxTokensToSample: ANSWER_TOKENS,
-                    topK: -1,
-                    topP: -1,
-                    messages: [
-                        ...preamble,
-                        ...examples,
-                        {
-                            speaker: 'human',
-                            text: input,
-                        },
-                        {
-                            speaker: 'assistant',
-                        },
-                    ],
+                    speaker: 'human',
+                    text: input,
                 },
                 {
-                    onChange: (text: string) => {
-                        responseText = text
-                    },
-                    onComplete: () => {
-                        resolve(responseText)
-                    },
-                    onError: (error: Error, statusCode?: number) => {
-                        console.error(
-                            `Error detecting intent: Status code ${statusCode}: ${error.message}`
-                        )
-                        resolve(fallback)
-                    },
-                }
-            )
+                    speaker: 'assistant',
+                },
+            ],
         })
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
+                    result = message.text
+                    break
+                }
+                case 'error': {
+                    console.error(
+                        `Error detecting intent: Status code ${message.statusCode}: ${message.error.message}`
+                    )
+                    return fallback
+                }
+            }
+        }
 
         const responseClassification = result.match(/<classification>(.*?)<\/classification>/)?.[1]
         if (!responseClassification) {
