@@ -50,7 +50,7 @@ export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTree
     }
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory)]
-    chatHistoryEntries.forEach(([id, entry]) => {
+    for (const [id, entry] of chatHistoryEntries) {
         const lastHumanMessage = findLast(
             entry?.interactions,
             message => message.humanMessage.displayText !== undefined
@@ -67,7 +67,7 @@ export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTree
                 },
             })
         }
-    })
+    }
     return chatTreeItems.reverse()
 }
 

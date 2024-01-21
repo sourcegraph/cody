@@ -345,6 +345,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public dispose(): void {
         this.disposePanels()
-        this.disposables.forEach(d => d.dispose())
+        vscode.Disposable.from(...this.disposables).dispose()
     }
 }

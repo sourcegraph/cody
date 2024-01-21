@@ -52,7 +52,7 @@ class IndexManager implements vscode.Disposable {
     }
 
     public dispose(): void {
-        this.disposables.forEach(d => d.dispose())
+        vscode.Disposable.from(...this.disposables).dispose()
     }
 
     /**
@@ -174,20 +174,22 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             })
         )
         // Kick off search index creation for all workspace folders
-        vscode.workspace.workspaceFolders?.forEach(folder => {
-            if (isFileURI(folder.uri)) {
-                void this.symfRunner.ensureIndex(folder.uri, { hard: false })
+        if (vscode.workspace.workspaceFolders) {
+            for (const folder of vscode.workspace.workspaceFolders) {
+                if (isFileURI(folder.uri)) {
+                    void this.symfRunner.ensureIndex(folder.uri, { hard: false })
+                }
             }
-        })
+        }
         this.disposables.push(
             vscode.workspace.onDidChangeWorkspaceFolders(event => {
-                event.added.forEach(folder => {
+                for (const folder of event.added) {
                     if (isFileURI(folder.uri)) {
                         void this.symfRunner.ensureIndex(folder.uri, {
                             hard: false,
                         })
                     }
-                })
+                }
             })
         )
         this.disposables.push(

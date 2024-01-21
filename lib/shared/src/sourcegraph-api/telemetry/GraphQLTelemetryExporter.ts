@@ -169,11 +169,11 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * https://github.com/sourcegraph/sourcegraph/pull/57719
      */
     if (exportMode === '5.2.0-5.2.1') {
-        events.forEach(event => {
+        for (const event of events) {
             if (event.parameters) {
                 event.parameters.privateMetadata = undefined
             }
-        })
+        }
     }
 
     /**
@@ -186,14 +186,16 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * was only added in 5.2.4: https://github.com/sourcegraph/sourcegraph/pull/58539
      */
     if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3') {
-        events.forEach(event => {
+        for (const event of events) {
             if (event.parameters) {
-                event.parameters.metadata?.forEach(entry => {
-                    entry.value = Math.round(entry.value)
-                })
+                if (event.parameters.metadata) {
+                    for (const entry of event.parameters.metadata) {
+                        entry.value = Math.round(entry.value)
+                    }
+                }
                 event.parameters.interactionID = undefined
             }
-        })
+        }
     }
 
     /**
@@ -201,8 +203,8 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * https://github.com/sourcegraph/sourcegraph/pull/58944
      */
     if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3' || exportMode === '5.2.4') {
-        events.forEach(event => {
+        for (const event of events) {
             event.timestamp = undefined
-        })
+        }
     }
 }

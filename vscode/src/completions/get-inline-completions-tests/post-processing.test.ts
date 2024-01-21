@@ -12,7 +12,7 @@ const cases = [true, false]
 
 // Run truncation tests for both strategies: indentation-based and tree-sitter-based.
 // We cannot use `describe.each` here because `toMatchInlineSnapshot` is not supported with it.
-cases.forEach(isTreeSitterEnabled => {
+for (const isTreeSitterEnabled of cases) {
     const label = isTreeSitterEnabled ? 'enabled' : 'disabled'
 
     describe(`[getInlineCompletions] post-processing with tree-sitter ${label}`, () => {
@@ -256,4 +256,4 @@ cases.forEach(isTreeSitterEnabled => {
             })
         }
     })
-})
+}

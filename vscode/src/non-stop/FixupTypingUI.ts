@@ -140,10 +140,9 @@ export class FixupTypingUI {
 
         // Initialize the selectedContextItems with any previous items
         // This is primarily for edit retries, where a user may want to reuse their context
-        initialSelectedContextFiles.forEach(file => {
+        for (const file of initialSelectedContextFiles) {
             selectedContextItems.set(getLabelForContextFile(file), file)
-        })
-
+        }
         // VS Code automatically sorts quick pick items by label.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false

@@ -72,7 +72,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
                 )
                 const eventsWithChildren = [...eventsWithStartTime, ...children]
 
-                sortByHrTime(eventsWithChildren).forEach(eventOrSpan => {
+                for (const eventOrSpan of sortByHrTime(eventsWithChildren)) {
                     if (isFormattedSpan(eventOrSpan)) {
                         this.logSpanTree(eventOrSpan, depth + 1)
                     } else {
@@ -87,7 +87,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
 
                         console.log(`%c${name}%c${attributesString}${textString}`, ...logStyles)
                     }
-                })
+                }
             }
 
             console.groupEnd()
@@ -133,8 +133,8 @@ function sortByHrTime<T extends Pick<ReadableSpan, 'startTime'>>(spans: T[]): T[
 
 function logAttrsGroup(name: string, attrs: Record<string, unknown>): void {
     console.group(name)
-    Object.entries(attrs).forEach(([name, value]) => {
+    for (const [name, value] of Object.entries(attrs)) {
         console.log(`${name}: ${value}`)
-    })
+    }
     console.groupEnd()
 }

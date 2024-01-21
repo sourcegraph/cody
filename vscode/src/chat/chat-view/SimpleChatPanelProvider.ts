@@ -513,7 +513,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose())
+        vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
     }
 

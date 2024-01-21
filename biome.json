@@ -23,8 +23,7 @@
                 "noArrayIndexKey": "off"
             },
             "complexity": {
-                "noBannedTypes": "off",
-                "noForEach": "off"
+                "noBannedTypes": "off"
             },
             "style": {
                 "noNonNullAssertion": "off",
