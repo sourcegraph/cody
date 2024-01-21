@@ -24,8 +24,7 @@
             },
             "style": {
                 "noNonNullAssertion": "off",
-                "noParameterAssign": "off",
-                "useDefaultParameterLast": "off"
+                "noParameterAssign": "off"
             },
             "security": {
                 "noDangerouslySetInnerHtml": "off"

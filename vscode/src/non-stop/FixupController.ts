@@ -197,7 +197,7 @@ export class FixupController
             fixupFile,
             instruction,
             userContextFiles,
-            intent,
+            intent ?? 'edit',
             selectionRange,
             mode,
             source,
