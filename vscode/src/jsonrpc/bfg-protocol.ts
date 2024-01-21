@@ -11,8 +11,11 @@ export type Requests = {
         { uri: string; content: string; position: Position; maxChars: number; contextRange?: Range },
         { symbols?: SymbolContextSnippet[]; files?: FileContextSnippet[] },
     ]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/workspace/didChange': [{ workspaceUri: string }, void]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/shutdown': [null, void]
 
     'embeddings/hello': [null, string]

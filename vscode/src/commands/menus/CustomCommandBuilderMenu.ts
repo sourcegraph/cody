@@ -169,7 +169,7 @@ export class CustomCommandsBuilderMenu {
     }
 }
 
-async function showPromptCreationInputBox(): Promise<string | void> {
+async function showPromptCreationInputBox(): Promise<string | undefined> {
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',

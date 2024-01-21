@@ -31,8 +31,8 @@ import {
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import { isCompletionVisible } from './is-completion-visible'
-import * as CompletionLogger from './logger'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
+import * as CompletionLogger from './logger'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -224,7 +224,7 @@ export class InlineCompletionItemProvider
             )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
-            let stopLoading: () => void | undefined
+            let stopLoading: (() => void) | undefined
             const setIsLoading = (isLoading: boolean): void => {
                 if (isLoading) {
                     // We do not want to show a loading spinner when the user is rate limited to

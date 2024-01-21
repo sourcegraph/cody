@@ -1,4 +1,4 @@
-import { commands, QuickInputButtons, ThemeIcon, window, type QuickPickItem } from 'vscode'
+import { QuickInputButtons, ThemeIcon, commands, window, type QuickPickItem } from 'vscode'
 
 import type { ContextOption } from '.'
 
@@ -127,7 +127,7 @@ export const promptSizeInit = {
 }
 
 // Ask user to confirm before trying to delete the cody.json file
-export async function showRemoveConfirmationInput(): Promise<string | void> {
+export async function showRemoveConfirmationInput(): Promise<'Yes' | 'No' | undefined> {
     const confirmRemove = await window.showWarningMessage(
         'Are you sure you want to remove the .vscode/cody.json file from your file system?',
         { modal: true },

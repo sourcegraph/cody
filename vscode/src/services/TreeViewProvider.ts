@@ -10,7 +10,7 @@ import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } fro
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []
     private _disposables: vscode.Disposable[] = []
-    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
+    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
     private treeItems: CodySidebarTreeItem[]
@@ -101,7 +101,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 this.treeNodes.length
             )
         }
-        this._onDidChangeTreeData.fire()
+        this._onDidChangeTreeData.fire(undefined)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {

@@ -10,7 +10,7 @@ import { trace, type Attributes, type Span } from '@opentelemetry/api'
 export const addAutocompleteDebugEvent = (
     name: string,
     attributes: Record<string, unknown> = {}
-): Span | void => {
+): Span | undefined => {
     if (process.env.NODE_ENV === 'development') {
         const activeSpan = trace.getActiveSpan()
 
@@ -22,4 +22,5 @@ export const addAutocompleteDebugEvent = (
 
         return activeSpan?.addEvent(name, attributes as Attributes)
     }
+    return undefined
 }
