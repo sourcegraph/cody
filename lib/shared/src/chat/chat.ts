@@ -15,7 +15,12 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
 export class ChatClient {
     constructor(private completions: SourcegraphCompletionsClient) {}
 
-    public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
+    public chat(
+        messages: Message[],
+        cb: CompletionCallbacks,
+        params: Partial<ChatParameters>,
+        abortSignal?: AbortSignal
+    ): void {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =
@@ -30,13 +35,14 @@ export class ChatClient {
                 ? messages.concat([{ speaker: 'assistant' }])
                 : messages
 
-        return this.completions.stream(
+        this.completions.stream(
             {
                 ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
                 ...params,
                 messages: augmentedMessages,
             },
-            cb
+            cb,
+            abortSignal
         )
     }
 }

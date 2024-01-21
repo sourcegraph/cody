@@ -1,13 +1,14 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
+import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
 import { SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
-        const abort = new AbortController()
+    public stream(params: CompletionParameters, cb: CompletionCallbacks, signal?: AbortSignal): void {
+        const abort = dependentAbortController(signal)
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
@@ -74,9 +75,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
-        return () => {
-            abort.abort()
-        }
     }
 }
 

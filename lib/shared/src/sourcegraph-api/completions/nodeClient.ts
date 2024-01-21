@@ -1,6 +1,7 @@
 import http from 'http'
 import https from 'https'
 
+import { onAbort } from '../../common/abortController'
 import { logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
@@ -14,7 +15,7 @@ import { type CompletionCallbacks, type CompletionParameters } from './types'
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+    public stream(params: CompletionParameters, cb: CompletionCallbacks, signal?: AbortSignal): void {
         if (isTemperatureZero) {
             params = {
                 ...params,
@@ -172,7 +173,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         request.write(JSON.stringify(params))
         request.end()
 
-        return () => request.destroy()
+        onAbort(signal, () => request.destroy())
     }
 }
 
