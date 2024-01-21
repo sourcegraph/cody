@@ -15,7 +15,9 @@
                 "useImportType": "error",
                 "useGroupedTypeImport": "error",
                 "noUnusedImports": "error",
-                "noUnusedPrivateClassMembers": "error"
+                "noUnusedPrivateClassMembers": "error",
+                "noInvalidUseBeforeDeclaration": "error",
+                "noUselessTernary": "error",
             },
             "suspicious": {
                 "noExplicitAny": "off"
