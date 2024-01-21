@@ -28,9 +28,6 @@
                 "noParameterAssign": "off",
                 "useDefaultParameterLast": "off"
             },
-            "a11y": {
-                "useValidAnchor": "off"
-            },
             "security": {
                 "noDangerouslySetInnerHtml": "off"
             }
