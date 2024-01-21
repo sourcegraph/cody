@@ -1,0 +1,16 @@
+version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: no_shared_imports
+    level: error
+    description: |
+      Please import from @sourcegraph/cody-shared instead of subpaths.
+      If you need to use something that is not exported by @sourcegraph/cody-shared, just update lib/shared/src/index.ts to export the thing you need.
+      Reasons for this restriction: (1) enforce a clean boundary between the internal and external API of the shared lib,
+      (2) avoid accidentally bundling multiple copies of the shared lib.
+    body: |
+      language js
+
+      file($name, $body) where {
+        $body <: contains `import $_ from "@sourcegraph/cody-shared/$_"`
+      }
