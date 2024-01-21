@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
 
-import { displayPath, tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type AutocompleteTimeouts,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+} from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import type { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'

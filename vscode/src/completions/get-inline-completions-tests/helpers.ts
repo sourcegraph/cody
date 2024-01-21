@@ -4,14 +4,15 @@ import { expect } from 'vitest'
 import {
     STOP_REASON_STREAMING_CHUNK,
     testFileUri,
+    type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
+    type CompletionResponseGenerator,
 } from '@sourcegraph/cody-shared'
 
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import type { CodeCompletionsClient, CompletionResponseGenerator } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'

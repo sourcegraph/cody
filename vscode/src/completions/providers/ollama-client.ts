@@ -4,13 +4,14 @@ import {
     isDefined,
     isError,
     isNodeResponse,
+    type CodeCompletionsClient,
     type CompletionLogger,
+    type CompletionResponseGenerator,
     type OllamaGenerateParameters,
     type OllamaOptions,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
-import type { CodeCompletionsClient, CompletionResponseGenerator } from '../client'
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
