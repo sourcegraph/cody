@@ -7,9 +7,6 @@
         "enabled": true,
         "rules": {
             "recommended": true,
-            "correctness": {
-                "noUnnecessaryContinue": "off"
-            },
             "nursery": {
                 "useExportType": "error",
                 "useImportType": "error",

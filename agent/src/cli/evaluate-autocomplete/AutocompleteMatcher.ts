@@ -136,8 +136,6 @@ export class AutocompleteMatcher {
                                 openParenPosition + openParenSyntax.length
                             ),
                         })
-                        continue
-                        // biome-ignore lint/style/noUselessElse: <explanation>
                     } else {
                         throw new Error(
                             `Missing @opening_paren and/or @closing_parent captures for node: ${capture.node.text}`
@@ -162,8 +160,6 @@ export class AutocompleteMatcher {
                             ),
                             requestPosition: document.textDocument.positionAt(startIndex - 1),
                         })
-                        continue
-                        // biome-ignore lint/style/noUselessElse: <explanation>
                     } else {
                         throw new Error(`Missing @equal_sign capture for node: ${capture.node.text}`)
                     }
