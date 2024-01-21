@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type RequestParams } from './request-manager'
+import type { RequestParams } from './request-manager'
 
 /**
  * Handles showing an in-editor decoration when a first completion is accepted.
@@ -48,7 +48,9 @@ export class FirstCompletionDecorationHandler {
 
         // Show the decoration at the position of the completion request. Because we set isWholeLine=true
         // it'll always be shown at the end of this line, regardless of the length of the completion.
-        editor.setDecorations(this.decorationType, [new vscode.Range(request.position, request.position)])
+        editor.setDecorations(this.decorationType, [
+            new vscode.Range(request.position, request.position),
+        ])
 
         // Hide automatically after a time..
         this.hideTimer = setTimeout(

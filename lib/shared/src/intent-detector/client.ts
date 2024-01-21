@@ -1,10 +1,15 @@
 import { ANSWER_TOKENS } from '../prompt/constants'
-import { type Message } from '../sourcegraph-api'
-import { type SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import type { Message } from '../sourcegraph-api'
+import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 
-import { type IntentClassificationOption, type IntentDetector } from '.'
+import type { IntentClassificationOption, IntentDetector } from '.'
 
-const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
+const editorRegexps = [
+    /editor/,
+    /(open|current|this|entire)\s+file/,
+    /current(ly)?\s+open/,
+    /have\s+open/,
+]
 
 export class SourcegraphIntentDetectorClient implements IntentDetector {
     constructor(private completionsClient?: SourcegraphCompletionsClient) {}
@@ -106,7 +111,9 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
                         resolve(responseText)
                     },
                     onError: (error: Error, statusCode?: number) => {
-                        console.error(`Error detecting intent: Status code ${statusCode}: ${error.message}`)
+                        console.error(
+                            `Error detecting intent: Status code ${statusCode}: ${error.message}`
+                        )
                         resolve(fallback)
                     },
                 }

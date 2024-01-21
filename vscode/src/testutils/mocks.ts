@@ -27,7 +27,9 @@ export { Disposable } from './Disposable'
  */
 
 export enum InlineCompletionTriggerKind {
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
 }
 
@@ -206,6 +208,7 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
+// biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
@@ -265,7 +268,10 @@ export class Position implements VSCodePosition {
 
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
-    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
+    public with(
+        arg?: number | { line?: number; character?: number },
+        character?: number
+    ): VSCodePosition {
         const newLine = typeof arg === 'number' ? arg : arg?.line
         const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
         return new Position(newLine ?? this.line, newCharacter ?? this.character)
@@ -484,10 +490,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         const type = stat.isFile()
             ? FileType.File
             : stat.isDirectory()
-            ? FileType.Directory
-            : stat.isSymbolicLink()
-            ? FileType.SymbolicLink
-            : FileType.Unknown
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                  ? FileType.SymbolicLink
+                  : FileType.Unknown
 
         return {
             type,
@@ -503,10 +509,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             const type = entry.isFile()
                 ? FileType.File
                 : entry.isDirectory()
-                ? FileType.Directory
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                      ? FileType.SymbolicLink
+                      : FileType.Unknown
 
             return [entry.name, type]
         })

@@ -1,4 +1,4 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 // This should remain compatible with vscode.Disposable.
 export interface Disposable {
@@ -16,7 +16,10 @@ export interface ContextStatusProvider {
 
 export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider
 
-type EmbeddingsProvider = IndeterminateEmbeddingsProvider | LocalEmbeddingsProvider | RemoteEmbeddingsProvider
+type EmbeddingsProvider =
+    | IndeterminateEmbeddingsProvider
+    | LocalEmbeddingsProvider
+    | RemoteEmbeddingsProvider
 
 interface IndeterminateEmbeddingsProvider {
     kind: 'embeddings'

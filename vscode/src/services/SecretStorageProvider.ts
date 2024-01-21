@@ -55,7 +55,9 @@ export class VSCodeSecretStorage implements SecretStorage {
         // For user that does not have secret storage implemented in their server
         this.fsPath = config.get('experimental.localTokenPath') || null
         if (this.fsPath) {
-            logDebug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', { verbose: this.fsPath })
+            logDebug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', {
+                verbose: this.fsPath,
+            })
         }
     }
 
@@ -181,7 +183,7 @@ async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> 
         const decoded = new TextDecoder('utf-8').decode(fileContent)
         const json = JSON.parse(decoded) as ConfigJson
         if (!json.token) {
-            throw new Error('Failed to retrieve token from: ' + fsPath)
+            throw new Error(`Failed to retrieve token from: ${fsPath}`)
         }
         logDebug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'retrieved')
         return json.token

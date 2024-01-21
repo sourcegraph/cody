@@ -11,9 +11,9 @@ import {
     type SearchPanelSnippet,
 } from '@sourcegraph/cody-shared'
 
-import { type WebviewMessage } from '../chat/protocol'
+import type { WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
-import { type IndexStartEvent, type SymfRunner } from '../local-context/symf'
+import type { IndexStartEvent, SymfRunner } from '../local-context/symf'
 
 const searchDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('searchEditor.findMatchBackground'),
@@ -70,7 +70,9 @@ class IndexManager implements vscode.Disposable {
         if (indexingScopeDirs.length === 0) {
             return
         }
-        void vscode.window.showWarningMessage(`Still indexing: ${indexingScopeDirs.map(displayPath).join(', ')}`)
+        void vscode.window.showWarningMessage(
+            `Still indexing: ${indexingScopeDirs.map(displayPath).join(', ')}`
+        )
     }
 
     public showIndexProgress({ scopeDir, cancel, done }: IndexStartEvent): void {
@@ -159,7 +161,9 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 await this.indexManager.refreshIndex(scopeDirs[0])
             }),
             vscode.commands.registerCommand('cody.search.index-update-all', async () => {
-                const folders = vscode.workspace.workspaceFolders?.map(folder => folder.uri).filter(isFileURI)
+                const folders = vscode.workspace.workspaceFolders
+                    ?.map(folder => folder.uri)
+                    .filter(isFileURI)
                 if (!folders) {
                     void vscode.window.showWarningMessage('Open a workspace folder to index')
                     return
@@ -220,7 +224,9 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         // Register to receive messages from webview
         this.disposables.push(
             webviewView.webview.onDidReceiveMessage(message =>
-                this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
+                this.onDidReceiveMessage(
+                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
+                )
             )
         )
     }
@@ -246,10 +252,14 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                     selection: vscodeRange,
                     preserveFocus: true,
                 })
-                const isWholeFile = vscodeRange.start.line === 0 && vscodeRange.end.line === doc.lineCount - 1
+                const isWholeFile =
+                    vscodeRange.start.line === 0 && vscodeRange.end.line === doc.lineCount - 1
                 if (!isWholeFile) {
                     editor.setDecorations(searchDecorationType, [vscodeRange])
-                    editor.revealRange(vscodeRange, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+                    editor.revealRange(
+                        vscodeRange,
+                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                    )
                 }
                 break
             }
@@ -295,9 +305,13 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                     })
                 } catch (error) {
                     if (error instanceof vscode.CancellationError) {
-                        void vscode.window.showErrorMessage('No search results because indexing was canceled')
+                        void vscode.window.showErrorMessage(
+                            'No search results because indexing was canceled'
+                        )
                     } else {
-                        void vscode.window.showErrorMessage(`Error fetching results for query "${query}": ${error}`)
+                        void vscode.window.showErrorMessage(
+                            `Error fetching results for query "${query}": ${error}`
+                        )
                     }
                 }
             }

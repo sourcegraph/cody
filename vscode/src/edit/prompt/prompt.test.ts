@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { isWindows, testFileUri } from '@sourcegraph/cody-shared'
 
 import { claude } from './claude'
-import { type GetLLMInteractionOptions } from './type'
+import type { GetLLMInteractionOptions } from './type'
 
 describe('Edit Prompts', () => {
     const fixupTask: GetLLMInteractionOptions = {

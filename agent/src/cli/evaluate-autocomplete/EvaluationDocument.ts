@@ -1,14 +1,17 @@
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { type ObjectHeaderItem } from 'csv-writer/src/lib/record'
+import type { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import type * as vscode from 'vscode'
 
-import { type CompletionBookkeepingEvent, type CompletionItemInfo } from '../../../../vscode/src/completions/logger'
+import type {
+    CompletionBookkeepingEvent,
+    CompletionItemInfo,
+} from '../../../../vscode/src/completions/logger'
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
-import { type AutocompleteMatchKind } from './AutocompleteMatcher'
+import type { AutocompleteMatchKind } from './AutocompleteMatcher'
 
 export type EvaluationDocumentParams = Pick<
     EvaluationItem,
@@ -30,7 +33,10 @@ export class EvaluationDocument {
     }
 
     public pushItem(
-        item: Omit<EvaluationItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'>
+        item: Omit<
+            EvaluationItem,
+            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
+        >
     ): void {
         item.rangeStartLine = item.range.start.line
         item.rangeStartCharacter = item.range.start.character
@@ -79,14 +85,18 @@ export class EvaluationDocument {
             out.push(' '.repeat(commentSyntax.length))
             out.push(line.replace('\t', ' '))
             out.push('\n')
-            while (occurrenceIndex < this.items.length && this.items[occurrenceIndex].rangeStartLine === lineNumber) {
+            while (
+                occurrenceIndex < this.items.length &&
+                this.items[occurrenceIndex].rangeStartLine === lineNumber
+            ) {
                 const item = this.items[occurrenceIndex]
                 occurrenceIndex++
                 out.push(commentSyntax)
                 out.push(' '.repeat(item.range.start.character))
                 const length = item.range.isSingleLine
                     ? item.range.end.character - item.range.start.character
-                    : this.textDocument.lineAt(item.range.start.line).text.length - item.range.start.character
+                    : this.textDocument.lineAt(item.range.start.line).text.length -
+                      item.range.start.character
                 if (length < 0) {
                     throw new Error(this.format(item.range, 'negative length occurrence!'))
                 }

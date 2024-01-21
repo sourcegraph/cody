@@ -1,17 +1,21 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatEventSource, type CodyCommand } from '@sourcegraph/cody-shared'
+import {
+    ConfigFeaturesSingleton,
+    type ChatEventSource,
+    type CodyCommand,
+} from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent, type EditMode } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
-import { type VSCodeEditor } from '../editor/vscode-editor'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { type CodyCommandArgs } from '.'
+import type { CodyCommandArgs } from '.'
 import { getContextForCommand } from './utils/get-context'
 
 /**
@@ -165,9 +169,13 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
-        const intent: EditIntent = this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
-        const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
+        const range =
+            this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
+        const intent: EditIntent =
+            this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
+        const instruction = insertMode
+            ? addSelectionToPrompt(this.command.prompt, code)
+            : this.command.prompt
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
 
         const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
@@ -202,7 +210,7 @@ export class CommandRunner implements vscode.Disposable {
  * @returns The updated prompt string with the code snippet added
  */
 function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
+    return `${prompt}\nHere is the code: \n<code>${code}</code>`
 }
 
 /**

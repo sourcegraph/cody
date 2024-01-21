@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import {
     getContextMessageWithResponse,
@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { answers } from '../commands/prompt/templates'
-import { type VSCodeEditor } from '../editor/vscode-editor'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 
 import {
     decodeVSCodeTextDoc,
@@ -69,7 +69,9 @@ export class VSCodeEditorContext {
         try {
             // Get open tabs from the current editor
             const tabGroups = vscode.window.tabGroups.all
-            const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+            const openTabs = tabGroups.flatMap(group =>
+                group.tabs.map(tab => tab.input)
+            ) as vscode.TabInputText[]
 
             for (const tab of openTabs) {
                 // Skip non-file URIs
@@ -166,7 +168,11 @@ export class VSCodeEditorContext {
             const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
             return getContextMessageWithResponse(
-                populateContextTemplateFromText('Codebase context from file path {fileName}: ', truncatedContent, file),
+                populateContextTemplateFromText(
+                    'Codebase context from file path {fileName}: ',
+                    truncatedContent,
+                    file
+                ),
                 {
                     type: 'file',
                     content: decoded,
@@ -293,7 +299,10 @@ export class VSCodeEditorContext {
             const devDependencies = packageJson.devDependencies
             // stringify the scripts object with devDependencies
             const context = JSON.stringify({ scripts, devDependencies })
-            const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(
+                context.toString() || decoded.toString(),
+                MAX_CURRENT_FILE_TOKENS
+            )
             const templateText =
                 'Here are the scripts and devDependencies from the package.json file for the codebase: '
 
@@ -331,13 +340,16 @@ export class VSCodeEditorContext {
 
             const truncatedContent = truncateText(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
 
-            return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileUri), {
-                type: 'file',
-                uri: fileUri,
-                content: truncatedContent,
-                range: importsRange,
-                source: 'editor',
-            })
+            return getContextMessageWithResponse(
+                populateImportListContextTemplate(truncatedContent, fileUri),
+                {
+                    type: 'file',
+                    uri: fileUri,
+                    content: truncatedContent,
+                    range: importsRange,
+                    source: 'editor',
+                }
+            )
         } catch {
             return []
         }

@@ -10,7 +10,9 @@ class TestProvider implements status.ContextStatusProvider {
 
     constructor(private status_: status.ContextGroup[] | undefined = undefined) {}
 
-    public onDidChangeStatus(callback: (provider: status.ContextStatusProvider) => void): vscode.Disposable {
+    public onDidChangeStatus(
+        callback: (provider: status.ContextStatusProvider) => void
+    ): vscode.Disposable {
         return this.emitter.event(callback)
     }
 
@@ -126,7 +128,9 @@ describe('ContextStatusAggregator', () => {
                 resolve(provider.status)
             })
         })
-        provider.status = [{ displayName: 'github.com/foo/bar', providers: [{ kind: 'graph', state: 'indexing' }] }]
+        provider.status = [
+            { displayName: 'github.com/foo/bar', providers: [{ kind: 'graph', state: 'indexing' }] },
+        ]
         provider.emitter.fire(provider)
 
         expect(await promise).toEqual<status.ContextGroup[]>([

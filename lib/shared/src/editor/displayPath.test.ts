@@ -28,14 +28,20 @@ const DISPLAY_PATH_TEST_CASES: {
                 envInfo: { workspaceFolders: [] },
                 cases: [
                     { input: URI.file('/foo/bar.ts'), expected: '/foo/bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
             windows: {
                 envInfo: { workspaceFolders: [] },
                 cases: [
                     { input: windowsFileURI('c:\\foo\\bar.ts'), expected: 'c:\\foo\\bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
         },
@@ -48,15 +54,24 @@ const DISPLAY_PATH_TEST_CASES: {
                 cases: [
                     { input: URI.file('/workspace/foo/bar.ts'), expected: 'foo/bar.ts' },
                     { input: URI.file('/other/foo/bar.ts'), expected: '/other/foo/bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
             windows: {
                 envInfo: { workspaceFolders: [windowsFileURI('c:\\workspace')] },
                 cases: [
                     { input: windowsFileURI('c:\\workspace\\foo\\bar.ts'), expected: 'foo\\bar.ts' },
-                    { input: windowsFileURI('c:\\other\\foo\\bar.ts'), expected: 'c:\\other\\foo\\bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: windowsFileURI('c:\\other\\foo\\bar.ts'),
+                        expected: 'c:\\other\\foo\\bar.ts',
+                    },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
         },
@@ -85,18 +100,36 @@ const DISPLAY_PATH_TEST_CASES: {
                     { input: URI.file('/workspace1/foo/bar.ts'), expected: 'workspace1/foo/bar.ts' },
                     { input: URI.file('/workspace2/foo/bar.ts'), expected: 'workspace2/foo/bar.ts' },
                     { input: URI.file('/other/foo/bar.ts'), expected: '/other/foo/bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
             windows: {
                 envInfo: {
-                    workspaceFolders: [windowsFileURI('c:\\workspace1'), windowsFileURI('c:\\workspace2')],
+                    workspaceFolders: [
+                        windowsFileURI('c:\\workspace1'),
+                        windowsFileURI('c:\\workspace2'),
+                    ],
                 },
                 cases: [
-                    { input: windowsFileURI('c:\\workspace1\\foo\\bar.ts'), expected: 'workspace1\\foo\\bar.ts' },
-                    { input: windowsFileURI('c:\\workspace2\\foo\\bar.ts'), expected: 'workspace2\\foo\\bar.ts' },
-                    { input: windowsFileURI('c:\\other\\foo\\bar.ts'), expected: 'c:\\other\\foo\\bar.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: windowsFileURI('c:\\workspace1\\foo\\bar.ts'),
+                        expected: 'workspace1\\foo\\bar.ts',
+                    },
+                    {
+                        input: windowsFileURI('c:\\workspace2\\foo\\bar.ts'),
+                        expected: 'workspace2\\foo\\bar.ts',
+                    },
+                    {
+                        input: windowsFileURI('c:\\other\\foo\\bar.ts'),
+                        expected: 'c:\\other\\foo\\bar.ts',
+                    },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
         },
@@ -108,7 +141,10 @@ const DISPLAY_PATH_TEST_CASES: {
                 envInfo: { workspaceFolders: [URI.parse('https://example.com/a')] },
                 cases: [
                     { input: URI.parse('https://example.com/a/b/c.ts'), expected: 'b/c.ts' },
-                    { input: URI.parse('https://example.com/foo/bar.ts'), expected: 'https://example.com/foo/bar.ts' },
+                    {
+                        input: URI.parse('https://example.com/foo/bar.ts'),
+                        expected: 'https://example.com/foo/bar.ts',
+                    },
                 ],
             },
         },
@@ -153,7 +189,8 @@ describe('displayPath', () => {
             )
         }
         if (windows) {
-            describe('windows', () => runTestCases({ ...windows.envInfo, isWindows: true }, windows.cases))
+            describe('windows', () =>
+                runTestCases({ ...windows.envInfo, isWindows: true }, windows.cases))
         }
         if (all) {
             describe.skipIf(isWindows())('all nonWindows', () =>
@@ -175,21 +212,32 @@ describe('displayPathDirname', () => {
             if (!isWindows()) {
                 // Skip on Windows because there is still some magic in the URI library for file: URIs
                 // on Windows.
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///foo/bar.ts'), envInfo)).toBe('/foo')
+                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///foo/bar.ts'), envInfo)).toBe(
+                    '/foo'
+                )
             }
-            expect(displayPathDirnameWithEnvInfo(URI.parse('https://example.com/foo/bar.ts'), envInfo)).toBe(
-                'https://example.com/foo'
-            )
+            expect(
+                displayPathDirnameWithEnvInfo(URI.parse('https://example.com/foo/bar.ts'), envInfo)
+            ).toBe('https://example.com/foo')
         })
 
         test('1 workspace folder', () => {
-            const envInfo: DisplayPathEnvInfo = { isWindows: false, workspaceFolders: [URI.parse('file:///workspace')] }
+            const envInfo: DisplayPathEnvInfo = {
+                isWindows: false,
+                workspaceFolders: [URI.parse('file:///workspace')],
+            }
             if (!isWindows()) {
                 // Skip on Windows because there is still some magic in the URI library for file: URIs
                 // on Windows.
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace/foo.ts'), envInfo)).toBe('.')
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace/foo/bar.ts'), envInfo)).toBe('foo')
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///other/foo.ts'), envInfo)).toBe('/other')
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace/foo.ts'), envInfo)
+                ).toBe('.')
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace/foo/bar.ts'), envInfo)
+                ).toBe('foo')
+                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///other/foo.ts'), envInfo)).toBe(
+                    '/other'
+                )
             }
             expect(displayPathDirnameWithEnvInfo(URI.parse('https://example.com/a/b'), envInfo)).toBe(
                 'https://example.com/a'
@@ -204,19 +252,21 @@ describe('displayPathDirname', () => {
             if (!isWindows()) {
                 // Skip on Windows because there is still some magic in the URI library for file: URIs
                 // on Windows.
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace1/foo.ts'), envInfo)).toBe(
-                    'workspace1'
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace1/foo.ts'), envInfo)
+                ).toBe('workspace1')
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace2/foo.ts'), envInfo)
+                ).toBe('workspace2')
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace1/foo/bar.ts'), envInfo)
+                ).toBe('workspace1/foo')
+                expect(
+                    displayPathDirnameWithEnvInfo(URI.parse('file:///workspace2/foo/bar.ts'), envInfo)
+                ).toBe('workspace2/foo')
+                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///other/foo.ts'), envInfo)).toBe(
+                    '/other'
                 )
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace2/foo.ts'), envInfo)).toBe(
-                    'workspace2'
-                )
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace1/foo/bar.ts'), envInfo)).toBe(
-                    'workspace1/foo'
-                )
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///workspace2/foo/bar.ts'), envInfo)).toBe(
-                    'workspace2/foo'
-                )
-                expect(displayPathDirnameWithEnvInfo(URI.parse('file:///other/foo.ts'), envInfo)).toBe('/other')
             }
             expect(displayPathDirnameWithEnvInfo(URI.parse('https://example.com/a/b'), envInfo)).toBe(
                 'https://example.com/a'
@@ -227,14 +277,25 @@ describe('displayPathDirname', () => {
     describe('windows', () => {
         test('no workspace folders', () => {
             const envInfo: DisplayPathEnvInfo = { isWindows: true, workspaceFolders: [] }
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\foo\\bar.ts'), envInfo)).toBe('c:\\foo')
+            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\foo\\bar.ts'), envInfo)).toBe(
+                'c:\\foo'
+            )
         })
 
         test('1 workspace folder', () => {
-            const envInfo: DisplayPathEnvInfo = { isWindows: true, workspaceFolders: [windowsFileURI('c:\\workspace')] }
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace\\foo.ts'), envInfo)).toBe('.')
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace\\foo\\bar.ts'), envInfo)).toBe('foo')
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\other\\foo.ts'), envInfo)).toBe('c:\\other')
+            const envInfo: DisplayPathEnvInfo = {
+                isWindows: true,
+                workspaceFolders: [windowsFileURI('c:\\workspace')],
+            }
+            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace\\foo.ts'), envInfo)).toBe(
+                '.'
+            )
+            expect(
+                displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace\\foo\\bar.ts'), envInfo)
+            ).toBe('foo')
+            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\other\\foo.ts'), envInfo)).toBe(
+                'c:\\other'
+            )
             expect(displayPathDirnameWithEnvInfo(URI.parse('https://example.com/a/b'), envInfo)).toBe(
                 'https://example.com/a'
             )
@@ -245,15 +306,21 @@ describe('displayPathDirname', () => {
                 isWindows: true,
                 workspaceFolders: [windowsFileURI('c:\\workspace1'), windowsFileURI('c:\\workspace2')],
             }
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace1\\foo.ts'), envInfo)).toBe('workspace1')
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace2\\foo.ts'), envInfo)).toBe('workspace2')
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace1\\foo\\bar.ts'), envInfo)).toBe(
-                'workspace1\\foo'
+            expect(
+                displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace1\\foo.ts'), envInfo)
+            ).toBe('workspace1')
+            expect(
+                displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace2\\foo.ts'), envInfo)
+            ).toBe('workspace2')
+            expect(
+                displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace1\\foo\\bar.ts'), envInfo)
+            ).toBe('workspace1\\foo')
+            expect(
+                displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace2\\foo\\bar.ts'), envInfo)
+            ).toBe('workspace2\\foo')
+            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\other\\foo.ts'), envInfo)).toBe(
+                'c:\\other'
             )
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\workspace2\\foo\\bar.ts'), envInfo)).toBe(
-                'workspace2\\foo'
-            )
-            expect(displayPathDirnameWithEnvInfo(windowsFileURI('C:\\other\\foo.ts'), envInfo)).toBe('c:\\other')
             expect(displayPathDirnameWithEnvInfo(URI.parse('https://example.com/a/b'), envInfo)).toBe(
                 'https://example.com/a'
             )
@@ -275,7 +342,9 @@ describe('displayPathBasename', () => {
         if (!isWindows()) {
             // Skip on Windows because there is still some magic in the URI library for file: URIs
             // on Windows.
-            expect(displayPathBasenameWithEnvInfo(URI.parse('file:///foo/bar.ts'), envInfo)).toBe('bar.ts')
+            expect(displayPathBasenameWithEnvInfo(URI.parse('file:///foo/bar.ts'), envInfo)).toBe(
+                'bar.ts'
+            )
         }
         expect(displayPathBasenameWithEnvInfo(URI.parse('https://example.com/a/b'), envInfo)).toBe('b')
     })
@@ -289,22 +358,34 @@ describe('displayPathBasename', () => {
 
 describe('uriHasPrefix', () => {
     test('same url', () =>
-        expect(uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('https://example.com/a/b'), false)).toBe(
-            true
-        ))
+        expect(
+            uriHasPrefix(
+                URI.parse('https://example.com/a/b'),
+                URI.parse('https://example.com/a/b'),
+                false
+            )
+        ).toBe(true))
 
     test('https path prefix', () => {
-        expect(uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('https://example.com/a'), false)).toBe(true)
-        expect(uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('other://example.com/a'), false)).toBe(
-            false
-        )
-        expect(uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('https://example.com/a/'), false)).toBe(
-            true
-        )
-        expect(uriHasPrefix(URI.parse('https://example.com/a'), URI.parse('https://example.com/a/'), false)).toBe(true)
-        expect(uriHasPrefix(URI.parse('https://example.com/a-b'), URI.parse('https://example.com/a'), false)).toBe(
-            false
-        )
+        expect(
+            uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('https://example.com/a'), false)
+        ).toBe(true)
+        expect(
+            uriHasPrefix(URI.parse('https://example.com/a/b'), URI.parse('other://example.com/a'), false)
+        ).toBe(false)
+        expect(
+            uriHasPrefix(
+                URI.parse('https://example.com/a/b'),
+                URI.parse('https://example.com/a/'),
+                false
+            )
+        ).toBe(true)
+        expect(
+            uriHasPrefix(URI.parse('https://example.com/a'), URI.parse('https://example.com/a/'), false)
+        ).toBe(true)
+        expect(
+            uriHasPrefix(URI.parse('https://example.com/a-b'), URI.parse('https://example.com/a'), false)
+        ).toBe(false)
     })
 
     test('file path prefix', () => {

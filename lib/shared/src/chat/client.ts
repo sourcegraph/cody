@@ -1,15 +1,18 @@
-import { type ConfigurationWithAccessToken } from '../configuration'
+import type { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { Transcript } from './transcript'
-import { type ChatMessage } from './transcript/messages'
-
-export {}
+import type { ChatMessage } from './transcript/messages'
 
 type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
+    | 'serverEndpoint'
+    | 'codebase'
+    | 'useContext'
+    | 'accessToken'
+    | 'customHeaders'
+    | 'experimentalLocalSymbols'
 >
 
 interface ClientInit {

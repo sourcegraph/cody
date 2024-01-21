@@ -82,7 +82,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             {
                 tabs,
                 isActive: true,
-                activeTab: this.activeDocumentFilePath ? this.vscodeTab(this.activeDocumentFilePath) : undefined,
+                activeTab: this.activeDocumentFilePath
+                    ? this.vscodeTab(this.activeDocumentFilePath)
+                    : undefined,
                 viewColumn: vscode_shim.ViewColumn.Active,
             },
         ]

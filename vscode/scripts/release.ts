@@ -115,7 +115,9 @@ if (!tokens.vscode || !tokens.openvsx) {
 // The insiders build is the stable version suffixed with "-" and the Unix time.
 //
 // For example: 0.4.4 in package.json -> 0.5.1689391131
-const insidersVersion = semver.inc(packageJSONVersion, 'minor')?.replace(/\.\d+$/, `.${Math.ceil(Date.now() / 1000)}`)
+const insidersVersion = semver
+    .inc(packageJSONVersion, 'minor')
+    ?.replace(/\.\d+$/, `.${Math.ceil(Date.now() / 1000)}`)
 if (!insidersVersion) {
     console.error('Could not increment version for insiders release.')
     process.exit(1)
@@ -194,5 +196,5 @@ function loadJsonFileSync(filename: string): any {
 function writeJsonFileSync(filename: string, data: any): void {
     const filepath = path.join(process.cwd(), filename)
     const body = JSON.stringify(data, null, 2)
-    return fs.writeFileSync(filepath, body, 'utf8')
+    fs.writeFileSync(filepath, body, 'utf8')
 }

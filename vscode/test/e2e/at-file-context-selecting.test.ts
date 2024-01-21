@@ -21,7 +21,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('@')
     await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols...' })
+        chatPanelFrame.getByRole('heading', {
+            name: 'Search for a file to include, or type # to search symbols...',
+        })
     ).toBeVisible()
 
     // No results
@@ -46,7 +48,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
 
     // Symbol empty state
     await chatInput.fill('@#')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })).toBeVisible()
+    await expect(
+        chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })
+    ).toBeVisible()
 
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
@@ -81,7 +85,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('ArrowDown') // second item again
     await chatInput.press('Enter')
     await expect(chatInput).toHaveValue(
-        withPlatformSlashes('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go ')
+        withPlatformSlashes(
+            'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '
+        )
     )
 
     // Send the message and check it was included
@@ -89,7 +95,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await expect(chatInput).toBeEmpty()
     await expect(
         chatPanelFrame.getByText(
-            withPlatformSlashes('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go')
+            withPlatformSlashes(
+                'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go'
+            )
         )
     ).toBeVisible()
 

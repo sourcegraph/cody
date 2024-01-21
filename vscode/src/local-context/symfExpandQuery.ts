@@ -4,7 +4,7 @@ import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 
 export function symfExpandQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: string,
+    query: string
 ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const streamingText: string[] = []
@@ -63,7 +63,7 @@ export function symfExpandQuery(
                 onError(error) {
                     reject(error)
                 },
-            },
+            }
         )
     })
 }

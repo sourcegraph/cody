@@ -59,7 +59,10 @@ export class IgnoreHelper {
             // Compute the relative path from the workspace root to the folder this ignore
             // file applies to.
             const effectiveDir = ignoreFileEffectiveDirectory(ignoreFile.uri)
-            const relativeFolderUriPath = posixAndURIPaths.relative(workspaceRoot.path, effectiveDir.path)
+            const relativeFolderUriPath = posixAndURIPaths.relative(
+                workspaceRoot.path,
+                effectiveDir.path
+            )
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
@@ -77,7 +80,9 @@ export class IgnoreHelper {
                 }
 
                 // Gitignores always use POSIX/forward slashes, even on Windows.
-                const ignoreRule = relativeFolderUriPath.length ? relativeFolderUriPath + '/' + ignoreLine : ignoreLine
+                const ignoreRule = relativeFolderUriPath.length
+                    ? relativeFolderUriPath + '/' + ignoreLine
+                    : ignoreLine
                 rules.add((isInverted ? '!' : '') + ignoreRule)
             }
         }

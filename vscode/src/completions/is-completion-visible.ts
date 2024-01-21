@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 
-import { type DocumentContext } from './get-current-doc-context'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { DocumentContext } from './get-current-doc-context'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 export function isCompletionVisible(
     completion: InlineCompletionItemWithAnalytics,

@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 export const AskCodyIcon: React.FC<{ iconColor?: string }> = ({ iconColor = '#A112FF' }) => (
     <div style={{ padding: '0 3px' }}>

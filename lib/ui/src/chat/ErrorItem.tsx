@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import { ContextWindowLimitError, RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
 
-import { type ApiPostMessage, type ChatButtonProps, type UserAccountInfo } from '../Chat'
+import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 
@@ -57,7 +57,11 @@ const ContextWindowLimitErrorItem: React.FunctionComponent<{
     error: ContextWindowLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     postMessage: ApiPostMessage
-}> = React.memo(function ContextWindowLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function ContextWindowLimitErrorItemContent({
+    error,
+    ChatButtonComponent,
+    postMessage,
+}) {
     const onClick = useCallback(() => {
         postMessage({ command: 'reset' })
     }, [postMessage])
@@ -74,7 +78,12 @@ const ContextWindowLimitErrorItem: React.FunctionComponent<{
                 </header>
                 {ChatButtonComponent && (
                     <div className={styles.actions}>
-                        <ChatButtonComponent label="Start New Chat" action="" appearance="primary" onClick={onClick} />
+                        <ChatButtonComponent
+                            label="Start New Chat"
+                            action=""
+                            appearance="primary"
+                            onClick={onClick}
+                        />
                     </div>
                 )}
             </div>
@@ -90,7 +99,12 @@ const RateLimitErrorItem: React.FunctionComponent<{
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo: UserAccountInfo
     postMessage: ApiPostMessage
-}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+}> = React.memo(function RateLimitErrorItemContent({
+    error,
+    ChatButtonComponent,
+    userInfo,
+    postMessage,
+}) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
     const isEnterpriseUser = userInfo.isDotComUser !== true
@@ -98,6 +112,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 
     // Only log once on mount
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
     React.useEffect(() => {
         // Log as abuseUsageLimit if pro user run into rate limit
         postMessage({

@@ -1,14 +1,14 @@
 import { Range, type Position, type TextDocument } from 'vscode'
-import { type Tree } from 'web-tree-sitter'
+import type { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { type DocumentContext } from '../get-current-doc-context'
-import { type ItemPostProcessingInfo } from '../logger'
-import { type InlineCompletionItem } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { ItemPostProcessingInfo } from '../logger'
+import type { InlineCompletionItem } from '../types'
 
 import { dropParserFields, type ParsedCompletion } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
@@ -60,7 +60,10 @@ interface ProcessItemParams {
     docContext: DocumentContext
 }
 
-export function processCompletion(completion: ParsedCompletion, params: ProcessItemParams): ParsedCompletion {
+export function processCompletion(
+    completion: ParsedCompletion,
+    params: ProcessItemParams
+): ParsedCompletion {
     const { document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
@@ -77,7 +80,10 @@ export function processCompletion(completion: ParsedCompletion, params: ProcessI
         return completion
     }
 
-    completion.range = getRangeAdjustedForOverlappingCharacters(completion, { position, currentLineSuffix })
+    completion.range = getRangeAdjustedForOverlappingCharacters(completion, {
+        position,
+        currentLineSuffix,
+    })
 
     // Use the parse tree WITHOUT the pasted completion to get surrounding node types.
     // Helpful to optimize the completion AST triggers for higher CAR.
@@ -121,7 +127,9 @@ interface GetNodeTypesInfoParams {
     multilineTriggerPosition: Position | null
 }
 
-function getNodeTypesInfo(params: GetNodeTypesInfoParams): InlineCompletionItemWithAnalytics['nodeTypes'] | undefined {
+function getNodeTypesInfo(
+    params: GetNodeTypesInfoParams
+): InlineCompletionItemWithAnalytics['nodeTypes'] | undefined {
     const { position, parseTree, multilineTriggerPosition } = params
 
     const positionBeforeCursor = asPoint({

@@ -1,8 +1,8 @@
-import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
-import { type LogEventMode, type SourcegraphGraphQLAPIClient } from '../graphql/client'
+import type { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
@@ -43,7 +43,11 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
-                logError('GraphQLTelemetryExporter', 'telemetry: failed to evaluate server version:', siteVersion)
+                logError(
+                    'GraphQLTelemetryExporter',
+                    'telemetry: failed to evaluate server version:',
+                    siteVersion
+                )
                 return // we can try again later
             }
 
@@ -104,6 +108,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                             url: event.marketingTracking?.url || '',
                             publicArgument: () =>
                                 event.parameters.metadata?.reduce((acc, curr) => ({
+                                    // biome-ignore lint/performance/noAccumulatingSpread: TODO(sqs): this is a legit perf issue
                                     ...acc,
                                     [curr.key]: curr.value,
                                 })),

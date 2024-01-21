@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { type Editor } from '@sourcegraph/cody-shared'
+import type { Editor } from '@sourcegraph/cody-shared'
 
-import { type ContextItem } from './SimpleChatModel'
+import type { ContextItem } from './SimpleChatModel'
 import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 
 import '../../testutils/vscode'

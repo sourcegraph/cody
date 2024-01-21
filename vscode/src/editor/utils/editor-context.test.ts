@@ -13,11 +13,17 @@ afterEach(() => {
 
 describe('getFileContextFiles', () => {
     function setFiles(relativePaths: string[]) {
-        vscode.workspace.findFiles = vi.fn().mockResolvedValueOnce(relativePaths.map(f => testFileUri(f)))
+        vscode.workspace.findFiles = vi
+            .fn()
+            .mockResolvedValueOnce(relativePaths.map(f => testFileUri(f)))
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
-        const results = await getFileContextFiles(query, maxResults, new vscode.CancellationTokenSource().token)
+        const results = await getFileContextFiles(
+            query,
+            maxResults,
+            new vscode.CancellationTokenSource().token
+        )
 
         return results.map(f => uriBasename(f.uri))
     }
@@ -63,7 +69,9 @@ describe('getFileContextFiles', () => {
 
     it('filters out ignored files', async () => {
         ignores.setActiveState(true)
-        ignores.setIgnoreFiles(testFileUri(''), [{ uri: testFileUri('.cody/ignore'), content: '*.ignore' }])
+        ignores.setIgnoreFiles(testFileUri(''), [
+            { uri: testFileUri('.cody/ignore'), content: '*.ignore' },
+        ])
         setFiles(['foo.txt', 'foo.ignore'])
 
         // Match the .txt but not the .ignore

@@ -1,7 +1,7 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { type ContextFile } from '../codebase-context/messages'
-import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import type { ContextFile } from '../codebase-context/messages'
+import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 export type ContextResult = ContextFile & {
     repoName?: string

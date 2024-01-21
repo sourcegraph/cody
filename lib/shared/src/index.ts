@@ -50,7 +50,11 @@ export type {
 export { defaultCodyCommandContext } from './commands'
 export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { ProgrammingLanguage, languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './common/languages'
+export {
+    ProgrammingLanguage,
+    languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+} from './common/languages'
 export { renderMarkdown } from './common/markdown'
 export { posixAndURIPaths } from './common/path'
 export { isWindows } from './common/platform'
@@ -94,7 +98,11 @@ export {
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
 export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
-export { FeatureFlag, FeatureFlagProvider, featureFlagProvider } from './experimentation/FeatureFlagProvider'
+export {
+    FeatureFlag,
+    FeatureFlagProvider,
+    featureFlagProvider,
+} from './experimentation/FeatureFlagProvider'
 export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
@@ -127,7 +135,11 @@ export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type { CompletionLogger, CompletionsClientConfig } from './sourcegraph-api/completions/client'
-export type { CompletionParameters, CompletionResponse, Event } from './sourcegraph-api/completions/types'
+export type {
+    CompletionParameters,
+    CompletionResponse,
+    Event,
+} from './sourcegraph-api/completions/types'
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
@@ -141,7 +153,11 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export { SourcegraphGraphQLAPIClient, graphqlClient, type EmbeddingsSearchResults } from './sourcegraph-api/graphql'
+export {
+    SourcegraphGraphQLAPIClient,
+    graphqlClient,
+    type EmbeddingsSearchResults,
+} from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
@@ -152,7 +168,11 @@ export {
     type GraphQLAPIClientConfig,
     type LogEventMode,
 } from './sourcegraph-api/graphql/client'
-export type { CodyLLMSiteConfiguration, EmbeddingsSearchResult, event } from './sourcegraph-api/graphql/client'
+export type {
+    CodyLLMSiteConfiguration,
+    EmbeddingsSearchResult,
+    event,
+} from './sourcegraph-api/graphql/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 export { NOOP_TELEMETRY_SERVICE } from './telemetry'
 export type { TelemetryEventProperties, TelemetryService } from './telemetry'

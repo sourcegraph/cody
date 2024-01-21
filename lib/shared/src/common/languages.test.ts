@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { languageFromFilename as _languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './languages'
+import {
+    languageFromFilename as _languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+} from './languages'
 
 describe('languageFromFilename', () => {
     function languageFromFilename(name: string): ReturnType<typeof _languageFromFilename> {

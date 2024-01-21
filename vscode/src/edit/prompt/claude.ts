@@ -1,7 +1,7 @@
 import { displayPath } from '@sourcegraph/cody-shared'
 
 import { PROMPT_TOPICS } from './constants'
-import { type EditLLMInteraction } from './type'
+import type { EditLLMInteraction } from './type'
 
 const EDIT_PROMPT = `
 - You are an AI programming assistant who is an expert in updating code to meet given instructions.
@@ -132,7 +132,10 @@ export const claude: EditLLMInteraction = {
 
         return {
             ...SHARED_PARAMETERS,
-            prompt: ADD_PROMPT.replace('{instruction}', instruction).replace('{filePath}', displayPath(uri)),
+            prompt: ADD_PROMPT.replace('{instruction}', instruction).replace(
+                '{filePath}',
+                displayPath(uri)
+            ),
             assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
         }
     },

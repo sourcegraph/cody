@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getContextRange } from '../../../doc-context-getters'
-import { type ContextRetriever, type ContextRetrieverOptions } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
 import { VSCodeDocumentHistory, type DocumentHistory } from '../jaccard-similarity/history'
 
@@ -56,7 +56,12 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                 continue
             }
             const lines = contents.split('\n')
-            const fileMatches = bestJaccardMatches(targetText, contents, this.snippetWindowSize, this.maxMatchesPerFile)
+            const fileMatches = bestJaccardMatches(
+                targetText,
+                contents,
+                this.snippetWindowSize,
+                this.maxMatchesPerFile
+            )
 
             // Ignore matches with 0 overlap to our source file
             const relatedMatches = fileMatches.filter(match => match.score > 0)
@@ -249,7 +254,11 @@ function startOrEndOverlapsLineRange(
     )
 }
 
-function mergeOverlappingMatches(uri: vscode.Uri, lines: string[], matches: JaccardMatch[]): JaccardMatch[] {
+function mergeOverlappingMatches(
+    uri: vscode.Uri,
+    lines: string[],
+    matches: JaccardMatch[]
+): JaccardMatch[] {
     if (matches.length <= 1) {
         return matches
     }

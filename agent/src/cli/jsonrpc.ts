@@ -1,4 +1,4 @@
-import { type EXPIRY_STRATEGY, type MODE, type Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 

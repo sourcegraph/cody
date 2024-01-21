@@ -41,7 +41,10 @@ export class AuthProvider {
     private listeners: Set<Listener> = new Set()
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        private config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders'
+        >
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -403,7 +406,10 @@ export class AuthProvider {
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
-    private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
+    private async storeAuthInfo(
+        endpoint: string | null | undefined,
+        token: string | null | undefined
+    ): Promise<void> {
         if (!endpoint) {
             return
         }
@@ -455,7 +461,10 @@ function formatURL(uri: string): string | null {
     return null
 }
 
-async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
+async function showAuthResultMessage(
+    endpoint: string,
+    authStatus: AuthStatus | undefined
+): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)

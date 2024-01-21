@@ -5,8 +5,10 @@ import { describe, it } from 'vitest'
 import { BotResponseMultiplexer, type BotResponseSubscriber } from './bot-response-multiplexer'
 
 function promise<T>(): [(value: T) => void, Promise<T>] {
-    let resolver
-    const promise = new Promise<T>(resolve => (resolver = resolve))
+    let resolver: any
+    const promise = new Promise<T>(resolve => {
+        resolver = resolve
+    })
     if (!resolver) {
         throw new Error('unreachable')
     }

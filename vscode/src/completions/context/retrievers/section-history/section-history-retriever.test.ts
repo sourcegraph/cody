@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vitest, type Mock } from 'vitest'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { testFileUri } from '@sourcegraph/cody-shared'
 
@@ -56,11 +56,17 @@ describe('GraphSectionObserver', () => {
         const getContextRangeSpy = vitest.spyOn(docContextGetters, 'getContextRange')
         getContextRangeSpy.mockImplementation(() => range(0, 0, 20, 0))
 
-        visibleTextEditors = vitest.fn().mockImplementation(() => [{ document: testDocuments.document1 }])
-        getDocumentSections = vitest.fn().mockImplementation((document: typeof testDocuments.document1) => {
-            const doc = Object.values(testDocuments).find(doc => doc.uri.toString() === document.uri.toString())
-            return doc?.sections ?? []
-        })
+        visibleTextEditors = vitest
+            .fn()
+            .mockImplementation(() => [{ document: testDocuments.document1 }])
+        getDocumentSections = vitest
+            .fn()
+            .mockImplementation((document: typeof testDocuments.document1) => {
+                const doc = Object.values(testDocuments).find(
+                    doc => doc.uri.toString() === document.uri.toString()
+                )
+                return doc?.sections ?? []
+            })
 
         sectionObserver = SectionHistoryRetriever.createInstance(
             {

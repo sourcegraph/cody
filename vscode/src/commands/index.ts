@@ -1,6 +1,6 @@
 import * as uuid from 'uuid'
 
-import { type ChatEventSource, type CodyCommand } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, CodyCommand } from '@sourcegraph/cody-shared'
 
 import * as defaultCommands from './prompt/cody.json'
 import { toSlashCommand } from './prompt/utils'

@@ -12,13 +12,13 @@ import {
     type Message,
 } from '@sourcegraph/cody-shared'
 
-import { type VSCodeEditor } from '../../editor/vscode-editor'
-import { type FixupTask } from '../../non-stop/FixupTask'
-import { type EditIntent } from '../types'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { FixupTask } from '../../non-stop/FixupTask'
+import type { EditIntent } from '../types'
 
 import { claude } from './claude'
 import { getContext } from './context'
-import { type EditLLMInteraction, type GetLLMInteractionOptions, type LLMInteraction } from './type'
+import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
 
@@ -83,17 +83,14 @@ export const buildInteraction = async ({
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
 
-    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } = getInteractionArgsFromIntent(
-        task.intent,
-        model,
-        {
+    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
+        getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
             followingText,
             precedingText,
             selectedText,
             instruction: task.instruction,
-        }
-    )
+        })
 
     const transcript = new Transcript()
     const interaction = new Interaction(

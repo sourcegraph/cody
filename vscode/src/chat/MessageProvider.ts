@@ -1,9 +1,9 @@
-import { type ChatClient, type Guardrails, type IntentDetector } from '@sourcegraph/cody-shared'
+import type { ChatClient, Guardrails, IntentDetector } from '@sourcegraph/cody-shared'
 
-import { type VSCodeEditor } from '../editor/vscode-editor'
-import { type AuthProvider } from '../services/AuthProvider'
+import type { VSCodeEditor } from '../editor/vscode-editor'
+import type { AuthProvider } from '../services/AuthProvider'
 
-import { type ContextProvider } from './ContextProvider'
+import type { ContextProvider } from './ContextProvider'
 
 /**
  * The types of errors that should be handled from MessageProvider.

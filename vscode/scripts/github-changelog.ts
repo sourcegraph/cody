@@ -41,7 +41,10 @@ interface Change {
 // some other content...
 //
 // Extract a list of changes and the previous version number
-function extractSection(changelog: string, version: string): { changes: Change[]; previousVersion: string } {
+function extractSection(
+    changelog: string,
+    version: string
+): { changes: Change[]; previousVersion: string } {
     let previousVersion = ''
 
     const lines = changelog.split('\n')
@@ -82,8 +85,13 @@ function extractSection(changelog: string, version: string): { changes: Change[]
     return { changes, previousVersion }
 }
 
-function extractRepoAndNumberFromLink(link: string): { owner: string; repo: string; number: string } | undefined {
-    const matches = /https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/]+)\/(pull|issues)\/(?<number>\d+)/.exec(link)
+function extractRepoAndNumberFromLink(
+    link: string
+): { owner: string; repo: string; number: string } | undefined {
+    const matches =
+        /https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/]+)\/(pull|issues)\/(?<number>\d+)/.exec(
+            link
+        )
     if (!matches?.groups) {
         throw new Error(`Malformed link: ${link}`)
     }
@@ -115,7 +123,7 @@ async function main(): Promise<void> {
         ## v${currentVersion} Changes
     `
 
-    output += intro + '\n\n'
+    output += `${intro}\n\n`
 
     for (const change of changes) {
         let author: string | undefined
@@ -133,13 +141,15 @@ async function main(): Promise<void> {
             }
         }
 
-        output += `- ${change.text}${author ? ` by @${author}` : ''}${change.link ? ` in ${change.link}` : ''}\n`
+        output += `- ${change.text}${author ? ` by @${author}` : ''}${
+            change.link ? ` in ${change.link}` : ''
+        }\n`
     }
 
     const outro = dedent`
       **Full Changelog**: https://github.com/sourcegraph/cody/compare/vscode-v${previousVersion}...vscode-v${currentVersion}
     `
-    output += '\n' + outro + '\n'
+    output += `\n${outro}\n`
 
     await fs.promises.writeFile(path.join(__dirname, '../GITHUB_CHANGELOG.md'), output)
 }

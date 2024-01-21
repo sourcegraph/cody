@@ -1,4 +1,4 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { isWindows as _isWindows } from './platform'
 

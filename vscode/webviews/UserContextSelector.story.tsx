@@ -1,4 +1,4 @@
-import { type Meta, type StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
@@ -45,7 +45,7 @@ export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = 
     args: {
         // Long enough to test text-overflow
         contextSelection: Array.from(new Array(20).keys()).map(i => ({
-            uri: URI.file(`${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py`),
+            uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
             type: 'file',
         })),
         selected: 0,
@@ -64,7 +64,12 @@ export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorCo
 export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [
-            { symbolName: 'LoginDialog', type: 'symbol', kind: 'class', uri: URI.file('/lib/src/LoginDialog.tsx') },
+            {
+                symbolName: 'LoginDialog',
+                type: 'symbol',
+                kind: 'class',
+                uri: URI.file('/lib/src/LoginDialog.tsx'),
+            },
             {
                 symbolName: 'login',
                 type: 'symbol',

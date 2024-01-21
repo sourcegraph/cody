@@ -1,9 +1,9 @@
-import { type ConfigurationWithAccessToken } from '../configuration'
+import type { ConfigurationWithAccessToken } from '../configuration'
 import { logError } from '../logger'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
-import { type TelemetryEventProperties } from '.'
+import type { TelemetryEventProperties } from '.'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -26,9 +26,13 @@ export class EventLogger {
         private config: ConfigurationWithAccessToken
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
-        this.setSiteIdentification().catch(error => logError('EventLogger', 'setSiteIdentification', error))
+        this.setSiteIdentification().catch(error =>
+            logError('EventLogger', 'setSiteIdentification', error)
+        )
         if (this.extensionDetails.ideExtensionType !== 'Cody') {
-            throw new Error(`new extension type ${this.extensionDetails.ideExtensionType} not yet accounted for`)
+            throw new Error(
+                `new extension type ${this.extensionDetails.ideExtensionType} not yet accounted for`
+            )
         }
 
         switch (this.extensionDetails.ide) {

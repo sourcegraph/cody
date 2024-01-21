@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
-import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
 import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
@@ -26,7 +26,11 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
     public identifier = 'jaccard-similarity'
     private history = new VSCodeDocumentHistory()
 
-    public async retrieve({ document, docContext, abortSignal }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+    public async retrieve({
+        document,
+        docContext,
+        abortSignal,
+    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
         const targetText = lastNLines(docContext.prefix, SNIPPET_WINDOW_SIZE)
         const files = await getRelevantFiles(document, this.history)
 

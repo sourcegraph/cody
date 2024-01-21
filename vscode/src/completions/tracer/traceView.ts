@@ -7,17 +7,19 @@ import {
     SectionHistoryRetriever,
 } from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
-import { type InlineCompletionItemProvider } from '../inline-completion-item-provider'
+import type { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
-import { type InlineCompletionItem } from '../types'
+import type { InlineCompletionItem } from '../types'
 
-import { type ProvideInlineCompletionsItemTraceData } from '.'
+import type { ProvideInlineCompletionsItemTraceData } from '.'
 
 /**
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used
  * for autocomplete.
  */
-export function registerAutocompleteTraceView(provider: InlineCompletionItemProvider): vscode.Disposable {
+export function registerAutocompleteTraceView(
+    provider: InlineCompletionItemProvider
+): vscode.Disposable {
     let panel: vscode.WebviewPanel | null = null
     let latestInvocationSequence = 0
 
@@ -100,7 +102,10 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - triggerKind: ${data.params.triggerKind}
 - selectedCompletionInfo: ${
                 data.params.selectedCompletionInfo
-                    ? selectedCompletionInfoDescription(data.params.selectedCompletionInfo, data.params.document)
+                    ? selectedCompletionInfoDescription(
+                          data.params.selectedCompletionInfo,
+                          data.params.document
+                      )
                     : 'none'
             }
 `,
@@ -151,15 +156,18 @@ ${codeDetailsWithSummary('Params', JSON.stringify(data.completionProviderCallPar
 ${
     data.completionProviderCallResult
         ? [
-              codeDetailsWithSummary('Result', JSON.stringify(data.completionProviderCallResult.completions, null, 2)),
+              codeDetailsWithSummary(
+                  'Result',
+                  JSON.stringify(data.completionProviderCallResult.completions, null, 2)
+              ),
               data.completionProviderCallResult.debugMessage
                   ? codeDetailsWithSummary(
-                        'Timing',
-                        data.completionProviderCallResult.debugMessage,
-                        undefined,
-                        undefined,
-                        true
-                    )
+                          'Timing',
+                          data.completionProviderCallResult.debugMessage,
+                          undefined,
+                          undefined,
+                          true
+                      )
                   : null,
           ]
               .filter(isDefined)
@@ -174,7 +182,10 @@ ${
 ## Completions
 
 ${(data.result
-    ? [`- source: ${InlineCompletionsResultSource[data.result.source]}`, `- logId: \`${data.result.logId}\``]
+    ? [
+          `- source: ${InlineCompletionsResultSource[data.result.source]}`,
+          `- logId: \`${data.result.logId}\``,
+      ]
     : []
 ).join('\n')}
 
@@ -182,10 +193,10 @@ ${
     data.result === null
         ? '`null`'
         : data.result.items.length === 0
-        ? 'Empty completions.'
-        : data.result.items
-              .map(item => inlineCompletionItemDescription(item, data.params?.document))
-              .join('\n\n---\n\n')
+          ? 'Empty completions.'
+          : data.result.items
+                  .map(item => inlineCompletionItemDescription(item, data.params?.document))
+                  .join('\n\n---\n\n')
 }`,
 
         data?.error &&
@@ -238,7 +249,11 @@ function codeDetailsWithSummary(
     open = false
 ): string {
     const excerpt =
-        anchor === 'start' ? value.slice(0, excerptLength) : anchor === 'end' ? value.slice(-excerptLength) : null
+        anchor === 'start'
+            ? value.slice(0, excerptLength)
+            : anchor === 'end'
+              ? value.slice(-excerptLength)
+              : null
     const excerptMarkdown =
         excerpt === null
             ? ''
@@ -273,10 +288,9 @@ function selectedCompletionInfoDescription(
     { range, text }: NonNullable<vscode.InlineCompletionContext['selectedCompletionInfo']>,
     document: vscode.TextDocument
 ): string {
-    return `${markdownInlineCode(withVisibleWhitespace(text))}, replacing ${rangeDescriptionWithCurrentText(
-        range,
-        document
-    )}`
+    return `${markdownInlineCode(
+        withVisibleWhitespace(text)
+    )}, replacing ${rangeDescriptionWithCurrentText(range, document)}`
 }
 
 function inlineCompletionItemDescription(
@@ -305,7 +319,9 @@ function rangeDescription(range: vscode.Range): string {
     return `${range.start.line + 1}:${range.start.character + 1}${
         range.isEmpty
             ? ''
-            : `-${range.end.line === range.start.line ? '' : `${range.end.line + 1}:`}${range.end.character + 1}`
+            : `-${range.end.line === range.start.line ? '' : `${range.end.line + 1}:`}${
+                  range.end.character + 1
+              }`
     }`
 }
 
@@ -314,8 +330,8 @@ function rangeDescriptionWithCurrentText(range: vscode.Range, document?: vscode.
         range.isEmpty
             ? 'empty'
             : document
-            ? markdownInlineCode(withVisibleWhitespace(document.getText(range)))
-            : 'unknown replacement text'
+              ? markdownInlineCode(withVisibleWhitespace(document.getText(range)))
+              : 'unknown replacement text'
     })`
 }
 

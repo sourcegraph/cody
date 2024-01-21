@@ -44,13 +44,19 @@ describe('convertFileUriToTestFileUri', () => {
 
     it('should generate a test file uri from a non-test file uri', () => {
         expect(
-            convertFileUriToTestFileUri(URI.file('/path/to/file.ts'), URI.file('/path/to/testFile.ts')).toString()
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.ts'),
+                URI.file('/path/to/testFile.ts')
+            ).toString()
         ).toBe(URI.file('/path/to/file.test.ts').toString())
     })
 
     it('should generate the default spec file uri from a non-test file uri for ruby', () => {
         expect(
-            convertFileUriToTestFileUri(URI.file('/path/to/file.rb'), URI.file('/path/to/testFile.ts')).toString()
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.rb'),
+                URI.file('/path/to/testFile.ts')
+            ).toString()
         ).toBe(URI.file('/path/to/file_spec.rb').toString())
     })
 
@@ -83,7 +89,10 @@ describe('convertFileUriToTestFileUri', () => {
 
     it('should generate a test file uri for a non-test file uri in python', () => {
         expect(
-            convertFileUriToTestFileUri(URI.file('/path/to/file.py'), URI.file('/path/to/testFile_test.py')).toString()
+            convertFileUriToTestFileUri(
+                URI.file('/path/to/file.py'),
+                URI.file('/path/to/testFile_test.py')
+            ).toString()
         ).toBe(URI.file('/path/to/file_test.py').toString())
     })
 

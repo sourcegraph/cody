@@ -35,7 +35,7 @@ const CURSOR_MARKER = '█'
 
 export function document(
     text: string,
-    languageId: string = 'typescript',
+    languageId = 'typescript',
     uriString = testFileUri('test.ts').toString()
 ): VSCodeTextDocument {
     return wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, text))

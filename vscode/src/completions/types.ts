@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import type { DocumentContext } from './get-current-doc-context'
 

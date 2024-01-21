@@ -1,11 +1,14 @@
 import { Position, Range, type TextDocument } from 'vscode'
-import { type default as Parser, type Point, type Tree } from 'web-tree-sitter'
+import type { default as Parser, Point, Tree } from 'web-tree-sitter'
 
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { type DocumentContext } from '../get-current-doc-context'
-import { type InlineCompletionItem } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { InlineCompletionItem } from '../types'
 
-import { getMatchingSuffixLength, type InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import {
+    getMatchingSuffixLength,
+    type InlineCompletionItemWithAnalytics,
+} from './process-inline-completions'
 import { getLastLine, lines } from './utils'
 
 interface CompletionContext {
@@ -80,7 +83,11 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
     // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
-    const captures = query.captures(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
+    const captures = query.captures(
+        treeWithCompletion.rootNode,
+        points?.trigger || points.start,
+        points.end
+    )
 
     return {
         ...completion,

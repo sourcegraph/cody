@@ -11,12 +11,12 @@ import {
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { doesFileExist } from '../editor-context/helpers'
 import { logError } from '../log'
-import { type FixupController } from '../non-stop/FixupController'
+import type { FixupController } from '../non-stop/FixupController'
 import { NewFixupFileMap } from '../non-stop/FixupFile'
-import { type FixupTask } from '../non-stop/FixupTask'
+import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
-import { type EditManagerOptions } from './manager'
+import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
@@ -205,7 +205,8 @@ export class EditProvider {
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
             // an existing test file from codebase
-            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))?.file?.uri
+            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))
+                ?.file?.uri
             if (cbTestFileUri) {
                 const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
                 const fileExists = await doesFileExist(testFileUri)
@@ -223,7 +224,8 @@ export class EditProvider {
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
-        const haveSameExtensions = posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
+        const haveSameExtensions =
+            posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
@@ -233,7 +235,10 @@ export class EditProvider {
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(
+                this.config.task.id,
+                newFileUri
+            )
             try {
                 await this.insertionPromise
             } finally {

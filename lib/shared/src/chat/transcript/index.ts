@@ -1,9 +1,9 @@
-import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
+import type { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
-import { type Message } from '../../sourcegraph-api'
+import type { Message } from '../../sourcegraph-api'
 
-import { type Interaction, type InteractionJSON } from './interaction'
+import type { Interaction, InteractionJSON } from './interaction'
 import { errorToChatError, type ChatMessage } from './messages'
 
 interface TranscriptJSONScope {
@@ -85,7 +85,7 @@ export class Transcript {
     public async getPromptForLastInteraction(
         preamble: Message[] = [],
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
-        onlyHumanMessages: boolean = false
+        onlyHumanMessages = false
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[]; preciseContexts: PreciseContext[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
@@ -104,7 +104,10 @@ export class Transcript {
             }
         }
 
-        const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
+        const preambleTokensUsage = preamble.reduce(
+            (acc, message) => acc + estimateTokensUsage(message),
+            0
+        )
         let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []

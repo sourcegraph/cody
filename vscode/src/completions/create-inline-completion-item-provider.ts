@@ -4,10 +4,10 @@ import { FeatureFlag, featureFlagProvider, isDotCom, type Configuration } from '
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import { type CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/StatusBar'
 
-import { type CodeCompletionsClient } from './client'
-import { type ContextStrategy } from './context/context-strategy'
+import type { CodeCompletionsClient } from './client'
+import type { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
@@ -53,7 +53,10 @@ export async function createInlineCompletionItemProvider({
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
-            return vscode.languages.registerInlineCompletionItemProvider('*', new NoopCompletionItemProvider())
+            return vscode.languages.registerInlineCompletionItemProvider(
+                '*',
+                new NoopCompletionItemProvider()
+            )
         }
 
         return {
@@ -81,18 +84,18 @@ export async function createInlineCompletionItemProvider({
             config.autocompleteExperimentalGraphContext === 'bfg'
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                ? 'bfg-mixed'
-                : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                ? 'local-mixed'
-                : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                ? 'jaccard-similarity'
-                : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
-                ? 'new-jaccard-similarity'
-                : bfgMixedContextFlag
-                ? 'bfg-mixed'
-                : newJaccardSimilarityContextFlag
-                ? 'new-jaccard-similarity'
-                : 'jaccard-similarity'
+                  ? 'bfg-mixed'
+                  : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                      ? 'local-mixed'
+                      : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                          ? 'jaccard-similarity'
+                          : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
+                              ? 'new-jaccard-similarity'
+                              : bfgMixedContextFlag
+                                  ? 'bfg-mixed'
+                                  : newJaccardSimilarityContextFlag
+                                      ? 'new-jaccard-similarity'
+                                      : 'jaccard-similarity'
 
         const dynamicMultilineCompletions =
             config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
@@ -114,7 +117,9 @@ export async function createInlineCompletionItemProvider({
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 
-        const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
+        const documentFilters = await getInlineCompletionItemProviderFilters(
+            config.autocompleteLanguages
+        )
 
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>

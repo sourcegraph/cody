@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
+import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
 

@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import { type ChatMessage } from '@sourcegraph/cody-shared'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
     simple: [
@@ -30,7 +30,8 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
         },
         {
             speaker: 'assistant',
-            displayText: 'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
+            displayText:
+                'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
         },
         {
             speaker: 'human',

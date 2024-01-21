@@ -1,10 +1,10 @@
-import { type Socket } from 'node:net'
+import type { Socket } from 'node:net'
 
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
 
-import { type TelemetryEventInput } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 // create interface for the request
 interface MockRequest {
@@ -45,7 +45,10 @@ const publishOptions = {
     },
 }
 
-const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', publishOptions)
+const topicPublisher = pubSubClient.topic(
+    'projects/sourcegraph-telligent-testing/topics/e2e-testing',
+    publishOptions
+)
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
@@ -62,7 +65,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     // matches @sourcegraph/cody-shared't work, so hardcode it here.
     app.post('/.api/mockEventRecording', (req, res) => {
         const events = req.body as TelemetryEventInput[]
-        events.forEach(event => {
+        for (const event of events) {
             void logTestingData('new', JSON.stringify(event))
             if (
                 ![
@@ -71,7 +74,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             ) {
                 loggedV2Events.push(`${event.feature}/${event.action}`)
             }
-        })
+        }
         res.status(200)
     })
 
@@ -101,7 +104,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
                 ? responses.fixup
                 : responses.chat
-        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+        res.send(
+            `event: completion\ndata: {"completion": ${JSON.stringify(
+                response
+            )}}\n\nevent: done\ndata: {}\n\n`
+        )
     })
     app.post('/.test/completions/triggerRateLimit', (req, res) => {
         chatRateLimited = true
@@ -131,7 +138,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         // Extract the code from the last message.
         let completionPrefix = request.body.messages.at(-1)?.text
         if (!completionPrefix?.startsWith(OPENING_CODE_TAG)) {
-            throw new Error(`Last completion message did not contain code starting with ${OPENING_CODE_TAG}`)
+            throw new Error(
+                `Last completion message did not contain code starting with ${OPENING_CODE_TAG}`
+            )
         }
         completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
 
@@ -194,7 +203,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 )
                 break
             case 'IsContextRequiredForChatQuery':
-                res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
+                res.send(
+                    JSON.stringify({
+                        data: { isContextRequiredForChatQuery: false },
+                    })
+                )
                 break
             case 'SiteIdentification':
                 res.send(
@@ -202,17 +215,31 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                         data: {
                             site: {
                                 siteID: 'test-site-id',
-                                productSubscription: { license: { hashedKey: 'mmm,hashedkey' } },
+                                productSubscription: {
+                                    license: { hashedKey: 'mmm,hashedkey' },
+                                },
                             },
                         },
                     })
                 )
                 break
             case 'SiteProductVersion':
-                res.send(JSON.stringify({ data: { site: { productVersion: 'dev' } } }))
+                res.send(
+                    JSON.stringify({
+                        data: { site: { productVersion: 'dev' } },
+                    })
+                )
                 break
             case 'SiteGraphQLFields':
-                res.send(JSON.stringify({ data: { __type: { fields: [{ name: 'id' }, { name: 'isCodyEnabled' }] } } }))
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            __type: {
+                                fields: [{ name: 'id' }, { name: 'isCodyEnabled' }],
+                            },
+                        },
+                    })
+                )
                 break
             case 'SiteHasCodyEnabled':
                 res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
@@ -222,7 +249,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                     JSON.stringify({
                         data: {
                             site: {
-                                codyLLMConfiguration: { chatModel: 'test-chat-default-model', provider: 'sourcegraph' },
+                                codyLLMConfiguration: {
+                                    chatModel: 'test-chat-default-model',
+                                    provider: 'sourcegraph',
+                                },
                             },
                         },
                     })

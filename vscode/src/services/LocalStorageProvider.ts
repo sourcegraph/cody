@@ -1,9 +1,9 @@
 import * as uuid from 'uuid'
-import { type Memento } from 'vscode'
+import type { Memento } from 'vscode'
 
-import { type ChatHistory, type UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
 
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
@@ -83,7 +83,10 @@ class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        let history = this.storage.get<AccountKeyedChatHistory | UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        let history = this.storage.get<AccountKeyedChatHistory | UserLocalHistory | null>(
+            this.KEY_LOCAL_HISTORY,
+            null
+        )
         if (!history) {
             return { chat: {}, input: [] }
         }
@@ -218,7 +221,9 @@ class LocalStorage {
     private migrateChatHistory2665(history: AccountKeyedChatHistory): void {
         const needsMigration = Object.keys(history).some(key => key.includes('@'))
         if (needsMigration) {
-            const cleanedHistory = Object.fromEntries(Object.entries(history).filter(([key]) => !key.includes('@')))
+            const cleanedHistory = Object.fromEntries(
+                Object.entries(history).filter(([key]) => !key.includes('@'))
+            )
             this.storage.update(this.KEY_LOCAL_HISTORY, cleanedHistory).then(() => {}, console.error)
         }
     }

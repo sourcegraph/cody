@@ -20,43 +20,40 @@ describe('symf', () => {
             polly = startPollyRecording({ recordingName: 'symf' })
         })
 
-        function check(
-            query: string,
-            expectedHandler: (expandedTerm: string) => void,
-        ): void {
+        function check(query: string, expectedHandler: (expandedTerm: string) => void): void {
             it(query, async () => {
                 expectedHandler(await symfExpandQuery(client, query))
             })
         }
 
-        check('ocean', (expanded) =>
+        check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"',
-            ),
+                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"'
+            )
         )
 
-        check('How do I write a file to disk in Go', (expanded) =>
+        check('How do I write a file to disk in Go', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"disk file files go golang harddrive storage write writefile writetofile"',
-            ),
+                '"disk file files go golang harddrive storage write writefile writetofile"'
+            )
         )
 
-        check('Where is authentication router defined?', (expanded) =>
+        check('Where is authentication router defined?', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"auth authenticate authentication define defined definition route router routing"',
-            ),
+                '"auth authenticate authentication define defined definition route router routing"'
+            )
         )
 
-        check('parse file with tree-sitter', (expanded) =>
+        check('parse file with tree-sitter', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"file files parser parsing sitter tree tree-sitter ts"',
-            ),
+                '"file files parser parsing sitter tree tree-sitter ts"'
+            )
         )
 
-        check('scan tokens in C++', (expanded) =>
+        check('scan tokens in C++', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"',
-            ),
+                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"'
+            )
         )
         afterAll(async () => {
             await polly.stop()

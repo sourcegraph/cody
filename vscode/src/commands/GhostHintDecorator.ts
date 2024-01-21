@@ -10,7 +10,10 @@ const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
  * @param selection - The selection to check
  * @returns boolean - True if the selection does not contain the full range of non-whitespace characters on the line
  */
-function isEmptyOrIncompleteSelection(document: vscode.TextDocument, selection: vscode.Selection): boolean {
+function isEmptyOrIncompleteSelection(
+    document: vscode.TextDocument,
+    selection: vscode.Selection
+): boolean {
     if (selection.isEmpty) {
         // Nothing to select
         return true
@@ -53,7 +56,10 @@ export class GhostHintDecorator implements vscode.Disposable {
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
     constructor() {
-        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, { leading: false, trailing: true })
+        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
+            leading: false,
+            trailing: true,
+        })
         this.updateConfig()
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
@@ -64,45 +70,52 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private init(): void {
         this.disposables.push(
-            vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
-                const editor = event.textEditor
+            vscode.window.onDidChangeTextEditorSelection(
+                (event: vscode.TextEditorSelectionChangeEvent) => {
+                    const editor = event.textEditor
 
-                if (!event.kind || event.kind === vscode.TextEditorSelectionChangeKind.Command) {
-                    // The selection event was likely triggered programatically, or via another action (e.g. search)
-                    // It's unlikely the user would want to trigger an edit here, so clear any existing text and return early.
-                    return this.clearGhostText(editor)
+                    if (!event.kind || event.kind === vscode.TextEditorSelectionChangeKind.Command) {
+                        // The selection event was likely triggered programatically, or via another action (e.g. search)
+                        // It's unlikely the user would want to trigger an edit here, so clear any existing text and return early.
+                        return this.clearGhostText(editor)
+                    }
+
+                    const selection = event.selections[0]
+                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
+                        return this.clearGhostText(editor)
+                    }
+
+                    /**
+                     * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
+                     * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
+                     */
+                    const targetPosition = selection.isReversed
+                        ? selection.active
+                        : selection.active.translate(selection.end.character === 0 ? -1 : 0)
+
+                    if (
+                        this.activeDecoration &&
+                        this.activeDecoration.range.start.line !== targetPosition.line
+                    ) {
+                        // Active decoration is incorrectly positioned, remove it before continuing
+                        this.clearGhostText(editor)
+                    }
+
+                    // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
+                    return this.throttledSetGhostText(editor, targetPosition)
                 }
-
-                const selection = event.selections[0]
-                if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                    // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                    // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                    return this.clearGhostText(editor)
-                }
-
-                /**
-                 * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
-                 * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
-                 */
-                const targetPosition = selection.isReversed
-                    ? selection.active
-                    : selection.active.translate(selection.end.character === 0 ? -1 : 0)
-
-                if (this.activeDecoration && this.activeDecoration.range.start.line !== targetPosition.line) {
-                    // Active decoration is incorrectly positioned, remove it before continuing
-                    this.clearGhostText(editor)
-                }
-
-                // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                return this.throttledSetGhostText(editor, targetPosition)
-            })
+            )
         )
     }
 
     private setGhostText(editor: vscode.TextEditor, position: vscode.Position): void {
         this.activeDecoration = {
             range: new vscode.Range(position, position),
-            renderOptions: { after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` } },
+            renderOptions: {
+                after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` },
+            },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
     }
@@ -118,12 +131,14 @@ export class GhostHintDecorator implements vscode.Disposable {
         const isEnabled = config.get('internal.unstable') as boolean
 
         if (!isEnabled) {
-            return this.dispose()
+            this.dispose()
+            return
         }
 
         if (isEnabled && !this.isActive) {
             this.isActive = true
-            return this.init()
+            this.init()
+            return
         }
     }
 

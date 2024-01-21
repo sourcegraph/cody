@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
 import { getFullConfig } from '../configuration'
 
 import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
@@ -63,13 +63,17 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             }
 
             if (item.requireDotCom) {
-                const isConnectedtoDotCom = this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
+                const isConnectedtoDotCom =
+                    this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
                 if (!isConnectedtoDotCom) {
                     continue
                 }
             }
 
-            if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
+            if (
+                item.requireFeature &&
+                !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))
+            ) {
                 continue
             }
 
@@ -81,13 +85,21 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
             treeItem.description = item.description
-            treeItem.command = { command: item.command.command, title: item.title, arguments: item.command.args }
+            treeItem.command = {
+                command: item.command.command,
+                title: item.title,
+                arguments: item.command.args,
+            }
 
             updatedTree.push(treeItem)
         }
 
         if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
+            void vscode.commands.executeCommand(
+                'setContext',
+                'cody.hasChatHistory',
+                this.treeNodes.length
+            )
         }
         this._onDidChangeTreeData.fire()
     }

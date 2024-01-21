@@ -15,7 +15,9 @@ export interface DocumentSection {
  * TODO(philipp-spiess): We need advanced heuristics here so that for very large sections we can
  * divide them into subsections.
  */
-export async function getGraphDocumentSections(document: vscode.TextDocument): Promise<DocumentSection[]> {
+export async function getGraphDocumentSections(
+    document: vscode.TextDocument
+): Promise<DocumentSection[]> {
     const label = 'build document symbols map'
     performance.mark(label)
     const ranges = await getDocumentSections(document)

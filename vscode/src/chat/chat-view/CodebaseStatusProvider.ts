@@ -15,9 +15,9 @@ import {
 
 import { getConfiguration } from '../../configuration'
 import { getEditor } from '../../editor/active-editor'
-import { type SymfRunner } from '../../local-context/symf'
+import type { SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
-import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri
@@ -32,7 +32,8 @@ interface CodebaseIdentifiers {
 
 export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusProvider {
     private disposables: vscode.Disposable[] = []
-    private eventEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter<ContextStatusProvider>()
+    private eventEmitter: vscode.EventEmitter<ContextStatusProvider> =
+        new vscode.EventEmitter<ContextStatusProvider>()
 
     // undefined means uninitialized, null means there is no current codebase
     private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
@@ -187,7 +188,8 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             // Get codebase from config or fallback to getting codebase name from current file URL
             // Always use the codebase from config as this is manually set by the user
             newCodebase.remote =
-                config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+                config.codebase ||
+                (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
             if (newCodebase.remote) {
                 const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
                 if (!isError(repoId)) {

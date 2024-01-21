@@ -65,7 +65,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     const [searching, setSearching] = React.useState(false)
     const [results, setResults] = React.useState<SearchPanelFile[]>([])
     const [selectedResult, setSelectedResult] = React.useState<[number, number]>([-1, -1])
-    const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>({})
+    const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>(
+        {}
+    )
     const outerContainerRef = useRef<HTMLDivElement>(null)
     const queryInputRef = useRef<HTMLTextAreaElement>(null)
     const resultsCache = useMemo(() => new ResultsCache(), [])
@@ -173,7 +175,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             }
             if (e.key === 'ArrowDown') {
                 snippetIndex++
-                const numSnippets = collapsedFileResults[fileIndex] ? 0 : results[fileIndex].snippets.length
+                const numSnippets = collapsedFileResults[fileIndex]
+                    ? 0
+                    : results[fileIndex].snippets.length
                 if (snippetIndex >= numSnippets) {
                     fileIndex++
                     if (fileIndex >= results.length) {
@@ -189,7 +193,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     if (fileIndex < 0) {
                         return
                     }
-                    const numSnippets = collapsedFileResults[fileIndex] ? 0 : results[fileIndex].snippets.length
+                    const numSnippets = collapsedFileResults[fileIndex]
+                        ? 0
+                        : results[fileIndex].snippets.length
                     snippetIndex = numSnippets - 1
                 }
                 if (fileIndex < 0) {
@@ -249,8 +255,8 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             </form>
             {!searching && query.trim().length === 0 && (
                 <p className={styles.instructions}>
-                    Search for code using a natural language query, such as “password hashing”, "connection retries", a
-                    symbol name, or a topic.
+                    Search for code using a natural language query, such as “password hashing”,
+                    "connection retries", a symbol name, or a topic.
                 </p>
             )}
             {!searching && results.length === 0 && query.trim().length !== 0 && (
@@ -299,7 +305,10 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         <span className={styles.filematchIcon}>
                                             <i className="codicon codicon-file-code" />
                                         </span>
-                                        <span className={styles.filematchTitle} title={displayPathBasename(result.uri)}>
+                                        <span
+                                            className={styles.filematchTitle}
+                                            title={displayPathBasename(result.uri)}
+                                        >
                                             {displayPathBasename(result.uri)}
                                         </span>
                                         <span className={styles.filematchDescription}>
@@ -320,7 +329,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         snippet.range.start.character
                                     }-${snippet.range.end.line}:${snippet.range.end.character}`}
                                     onClick={() => setSelectedResult([fileIndex, snippetIndex])}
-                                    onKeyDown={e => e.key === 'Enter' && setSelectedResult([fileIndex, snippetIndex])}
+                                    onKeyDown={e =>
+                                        e.key === 'Enter' && setSelectedResult([fileIndex, snippetIndex])
+                                    }
                                 >
                                     <div
                                         className={`${styles.searchResultRowInner} ${

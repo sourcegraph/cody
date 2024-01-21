@@ -1,11 +1,11 @@
 import type * as vscode from 'vscode'
 
-import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import { type EditIntent, type EditMode } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 
-import { type Diff } from './diff'
-import { type FixupFile } from './FixupFile'
+import type { Diff } from './diff'
+import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string

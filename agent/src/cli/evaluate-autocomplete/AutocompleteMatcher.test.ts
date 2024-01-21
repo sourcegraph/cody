@@ -40,7 +40,11 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             const matches = await matcher.matches(text)
             const result: string[] = []
             for (const match of matches || []) {
-                const document = new EvaluationDocument(matcher.params, match.newText, vscode.Uri.file(filename))
+                const document = new EvaluationDocument(
+                    matcher.params,
+                    match.newText,
+                    vscode.Uri.file(filename)
+                )
                 document.pushItem({
                     range: new vscode.Range(
                         match.requestPosition,

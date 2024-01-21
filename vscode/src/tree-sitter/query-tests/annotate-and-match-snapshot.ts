@@ -4,9 +4,9 @@ import path from 'path'
 import dedent from 'dedent'
 import { findLast } from 'lodash'
 import { expect } from 'vitest'
-import { type default as Parser, type Point, type SyntaxNode } from 'web-tree-sitter'
+import type { default as Parser, Point, SyntaxNode } from 'web-tree-sitter'
 
-import { type SupportedLanguage } from '../grammars'
+import type { SupportedLanguage } from '../grammars'
 import { getLanguageConfig } from '../language'
 
 interface CommentSymbolInfo {
@@ -115,7 +115,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
     const caretPoint = getCaretPoint(lines, delimiter)
     if (!caretPoint) {
-        throw new Error('No caret point found in snippet: \n' + lines.join('\n'))
+        throw new Error(`No caret point found in snippet: \n${lines.join('\n')}`)
     }
 
     const cursorPositionLine = { index: -1, line: '' }
@@ -131,7 +131,10 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     })
 
     const tree = parser.parse(linesWithoutCursorComment.join('\n'))
-    const capturedNodes = captures(tree.rootNode, caretPoint, { ...caretPoint, column: caretPoint.column + 1 })
+    const capturedNodes = captures(tree.rootNode, caretPoint, {
+        ...caretPoint,
+        column: caretPoint.column + 1,
+    })
 
     if (!capturedNodes || capturedNodes.length === 0) {
         return code
@@ -171,7 +174,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
             if (matchingAnnotation) {
                 startCell[0] += `, ${annotationId}`
             } else {
-                startCell.push('^'.repeat(node.text.length) + ' ' + annotationId)
+                startCell.push(`${'^'.repeat(node.text.length)} ${annotationId}`)
             }
         } else {
             // Handle multi-line nodes
@@ -207,7 +210,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
         annotatedCodeSnippet += '\n'
     }
 
-    const nodeTypesAnnotation = `${delimiter} Nodes types:\n` + nodeTypes.join('\n') + '\n\n'
+    const nodeTypesAnnotation = `${delimiter} Nodes types:\n${nodeTypes.join('\n')}\n\n`
     return annotatedCodeSnippet + nodeTypesAnnotation
 }
 
@@ -219,7 +222,7 @@ const DOCUMENTATION_HEADER = `
 function commentOutLines(text: string, commentSymbol: string): string {
     return text
         .split('\n')
-        .map(line => commentSymbol + ' ' + line)
+        .map(line => `${commentSymbol} ${line}`)
         .join('\n')
 }
 
@@ -258,10 +261,10 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
         })
         .join(separator)
 
-    const content = header + '\n' + separator + '\n' + annotated
+    const content = `${header}\n${separator}\n${annotated}`
 
     const { ext, dir, name } = path.parse(sourcesPath)
-    const snapshotFilePath = path.join(dir, name + '.snap' + ext)
+    const snapshotFilePath = path.join(dir, `${name}.snap${ext}`)
 
     await expect(content).toMatchFileSnapshot(snapshotFilePath)
 }

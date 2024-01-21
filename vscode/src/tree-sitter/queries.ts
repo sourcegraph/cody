@@ -1,4 +1,4 @@
-import { type SupportedLanguage } from './grammars'
+import type { SupportedLanguage } from './grammars'
 import { goQueries } from './queries/go'
 import { javascriptQueries } from './queries/javascript'
 import { pythonQueries } from './queries/python'

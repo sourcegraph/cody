@@ -156,7 +156,11 @@ let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({ name: 'Workspace Root', uri: newWorkspaceDocuments.workspaceRootUri, index: 0 })
+        workspaceFolders.push({
+            name: 'Workspace Root',
+            uri: newWorkspaceDocuments.workspaceRootUri,
+            index: 0,
+        })
     }
 }
 
@@ -208,7 +212,13 @@ const _workspace: typeof vscode.workspace = {
                 if (fileType.valueOf() === FileType.Directory.valueOf()) {
                     await loop(workspaceRoot, uri)
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
-                    if (!matchesGlobPatterns(include ? [include] : [], exclude ? [exclude] : [], relativePath)) {
+                    if (
+                        !matchesGlobPatterns(
+                            include ? [include] : [],
+                            exclude ? [exclude] : [],
+                            relativePath
+                        )
+                    ) {
                         continue
                     }
                     result.push(uri)
@@ -275,7 +285,11 @@ const _workspace: typeof vscode.workspace = {
     registerTextDocumentContentProvider: () => emptyDisposable, // TODO: used by fixup controller
     asRelativePath: (pathOrUri: string | vscode.Uri): string => {
         const uri: vscode.Uri | undefined =
-            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+            typeof pathOrUri === 'string'
+                ? Uri.file(pathOrUri)
+                : pathOrUri instanceof Uri
+                  ? pathOrUri
+                  : undefined
         if (uri === undefined) {
             // Not sure what to do about non-string/non-uri arguments.
             return `${pathOrUri}`
@@ -329,7 +343,9 @@ export function setAgent(newAgent: Agent): void {
 export function defaultWebviewPanel(params: {
     viewType: string
     title: string
-    showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+    showOptions:
+        | vscode.ViewColumn
+        | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
     options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
@@ -342,7 +358,8 @@ export function defaultWebviewPanel(params: {
         options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
         reveal: () => {},
         title: params.title,
-        viewColumn: typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
+        viewColumn:
+            typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
         viewType: params.viewType,
         visible: false,
         webview: {
@@ -421,7 +438,9 @@ let shimmedCreateWebviewPanel: typeof vscode.window.createWebviewPanel = () => {
     return webviewPanel
 }
 
-export function setCreateWebviewPanel(newCreateWebviewPanel: typeof vscode.window.createWebviewPanel): void {
+export function setCreateWebviewPanel(
+    newCreateWebviewPanel: typeof vscode.window.createWebviewPanel
+): void {
     shimmedCreateWebviewPanel = newCreateWebviewPanel
 }
 
@@ -465,11 +484,18 @@ const _window: typeof vscode.window = {
         token.onCancellationRequested(() => progressBars.delete(id))
 
         if (progressClient) {
-            const location = typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
-            const locationViewId = typeof options.location === 'object' ? options.location.viewId : undefined
+            const location =
+                typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
+            const locationViewId =
+                typeof options.location === 'object' ? options.location.viewId : undefined
             progressClient.notify('progress/start', {
                 id,
-                options: { title: options.title, cancellable: options.cancellable, location, locationViewId },
+                options: {
+                    title: options.title,
+                    cancellable: options.cancellable,
+                    location,
+                    locationViewId,
+                },
             })
         }
         try {
@@ -635,11 +661,15 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' }).toString().trim()
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' }).toString().trim()
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
                     return gitRepository(Uri.file(toplevel), commit)
                 } catch {
                     return null
@@ -664,7 +694,8 @@ const _extensions: typeof vscode.extensions = {
     all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension = clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
+        const shouldActivateGitExtension =
+            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
         if (shouldActivateGitExtension && extensionId === 'vscode.git') {
             const extension: vscode.Extension<any> = gitExtension
             return extension

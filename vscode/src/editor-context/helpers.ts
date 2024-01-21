@@ -83,7 +83,11 @@ export const getFilesFromDir = async (
  * @param maxResults - The maximum number of results to return.
  * @returns A Promise resolving to an array of URI objects for the matching files, up to maxResults.
  */
-export async function findVSCodeFiles(globalPattern: string, excludePattern?: string, maxResults = 3): Promise<URI[]> {
+export async function findVSCodeFiles(
+    globalPattern: string,
+    excludePattern?: string,
+    maxResults = 3
+): Promise<URI[]> {
     try {
         // const defaultExcludePatterns = ['.*','node_modules','snap*']
         const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
@@ -250,7 +254,10 @@ export async function getCurrentDirFilteredContext(
  * Then it searches the codebase for additional test files matching the given
  * file name, preferring unit tests if isUnitTestRequest is true.
  */
-export async function getEditorTestContext(file: vscode.Uri, isUnitTestRequest = false): Promise<ContextMessage[]> {
+export async function getEditorTestContext(
+    file: vscode.Uri,
+    isUnitTestRequest = false
+): Promise<ContextMessage[]> {
     try {
         const currentTestFile = await getCurrentTestFileContext(file, isUnitTestRequest)
         if (currentTestFile.length) {
@@ -319,7 +326,10 @@ export async function getDirContextMessages(
  * If none found, searches for test files matching the fileName.
  * Gets the content of the found test files and returns ContextMessages.
  */
-async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCurrentTestFileContext(
+    file: vscode.Uri,
+    isUnitTest: boolean
+): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
@@ -344,7 +354,10 @@ async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean):
  * test directories if getting unit tests. Returns context messages for up to 5
  * matching test files.
  */
-async function getCodebaseTestFilesContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCodebaseTestFilesContext(
+    file: vscode.Uri,
+    isUnitTest: boolean
+): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 

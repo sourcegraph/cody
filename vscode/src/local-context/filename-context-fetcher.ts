@@ -4,13 +4,13 @@ import * as path from 'path'
 import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
-import {
-    type ChatClient,
-    type ContextFileSource,
-    type ContextFileType,
-    type ContextResult,
-    type Editor,
-    type FilenameContextFetcher as IFilenameContextFetcher,
+import type {
+    ChatClient,
+    ContextFileSource,
+    ContextFileType,
+    ContextResult,
+    Editor,
+    FilenameContextFetcher as IFilenameContextFetcher,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
@@ -93,7 +93,12 @@ export class FilenameContextFetcher implements IFilenameContextFetcher {
                 queryToFileFragments: { duration: time2 - time1, fragments: filenameFragments },
                 getFilenames: { duration: time3 - time2 },
             }),
-            { verbose: { matchingFiles: unsortedMatchingFiles, results: results.map(r => r.fileName) } }
+            {
+                verbose: {
+                    matchingFiles: unsortedMatchingFiles,
+                    results: results.map(r => r.fileName),
+                },
+            }
         )
 
         return results
@@ -128,8 +133,12 @@ export class FilenameContextFetcher implements IFilenameContextFetcher {
         return uniqueFragments
     }
 
-    private async getFilenames(rootPath: string, filenameFragments: string[], maxDepth: number): Promise<string[]> {
-        const searchPattern = '{' + filenameFragments.map(fragment => `**${fragment}**`).join(',') + '}'
+    private async getFilenames(
+        rootPath: string,
+        filenameFragments: string[],
+        maxDepth: number
+    ): Promise<string[]> {
+        const searchPattern = `{${filenameFragments.map(fragment => `**${fragment}**`).join(',')}}`
         const rgArgs = [
             '--files',
             '--iglob',

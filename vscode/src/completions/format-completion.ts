@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { logCompletionFormatEvent, logError } from './logger'
-import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
+import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import { lines } from './text-processing'
 
 export async function formatCompletion(autocompleteItem: AutocompleteItem): Promise<void> {
@@ -19,7 +19,10 @@ export async function formatCompletion(autocompleteItem: AutocompleteItem): Prom
         const endPosition =
             insertedLines.length <= 1
                 ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
-                : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+                : new vscode.Position(
+                      position.line + insertedLines.length - 1,
+                      insertedLines.at(-1)!.length
+                  )
         // Start at the beginning of the line to format the whole line if needed.
         const rangeToFormat = new vscode.Range(new vscode.Position(position.line, 0), endPosition)
 

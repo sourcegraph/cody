@@ -5,7 +5,8 @@ import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { assertEvents, test } from './helpers'
 
-const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
+const DECORATION_SELECTOR =
+    'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
 const expectedEvents = [
     'CodyVSCodeExtension:command:edit:executed',

@@ -1,5 +1,9 @@
 import type { Assertion, AsymmetricMatchersContaining } from 'vitest'
 
+// TODO(sqs): necessary to avoid tsc complaining that vitest types do not exist
+type __1 = Assertion
+type __2 = AsymmetricMatchersContaining
+
 interface CustomMatchers<R = unknown> {
     /**
      * Checks if `CompletionParameters[]` contains one item with single-line stop sequences.

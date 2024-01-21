@@ -1,10 +1,12 @@
-import { type Message } from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 
 export function getSimplePreamble(preInstruction?: string | undefined): Message[] {
     return [
         {
             speaker: 'human',
-            text: `You are Cody, an AI coding assistant from Sourcegraph.${preInstruction ? ` ${preInstruction}` : ''}`,
+            text: `You are Cody, an AI coding assistant from Sourcegraph.${
+                preInstruction ? ` ${preInstruction}` : ''
+            }`,
         },
         {
             speaker: 'assistant',

@@ -1,9 +1,9 @@
 import type * as vscode from 'vscode'
 
 import {
+    MAX_CURRENT_FILE_TOKENS,
     createContextMessageByFile,
     getContextMessageWithResponse,
-    MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
@@ -15,8 +15,8 @@ import {
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
-import { type VSCodeEditor } from '../../editor/vscode-editor'
-import { type EditIntent } from '../types'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 
@@ -79,18 +79,24 @@ const getContextFromIntent = async ({
             const contextMessages = []
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
-                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedPrecedingText, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedPrecedingText, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 )
             }
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
-                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedFollowingText, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedFollowingText, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 )
             }
             return contextMessages
@@ -100,10 +106,12 @@ const getContextFromIntent = async ({
          * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
          * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
          */
-        case 'edit':
+        case 'edit': {
             const range = selectionRange
             const diagnostics = range ? editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
-            const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
+            const errorsAndWarnings = diagnostics.filter(
+                ({ type }) => type === 'error' || type === 'warning'
+            )
             const selectionContext = await getContextMessagesFromSelection(
                 selectedText,
                 truncatedPrecedingText,
@@ -114,14 +122,17 @@ const getContextFromIntent = async ({
             return [
                 ...selectionContext,
                 ...errorsAndWarnings.flatMap(diagnostic =>
-                    getContextMessageWithResponse(populateCurrentEditorDiagnosticsTemplate(diagnostic, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    getContextMessageWithResponse(
+                        populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 ),
             ]
+        }
     }
-    /* eslint-enable no-case-declarations */
 }
 
 interface GetContextOptions extends GetContextFromIntentOptions {
