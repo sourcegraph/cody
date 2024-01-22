@@ -192,3 +192,7 @@
 .focused {
     box-shadow: 0.5rem 0.1rem 0.2rem var(--vscode-widget-shadow);
 }
+
+.hide {
+    visibility: hidden;
+}

@@ -92,7 +92,6 @@ export type ApiPostMessage = (message: any) => void;
 
 interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string;
-    chatInputContextClassName?: string;
     chatInputClassName?: string;
 }
 
@@ -106,7 +105,7 @@ export interface ChatButtonProps {
 export interface ChatUITextAreaProps {
     className: string;
     rows: number;
-    autoFocus: boolean;
+    isFocusd: boolean;
     value: string;
     required: boolean;
     chatEnabled: boolean;
@@ -214,7 +213,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     transcriptItemParticipantClassName,
     transcriptActionClassName,
     inputRowClassName,
-    chatInputContextClassName,
     chatInputClassName,
     EditButtonContainer,
     FeedbackButtonsContainer,
@@ -246,6 +244,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     guardrails,
 }) => {
     const isMac = isMacOS();
+    const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker);
     const [inputRows, setInputRows] = useState(1);
     const [displayCommands, setDisplayCommands] = useState<
         [string, CodyCommand & { instruction?: string }][] | null
@@ -300,6 +299,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (inputText) {
                 setFormInput(inputText);
             }
+            setInputFocus(true);
         },
         [messageBeingEdited, setFormInput, setMessageBeingEdited, transcript]
     );
@@ -434,6 +434,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             chatContextFiles,
             inputHistory,
             setInputHistory,
+            setEditMessageState,
+            setFormInput,
         ]
     );
     const onChatInput = useCallback(
@@ -474,20 +476,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setEditMessageState();
                     return;
                 }
-                // Aborts a message in progress if one exists
-                if (messageInProgress?.speaker) {
-                    event.preventDefault();
-                    onAbortMessageInProgress();
-                    return;
-                }
             }
         },
-        [
-            messageBeingEdited,
-            messageInProgress,
-            onAbortMessageInProgress,
-            setEditMessageState,
-        ]
+        [messageBeingEdited, setEditMessageState]
     );
 
     const onChatKeyDown = useCallback(
@@ -643,6 +634,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
+            // Captures Escape button clicks
+            if (event.key === "Escape") {
+                // Aborts a message in progress if one exists
+                if (messageInProgress?.speaker && inputFocus) {
+                    event.preventDefault();
+                    onAbortMessageInProgress();
+                    return;
+                }
+            }
+
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
             if (
@@ -705,6 +706,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             selectedChatContext,
             onChatContextSelected,
             enableNewChatMode,
+            onAbortMessageInProgress,
+            inputFocus,
+            messageInProgress,
         ]
     );
 
@@ -766,8 +770,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
-                    submitButtonComponent={SubmitButton}
-                    chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
                     chatModels={chatModels}
@@ -802,6 +804,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         onEditLastMessageClick={() =>
                             setEditMessageState(lastHumanMessageIndex)
                         }
+                        setInputFocus={setInputFocus}
                     />
                 )}
                 <div className={styles.textAreaContainer}>
@@ -840,7 +843,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                     ? formInput
                                     : "Cody is disabled on this instance"
                             }
-                            autoFocus={!messageInProgress?.speaker}
+                            isFocusd={inputFocus}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}

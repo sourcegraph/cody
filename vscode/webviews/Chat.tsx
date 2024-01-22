@@ -248,7 +248,6 @@ export const Chat: React.FunctionComponent<
             }
             transcriptActionClassName={styles.transcriptAction}
             inputRowClassName={styles.inputRow}
-            chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
             EditButtonContainer={EditButton}
             FeedbackButtonsContainer={FeedbackButtons}
@@ -301,7 +300,7 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
-    autoFocus,
+    isFocusd,
     value,
     setValue,
     chatEnabled,
@@ -320,15 +319,15 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
-        if (autoFocus) {
+        if (isFocusd) {
             inputRef.current?.focus();
-            // move cursor to end of line
-            inputRef?.current?.setSelectionRange(
-                inputRef?.current?.selectionEnd,
-                inputRef?.current?.selectionEnd
-            );
+
+            // move cursor to end of line if current cursor position is at the beginning
+            if (inputRef.current?.selectionStart === 0 && value.length > 0) {
+                inputRef.current?.setSelectionRange(value.length, value.length);
+            }
         }
-    }, [autoFocus, value, messageBeingEdited, chatModels]);
+    }, [isFocusd, value, messageBeingEdited, chatModels]);
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
