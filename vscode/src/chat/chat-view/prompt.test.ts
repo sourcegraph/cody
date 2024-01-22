@@ -16,9 +16,7 @@ describe('DefaultPrompter', () => {
             prompt,
             contextLimitWarnings: warnings,
             newContextUsed,
-        } = await new DefaultPrompter(
-            [], () => Promise.resolve([])
-        ).makePrompt(chat,100000)
+        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(chat, 100000)
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -56,10 +54,7 @@ describe('DefaultPrompter', () => {
             prompt,
             contextLimitWarnings: warnings,
             newContextUsed,
-        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
-            chat,
-            100000
-        )
+        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(chat, 100000)
 
         expect(prompt).toMatchInlineSnapshot(`
           [

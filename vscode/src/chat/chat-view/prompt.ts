@@ -42,7 +42,9 @@ export class CommandPrompter implements IPrompter {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
-        const preInstruction: string | undefined = vscode.workspace.getConfiguration('cody.chat').get('preInstruction')
+        const preInstruction: string | undefined = vscode.workspace
+            .getConfiguration('cody.chat')
+            .get('preInstruction')
 
         const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
@@ -76,7 +78,11 @@ export class CommandPrompter implements IPrompter {
         if (limitReached) {
             // TODO(beyang): we're masking this error (repro: try /explain),
             // we should improve the commands context selection process
-            logDebug('CommandPrompter', 'makePrompt', `context limit reached, ignored ${ignored.length} items`)
+            logDebug(
+                'CommandPrompter',
+                'makePrompt',
+                `context limit reached, ignored ${ignored.length} items`
+            )
         }
 
         return {
@@ -188,7 +194,6 @@ export class DefaultPrompter implements IPrompter {
         }
     }
 }
-
 
 function renderContextItem(contextItem: ContextItem): Message[] {
     // Do not create context item for empty file

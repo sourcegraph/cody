@@ -211,7 +211,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
-                        await vscode.commands.executeCommand('cody.action.commands.exec', `${selectedCommandID} input`)
+                        await vscode.commands.executeCommand(
+                            'cody.action.commands.exec',
+                            `${selectedCommandID} input`
+                        )
                         return
                     }
                     input = await showAskQuestionQuickPick()

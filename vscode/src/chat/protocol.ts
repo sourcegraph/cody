@@ -15,7 +15,7 @@ import type {
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 

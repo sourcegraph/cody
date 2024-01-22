@@ -3,7 +3,7 @@ import { URI } from 'vscode-uri'
 
 import type { Editor } from '@sourcegraph/cody-shared'
 
-import { type ContextItem } from './SimpleChatModel'
+import type { ContextItem } from './SimpleChatModel'
 
 import '../../testutils/vscode'
 

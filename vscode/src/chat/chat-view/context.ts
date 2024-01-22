@@ -15,15 +15,15 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getContextForCommand } from '../../commands/utils/get-context'
-import { type VSCodeEditor } from '../../editor/vscode-editor'
-import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { type SymfRunner } from '../../local-context/symf'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 import { viewRangeToRange } from './chat-helpers'
-import { type CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { type ContextItem } from './SimpleChatModel'
+import type { CodebaseStatusProvider } from './CodebaseStatusProvider'
+import type { ContextItem } from './SimpleChatModel'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -50,7 +50,11 @@ export async function getEnhancedContext(
     if (useContextConfig !== 'keyword') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = searchEmbeddingsLocal(localEmbeddings, text)
-        const remoteEmbeddingsResults = searchEmbeddingsRemote(embeddingsClient, codebaseStatusProvider, text)
+        const remoteEmbeddingsResults = searchEmbeddingsRemote(
+            embeddingsClient,
+            codebaseStatusProvider,
+            text
+        )
         try {
             const r = await localEmbeddingsResults
             hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
@@ -131,34 +135,39 @@ async function searchSymf(
     }
 
     const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
-        const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
-            if (isCodyIgnoredFile(result.file)) {
-                return []
-            }
-            const range = new vscode.Range(
-                result.range.startPoint.row,
-                result.range.startPoint.col,
-                result.range.endPoint.row,
-                result.range.endPoint.col
-            )
-
-            let text: string | undefined
-            try {
-                text = await editor.getTextEditorContentForFile(result.file, range)
-                if (!text) {
+        const items = (await results).flatMap(
+            async (result: Result): Promise<ContextItem[] | ContextItem> => {
+                if (isCodyIgnoredFile(result.file)) {
                     return []
                 }
-            } catch (error) {
-                logError('SimpleChatPanelProvider.searchSymf', `Error getting file contents: ${error}`)
-                return []
+                const range = new vscode.Range(
+                    result.range.startPoint.row,
+                    result.range.startPoint.col,
+                    result.range.endPoint.row,
+                    result.range.endPoint.col
+                )
+
+                let text: string | undefined
+                try {
+                    text = await editor.getTextEditorContentForFile(result.file, range)
+                    if (!text) {
+                        return []
+                    }
+                } catch (error) {
+                    logError(
+                        'SimpleChatPanelProvider.searchSymf',
+                        `Error getting file contents: ${error}`
+                    )
+                    return []
+                }
+                return {
+                    uri: result.file,
+                    range,
+                    source: 'search',
+                    text,
+                }
             }
-            return {
-                uri: result.file,
-                range,
-                source: 'search',
-                text,
-            }
-        })
+        )
         return (await Promise.all(items)).flat()
     })
 
@@ -190,10 +199,7 @@ async function searchEmbeddingsLocal(
 
     logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
     const contextItems: ContextItem[] = []
-    const embeddingsResults = await localEmbeddings.getContext(
-        text,
-        NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-    )
+    const embeddingsResults = await localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
 
     for (const result of embeddingsResults) {
         const range = new vscode.Range(
@@ -242,12 +248,7 @@ async function searchEmbeddingsRemote(
 
     logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
     const contextItems: ContextItem[] = []
-    const embeddings = await embeddingsClient.search(
-        [repoId],
-        text,
-        NUM_CODE_RESULTS,
-        NUM_TEXT_RESULTS
-    )
+    const embeddings = await embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
     if (isError(embeddings)) {
         throw new Error(`Error retrieving embeddings: ${embeddings}`)
     }
@@ -357,7 +358,15 @@ function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
     const words = input.split(/\W+/).filter(w => w.length > 0)
     const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
 
-    const projectSignifiers = ['project', 'repository', 'repo', 'library', 'package', 'module', 'codebase']
+    const projectSignifiers = [
+        'project',
+        'repository',
+        'repo',
+        'library',
+        'package',
+        'module',
+        'codebase',
+    ]
     const questionIndicators = ['what', 'how', 'describe', 'explain', '?']
 
     const workspaceUri = editor.getWorkspaceRootUri()
@@ -395,7 +404,10 @@ async function getReadmeContext(): Promise<ContextItem[]> {
     }
     const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
     const readmeText = readmeDoc.getText()
-    const { truncated: truncatedReadmeText, range } = truncateTextNearestLine(readmeText, MAX_BYTES_PER_FILE)
+    const { truncated: truncatedReadmeText, range } = truncateTextNearestLine(
+        readmeText,
+        MAX_BYTES_PER_FILE
+    )
     if (truncatedReadmeText.length === 0) {
         return []
     }
@@ -410,7 +422,10 @@ async function getReadmeContext(): Promise<ContextItem[]> {
     ]
 }
 
-export async function getCommandContext(editor: VSCodeEditor, command: CodyCommand): Promise<ContextItem[]> {
+export async function getCommandContext(
+    editor: VSCodeEditor,
+    command: CodyCommand
+): Promise<ContextItem[]> {
     logDebug('SimpleChatPanelProvider.getCommandContext', command.slashCommand)
 
     const contextItems: ContextItem[] = []

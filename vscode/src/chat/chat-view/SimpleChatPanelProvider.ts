@@ -30,7 +30,10 @@ import {
 import type { View } from '../../../webviews/NavBar'
 import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
 import type { CommandsController } from '../../commands/CommandsController'
-import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../../commands/prompt/display-text'
+import {
+    createDisplayTextWithFileLinks,
+    createDisplayTextWithFileSelection,
+} from '../../commands/prompt/display-text'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import {
@@ -40,10 +43,10 @@ import {
 } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
-import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { type SymfRunner } from '../../local-context/symf'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { type AuthProvider } from '../../services/AuthProvider'
+import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
@@ -66,11 +69,23 @@ import type { ChatViewProviderWebview, Config } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { getCommandContext, getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
-import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { AuthStatus, ChatSubmitType, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
-import { CommandPrompter, DefaultPrompter, IPrompter } from './prompt'
-import { MessageErrorType } from '../MessageProvider'
+import {
+    type ContextItem,
+    type MessageWithContext,
+    SimpleChatModel,
+    toViewMessage,
+} from './SimpleChatModel'
+import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import type {
+    AuthStatus,
+    ChatSubmitType,
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    LocalEnv,
+    WebviewMessage,
+} from '../protocol'
+import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
+import type { MessageErrorType } from '../MessageProvider'
 
 interface SimpleChatPanelProviderOptions {
     config: Config
@@ -186,8 +201,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)?.chatTitle ||
-            getChatPanelTitle(lastQuestion)
+            this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+                ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -538,8 +553,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
-                return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
+            if (
+                command.context?.selection ||
+                command.context?.currentFile ||
+                command.context?.currentDir
+            ) {
+                return this.postError(
+                    new Error('Command failed. Please open a file and try again.'),
+                    'transcript'
+                )
             }
         }
 
@@ -556,7 +578,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
 
-        const prompt = await this.buildPrompt(new CommandPrompter(() => getCommandContext(this.editor, command)))
+        const prompt = await this.buildPrompt(
+            new CommandPrompter(() => getCommandContext(this.editor, command))
+        )
         this.streamAssistantResponse(args.requestID, prompt)
     }
 
@@ -602,7 +626,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
 
-        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
+        const userContextItems = await contextFilesToContextItems(
+            this.editor,
+            userContextFiles || [],
+            true
+        )
         const prompter = new DefaultPrompter(
             userContextItems,
             addEnhancedContext
@@ -635,14 +663,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     ...contextSummary,
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                    recordsPrivateMetadataTranscript:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
                 },
                 privateMetadata: {
                     properties,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
+                    promptText:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                 },
             })
         }
@@ -654,7 +684,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (isRateLimitError(error)) {
                 this.postError(error, 'transcript')
             } else {
-                this.postError(isError(error) ? error : new Error(`Error generating assistant response: ${error}`))
+                this.postError(
+                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
+                )
             }
         }
     }
@@ -662,7 +694,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     /**
      * Constructs the prompt and updates the UI with the context used in the prompt.
      */
-    private async buildPrompt(prompter: IPrompter, sendTelemetry?: (contextSummary: {}) => void): Promise<Message[]> {
+    private async buildPrompt(
+        prompter: IPrompter,
+        sendTelemetry?: (contextSummary: {}) => void
+    ): Promise<Message[]> {
         const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
             this.chatModel,
             getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
@@ -756,7 +791,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (isRateLimitError(error)) {
                 this.postError(error, 'transcript')
             } else {
-                this.postError(isError(error) ? error : new Error(`Error generating assistant response: ${error}`))
+                this.postError(
+                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
+                )
             }
         }
     }
@@ -914,7 +951,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             chatID: this.chatModel.sessionID,
         })
 
-        const chatTitle = this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)?.chatTitle
+        const chatTitle = this.history.getChat(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.sessionID
+        )?.chatTitle
         if (chatTitle) {
             this.handleChatTitle(chatTitle)
             return
@@ -1057,8 +1097,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private updateWebviewPanelTitle(title: string): void {
         if (this.webviewPanel) {
             this.webviewPanel.title =
-                this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)?.chatTitle ||
-                getChatPanelTitle(title)
+                this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+                    ?.chatTitle || getChatPanelTitle(title)
         }
     }
 
@@ -1074,7 +1114,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 }
 
-async function newChatModelfromTranscriptJSON(json: TranscriptJSON, modelID: string): Promise<SimpleChatModel> {
+async function newChatModelfromTranscriptJSON(
+    json: TranscriptJSON,
+    modelID: string
+): Promise<SimpleChatModel> {
     const messages: MessageWithContext[][] = json.interactions.map(
         (interaction: InteractionJSON): MessageWithContext[] => {
             return [
@@ -1099,7 +1142,12 @@ async function newChatModelfromTranscriptJSON(json: TranscriptJSON, modelID: str
             ]
         }
     )
-    return new SimpleChatModel(json.chatModel || modelID, (await Promise.all(messages)).flat(), json.id, json.chatTitle)
+    return new SimpleChatModel(
+        json.chatModel || modelID,
+        (await Promise.all(messages)).flat(),
+        json.id,
+        json.chatTitle
+    )
 }
 
 export async function contextFilesToContextItems(

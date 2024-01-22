@@ -46,7 +46,12 @@ export class CachedRemoteEmbeddingsClient {
         if (repoIDs.length !== 1) {
             throw new Error('Only one repoID is supported for now')
         }
-        const results = await this.client.legacySearchEmbeddings(repoIDs[0], query, codeResultsCount, textResultsCount)
+        const results = await this.client.legacySearchEmbeddings(
+            repoIDs[0],
+            query,
+            codeResultsCount,
+            textResultsCount
+        )
         if (results instanceof Error) {
             return results
         }
