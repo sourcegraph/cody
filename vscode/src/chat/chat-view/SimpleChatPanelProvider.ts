@@ -646,7 +646,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                       )
                 : undefined
         )
-        const sendTelemetry = (contextSummary: {}): void => {
+        const sendTelemetry = (contextSummary: any): void => {
             const authStatus = this.authProvider.getAuthStatus()
             const properties = {
                 requestID,
@@ -695,7 +695,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     private async buildPrompt(
         prompter: IPrompter,
-        sendTelemetry?: (contextSummary: {}) => void
+        sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
         const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
             this.chatModel,

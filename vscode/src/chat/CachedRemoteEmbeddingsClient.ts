@@ -55,16 +55,16 @@ export class CachedRemoteEmbeddingsClient {
         if (results instanceof Error) {
             return results
         }
-        results.codeResults.forEach(result => {
+        for (const result of results.codeResults) {
             if (!result.uri) {
                 result.uri = vscode.Uri.file(result.fileName)
             }
-        })
-        results.textResults.forEach(result => {
+        }
+        for (const result of results.textResults) {
             if (!result.uri) {
                 result.uri = vscode.Uri.file(result.fileName)
             }
-        })
+        }
         return results
     }
 }
