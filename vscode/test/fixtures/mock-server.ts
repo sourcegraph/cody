@@ -289,6 +289,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                         },
                     })
                 )
+                break
             }
             default:
                 res.sendStatus(400)
