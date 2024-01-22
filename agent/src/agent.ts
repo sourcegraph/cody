@@ -549,6 +549,15 @@ export class Agent extends MessageHandler {
             return res.codyProEnabled
         })
 
+        this.registerRequest('graphql/getCurrentUserCodySubscription', async () => {
+            const res = await graphqlClient.getCurrentUserCodySubscription()
+            if (res instanceof Error) {
+                throw res
+            }
+
+            return res
+        })
+
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,

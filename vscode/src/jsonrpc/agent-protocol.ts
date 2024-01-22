@@ -15,6 +15,7 @@ import type {
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
+import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
 import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -83,6 +84,7 @@ export type Requests = {
 
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
+    'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
