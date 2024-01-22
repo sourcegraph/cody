@@ -411,7 +411,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                           this.localEmbeddings,
                           this.config.experimentalSymfContext ? this.symf : null,
                           this.codebaseStatusProvider,
-                          query
+                          query,
+                          this.config.internalUnstable
                       )
                 : undefined
         )

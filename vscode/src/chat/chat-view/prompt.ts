@@ -21,11 +21,6 @@ import {
     type SimpleChatModel,
 } from './SimpleChatModel'
 
-export interface IContextProvider {
-    // Relevant context pulled from the editor state and broader repository
-    getEnhancedContext(query: string): Promise<ContextItem[]>
-}
-
 interface PromptInfo {
     prompt: Message[]
     contextLimitWarnings: string[]

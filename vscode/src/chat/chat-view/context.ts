@@ -34,8 +34,20 @@ export async function getEnhancedContext(
     localEmbeddings: LocalEmbeddingsController | null,
     symf: SymfRunner | null,
     codebaseStatusProvider: CodebaseStatusProvider,
-    text: string
+    text: string,
+    internalUnstable: boolean
 ): Promise<ContextItem[]> {
+    if (internalUnstable) {
+        return getEnhancedContextFused(
+            useContextConfig,
+            editor,
+            embeddingsClient,
+            localEmbeddings,
+            symf,
+            codebaseStatusProvider,
+            text
+        )
+    }
     const searchContext: ContextItem[] = []
 
     // use user attention context only if config is set to none
@@ -83,32 +95,44 @@ export async function getEnhancedContext(
         }
     }
 
-    const priorityContext: ContextItem[] = []
-    const selectionContext = getCurrentSelectionContext(editor)
-    if (selectionContext.length > 0) {
-        priorityContext.push(...selectionContext)
-    } else if (needsUserAttentionContext(text)) {
-        // Query refers to current editor
-        priorityContext.push(...getVisibleEditorContext(editor))
-    } else if (needsReadmeContext(editor, text)) {
-        // Query refers to project, so include the README
-        let containsREADME = false
-        for (const contextItem of searchContext) {
-            const basename = uriBasename(contextItem.uri)
-            if (
-                basename.toLocaleLowerCase() === 'readme' ||
-                basename.toLocaleLowerCase().startsWith('readme.')
-            ) {
-                containsREADME = true
-                break
-            }
-        }
-        if (!containsREADME) {
-            priorityContext.push(...(await getReadmeContext()))
-        }
+    const priorityContext = await getPriorityContext(text, editor, searchContext)
+    return priorityContext.concat(searchContext)
+}
+
+async function getEnhancedContextFused(
+    useContextConfig: ConfigurationUseContext,
+    editor: VSCodeEditor,
+    _embeddingsClient: CachedRemoteEmbeddingsClient,
+    localEmbeddings: LocalEmbeddingsController | null,
+    symf: SymfRunner | null,
+    _codebaseStatusProvider: CodebaseStatusProvider,
+    text: string
+): Promise<ContextItem[]> {
+    // use user attention context only if config is set to none
+    if (useContextConfig === 'none') {
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+        return getVisibleEditorContext(editor)
     }
 
-    return priorityContext.concat(searchContext)
+    const retrievers: Promise<{ strategy: string; items: ContextItem[] }>[] = []
+    // Get embeddings context if useContext Config is not set to 'keyword' only
+    if (useContextConfig !== 'keyword') {
+        // Query local embeddings (dense)
+        retrievers.push(
+            retrieveContextGracefully(searchEmbeddingsLocal(localEmbeddings, text), 'local-embeddings')
+        )
+    }
+    if (symf) {
+        // Query symf context (sparse)
+        retrievers.push(retrieveContextGracefully(searchSymf(symf, editor, text), 'symf'))
+    }
+
+    const searchContext = await Promise.all(retrievers)
+
+    const fusedContext = fuseContext(searchContext)
+
+    const priorityContext = await getPriorityContext(text, editor, fusedContext)
+    return priorityContext.concat(fusedContext)
 }
 
 /**
@@ -341,6 +365,38 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     ]
 }
 
+async function getPriorityContext(
+    text: string,
+    editor: VSCodeEditor,
+    retrievedContext: ContextItem[]
+): Promise<ContextItem[]> {
+    const priorityContext: ContextItem[] = []
+    const selectionContext = getCurrentSelectionContext(editor)
+    if (selectionContext.length > 0) {
+        priorityContext.push(...selectionContext)
+    } else if (needsUserAttentionContext(text)) {
+        // Query refers to current editor
+        priorityContext.push(...getVisibleEditorContext(editor))
+    } else if (needsReadmeContext(editor, text)) {
+        // Query refers to project, so include the README
+        let containsREADME = false
+        for (const contextItem of retrievedContext) {
+            const basename = uriBasename(contextItem.uri)
+            if (
+                basename.toLocaleLowerCase() === 'readme' ||
+                basename.toLocaleLowerCase().startsWith('readme.')
+            ) {
+                containsREADME = true
+                break
+            }
+        }
+        if (!containsREADME) {
+            priorityContext.push(...(await getReadmeContext()))
+        }
+    }
+    return priorityContext
+}
+
 function needsUserAttentionContext(input: string): boolean {
     const inputLowerCase = input.toLowerCase()
     // If the input matches any of the `editorRegexps` we assume that we have to include
@@ -463,4 +519,106 @@ function extractQuestion(input: string): string | undefined {
         return input
     }
     return undefined
+}
+
+async function retrieveContextGracefully<T>(
+    promise: Promise<T[]>,
+    strategy: string
+): Promise<{ strategy: string; items: T[] }> {
+    try {
+        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (start)`)
+        return { strategy, items: await promise }
+    } catch (error) {
+        logError('SimpleChatPanelProvider', `getEnhancedContext > ${strategy}' (error)`, error)
+        return { strategy, items: [] }
+    } finally {
+        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
+    }
+}
+
+// k parameter for the reciprocal rank fusion scoring. 60 is the default value in many places
+//
+// c.f. https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking#how-rrf-ranking-works
+const RRF_K = 60
+function fuseContext(searchContext: { strategy: string; items: ContextItem[] }[]): ContextItem[] {
+    // For every strategy, create a map of snippets by document.
+    const resultsByDocument = new Map<string, { [identifier: string]: ContextItem[] }>()
+    for (const { strategy, items } of searchContext) {
+        for (const item of items) {
+            const documentId = item.uri.toString()
+
+            let document = resultsByDocument.get(documentId)
+            if (!document) {
+                document = {}
+                resultsByDocument.set(documentId, document)
+            }
+            if (!document[strategy]) {
+                document[strategy] = []
+            }
+            document[strategy].push(item)
+        }
+    }
+
+    // Rank the order of documents using reciprocal rank fusion.
+    //
+    // For this, we take the top rank of every document from each retrieved set and compute a
+    // combined rank. The idea is that a document that ranks highly across multiple retrievers
+    // should be ranked higher overall.
+    const fusedDocumentScores: Map<string, number> = new Map()
+    for (const { strategy, items } of searchContext) {
+        items.forEach((item, rank) => {
+            const documentId = item.uri.toString()
+
+            // Since every retriever can return many snippets for a given document, we need to
+            // only consider the best rank for each document.
+            // We can use the previous map by document to find the highest ranked snippet for a
+            // retriever
+            const isBestRankForRetriever = resultsByDocument.get(documentId)?.[strategy][0] === item
+            if (!isBestRankForRetriever) {
+                return
+            }
+
+            const reciprocalRank = 1 / (RRF_K + rank)
+
+            const score = fusedDocumentScores.get(documentId)
+            if (score === undefined) {
+                fusedDocumentScores.set(documentId, reciprocalRank)
+            } else {
+                fusedDocumentScores.set(documentId, score + reciprocalRank)
+            }
+        })
+    }
+
+    const fusedDocuments = [...fusedDocumentScores.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])
+
+    const fusedContext: ContextItem[] = []
+    // Now that we have a sorted list of documents (with the first document being the highest
+    // ranked one), we use top-k to combine snippets from each retriever into a result set.
+    //
+    // We start with the highest ranked document and include all retrieved snippets from this
+    // document into the result set, starting with the top retrieved snippet from each retriever
+    // and adding entries greedily.
+    for (const documentId of fusedDocuments) {
+        const resultByDocument = resultsByDocument.get(documentId)
+        if (!resultByDocument) {
+            continue
+        }
+
+        // We want to start iterating over every retrievers first rank, then every retrievers
+        // second rank etc. The termination criteria is thus defined to be the length of the
+        // largest snippet list of any retriever.
+        const maxMatches = Math.max(...Object.values(resultByDocument).map(r => r.length))
+
+        for (let i = 0; i < maxMatches; i++) {
+            for (const [_, snippets] of Object.entries(resultByDocument)) {
+                if (i >= snippets.length) {
+                    continue
+                }
+                const snippet = snippets[i]
+
+                fusedContext.push(snippet)
+            }
+        }
+    }
+    return fusedContext
 }
