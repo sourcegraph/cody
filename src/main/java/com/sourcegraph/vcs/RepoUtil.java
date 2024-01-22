@@ -1,5 +1,7 @@
 package com.sourcegraph.vcs;
 
+import static com.sourcegraph.vcs.ConvertUtilKt.convertGitCloneURLToCodebaseNameOrError;
+
 import com.intellij.dvcs.repo.Repository;
 import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -11,12 +13,14 @@ import com.sourcegraph.cody.agent.CodyAgentService;
 import com.sourcegraph.cody.agent.protocol.CloneURL;
 import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.common.ErrorNotification;
+import com.sourcegraph.config.ConfigUtil;
 import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -147,15 +151,22 @@ public class RepoUtil {
 
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
-      String codebaseName =
-          CodyAgentService.getAgent(project)
-              .thenCompose(
-                  agent ->
-                      agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
-              .join();
+      String codebaseName = null;
+
+      if (ConfigUtil.isCodyEnabled()) {
+        codebaseName =
+            CodyAgentService.getAgent(project)
+                .thenCompose(
+                    agent ->
+                        agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
+                .completeOnTimeout(/* value= */ null, /* timeout= */ 4, TimeUnit.SECONDS)
+                .get();
+      }
+
       if (codebaseName == null) {
-        throw new Exception(
-            "Failed to convert git clone URL to codebase name for cloneURL: " + cloneURL);
+        logger.warn(
+            "Failed to convert git clone URL to codebase name for cloneURL via agent: " + cloneURL);
+        codebaseName = convertGitCloneURLToCodebaseNameOrError(cloneURL);
       }
       return codebaseName;
     }

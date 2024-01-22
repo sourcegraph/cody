@@ -156,7 +156,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             SUBSCRIPTION_TAB_INDEX)
       }
       subscriptionPanel.update(data.isCurrentUserPro)
-    } else {
+    } else if (SUBSCRIPTION_TAB_INDEX < tabbedPane.tabCount) {
       tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
     }
   }
