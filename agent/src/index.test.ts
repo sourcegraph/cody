@@ -623,11 +623,19 @@ describe('Agent', () => {
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
             await openFile(squirrelUri)
             await client.request('command/execute', { command: 'cody.search.index-update' })
-            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
+            const id = await client.request('chat/new', null)
+            
+            const lastMessage = await client.sendMessage(id, 'What is Squirrel?', {
                 addEnhancedContext: true,
             })
             expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
             expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+
+            const lastMessageWithoutContext = await client.sendMessage(id, 'What is Squirrel?', {
+                addEnhancedContext: false,
+            })
+            expect(lastMessageWithoutContext?.text?.toLocaleLowerCase().includes('code nav')).toBeFalsy()
+            expect(lastMessageWithoutContext?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeFalsy()
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {

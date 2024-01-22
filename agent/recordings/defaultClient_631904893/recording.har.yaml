@@ -11133,6 +11133,7 @@ log:
 
 
 
+
                       
                   </selected>
               - speaker: assistant
@@ -12832,6 +12833,7 @@ log:
                   <selected>
 
                       return function inner() {}
+
 
 
                       
@@ -17675,6 +17677,7 @@ log:
 
                       return function inner() {}
 
+
                       
                   </selected>
               - speaker: assistant
@@ -17737,6 +17740,612 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-19T20:29:47.925Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c7f12de116d110c8a524686e51a49a00
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1325
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/squirrel.ts`:
+                  ```typescript
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `src/squirrel.ts`:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is Squirrel?
+              - speaker: assistant
+                text: " Based on the code snippet and comments provided, Squirrel is an
+                  interface that does not actually have anything to do with
+                  squirrels. The comment states that it mocks something
+                  unrelated to squirrels and is related to the implementation of
+                  precise code navigation in Sourcegraph. Specifically, Squirrel
+                  is an empty interface exported from the src/squirrel.ts file."
+              - speaker: human
+                text: What is Squirrel?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 27652
+        content:
+          mimeType: text/event-stream
+          size: 27652
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related to squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related to squirrels","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related to squirrels.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the updated code snippet, Squirrel is an interface defined in src/squirrel.ts that has the following details:\n\n- It is exported from the file\n- The comment states it is unrelated to squirrels, and instead is related to precise code navigation in Sourcegraph\n- It is an empty interface definition\n\nSo in summary, Squirrel is an interface used in implementing precise code navigation in Sourcegraph, despite its name implies it is related to squirrels.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 22 Jan 2024 17:04:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-22T17:04:00.456Z
       time: 0
       timings:
         blocked: -1
