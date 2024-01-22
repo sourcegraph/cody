@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 import { logDebug, logError } from '../../log'
 
-import { type UserWorkspaceInfo } from '.'
+import type { UserWorkspaceInfo } from '.'
 import { outputWrapper } from './helpers'
 
 const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
@@ -58,7 +58,7 @@ export class ToolsProvider {
             return
         }
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
-        const homeDir = this.user.homeDir + '/' || ''
+        const homeDir = `${this.user.homeDir}/` || ''
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}`)
         try {
             const { stdout, stderr } = await _exec(filteredCommand, {

@@ -1,22 +1,32 @@
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
-import { testFileUri, type CompletionParameters, type CompletionResponse } from '@sourcegraph/cody-shared'
+import {
+    STOP_REASON_STREAMING_CHUNK,
+    testFileUri,
+    type CodeCompletionsClient,
+    type CompletionParameters,
+    type CompletionResponse,
+    type CompletionResponseGenerator,
+} from '@sourcegraph/cody-shared'
 
-import { type SupportedLanguage } from '../../tree-sitter/grammars'
+import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient, type CompletionResponseGenerator } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
-    getInlineCompletions as _getInlineCompletions,
     TriggerKind,
+    getInlineCompletions as _getInlineCompletions,
     type InlineCompletionsParams,
 } from '../get-inline-completions'
-import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
+import {
+    MULTI_LINE_STOP_SEQUENCES,
+    SINGLE_LINE_STOP_SEQUENCES,
+    createProviderConfig,
+} from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 
@@ -68,7 +78,9 @@ export function params(
 
     let requestCounter = 0
     let resolveCompletionResponseGenerator: (value?: unknown) => void
-    const completionResponseGeneratorPromise = new Promise(resolve => (resolveCompletionResponseGenerator = resolve))
+    const completionResponseGeneratorPromise = new Promise(resolve => {
+        resolveCompletionResponseGenerator = resolve
+    })
 
     const client: Pick<CodeCompletionsClient, 'complete'> = {
         async *complete(completeParams) {
@@ -176,7 +188,8 @@ expect.extend({
         const { isNot } = this
 
         return {
-            pass: requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
+            pass:
+                requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
             message: () => `Completion requests are${isNot ? ' not' : ''} single-line`,
             actual: requests.map(r => ({ stopSequences: r.stopSequences })),
             expected: [{ stopSequences: SINGLE_LINE_STOP_SEQUENCES }],
@@ -189,10 +202,13 @@ expect.extend({
         const { isNot } = this
 
         return {
-            pass: requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
+            pass:
+                requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
             message: () => `Completion requests are${isNot ? ' not' : ''} multi-line`,
             actual: requests.map(r => ({ stopSequences: r.stopSequences })),
-            expected: Array.from({ length: 3 }).map(() => ({ stopSequences: MULTI_LINE_STOP_SEQUENCES })),
+            expected: Array.from({ length: 3 }).map(() => ({
+                stopSequences: MULTI_LINE_STOP_SEQUENCES,
+            })),
         }
     },
 })

@@ -15,7 +15,13 @@ describe('RateLimitError', () => {
     const dayInSeconds = 60 * 60 * 24
 
     it('gives a short retryMessage within 7 days', () => {
-        const error = new RateLimitError('autocompletions', 'rate limited oh no', false, 1234, String(5 * dayInSeconds))
+        const error = new RateLimitError(
+            'autocompletions',
+            'rate limited oh no',
+            false,
+            1234,
+            String(5 * dayInSeconds)
+        )
         expect(error.retryMessage).toBe('Usage will reset Sunday at 1:00 PM')
     })
 

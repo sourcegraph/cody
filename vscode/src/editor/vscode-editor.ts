@@ -164,7 +164,9 @@ export class VSCodeEditor implements Editor {
         return doc.getText(range)
     }
 
-    private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
+    private getActiveTextEditorDiagnosticType(
+        severity: vscode.DiagnosticSeverity
+    ): ActiveTextEditorDiagnosticType {
         switch (severity) {
             case vscode.DiagnosticSeverity.Error:
                 return 'error'
@@ -212,7 +214,10 @@ export class VSCodeEditor implements Editor {
             )
         )
         const followingText = activeEditor.document.getText(
-            new vscode.Range(selection.end, new vscode.Position(selection.end.line + SURROUNDING_LINES, 0))
+            new vscode.Range(
+                selection.end,
+                new vscode.Position(selection.end.line + SURROUNDING_LINES, 0)
+            )
         )
 
         return {

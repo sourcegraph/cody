@@ -3,7 +3,11 @@ import { expect, type Frame, type Locator, type Page } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 // Sign into Cody with valid auth from the sidebar
-export const sidebarSignin = async (page: Page, sidebar: Frame, enableNotifications = false): Promise<void> => {
+export const sidebarSignin = async (
+    page: Page,
+    sidebar: Frame,
+    enableNotifications = false
+): Promise<void> => {
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)

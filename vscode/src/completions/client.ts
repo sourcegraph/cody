@@ -1,42 +1,32 @@
 import {
-    addTraceparent,
     FeatureFlag,
+    NetworkError,
+    RateLimitError,
+    STOP_REASON_STREAMING_CHUNK,
+    TracedError,
+    addTraceparent,
     featureFlagProvider,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
     isRateLimitError,
-    NetworkError,
-    RateLimitError,
-    TracedError,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
     type CompletionLogger,
-    type CompletionParameters,
     type CompletionResponse,
+    type CompletionResponseGenerator,
     type CompletionsClientConfig,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
 
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
-export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
-
-export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
-}
-
-/**
- * Marks the yielded value as an incomplete response.
- *
- * TODO: migrate to union of multiple `CompletionResponse` types to explicitly document
- * all possible response types.
- */
-export const STOP_REASON_STREAMING_CHUNK = 'cody-streaming-chunk'
-
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
-export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
+export function createClient(
+    config: CompletionsClientConfig,
+    logger?: CompletionLogger
+): CodeCompletionsClient {
     async function* complete(
         params: CodeCompletionsParams,
         abortController: AbortController
@@ -44,7 +34,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
 
-        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteTracing
+        )
 
         const headers = new Headers(config.customHeaders)
         // Force HTTP connection reuse to reduce latency.
@@ -92,7 +84,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             // is no upgrade available.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
-                typeof response.headers.get('x-is-cody-pro-user') !== undefined
+                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
@@ -171,10 +163,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     const message = `response does not satisfy CodeCompletionResponse: ${result}`
                     log?.onError(message)
                     throw new TracedError(message, traceId)
-                } else {
-                    log?.onComplete(response)
-                    return response
                 }
+                log?.onComplete(response)
+                return response
             } catch (error) {
                 const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
                 log?.onError(message, error)
@@ -205,6 +196,7 @@ export async function* createSSEIterator(iterator: NodeJS.ReadableStream): Async
         buffer += event.toString()
 
         let index: number
+        // biome-ignore lint/suspicious/noAssignInExpressions: useful
         while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
             const message = buffer.slice(0, index)
             buffer = buffer.slice(index + SSE_TERMINATOR.length)

@@ -18,14 +18,14 @@ export function getOSArch(): {
         i686: 'x86',
     }
 
-    let platform
+    let platform: string | undefined
     try {
         platform = nodePlatformToPlatform[os.platform()]
     } catch {
         // Ignore errors
     }
 
-    let arch
+    let arch: string | undefined
     try {
         arch = nodeMachineToArch[os.arch()]
     } catch {

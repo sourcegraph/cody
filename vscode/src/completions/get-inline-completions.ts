@@ -1,26 +1,26 @@
 import type * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
-import { type CompletionIntent } from '../tree-sitter/query-sdk'
+import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { type ContextMixer } from './context/context-mixer'
+import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
-import { type CompletionLogID } from './logger'
-import {
-    type CompletionProviderTracer,
-    type Provider,
-    type ProviderConfig,
-    type ProviderOptions,
+import type { CompletionLogID } from './logger'
+import type {
+    CompletionProviderTracer,
+    Provider,
+    ProviderConfig,
+    ProviderOptions,
 } from './providers/provider'
-import { type RequestManager, type RequestParams } from './request-manager'
+import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import { type ProvideInlineCompletionsItemTraceData } from './tracer'
+import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 
 export interface InlineCompletionsParams {
     // Context
@@ -136,7 +136,9 @@ export enum TriggerKind {
     SuggestWidget = 'SuggestWidget',
 }
 
-export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
+export async function getInlineCompletions(
+    params: InlineCompletionsParams
+): Promise<InlineCompletionsResult | null> {
     try {
         const result = await doGetInlineCompletions(params)
         params.tracer?.({ result })
@@ -163,7 +165,9 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
     }
 }
 
-async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
+async function doGetInlineCompletions(
+    params: InlineCompletionsParams
+): Promise<InlineCompletionsResult | null> {
     const {
         document,
         position,
@@ -207,7 +211,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Do not trigger when cursor is at the start of the file ending line and the line above is empty
-    if (triggerKind !== TriggerKind.Manual && position.line !== 0 && position.line === document.lineCount - 1) {
+    if (
+        triggerKind !== TriggerKind.Manual &&
+        position.line !== 0 &&
+        position.line === document.lineCount - 1
+    ) {
         const lineAbove = Math.max(position.line - 1, 0)
         if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
             return null
@@ -272,7 +280,8 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Debounce to avoid firing off too many network requests as the user is still typing.
     await wrapInActiveSpan('autocomplete.debounce', async () => {
         const interval =
-            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
+            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+            (artificialDelay ?? 0)
         if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
             await new Promise<void>(resolve => setTimeout(resolve, interval))
         }
@@ -351,14 +360,26 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 interface GetCompletionProvidersParams
     extends Pick<
         InlineCompletionsParams,
-        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'dynamicMultilineCompletions' | 'hotStreak'
+        | 'document'
+        | 'position'
+        | 'triggerKind'
+        | 'providerConfig'
+        | 'dynamicMultilineCompletions'
+        | 'hotStreak'
     > {
     docContext: DocumentContext
 }
 
 function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
-    const { document, position, triggerKind, providerConfig, docContext, dynamicMultilineCompletions, hotStreak } =
-        params
+    const {
+        document,
+        position,
+        triggerKind,
+        providerConfig,
+        docContext,
+        dynamicMultilineCompletions,
+        hotStreak,
+    } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,

@@ -12,16 +12,19 @@ import {
     type ContextFile,
     type EnhancedContextContextT,
 } from '@sourcegraph/cody-shared'
-import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
+import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
-import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
+import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
 
 import { Chat } from './Chat'
-import { EnhancedContextContext, EnhancedContextEventHandlers } from './Components/EnhancedContextSettings'
+import {
+    EnhancedContextContext,
+    EnhancedContextEventHandlers,
+} from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
-import { type View } from './NavBar'
+import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
@@ -50,7 +53,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [myPrompts, setMyPrompts] = useState<
         [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
@@ -81,6 +83,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         })
     }, [vscodeAPI])
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
@@ -134,12 +137,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'view':
                         setView(message.messages)
                         break
-                    case 'suggestions':
-                        setSuggestions(message.suggestions)
-                        break
                     case 'custom-prompts': {
-                        let prompts: [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] =
-                            message.prompts
+                        let prompts: [
+                            string,
+                            CodyCommand & { isLastInGroup?: boolean; instruction?: string },
+                        ][] = message.prompts
 
                         if (!prompts) {
                             setMyPrompts(null)
@@ -158,7 +160,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setMyPrompts([
                             ...prompts,
                             // add another group
-                            ['reset', { prompt: '', slashCommand: '/reset', description: 'Clear the chat' }],
+                            [
+                                'reset',
+                                { prompt: '', slashCommand: '/reset', description: 'Clear the chat' },
+                            ],
                         ])
                         break
                     }
@@ -178,7 +183,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             })
                         }
                         if (message.error) {
-                            guardrails.notifyAttributionFailure(message.snippet, new Error(message.error))
+                            guardrails.notifyAttributionFailure(
+                                message.snippet,
+                                new Error(message.error)
+                            )
                         }
                         break
                 }
@@ -257,8 +265,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0} />
-                    {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                    <Notices
+                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                    />
+                    {errorMessages && (
+                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
+                    )}
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
@@ -286,8 +298,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         inputHistory={inputHistory}
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
-                                        suggestions={suggestions}
-                                        setSuggestions={setSuggestions}
                                         telemetryService={telemetryService}
                                         chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
@@ -309,21 +319,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 }
 
-const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> = ({
-    errors,
-    setErrors,
-}) => (
-    <div className="error-container">
-        {errors.map((error, i) => (
-            <div key={i} className="error">
-                <span>{error}</span>
-                <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
-                    ×
-                </button>
-            </div>
-        ))}
-    </div>
-)
+const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
+    ({ errors, setErrors }) => (
+        <div className="error-container">
+            {errors.map((error, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
+                <div key={i} className="error">
+                    <span>{error}</span>
+                    <button
+                        type="button"
+                        className="close-btn"
+                        onClick={() => setErrors(errors.filter(e => e !== error))}
+                    >
+                        ×
+                    </button>
+                </div>
+            ))}
+        </div>
+    )
 
 /**
  * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
@@ -356,7 +369,10 @@ const instructionLabels: Record<string, string> = {
 /**
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
-function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [string, T & { instruction?: string }] {
+function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [
+    string,
+    T & { instruction?: string },
+] {
     const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }

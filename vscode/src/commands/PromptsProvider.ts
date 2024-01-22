@@ -1,4 +1,4 @@
-import { type CodyCommand } from '@sourcegraph/cody-shared'
+import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { getDefaultCommandsMap } from '.'
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
@@ -51,7 +51,10 @@ export class PromptsProvider {
     /**
      * Group the default prompts with the custom prompts and add a separator
      */
-    public groupCommands(customCommands = new Map<string, CodyCommand>(), includeExperimentalCommands = false): void {
+    public groupCommands(
+        customCommands = new Map<string, CodyCommand>(),
+        includeExperimentalCommands = false
+    ): void {
         // Filter commands that has the experimental type if not enabled
         let defaultCommands = [...this.defaultPromptsMap]
         if (!includeExperimentalCommands) {

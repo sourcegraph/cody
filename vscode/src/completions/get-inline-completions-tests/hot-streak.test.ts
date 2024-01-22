@@ -205,7 +205,9 @@ describe('[getInlineCompletions] hot streak', () => {
             )
             const firstRequest = await getInlineCompletions(firstParams)
 
-            expect(firstRequest?.items[0]?.insertText).toEqual('if(i > 1) {\n        console.log(2)\n    }')
+            expect(firstRequest?.items[0]?.insertText).toEqual(
+                'if(i > 1) {\n        console.log(2)\n    }'
+            )
 
             const secondRequest = await getInlineCompletions({
                 ...params(
@@ -229,7 +231,9 @@ describe('[getInlineCompletions] hot streak', () => {
                 requestManager: firstParams.requestManager,
             })
 
-            expect(secondRequest?.items[0]?.insertText).toEqual('if(i > 2) {\n        console.log(3)\n    }')
+            expect(secondRequest?.items[0]?.insertText).toEqual(
+                'if(i > 2) {\n        console.log(3)\n    }'
+            )
             expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
     })

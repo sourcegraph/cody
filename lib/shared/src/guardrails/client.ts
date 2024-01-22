@@ -1,8 +1,8 @@
-import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import { ConfigFeaturesSingleton } from '../sourcegraph-api/graphql/client'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
-import { type Attribution, type Guardrails } from '.'
+import type { Attribution, Guardrails } from '.'
+import { ConfigFeaturesSingleton } from '../sourcegraph-api/graphql/client'
 
 export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(private client: SourcegraphGraphQLAPIClient) {}

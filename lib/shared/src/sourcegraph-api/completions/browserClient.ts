@@ -1,13 +1,18 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
+import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
 import { SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
-        const abort = new AbortController()
+    protected _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void {
+        const abort = dependentAbortController(signal)
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
@@ -52,7 +57,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                     const data: Event = { ...JSON.parse(message.data), type: message.event }
                     this.sendEvents([data], cb)
                 } catch (error: any) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     cb.onError(error.message)
                     abort.abort()
                     console.error(error)
@@ -61,7 +65,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 }
             },
             onerror(error) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 cb.onError(error.message)
                 abort.abort()
                 console.error(error)
@@ -69,24 +72,19 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 throw error
             },
         }).catch(error => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             cb.onError(error.message)
             abort.abort()
             console.error(error)
         })
-        return () => {
-            abort.abort()
-        }
     }
 }
 
 declare const WorkerGlobalScope: never
-// eslint-disable-next-line unicorn/no-typeof-undefined
-const isRunningInWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
+const isRunningInWebWorker =
+    typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 
 if (isRunningInWebWorker) {
     // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
     // available in a worker.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     ;(self as any).document = { removeEventListener: () => {} }
 }

@@ -1,8 +1,8 @@
-import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
-import { type LogEventMode, type SourcegraphGraphQLAPIClient } from '../graphql/client'
+import type { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
@@ -43,7 +43,11 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
-                logError('GraphQLTelemetryExporter', 'telemetry: failed to evaluate server version:', siteVersion)
+                logError(
+                    'GraphQLTelemetryExporter',
+                    'telemetry: failed to evaluate server version:',
+                    siteVersion
+                )
                 return // we can try again later
             }
 
@@ -104,6 +108,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                             url: event.marketingTracking?.url || '',
                             publicArgument: () =>
                                 event.parameters.metadata?.reduce((acc, curr) => ({
+                                    // biome-ignore lint/performance/noAccumulatingSpread: TODO(sqs): this is a legit perf issue
                                     ...acc,
                                     [curr.key]: curr.value,
                                 })),
@@ -164,11 +169,11 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * https://github.com/sourcegraph/sourcegraph/pull/57719
      */
     if (exportMode === '5.2.0-5.2.1') {
-        events.forEach(event => {
+        for (const event of events) {
             if (event.parameters) {
                 event.parameters.privateMetadata = undefined
             }
-        })
+        }
     }
 
     /**
@@ -181,14 +186,16 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * was only added in 5.2.4: https://github.com/sourcegraph/sourcegraph/pull/58539
      */
     if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3') {
-        events.forEach(event => {
+        for (const event of events) {
             if (event.parameters) {
-                event.parameters.metadata?.forEach(entry => {
-                    entry.value = Math.round(entry.value)
-                })
+                if (event.parameters.metadata) {
+                    for (const entry of event.parameters.metadata) {
+                        entry.value = Math.round(entry.value)
+                    }
+                }
                 event.parameters.interactionID = undefined
             }
-        })
+        }
     }
 
     /**
@@ -196,8 +203,8 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * https://github.com/sourcegraph/sourcegraph/pull/58944
      */
     if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3' || exportMode === '5.2.4') {
-        events.forEach(event => {
+        for (const event of events) {
             event.timestamp = undefined
-        })
+        }
     }
 }

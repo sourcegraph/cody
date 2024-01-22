@@ -1,7 +1,7 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared'
+import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../log'
 
@@ -136,7 +136,10 @@ export class CustomPromptsStore implements vscode.Disposable {
                             // write transformed commands to the corresponding config file
                             void this.updateJSONFile({ ...json, commands }, type).then(() => {
                                 // open the updated settings file
-                                const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+                                const filePath =
+                                    type === 'user'
+                                        ? this.jsonFileUris.user
+                                        : this.jsonFileUris.workspace
                                 if (filePath) {
                                     void vscode.window.showTextDocument(filePath)
                                 }
@@ -241,7 +244,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            logError('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
+            logError('CustomPromptsStore:clear:error:', `Failed to remove cody.json file for${type}`)
         }
         await deleteFile(uri)
     }

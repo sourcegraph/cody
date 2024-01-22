@@ -1,7 +1,5 @@
-import { type Polly } from '@pollyjs/core'
+import type { Polly } from '@pollyjs/core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
-// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { startPollyRecording } from '../testutils/polly'
@@ -47,7 +45,9 @@ describe('symf', () => {
         )
 
         check('parse file with tree-sitter', expanded =>
-            expect(expanded).toMatchInlineSnapshot('"file files parser parsing sitter tree tree-sitter ts"')
+            expect(expanded).toMatchInlineSnapshot(
+                '"file files parser parsing sitter tree tree-sitter ts"'
+            )
         )
 
         check('scan tokens in C++', expanded =>

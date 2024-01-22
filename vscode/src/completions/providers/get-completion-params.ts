@@ -1,9 +1,10 @@
-import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
+import type { AutocompleteTimeouts, CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
-import { type CodeCompletionsParams } from '../client'
-
-import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
-import { type ProviderOptions } from './provider'
+import {
+    fetchAndProcessCompletions,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import type { ProviderOptions } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
 
@@ -23,7 +24,9 @@ interface Params {
     multilineStopSequences: string[]
 }
 
-export function getLineNumberDependentCompletionParams(params: Params): LineNumberDependentCompletionParamsByType {
+export function getLineNumberDependentCompletionParams(
+    params: Params
+): LineNumberDependentCompletionParamsByType {
     const { singlelineStopSequences, multilineStopSequences } = params
 
     return {
@@ -73,7 +76,11 @@ export function getCompletionParamsAndFetchImpl(
     const {
         timeouts,
         providerOptions: { multiline: isMutiline, dynamicMultilineCompletions, hotStreak },
-        lineNumberDependentCompletionParams: { singlelineParams, multilineParams, dynamicMultilineParams },
+        lineNumberDependentCompletionParams: {
+            singlelineParams,
+            multilineParams,
+            dynamicMultilineParams,
+        },
     } = params
 
     const useExtendedGeneration = isMutiline || dynamicMultilineCompletions || hotStreak

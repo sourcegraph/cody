@@ -1,7 +1,8 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { type ActiveTextEditorSelectionRange } from '../editor'
-import { type Message } from '../sourcegraph-api'
+import type { ActiveTextEditorSelectionRange } from '../editor'
+import { displayPath } from '../editor/displayPath'
+import type { Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context file.
 // embeddings: context file returned by the embeddings client
@@ -88,7 +89,7 @@ export interface HoverContext {
 export function getContextMessageWithResponse(
     text: string,
     file: ContextFile,
-    response: string = 'Ok.',
+    response = 'Ok.',
     source: ContextFileSource = 'editor'
 ): ContextMessage[] {
     file.source = file.source || source
@@ -110,7 +111,9 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
             text:
                 file.type === 'file'
                     ? `Context from file path @${file.uri?.path}:\n${code}`
-                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`,
+                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${displayPath(
+                          file.uri
+                      )}:\n${code}`,
             file,
         },
         { speaker: 'assistant', text: 'OK.' },

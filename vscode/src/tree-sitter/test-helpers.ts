@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { type default as Parser, type QueryCapture, type QueryMatch } from 'web-tree-sitter'
+import type { default as Parser, QueryCapture, QueryMatch } from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { createParser } from './parser'
@@ -11,7 +11,9 @@ const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
 /**
  * Should be used in tests only.
  */
-export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser | undefined> {
+export function initTreeSitterParser(
+    language = SupportedLanguage.TypeScript
+): Promise<Parser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
@@ -21,7 +23,9 @@ export function initTreeSitterParser(language = SupportedLanguage.TypeScript): P
 /**
  * Should be used in tests only.
  */
-export async function initTreeSitterSDK(language = SupportedLanguage.TypeScript): Promise<DocumentQuerySDK> {
+export async function initTreeSitterSDK(
+    language = SupportedLanguage.TypeScript
+): Promise<DocumentQuerySDK> {
     await initTreeSitterParser(language)
     const sdk = getDocumentQuerySDK(language)
 

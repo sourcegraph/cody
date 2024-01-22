@@ -5,8 +5,6 @@ import type Parser from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports,@typescript-eslint/no-var-requires
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
 /*

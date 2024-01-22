@@ -1,22 +1,29 @@
 import * as vscode from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+} from '@sourcegraph/cody-shared'
 
-import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+    OPENING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    MULTILINE_STOP_SEQUENCE,
-    OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { type ContextSnippet } from '../types'
+import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { type FetchCompletionResult } from './fetch-and-process-completions'
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import type { FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -45,9 +52,13 @@ const PROVIDER_IDENTIFIER = 'unstable-openai'
 class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
-    private instructions = `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
+    private instructions =
+        `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 
-    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<UnstableOpenAIOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { maxContextTokens, client }: Required<UnstableOpenAIOptions>
+    ) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -92,7 +103,9 @@ ${OPENING_CODE_TAG}${infillBlock}`
             const snippetMessages: string[] = [
                 'symbol' in snippet && snippet.symbol !== ''
                     ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                    : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    : `Codebase context from file path '${displayPath(
+                          snippet.uri
+                      )}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
             ]
             const numSnippetChars = snippetMessages.join('\n\n').length + 1
             if (numSnippetChars > remainingChars) {
@@ -111,10 +124,12 @@ ${OPENING_CODE_TAG}${infillBlock}`
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
-            providerOptions: this.options,
-            lineNumberDependentCompletionParams,
-        })
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
+            {
+                providerOptions: this.options,
+                lineNumberDependentCompletionParams,
+            }
+        )
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
@@ -124,7 +139,9 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+        const completionsGenerators = Array.from({
+            length: this.options.n,
+        }).map(() => {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
@@ -172,7 +189,10 @@ export function createProviderConfig({
 }: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(options, { maxContextTokens, ...otherOptions })
+            return new UnstableOpenAIProvider(options, {
+                maxContextTokens,
+                ...otherOptions,
+            })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

@@ -3,12 +3,12 @@ import * as vscode from 'vscode'
 import { displayPath, type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
-import { type ExecuteEditArguments } from '../edit/execute'
+import type { ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/editor-context'
 
-import { type FixupTask } from './FixupTask'
-import { type FixupTaskFactory } from './roles'
+import type { FixupTask } from './FixupTask'
+import type { FixupTaskFactory } from './roles'
 import { updateRangeMultipleChanges, type TextChange } from './tracked-range'
 
 function removeAfterLastAt(str: string): string {
@@ -99,7 +99,11 @@ export class FixupTypingUI {
         const fileMatch = instruction.match(MATCHING_CONTEXT_FILE_REGEX)
         if (fileMatch) {
             const cancellation = new vscode.CancellationTokenSource()
-            const fileResults = await getFileContextFiles(fileMatch[1], MAX_FUZZY_RESULTS, cancellation.token)
+            const fileResults = await getFileContextFiles(
+                fileMatch[1],
+                MAX_FUZZY_RESULTS,
+                cancellation.token
+            )
             return fileResults.map(result => ({
                 key: getLabelForContextFile(result),
                 file: result,
@@ -122,7 +126,9 @@ export class FixupTypingUI {
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
+        quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(
+            range
+        )} with Cody`
         quickPick.placeholder = placeholder
         if (initialValue) {
             quickPick.value = initialValue
@@ -134,13 +140,11 @@ export class FixupTypingUI {
 
         // Initialize the selectedContextItems with any previous items
         // This is primarily for edit retries, where a user may want to reuse their context
-        initialSelectedContextFiles.forEach(file => {
+        for (const file of initialSelectedContextFiles) {
             selectedContextItems.set(getLabelForContextFile(file), file)
-        })
-
+        }
         // VS Code automatically sorts quick pick items by label.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ;(quickPick as any).sortByLabel = false
 
         if (source === 'menu') {

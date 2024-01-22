@@ -1,4 +1,4 @@
-import { type Position, type TextDocument } from './protocol-alias'
+import type { Position, TextDocument } from './protocol-alias'
 
 /**
  * Utility class to convert line/character positions into offsets.
@@ -47,7 +47,10 @@ export class DocumentOffsets {
         return this.lineLengthIncludingNewline(line) - this.newlineLength(line)
     }
     public offset(position: Position): number {
-        return this.lines[position.line] + Math.min(position.character, this.lineLengthIncludingNewline(position.line))
+        return (
+            this.lines[position.line] +
+            Math.min(position.character, this.lineLengthIncludingNewline(position.line))
+        )
     }
     public position(offset: number): { line: number; character: number } {
         let line = 0

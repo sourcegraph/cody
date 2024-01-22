@@ -5,5 +5,8 @@ import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 
 beforeAll(() => {
     const isWin = isWindows()
-    setDisplayPathEnvInfo({ isWindows: isWin, workspaceFolders: [isWin ? URI.file('C:\\') : URI.file('/')] })
+    setDisplayPathEnvInfo({
+        isWindows: isWin,
+        workspaceFolders: [isWin ? URI.file('C:\\') : URI.file('/')],
+    })
 })

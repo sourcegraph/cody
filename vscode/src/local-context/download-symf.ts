@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as fs from 'fs'
 import fspromises from 'fs/promises'
 import * as os from 'os'
@@ -30,7 +28,9 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     const { platform, arch } = getOSArch()
     if (!platform || !arch) {
         // show vs code error message
-        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
+        void vscode.window.showErrorMessage(
+            `No symf binary available for ${os.platform()}/${os.machine()}`
+        )
         return null
     }
 
@@ -44,7 +44,8 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
 
     // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
     // identifier (linux-musl, windows-gnu, macos).
-    const zigPlatform = platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
+    const zigPlatform =
+        platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
 
     const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${zigPlatform}.zip`
     logDebug('symf', `downloading symf from ${symfURL}`)
@@ -58,7 +59,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
                 cancellable: false,
             },
             async progress => {
-                const symfTmpDir = symfPath + '.tmp'
+                const symfTmpDir = `${symfPath}.tmp`
                 progress.report({ message: 'Downloading symf and extracting symf' })
 
                 await fspromises.mkdir(symfTmpDir, { recursive: true })
