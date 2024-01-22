@@ -1,7 +1,8 @@
+import { STOP_REASON_STREAMING_CHUNK, type CompletionResponseGenerator } from '@sourcegraph/cody-shared'
+
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { STOP_REASON_STREAMING_CHUNK, type CompletionResponseGenerator } from '../client'
-import { type DocumentContext } from '../get-current-doc-context'
+import type { DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
@@ -11,7 +12,7 @@ import {
 
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { createHotStreakExtractor, type HotStreakExtractor } from './hot-streak'
-import { type ProviderOptions } from './provider'
+import type { ProviderOptions } from './provider'
 
 export interface FetchAndProcessCompletionsParams {
     abortController: AbortController
@@ -27,7 +28,12 @@ export interface FetchAndProcessCompletionsParams {
 export async function* fetchAndProcessDynamicMultilineCompletions(
     params: FetchAndProcessCompletionsParams
 ): FetchCompletionsGenerator {
-    const { completionResponseGenerator, abortController, providerOptions, providerSpecificPostProcess } = params
+    const {
+        completionResponseGenerator,
+        abortController,
+        providerOptions,
+        providerSpecificPostProcess,
+    } = params
     const { hotStreak, docContext, multiline } = providerOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor
@@ -38,7 +44,9 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         isFinal: boolean
     }
 
-    function* stopStreamingAndUsePartialResponse(stopParams: StopParams): Generator<FetchCompletionResult> {
+    function* stopStreamingAndUsePartialResponse(
+        stopParams: StopParams
+    ): Generator<FetchCompletionResult> {
         const { completedCompletion, rawCompletion, isFinal } = stopParams
 
         yield {
@@ -90,7 +98,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
             if (completion) {
                 const completedCompletion = processCompletion(completion, providerOptions)
-                yield* stopStreamingAndUsePartialResponse({ completedCompletion, isFinal, rawCompletion })
+                yield* stopStreamingAndUsePartialResponse({
+                    completedCompletion,
+                    isFinal,
+                    rawCompletion,
+                })
             }
         } else {
             /**
@@ -125,7 +137,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                         docContext: dynamicMultilineDocContext,
                     })
 
-                    yield* stopStreamingAndUsePartialResponse({ completedCompletion, isFinal, rawCompletion })
+                    yield* stopStreamingAndUsePartialResponse({
+                        completedCompletion,
+                        isFinal,
+                        rawCompletion,
+                    })
                 }
             } else {
                 /**
@@ -152,7 +168,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                         providerOptions
                     )
 
-                    yield* stopStreamingAndUsePartialResponse({ completedCompletion, isFinal, rawCompletion })
+                    yield* stopStreamingAndUsePartialResponse({
+                        completedCompletion,
+                        isFinal,
+                        rawCompletion,
+                    })
                 }
             }
         }
@@ -168,8 +188,15 @@ export type FetchCompletionResult =
 
 type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult>
 
-export async function* fetchAndProcessCompletions(params: FetchAndProcessCompletionsParams): FetchCompletionsGenerator {
-    const { completionResponseGenerator, abortController, providerOptions, providerSpecificPostProcess } = params
+export async function* fetchAndProcessCompletions(
+    params: FetchAndProcessCompletionsParams
+): FetchCompletionsGenerator {
+    const {
+        completionResponseGenerator,
+        abortController,
+        providerOptions,
+        providerSpecificPostProcess,
+    } = params
     const { hotStreak, docContext } = providerOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor

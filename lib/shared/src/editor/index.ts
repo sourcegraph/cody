@@ -1,4 +1,4 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 export interface ActiveTextEditor {
     content: string
@@ -51,7 +51,9 @@ export interface VsCodeCommandsController {
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
-export interface ActiveTextEditorViewControllers<C extends VsCodeCommandsController = VsCodeCommandsController> {
+export interface ActiveTextEditorViewControllers<
+    C extends VsCodeCommandsController = VsCodeCommandsController,
+> {
     readonly command?: C
 }
 
@@ -76,11 +78,16 @@ export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsContr
     /**
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
-    getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
+    getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
-    getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
+    getTextEditorContentForFile(
+        uri: URI,
+        range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined>
 
     showWarningMessage(message: string): Promise<void>
 }

@@ -1,20 +1,20 @@
 import { URI } from 'vscode-uri'
 
 import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
-import { type Configuration } from '../configuration'
-import { type ActiveTextEditorSelectionRange } from '../editor'
-import { type EmbeddingsSearch } from '../embeddings'
-import {
-    type ContextResult,
-    type FilenameContextFetcher,
-    type IndexedKeywordContextFetcher,
-    type LocalEmbeddingsFetcher,
+import type { Configuration } from '../configuration'
+import type { ActiveTextEditorSelectionRange } from '../editor'
+import type { EmbeddingsSearch } from '../embeddings'
+import type {
+    ContextResult,
+    FilenameContextFetcher,
+    IndexedKeywordContextFetcher,
+    LocalEmbeddingsFetcher,
 } from '../local-context'
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
-import { type Message } from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 import { isDotCom } from '../sourcegraph-api/environments'
-import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-import { type UnifiedContextFetcher } from '../unified-context'
+import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import type { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
 import {
@@ -50,7 +50,11 @@ export class CodebaseContext {
      * Returns list of context messages for a given query, sorted in *reverse* order of importance (that is,
      * the most important context message appears *last*)
      */
-    public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+    public async getContextMessages(
+        workspaceFolderUri: URI,
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
             case 'unified':
                 return this.getUnifiedContextMessages(query, options)
@@ -60,7 +64,7 @@ export class CodebaseContext {
                 return []
             default: {
                 return this.localEmbeddings || this.embeddings
-                    ? this.getEmbeddingsContextMessages(query, options)
+                    ? this.getEmbeddingsContextMessages(workspaceFolderUri, query, options)
                     : this.getLocalContextMessages(query, options)
             }
         }
@@ -70,10 +74,11 @@ export class CodebaseContext {
     // We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
     // when we run out of tokens.
     private async getEmbeddingsContextMessages(
+        workspaceFolderUri: URI,
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
-        const combinedResults = await this.getEmbeddingSearchResults(query, options)
+        const combinedResults = await this.getEmbeddingSearchResults(workspaceFolderUri, query, options)
 
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
@@ -82,6 +87,7 @@ export class CodebaseContext {
     }
 
     private async getEmbeddingSearchResults(
+        workspaceFolderUri: URI,
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
@@ -94,6 +100,7 @@ export class CodebaseContext {
 
         if (this.embeddings) {
             const embeddingsSearchResults = await this.embeddings.search(
+                workspaceFolderUri,
                 query,
                 options.numCodeResults,
                 options.numTextResults
@@ -124,7 +131,10 @@ export class CodebaseContext {
         )
     }
 
-    private async getUnifiedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+    private async getUnifiedContextMessages(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<ContextMessage[]> {
         if (!this.unifiedContextFetcher) {
             return []
         }
@@ -163,10 +173,15 @@ export class CodebaseContext {
         })
     }
 
-    private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+    private async getLocalContextMessages(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<ContextMessage[]> {
         try {
             const filenameResults = await this.getFilenameSearchResults(query, options)
-            const rerankedResults = await (this.rerank ? this.rerank(query, filenameResults) : filenameResults)
+            const rerankedResults = await (this.rerank
+                ? this.rerank(query, filenameResults)
+                : filenameResults)
             const messages = resultsToMessages(rerankedResults)
 
             return messages
@@ -176,11 +191,17 @@ export class CodebaseContext {
         }
     }
 
-    private async getFilenameSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
+    private async getFilenameSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<ContextResult[]> {
         if (!this.filenames) {
             return []
         }
-        const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
+        const results = await this.filenames.getContext(
+            query,
+            options.numCodeResults + options.numTextResults
+        )
         return results
     }
 }
@@ -190,10 +211,13 @@ function groupResultsByFile(
 ): { file: ContextFile & Required<Pick<ContextFile, 'uri'>>; results: string[] }[] {
     const originalFileOrder: (ContextFile & Required<Pick<ContextFile, 'uri'>>)[] = []
     for (const result of results) {
-        const resultUri = URI.file(result.fileName)
-        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.uri.toString() === resultUri.toString())) {
+        if (
+            !originalFileOrder.find(
+                (ogFile: ContextFile) => ogFile.uri.toString() === result.uri.toString()
+            )
+        ) {
             originalFileOrder.push({
-                uri: resultUri,
+                uri: result.uri,
                 repoName: result.repoName,
                 revision: result.revision,
                 range: createContextFileRange(result),
@@ -205,12 +229,11 @@ function groupResultsByFile(
 
     const resultsGroupedByFile = new Map<string /* resultUri.toString() */, EmbeddingsSearchResult[]>()
     for (const result of results) {
-        const resultUri = URI.file(result.fileName)
-        const results = resultsGroupedByFile.get(resultUri.toString())
+        const results = resultsGroupedByFile.get(result.uri.toString())
         if (results === undefined) {
-            resultsGroupedByFile.set(resultUri.toString(), [result])
+            resultsGroupedByFile.set(result.uri.toString(), [result])
         } else {
-            resultsGroupedByFile.set(resultUri.toString(), results.concat([result]))
+            resultsGroupedByFile.set(result.uri.toString(), results.concat([result]))
         }
     }
 
@@ -239,8 +262,8 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 }
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
-    return results.flatMap(({ content, fileName, uri, repoName, revision }) => {
-        const messageText = populateCodeContextTemplate(content, uri ?? URI.file(fileName), repoName)
+    return results.flatMap(({ content, uri, repoName, revision }) => {
+        const messageText = populateCodeContextTemplate(content, uri, repoName)
         return getContextMessageWithResponse(messageText, { type: 'file', uri, repoName, revision })
     })
 }

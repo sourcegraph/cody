@@ -24,7 +24,14 @@ async function main(): Promise<void> {
     const extensionDevelopmentPath = vscodeCodyRoot
 
     // The path to the test runner script, passed to --extensionTestsPath.
-    const extensionTestsPath = path.resolve(vscodeCodyRoot, 'dist', 'tsc', 'test', 'integration', 'index')
+    const extensionTestsPath = path.resolve(
+        vscodeCodyRoot,
+        'dist',
+        'tsc',
+        'test',
+        'integration',
+        'index'
+    )
 
     try {
         // Download VS Code, unzip it, and run the integration test.
@@ -44,6 +51,4 @@ async function main(): Promise<void> {
         process.exit(1)
     }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()

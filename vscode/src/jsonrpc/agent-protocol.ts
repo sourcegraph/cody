@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
-
-import type { BillingCategory, BillingProduct, ChatMessage, ChatModelProvider, event } from '@sourcegraph/cody-shared'
+import type {
+    BillingCategory,
+    BillingProduct,
+    ChatMessage,
+    ChatModelProvider,
+    event,
+} from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
     KnownString,
@@ -271,7 +275,7 @@ export interface ServerInfo {
     capabilities?: ServerCapabilities
     authStatus?: AuthStatus
 }
-interface ServerCapabilities {}
+type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -327,7 +331,11 @@ interface TelemetryEvent {
  * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
  * type constraints as '(TelemetryEventRecorder).recordEvent()'.
  */
-export function newTelemetryEvent<Feature extends string, Action extends string, MetadataKey extends string>(
+export function newTelemetryEvent<
+    Feature extends string,
+    Action extends string,
+    MetadataKey extends string,
+>(
     feature: KnownString<Feature>,
     action: KnownString<Action>,
     parameters?: TelemetryEventParameters<

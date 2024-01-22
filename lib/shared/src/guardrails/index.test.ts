@@ -12,10 +12,14 @@ const genRepos = (count: number) => {
 
 describe('summariseAttribution', () => {
     it('handles error', () => {
-        expect(summariseAttribution(new Error('test'))).toEqual('guardrails attribution search failed: test')
+        expect(summariseAttribution(new Error('test'))).toEqual(
+            'guardrails attribution search failed: test'
+        )
     })
     it('handles no matches', () => {
-        expect(summariseAttribution({ limitHit: false, repositories: [] })).toEqual('no matching repositories found')
+        expect(summariseAttribution({ limitHit: false, repositories: [] })).toEqual(
+            'no matching repositories found'
+        )
     })
     it('handles one match', () => {
         expect(summariseAttribution({ limitHit: false, repositories: genRepos(1) })).toEqual(

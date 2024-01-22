@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     DOTCOM_URL,
-    isDotCom,
-    isError,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    isDotCom,
+    isError,
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
@@ -29,7 +29,7 @@ import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
-type Unsubscribe = () => {}
+type Unsubscribe = () => void
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -41,7 +41,10 @@ export class AuthProvider {
     private listeners: Set<Listener> = new Set()
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        private config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders'
+        >
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -301,7 +304,7 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders?: {} | null
+        customHeaders?: Record<string, string> | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const endpoint = formatURL(uri) || ''
         const config = {
@@ -345,7 +348,10 @@ export class AuthProvider {
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token
     // sending back from sourcegraph.com
-    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<void> {
+    public async tokenCallbackHandler(
+        uri: vscode.Uri,
+        customHeaders: Record<string, string>
+    ): Promise<void> {
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
         const endpoint = this.authStatus.endpoint
@@ -403,7 +409,10 @@ export class AuthProvider {
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
-    private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
+    private async storeAuthInfo(
+        endpoint: string | null | undefined,
+        token: string | null | undefined
+    ): Promise<void> {
         if (!endpoint) {
             return
         }
@@ -455,7 +464,10 @@ function formatURL(uri: string): string | null {
     return null
 }
 
-async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
+async function showAuthResultMessage(
+    endpoint: string,
+    authStatus: AuthStatus | undefined
+): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)

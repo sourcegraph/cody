@@ -13,7 +13,7 @@ import {
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
 
-import { contextItemsToContextFiles } from './chat-helpers'
+import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 
 export interface MessageWithContext {
     message: Message
@@ -36,7 +36,7 @@ export class SimpleChatModel {
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
-        public chatTitle?: string
+        private customChatTitle?: string
     ) {}
 
     public isEmpty(): boolean {
@@ -69,14 +69,13 @@ export class SimpleChatModel {
 
     public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
-        let error
+        let error: any
         // If there is no text, it could be a placeholder message for an error
         if (lastMessage?.speaker === 'assistant') {
             if (lastMessage?.text) {
                 throw new Error('Cannot add a bot message after a bot message')
-            } else {
-                error = this.messagesWithContext.pop()?.error
             }
+            error = this.messagesWithContext.pop()?.error
         }
         this.messagesWithContext.push({
             displayText,
@@ -91,7 +90,8 @@ export class SimpleChatModel {
     public addErrorAsBotMessage(error: Error): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
         // Remove the last assistant message if any
-        const lastAssistantMessage = lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
+        const lastAssistantMessage =
+            lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
         const assistantMessage = lastAssistantMessage || { speaker: 'assistant' }
         // Then add a new assistant message with error added
         this.messagesWithContext.push({
@@ -150,8 +150,23 @@ export class SimpleChatModel {
         return this.messagesWithContext
     }
 
-    public setChatTitle(title: string): void {
-        this.chatTitle = title
+    public getChatTitle(): string {
+        if (this.customChatTitle) {
+            return this.customChatTitle
+        }
+        const text = this.getLastHumanMessage()?.displayText
+        if (text) {
+            return getChatPanelTitle(text)
+        }
+        return 'New Chat'
+    }
+
+    public getCustomChatTitle(): string | undefined {
+        return this.customChatTitle
+    }
+
+    public setCustomChatTitle(title: string): void {
+        this.customChatTitle = title
     }
 
     /**
@@ -167,14 +182,17 @@ export class SimpleChatModel {
         return {
             id: this.sessionID,
             chatModel: this.modelID,
-            chatTitle: this.chatTitle,
+            chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
     }
 }
 
-function messageToInteractionJSON(humanMessage: MessageWithContext, botMessage: MessageWithContext): InteractionJSON {
+function messageToInteractionJSON(
+    humanMessage: MessageWithContext,
+    botMessage: MessageWithContext
+): InteractionJSON {
     if (humanMessage?.message?.speaker !== 'human') {
         throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
     }

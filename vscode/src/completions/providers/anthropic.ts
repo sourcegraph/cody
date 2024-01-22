@@ -1,24 +1,38 @@
 import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
-import { tokensToChars, type Message } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
-import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+    OPENING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    MULTILINE_STOP_SEQUENCE,
-    OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
     type PrefixComponents,
 } from '../text-processing'
-import { type ContextSnippet } from '../types'
-import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
+import type { ContextSnippet } from '../types'
+import {
+    forkSignal,
+    generatorWithErrorObserver,
+    generatorWithTimeout,
+    messagesToText,
+    zipGenerators,
+} from '../utils'
 
-import { type FetchCompletionResult } from './fetch-and-process-completions'
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import type { FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -29,7 +43,11 @@ import {
 
 const MAX_RESPONSE_TOKENS = 256
 
-export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+export const SINGLE_LINE_STOP_SEQUENCES = [
+    anthropic.HUMAN_PROMPT,
+    CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+]
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
@@ -52,7 +70,11 @@ class AnthropicProvider extends Provider {
 
     constructor(
         options: ProviderOptions,
-        { maxContextTokens, client, model }: Required<Omit<AnthropicOptions, 'model'>> & Pick<AnthropicOptions, 'model'>
+        {
+            maxContextTokens,
+            client,
+            model,
+        }: Required<Omit<AnthropicOptions, 'model'>> & Pick<AnthropicOptions, 'model'>
     ) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
@@ -106,7 +128,10 @@ class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
+    protected createPrompt(snippets: ContextSnippet[]): {
+        messages: Message[]
+        prefix: PrefixComponents
+    } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
@@ -120,7 +145,9 @@ class AnthropicProvider extends Provider {
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
                             ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                            : `Codebase context from file path '${displayPath(
+                                  snippet.uri
+                              )}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
@@ -143,10 +170,12 @@ class AnthropicProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
-            providerOptions: this.options,
-            lineNumberDependentCompletionParams,
-        })
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
+            {
+                providerOptions: this.options,
+                lineNumberDependentCompletionParams,
+            }
+        )
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,

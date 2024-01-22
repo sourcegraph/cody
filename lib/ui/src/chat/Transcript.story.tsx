@@ -1,6 +1,6 @@
-import { type Meta, type StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
-import { type FileLinkProps } from './components/EnhancedContext'
+import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 import { Transcript } from './Transcript'
 
@@ -23,7 +23,11 @@ const meta: Meta<typeof Transcript> = {
     },
 
     decorators: [
-        story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>{story()}</div>,
+        story => (
+            <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>
+                {story()}
+            </div>
+        ),
     ],
 }
 

@@ -1,197 +1,223 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from "vscode-uri";
 
-import {
-    type ActiveTextEditorSelectionRange,
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type CodyLLMSiteConfiguration,
-    type ConfigurationWithAccessToken,
-    type ContextFile,
-    type ContextFileType,
-    type CustomCommandType,
-    type EnhancedContextContextT,
-    type SearchPanelFile,
-    type TelemetryEventProperties,
-    type UserLocalHistory,
-} from '@sourcegraph/cody-shared'
-import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type {
+    ActiveTextEditorSelectionRange,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    CodyLLMSiteConfiguration,
+    ConfigurationWithAccessToken,
+    ContextFile,
+    ContextFileType,
+    EnhancedContextContextT,
+    SearchPanelFile,
+    TelemetryEventProperties,
+    UserLocalHistory,
+} from "@sourcegraph/cody-shared";
+import type { CodeBlockMeta } from "@sourcegraph/cody-ui/src/chat/CodeBlocks";
 
-import { type View } from '../../webviews/NavBar'
+import type { View } from "../../webviews/NavBar";
 
 /**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
-    | { command: 'ready' }
-    | { command: 'initialized' }
+    | { command: "ready" }
+    | { command: "initialized" }
     | {
-          command: 'event'
-          eventName: string
-          properties: TelemetryEventProperties | undefined
+          command: "event";
+          eventName: string;
+          properties: TelemetryEventProperties | undefined;
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | ({ command: 'submit' } & WebviewSubmitMessage)
-    | { command: 'history'; action: 'clear' | 'export' }
-    | { command: 'restoreHistory'; chatID: string }
-    | { command: 'deleteHistory'; chatID: string }
-    | { command: 'links'; value: string }
+    | ({ command: "submit" } & WebviewSubmitMessage)
+    | { command: "history"; action: "clear" | "export" }
+    | { command: "restoreHistory"; chatID: string }
+    | { command: "deleteHistory"; chatID: string }
+    | { command: "links"; value: string }
     | {
-          command: 'show-page'
-          page: string
+          command: "show-page";
+          page: string;
       }
-    | { command: 'chatModel'; model: string }
-    | { command: 'get-chat-models' }
+    | { command: "chatModel"; model: string }
+    | { command: "get-chat-models" }
     | {
-          command: 'openFile'
-          uri: URI
-          range?: ActiveTextEditorSelectionRange
+          command: "openFile";
+          uri: URI;
+          range?: ActiveTextEditorSelectionRange;
       }
     | {
-          command: 'openLocalFileWithRange'
-          filePath: string
+          command: "openLocalFileWithRange";
+          filePath: string;
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends ot munge the type in a weird way (nested fields become array indices).
-          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+          range?: {
+              startLine: number;
+              startCharacter: number;
+              endLine: number;
+              endCharacter: number;
+          };
       }
-    | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'embeddings/index' }
-    | { command: 'symf/index' }
-    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
+    | ({ command: "edit" } & WebviewEditMessage)
+    | { command: "embeddings/index" }
+    | { command: "symf/index" }
+    | { command: "insert"; text: string; metadata?: CodeBlockMeta }
+    | { command: "newFile"; text: string; metadata?: CodeBlockMeta }
     | {
-          command: 'auth'
+          command: "copy";
+          eventType: "Button" | "Keydown";
+          text: string;
+          metadata?: CodeBlockMeta;
+      }
+    | {
+          command: "auth";
           type:
-              | 'signin'
-              | 'signout'
-              | 'support'
-              | 'callback'
-              | 'simplified-onboarding'
-              | 'simplified-onboarding-exposure'
-          endpoint?: string
-          value?: string
-          authMethod?: AuthMethod
+              | "signin"
+              | "signout"
+              | "support"
+              | "callback"
+              | "simplified-onboarding"
+              | "simplified-onboarding-exposure";
+          endpoint?: string;
+          value?: string;
+          authMethod?: AuthMethod;
       }
-    | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
-    | { command: 'reload' }
+    | { command: "abort" }
+    | { command: "reload" }
     | {
-          command: 'simplified-onboarding'
-          type: 'reload-state' | 'web-sign-in-token'
+          command: "simplified-onboarding";
+          type: "reload-state" | "web-sign-in-token";
       }
-    | { command: 'getUserContext'; query: string }
-    | { command: 'search'; query: string }
+    | { command: "getUserContext"; query: string }
+    | { command: "search"; query: string }
     | {
-          command: 'show-search-result'
-          uri: URI
-          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+          command: "show-search-result";
+          uri: URI;
+          range: {
+              start: { line: number; character: number };
+              end: { line: number; character: number };
+          };
       }
     | {
-          command: 'reset'
+          command: "reset";
       }
     | {
-          command: 'attribution-search'
-          snippet: string
-      }
+          command: "attribution-search";
+          snippet: string;
+      };
 
 /**
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
     | {
-          type: 'config'
-          config: ConfigurationSubsetForWebview & LocalEnv
-          authStatus: AuthStatus
-          workspaceFolderUris: string[]
+          type: "config";
+          config: ConfigurationSubsetForWebview & LocalEnv;
+          authStatus: AuthStatus;
+          workspaceFolderUris: string[];
       }
-    | { type: 'history'; messages: UserLocalHistory | null }
-    | ({ type: 'transcript' } & ExtensionTranscriptMessage)
-    | { type: 'view'; messages: View }
-    | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
-    | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
-    | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
-    | { type: 'chatModels'; models: ChatModelProvider[] }
-    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
-    | { type: 'index-updated'; scopeDir: string }
-    | { type: 'enhanced-context'; context: EnhancedContextContextT }
-    | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'setChatEnabledConfigFeature'; data: boolean }
+    | { type: "history"; messages: UserLocalHistory | null }
+    | ({ type: "transcript" } & ExtensionTranscriptMessage)
+    | { type: "view"; messages: View }
+    | { type: "errors"; errors: string }
+    | { type: "notice"; notice: { key: string } }
+    | { type: "custom-prompts"; prompts: [string, CodyCommand][] }
+    | { type: "transcript-errors"; isTranscriptError: boolean }
+    | {
+          type: "userContextFiles";
+          context: ContextFile[] | null;
+          kind?: ContextFileType;
+      }
+    | { type: "chatModels"; models: ChatModelProvider[] }
+    | {
+          type: "update-search-results";
+          results: SearchPanelFile[];
+          query: string;
+      }
+    | { type: "index-updated"; scopeDir: string }
+    | { type: "enhanced-context"; context: EnhancedContextContextT }
+    | ({ type: "attribution" } & ExtensionAttributionMessage)
+    | { type: "setChatEnabledConfigFeature"; data: boolean };
 
 interface ExtensionAttributionMessage {
-    snippet: string
+    snippet: string;
     attribution?: {
-        repositoryNames: string[]
-        limitHit: boolean
-    }
-    error?: string
+        repositoryNames: string[];
+        limitHit: boolean;
+    };
+    error?: string;
 }
 
+export type ChatSubmitType = "user" | "user-newchat";
+
 interface WebviewSubmitMessage extends WebviewContextMessage {
-    text: string
-    submitType: ChatSubmitType
+    text: string;
+    submitType: ChatSubmitType;
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
-    text: string
-    index?: number
+    text: string;
+    index?: number;
 }
 
 interface WebviewContextMessage {
-    addEnhancedContext?: boolean
-    contextFiles?: ContextFile[]
+    addEnhancedContext?: boolean;
+    contextFiles?: ContextFile[];
 }
 
 export interface ExtensionTranscriptMessage {
-    messages: ChatMessage[]
-    isMessageInProgress: boolean
-    chatID: string
+    messages: ChatMessage[];
+    isMessageInProgress: boolean;
+    chatID: string;
 }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        "debugEnable" | "experimentalGuardrails" | "serverEndpoint"
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const CODY_DOC_URL = new URL("https://sourcegraph.com/docs/cody");
 
 // Community and support
-export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
-export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
+export const DISCORD_URL = new URL("https://discord.gg/s2qDtYGnAE");
+export const CODY_FEEDBACK_URL = new URL(
+    "https://github.com/sourcegraph/cody/issues/new/choose"
+);
 // Account
-export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
-export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
+export const ACCOUNT_UPGRADE_URL = new URL(
+    "https://sourcegraph.com/cody/subscription"
+);
+export const ACCOUNT_USAGE_URL = new URL("https://sourcegraph.com/cody/manage");
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
-    'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
-)
+    "https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits"
+);
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
  * verified email.
  */
 export interface AuthStatus {
-    username: string
-    endpoint: string | null
-    isDotCom: boolean
-    isLoggedIn: boolean
-    showInvalidAccessTokenError: boolean
-    authenticated: boolean
-    hasVerifiedEmail: boolean
-    requiresVerifiedEmail: boolean
-    siteHasCodyEnabled: boolean
-    siteVersion: string
-    configOverwrites?: CodyLLMSiteConfiguration
-    showNetworkError?: boolean
-    primaryEmail: string
-    displayName?: string
-    avatarURL: string
+    username: string;
+    endpoint: string | null;
+    isDotCom: boolean;
+    isLoggedIn: boolean;
+    showInvalidAccessTokenError: boolean;
+    authenticated: boolean;
+    hasVerifiedEmail: boolean;
+    requiresVerifiedEmail: boolean;
+    siteHasCodyEnabled: boolean;
+    siteVersion: string;
+    configOverwrites?: CodyLLMSiteConfiguration;
+    showNetworkError?: boolean;
+    primaryEmail: string;
+    displayName?: string;
+    avatarURL: string;
     /**
      * Whether the users account can be upgraded.
      *
@@ -200,11 +226,11 @@ export interface AuthStatus {
      * rate limit messages and show additional upgrade
      * buttons in the UI.
      */
-    userCanUpgrade: boolean
+    userCanUpgrade: boolean;
 }
 
 export const defaultAuthStatus = {
-    endpoint: '',
+    endpoint: "",
     isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
@@ -212,16 +238,16 @@ export const defaultAuthStatus = {
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
-    siteVersion: '',
+    siteVersion: "",
     userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-} satisfies AuthStatus
+    username: "",
+    primaryEmail: "",
+    displayName: "",
+    avatarURL: "",
+} satisfies AuthStatus;
 
 export const unauthenticatedStatus = {
-    endpoint: '',
+    endpoint: "",
     isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
@@ -229,13 +255,13 @@ export const unauthenticatedStatus = {
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
-    siteVersion: '',
+    siteVersion: "",
     userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-} satisfies AuthStatus
+    username: "",
+    primaryEmail: "",
+    displayName: "",
+    avatarURL: "",
+} satisfies AuthStatus;
 
 export const networkErrorAuthStatus = {
     isDotCom: false,
@@ -246,32 +272,35 @@ export const networkErrorAuthStatus = {
     showNetworkError: true,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
-    siteVersion: '',
+    siteVersion: "",
     userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-} satisfies Omit<AuthStatus, 'endpoint'>
+    username: "",
+    primaryEmail: "",
+    displayName: "",
+    avatarURL: "",
+} satisfies Omit<AuthStatus, "endpoint">;
 
 /** The local environment of the editor. */
 export interface LocalEnv {
     // The  operating system kind
-    os: string
-    arch: string
-    homeDir?: string | undefined
+    os: string;
+    arch: string;
+    homeDir?: string | undefined;
 
-    extensionVersion: string
+    extensionVersion: string;
 
     // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
-    uiKindIsWeb: boolean
+    uiKindIsWeb: boolean;
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
-        return false
+        return false;
     }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return (
+        authStatus.authenticated &&
+        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    );
 }
 
-export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+export type AuthMethod = "dotcom" | "github" | "gitlab" | "google";

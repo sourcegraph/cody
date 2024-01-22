@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /**
  * A script to create the GitHub release changelog format from the current
  * CHANGELOG.md.
@@ -43,7 +41,10 @@ interface Change {
 // some other content...
 //
 // Extract a list of changes and the previous version number
-function extractSection(changelog: string, version: string): { changes: Change[]; previousVersion: string } {
+function extractSection(
+    changelog: string,
+    version: string
+): { changes: Change[]; previousVersion: string } {
     let previousVersion = ''
 
     const lines = changelog.split('\n')
@@ -84,8 +85,13 @@ function extractSection(changelog: string, version: string): { changes: Change[]
     return { changes, previousVersion }
 }
 
-function extractRepoAndNumberFromLink(link: string): { owner: string; repo: string; number: string } | undefined {
-    const matches = /https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/]+)\/(pull|issues)\/(?<number>\d+)/.exec(link)
+function extractRepoAndNumberFromLink(
+    link: string
+): { owner: string; repo: string; number: string } | undefined {
+    const matches =
+        /https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/]+)\/(pull|issues)\/(?<number>\d+)/.exec(
+            link
+        )
     if (!matches?.groups) {
         throw new Error(`Malformed link: ${link}`)
     }
@@ -117,7 +123,7 @@ async function main(): Promise<void> {
         ## v${currentVersion} Changes
     `
 
-    output += intro + '\n\n'
+    output += `${intro}\n\n`
 
     for (const change of changes) {
         let author: string | undefined
@@ -127,8 +133,6 @@ async function main(): Promise<void> {
                 const { owner, repo, number } = data
 
                 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${number}`
-
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore: Fetch is available in node :shrug:
                 const json = await fetch(apiUrl).then(res => res.json())
                 if (json?.user?.login) {
@@ -137,13 +141,15 @@ async function main(): Promise<void> {
             }
         }
 
-        output += `- ${change.text}${author ? ` by @${author}` : ''}${change.link ? ` in ${change.link}` : ''}\n`
+        output += `- ${change.text}${author ? ` by @${author}` : ''}${
+            change.link ? ` in ${change.link}` : ''
+        }\n`
     }
 
     const outro = dedent`
       **Full Changelog**: https://github.com/sourcegraph/cody/compare/vscode-v${previousVersion}...vscode-v${currentVersion}
     `
-    output += '\n' + outro + '\n'
+    output += `\n${outro}\n`
 
     await fs.promises.writeFile(path.join(__dirname, '../GITHUB_CHANGELOG.md'), output)
 }

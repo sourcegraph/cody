@@ -36,7 +36,11 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             const matches = await matcher.matches(text)
             const result: string[] = []
             for (const match of matches || []) {
-                const document = new EvaluationDocument(matcher.params, match.newText, vscode.Uri.file(filename))
+                const document = new EvaluationDocument(
+                    matcher.params,
+                    match.newText,
+                    vscode.Uri.file(filename)
+                )
                 document.pushItem({
                     range: new vscode.Range(
                         match.requestPosition,
@@ -48,7 +52,7 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             const resultString = result
                 .join('\n')
                 .split('\n')
-                // Trim trailing whitespace because prettier removes it from the assertions
+                // Trim trailing whitespace because the formatter may remove it from the assertions
                 // while it's normal for the transformation to preserve them.
                 .map(line => line.trimEnd())
                 .join('\n')
@@ -57,7 +61,7 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             // vertically aligned. Without this newline, the caret appears one
             // character too early because the inline snapshot start with an
             // opening double quote "
-            assertion('\n' + resultString)
+            assertion(`\n${resultString}`)
         })
     }
 

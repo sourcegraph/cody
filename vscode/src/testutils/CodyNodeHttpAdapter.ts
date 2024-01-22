@@ -1,5 +1,5 @@
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { type Request } from '@pollyjs/core'
+import type { Request } from '@pollyjs/core'
 
 export class CodyNodeHttpAdapter extends NodeHttpAdapter {
     public async onRequest(request: Request): Promise<void> {

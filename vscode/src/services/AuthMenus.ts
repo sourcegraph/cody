@@ -20,7 +20,10 @@ function getItemLabel(uri: string, current: boolean): string {
     return `${icon}${uri}`
 }
 
-export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
+export const AuthMenu = async (
+    type: AuthMenuType,
+    historyItems: string[]
+): Promise<LoginMenuItem | null> => {
     // Create option items
 
     // Exclude App from the history list.
@@ -40,7 +43,10 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
             : []
     const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
     const optionItems = [...LoginMenuOptionItems, ...separator, ...history]
-    const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
+    const option = (await vscode.window.showQuickPick(
+        optionItems,
+        AuthMenuOptions[type]
+    )) as LoginMenuItem
     return option
 }
 

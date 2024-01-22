@@ -6,21 +6,17 @@ interface ErrorLike {
 }
 
 export const isErrorLike = (value: unknown): value is ErrorLike =>
-    typeof value === 'object' && value !== null && ('stack' in value || 'message' in value) && !('__typename' in value)
+    typeof value === 'object' &&
+    value !== null &&
+    ('stack' in value || 'message' in value) &&
+    !('__typename' in value)
 
 /**
  * Returns true if `val` is not `null` or `undefined`
  */
 export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null
 
-/**
- * Returns the last element of path, or "." if path is empty.
- */
-export function basename(path: string): string {
-    return path.split('/').at(-1) || '.'
-}
-
-export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
+export function pluralize(string: string, count: number | bigint, plural = `${string}s`): string {
     return count === 1 || count === 1n ? string : plural
 }
 

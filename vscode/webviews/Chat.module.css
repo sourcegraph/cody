@@ -117,6 +117,8 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     font: inherit;
     width: 100%;
     overflow: hidden;
+    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
+    max-height: 80vh; /* 80% of viewport height */
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
 

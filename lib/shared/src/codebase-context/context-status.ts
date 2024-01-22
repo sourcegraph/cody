@@ -1,3 +1,5 @@
+import type { URI } from 'vscode-uri'
+
 // This should remain compatible with vscode.Disposable.
 export interface Disposable {
     dispose(): void
@@ -14,7 +16,10 @@ export interface ContextStatusProvider {
 
 export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider
 
-type EmbeddingsProvider = IndeterminateEmbeddingsProvider | LocalEmbeddingsProvider | RemoteEmbeddingsProvider
+type EmbeddingsProvider =
+    | IndeterminateEmbeddingsProvider
+    | LocalEmbeddingsProvider
+    | RemoteEmbeddingsProvider
 
 interface IndeterminateEmbeddingsProvider {
     kind: 'embeddings'
@@ -53,7 +58,17 @@ interface GraphProvider {
 }
 
 export interface ContextGroup {
-    name: string
+    /** The directory that this context group represents. */
+    dir?: URI
+
+    /**
+     * Usually `basename(dir)`.
+     *
+     * TODO(sqs): when old remote embeddings code is removed, remove this field and compute it as
+     * late as possible for presentation only.
+     */
+    displayName: string
+
     providers: ContextProvider[]
 }
 

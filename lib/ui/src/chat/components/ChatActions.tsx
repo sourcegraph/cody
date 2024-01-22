@@ -87,7 +87,8 @@ export const ChatActions: React.FunctionComponent<{
                         title={action.title}
                         autoFocus={isMessageInProgress && action.focus}
                     >
-                        <span className={styles.chatActionButtonTitle}>{action.name}</span> {action.keybind}
+                        <span className={styles.chatActionButtonTitle}>{action.name}</span>{' '}
+                        {action.keybind}
                     </button>
                 ))}
         </div>

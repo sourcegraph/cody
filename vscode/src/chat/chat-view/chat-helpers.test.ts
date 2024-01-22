@@ -16,7 +16,7 @@ import {
     getChatPanelTitle,
     stripContextWrapper,
 } from './chat-helpers'
-import { type ContextItem } from './SimpleChatModel'
+import type { ContextItem } from './SimpleChatModel'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {
@@ -62,11 +62,17 @@ describe('unwrap context snippets', () => {
 
         const testCases: TestCase[] = [
             {
-                input: populateCurrentEditorSelectedContextTemplate('// This is the code', testFileUri('test.ts')),
+                input: populateCurrentEditorSelectedContextTemplate(
+                    '// This is the code',
+                    testFileUri('test.ts')
+                ),
                 expOut: '// This is the code',
             },
             {
-                input: populateCurrentSelectedCodeContextTemplate('// This is the code', testFileUri('test.ts')),
+                input: populateCurrentSelectedCodeContextTemplate(
+                    '// This is the code',
+                    testFileUri('test.ts')
+                ),
                 expOut: '// This is the code',
             },
         ]

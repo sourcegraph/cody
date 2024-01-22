@@ -1,9 +1,9 @@
-import { type TextDocument } from 'vscode'
-import { type Point, type SyntaxNode } from 'web-tree-sitter'
+import type { TextDocument } from 'vscode'
+import type { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { type DocumentContext } from '../get-current-doc-context'
+import type { DocumentContext } from '../get-current-doc-context'
 
 import { parseCompletion, type ParsedCompletion } from './parse-completion'
 import { BRACKET_PAIR, type OpeningBracket } from './utils'
@@ -68,9 +68,9 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
 
     let fixedCompletion = completion
 
-    const insertTextWithMissingBrackets = insertMissingBrackets(docContext.currentLinePrefix + insertText).slice(
-        docContext.currentLinePrefix.length
-    )
+    const insertTextWithMissingBrackets = insertMissingBrackets(
+        docContext.currentLinePrefix + insertText
+    ).slice(docContext.currentLinePrefix.length)
 
     if (insertTextWithMissingBrackets.length !== insertText.length) {
         const updatedCompletion = parseCompletion({
@@ -84,9 +84,13 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
         }
     }
 
-    const nodeToInsert = findLastAncestorOnTheSameRow(fixedCompletion.tree!.rootNode, points.trigger || points.start)
+    const nodeToInsert = findLastAncestorOnTheSameRow(
+        fixedCompletion.tree!.rootNode,
+        points.trigger || points.start
+    )
 
-    let textToInsert = nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text
+    let textToInsert =
+        nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text
     if (textToInsert && document.getText().endsWith(textToInsert.slice(-100))) {
         textToInsert = 'till the end of the document'
     }
@@ -118,7 +122,10 @@ export function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point):
     const initial = root.namedDescendantForPosition(position)
     let current = initial
 
-    while (current?.parent?.startPosition.row === initial?.startPosition.row && current.parent.id !== root.id) {
+    while (
+        current?.parent?.startPosition.row === initial?.startPosition.row &&
+        current.parent.id !== root.id
+    ) {
         current = current.parent
     }
 

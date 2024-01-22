@@ -1,85 +1,74 @@
 {
-  "private": true,
-  "name": "@sourcegraph/cody",
-  "description": "Cody, the code AI that writes code, fixes bugs, and answers questions using the code graph",
-  "license": "Apache-2.0",
-  "homepage": "https://cody.dev",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sourcegraph/cody"
-  },
-  "engines": {
-    "node": "^v20.4.0",
-    "pnpm": "^8.6.7"
-  },
-  "browser": {
-    "fs": false
-  },
-  "scripts": {
-    "build": "tsc --build",
-    "watch": "tsc --build --watch",
-    "lint": "pnpm run -s lint:js && pnpm run -s lint:css",
-    "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --max-warnings 0 --cache '**/*.[tj]s?(x)'",
-    "lint:css": "stylelint --quiet --cache '**/*.css'",
-    "format": "prettier '**/{*.{js?(on),ts?(x),md,scss},.*.js?(on)}' --list-different --config .prettierrc.js --write",
-    "format:check": "prettier '**/{*.{js?(on),ts?(x),md,scss},.*.js?(on)}' --config .prettierrc.js --check --write=false",
-    "test": "vitest",
-    "test:unit": "vitest run",
-    "test:integration": "pnpm -C vscode test:integration",
-    "test:e2e": "pnpm -C vscode test:e2e",
-    "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
-    "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
-  },
-  "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
-    "@sourcegraph/eslint-config": "0.37.1",
-    "@sourcegraph/prettierrc": "^3.0.3",
-    "@sourcegraph/tsconfig": "^4.0.1",
-    "@storybook/addon-essentials": "^7.0.26",
-    "@storybook/addon-interactions": "^7.0.26",
-    "@storybook/addon-links": "^7.0.26",
-    "@storybook/react": "^7.0.26",
-    "@storybook/react-vite": "^7.0.26",
-    "@types/node": "20.4.0",
-    "@types/react": "18.2.42",
-    "@types/react-dom": "18.2.17",
-    "@vitejs/plugin-react": "^4.0.2",
-    "esbuild": "^0.18.11",
-    "eslint": "^8.56.0",
-    "eslint-plugin-storybook": "^0.6.12",
-    "jsdom": "^22.1.0",
-    "knip": "^3.13.2",
-    "prettier": "3.0.3",
-    "storybook": "^7.0.26",
-    "stylelint": "^15.11.0",
-    "stylelint-config-prettier": "^9.0.5",
-    "stylelint-config-standard": "^34.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "vite": "^4.4.3",
-    "vitest": "^1.2.0"
-  },
-  "dependencies": {
-    "ignore": "^5.2.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
-  },
-  "packageManager": "pnpm@8.6.7",
-  "resolutions": {
-    "tslib": "2.1.0"
-  },
-  "pnpm": {
-    "packageExtensions": {
-      "@vscode/webview-ui-toolkit": {
-        "dependencies": {
-          "@microsoft/fast-web-utilities": "^6.0.0",
-          "tslib": "^2.1.0"
-        }
-      }
+    "private": true,
+    "name": "@sourcegraph/cody",
+    "description": "Cody, the code AI that writes code, fixes bugs, and answers questions using the code graph",
+    "license": "Apache-2.0",
+    "homepage": "https://cody.dev",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sourcegraph/cody"
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ]
-  }
+    "engines": {
+        "node": "^v20.4.0",
+        "pnpm": "^8.6.7"
+    },
+    "browser": {
+        "fs": false
+    },
+    "scripts": {
+        "build": "tsc --build",
+        "watch": "tsc --build --watch",
+        "check": "pnpm run -s biome && pnpm run -s check:css",
+        "check:css": "stylelint --quiet --cache '**/*.css'",
+        "biome": "biome check --apply --error-on-warnings .",
+        "test": "vitest",
+        "test:unit": "vitest run",
+        "test:integration": "pnpm -C vscode test:integration",
+        "test:e2e": "pnpm -C vscode test:e2e",
+        "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
+        "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "1.5.2",
+        "@sourcegraph/tsconfig": "^4.0.1",
+        "@storybook/addon-essentials": "^7.0.26",
+        "@storybook/addon-interactions": "^7.0.26",
+        "@storybook/addon-links": "^7.0.26",
+        "@storybook/react": "^7.0.26",
+        "@storybook/react-vite": "^7.0.26",
+        "@types/node": "20.4.0",
+        "@types/react": "18.2.42",
+        "@types/react-dom": "18.2.17",
+        "@vitejs/plugin-react": "^4.0.2",
+        "esbuild": "^0.18.11",
+        "jsdom": "^22.1.0",
+        "knip": "^3.13.2",
+        "storybook": "^7.0.26",
+        "stylelint": "^15.11.0",
+        "stylelint-config-standard": "^34.0.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "vite": "^4.4.3",
+        "vitest": "^1.2.0"
+    },
+    "dependencies": {
+        "ignore": "^5.2.4",
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
+    },
+    "packageManager": "pnpm@8.6.7",
+    "resolutions": {
+        "tslib": "2.1.0"
+    },
+    "pnpm": {
+        "packageExtensions": {
+            "@vscode/webview-ui-toolkit": {
+                "dependencies": {
+                    "@microsoft/fast-web-utilities": "^6.0.0",
+                    "tslib": "^2.1.0"
+                }
+            }
+        },
+        "neverBuiltDependencies": ["deasync", "playwright"]
+    }
 }

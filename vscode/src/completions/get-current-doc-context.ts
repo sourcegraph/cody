@@ -3,7 +3,13 @@ import * as vscode from 'vscode'
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import { detectMultiline } from './detect-multiline'
-import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
+import {
+    getFirstLine,
+    getLastLine,
+    getNextNonEmptyLine,
+    getPrevNonEmptyLine,
+    lines,
+} from './text-processing'
 
 export interface DocumentContext extends DocumentDependentContext, LinesContext {
     position: vscode.Position
@@ -36,13 +42,22 @@ interface GetCurrentDocContextParams {
  * Get the current document context based on the cursor position in the current document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, context, dynamicMultilineCompletions } = params
+    const {
+        document,
+        position,
+        maxPrefixLength,
+        maxSuffixLength,
+        context,
+        dynamicMultilineCompletions,
+    } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
     // instead?
     const completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
-    const completeSuffix = document.getText(new vscode.Range(position, document.positionAt(document.getText().length)))
+    const completeSuffix = document.getText(
+        new vscode.Range(position, document.positionAt(document.getText().length))
+    )
 
     // Patch the document to contain the selected completion from the popup dialog already
     let completePrefixWithContextCompletion = completePrefix
@@ -56,7 +71,8 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         if (range.end.character === position.character && range.end.line === position.line) {
             const lastLine = lines(completePrefix).at(-1)!
             const beforeLastLine = completePrefix.slice(0, -lastLine.length)
-            completePrefixWithContextCompletion = beforeLastLine + lastLine.slice(0, range.start.character) + text
+            completePrefixWithContextCompletion =
+                beforeLastLine + lastLine.slice(0, range.start.character) + text
             injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
             if (injectedPrefix === '') {
                 injectedPrefix = null
@@ -161,7 +177,7 @@ export function insertIntoDocContext(
     docContext: DocumentContext,
     insertText: string,
     languageId: string,
-    dynamicMultilineCompletions: boolean = false
+    dynamicMultilineCompletions = false
 ): DocumentContext {
     const { position, prefix, currentLinePrefix, currentLineSuffix, suffix } = docContext
 

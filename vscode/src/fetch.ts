@@ -6,7 +6,11 @@ import type { Agent } from 'http'
  */
 import isomorphicFetch from 'isomorphic-fetch'
 
-import { addCustomUserAgent, customUserAgent, type BrowserOrNodeResponse } from '@sourcegraph/cody-shared'
+import {
+    addCustomUserAgent,
+    customUserAgent,
+    type BrowserOrNodeResponse,
+} from '@sourcegraph/cody-shared'
 
 /**
  * In node environments, it might be necessary to set up a custom agent to control the network

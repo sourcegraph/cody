@@ -42,7 +42,12 @@ test('shows chat history in sidebar and update chat panel correctly', async ({ p
 
     // Click on the previous chat session to open the chat panel in editor
     // Both chat panels should be visible as tabs in the editor
-    await page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3).click()
+    await page
+        .getByRole('treeitem', { name: 'Hey' })
+        .locator('div')
+        .filter({ hasText: 'Hey' })
+        .nth(3)
+        .click()
     await expect(page.getByRole('tab', { name: 'Hola' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hey' })).toBeVisible()
 

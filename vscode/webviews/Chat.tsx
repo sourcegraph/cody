@@ -1,67 +1,67 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react";
+import classNames from "classnames";
 
-import {
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type ContextFile,
-    type Guardrails,
-    type TelemetryService,
-} from '@sourcegraph/cody-shared'
+import type {
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    ContextFile,
+    Guardrails,
+    TelemetryService,
+} from "@sourcegraph/cody-shared";
 import {
     Chat as ChatUI,
     type ChatButtonProps,
-    type ChatSubmitType,
+    type WebviewChatSubmitType,
     type ChatUISubmitButtonProps,
-    type ChatUISuggestionButtonProps,
     type ChatUITextAreaProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
     type UserAccountInfo,
-} from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
-import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+} from "@sourcegraph/cody-ui/src/Chat";
+import type { CodeBlockMeta } from "@sourcegraph/cody-ui/src/chat/CodeBlocks";
+import { useEnhancedContextEnabled } from "@sourcegraph/cody-ui/src/chat/components/EnhancedContext";
 
-import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
+import { CODY_FEEDBACK_URL } from "../src/chat/protocol";
 
-import { ChatCommandsComponent } from './ChatCommands'
-import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
-import { FileLink } from './Components/FileLink'
-import { SymbolLink } from './SymbolLink'
-import { UserContextSelectorComponent } from './UserContextSelector'
-import { type VSCodeWrapper } from './utils/VSCodeApi'
+import { ChatCommandsComponent } from "./ChatCommands";
+import { ChatModelDropdownMenu } from "./Components/ChatModelDropdownMenu";
+import { EnhancedContextSettings } from "./Components/EnhancedContextSettings";
+import { FileLink } from "./Components/FileLink";
+import { SymbolLink } from "./SymbolLink";
+import { UserContextSelectorComponent } from "./UserContextSelector";
+import type { VSCodeWrapper } from "./utils/VSCodeApi";
 
-import styles from './Chat.module.css'
+import styles from "./Chat.module.css";
 
 interface ChatboxProps {
-    welcomeMessage?: string
-    chatEnabled: boolean
-    messageInProgress: ChatMessage | null
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
-    transcript: ChatMessage[]
-    formInput: string
-    setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
-    vscodeAPI: VSCodeWrapper
-    telemetryService: TelemetryService
-    suggestions?: string[]
-    setSuggestions?: (suggestions: undefined | string[]) => void
-    chatCommands?: [string, CodyCommand][]
-    isTranscriptError: boolean
-    contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelProvider[]) => void
-    chatModels?: ChatModelProvider[]
-    enableNewChatUI: boolean
-    userInfo: UserAccountInfo
-    guardrails?: Guardrails
+    welcomeMessage?: string;
+    chatEnabled: boolean;
+    messageInProgress: ChatMessage | null;
+    messageBeingEdited: number | undefined;
+    setMessageBeingEdited: (index?: number) => void;
+    transcript: ChatMessage[];
+    formInput: string;
+    setFormInput: (input: string) => void;
+    inputHistory: string[];
+    setInputHistory: (history: string[]) => void;
+    vscodeAPI: VSCodeWrapper;
+    telemetryService: TelemetryService;
+    chatCommands?: [string, CodyCommand][];
+    isTranscriptError: boolean;
+    contextSelection?: ContextFile[] | null;
+    setChatModels?: (models: ChatModelProvider[]) => void;
+    chatModels?: ChatModelProvider[];
+    enableNewChatUI: boolean;
+    userInfo: UserAccountInfo;
+    guardrails?: Guardrails;
 }
-export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+export const Chat: React.FunctionComponent<
+    React.PropsWithChildren<ChatboxProps>
+> = ({
     welcomeMessage,
     messageInProgress,
     messageBeingEdited,
@@ -73,8 +73,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    suggestions,
-    setSuggestions,
     chatCommands,
     isTranscriptError,
     contextSelection,
@@ -86,107 +84,144 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     guardrails,
 }) => {
     const abortMessageInProgress = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'abort' })
-    }, [vscodeAPI])
+        vscodeAPI.postMessage({ command: "abort" });
+    }, [vscodeAPI]);
 
-    const addEnhancedContext = useEnhancedContextEnabled()
+    const addEnhancedContext = useEnhancedContextEnabled();
 
     const onEditSubmit = useCallback(
         (text: string, index: number, contextFiles: ContextFile[]) => {
             vscodeAPI.postMessage({
-                command: 'edit',
+                command: "edit",
                 index,
                 text,
                 addEnhancedContext,
                 contextFiles,
-            })
+            });
         },
         [addEnhancedContext, vscodeAPI]
-    )
+    );
 
     const onSubmit = useCallback(
-        (text: string, submitType: ChatSubmitType, contextFiles?: Map<string, ContextFile>) => {
-            // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
-            const userContextFiles: ContextFile[] = []
+        (
+            text: string,
+            submitType: WebviewChatSubmitType,
+            contextFiles?: Map<string, ContextFile>
+        ) => {
+            // loop the added contextFiles to:
+            // 1. check if the key still exists in the text
+            // 2. remove the ones not present
+            const userContextFiles: ContextFile[] = [];
             if (contextFiles?.size) {
                 for (const [fileName, contextFile] of contextFiles) {
                     if (text.includes(fileName)) {
-                        userContextFiles.push(contextFile)
+                        userContextFiles.push(contextFile);
                     }
                 }
             }
 
-            if (submitType === 'edit' && messageBeingEdited !== undefined) {
-                onEditSubmit(text, messageBeingEdited, userContextFiles)
-                return
+            // Handle edit requests
+            if (submitType === "edit") {
+                if (messageBeingEdited !== undefined) {
+                    onEditSubmit(text, messageBeingEdited, userContextFiles);
+                }
+                return;
             }
 
             vscodeAPI.postMessage({
-                command: 'submit',
+                command: "submit",
                 submitType,
                 text,
                 addEnhancedContext,
                 contextFiles: userContextFiles,
-            })
+            });
         },
         [addEnhancedContext, messageBeingEdited, onEditSubmit, vscodeAPI]
-    )
+    );
 
     const onCurrentChatModelChange = useCallback(
         (selected: ChatModelProvider): void => {
             if (!chatModels || !setChatModels) {
-                return
+                return;
             }
-            vscodeAPI.postMessage({ command: 'chatModel', model: selected.model })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
+            vscodeAPI.postMessage({
+                command: "chatModel",
+                model: selected.model,
+            });
+            const updatedChatModels = chatModels.map((m) =>
+                m.model === selected.model
+                    ? { ...m, default: true }
+                    : { ...m, default: false }
+            );
+            setChatModels(updatedChatModels);
         },
         [chatModels, setChatModels, vscodeAPI]
-    )
+    );
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
             const eventData = {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
-                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
+                    transcript
+                        .at(-1)
+                        ?.contextFiles?.some(
+                            (file) => file.source === "embeddings"
+                        )
                 ),
-                transcript: '',
-            }
+                transcript: "",
+            };
 
             if (userInfo.isDotComUser) {
-                eventData.transcript = JSON.stringify(transcript)
+                eventData.transcript = JSON.stringify(transcript);
             }
 
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
+            telemetryService.log(
+                `CodyVSCodeExtension:codyFeedback:${text}`,
+                eventData
+            );
         },
         [telemetryService, transcript, userInfo]
-    )
+    );
 
     const onCopyBtnClick = useCallback(
-        (text: string, eventType: 'Button' | 'Keydown' = 'Button', metadata?: CodeBlockMeta) => {
-            const op = 'copy'
+        (
+            text: string,
+            eventType: "Button" | "Keydown" = "Button",
+            metadata?: CodeBlockMeta
+        ) => {
+            const op = "copy";
             // remove the additional /n added by the text area at the end of the text
-            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            const code =
+                eventType === "Button" ? text.replace(/\n$/, "") : text;
             // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({ command: op, eventType, text: code, metadata })
+            vscodeAPI.postMessage({
+                command: op,
+                eventType,
+                text: code,
+                metadata,
+            });
         },
         [vscodeAPI]
-    )
+    );
 
     const onInsertBtnClick = useCallback(
         (text: string, newFile = false, metadata?: CodeBlockMeta) => {
-            const op = newFile ? 'newFile' : 'insert'
-            const eventType = 'Button'
+            const op = newFile ? "newFile" : "insert";
+            const eventType = "Button";
             // remove the additional /n added by the text area at the end of the text
-            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            const code =
+                eventType === "Button" ? text.replace(/\n$/, "") : text;
             // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({ command: op, eventType, text: code, metadata })
+            vscodeAPI.postMessage({
+                command: op,
+                eventType,
+                text: code,
+                metadata,
+            });
         },
         [vscodeAPI]
-    )
+    );
 
     return (
         <ChatUI
@@ -201,7 +236,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
-            suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
             symbolLinkComponent={SymbolLink}
             className={styles.innerContainer}
@@ -209,7 +243,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
             transcriptItemClassName={styles.transcriptItem}
             humanTranscriptItemClassName={styles.humanTranscriptItem}
-            transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+            transcriptItemParticipantClassName={
+                styles.transcriptItemParticipant
+            }
             transcriptActionClassName={styles.transcriptAction}
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
@@ -219,8 +255,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
             insertButtonOnSubmit={onInsertBtnClick}
-            suggestions={suggestions}
-            setSuggestions={setSuggestions}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
@@ -240,18 +274,30 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
             chatEnabled={chatEnabled}
-            EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
-            postMessage={msg => vscodeAPI.postMessage(msg)}
+            EnhancedContextSettings={
+                enableNewChatUI ? EnhancedContextSettings : undefined
+            }
+            postMessage={(msg) => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
         />
-    )
-}
+    );
+};
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
-    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton} appearance={appearance}>
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
+    label,
+    action,
+    onClick,
+    appearance,
+}) => (
+    <VSCodeButton
+        type="button"
+        onClick={() => onClick(action)}
+        className={styles.chatButton}
+        appearance={appearance}
+    >
         {label}
     </VSCodeButton>
-)
+);
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
@@ -267,17 +313,22 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
     messageBeingEdited,
 }) => {
-    const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = 'Message (@ to include code, / for commands)'
-    const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const placeholder = "Message (@ to include code, / for commands)";
+    const disabledPlaceHolder =
+        "Chat has been disabled by your Enterprise instance site administrator";
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
         if (autoFocus) {
-            inputRef.current?.focus()
+            inputRef.current?.focus();
             // move cursor to end of line
-            inputRef?.current?.setSelectionRange(inputRef?.current?.selectionEnd, inputRef?.current?.selectionEnd)
+            inputRef?.current?.setSelectionRange(
+                inputRef?.current?.selectionEnd,
+                inputRef?.current?.selectionEnd
+            );
         }
-    }, [autoFocus, value, messageBeingEdited, chatModels])
+    }, [autoFocus, value, messageBeingEdited, chatModels]);
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -285,34 +336,38 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     useEffect(() => {
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed) {
-                inputRef.current?.focus()
+                inputRef.current?.focus();
             }
-        }
-        window.addEventListener('focus', handleFocus)
+        };
+        window.addEventListener("focus", handleFocus);
         return () => {
-            window.removeEventListener('focus', handleFocus)
-        }
-    }, [])
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, []);
 
     const onTextAreaKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-            onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
+            onKeyDown?.(event, inputRef.current?.selectionStart ?? null);
         },
-        [inputRef, onKeyDown]
-    )
+        [onKeyDown]
+    );
     const onTextAreaKeyUp = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-            onKeyUp?.(event, inputRef.current?.selectionStart ?? null)
+            onKeyUp?.(event, inputRef.current?.selectionStart ?? null);
         },
-        [inputRef, onKeyUp]
-    )
+        [onKeyUp]
+    );
 
-    const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
-    const isDisabled = !chatEnabled
+    const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder;
+    const isDisabled = !chatEnabled;
 
     return (
         <div
-            className={classNames(styles.chatInputContainer, className, chatModels && styles.newChatInputContainer)}
+            className={classNames(
+                styles.chatInputContainer,
+                className,
+                chatModels && styles.newChatInputContainer
+            )}
             data-value={value || actualPlaceholder}
         >
             <textarea
@@ -336,39 +391,50 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 disabled={isDisabled} // Disable the textarea if the chat is disabled and change the background color to grey
             />
         </div>
-    )
-}
+    );
+};
 
 const submitButtonTypes = {
-    user: { icon: 'codicon codicon-arrow-up', title: 'Send Message' },
-    edit: { icon: 'codicon codicon-check', title: 'Update Message' },
-    'user-newchat': { icon: 'codicon codicon-add', title: 'Start New Chat Session' },
-    abort: { icon: 'codicon codicon-debug-stop', title: 'Stop Generating' },
-}
+    user: { icon: "codicon codicon-arrow-up", title: "Send Message" },
+    edit: { icon: "codicon codicon-check", title: "Update Message" },
+    "user-newchat": {
+        icon: "codicon codicon-add",
+        title: "Start New Chat Session",
+    },
+    abort: { icon: "codicon codicon-debug-stop", title: "Stop Generating" },
+};
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
-    type = 'user',
+    type = "user",
     className,
     disabled,
     onClick,
     onAbortMessageInProgress,
 }) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
+        className={classNames(
+            styles.submitButton,
+            className,
+            disabled && styles.submitButtonDisabled
+        )}
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}
-        title={onAbortMessageInProgress ? submitButtonTypes.abort.title : submitButtonTypes[type]?.title}
+        title={
+            onAbortMessageInProgress
+                ? submitButtonTypes.abort.title
+                : submitButtonTypes[type]?.title
+        }
     >
-        <i className={onAbortMessageInProgress ? submitButtonTypes.abort.icon : submitButtonTypes[type]?.icon} />
+        <i
+            className={
+                onAbortMessageInProgress
+                    ? submitButtonTypes.abort.icon
+                    : submitButtonTypes[type]?.icon
+            }
+        />
     </VSCodeButton>
-)
-
-const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
-    <button className={styles.suggestionButton} type="button" onClick={onClick}>
-        {suggestion}
-    </button>
-)
+);
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
@@ -384,18 +450,21 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     >
         <i className="codicon codicon-edit" />
     </VSCodeButton>
-)
+);
 
-const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState('')
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
+    className,
+    feedbackButtonsOnSubmit,
+}) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState("");
 
     const onFeedbackBtnSubmit = useCallback(
         (text: string) => {
-            feedbackButtonsOnSubmit(text)
-            setFeedbackSubmitted(text)
+            feedbackButtonsOnSubmit(text);
+            setFeedbackSubmitted(text);
         },
         [feedbackButtonsOnSubmit]
-    )
+    );
 
     return (
         <div className={classNames(styles.feedbackButtons, className)}>
@@ -405,7 +474,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                         className={classNames(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
-                        onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+                        onClick={() => onFeedbackBtnSubmit("thumbsUp")}
                     >
                         <i className="codicon codicon-thumbsup" />
                     </VSCodeButton>
@@ -413,13 +482,13 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                         className={classNames(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
-                        onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+                        onClick={() => onFeedbackBtnSubmit("thumbsDown")}
                     >
                         <i className="codicon codicon-thumbsdown" />
                     </VSCodeButton>
                 </>
             )}
-            {feedbackSubmitted === 'thumbsUp' && (
+            {feedbackSubmitted === "thumbsUp" && (
                 <VSCodeButton
                     className={classNames(styles.feedbackButton)}
                     appearance="icon"
@@ -431,7 +500,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                     <i className="codicon codicon-check" />
                 </VSCodeButton>
             )}
-            {feedbackSubmitted === 'thumbsDown' && (
+            {feedbackSubmitted === "thumbsDown" && (
                 <span className={styles.thumbsDownFeedbackContainer}>
                     <VSCodeButton
                         className={classNames(styles.feedbackButton)}
@@ -453,28 +522,33 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                 </span>
             )}
         </div>
-    )
-}
+    );
+};
 
-const slashCommandRegex = /^\/[A-Za-z]+/
+const slashCommandRegex = /^\/[A-Za-z]+/;
 function isSlashCommand(value: string): boolean {
-    return slashCommandRegex.test(value)
+    return slashCommandRegex.test(value);
 }
 
 function normalize(input: string): string {
-    return input.trim().toLowerCase()
+    return input.trim().toLowerCase();
 }
 
-function filterChatCommands(chatCommands: [string, CodyCommand][], query: string): [string, CodyCommand][] {
-    const normalizedQuery = normalize(query)
+function filterChatCommands(
+    chatCommands: [string, CodyCommand][],
+    query: string
+): [string, CodyCommand][] {
+    const normalizedQuery = normalize(query);
 
     if (!isSlashCommand(normalizedQuery)) {
-        return []
+        return [];
     }
 
-    const [slashCommand] = normalizedQuery.split(' ')
+    const [slashCommand] = normalizedQuery.split(" ");
     const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
-        ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
-    )
-    return matchingCommands.sort()
+        ([key, command]) =>
+            key === "separator" ||
+            command.slashCommand?.toLowerCase().startsWith(slashCommand)
+    );
+    return matchingCommands.sort();
 }

@@ -2,8 +2,8 @@ import { spawn } from 'child_process'
 
 import {
     ConsoleReporter,
-    downloadAndUnzipVSCode,
     ProgressReportStage,
+    downloadAndUnzipVSCode,
     type ProgressReport,
 } from '@vscode/test-electron'
 
@@ -14,17 +14,23 @@ const vscodeVersion = '1.85.1'
 class CustomConsoleReporter extends ConsoleReporter {
     public report(report: ProgressReport): void {
         if (report.stage !== ProgressReportStage.FoundMatchingInstall) {
-            return super.report(report)
+            super.report(report)
         }
     }
 }
 
 export function installVsCode(): Promise<string> {
-    return downloadAndUnzipVSCode(vscodeVersion, undefined, new CustomConsoleReporter(process.stdout.isTTY))
+    return downloadAndUnzipVSCode(
+        vscodeVersion,
+        undefined,
+        new CustomConsoleReporter(process.stdout.isTTY)
+    )
 }
 
 function installChromium(): Promise<void> {
-    const proc = spawn('pnpm', ['exec', 'playwright', 'install', 'chromium'], { shell: true })
+    const proc = spawn('pnpm', ['exec', 'playwright', 'install', 'chromium'], {
+        shell: true,
+    })
     return new Promise<void>((resolve, reject) => {
         proc.on('error', e => console.error(e))
         proc.stderr.on('data', e => {

@@ -24,7 +24,11 @@ export class AgentGlobalState implements vscode.Memento {
     }
 
     public keys(): readonly string[] {
-        return [localStorage.LAST_USED_ENDPOINT, localStorage.ANONYMOUS_USER_ID_KEY, ...this.globalStorage.keys()]
+        return [
+            localStorage.LAST_USED_ENDPOINT,
+            localStorage.ANONYMOUS_USER_ID_KEY,
+            ...this.globalStorage.keys(),
+        ]
     }
 
     public get<T>(key: string, defaultValue?: unknown): any {

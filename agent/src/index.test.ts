@@ -8,19 +8,19 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
-import {
-    type ClientInfo,
-    type ExtensionConfiguration,
-    type ProgressReportParams,
-    type ProgressStartParams,
-    type ServerInfo,
-    type WebviewPostMessageParams,
+import type {
+    ClientInfo,
+    ExtensionConfiguration,
+    ProgressReportParams,
+    ProgressStartParams,
+    ServerInfo,
+    WebviewPostMessageParams,
 } from './protocol-alias'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
@@ -37,7 +37,7 @@ interface ProgressReportMessage {
 interface ProgressEndMessage {
     method: 'progress/end'
     id: string
-    message: {}
+    message: Record<string, never>
 }
 
 export function isNode16(): boolean {
@@ -69,14 +69,26 @@ export class TestClient extends MessageHandler {
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/start', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/start',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/report', message => {
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/report', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/report',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/end', ({ id }) => {
-            this.progressMessages.push({ method: 'progress/end', id: this.progressID(id), message: {} })
+            this.progressMessages.push({
+                method: 'progress/end',
+                id: this.progressID(id),
+                message: {},
+            })
         })
         this.registerNotification('debug/message', message => {
             // Uncomment below to see `logDebug` messages.
@@ -153,20 +165,28 @@ export class TestClient extends MessageHandler {
         } catch (error) {
             if (error === undefined) {
                 throw new Error('Agent failed to initialize, error is undefined')
-            } else if (error instanceof Error) {
-                throw error
-            } else {
-                throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, { cause: error })
             }
+            if (error instanceof Error) {
+                throw error
+            }
+            throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, {
+                cause: error,
+            })
         }
     }
 
     public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'chatModel', model },
+        })
     }
 
     public async reset(id: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'reset' } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'reset' },
+        })
     }
 
     public async sendMessage(
@@ -299,7 +319,7 @@ export class TestClient extends MessageHandler {
                 progressBars: 'enabled',
             },
             extensionConfiguration: {
-                anonymousUserID: this.name + 'abcde1234',
+                anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
                 serverEndpoint: this.serverEndpoint,
                 customHeaders: {},
@@ -339,13 +359,18 @@ const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
-const mayRecord = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+const mayRecord =
+    process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
     const dotcom = 'https://sourcegraph.com'
     if (mayRecord) {
         execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
+        assert.strictEqual(
+            process.env.SRC_ENDPOINT,
+            dotcom,
+            'SRC_ENDPOINT must be https://sourcegraph.com'
+        )
     }
 
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
@@ -359,7 +384,8 @@ describe('Agent', () => {
         // needs to be updated whenever we change the underlying access token.
         // We can't return a random string here because then Polly won't be able
         // to associate the HTTP requests between record mode and replay mode.
-        process.env.SRC_ACCESS_TOKEN ?? 'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
+        process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
     )
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
@@ -368,12 +394,17 @@ describe('Agent', () => {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', { cwd: client.getAgentDir(), stdio: 'inherit' })
+    execSync('pnpm run build:agent', {
+        cwd: client.getAgentDir(),
+        stdio: 'inherit',
+    })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, {
+            recursive: true,
+        })
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -435,9 +466,10 @@ describe('Agent', () => {
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionStart + selectionStartMarker.length)
-                : undefined
-        const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
+                  ? document.positionAt(selectionStart + selectionStartMarker.length)
+                  : undefined
+        const end =
+            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
         client.notify(method, {
             uri: uri.toString(),
             content,
@@ -497,7 +529,9 @@ describe('Agent', () => {
         `,
             explainPollyError
         )
-        client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
+        client.notify('autocomplete/completionAccepted', {
+            completionID: completions.items[0].id,
+        })
     }, 10_000)
 
     describe('Chat', () => {
@@ -517,7 +551,9 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
-            const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
+            const lastMessage = await client.sendSingleMessageToNewChat(
+                'Generate simple hello world function in java!'
+            )
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
@@ -600,7 +636,9 @@ describe('Agent', () => {
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await openFile(animalUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
                 {
@@ -630,7 +668,9 @@ describe('Agent', () => {
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
             await openFile(squirrelUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
                 addEnhancedContext: true,
             })
@@ -642,12 +682,18 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('openai')).toBeTruthy()
             }
             {
                 await client.setChatModel(id, 'anthropic/claude-2.0')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
                 expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
             }
         }, 30_000)
@@ -676,7 +722,10 @@ describe('Agent', () => {
                 'edits the last human chat message',
                 async () => {
                     const id = await client.request('chat/new', null)
-                    await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                    await client.setChatModel(
+                        id,
+                        'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                    )
                     await client.sendMessage(
                         id,
                         'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
@@ -699,12 +748,28 @@ describe('Agent', () => {
 
             it('edits messages by index', async () => {
                 const id = await client.request('chat/new', null)
-                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                await client.setChatModel(
+                    id,
+                    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                )
                 // edits by index replaces message at index, and erases all subsequent messages
-                await client.sendMessage(id, 'I have a turtle named "potter", reply single "ok" if you understand.')
-                await client.sendMessage(id, 'I have a bird named "skywalker", reply single "ok" if you understand.')
-                await client.sendMessage(id, 'I have a dog named "happy", reply single "ok" if you understand.')
-                await client.editMessage(id, 'I have a tiger named "zorro", reply single "ok" if you understand', 2)
+                await client.sendMessage(
+                    id,
+                    'I have a turtle named "potter", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a bird named "skywalker", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a dog named "happy", reply single "ok" if you understand.'
+                )
+                await client.editMessage(
+                    id,
+                    'I have a tiger named "zorro", reply single "ok" if you understand',
+                    2
+                )
                 {
                     const lastMessage = await client.sendMessage(id, 'What pets do I have?')
                     const answer = lastMessage?.text?.toLocaleLowerCase()
@@ -719,11 +784,15 @@ describe('Agent', () => {
 
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
 
             await openFile(multipleSelectionsUri)
             await changeFile(multipleSelectionsUri)
-            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            await changeFile(multipleSelectionsUri, {
+                selectionName: 'SELECTION_2',
+            })
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 { addEnhancedContext: true }
@@ -890,11 +959,16 @@ describe('Agent', () => {
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
-            const { result } = await client.request('testing/progress', { title: 'Susan' })
+            const { result } = await client.request('testing/progress', {
+                title: 'Susan',
+            })
             expect(result).toStrictEqual('Hello Susan')
             let progressID: string | undefined
             for (const message of client.progressMessages) {
-                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
+                if (
+                    message.method === 'progress/start' &&
+                    message.message.options.title === 'testing/progress'
+                ) {
                     progressID = message.message.id
                     break
                 }
@@ -954,7 +1028,9 @@ describe('Agent', () => {
                 }
             })
             try {
-                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
+                const { result } = await client.request('testing/progressCancelation', {
+                    title: 'Leona',
+                })
                 expect(result).toStrictEqual("request with title 'Leona' cancelled")
             } finally {
                 disposable.dispose()
@@ -1018,7 +1094,10 @@ describe('Agent', () => {
     })
 
     afterAll(async () => {
-        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
+        await fspromises.rm(workspaceRootPath, {
+            recursive: true,
+            force: true,
+        })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 30_000)

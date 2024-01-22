@@ -66,10 +66,10 @@ describe('JaccardSimilarityRetriever', () => {
             { document: unrelatedDocument },
         ] as any)
         vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(((uri: vscode.Uri) => {
-            if (uri && uri.toString().includes('unrelated')) {
+            if (uri?.toString().includes('unrelated')) {
                 return Promise.resolve(unrelatedDocument)
             }
-            if (uri && uri.toString().includes('test-class.test')) {
+            if (uri?.toString().includes('test-class.test')) {
                 return Promise.resolve(testDocument)
             }
             return Promise.resolve(otherDocument)
@@ -159,7 +159,9 @@ describe('JaccardSimilarityRetriever', () => {
             testFileUri('test-class.test.ts').toString()
         )
 
-        vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([{ document: testDocument }] as any)
+        vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([
+            { document: testDocument },
+        ] as any)
         vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
             return Promise.resolve(testDocument)
         })
@@ -210,7 +212,9 @@ describe('JaccardSimilarityRetriever', () => {
             testFileUri('test-class.ts').toString()
         )
 
-        vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([{ document: otherDocument }] as any)
+        vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([
+            { document: otherDocument },
+        ] as any)
         vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
             return Promise.resolve(otherDocument)
         })

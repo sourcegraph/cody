@@ -26,7 +26,9 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
 
 export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): string | Error {
     if (!cloneURL) {
-        return new Error(`Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`)
+        return new Error(
+            `Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`
+        )
     }
     try {
         // Handle common Git SSH URL format
@@ -39,7 +41,7 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
         }
         const uri = new URL(cloneURL)
         // Handle Azure DevOps URLs
-        if (uri.hostname && uri.hostname.includes('dev.azure') && uri.pathname) {
+        if (uri.hostname?.includes('dev.azure') && uri.pathname) {
             return `${uri.hostname}${uri.pathname.replace('/_git', '')}`
         }
         // Handle GitHub URLs
@@ -60,6 +62,8 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
         }
         return new Error('')
     } catch (error) {
-        return new Error(`Cody could not extract repo name from clone URL ${cloneURL}:`, { cause: error })
+        return new Error(`Cody could not extract repo name from clone URL ${cloneURL}:`, {
+            cause: error,
+        })
     }
 }

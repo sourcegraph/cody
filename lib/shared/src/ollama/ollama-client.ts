@@ -1,15 +1,14 @@
+import { isDefined } from '../common'
+import type { OllamaGenerateParameters, OllamaOptions } from '../configuration'
 import {
-    isAbortError,
-    isDefined,
-    isError,
-    isNodeResponse,
-    type CompletionLogger,
-    type OllamaGenerateParameters,
-    type OllamaOptions,
-} from '@sourcegraph/cody-shared'
-
-import { logDebug } from '../../log'
-import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient, type CompletionResponseGenerator } from '../client'
+    STOP_REASON_STREAMING_CHUNK,
+    type CodeCompletionsClient,
+    type CompletionResponseGenerator,
+} from '../inferenceClient/misc'
+import type { CompletionLogger } from '../sourcegraph-api/completions/client'
+import { isAbortError } from '../sourcegraph-api/errors'
+import { isNodeResponse } from '../sourcegraph-api/graphql/client'
+import { isError } from '../utils'
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
@@ -51,7 +50,8 @@ const RESPONSE_SEPARATOR = /\r?\n/
  */
 export function createOllamaClient(
     ollamaOptions: OllamaOptions,
-    logger?: CompletionLogger
+    logger?: CompletionLogger,
+    logDebug?: (filterLabel: string, text: string, ...args: unknown[]) => void
 ): CodeCompletionsClient<OllamaGenerateParams> {
     async function* complete(
         params: OllamaGenerateParams,
@@ -97,7 +97,7 @@ export function createOllamaClient(
                     if (line.done && line.total_duration) {
                         const timingInfo = formatOllamaTimingInfo(line)
                         // TODO(valery): yield debug message with timing info to a tracer
-                        logDebug('ollama', 'generation done', timingInfo.join(' '))
+                        logDebug?.('ollama', 'generation done', timingInfo.join(' '))
                     }
                 }
             }
@@ -142,7 +142,9 @@ function formatOllamaTimingInfo(response: OllamaGenerateResponse): string[] {
 
     const promptEvalSpeed =
         response.prompt_eval_count !== undefined && response.prompt_eval_duration !== undefined
-            ? `prompt_eval_tok/sec=${response.prompt_eval_count / (response.prompt_eval_duration / 1000000000)}`
+            ? `prompt_eval_tok/sec=${
+                  response.prompt_eval_count / (response.prompt_eval_duration / 1000000000)
+              }`
             : null
 
     const responseEvalSpeed =
@@ -157,7 +159,6 @@ function browserResponseToAsyncIterable(body: ReadableStream<Uint8Array>): {
     [Symbol.asyncIterator]: () => AsyncGenerator<string, string, unknown>
 } {
     return {
-        // eslint-disable-next-line object-shorthand
         [Symbol.asyncIterator]: async function* () {
             const reader = body.getReader()
             const decoder = new TextDecoder('utf-8')

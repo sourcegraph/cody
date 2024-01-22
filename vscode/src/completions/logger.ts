@@ -3,22 +3,22 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
-import { type KnownString, type TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
-import { type CompletionIntent } from '../tree-sitter/query-sdk'
+import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { type ContextSummary } from './context/context-mixer'
-import { type InlineCompletionsResultSource, type TriggerKind } from './get-inline-completions'
+import type { ContextSummary } from './context/context-mixer'
+import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
-import { type RequestParams } from './request-manager'
+import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { type InlineCompletionItem } from './types'
+import type { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -324,7 +324,10 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
 
 export interface CompletionBookkeepingEvent {
     id: CompletionLogID
-    params: Omit<SharedEventPayload, 'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'>
+    params: Omit<
+        SharedEventPayload,
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
+    >
     // The timestamp when the completion request started
     startedAt: number
     // The timestamp when the completion fired off an eventual network request
@@ -452,7 +455,10 @@ export function start(id: CompletionLogID): void {
     }
 }
 
-export function networkRequestStarted(id: CompletionLogID, contextSummary: ContextSummary | undefined): void {
+export function networkRequestStarted(
+    id: CompletionLogID,
+    contextSummary: ContextSummary | undefined
+): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.networkRequestStartedAt) {
         event.networkRequestStartedAt = performance.now()
@@ -476,7 +482,8 @@ export function loaded(
 
     // Check if we already have a completion id for the loaded completion item
     const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionAnalyticsID = recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
+    const completionId: CompletionAnalyticsID =
+        recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
     recentCompletions.set(key, completionId)
     event.params.id = completionId
 
@@ -661,6 +668,7 @@ export function flushActiveSuggestionRequests(): void {
 
 function logSuggestionEvents(): void {
     const now = performance.now()
+    // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
         const {
             params,
@@ -719,7 +727,10 @@ export function reset_testOnly(): void {
     completionsStartedSinceLastSuggestion = 0
 }
 
-function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {
+function lineAndCharCount({ insertText }: InlineCompletionItem): {
+    lineCount: number
+    charCount: number
+} {
     const lineCount = lines(insertText).length
     const charCount = insertText.length
     return { lineCount, charCount }
@@ -773,7 +784,10 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
     }
 }
 
-function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser: boolean): CompletionItemInfo {
+function completionItemToItemInfo(
+    item: InlineCompletionItemWithAnalytics,
+    isDotComUser: boolean
+): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
     const completionItemInfo: CompletionItemInfo = {

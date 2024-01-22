@@ -21,7 +21,9 @@ describe('releaseType', () => {
 
 describe('releaseNotesURL', () => {
     it('returns GitHub release notes for stable builds', () => {
-        expect(releaseNotesURL('4.2.1')).toEqual('https://github.com/sourcegraph/cody/releases/tag/vscode-v4.2.1')
+        expect(releaseNotesURL('4.2.1')).toEqual(
+            'https://github.com/sourcegraph/cody/releases/tag/vscode-v4.2.1'
+        )
     })
     it('returns changelog for insiders builds', () => {
         expect(releaseNotesURL('4.3.1689391131')).toEqual(

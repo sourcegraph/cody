@@ -2,15 +2,15 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
-import {
-    type ApiPostMessage,
-    type ChatButtonProps,
-    type CodeBlockActionsProps,
-    type EditButtonProps,
-    type FeedbackButtonsProps,
-    type UserAccountInfo,
+import type {
+    ApiPostMessage,
+    ChatButtonProps,
+    CodeBlockActionsProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
@@ -53,7 +53,9 @@ export const TranscriptItem: React.FunctionComponent<
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        abortMessageInProgressComponent?: React.FunctionComponent<{
+            onAbortMessageInProgress: () => void
+        }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo: UserAccountInfo
@@ -108,8 +110,15 @@ export const TranscriptItem: React.FunctionComponent<
         >
             {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
             {showEditButton && EditButtonContainer && !isInEditingMode && (
-                <div className={isInEditingMode ? styles.editingContainer : styles.editingButtonContainer}>
-                    <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
+                <div
+                    className={isInEditingMode ? styles.editingContainer : styles.editingButtonContainer}
+                >
+                    <header
+                        className={classNames(
+                            styles.transcriptItemHeader,
+                            transcriptItemParticipantClassName
+                        )}
+                    >
                         <EditButtonContainer
                             className={styles.FeedbackEditButtonsContainer}
                             messageBeingEdited={index}
@@ -177,7 +186,12 @@ export const TranscriptItem: React.FunctionComponent<
                 FeedbackButtonsContainer &&
                 feedbackButtonsOnSubmit &&
                 message.speaker === 'assistant' && (
-                    <footer className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}>
+                    <footer
+                        className={classNames(
+                            styles.footerContainer,
+                            transcriptItemParticipantClassName
+                        )}
+                    >
                         {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
                         <FeedbackButtonsContainer
                             className={styles.FeedbackEditButtonsContainer}
