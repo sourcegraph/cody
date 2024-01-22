@@ -17,7 +17,6 @@ import {
     type ChatButtonProps,
     type ChatSubmitType,
     type ChatUISubmitButtonProps,
-    type ChatUISuggestionButtonProps,
     type ChatUITextAreaProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
@@ -51,8 +50,6 @@ interface ChatboxProps {
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
-    suggestions?: string[]
-    setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
@@ -74,8 +71,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    suggestions,
-    setSuggestions,
     chatCommands,
     isTranscriptError,
     contextSelection,
@@ -192,7 +187,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
-            suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
             symbolLinkComponent={SymbolLink}
             className={styles.innerContainer}
@@ -211,8 +205,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
             insertButtonOnSubmit={onInsertBtnClick}
-            suggestions={suggestions}
-            setSuggestions={setSuggestions}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
@@ -361,15 +353,6 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
             <i className="codicon codicon-comment" />
         )}
     </VSCodeButton>
-)
-
-const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({
-    suggestion,
-    onClick,
-}) => (
-    <button className={styles.suggestionButton} type="button" onClick={onClick}>
-        {suggestion}
-    </button>
 )
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({

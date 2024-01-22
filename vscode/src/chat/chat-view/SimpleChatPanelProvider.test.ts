@@ -4,9 +4,10 @@ import { URI } from 'vscode-uri'
 import type { Editor } from '@sourcegraph/cody-shared'
 
 import type { ContextItem } from './SimpleChatModel'
-import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 
 import '../../testutils/vscode'
+
+import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 
 describe('contextFilesToContextItems', () => {
     test('omits files that could not be read', async () => {

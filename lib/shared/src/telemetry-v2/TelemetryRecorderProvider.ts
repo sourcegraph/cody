@@ -126,10 +126,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
                 value: CONTEXT_SELECTION_ID[this.config.useContext],
             },
             {
-                key: 'chatPredictions',
-                value: this.config.experimentalChatPredictions ? 1 : 0,
-            },
-            {
                 key: 'guardrails',
                 value: this.config.experimentalGuardrails ? 1 : 0,
             }

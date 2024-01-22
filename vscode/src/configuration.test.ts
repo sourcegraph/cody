@@ -35,8 +35,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true }
-                    case 'cody.experimental.chatPredictions':
-                        return true
                     case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
@@ -114,7 +112,6 @@ describe('getConfiguration', () => {
             autocompleteLanguages: {
                 '*': true,
             },
-            experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSymfContext: true,

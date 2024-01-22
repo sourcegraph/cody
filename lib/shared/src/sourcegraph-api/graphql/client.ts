@@ -130,7 +130,8 @@ type LogEventResponse = unknown
 export interface EmbeddingsSearchResult {
     repoName?: string
     revision?: string
-    uri: URI
+    fileName: string
+    uri: URI // TODO(beyang): this is not guaranteed to exist
     startLine: number
     endLine: number
     content: string

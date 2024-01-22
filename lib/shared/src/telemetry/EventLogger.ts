@@ -119,7 +119,6 @@ export class EventLogger {
             extensionDetails: this.extensionDetails,
             configurationDetails: {
                 contextSelection: this.config.useContext,
-                chatPredictions: this.config.experimentalChatPredictions,
                 guardrails: this.config.experimentalGuardrails,
             },
             version: this.extensionDetails.version, // for backcompat

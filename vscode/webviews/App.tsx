@@ -53,7 +53,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [myPrompts, setMyPrompts] = useState<
         [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
@@ -135,9 +134,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'view':
                         setView(message.messages)
-                        break
-                    case 'suggestions':
-                        setSuggestions(message.suggestions)
                         break
                     case 'custom-prompts': {
                         let prompts: [
@@ -300,8 +296,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         inputHistory={inputHistory}
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
-                                        suggestions={suggestions}
-                                        setSuggestions={setSuggestions}
                                         telemetryService={telemetryService}
                                         chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}

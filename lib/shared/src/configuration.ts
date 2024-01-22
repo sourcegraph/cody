@@ -44,7 +44,6 @@ export interface Configuration {
     experimentalSymfContext: boolean
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
-    experimentalChatPredictions: boolean
 
     /**
      * Unstable Features for internal testing only

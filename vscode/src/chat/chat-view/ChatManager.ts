@@ -118,11 +118,10 @@ export class ChatManager implements vscode.Disposable {
         const requestID = uuid.v4()
         telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, ...args })
         const chatProvider = await this.getChatProvider()
-        await chatProvider.handleHumanMessageSubmitted(requestID, question, 'user', [], false)
+        await chatProvider.handleNewUserMessage(requestID, question, 'user-newchat', [], true)
     }
 
     // Execute a command request in a new chat panel
-
     public async executeCommand(
         command: CodyCommand,
         args: CodyCommandArgs,
@@ -143,7 +142,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
-        await chatProvider.handleCommands(command, args)
+        await chatProvider.handleCommand(command, args)
         return chatProvider
     }
 
