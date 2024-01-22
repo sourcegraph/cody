@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import {
     SourcegraphGraphQLAPIClient,
     type EmbeddingsSearchResults,
@@ -35,7 +37,7 @@ export class CachedRemoteEmbeddingsClient {
         return repoID
     }
 
-    public search(
+    public async search(
         repoIDs: string[],
         query: string,
         codeResultsCount: number,
@@ -44,6 +46,20 @@ export class CachedRemoteEmbeddingsClient {
         if (repoIDs.length !== 1) {
             throw new Error('Only one repoID is supported for now')
         }
-        return this.client.legacySearchEmbeddings(repoIDs[0], query, codeResultsCount, textResultsCount)
+        const results = await this.client.legacySearchEmbeddings(repoIDs[0], query, codeResultsCount, textResultsCount)
+        if (results instanceof Error) {
+            return results
+        }
+        results.codeResults.forEach(result => {
+            if (!result.uri) {
+                result.uri = vscode.Uri.file(result.fileName)
+            }
+        })
+        results.textResults.forEach(result => {
+            if (!result.uri) {
+                result.uri = vscode.Uri.file(result.fileName)
+            }
+        })
+        return results
     }
 }
