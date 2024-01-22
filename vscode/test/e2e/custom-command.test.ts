@@ -20,7 +20,7 @@ test('open the Custom Commands in sidebar and add new user command', async ({ pa
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Cody"]')
+    await page.click('.badge[aria-label="Cody"]')
 
     // Open the new chat panel
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
