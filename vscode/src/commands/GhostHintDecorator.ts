@@ -1,8 +1,9 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
+import { getCustomKeybindingForCommand } from '../keybindings/getCustomKeybindingForCommand'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
+const DEFAULT_EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
+const DEFAULT_CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
@@ -52,10 +53,12 @@ export const ghostHintDecoration = vscode.window.createTextEditorDecorationType(
 export class GhostHintDecorator implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private isActive = false
+    private decorationLabel: string
     private activeDecoration: vscode.DecorationOptions | null = null
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
     constructor() {
+        this.decorationLabel = this.getDecorationLabel()
         this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
             leading: false,
             trailing: true,
@@ -66,6 +69,17 @@ export class GhostHintDecorator implements vscode.Disposable {
                 this.updateConfig()
             }
         })
+    }
+
+    private getDecorationLabel = () => {
+        const editCommandLabel =
+            getCustomKeybindingForCommand('cody.command.edit-code', { formatAsLabel: true }) ||
+            DEFAULT_EDIT_SHORTCUT_LABEL
+        const chatCommandLabel =
+            getCustomKeybindingForCommand('cody.chat.panel.new', { formatAsLabel: true }) ||
+            DEFAULT_CHAT_SHORTCUT_LABEL
+
+        return `${editCommandLabel} to Edit, ${chatCommandLabel} to Chat`
     }
 
     private init(): void {
@@ -108,7 +122,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.activeDecoration = {
             range: new vscode.Range(position, position),
             renderOptions: {
-                after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` },
+                after: { contentText: this.decorationLabel },
             },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])

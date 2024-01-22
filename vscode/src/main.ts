@@ -48,6 +48,7 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { parseCustomKeybindings } from './keybindings/getCustomKeybindingForCommand'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -132,6 +133,7 @@ const register = async (
     }
 
     parseAllVisibleDocuments()
+    parseCustomKeybindings()
 
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
