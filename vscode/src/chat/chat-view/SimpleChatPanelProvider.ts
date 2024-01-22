@@ -256,7 +256,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break;
             }
             case "edit": {
-                await this.handleEdit(uuid.v4(), message.text);
+                await this.handleEdit(
+                    uuid.v4(),
+                    message.text,
+                    message.index,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext || false
+                );
                 break;
             }
             case "abort":
