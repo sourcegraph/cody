@@ -545,9 +545,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
+        // If it's not an ask command, it's a fixup command, so we can exit early.
         // This is because startCommand will start the CommandRunner,
-        // which would send all fixup requests to the FixupController
+        // which would send all fixup command requests to the FixupController
         if (command.mode !== 'ask') {
             return
         }
@@ -654,7 +654,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 contextSummary,
             }
 
-            // Only log chat-question event if it is not a command to avoid double logging for commands
             telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
                 hasV2Event: true,
             })
@@ -670,7 +669,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     properties,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
+                    // the condition below is an aditional safeguard measure
                     promptText:
                         authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                 },
@@ -707,7 +706,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.chatModel.setNewContextUsed(newContextUsed)
         if (contextLimitWarnings.length > 0) {
             const warningMsg = contextLimitWarnings
-                .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
+                .map(w => {
+                    w = w.trim()
+                    if (!w.endsWith('.')) {
+                        w += '.'
+                    }
+                    return w
+                })
                 .join(' ')
             this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
         }
