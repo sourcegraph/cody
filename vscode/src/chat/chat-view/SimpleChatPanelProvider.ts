@@ -62,20 +62,8 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
-import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
-import { ChatHistoryManager } from './ChatHistoryManager'
-import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import type { ChatViewProviderWebview, Config } from './ChatPanelsManager'
-import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getCommandContext, getEnhancedContext } from './context'
-import { InitDoer } from './InitDoer'
-import {
-    type ContextItem,
-    type MessageWithContext,
-    SimpleChatModel,
-    toViewMessage,
-} from './SimpleChatModel'
 import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import type { MessageErrorType } from '../MessageProvider'
 import type {
     AuthStatus,
     ChatSubmitType,
@@ -84,8 +72,20 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
+import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
+import { ChatHistoryManager } from './ChatHistoryManager'
+import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
+import type { ChatViewProviderWebview, Config } from './ChatPanelsManager'
+import { CodebaseStatusProvider } from './CodebaseStatusProvider'
+import { getCommandContext, getEnhancedContext } from './context'
+import { InitDoer } from './InitDoer'
 import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
-import type { MessageErrorType } from '../MessageProvider'
+import {
+    SimpleChatModel,
+    toViewMessage,
+    type ContextItem,
+    type MessageWithContext,
+} from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     config: Config

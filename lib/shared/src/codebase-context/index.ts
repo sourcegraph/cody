@@ -51,6 +51,7 @@ export class CodebaseContext {
      * the most important context message appears *last*)
      */
     public async getContextMessages(
+        workspaceFolderUri: URI,
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
@@ -63,7 +64,7 @@ export class CodebaseContext {
                 return []
             default: {
                 return this.localEmbeddings || this.embeddings
-                    ? this.getEmbeddingsContextMessages(query, options)
+                    ? this.getEmbeddingsContextMessages(workspaceFolderUri, query, options)
                     : this.getLocalContextMessages(query, options)
             }
         }
@@ -73,10 +74,11 @@ export class CodebaseContext {
     // We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
     // when we run out of tokens.
     private async getEmbeddingsContextMessages(
+        workspaceFolderUri: URI,
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
-        const combinedResults = await this.getEmbeddingSearchResults(query, options)
+        const combinedResults = await this.getEmbeddingSearchResults(workspaceFolderUri, query, options)
 
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
@@ -85,6 +87,7 @@ export class CodebaseContext {
     }
 
     private async getEmbeddingSearchResults(
+        workspaceFolderUri: URI,
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
@@ -97,6 +100,7 @@ export class CodebaseContext {
 
         if (this.embeddings) {
             const embeddingsSearchResults = await this.embeddings.search(
+                workspaceFolderUri,
                 query,
                 options.numCodeResults,
                 options.numTextResults

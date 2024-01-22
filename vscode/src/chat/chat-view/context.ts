@@ -3,15 +3,15 @@ import * as vscode from 'vscode'
 import {
     isCodyIgnoredFile,
     isError,
+    isFileURI,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     truncateTextNearestLine,
+    uriBasename,
     type CodyCommand,
     type ConfigurationUseContext,
     type Result,
-    isFileURI,
-    uriBasename,
 } from '@sourcegraph/cody-shared'
 
 import { getContextForCommand } from '../../commands/utils/get-context'
@@ -248,7 +248,13 @@ async function searchEmbeddingsRemote(
 
     logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
     const contextItems: ContextItem[] = []
-    const embeddings = await embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+    const embeddings = await embeddingsClient.search(
+        workspaceFolder.uri,
+        [repoId],
+        text,
+        NUM_CODE_RESULTS,
+        NUM_TEXT_RESULTS
+    )
     if (isError(embeddings)) {
         throw new Error(`Error retrieving embeddings: ${embeddings}`)
     }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     SourcegraphGraphQLAPIClient,
+    type EmbeddingsSearchResult,
     type EmbeddingsSearchResults,
     type GraphQLAPIClientConfig,
 } from '@sourcegraph/cody-shared'
@@ -38,6 +39,7 @@ export class CachedRemoteEmbeddingsClient {
     }
 
     public async search(
+        workspaceFolderUri: vscode.Uri,
         repoIDs: string[],
         query: string,
         codeResultsCount: number,
@@ -55,16 +57,18 @@ export class CachedRemoteEmbeddingsClient {
         if (results instanceof Error) {
             return results
         }
-        for (const result of results.codeResults) {
-            if (!result.uri) {
-                result.uri = vscode.Uri.file(result.fileName)
+        function resolveFileNameToURI({
+            fileName,
+            ...result
+        }: Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string }): EmbeddingsSearchResult {
+            return {
+                ...result,
+                uri: vscode.Uri.joinPath(workspaceFolderUri, fileName),
             }
         }
-        for (const result of results.textResults) {
-            if (!result.uri) {
-                result.uri = vscode.Uri.file(result.fileName)
-            }
+        return {
+            codeResults: results.codeResults.map(resolveFileNameToURI),
+            textResults: results.textResults.map(resolveFileNameToURI),
         }
-        return results
     }
 }
