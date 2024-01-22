@@ -372,7 +372,10 @@ export class SourcegraphGraphQLAPIClient {
             CURRENT_SITE_CODY_CONFIG_FEATURES,
             {}
         )
-        return extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
+        return extractDataOrError(
+            response,
+            data => data.site?.codyConfigFeatures ?? new Error('cody config not found')
+        )
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {

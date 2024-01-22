@@ -122,7 +122,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
             response = responses.chatWithSnippet
         }
-        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+        res.send(
+            `event: completion\ndata: {"completion": ${JSON.stringify(
+                response
+            )}}\n\nevent: done\ndata: {}\n\n`
+        )
     })
     app.post('/.test/completions/triggerRateLimit', (req, res) => {
         chatRateLimited = true

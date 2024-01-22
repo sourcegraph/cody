@@ -5,12 +5,14 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarSignin } from './common'
 import { test as baseTest, type DotcomUrlOverride, type ExtraWorkspaceSettings } from './helpers'
 
-const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExtraWorkspaceSettings>({
-    extraWorkspaceSettings: {
-        // TODO(#59720): Remove experimental setting.
-        'cody.experimental.guardrails': true,
-    },
-})
+const test = baseTest
+    .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
+    .extend<ExtraWorkspaceSettings>({
+        extraWorkspaceSettings: {
+            // TODO(#59720): Remove experimental setting.
+            'cody.experimental.guardrails': true,
+        },
+    })
 
 test('attribution search enabled in chat', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })

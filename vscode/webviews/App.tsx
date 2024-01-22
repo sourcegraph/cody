@@ -306,7 +306,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
-                                            config.experimentalGuardrails && attributionEnabled ? guardrails : undefined
+                                            config.experimentalGuardrails && attributionEnabled
+                                                ? guardrails
+                                                : undefined
                                         }
                                     />
                                 </EnhancedContextEnabled.Provider>
