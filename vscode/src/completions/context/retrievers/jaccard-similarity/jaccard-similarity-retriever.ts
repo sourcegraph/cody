@@ -8,6 +8,7 @@ import { baseLanguageId } from '../../utils'
 
 import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
 import { VSCodeDocumentHistory, type DocumentHistory } from './history'
+import { lastNLines } from '../../../text-processing'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -188,9 +189,4 @@ async function getRelevantFiles(
         })
     )
     return files
-}
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }

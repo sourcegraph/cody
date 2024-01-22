@@ -4,7 +4,12 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { Provider } from './providers/provider'
-import { RequestManager, type RequestManagerResult, type RequestParams } from './request-manager'
+import {
+    RequestManager,
+    computeStillRelevantCompletions,
+    type RequestManagerResult,
+    type RequestParams,
+} from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import type { ContextSnippet } from './types'
 
@@ -62,8 +67,8 @@ function createProvider(prefix: string) {
     })
 }
 
-function docState(prefix: string, suffix = ';'): RequestParams {
-    const { document, position } = documentAndPosition(`${prefix}█${suffix}`)
+function docState(prefix: string, suffix = ';', uriString?: string): RequestParams {
+    const { document, position } = documentAndPosition(`${prefix}█${suffix}`, undefined, uriString)
     return {
         document,
         position,
@@ -209,5 +214,76 @@ describe('RequestManager', () => {
         expect(completion).toHaveProperty('range')
 
         expect(provider2.didAbort).toBe(true)
+    })
+})
+
+describe('computeStillRelevantCompletions', () => {
+    it('returns the completion it it is a forward type of the updated document', async () => {
+        const currentRequest = docState('console.log')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual([
+            completion,
+        ])
+    })
+
+    it('handles cases on different lines', async () => {
+        const currentRequest = docState('if (true) {\n  console.')
+        const previousRequest = docState('if (true) {')
+        const completion = { insertText: '\n  console.log("wow")' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual([
+            completion,
+        ])
+    })
+
+    it('handles cases where the prefix is not starting at the same line', async () => {
+        let hundredLines = ''
+        for (let i = 0; i < 100; i++) {
+            hundredLines += `${i}\n`
+        }
+
+        const currentRequest = docState(`${hundredLines}if (true) {\n  console.log(`)
+        const previousRequest = docState(`${hundredLines}if (true) {`)
+        const completion = { insertText: '\n  console.log("wow")\n}' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual([
+            completion,
+        ])
+    })
+
+    it('never matches for mismatched documents', async () => {
+        const currentRequest = docState('console.log', undefined, 'foo.ts')
+        const previousRequest = docState('console.', undefined, 'bar.ts')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual(
+            []
+        )
+    })
+
+    it('never matches for mismatching prefixes', async () => {
+        const hundredLines = 'WOW\n'.repeat(100)
+        const thousandLines = 'WOW\n'.repeat(1000)
+        const currentRequest = docState(`${hundredLines}console.log`)
+        const previousRequest = docState(`${thousandLines}console.`)
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        // Even though the prefix will look the same, it'll be on different lines and should thus
+        // not be reused
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual(
+            []
+        )
+    })
+
+    it('accounts for typos', async () => {
+        const currentRequest = docState('console.dir')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual([
+            completion,
+        ])
     })
 })

@@ -18,6 +18,7 @@ import {
     type InlineCompletionItemWithAnalytics,
 } from './text-processing/process-inline-completions'
 import type { ContextSnippet } from './types'
+import { getPrefixRange } from './doc-context-getters'
 
 export interface RequestParams {
     /** The request's document */
@@ -238,4 +239,70 @@ class RequestCache {
     public delete(key: RequestParams): void {
         this.cache.delete(this.toCacheKey(key))
     }
+}
+
+// Given the current document and a previous request with it's recommended completions, compute if
+// the completion is still relevant for the current document.
+//
+// We define a completion suggestion as still relevant if the prefix still overlap with the new new
+// completion while allowing for some slight changes to account for prefixes.
+export function computeStillRelevantCompletions(
+    currentRequest: RequestParams,
+    previousRequest: RequestParams,
+    completions: InlineCompletionItemWithAnalytics[]
+): InlineCompletionItemWithAnalytics[] {
+    if (currentRequest.document.uri.toString() !== previousRequest.document.uri.toString()) {
+        return []
+    }
+
+    const currentPrefixRange = getPrefixRange(currentRequest.document, currentRequest.docContext)
+    const previousPrefixRange = getPrefixRange(previousRequest.document, previousRequest.docContext)
+
+    const sharedStartLine = Math.max(currentPrefixRange.start.line, previousPrefixRange.start.line)
+
+    // Truncate both prefixes to ensure they start at the same line
+    const currentPrefixDiff = sharedStartLine - currentPrefixRange.start.line
+    const previousPrefixDiff = sharedStartLine - previousPrefixRange.start.line
+    if (currentPrefixDiff < 0 || previousPrefixDiff < 0) {
+        // There is no overlap in prefixes, the completions are not relevant
+        return []
+    }
+    const currentPrefix = currentRequest.docContext.prefix
+        .split('\n')
+        .slice(currentPrefixDiff)
+        .join('\n')
+    const previousPrefix = previousRequest.docContext.prefix
+        .split('\n')
+        .slice(previousPrefixDiff)
+        .join('\n')
+
+    // Require some overlap in the prefixes
+    if (currentPrefix === '' || previousPrefix === '') {
+        return []
+    }
+
+    const current = currentPrefix
+    const relevantCompletions: InlineCompletionItemWithAnalytics[] = []
+    for (const completion of completions) {
+        const inserted = previousPrefix + completion.insertText
+
+        const isFullContinuation = inserted.startsWith(current)
+        // We consider a completion still relevant if the prefixes and the continuation diverge up
+        // to three characters. For this, we only consider typos in the last line (= the line at the
+        // cursor position)
+        const [insertedLines, insertedLastLine] = splitLastLine(inserted)
+        const [currentLines, currentLastLine] = splitLastLine(current)
+        const isTypo =
+            insertedLines === currentLines && insertedLastLine.startsWith(currentLastLine.slice(0, -3))
+        if (isFullContinuation || isTypo) {
+            relevantCompletions.push(completion)
+        }
+    }
+    return relevantCompletions
+}
+
+function splitLastLine(text: string): [string, string] {
+    const lines = text.split('\n')
+    const lastLine = lines.pop()!
+    return [lines.join('\n'), lastLine]
 }
