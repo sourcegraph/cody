@@ -111,6 +111,29 @@ export interface ChatSession {
  * SimpleChatPanelProvider is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
  * and interacts with the rest of the extension.
+ *
+ * Its methods are grouped into the following sections, each of which is demarcated
+ * by a comment block (search for "// Section: "):
+ *
+ * 1. top-level view action handlers
+ * 2. view updaters
+ * 3. chat request lifecycle methods
+ * 4. session management
+ * 5. webview container management
+ * 6. other public accessors and mutators
+ *
+ * The following invariants should be maintained:
+ * 1. top-level view action handlers
+ *    a. should all follow the handle$ACTION naming convention
+ *    b. should be private (with the existing exceptions)
+ * 2 view updaters
+ *    a. should all follow the post$ACTION naming convention
+ *    b. should NOT mutate model state
+ * 3. Do NOT introduce new public fields or methods. The public
+ *    interface of this class should be kept small in order to
+ *    avoid tight coupling with other classes. If communication
+ *    with other components outside the model and view is needed,
+ *    we should implement an broadcast/subscription design.
  */
 export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private chatModel: SimpleChatModel
@@ -271,7 +294,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // =======================================================================
-    // Top-level view action handlers
+    // Section: top-level view action handlers
     // =======================================================================
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -600,7 +623,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // =======================================================================
-    // Webview updaters
+    // Section: view updaters
     // =======================================================================
 
     private postEmptyMessageInProgress(): void {
@@ -660,9 +683,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
     }
 
-    /**
-     * Send a list of commands to webview that can be triggered via chat input box with slash
-     */
+    // Send a list of commands to webview that can be triggered via chat input box with slash
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.commandsController?.refresh()
@@ -670,7 +691,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id, { mode }]) => {
-                    /** The /ask command is only useful outside of chat */
+                    // The /ask command is only useful outside of chat
                     const isRedundantCommand = id === '/ask'
                     return !isRedundantCommand
                 }) || []
@@ -714,7 +735,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // =======================================================================
-    // Chat request lifecycle methods
+    // Section: chat request lifecycle methods
     // =======================================================================
 
     /**
@@ -900,7 +921,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // =======================================================================
-    // Session management
+    // Section: session management
     // =======================================================================
 
     // A unique identifier for this SimpleChatPanelProvider instance used to identify
@@ -952,7 +973,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
     }
     // =======================================================================
-    // Webview state and methods
+    // Section: webview container management
     // =======================================================================
 
     private extensionUri: vscode.Uri
@@ -1077,7 +1098,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // =======================================================================
-    // Other public accessors and mutators
+    // Section: other public accessors and mutators
     // =======================================================================
 
     public setChatTitle(title: string): void {
