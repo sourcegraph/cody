@@ -30,7 +30,7 @@ type ChatID = string
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
-    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable'
+    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable' | 'useContext'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {

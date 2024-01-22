@@ -778,7 +778,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
-    experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,

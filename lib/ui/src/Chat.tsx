@@ -40,7 +40,6 @@ interface ChatProps extends ChatClassNames {
     gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
-    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
     helpMarkdown?: string
@@ -53,8 +52,6 @@ interface ChatProps extends ChatClassNames {
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-    suggestions?: string[]
-    setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
     codyNotEnabledNotice?: React.FunctionComponent
@@ -128,11 +125,6 @@ export interface ChatUISubmitButtonProps {
     onAbortMessageInProgress?: () => void
 }
 
-export interface ChatUISuggestionButtonProps {
-    suggestion: string
-    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
-}
-
 export interface EditButtonProps {
     className: string
     disabled?: boolean
@@ -168,7 +160,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export type ChatSubmitType = 'user' | 'suggestion' | 'example' | 'user-newchat'
+export type ChatSubmitType = 'user' | 'user-newchat'
 
 export interface ChatModelDropdownMenuProps {
     models: ChatModelProvider[]
@@ -192,7 +184,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
-    suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
     symbolLinkComponent,
     helpMarkdown,
@@ -214,8 +205,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    suggestions,
-    setSuggestions,
     needsEmailVerification = false,
     codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
@@ -340,7 +329,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
             onSubmit(input, submitType, chatContextFiles)
-            setSuggestions?.(undefined)
             setChatContextFiles(new Map())
             setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
@@ -348,7 +336,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [messageInProgress, onSubmit, chatContextFiles, setSuggestions, inputHistory, setInputHistory]
+        [messageInProgress, onSubmit, chatContextFiles, inputHistory, setInputHistory]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -602,29 +590,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     guardrails={guardrails}
                 />
             )}
-
             {isGettingStartedComponentVisible && (
                 <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
-
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {!displayCommands &&
-                !contextSelection &&
-                suggestions !== undefined &&
-                suggestions.length !== 0 &&
-                SuggestionButton ? (
-                    <div className={styles.suggestions}>
-                        {suggestions.map((suggestion: string) =>
-                            suggestion.trim().length > 0 ? (
-                                <SuggestionButton
-                                    key={suggestion}
-                                    suggestion={suggestion}
-                                    onClick={() => submitInput(suggestion, 'suggestion')}
-                                />
-                            ) : null
-                        )}
-                    </div>
-                ) : null}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton

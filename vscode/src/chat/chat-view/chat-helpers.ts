@@ -131,3 +131,10 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
     // truncate title that is too long
     return lastDisplayText.length > 25 ? `${lastDisplayText.slice(0, 25).trim()}...` : lastDisplayText
 }
+
+export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
+    if (!range) {
+        return undefined
+    }
+    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
+}

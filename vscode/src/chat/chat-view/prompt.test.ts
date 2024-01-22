@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-
-import { DefaultPrompter } from './prompt'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SimpleChatModel } from './SimpleChatModel'
+import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
     afterEach(() => {
@@ -17,16 +16,9 @@ describe('DefaultPrompter', () => {
             prompt,
             contextLimitWarnings: warnings,
             newContextUsed,
-        } = await new DefaultPrompter().makePrompt(
-            chat,
-            {
-                getExplicitContext: () => [],
-                getEnhancedContext: () => Promise.resolve([]),
-                getCommandContext: () => Promise.resolve([]),
-            },
-            true,
-            100000
-        )
+        } = await new DefaultPrompter(
+            [], () => Promise.resolve([])
+        ).makePrompt(chat,100000)
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -64,14 +56,8 @@ describe('DefaultPrompter', () => {
             prompt,
             contextLimitWarnings: warnings,
             newContextUsed,
-        } = await new DefaultPrompter().makePrompt(
+        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
             chat,
-            {
-                getExplicitContext: () => [],
-                getEnhancedContext: () => Promise.resolve([]),
-                getCommandContext: () => Promise.resolve([]),
-            },
-            true,
             100000
         )
 

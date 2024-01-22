@@ -108,7 +108,6 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 

@@ -15,8 +15,7 @@ import type {
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import type { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 
@@ -109,7 +108,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
@@ -129,6 +127,8 @@ interface ExtensionAttributionMessage {
     }
     error?: string
 }
+
+export type ChatSubmitType = 'user' | 'user-newchat'
 
 interface WebviewSubmitMessage {
     text: string
