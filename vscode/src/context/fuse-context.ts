@@ -85,8 +85,6 @@ export function fuseContext<T>(retrievers: T[][], rankingIdentity: (item: T) => 
         // largest snippet list of any retriever.
         const maxMatches = Math.max(...[...resultByDocument.values()].map(r => r.length))
 
-        // console.log(documentId, { resultByDocument }, maxMatches)
-
         for (let i = 0; i < maxMatches; i++) {
             for (const [_, snippets] of resultByDocument.entries()) {
                 if (i >= snippets.length) {
