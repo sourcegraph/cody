@@ -52,8 +52,9 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
               val toolWindowManager = ToolWindowManager.getInstance(project)
               val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
               toolWindow?.setAvailable(true, null)
-              val codyToolWindow = CodyToolWindowContent.getInstance(project)
-              codyToolWindow.refreshPanelsVisibility()
+              CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+                refreshPanelsVisibility()
+              }
             }
 
             CodyAutocompleteStatusService.resetApplication(project)

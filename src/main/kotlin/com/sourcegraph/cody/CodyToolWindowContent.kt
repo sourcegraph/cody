@@ -533,8 +533,14 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     private const val SUBSCRIPTION_TAB_INDEX = 2
     private const val CHAT_MESSAGE_HISTORY_CAPACITY = 100
 
-    fun getInstance(project: Project): CodyToolWindowContent {
-      return project.getService(CodyToolWindowContent::class.java)
+    fun executeOnInstanceIfNotDisposed(
+        project: Project,
+        myAction: CodyToolWindowContent.() -> Unit
+    ) {
+      if (!project.isDisposed) {
+        val codyToolWindowContent = project.getService(CodyToolWindowContent::class.java)
+        codyToolWindowContent.myAction()
+      }
     }
   }
 }

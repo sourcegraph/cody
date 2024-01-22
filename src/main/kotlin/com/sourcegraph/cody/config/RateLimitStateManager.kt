@@ -14,7 +14,7 @@ object RateLimitStateManager {
       UpgradeToCodyProNotification.chatRateLimitError.set(null)
       CodyAutocompleteStatusService.resetApplication(project)
       ApplicationManager.getApplication().executeOnPooledThread {
-        CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+        CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
       }
     }
   }
@@ -24,7 +24,7 @@ object RateLimitStateManager {
       UpgradeToCodyProNotification.chatRateLimitError.set(rateLimitError)
       CodyAutocompleteStatusService.resetApplication(project)
       ApplicationManager.getApplication().executeOnPooledThread {
-        CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+        CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
       }
     }
   }

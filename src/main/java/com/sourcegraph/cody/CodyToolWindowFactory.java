@@ -22,29 +22,34 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
   @Override
   public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-    CodyToolWindowContent toolWindowContent = CodyToolWindowContent.Companion.getInstance(project);
-    Content content =
-        // ContentFactory.SERVICE.getInstance() has been deprecated in recent versions
-        ApplicationManager.getApplication()
-            .getService(ContentFactory.class)
-            .createContent(toolWindowContent.getContentPanel(), "", false);
-    content.setPreferredFocusableComponent(toolWindowContent.getPreferredFocusableComponent());
-    toolWindowContent.addToTabbedPaneChangeListener(
-        () -> {
+    CodyToolWindowContent.Companion.executeOnInstanceIfNotDisposed(
+        project,
+        toolWindowContent -> {
+          Content content =
+              // ContentFactory.SERVICE.getInstance() has been deprecated in recent versions
+              ApplicationManager.getApplication()
+                  .getService(ContentFactory.class)
+                  .createContent(toolWindowContent.getContentPanel(), "", false);
           content.setPreferredFocusableComponent(
               toolWindowContent.getPreferredFocusableComponent());
+          toolWindowContent.addToTabbedPaneChangeListener(
+              () -> {
+                content.setPreferredFocusableComponent(
+                    toolWindowContent.getPreferredFocusableComponent());
+                return null;
+              });
+          toolWindow.getContentManager().addContent(content);
+          DefaultActionGroup customCodySettings = new DefaultActionGroup();
+          customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
+          customCodySettings.addSeparator();
+          toolWindow.setAdditionalGearActions(customCodySettings);
+          List<AnAction> titleActions = new ArrayList<>();
+          createTitleActions(titleActions);
+          if (!titleActions.isEmpty()) {
+            toolWindow.setTitleActions(titleActions);
+          }
           return null;
         });
-    toolWindow.getContentManager().addContent(content);
-    DefaultActionGroup customCodySettings = new DefaultActionGroup();
-    customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
-    customCodySettings.addSeparator();
-    toolWindow.setAdditionalGearActions(customCodySettings);
-    List<AnAction> titleActions = new ArrayList<>();
-    createTitleActions(titleActions);
-    if (!titleActions.isEmpty()) {
-      toolWindow.setTitleActions(titleActions);
-    }
   }
 
   private void createTitleActions(@NotNull List<? super AnAction> titleActions) {

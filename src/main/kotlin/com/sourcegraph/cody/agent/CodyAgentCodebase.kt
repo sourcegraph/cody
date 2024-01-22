@@ -39,16 +39,18 @@ class CodyAgentCodebase(val project: Project) {
         val openedFileName = file.name
         val relativeFilePath: String? = ProjectFileUtils.getRelativePathToProjectRoot(project, file)
         ApplicationManager.getApplication().invokeLater {
-          CodyToolWindowContent.getInstance(project)
-              .embeddingStatusView
-              .setOpenedFileName(openedFileName, relativeFilePath)
+          CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+            embeddingStatusView.setOpenedFileName(openedFileName, relativeFilePath)
+          }
         }
       }
     }
   }
 
   private fun onPropagateConfiguration() {
-    CodyToolWindowContent.getInstance(project).embeddingStatusView.updateEmbeddingStatus()
+    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+      embeddingStatusView.updateEmbeddingStatus()
+    }
     CodyAgentService.applyAgentOnBackgroundThread(project) {
       it.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
     }

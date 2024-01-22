@@ -32,18 +32,17 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               CodyAgentService.getInstance(project).restartAgent(project)
             }
 
-            val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
-            // Refresh onboarding panels
-            if (ConfigUtil.isCodyEnabled()) {
-              codyToolWindowContent.refreshPanelsVisibility()
-              codyToolWindowContent.embeddingStatusView.updateEmbeddingStatus()
-            }
+            CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+              // Refresh onboarding panels
+              if (ConfigUtil.isCodyEnabled()) {
+                refreshPanelsVisibility()
+                embeddingStatusView.updateEmbeddingStatus()
+              }
 
-            UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-            UpgradeToCodyProNotification.chatRateLimitError.set(null)
-            CodyAutocompleteStatusService.resetApplication(project)
-            ApplicationManager.getApplication().executeOnPooledThread {
-              codyToolWindowContent.refreshSubscriptionTab()
+              UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+              UpgradeToCodyProNotification.chatRateLimitError.set(null)
+              CodyAutocompleteStatusService.resetApplication(project)
+              ApplicationManager.getApplication().executeOnPooledThread { refreshSubscriptionTab() }
             }
 
             if (context.serverUrlChanged) {

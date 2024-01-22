@@ -16,18 +16,24 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       displayUnableToResetConversationError();
       return;
     }
-    CodyToolWindowContent codyToolWindowContent =
-        CodyToolWindowContent.Companion.getInstance(project);
-    codyToolWindowContent.resetConversation();
+    CodyToolWindowContent.Companion.executeOnInstanceIfNotDisposed(
+        project,
+        codyToolWindowContent -> {
+          codyToolWindowContent.resetConversation();
+          return null;
+        });
   }
 
   @Override
   public void update(@NotNull AnActionEvent e) {
     Project project = e.getProject();
     if (project != null) {
-      CodyToolWindowContent codyToolWindowContent =
-          CodyToolWindowContent.Companion.getInstance(project);
-      e.getPresentation().setVisible(codyToolWindowContent.isChatVisible());
+      CodyToolWindowContent.Companion.executeOnInstanceIfNotDisposed(
+          project,
+          codyToolWindowContent -> {
+            e.getPresentation().setVisible(codyToolWindowContent.isChatVisible());
+            return null;
+          });
     }
   }
 

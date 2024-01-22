@@ -241,7 +241,9 @@ class CodyAutocompleteManager {
                 UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
                 UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
                 ApplicationManager.getApplication().executeOnPooledThread {
-                  CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+                  CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+                    refreshSubscriptionTab()
+                  }
                 }
                 processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
               }
@@ -273,7 +275,7 @@ class CodyAutocompleteManager {
         UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
         ApplicationManager.getApplication().executeOnPooledThread {
           UpgradeToCodyProNotification.notify(rateLimitError, project)
-          CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
+          CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
         }
       }
     }
