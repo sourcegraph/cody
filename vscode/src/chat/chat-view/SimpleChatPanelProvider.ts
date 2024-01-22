@@ -175,7 +175,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Push context status to the webview when it changes.
         this.disposables.push(
-            this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatusToWebView())
+            this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatus())
         )
         this.disposables.push(this.contextStatusAggregator)
         if (this.localEmbeddings) {
@@ -625,7 +625,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
 
         // Update webview panel title
-        this.updateWebviewPanelTitle()
+        this.postChatTitle()
     }
 
     /**
@@ -683,6 +683,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await send()
     }
 
+    private postContextStatus(): void {
+        logDebug(
+            'SimpleChatPanelProvider',
+            'postContextStatusToWebView',
+            JSON.stringify(this.contextStatusAggregator.status)
+        )
+        void this.postMessage({
+            type: 'enhanced-context',
+            context: {
+                groups: this.contextStatusAggregator.status,
+            },
+        })
+    }
+
     /**
      * Low-level utility to post a message to the webview, pending initialization.
      *
@@ -691,6 +705,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
         return this.initDoer.do(() => this.webview?.postMessage(message))
+    }
+
+    private postChatTitle(): void {
+        if (this.webviewPanel) {
+            this.webviewPanel.title = this.chatModel.getChatTitle()
+        }
     }
 
     // =======================================================================
@@ -1014,7 +1034,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // Register webview
         this._webviewPanel = panel
         this._webview = panel.webview
-        this.postContextStatusToWebView()
+        this.postContextStatus()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -1056,26 +1076,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
     }
 
-    private postContextStatusToWebView(): void {
-        logDebug(
-            'SimpleChatPanelProvider',
-            'postContextStatusToWebView',
-            JSON.stringify(this.contextStatusAggregator.status)
-        )
-        void this.postMessage({
-            type: 'enhanced-context',
-            context: {
-                groups: this.contextStatusAggregator.status,
-            },
-        })
-    }
-
-    private updateWebviewPanelTitle(): void {
-        if (this.webviewPanel) {
-            this.webviewPanel.title = this.chatModel.getChatTitle()
-        }
-    }
-
     // =======================================================================
     // Other public accessors and mutators
     // =======================================================================
@@ -1085,7 +1085,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (title !== 'New Chat') {
             this.chatModel.setCustomChatTitle(title)
         }
-        this.updateWebviewPanelTitle()
+        this.postChatTitle()
     }
 
     // Convenience function for tests
