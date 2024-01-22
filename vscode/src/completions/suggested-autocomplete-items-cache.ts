@@ -2,10 +2,10 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { type DocumentContext } from './get-current-doc-context'
-import { type CompletionItemID, type CompletionLogID } from './logger'
-import { type RequestParams } from './request-manager'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { DocumentContext } from './get-current-doc-context'
+import type { CompletionItemID, CompletionLogID } from './logger'
+import type { RequestParams } from './request-manager'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 interface AutocompleteItemParams {
     insertText: string | vscode.SnippetString
@@ -78,8 +78,12 @@ class SuggestedAutocompleteItemsCache {
         max: 60,
     })
 
-    public get<T extends object>(completionOrItemId: CompletionItemID | T): AutocompleteItem | T | undefined {
-        return typeof completionOrItemId === 'string' ? this.cache.get(completionOrItemId) : completionOrItemId
+    public get<T extends object>(
+        completionOrItemId: CompletionItemID | T
+    ): AutocompleteItem | T | undefined {
+        return typeof completionOrItemId === 'string'
+            ? this.cache.get(completionOrItemId)
+            : completionOrItemId
     }
 
     public add(item: AutocompleteItem): void {

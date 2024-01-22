@@ -7,7 +7,7 @@ export function messagesToText(messages: Message[]): string {
         .map(
             message =>
                 `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
-                    message.text === undefined ? '' : ' ' + message.text
+                    message.text === undefined ? '' : ` ${message.text}`
                 }`
         )
         .join('')
@@ -113,5 +113,7 @@ export async function* generatorWithTimeout<T>(
 }
 
 function createTimeout(timeoutMs: number): Promise<never> {
-    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
+    return new Promise((_, reject) =>
+        setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs)
+    )
 }

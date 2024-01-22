@@ -9,7 +9,6 @@ vite.config.ts
 pnpm-lock.yaml
 node_modules/
 tsconfig.json
-.eslintignore
 scripts/
 webviews/
 test/

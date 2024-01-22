@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { Readable } from 'stream'
 
 import { describe, expect, it } from 'vitest'
@@ -46,7 +45,9 @@ describe('createSSEIterator', () => {
 
     it('skips intermediate completion events', async () => {
         async function* createIterator() {
-            yield Buffer.from('event: completion\ndata: {"foo":"bar"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n')
+            yield Buffer.from(
+                'event: completion\ndata: {"foo":"bar"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n'
+            )
         }
 
         const messages = []

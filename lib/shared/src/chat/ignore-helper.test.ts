@@ -1,38 +1,34 @@
-import path from 'path'
-
-import { beforeEach, describe, expect, it } from 'vitest'
-// TODO(dantup): Determine whether we should be using vscode-uri URI here, or vscode.URI/shim
-//  (or if we should be testing both).
+import { beforeEach, describe, expect, it, test } from 'vitest'
 import { URI, Utils } from 'vscode-uri'
 
 import { testFileUri } from '../test/path-helpers'
 
-import { CODY_IGNORE_FILENAME, IgnoreHelper } from './ignore-helper'
+import { CODY_IGNORE_URI_PATH, ignoreFileEffectiveDirectory, IgnoreHelper } from './ignore-helper'
 
 describe('IgnoreHelper', () => {
     let ignore: IgnoreHelper
     const workspace1Root = testFileUri('foo/workspace1')
     const workspace2Root = testFileUri('foo/workspace2')
 
-    function setIgnores(workspaceRoot: string, ignoreFolder: string, rules: string[]) {
+    function setIgnores(workspaceRoot: URI, ignoreFolder: string, rules: string[]) {
         ignore.setIgnoreFiles(workspaceRoot, [
             {
-                filePath: path.join(ignoreFolder, CODY_IGNORE_FILENAME),
+                uri: Utils.joinPath(workspaceRoot, ignoreFolder, CODY_IGNORE_URI_PATH),
                 content: rules.join('\n'),
             },
         ])
     }
 
     function setWorkspace1Ignores(rules: string[]) {
-        setIgnores(workspace1Root.fsPath, workspace1Root.fsPath, rules)
+        setIgnores(workspace1Root, '.', rules)
     }
 
     function setWorkspace2Ignores(rules: string[]) {
-        setIgnores(workspace2Root.fsPath, workspace2Root.fsPath, rules)
+        setIgnores(workspace2Root, '.', rules)
     }
 
     function setWorkspace1NestedIgnores(folder: string, rules: string[]) {
-        setIgnores(workspace1Root.fsPath, path.join(workspace1Root.fsPath, folder), rules)
+        setIgnores(workspace1Root, folder, rules)
     }
 
     beforeEach(() => {
@@ -196,5 +192,13 @@ describe('IgnoreHelper', () => {
         ])('returns false for file not in ignore list %s', (filePath: string) => {
             expect(ignore.isIgnored(Utils.joinPath(workspace1Root, filePath))).toBe(false)
         })
+    })
+})
+
+describe('ignoreFileEffectiveDirectory', () => {
+    test('', () => {
+        expect(ignoreFileEffectiveDirectory(URI.parse('file:///a/b/.cody/ignore')).toString()).toBe(
+            'file:///a/b'
+        )
     })
 })

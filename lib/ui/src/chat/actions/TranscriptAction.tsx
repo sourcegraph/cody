@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 import classNames from 'classnames'
 
@@ -33,6 +33,7 @@ export const TranscriptAction: React.FunctionComponent<{
             </summary>
             <div className={styles.steps}>
                 {steps.map((step, index) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: no other natural key, and this is stable/immutable
                     <span key={index} className={styles.step}>
                         {step.object}
                     </span>

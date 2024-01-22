@@ -7,7 +7,12 @@ import {
     type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
-import { CONFIG_KEY, getConfigEnumValues, type ConfigKeys, type ConfigurationKeysMap } from './configuration-keys'
+import {
+    CONFIG_KEY,
+    getConfigEnumValues,
+    type ConfigKeys,
+    type ConfigurationKeysMap,
+} from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -18,7 +23,9 @@ interface ConfigGetter {
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
+export function getConfiguration(
+    config: ConfigGetter = vscode.workspace.getConfiguration()
+): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
@@ -30,14 +37,17 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         const debugPattern: string | null = config.get<string | null>(CONFIG_KEY.debugFilter, null)
         if (debugPattern) {
             if (debugPattern === '*') {
-                debugRegex = new RegExp('.*')
+                debugRegex = /.*/
             } else {
                 debugRegex = new RegExp(debugPattern)
             }
         }
     } catch (error: any) {
-        void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
-        debugRegex = new RegExp('.*')
+        void vscode.window.showErrorMessage(
+            "Error parsing cody.debug.filter regex - using default '*'",
+            error
+        )
+        debugRegex = /.*/
     }
 
     let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
@@ -50,7 +60,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     }
 
     // check if the configured enum values are valid
-    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+    const configKeys = [
+        'autocompleteAdvancedProvider',
+        'autocompleteAdvancedModel',
+    ] as (keyof ConfigurationKeysMap)[]
 
     for (const configVal of configKeys) {
         const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
@@ -95,7 +108,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
@@ -108,11 +120,17 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             false
         ),
 
-        autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
-        autocompleteExperimentalOllamaOptions: getHiddenSetting('autocomplete.experimental.ollamaOptions', {
-            url: 'http://localhost:11434',
-            model: 'codellama:7b-code',
-        }),
+        autocompleteExperimentalHotStreak: getHiddenSetting(
+            'autocomplete.experimental.hotStreak',
+            false
+        ),
+        autocompleteExperimentalOllamaOptions: getHiddenSetting(
+            'autocomplete.experimental.ollamaOptions',
+            {
+                url: 'http://localhost:11434',
+                model: 'codellama:7b-code',
+            }
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
@@ -121,8 +139,14 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
         autocompleteTimeouts: {
-            multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
-            singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
+            multiline: getHiddenSetting<number | undefined>(
+                'autocomplete.advanced.timeout.multiline',
+                undefined
+            ),
+            singleline: getHiddenSetting<number | undefined>(
+                'autocomplete.advanced.timeout.singleline',
+                undefined
+            ),
         },
 
         testingLocalEmbeddingsModel: isTesting
@@ -149,17 +173,20 @@ function sanitizeCodebase(codebase: string | undefined): string {
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
     const isTesting = process.env.CODY_TESTING === 'true'
-    const serverEndpoint = localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
+    const serverEndpoint =
+        localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken, serverEndpoint }
 }
 
 function checkValidEnumValues(configName: string, value: string | null): void {
-    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    const validEnumValues = getConfigEnumValues(`cody.${configName}`)
     if (value) {
         if (!validEnumValues.includes(value)) {
             void vscode.window.showErrorMessage(
-                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(
+                    ', '
+                )}`
             )
         }
     }

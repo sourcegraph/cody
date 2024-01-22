@@ -1,6 +1,6 @@
-import { posix } from 'path'
-
 import { Utils, type URI } from 'vscode-uri'
+
+import { uriBasename, uriExtname, uriParseNameAndExtension } from '@sourcegraph/cody-shared'
 
 import { isValidTestFile } from '../prompt/utils'
 
@@ -25,9 +25,9 @@ export function createDefaultTestFile(file: URI): URI {
         return file
     }
 
-    // remove the first dot from ext
-    const ext = posix.extname(file.path).slice(1)
-    const fileName = posix.parse(file.path).name
+    const extWithDot = uriExtname(file)
+    const fileName = uriBasename(file, extWithDot)
+    const ext = extWithDot.slice(1)
 
     let testFileName = `${fileName}Test.${ext}`
     if (TEST_FILE_DOT_SUFFIX_EXTENSIONS.has(ext)) {
@@ -62,8 +62,8 @@ export function convertFileUriToTestFileUri(currentFile: URI, testFile?: URI): U
 
     // If there is an existing test file, create the test file following its naming convention
     if (testFile?.path && isValidTestFile(testFile)) {
-        const parsedCurrentFile = posix.parse(currentFile.path)
-        const parsedTestFile = posix.parse(testFile.path)
+        const parsedCurrentFile = uriParseNameAndExtension(currentFile)
+        const parsedTestFile = uriParseNameAndExtension(testFile)
         if (parsedCurrentFile.ext === parsedTestFile.ext) {
             const testFileName = parsedTestFile.name
             const index = testFileName.lastIndexOf('test') || testFileName.lastIndexOf('spec')
@@ -80,7 +80,10 @@ export function convertFileUriToTestFileUri(currentFile: URI, testFile?: URI): U
                 // then replace it with the current file name
                 // e.g. "current_file" & "existing_test" => "current_file_test"
                 const strippedTestFileName = testFileName.slice(0, index - 1)
-                const newTestFileName = testFileName.replace(strippedTestFileName, parsedCurrentFile.name)
+                const newTestFileName = testFileName.replace(
+                    strippedTestFileName,
+                    parsedCurrentFile.name
+                )
                 return Utils.joinPath(currentFile, '..', `${newTestFileName}${parsedCurrentFile.ext}`)
             }
         }

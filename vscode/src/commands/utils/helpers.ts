@@ -56,7 +56,11 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export const createQuickPickItem = (label = '', description = '', alwaysShow = false): vscode.QuickPickItem => ({
+export const createQuickPickItem = (
+    label = '',
+    description = '',
+    alwaysShow = false
+): vscode.QuickPickItem => ({
     label,
     description,
     alwaysShow,

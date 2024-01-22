@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
-
-import type { BillingCategory, BillingProduct, ChatMessage, ChatModelProvider, event } from '@sourcegraph/cody-shared'
+import type {
+    BillingCategory,
+    BillingProduct,
+    ChatMessage,
+    ChatModelProvider,
+    event,
+} from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
     KnownString,
@@ -103,6 +107,10 @@ export type Requests = {
     // the client sends progress/cancel.
     'testing/progressCancelation': [{ title: string }, { result: string }]
 
+    // Only used for testing purposes. Does a best-effort to reset the state
+    // if the agent server. For example, closes all open documents.
+    'testing/reset': [null, null]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
@@ -155,7 +163,7 @@ export type Notifications = {
     'textDocument/didChange': [TextDocument]
     // The user focused on a document without changing the document's content.
     // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didFocus': [TextDocument]
+    'textDocument/didFocus': [{ uri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [TextDocument]
@@ -267,7 +275,7 @@ export interface ServerInfo {
     capabilities?: ServerCapabilities
     authStatus?: AuthStatus
 }
-interface ServerCapabilities {}
+type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -323,7 +331,11 @@ interface TelemetryEvent {
  * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
  * type constraints as '(TelemetryEventRecorder).recordEvent()'.
  */
-export function newTelemetryEvent<Feature extends string, Action extends string, MetadataKey extends string>(
+export function newTelemetryEvent<
+    Feature extends string,
+    Action extends string,
+    MetadataKey extends string,
+>(
     feature: KnownString<Feature>,
     action: KnownString<Action>,
     parameters?: TelemetryEventParameters<

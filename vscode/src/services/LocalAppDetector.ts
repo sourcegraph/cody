@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { version } from '../../package.json'
-import { type LocalEnv } from '../chat/protocol'
+import type { LocalEnv } from '../chat/protocol'
 
 // The  OS and Arch support for Cody app
 

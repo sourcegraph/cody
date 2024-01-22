@@ -1,7 +1,6 @@
 import { execFile as _execFile, spawn } from 'node:child_process'
 import fs, { access, rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
-import path from 'node:path'
 import { promisify } from 'node:util'
 
 import { Mutex } from 'async-mutex'
@@ -9,7 +8,12 @@ import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import {
+    assertFileURI,
+    isFileURI,
     isWindows,
+    uriBasename,
+    uriDirname,
+    type FileURI,
     type IndexedKeywordContextFetcher,
     type Result,
     type SourcegraphCompletionsClient,
@@ -24,7 +28,7 @@ const execFile = promisify(_execFile)
 
 export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
     // The root of all symf index directories
-    private indexRoot: string
+    private indexRoot: FileURI
     private indexLocks: Map<string, RWLock> = new Map()
 
     private status: IndexStatus = new IndexStatus()
@@ -35,7 +39,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         private authToken: string | null,
         private completionsClient: SourcegraphCompletionsClient
     ) {
-        const indexRoot = path.join(context.globalStorageUri.fsPath, 'symf', 'indexroot')
+        const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
+            // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
+            // file system paths.
+            vscode.env.uiKind === vscode.UIKind.Desktop ? { scheme: 'file' } : {}
+        )
+
+        if (!isFileURI(indexRoot)) {
+            throw new Error('symf only supports running on the file system')
+        }
         this.indexRoot = indexRoot
     }
 
@@ -56,7 +68,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         this.authToken = authToken
     }
 
-    private async getSymfInfo(): Promise<{ symfPath: string; serverEndpoint: string; accessToken: string }> {
+    private async getSymfInfo(): Promise<{
+        symfPath: string
+        serverEndpoint: string
+        accessToken: string
+    }> {
         const accessToken = this.authToken
         if (!accessToken) {
             throw new Error('SymfRunner.getResults: No access token')
@@ -72,9 +88,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return { accessToken, serverEndpoint, symfPath }
     }
 
-    public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
+    public getResults(userQuery: string, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
         const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
-        return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
+        return Promise.resolve(
+            scopeDirs
+                .filter(isFileURI)
+                .map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+        )
     }
 
     /**
@@ -82,7 +102,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * @param keywordQuery is a promise, because query expansion might be an expensive
      * operation that is best done concurrently with querying and (re)building the index.
      */
-    private async getResultsForScopeDir(keywordQuery: Promise<string>, scopeDir: string): Promise<Result[]> {
+    private async getResultsForScopeDir(
+        keywordQuery: Promise<string>,
+        scopeDir: FileURI
+    ): Promise<Result[]> {
         const maxRetries = 10
 
         // Run in a loop in case the index is deleted before we can query it
@@ -109,13 +132,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
     }
 
-    public async deleteIndex(scopeDir: string): Promise<void> {
+    public async deleteIndex(scopeDir: FileURI): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeDeleteIndex(scopeDir)
         })
     }
 
-    public async getIndexStatus(scopeDir: string): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
+    public async getIndexStatus(
+        scopeDir: FileURI
+    ): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
         if (this.status.isInProgress(scopeDir)) {
             // Check this before waiting on the lock
             return 'indexing'
@@ -132,30 +157,42 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return 'unindexed'
     }
 
-    public async ensureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
+    public async ensureIndex(
+        scopeDir: FileURI,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeEnsureIndex(scopeDir, options)
         })
     }
 
-    private getIndexLock(scopeDir: string): RWLock {
+    private getIndexLock(scopeDir: FileURI): RWLock {
         const { indexDir } = this.getIndexDir(scopeDir)
-        let lock = this.indexLocks.get(indexDir)
+        let lock = this.indexLocks.get(indexDir.toString())
         if (lock) {
             return lock
         }
         lock = new RWLock()
-        this.indexLocks.set(indexDir, lock)
+        this.indexLocks.set(indexDir.toString(), lock)
         return lock
     }
 
-    private async unsafeRunQuery(keywordQuery: string, scopeDir: string): Promise<string> {
+    private async unsafeRunQuery(keywordQuery: string, scopeDir: FileURI): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
             const { stdout } = await execFile(
                 symfPath,
-                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', keywordQuery],
+                [
+                    '--index-root',
+                    indexDir.fsPath,
+                    'query',
+                    '--scopes',
+                    scopeDir.fsPath,
+                    '--fmt',
+                    'json',
+                    keywordQuery,
+                ],
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
@@ -172,9 +209,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
-    private async unsafeDeleteIndex(scopeDir: string): Promise<void> {
-        const trashRootDir = path.join(this.indexRoot, '.trash')
-        await mkdirp(trashRootDir)
+    private async unsafeDeleteIndex(scopeDir: FileURI): Promise<void> {
+        const trashRootDir = vscode.Uri.joinPath(this.indexRoot, '.trash')
+        await mkdirp(trashRootDir.fsPath)
         const { indexDir } = this.getIndexDir(scopeDir)
 
         if (!(await fileExists(indexDir))) {
@@ -183,22 +220,27 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
 
         // Unique name for trash directory
-        const trashDir = path.join(trashRootDir, `${path.basename(indexDir)}-${Date.now()}`)
+        const trashDir = vscode.Uri.joinPath(trashRootDir, `${uriBasename(indexDir)}-${Date.now()}`)
         if (await fileExists(trashDir)) {
             // if trashDir already exists, error
-            throw new Error(`could not delete index ${indexDir}: target trash directory ${trashDir} already exists`)
+            throw new Error(
+                `could not delete index ${indexDir}: target trash directory ${trashDir} already exists`
+            )
         }
 
-        await rename(indexDir, trashDir)
-        void rm(trashDir, { recursive: true, force: true }) // delete in background
+        await rename(indexDir.fsPath, trashDir.fsPath)
+        void rm(trashDir.fsPath, { recursive: true, force: true }) // delete in background
     }
 
-    private async unsafeIndexExists(scopeDir: string): Promise<boolean> {
+    private async unsafeIndexExists(scopeDir: FileURI): Promise<boolean> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        return fileExists(path.join(indexDir, 'index.json'))
+        return fileExists(vscode.Uri.joinPath(indexDir, 'index.json'))
     }
 
-    private async unsafeEnsureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
+    private async unsafeEnsureIndex(
+        scopeDir: FileURI,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
             return
@@ -221,21 +263,30 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         await this.clearIndexFailure(scopeDir)
     }
 
-    private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
-        let absIndexedDir = path.resolve(scopeDir)
-        // On Windows, we can't use an absolute path with a dirve letter inside another path
-        // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
-        // sub-path in the index.
-        if (isWindows() && absIndexedDir[1] === ':') {
-            absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
+    private getIndexDir(scopeDir: FileURI): { indexDir: FileURI; tmpDir: FileURI } {
+        let indexSubdir = scopeDir.path
+
+        // On Windows, we can't use an absolute path with a drive letter inside another path
+        // so we remove the colon, so `/c:/foo/` becomes `/c/foo` and `/c%3A/foo` becomes `/c/foo`.
+        if (isWindows()) {
+            if (indexSubdir[2] === ':') {
+                indexSubdir = indexSubdir.slice(0, 2) + indexSubdir.slice(3)
+            } else if (indexSubdir.slice(2, 5) === '%3A') {
+                indexSubdir = indexSubdir.slice(0, 2) + indexSubdir.slice(5)
+            }
         }
+
         return {
-            indexDir: path.join(this.indexRoot, absIndexedDir),
-            tmpDir: path.join(this.indexRoot, '.tmp', absIndexedDir),
+            indexDir: assertFileURI(vscode.Uri.joinPath(this.indexRoot, indexSubdir)),
+            tmpDir: assertFileURI(vscode.Uri.joinPath(this.indexRoot, '.tmp', indexSubdir)),
         }
     }
 
-    private unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
+    private unsafeUpsertIndex(
+        indexDir: FileURI,
+        tmpIndexDir: FileURI,
+        scopeDir: FileURI
+    ): Promise<void> {
         const cancellation = new vscode.CancellationTokenSource()
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir, cancellation.token)
         this.status.didStart({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
@@ -247,9 +298,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     private async _unsafeUpsertIndex(
-        indexDir: string,
-        tmpIndexDir: string,
-        scopeDir: string,
+        indexDir: FileURI,
+        tmpIndexDir: FileURI,
+        scopeDir: FileURI,
         cancellationToken: vscode.CancellationToken
     ): Promise<void> {
         const symfPath = await getSymfPath(this.context)
@@ -257,8 +308,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             return
         }
         await Promise.all([
-            rm(indexDir, { recursive: true }).catch(() => undefined),
-            rm(tmpIndexDir, { recursive: true }).catch(() => undefined),
+            rm(indexDir.fsPath, { recursive: true }).catch(() => undefined),
+            rm(tmpIndexDir.fsPath, { recursive: true }).catch(() => undefined),
         ])
 
         logDebug('symf', 'creating index', indexDir)
@@ -275,7 +326,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         let wasCancelled = false
         let onExit: (() => void) | undefined
         try {
-            const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
+            const proc = spawn(symfPath, ['--index-root', tmpIndexDir.fsPath, 'add', scopeDir.fsPath], {
                 env: {
                     ...process.env,
                     GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
@@ -311,8 +362,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     }
                 })
             })
-            await mkdirp(path.dirname(indexDir))
-            await rename(tmpIndexDir, indexDir)
+            await mkdirp(uriDirname(indexDir).fsPath)
+            await rename(tmpIndexDir.fsPath, indexDir.fsPath)
         } catch (error) {
             if (wasCancelled) {
                 throw new vscode.CancellationError()
@@ -322,8 +373,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             if (onExit) {
                 process.removeListener('exit', onExit)
             }
-            disposeOnFinish.forEach(d => d.dispose())
-            await rm(tmpIndexDir, { recursive: true, force: true })
+            vscode.Disposable.from(...disposeOnFinish).dispose()
+            await rm(tmpIndexDir.fsPath, { recursive: true, force: true })
         }
     }
 
@@ -331,45 +382,40 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * Helpers for tracking index failure
      */
 
-    private async markIndexFailed(scopeDir: string): Promise<void> {
-        const failureRoot = path.join(this.indexRoot, '.failed')
-        await mkdirp(failureRoot)
-
-        const absIndexedDir = path.resolve(scopeDir)
-        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
-
-        await writeFile(failureSentinelFile, '')
+    private async markIndexFailed(scopeDir: FileURI): Promise<void> {
+        const failureRoot = vscode.Uri.joinPath(this.indexRoot, '.failed')
+        await mkdirp(failureRoot.fsPath)
+        const failureSentinelFile = vscode.Uri.joinPath(failureRoot, scopeDir.path.replaceAll('/', '__'))
+        await writeFile(failureSentinelFile.fsPath, '')
     }
 
-    private async didIndexFail(scopeDir: string): Promise<boolean> {
-        const failureRoot = path.join(this.indexRoot, '.failed')
-        const absIndexedDir = path.resolve(scopeDir)
-        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+    private async didIndexFail(scopeDir: FileURI): Promise<boolean> {
+        const failureRoot = vscode.Uri.joinPath(this.indexRoot, '.failed')
+        const failureSentinelFile = vscode.Uri.joinPath(failureRoot, scopeDir.path.replaceAll('/', '__'))
         return fileExists(failureSentinelFile)
     }
 
-    private async clearIndexFailure(scopeDir: string): Promise<void> {
-        const failureRoot = path.join(this.indexRoot, '.failed')
-        const absIndexedDir = path.resolve(scopeDir)
-        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
-        await rm(failureSentinelFile, { force: true })
+    private async clearIndexFailure(scopeDir: FileURI): Promise<void> {
+        const failureRoot = vscode.Uri.joinPath(this.indexRoot, '.failed')
+        const failureSentinelFile = vscode.Uri.joinPath(failureRoot, scopeDir.path.replaceAll('/', '__'))
+        await rm(failureSentinelFile.fsPath, { force: true })
     }
 }
 
 export interface IndexStartEvent {
-    scopeDir: string
+    scopeDir: FileURI
     cancel: () => void
     done: Promise<void>
 }
 
 interface IndexEndEvent {
-    scopeDir: string
+    scopeDir: FileURI
 }
 
 class IndexStatus implements vscode.Disposable {
     private startEmitter = new vscode.EventEmitter<IndexStartEvent>()
     private stopEmitter = new vscode.EventEmitter<IndexEndEvent>()
-    private inProgressDirs = new Set<string>()
+    private inProgressDirs = new Set<string /* uri.toString() */>()
 
     public dispose(): void {
         this.startEmitter.dispose()
@@ -377,12 +423,12 @@ class IndexStatus implements vscode.Disposable {
     }
 
     public didStart(event: IndexStartEvent): void {
-        this.inProgressDirs.add(event.scopeDir)
+        this.inProgressDirs.add(event.scopeDir.toString())
         this.startEmitter.fire(event)
     }
 
     public didEnd(event: IndexEndEvent): void {
-        this.inProgressDirs.delete(event.scopeDir)
+        this.inProgressDirs.delete(event.scopeDir.toString())
         this.stopEmitter.fire(event)
     }
 
@@ -394,14 +440,17 @@ class IndexStatus implements vscode.Disposable {
         return this.stopEmitter.event(cb)
     }
 
-    public isInProgress(scopeDir: string): boolean {
-        return this.inProgressDirs.has(scopeDir)
+    public isInProgress(scopeDir: FileURI): boolean {
+        return this.inProgressDirs.has(scopeDir.toString())
     }
 }
 
-async function fileExists(filePath: string): Promise<boolean> {
+async function fileExists(file: vscode.Uri): Promise<boolean> {
+    if (!isFileURI(file)) {
+        throw new Error('only file URIs are supported')
+    }
     try {
-        await access(filePath, fs.constants.F_OK)
+        await access(file.fsPath, fs.constants.F_OK)
         return true
     } catch {
         return false
@@ -409,9 +458,12 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 function parseSymfStdout(stdout: string): Result[] {
-    const results: Result[] = JSON.parse(stdout) as Result[]
+    interface RawSymfResult extends Omit<Result, 'file'> {
+        file: string
+    }
+    const results = JSON.parse(stdout) as RawSymfResult[]
     return results.map(result => {
-        const { fqname, name, type, doc, exported, lang, file, range, summary } = result
+        const { fqname, name, type, doc, exported, lang, file: fsPath, range, summary } = result
 
         const { row: startRow, col: startColumn } = range.startPoint
         const { row: endRow, col: endColumn } = range.endPoint
@@ -426,7 +478,7 @@ function parseSymfStdout(stdout: string): Result[] {
             doc,
             exported,
             lang,
-            file,
+            file: vscode.Uri.file(fsPath),
             summary,
             range: {
                 startByte,
@@ -440,7 +492,7 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
-        }
+        } satisfies Result
     })
 }
 
@@ -496,7 +548,8 @@ function toSymfError(error: unknown): Error {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
-        errorMessage = 'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
+        errorMessage =
+            'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {

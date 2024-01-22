@@ -1,11 +1,9 @@
 import * as vscode from 'vscode'
-
-// eslint-disable-next-line no-restricted-imports
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CommandsController } from './commands/CommandsController'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
-import { type ExtensionApi } from './extension-api'
+import type { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'

@@ -1,16 +1,19 @@
 import {
     FeatureFlag,
     featureFlagProvider,
+    type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
-import { type CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
-import { createProviderConfig as createFireworksProviderConfig, type FireworksOptions } from './fireworks'
-import { type ProviderConfig } from './provider'
+import {
+    createProviderConfig as createFireworksProviderConfig,
+    type FireworksOptions,
+} from './fireworks'
+import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOllamaProviderConfig } from './unstable-ollama'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -94,7 +97,10 @@ export async function createProviderConfig(
                 return createAnthropicProviderConfig({
                     client,
                     // Only pass through the upstream-defined model if we're using Cody Gateway
-                    model: codyLLMSiteConfig.provider === 'sourcegraph' ? codyLLMSiteConfig.completionModel : undefined,
+                    model:
+                        codyLLMSiteConfig.provider === 'sourcegraph'
+                            ? codyLLMSiteConfig.completionModel
+                            : undefined,
                 })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
@@ -109,7 +115,9 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
-async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredProvider: string | null): Promise<{
+async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+    configuredProvider: string | null
+): Promise<{
     provider: string
     model?: FireworksOptions['model']
 } | null> {

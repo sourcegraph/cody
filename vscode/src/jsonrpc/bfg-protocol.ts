@@ -2,25 +2,24 @@
  * This file declares the protocol for communicating between Cody and BFG (Blazingly Fast Graph), a Rust implementation
  * of the "Graph Context" feature flag.
  */
-import { type FileContextSnippet, type SymbolContextSnippet } from '../completions/types'
+import type { FileContextSnippet, SymbolContextSnippet } from '../completions/types'
 
-import { type Position, type Range } from './agent-protocol'
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+import type { Position, Range } from './agent-protocol'
 export type Requests = {
     'bfg/initialize': [{ clientName: string }, { serverVersion: string }]
     'bfg/contextAtPosition': [
         { uri: string; content: string; position: Position; maxChars: number; contextRange?: Range },
         { symbols?: SymbolContextSnippet[]; files?: FileContextSnippet[] },
     ]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/workspace/didChange': [{ workspaceUri: string }, void]
+    // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/shutdown': [null, void]
 
     'embeddings/hello': [null, string]
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Notifications = {
     'bfg/placeholderNotification': [null]
 }

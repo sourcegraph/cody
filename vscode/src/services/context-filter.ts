@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CODY_IGNORE_FILENAME_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
+import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -16,7 +16,7 @@ export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
 
     // Refresh ignore rules when any ignore file in the workspace changes.
-    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_POSIX_GLOB)
+    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
     watcher.onDidChange(refresh)
     watcher.onDidCreate(refresh)
     watcher.onDidDelete(refresh)
@@ -65,17 +65,17 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 
     // Get the codebase name from the git clone URL on each refresh
     // NOTE: This is needed because the ignore rules are mapped to workspace addreses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
-    const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB).pattern
+    const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB).pattern
     const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern)
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles.map(async fileUri => ({
-            filePath: fileUri.fsPath,
+            uri: fileUri,
             content: await tryReadFile(fileUri),
         }))
     )
 
-    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
-    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
+    logDebug('CodyIgnore:refresh:workspace', wf.uri.toString())
+    ignores.setIgnoreFiles(wf.uri, filesWithContent)
 }
 
 /**
@@ -88,8 +88,8 @@ function clear(wf: vscode.WorkspaceFolder): void {
         return
     }
 
-    ignores.clearIgnoreFiles(wf.uri.fsPath)
-    logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.fsPath })
+    ignores.clearIgnoreFiles(wf.uri)
+    logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.toString() })
 }
 
 /**

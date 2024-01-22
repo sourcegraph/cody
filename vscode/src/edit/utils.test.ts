@@ -35,18 +35,20 @@ describe('contentSanitizer', () => {
     })
 
     it('handles problematic prompt correct', () => {
-        const sanitizedPrompt = contentSanitizer('<SELECTEDCODE7662>' + correctResponse + '</SELECTEDCODE7662>')
+        const sanitizedPrompt = contentSanitizer(
+            `<SELECTEDCODE7662>${correctResponse}</SELECTEDCODE7662>`
+        )
         expect(sanitizedPrompt).toBe(correctResponse)
     })
 
     it('handles problematic prompt correctly with whitespace', () => {
-        const sanitizedPrompt = contentSanitizer('   <CODE5711>' + correctResponse + '</CODE5711>   ')
+        const sanitizedPrompt = contentSanitizer(`   <CODE5711>${correctResponse}</CODE5711>   `)
         expect(sanitizedPrompt).toBe(correctResponse)
     })
 
     it('handles problematic prompt correctly with whitespace across new lines', () => {
         const sanitizedPrompt = contentSanitizer(
-            '\n   <SELECTEDCODE7662>' + correctResponse + '</SELECTEDCODE7662>   \n'
+            `\n   <SELECTEDCODE7662>${correctResponse}</SELECTEDCODE7662>   \n`
         )
         expect(sanitizedPrompt).toBe(correctResponse)
     })

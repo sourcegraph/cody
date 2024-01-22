@@ -5,11 +5,11 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 
 import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
-import { type MessageHandler } from '../../jsonrpc-alias'
+import type { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
 import { AutocompleteMatcher, type AutocompleteMatchKind } from './AutocompleteMatcher'
-import { type EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { Queries } from './Queries'
@@ -23,7 +23,10 @@ import { triggerAutocomplete } from './triggerAutocomplete'
  * code. Eventually, we could make the logic configurable via command-line
  * flags so that we can reuse this command for different kinds of evaluations.
  */
-export async function evaluateBfgStrategy(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
+export async function evaluateBfgStrategy(
+    client: MessageHandler,
+    options: EvaluateAutocompleteOptions
+): Promise<void> {
     const { workspace } = options
     const queries = new Queries(options.queriesDirectory)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
@@ -40,7 +43,9 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
         const matchCounts = new Map<AutocompleteMatchKind, number>()
 
         for (const file of files) {
-            if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)) {
+            if (
+                !matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)
+            ) {
                 continue
             }
             const filePath = path.join(workspace, file)
@@ -55,7 +60,13 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
             if (!language) {
                 continue
             }
-            if (!matchesGlobPatterns(options.includeLanguage ?? [], options.excludeLanguage ?? [], languageid)) {
+            if (
+                !matchesGlobPatterns(
+                    options.includeLanguage ?? [],
+                    options.excludeLanguage ?? [],
+                    languageid
+                )
+            ) {
                 continue
             }
             const document = new EvaluationDocument(
@@ -80,7 +91,9 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
 
             for (const match of matches) {
                 if (documentTestCountStart - remainingTests > options.maxFileTestCount) {
-                    console.log(`--max-file-test-count=${options.maxFileTestCount} limit hit for file '${file}'`)
+                    console.log(
+                        `--max-file-test-count=${options.maxFileTestCount} limit hit for file '${file}'`
+                    )
                     break
                 }
                 if (remainingTests <= 0) {
@@ -89,7 +102,13 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                 if (options?.matchMinimumSize && match.removedText.length < options.matchMinimumSize) {
                     continue
                 }
-                if (!matchesGlobPatterns(options.includeMatchKind ?? [], options.excludeMatchKind ?? [], match.kind)) {
+                if (
+                    !matchesGlobPatterns(
+                        options.includeMatchKind ?? [],
+                        options.excludeMatchKind ?? [],
+                        match.kind
+                    )
+                ) {
                     continue
                 }
 

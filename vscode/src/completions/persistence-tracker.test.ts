@@ -5,7 +5,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
-import { type CompletionAnalyticsID } from './logger'
+import type { CompletionAnalyticsID } from './logger'
 import { PersistenceTracker } from './persistence-tracker'
 import { document } from './test-helpers'
 
@@ -73,7 +73,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
 
         vi.advanceTimersByTime(90 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -84,7 +88,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
 
         vi.advanceTimersByTime(3 * 60 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -95,7 +103,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
 
         vi.advanceTimersByTime(5 * 60 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -106,7 +118,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
     })
 
     it('tracks changes to the document', () => {
@@ -137,7 +153,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
 
         vi.spyOn(doc, 'getText').mockImplementationOnce(() => 'fo0')
         onDidChangeTextDocument({
@@ -163,7 +183,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
     })
 
     it('tracks changes after renaming a document', () => {
@@ -214,7 +238,11 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:present', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:present',
+            expect.anything()
+        )
     })
 
     it('gracefully handles file deletions', () => {
@@ -256,6 +284,10 @@ describe('PersistenceTracker', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'persistence:removed', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith(
+            'cody.completion',
+            'persistence:removed',
+            expect.anything()
+        )
     })
 })

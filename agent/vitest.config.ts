@@ -14,7 +14,6 @@ function shimDirectory(): string {
         if (statSync(shimFromRootDirectory + '.ts').isFile()) {
             return shimFromRootDirectory
         }
-        // eslint-disable-next-line no-empty
     } catch {}
     return shimFromAgentDirectory
 }

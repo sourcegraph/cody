@@ -35,7 +35,8 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
   "categories": [
     "Programming Languages",
@@ -795,12 +796,6 @@
           "type": "boolean",
           "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
           "default": true
-        },
-        "cody.experimental.chatPredictions": {
-          "order": 8,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.commandCodeLenses": {
           "order": 8,

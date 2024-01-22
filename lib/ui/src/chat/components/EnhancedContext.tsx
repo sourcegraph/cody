@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegraph/cody-shared'
+import type { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
@@ -51,8 +51,8 @@ export const EnhancedContext: React.FunctionComponent<{
         0
     )
     const fileCount = filteredFiles.length
-    const lines = `${lineCount} line` + (lineCount > 1 ? 's' : '')
-    const files = `${fileCount} file` + (fileCount > 1 ? 's' : '')
+    const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
+    const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     const title = lineCount ? `${lines} from ${files}` : `${files}`
 
     return (

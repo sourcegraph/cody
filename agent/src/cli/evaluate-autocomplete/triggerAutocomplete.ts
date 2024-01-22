@@ -1,16 +1,16 @@
 import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import { type default as Parser, type Tree } from 'web-tree-sitter'
+import type { default as Parser, Tree } from 'web-tree-sitter'
 
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
-import { type MessageHandler } from '../../jsonrpc-alias'
-import { type AutocompleteResult } from '../../protocol-alias'
+import type { MessageHandler } from '../../jsonrpc-alias'
+import type { AutocompleteResult } from '../../protocol-alias'
 
-import { type AutocompleteMatchKind } from './AutocompleteMatcher'
-import { type EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { type EvaluationDocument } from './EvaluationDocument'
-import { type TestParameters } from './TestParameters'
+import type { AutocompleteMatchKind } from './AutocompleteMatcher'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluationDocument } from './EvaluationDocument'
+import type { TestParameters } from './TestParameters'
 import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 
@@ -31,7 +31,8 @@ export interface AutocompleteParameters {
 }
 
 export async function triggerAutocomplete(parameters: AutocompleteParameters): Promise<void> {
-    const { range, client, document, modifiedContent, autocompleteKind, removedContent, position } = parameters
+    const { range, client, document, modifiedContent, autocompleteKind, removedContent, position } =
+        parameters
     client.notify('textDocument/didChange', {
         uri: document.uri.toString(),
         filePath: document.uri.fsPath,
@@ -63,7 +64,9 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         return
     }
 
-    const textDocument = new AgentTextDocument(TextDocumentWithUri.from(document.uri, { content: modifiedContent }))
+    const textDocument = new AgentTextDocument(
+        TextDocumentWithUri.from(document.uri, { content: modifiedContent })
+    )
     for (const [index, item] of result.items.entries()) {
         const info = result.completionEvent?.items?.[index]
         const original = textDocument.getText(
@@ -82,7 +85,9 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         const newText = [
             modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),
             item.insertText,
-            modifiedDocument.getText(new vscode.Range(end, new vscode.Position(modifiedDocument.lineCount, 0))),
+            modifiedDocument.getText(
+                new vscode.Range(end, new vscode.Position(modifiedDocument.lineCount, 0))
+            ),
         ].join('')
         const testParameters: TestParameters = { ...parameters, item, newText }
         let resultParses: boolean | undefined

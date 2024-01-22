@@ -7,7 +7,10 @@ import {
 } from '../text-processing/process-inline-completions'
 
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
-import { type FetchAndProcessCompletionsParams, type FetchCompletionResult } from './fetch-and-process-completions'
+import type {
+    FetchAndProcessCompletionsParams,
+    FetchCompletionResult,
+} from './fetch-and-process-completions'
 
 interface HotStreakExtractorParams extends FetchAndProcessCompletionsParams {
     completedCompletion: InlineCompletionItemWithAnalytics
@@ -37,7 +40,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
         // Enter will usually insert a line break followed by the same indentation that the
         // current line has.
         let updatedDocContext = insertIntoDocContext(docContext, completion.insertText, languageId)
-        lastInsertedWhitespace = '\n' + (updatedDocContext.currentLinePrefix.match(/^([\t ])*/)?.[0] || '')
+        lastInsertedWhitespace = `\n${updatedDocContext.currentLinePrefix.match(/^([\t ])*/)?.[0] || ''}`
         updatedDocContext = insertIntoDocContext(updatedDocContext, lastInsertedWhitespace, languageId)
 
         alreadyInsertedLength += completion.insertText.length + lastInsertedWhitespace.length
@@ -67,11 +70,17 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                   }
                 : updatedProviderOptions
 
-            const completion = canUsePartialCompletion(unprocessedCompletion, eventualDynamicMultilineProviderOptions)
+            const completion = canUsePartialCompletion(
+                unprocessedCompletion,
+                eventualDynamicMultilineProviderOptions
+            )
             if (completion) {
                 // If the partial completion logic finds a match, extract this as the next hot
                 // streak...
-                const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
+                const processedCompletion = processCompletion(
+                    completion,
+                    eventualDynamicMultilineProviderOptions
+                )
 
                 yield {
                     docContext: updatedDocContext,
@@ -93,7 +102,10 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 if (completion.insertText.trim().length === 0) {
                     return undefined
                 }
-                const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
+                const processedCompletion = processCompletion(
+                    completion,
+                    eventualDynamicMultilineProviderOptions
+                )
 
                 yield {
                     docContext: updatedDocContext,

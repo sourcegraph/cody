@@ -13,7 +13,11 @@ export interface JaccardMatch {
  * @param matchText is the text we are sliding our window through to find the best match
  * @param windowSize is the size of the match window in number of lines
  */
-export function bestJaccardMatch(targetText: string, matchText: string, windowSize: number): JaccardMatch | null {
+export function bestJaccardMatch(
+    targetText: string,
+    matchText: string,
+    windowSize: number
+): JaccardMatch | null {
     const wordCount = (words: Map<string, number>): number => {
         let count = 0
         for (const v of words.values()) {
