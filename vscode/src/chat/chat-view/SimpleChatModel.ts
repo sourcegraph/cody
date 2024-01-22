@@ -13,7 +13,7 @@ import {
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
 
-import { contextItemsToContextFiles } from './chat-helpers'
+import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 
 export interface MessageWithContext {
     message: Message
@@ -36,7 +36,7 @@ export class SimpleChatModel {
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
-        public chatTitle?: string
+        private customChatTitle?: string
     ) {}
 
     public isEmpty(): boolean {
@@ -124,8 +124,23 @@ export class SimpleChatModel {
         return this.messagesWithContext
     }
 
-    public setChatTitle(title: string): void {
-        this.chatTitle = title
+    public getChatTitle(): string {
+        if (this.customChatTitle) {
+            return this.customChatTitle
+        }
+        const text = this.getLastHumanMessage()?.displayText
+        if (text) {
+            return getChatPanelTitle(text)
+        }
+        return 'New Chat'
+    }
+
+    public getCustomChatTitle(): string | undefined {
+        return this.customChatTitle
+    }
+
+    public setCustomChatTitle(title: string): void {
+        this.customChatTitle = title
     }
 
     /**
@@ -141,7 +156,7 @@ export class SimpleChatModel {
         return {
             id: this.sessionID,
             chatModel: this.modelID,
-            chatTitle: this.chatTitle,
+            chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
