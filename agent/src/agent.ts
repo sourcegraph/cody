@@ -560,7 +560,7 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const chatModel = new SimpleChatModel(modelID, [], chatID, undefined)
+            const chatModel = new SimpleChatModel(modelID, [], chatID)
             for (const message of messages) {
                 if (message.error) {
                     chatModel.addErrorAsBotMessage(message.error)

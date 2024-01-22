@@ -352,11 +352,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             : inputText
         const promptText = inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        this.updateWebviewPanelTitle(inputText)
         await this.saveSession(inputText)
 
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postEmptyMessageInProgress()
 
         const userContextItems = await contextFilesToContextItems(
             this.editor,
@@ -489,11 +487,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         )
         const promptText = command.prompt
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        this.updateWebviewPanelTitle(inputText)
         await this.saveSession(inputText)
 
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postEmptyMessageInProgress()
 
         const prompt = await this.buildPrompt(
             new CommandPrompter(() => getCommandContext(this.editor, command))
@@ -607,6 +603,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // Webview updaters
     // =======================================================================
 
+    private postEmptyMessageInProgress(): void {
+        this.postViewTranscript({ speaker: 'assistant' })
+    }
+
     private postViewTranscript(messageInProgress?: ChatMessage): void {
         const messages: ChatMessage[] = this.chatModel
             .getMessagesWithContext()
@@ -624,19 +624,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             chatID: this.chatModel.sessionID,
         })
 
-        const chatTitle = this.history.getChat(
-            this.authProvider.getAuthStatus(),
-            this.chatModel.sessionID
-        )?.chatTitle
-        if (chatTitle) {
-            this.setChatTitle(chatTitle)
-            return
-        }
-        // Update webview panel title to match the last message
-        const text = this.chatModel.getLastHumanMessage()?.displayText
-        if (this.webviewPanel && text) {
-            this.webviewPanel.title = getChatPanelTitle(text)
-        }
+        // Update webview panel title
+        this.updateWebviewPanelTitle()
     }
 
     /**
@@ -756,8 +745,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private streamAssistantResponse(requestID: string, prompt: Message[]): void {
-        this.postViewTranscript({ speaker: 'assistant' })
-
+        this.postEmptyMessageInProgress()
         this.sendLLMRequest(prompt, {
             update: content => {
                 this.postViewTranscript(
@@ -852,23 +840,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     /**
-     * Handles setting the chat title.
-     *
-     * Sets the title to the given string. Once set, the title will not update
-     * automatically to the next question.
-     * This allows users to manually edit the title for each chat session (via sidebar).
-     */
-    public setChatTitle(title: string): void {
-        // Skip storing default chat title
-        if (title !== 'New Chat') {
-            this.chatModel.setChatTitle(title)
-        }
-        if (this.webviewPanel) {
-            this.webviewPanel.title = title
-        }
-    }
-
-    /**
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
     private addBotMessage(requestID: string, rawResponse: string): void {
@@ -959,10 +930,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
-        // Reset current chat panel title
-        this.setChatTitle('New Chat')
     }
-
     // =======================================================================
     // Webview state and methods
     // =======================================================================
@@ -1102,17 +1070,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
     }
 
-    private updateWebviewPanelTitle(title: string): void {
+    private updateWebviewPanelTitle(): void {
         if (this.webviewPanel) {
-            this.webviewPanel.title =
-                this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
-                    ?.chatTitle || getChatPanelTitle(title)
+            this.webviewPanel.title = this.chatModel.getChatTitle()
         }
     }
 
     // =======================================================================
-    // Misc methods
+    // Other public accessors and mutators
     // =======================================================================
+
+    public setChatTitle(title: string): void {
+        // Skip storing default chat title
+        if (title !== 'New Chat') {
+            this.chatModel.setCustomChatTitle(title)
+        }
+        this.updateWebviewPanelTitle()
+    }
 
     // Convenience function for tests
     public getViewTranscript(): ChatMessage[] {
