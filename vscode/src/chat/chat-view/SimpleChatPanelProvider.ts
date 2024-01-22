@@ -24,6 +24,7 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
+    isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -366,7 +367,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return this.clearAndRestartSession()
             }
             if (inputText.match(/^\/edit(\s)?/)) {
-                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
+                await executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
+                return
             }
             if (inputText === '/commands-settings') {
                 // User has clicked the settings button for commands
@@ -376,7 +378,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 source: 'chat',
                 requestID,
             })
-            const command = await this.commandsController?.startCommand(inputText, commandArgs)
+            const command = (await this.commandsController?.startCommand(inputText, commandArgs))
+                ?.command
             if (command) {
                 return this.handleCommand(command, commandArgs)
             }
@@ -497,10 +500,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not an ask command, it's a fixup command, so we can exit early.
+        // It's a fixup command, so we can exit early.
         // This is because startCommand will start the CommandRunner,
         // which would send all fixup command requests to the FixupController
-        if (command.mode !== 'ask') {
+        if (isFixupCommand(command)) {
             return
         }
 

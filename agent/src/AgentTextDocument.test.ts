@@ -5,21 +5,35 @@ import * as vscode from 'vscode'
 
 import { testFileUri } from '@sourcegraph/cody-shared'
 
-import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 
 describe('AgentTextDocument', () => {
     const uri = testFileUri('foo')
-    const basic = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
-    const basicCrlf = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' }))
-    const emptyLine = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\n\n' }))
-    const noEndOfFileNewline = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\nb' }))
-    const emptyFirstLine = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\nb' }))
-    const emptyFirstLineCrlf = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\r\nb' }))
-    const noIndentation = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'sss\n' }))
-    const indentation = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '  a\n' }))
-    const indentationTab = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\t\tab\n' }))
+    const basic = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
+    const basicCrlf = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' })
+    )
+    const emptyLine = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\n\n' }))
+    const noEndOfFileNewline = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb' })
+    )
+    const emptyFirstLine = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\nb' })
+    )
+    const emptyFirstLineCrlf = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\r\nb' })
+    )
+    const noIndentation = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'sss\n' })
+    )
+    const indentation = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '  a\n' })
+    )
+    const indentationTab = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\t\tab\n' })
+    )
 
     it('getText(Range)', () => {
         assert.equal(basic.getText(new vscode.Range(0, 0, 0, 1)), 'a')

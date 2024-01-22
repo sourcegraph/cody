@@ -14,6 +14,7 @@ import type {
 
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CodyTaskState } from '../non-stop/utils'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -62,6 +63,9 @@ export type Requests = {
     'commands/explain': [null, string]
     'commands/test': [null, string]
     'commands/smell': [null, string]
+
+    // Trigger commands that edit the code.
+    'commands/document': [null, EditTask]
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -124,6 +128,8 @@ export type Requests = {
     // Server -> Client
     // ================
 
+    'textDocument/edit': [TextDocumentEditParams, boolean]
+
     // Low-level API to handle requests from the VS Code extension to create a
     // webview.  This endpoint should not be needed as long as you use
     // high-level APIs like chat/new instead. This API only exists to faithfully
@@ -155,18 +161,19 @@ export type Notifications = {
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
-    'textDocument/didOpen': [TextDocument]
+    'textDocument/didOpen': [ProtocolTextDocument]
     // The 'textDocument/didChange' notification should be sent on almost every
     // keystroke, whether the text contents changed or the cursor/selection
     // changed.  Leave the `content` property undefined when the document's
     // content is unchanged.
-    'textDocument/didChange': [TextDocument]
+    'textDocument/didChange': [ProtocolTextDocument]
     // The user focused on a document without changing the document's content.
-    // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didFocus': [{ uri: string }]
+    // The user saved the file to disk.
+    'textDocument/didSave': [{ uri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didClose': [TextDocument]
+    'textDocument/didClose': [ProtocolTextDocument]
 
     '$/cancelRequest': [CancelParams]
     // The user no longer wishes to consider the last autocomplete candidate
@@ -188,6 +195,9 @@ export type Notifications = {
     // ================
 
     'debug/message': [DebugMessage]
+
+    'editTaskState/didChange': [EditTask]
+    'codeLenses/display': [DisplayCodeLensParams]
 
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
@@ -265,6 +275,8 @@ interface ClientCapabilities {
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
+    edit?: 'none' | 'enabled'
+    codeLenses?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {
@@ -378,7 +390,7 @@ export interface Range {
     end: Position
 }
 
-export interface TextDocument {
+export interface ProtocolTextDocument {
     // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
     uri: string
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
@@ -445,4 +457,48 @@ interface ProgressOptions {
 export interface WebviewPostMessageParams {
     id: string
     message: ExtensionMessage
+}
+
+export interface TextDocumentEditParams {
+    uri: string
+    edits: TextEdit[]
+    options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+}
+export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
+export interface ReplaceTextEdit {
+    type: 'replace'
+    range: Range
+    value: string
+}
+export interface InsertTextEdit {
+    type: 'insert'
+    position: Position
+    value: string
+}
+export interface DeleteTextEdit {
+    type: 'delete'
+    range: Range
+}
+
+export interface EditTask {
+    id: string
+    state: CodyTaskState
+}
+
+export interface DisplayCodeLensParams {
+    uri: string
+    codeLenses: ProtocolCodeLens[]
+}
+
+export interface ProtocolCodeLens {
+    range: Range
+    command?: ProtocolCommand
+    isResolved: boolean
+}
+
+export interface ProtocolCommand {
+    title: string
+    command: string
+    tooltip?: string
+    arguments?: any[]
 }

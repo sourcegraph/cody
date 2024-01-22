@@ -13,6 +13,10 @@ export interface CodyCommand {
     additionalInput?: string
 }
 
+export function isFixupCommand(command: CodyCommand) {
+    return command.mode !== 'ask'
+}
+
 /**
  * - 'ask' mode is the default mode, run prompt in chat view
  * - 'edit' mode will run prompt with edit command which replace selection with cody's response
