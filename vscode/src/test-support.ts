@@ -38,6 +38,6 @@ export class TestSupport {
     public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
 
     public async chatMessages(): Promise<ChatMessage[]> {
-        return (await this.chatPanelProvider.get()).transcriptForTesting(this)
+        return (await this.chatPanelProvider.get()).getViewTranscript()
     }
 }

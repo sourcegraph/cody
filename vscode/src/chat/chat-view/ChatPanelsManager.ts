@@ -28,7 +28,7 @@ import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
 
-export type Config = Pick<
+export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
     'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable' | 'useContext'
 >
@@ -255,7 +255,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                     const provider =
                         this.panelProviders.find(p => p.sessionID === chatID) ||
                         this.panelProviders.find(p => p.sessionID === chatIDUTC)
-                    provider?.handleChatTitle(title)
+                    provider?.setChatTitle(title)
                 }
             })
     }

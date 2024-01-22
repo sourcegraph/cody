@@ -18,7 +18,6 @@ import {
     type CodyCommand,
     type ContextFile,
     type ContextMessage,
-    type CustomCommandType,
     type Editor,
     type FeatureFlagProvider,
     type Guardrails,
@@ -75,7 +74,7 @@ import type {
 import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import type { ChatViewProviderWebview, Config } from './ChatPanelsManager'
+import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { getCommandContext, getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
@@ -88,7 +87,7 @@ import {
 } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
-    config: Config
+    config: ChatPanelConfig
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
@@ -108,10 +107,15 @@ export interface ChatSession {
     sessionID: string
 }
 
+/**
+ * SimpleChatPanelProvider is the view controller class for the chat panel.
+ * It handles all events sent from the view, keeps track of the underlying chat model,
+ * and interacts with the rest of the extension.
+ */
 export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private chatModel: SimpleChatModel
 
-    private config: Config
+    private config: ChatPanelConfig
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
     private readonly embeddingsClient: CachedRemoteEmbeddingsClient
@@ -127,10 +131,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
-    // A unique identifier for this SimpleChatPanelProvider instance used to identify it to
-    // container classes that need a handle to this specific panel provider.
-    public get sessionID(): string {
-        return this.chatModel.sessionID
+    private disposables: vscode.Disposable[] = []
+    public dispose(): void {
+        vscode.Disposable.from(...this.disposables).dispose()
+        this.disposables = []
     }
 
     constructor({
@@ -183,6 +187,794 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             this.config.experimentalSymfContext ? this.symf : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+    }
+
+    /**
+     * onDidReceiveMessage handles all user actions sent from the chat panel view.
+     * @param message is the message from the view.
+     */
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        switch (message.command) {
+            case 'ready':
+                await this.handleReady()
+                break
+            case 'initialized':
+                await this.handleInitialized()
+                break
+            case 'submit': {
+                await this.handleNewUserMessage(
+                    uuid.v4(),
+                    message.text,
+                    message.submitType,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext ?? false
+                )
+                break
+            }
+            case 'edit': {
+                await this.handleEdit(uuid.v4(), message.text)
+                break
+            }
+            case 'abort':
+                this.handleAbort()
+                break
+            case 'chatModel':
+                this.handleSetChatModel(message.model)
+                break
+            case 'get-chat-models':
+                this.postChatModels()
+                break
+            case 'getUserContext':
+                await this.handleGetUserContextFilesCandidates(message.query)
+                break
+            case 'insert':
+                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                break
+            case 'copy':
+                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                break
+            case 'links':
+                void openExternalLinks(message.value)
+                break
+            case 'openFile':
+                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
+                break
+            case 'openLocalFileWithRange':
+                await openLocalFileWithRange(message.filePath, message.range)
+                break
+            case 'newFile':
+                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                await this.editor.createWorkspaceFile(message.text)
+                break
+            case 'embeddings/index':
+                void this.localEmbeddings?.index()
+                break
+            case 'symf/index': {
+                void this.handleSymfIndex()
+                break
+            }
+            case 'show-page':
+                await vscode.commands.executeCommand('cody.show-page', message.page)
+                break
+            case 'attribution-search':
+                void this.handleAttributionSearch(message.snippet)
+                break
+            case 'reset':
+                await this.clearAndRestartSession()
+                break
+            case 'event':
+                telemetryService.log(message.eventName, message.properties)
+                break
+            default:
+                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
+        }
+    }
+
+    // =======================================================================
+    // Top-level view action handlers
+    // =======================================================================
+
+    // When the webview sends the 'ready' message, respond by posting the view config
+    private async handleReady(): Promise<void> {
+        const config = await getFullConfig()
+        const authStatus = this.authProvider.getAuthStatus()
+        const localProcess = getProcessInfo()
+        const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+            ...localProcess,
+            debugEnable: config.debugEnable,
+            serverEndpoint: config.serverEndpoint,
+            experimentalGuardrails: config.experimentalGuardrails,
+        }
+        const workspaceFolderUris =
+            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+        await this.postMessage({
+            type: 'config',
+            config: configForWebview,
+            authStatus,
+            workspaceFolderUris,
+        })
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+    }
+
+    private initDoer = new InitDoer<boolean | undefined>()
+    private async handleInitialized(): Promise<void> {
+        logDebug('SimpleChatPanelProvider', 'handleInitialized')
+        // HACK: this call is necessary to get the webview to set the chatID state,
+        // which is necessary on deserialization. It should be invoked before the
+        // other initializers run (otherwise, it might interfere with other view
+        // state)
+        await this.webview?.postMessage({
+            type: 'transcript',
+            messages: [],
+            isMessageInProgress: false,
+            chatID: this.chatModel.sessionID,
+        })
+
+        this.postChatModels()
+        await this.saveSession()
+        await this.postCodyCommands()
+        this.initDoer.signalInitialized()
+    }
+
+    public async handleNewUserMessage(
+        requestID: string,
+        inputText: string,
+        submitType: ChatSubmitType,
+        userContextFiles: ContextFile[],
+        addEnhancedContext: boolean
+    ): Promise<void> {
+        // DEPRECATED (remove after slash commands are removed)
+        // If this is a slash command, run it with custom command instead
+        if (inputText.startsWith('/')) {
+            if (inputText.match(/^\/r(eset)?$/)) {
+                return this.clearAndRestartSession()
+            }
+            if (inputText.match(/^\/edit(\s)?/)) {
+                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
+            }
+            if (inputText === '/commands-settings') {
+                // User has clicked the settings button for commands
+                return vscode.commands.executeCommand('cody.settings.commands')
+            }
+            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
+            const command = await this.commandsController?.startCommand(inputText, commandArgs)
+            if (command) {
+                return this.handleCommand(command, commandArgs)
+            }
+        }
+
+        if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
+            await this.clearAndRestartSession()
+        }
+
+        const displayText = userContextFiles?.length
+            ? createDisplayTextWithFileLinks(inputText, userContextFiles)
+            : inputText
+        const promptText = inputText
+        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        this.updateWebviewPanelTitle(inputText)
+        await this.saveSession(inputText)
+
+        // trigger the context progress indicator
+        this.postViewTranscript({ speaker: 'assistant' })
+
+        const userContextItems = await contextFilesToContextItems(
+            this.editor,
+            userContextFiles || [],
+            true
+        )
+        const prompter = new DefaultPrompter(
+            userContextItems,
+            addEnhancedContext
+                ? query =>
+                      getEnhancedContext(
+                          this.config.useContext,
+                          this.editor,
+                          this.embeddingsClient,
+                          this.localEmbeddings,
+                          this.config.experimentalSymfContext ? this.symf : null,
+                          this.codebaseStatusProvider,
+                          query
+                      )
+                : undefined
+        )
+        const sendTelemetry = (contextSummary: any): void => {
+            const authStatus = this.authProvider.getAuthStatus()
+            const properties = {
+                requestID,
+                chatModel: this.chatModel.modelID,
+                contextSummary,
+            }
+
+            telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+                metadata: {
+                    ...contextSummary,
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    properties,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safeguard measure
+                    promptText:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
+                },
+            })
+        }
+
+        try {
+            const prompt = await this.buildPrompt(prompter, sendTelemetry)
+            this.streamAssistantResponse(requestID, prompt)
+        } catch (error) {
+            if (isRateLimitError(error)) {
+                this.postError(error, 'transcript')
+            } else {
+                this.postError(
+                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
+                )
+            }
+        }
+    }
+
+    private async handleEdit(requestID: string, text: string): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
+
+        this.chatModel.updateLastHumanMessage({ text })
+        this.postViewTranscript()
+
+        const prompter = new DefaultPrompter(
+            [], // TODO(beyang): support user context items in the edit input
+            (
+                query // TODO(beyang): get useEnhancedContext
+            ) =>
+                getEnhancedContext(
+                    this.config.useContext,
+                    this.editor,
+                    this.embeddingsClient,
+                    this.localEmbeddings,
+                    this.config.experimentalSymfContext ? this.symf : null,
+                    this.codebaseStatusProvider,
+                    query
+                )
+        )
+
+        try {
+            const prompt = await this.buildPrompt(prompter)
+            this.streamAssistantResponse(requestID, prompt)
+        } catch (error) {
+            if (isRateLimitError(error)) {
+                this.postError(error, 'transcript')
+            } else {
+                this.postError(
+                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
+                )
+            }
+        }
+    }
+
+    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
+        // If it's not an ask command, it's a fixup command, so we can exit early.
+        // This is because startCommand will start the CommandRunner,
+        // which would send all fixup command requests to the FixupController
+        if (command.mode !== 'ask') {
+            return
+        }
+
+        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
+            if (
+                command.context?.selection ||
+                command.context?.currentFile ||
+                command.context?.currentDir
+            ) {
+                return this.postError(
+                    new Error('Command failed. Please open a file and try again.'),
+                    'transcript'
+                )
+            }
+        }
+
+        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
+        const displayText = createDisplayTextWithFileSelection(
+            inputText,
+            this.editor.getActiveTextEditorSelectionOrEntireFile()
+        )
+        const promptText = command.prompt
+        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        this.updateWebviewPanelTitle(inputText)
+        await this.saveSession(inputText)
+
+        // trigger the context progress indicator
+        this.postViewTranscript({ speaker: 'assistant' })
+
+        const prompt = await this.buildPrompt(
+            new CommandPrompter(() => getCommandContext(this.editor, command))
+        )
+        this.streamAssistantResponse(args.requestID, prompt)
+    }
+
+    private handleAbort(): void {
+        this.cancelInProgressCompletion()
+        telemetryService.log(
+            'CodyVSCodeExtension:abortButton:clicked',
+            { source: 'sidebar' },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+    }
+
+    private async handleSetChatModel(modelID: string): Promise<void> {
+        this.chatModel.modelID = modelID
+        // Store the selected model in local storage to retrieve later
+        await localStorage.set('model', modelID)
+    }
+
+    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+        if (!query.length) {
+            const tabs = getOpenTabsContextFile()
+            await this.postMessage({
+                type: 'userContextFiles',
+                context: tabs,
+            })
+            return
+        }
+
+        const cancellation = new vscode.CancellationTokenSource()
+
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
+            }
+        } catch (error) {
+            this.postError(new Error(`Error retrieving context files: ${error}`))
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
+    }
+
+    private async handleSymfIndex(): Promise<void> {
+        const codebase = await this.codebaseStatusProvider.currentCodebase()
+        if (codebase && isFileURI(codebase.localFolder)) {
+            await this.symf?.ensureIndex(codebase.localFolder, { hard: true })
+        }
+    }
+
+    private async handleAttributionSearch(snippet: string): Promise<void> {
+        try {
+            const attribution = await this.guardrails.searchAttribution(snippet)
+            if (isError(attribution)) {
+                await this.postMessage({
+                    type: 'attribution',
+                    snippet,
+                    error: attribution.message,
+                })
+                return
+            }
+            await this.postMessage({
+                type: 'attribution',
+                snippet,
+                attribution: {
+                    repositoryNames: attribution.repositories.map(r => r.name),
+                    limitHit: attribution.limitHit,
+                },
+            })
+        } catch (error) {
+            await this.postMessage({
+                type: 'attribution',
+                snippet,
+                error: `${error}`,
+            })
+        }
+    }
+
+    // =======================================================================
+    // Webview updaters
+    // =======================================================================
+
+    private postViewTranscript(messageInProgress?: ChatMessage): void {
+        const messages: ChatMessage[] = this.chatModel
+            .getMessagesWithContext()
+            .map(m => toViewMessage(m))
+        if (messageInProgress) {
+            messages.push(messageInProgress)
+        }
+
+        // We never await on postMessage, because it can sometimes hang indefinitely:
+        // https://github.com/microsoft/vscode/issues/159431
+        void this.postMessage({
+            type: 'transcript',
+            messages,
+            isMessageInProgress: !!messageInProgress,
+            chatID: this.chatModel.sessionID,
+        })
+
+        const chatTitle = this.history.getChat(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.sessionID
+        )?.chatTitle
+        if (chatTitle) {
+            this.setChatTitle(chatTitle)
+            return
+        }
+        // Update webview panel title to match the last message
+        const text = this.chatModel.getLastHumanMessage()?.displayText
+        if (this.webviewPanel && text) {
+            this.webviewPanel.title = getChatPanelTitle(text)
+        }
+    }
+
+    /**
+     * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
+     */
+    private postError(error: Error, type?: MessageErrorType): void {
+        logDebug('SimpleChatPanelProvider: postError', error.message)
+        // Add error to transcript
+        if (type === 'transcript') {
+            this.chatModel.addErrorAsBotMessage(error)
+            this.postViewTranscript()
+            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
+        void this.postMessage({ type: 'errors', errors: error.message })
+    }
+
+    private postChatModels(): void {
+        const authStatus = this.authProvider.getAuthStatus()
+        if (!authStatus?.isLoggedIn) {
+            return
+        }
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
+
+        void this.postMessage({
+            type: 'chatModels',
+            models,
+        })
+    }
+
+    /**
+     * Send a list of commands to webview that can be triggered via chat input box with slash
+     */
+    private async postCodyCommands(): Promise<void> {
+        const send = async (): Promise<void> => {
+            await this.commandsController?.refresh()
+            const allCommands = await this.commandsController?.getAllCommands(true)
+            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
+            const prompts =
+                allCommands?.filter(([id, { mode }]) => {
+                    /** The /ask command is only useful outside of chat */
+                    const isRedundantCommand = id === '/ask'
+                    return !isRedundantCommand
+                }) || []
+            void this.postMessage({
+                type: 'custom-prompts',
+                prompts,
+            })
+        }
+        this.commandsController?.setMessenger(send)
+        await send()
+    }
+
+    /**
+     * Low-level utility to post a message to the webview, pending initialization.
+     *
+     * cody-invariant: this.webview?.postMessage should never be invoked directly
+     * except within this method.
+     */
+    private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
+        return this.initDoer.do(() => this.webview?.postMessage(message))
+    }
+
+    // =======================================================================
+    // Chat request lifecycle methods
+    // =======================================================================
+
+    /**
+     * Constructs the prompt and updates the UI with the context used in the prompt.
+     */
+    private async buildPrompt(
+        prompter: IPrompter,
+        sendTelemetry?: (contextSummary: any) => void
+    ): Promise<Message[]> {
+        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
+            this.chatModel,
+            getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
+        )
+
+        // Update UI based on prompt construction
+        this.chatModel.setNewContextUsed(newContextUsed)
+        if (contextLimitWarnings.length > 0) {
+            const warningMsg = contextLimitWarnings
+                .map(w => {
+                    w = w.trim()
+                    if (!w.endsWith('.')) {
+                        w += '.'
+                    }
+                    return w
+                })
+                .join(' ')
+            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
+        }
+
+        if (sendTelemetry) {
+            // Create a summary of how many code snippets of each context source are being
+            // included in the prompt
+            const contextSummary: { [key: string]: number } = {}
+            for (const { source } of newContextUsed) {
+                if (!source) {
+                    continue
+                }
+                if (contextSummary[source]) {
+                    contextSummary[source] += 1
+                } else {
+                    contextSummary[source] = 1
+                }
+            }
+            sendTelemetry(contextSummary)
+        }
+
+        return prompt
+    }
+
+    private streamAssistantResponse(requestID: string, prompt: Message[]): void {
+        this.postViewTranscript({ speaker: 'assistant' })
+
+        this.sendLLMRequest(prompt, {
+            update: content => {
+                this.postViewTranscript(
+                    toViewMessage({
+                        message: {
+                            speaker: 'assistant',
+                            text: content,
+                        },
+                    })
+                )
+            },
+            close: content => {
+                this.addBotMessage(requestID, content)
+            },
+            error: (partialResponse, error) => {
+                if (!isAbortError(error)) {
+                    this.postError(error, 'transcript')
+                }
+                try {
+                    // We should still add the partial response if there was an error
+                    // This'd throw an error if one has already been added
+                    this.addBotMessage(requestID, partialResponse)
+                } catch {
+                    console.error('Streaming Error', error)
+                }
+            },
+        })
+    }
+
+    /**
+     * Issue the chat request and stream the results back, updating the model and view
+     * with the response.
+     */
+    private async sendLLMRequest(
+        prompt: Message[],
+        callbacks: {
+            update: (response: string) => void
+            close: (finalResponse: string) => void
+            error: (completedResponse: string, error: Error) => void
+        }
+    ): Promise<void> {
+        let lastContent = ''
+        const typewriter = new Typewriter({
+            update: content => {
+                lastContent = content
+                callbacks.update(content)
+            },
+            close: () => {
+                callbacks.close(lastContent)
+            },
+            error: error => {
+                callbacks.error(lastContent, error)
+            },
+        })
+
+        this.cancelInProgressCompletion()
+        const abortController = new AbortController()
+        this.completionCanceller = () => abortController.abort()
+        const stream = this.chatClient.chat(
+            prompt,
+            { model: this.chatModel.modelID },
+            abortController.signal
+        )
+
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
+                    typewriter.update(message.text)
+                    break
+                }
+                case 'complete': {
+                    this.completionCanceller = undefined
+                    typewriter.close()
+                    typewriter.stop()
+                    break
+                }
+                case 'error': {
+                    this.cancelInProgressCompletion()
+                    typewriter.close()
+                    typewriter.stop(message.error)
+                }
+            }
+        }
+    }
+
+    private completionCanceller?: () => void
+    private cancelInProgressCompletion(): void {
+        if (this.completionCanceller) {
+            this.completionCanceller()
+            this.completionCanceller = undefined
+        }
+    }
+
+    /**
+     * Handles setting the chat title.
+     *
+     * Sets the title to the given string. Once set, the title will not update
+     * automatically to the next question.
+     * This allows users to manually edit the title for each chat session (via sidebar).
+     */
+    public setChatTitle(title: string): void {
+        // Skip storing default chat title
+        if (title !== 'New Chat') {
+            this.chatModel.setChatTitle(title)
+        }
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
+        }
+    }
+
+    /**
+     * Finalizes adding a bot message to the chat model and triggers an update to the view.
+     */
+    private addBotMessage(requestID: string, rawResponse: string): void {
+        const displayText = reformatBotMessageForChat(rawResponse, '')
+        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+        void this.saveSession()
+        this.postViewTranscript()
+
+        const authStatus = this.authProvider.getAuthStatus()
+
+        // Count code generated from response
+        const codeCount = countGeneratedCode(rawResponse)
+        if (codeCount?.charCount) {
+            // const metadata = lastInteraction?.getHumanMessage().metadata
+            telemetryService.log(
+                'CodyVSCodeExtension:chatResponse:hasCode',
+                { ...codeCount, requestID },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                metadata: {
+                    ...codeCount,
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    requestID,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
+                },
+            })
+        }
+    }
+
+    // =======================================================================
+    // Session management
+    // =======================================================================
+
+    // A unique identifier for this SimpleChatPanelProvider instance used to identify
+    // it when a handle to this specific panel provider is needed.
+    public get sessionID(): string {
+        return this.chatModel.sessionID
+    }
+
+    // Attempts to restore the chat to the given sessionID, if it exists in
+    // history. If it does, then saves the current session and cancels the
+    // current in-progress completion. If the chat does not exist, then this
+    // is a no-op.
+    public async restoreSession(sessionID: string): Promise<void> {
+        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
+        if (!oldTranscript) {
+            return
+        }
+        this.cancelInProgressCompletion()
+        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
+        this.chatModel = newModel
+
+        this.postViewTranscript()
+    }
+
+    private async saveSession(humanInput?: string): Promise<void> {
+        const allHistory = await this.history.saveChat(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.toTranscriptJSON(),
+            humanInput
+        )
+        if (allHistory) {
+            void this.postMessage({
+                type: 'history',
+                messages: allHistory,
+            })
+        }
+        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
+    }
+
+    public async clearAndRestartSession(): Promise<void> {
+        if (this.chatModel.isEmpty()) {
+            return
+        }
+
+        this.cancelInProgressCompletion()
+        await this.saveSession()
+
+        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.postViewTranscript()
+        // Reset current chat panel title
+        this.setChatTitle('New Chat')
+    }
+
+    // =======================================================================
+    // Webview state and methods
+    // =======================================================================
+
+    private extensionUri: vscode.Uri
+    private _webviewPanel?: vscode.WebviewPanel
+    public get webviewPanel(): vscode.WebviewPanel | undefined {
+        return this._webviewPanel
+    }
+    private _webview?: ChatViewProviderWebview
+    public get webview(): ChatViewProviderWebview | undefined {
+        return this._webview
     }
 
     /**
@@ -310,795 +1102,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
     }
 
-    /**
-     * This is the entrypoint for handling messages from the webview.
-     */
-    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        switch (message.command) {
-            case 'ready':
-                await this.postViewConfig()
-                break
-            case 'initialized':
-                logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
-                await this.onInitialized()
-                break
-            case 'reset':
-                await this.clearAndRestartSession()
-                break
-            case 'submit': {
-                const requestID = uuid.v4()
-                await this.handleNewUserMessage(
-                    requestID,
-                    message.text,
-                    message.submitType,
-                    message.contextFiles ?? [],
-                    message.addEnhancedContext ?? false
-                )
-                break
-            }
-            case 'edit': {
-                const requestID = uuid.v4()
-                await this.handleEdit(requestID, message.text)
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
-                break
-            }
-            case 'abort':
-                this.cancelInProgressCompletion()
-                telemetryService.log(
-                    'CodyVSCodeExtension:abortButton:clicked',
-                    { source: 'sidebar' },
-                    { hasV2Event: true }
-                )
-                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
-                break
-            case 'chatModel':
-                this.chatModel.modelID = message.model
-                // Store the selected model in local storage to retrieve later
-                await localStorage.set('model', message.model)
-                break
-            case 'get-chat-models':
-                this.postChatModels()
-                break
-            case 'getUserContext':
-                await this.handleContextFiles(message.query)
-                break
-            case 'custom-prompt':
-                await this.executeCustomCommand(message.title)
-                break
-            case 'insert':
-                await handleCodeFromInsertAtCursor(message.text, message.metadata)
-                break
-            case 'newFile':
-                handleCodeFromSaveToNewFile(message.text, message.metadata)
-                await this.editor.createWorkspaceFile(message.text)
-                break
-            case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
-                break
-            case 'event':
-                telemetryService.log(message.eventName, message.properties)
-                break
-            case 'links':
-                void openExternalLinks(message.value)
-                break
-            case 'openFile':
-                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
-                break
-            case 'openLocalFileWithRange':
-                await openLocalFileWithRange(message.filePath, message.range)
-                break
-            case 'embeddings/index':
-                void this.localEmbeddings?.index()
-                break
-            case 'symf/index': {
-                void this.codebaseStatusProvider.currentCodebase().then((codebase): void => {
-                    if (codebase && isFileURI(codebase.localFolder)) {
-                        void this.symf?.ensureIndex(codebase.localFolder, { hard: true })
-                    }
-                })
-                break
-            }
-            case 'show-page':
-                await vscode.commands.executeCommand('cody.show-page', message.page)
-                break
-            case 'attribution-search':
-                this.guardrails
-                    .searchAttribution(message.snippet)
-                    .then((attribution): void => {
-                        if (isError(attribution)) {
-                            void this.postMessage({
-                                type: 'attribution',
-                                snippet: message.snippet,
-                                error: attribution.message,
-                            })
-                            return
-                        }
-                        void this.postMessage({
-                            type: 'attribution',
-                            snippet: message.snippet,
-                            attribution: {
-                                repositoryNames: attribution.repositories.map(r => r.name),
-                                limitHit: attribution.limitHit,
-                            },
-                        })
-                    })
-                    .catch(error => {
-                        void this.postMessage({
-                            type: 'attribution',
-                            snippet: message.snippet,
-                            error: `${error}`,
-                        })
-                    })
-
-                break
-            default:
-                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
-        }
-    }
-
-    private initDoer = new InitDoer<boolean | undefined>()
-    private async onInitialized(): Promise<void> {
-        // HACK: this call is necessary to get the webview to set the chatID state,
-        // which is necessary on deserialization. It should be invoked before the
-        // other initializers run (otherwise, it might interfere with other view
-        // state)
-        await this.webview?.postMessage({
-            type: 'transcript',
-            messages: [],
-            isMessageInProgress: false,
-            chatID: this.chatModel.sessionID,
-        })
-
-        this.postChatModels()
-        await this.saveSession()
-        await this.postCodyCommands()
-        this.initDoer.signalInitialized()
-    }
-
-    private disposables: vscode.Disposable[] = []
-    public dispose(): void {
-        vscode.Disposable.from(...this.disposables).dispose()
-        this.disposables = []
-    }
-
-    /**
-     * Attempts to restore the chat to the given sessionID, if it exists in
-     * history. If it does, then saves the current session and cancels the
-     * current in-progress completion. If the chat does not exist, then this
-     * is a no-op.
-     */
-    public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
-        if (!oldTranscript) {
-            return
-        }
-        this.cancelInProgressCompletion()
-        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
-        this.chatModel = newModel
-
-        this.postViewTranscript()
-    }
-
-    public async saveSession(humanInput?: string): Promise<void> {
-        const allHistory = await this.history.saveChat(
-            this.authProvider.getAuthStatus(),
-            this.chatModel.toTranscriptJSON(),
-            humanInput
-        )
-        if (allHistory) {
-            void this.postMessage({
-                type: 'history',
-                messages: allHistory,
-            })
-        }
-        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
-    }
-
-    public async clearAndRestartSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
-        }
-
-        this.cancelInProgressCompletion()
-        await this.saveSession()
-
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
-        this.postViewTranscript()
-        // Reset current chat panel title
-        this.handleChatTitle('New Chat')
-    }
-
-    /**
-     * Handles setting the chat title.
-     *
-     * Sets the title to the given string. Once set, the title will not update
-     * automatically to the next question.
-     * This allows users to manually edit the title for each chat session (via sidebar).
-     */
-    public handleChatTitle(title: string): void {
-        // Skip storing default chat title
-        if (title !== 'New Chat') {
-            this.chatModel.setChatTitle(title)
-        }
-        if (this.webviewPanel) {
-            this.webviewPanel.title = title
-        }
-    }
-
-    private postChatModels(): void {
-        const authStatus = this.authProvider.getAuthStatus()
-        if (!authStatus?.isLoggedIn) {
-            return
-        }
-        if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
-        }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
-
-        void this.postMessage({
-            type: 'chatModels',
-            models,
-        })
-    }
-
-    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not an ask command, it's a fixup command, so we can exit early.
-        // This is because startCommand will start the CommandRunner,
-        // which would send all fixup command requests to the FixupController
-        if (command.mode !== 'ask') {
-            return
-        }
-
-        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (
-                command.context?.selection ||
-                command.context?.currentFile ||
-                command.context?.currentDir
-            ) {
-                return this.postError(
-                    new Error('Command failed. Please open a file and try again.'),
-                    'transcript'
-                )
-            }
-        }
-
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
-        const displayText = createDisplayTextWithFileSelection(
-            inputText,
-            this.editor.getActiveTextEditorSelectionOrEntireFile()
-        )
-        const promptText = command.prompt
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        this.updateWebviewPanelTitle(inputText)
-        await this.saveSession(inputText)
-
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
-
-        const prompt = await this.buildPrompt(
-            new CommandPrompter(() => getCommandContext(this.editor, command))
-        )
-        this.streamAssistantResponse(args.requestID, prompt)
-    }
-
-    public async handleNewUserMessage(
-        requestID: string,
-        inputText: string,
-        submitType: ChatSubmitType,
-        userContextFiles: ContextFile[],
-        addEnhancedContext: boolean
-    ): Promise<void> {
-        // DEPRECATED (remove after slash commands are removed)
-        // If this is a slash command, run it with custom command instead
-        if (inputText.startsWith('/')) {
-            if (inputText.match(/^\/r(eset)?$/)) {
-                return this.clearAndRestartSession()
-            }
-            if (inputText.match(/^\/edit(\s)?/)) {
-                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
-            }
-            if (inputText === '/commands-settings') {
-                // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.settings.commands')
-            }
-            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.startCommand(inputText, commandArgs)
-            if (command) {
-                return this.handleCommand(command, commandArgs)
-            }
-        }
-
-        if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
-            await this.clearAndRestartSession()
-        }
-
-        const displayText = userContextFiles?.length
-            ? createDisplayTextWithFileLinks(inputText, userContextFiles)
-            : inputText
-        const promptText = inputText
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        this.updateWebviewPanelTitle(inputText)
-        await this.saveSession(inputText)
-
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
-
-        const userContextItems = await contextFilesToContextItems(
-            this.editor,
-            userContextFiles || [],
-            true
-        )
-        const prompter = new DefaultPrompter(
-            userContextItems,
-            addEnhancedContext
-                ? query =>
-                      getEnhancedContext(
-                          this.config.useContext,
-                          this.editor,
-                          this.embeddingsClient,
-                          this.localEmbeddings,
-                          this.config.experimentalSymfContext ? this.symf : null,
-                          this.codebaseStatusProvider,
-                          query
-                      )
-                : undefined
-        )
-        const sendTelemetry = (contextSummary: any): void => {
-            const authStatus = this.authProvider.getAuthStatus()
-            const properties = {
-                requestID,
-                chatModel: this.chatModel.modelID,
-                contextSummary,
-            }
-
-            telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                metadata: {
-                    ...contextSummary,
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
-                },
-                privateMetadata: {
-                    properties,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safeguard measure
-                    promptText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
-                },
-            })
-        }
-
-        try {
-            const prompt = await this.buildPrompt(prompter, sendTelemetry)
-            this.streamAssistantResponse(requestID, prompt)
-        } catch (error) {
-            if (isRateLimitError(error)) {
-                this.postError(error, 'transcript')
-            } else {
-                this.postError(
-                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
-                )
-            }
-        }
-    }
-
-    /**
-     * Constructs the prompt and updates the UI with the context used in the prompt.
-     */
-    private async buildPrompt(
-        prompter: IPrompter,
-        sendTelemetry?: (contextSummary: any) => void
-    ): Promise<Message[]> {
-        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
-            this.chatModel,
-            getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
-        )
-
-        // Update UI based on prompt construction
-        this.chatModel.setNewContextUsed(newContextUsed)
-        if (contextLimitWarnings.length > 0) {
-            const warningMsg = contextLimitWarnings
-                .map(w => {
-                    w = w.trim()
-                    if (!w.endsWith('.')) {
-                        w += '.'
-                    }
-                    return w
-                })
-                .join(' ')
-            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
-        }
-
-        if (sendTelemetry) {
-            // Create a summary of how many code snippets of each context source are being
-            // included in the prompt
-            const contextSummary: { [key: string]: number } = {}
-            for (const { source } of newContextUsed) {
-                if (!source) {
-                    continue
-                }
-                if (contextSummary[source]) {
-                    contextSummary[source] += 1
-                } else {
-                    contextSummary[source] = 1
-                }
-            }
-            sendTelemetry(contextSummary)
-        }
-
-        return prompt
-    }
-
-    private streamAssistantResponse(requestID: string, prompt: Message[]): void {
-        this.postViewTranscript({ speaker: 'assistant' })
-
-        this.sendLLMRequest(prompt, {
-            update: content => {
-                this.postViewTranscript(
-                    toViewMessage({
-                        message: {
-                            speaker: 'assistant',
-                            text: content,
-                        },
-                    })
-                )
-            },
-            close: content => {
-                this.addBotMessage(requestID, content)
-            },
-            error: (partialResponse, error) => {
-                if (!isAbortError(error)) {
-                    this.postError(error, 'transcript')
-                }
-                try {
-                    // We should still add the partial response if there was an error
-                    // This'd throw an error if one has already been added
-                    this.addBotMessage(requestID, partialResponse)
-                } catch {
-                    console.error('Streaming Error', error)
-                }
-            },
-        })
-    }
-
-    private async handleEdit(requestID: string, text: string): Promise<void> {
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-
-        const prompter = new DefaultPrompter(
-            [], // TODO(beyang): support user context items in the edit input
-            (
-                query // TODO(beyang): get useEnhancedContext
-            ) =>
-                getEnhancedContext(
-                    this.config.useContext,
-                    this.editor,
-                    this.embeddingsClient,
-                    this.localEmbeddings,
-                    this.config.experimentalSymfContext ? this.symf : null,
-                    this.codebaseStatusProvider,
-                    query
-                )
-        )
-
-        try {
-            const prompt = await this.buildPrompt(prompter)
-            this.streamAssistantResponse(requestID, prompt)
-        } catch (error) {
-            if (isRateLimitError(error)) {
-                this.postError(error, 'transcript')
-            } else {
-                this.postError(
-                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
-                )
-            }
-        }
-    }
-
-    private async postViewConfig(): Promise<void> {
-        const config = await getFullConfig()
-        const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = getProcessInfo()
-        const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-            ...localProcess,
-            debugEnable: config.debugEnable,
-            serverEndpoint: config.serverEndpoint,
-            experimentalGuardrails: config.experimentalGuardrails,
-        }
-        const workspaceFolderUris =
-            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
-        await this.postMessage({
-            type: 'config',
-            config: configForWebview,
-            authStatus,
-            workspaceFolderUris,
-        })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
-    }
-
-    /**
-     * Issue the chat request and stream the results back, updating the model and view
-     * with the response.
-     */
-    private async sendLLMRequest(
-        prompt: Message[],
-        callbacks: {
-            update: (response: string) => void
-            close: (finalResponse: string) => void
-            error: (completedResponse: string, error: Error) => void
-        }
-    ): Promise<void> {
-        let lastContent = ''
-        const typewriter = new Typewriter({
-            update: content => {
-                lastContent = content
-                callbacks.update(content)
-            },
-            close: () => {
-                callbacks.close(lastContent)
-            },
-            error: error => {
-                callbacks.error(lastContent, error)
-            },
-        })
-
-        this.cancelInProgressCompletion()
-        const abortController = new AbortController()
-        this.completionCanceller = () => abortController.abort()
-        const stream = this.chatClient.chat(
-            prompt,
-            { model: this.chatModel.modelID },
-            abortController.signal
-        )
-
-        for await (const message of stream) {
-            switch (message.type) {
-                case 'change': {
-                    typewriter.update(message.text)
-                    break
-                }
-                case 'complete': {
-                    this.completionCanceller = undefined
-                    typewriter.close()
-                    typewriter.stop()
-                    break
-                }
-                case 'error': {
-                    this.cancelInProgressCompletion()
-                    typewriter.close()
-                    typewriter.stop(message.error)
-                }
-            }
-        }
-    }
-    private completionCanceller?: () => void
-    private cancelInProgressCompletion(): void {
-        if (this.completionCanceller) {
-            this.completionCanceller()
-            this.completionCanceller = undefined
-        }
-    }
-
-    // Handler to fetch context files candidates
-    private async handleContextFiles(query: string): Promise<void> {
-        if (!query.length) {
-            const tabs = getOpenTabsContextFile()
-            await this.postMessage({
-                type: 'userContextFiles',
-                context: tabs,
-            })
-            return
-        }
-
-        const cancellation = new vscode.CancellationTokenSource()
-
-        try {
-            const MAX_RESULTS = 20
-            if (query.startsWith('#')) {
-                // It would be nice if the VS Code symbols API supports
-                // cancellation, but it doesn't
-                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
-                // Check if cancellation was requested while getFileContextFiles
-                // was executing, which means a new request has already begun
-                // (i.e. prevent race conditions where slow old requests get
-                // processed after later faster requests)
-                if (!cancellation.token.isCancellationRequested) {
-                    await this.postMessage({
-                        type: 'userContextFiles',
-                        context: symbolResults,
-                    })
-                }
-            } else {
-                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
-                // Check if cancellation was requested while getFileContextFiles
-                // was executing, which means a new request has already begun
-                // (i.e. prevent race conditions where slow old requests get
-                // processed after later faster requests)
-                if (!cancellation.token.isCancellationRequested) {
-                    await this.postMessage({
-                        type: 'userContextFiles',
-                        context: fileResults,
-                    })
-                }
-            }
-        } catch (error) {
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            // Cancel any previous search request after we update the UI
-            // to avoid a flash of empty results as you type
-            this.contextFilesQueryCancellation?.cancel()
-            this.contextFilesQueryCancellation = cancellation
-        }
-    }
-
-    private postViewTranscript(messageInProgress?: ChatMessage): void {
-        const messages: ChatMessage[] = this.chatModel
-            .getMessagesWithContext()
-            .map(m => toViewMessage(m))
-        if (messageInProgress) {
-            messages.push(messageInProgress)
-        }
-
-        // We never await on postMessage, because it can sometimes hang indefinitely:
-        // https://github.com/microsoft/vscode/issues/159431
-        void this.postMessage({
-            type: 'transcript',
-            messages,
-            isMessageInProgress: !!messageInProgress,
-            chatID: this.chatModel.sessionID,
-        })
-
-        const chatTitle = this.history.getChat(
-            this.authProvider.getAuthStatus(),
-            this.chatModel.sessionID
-        )?.chatTitle
-        if (chatTitle) {
-            this.handleChatTitle(chatTitle)
-            return
-        }
-        // Update webview panel title to match the last message
-        const text = this.chatModel.getLastHumanMessage()?.displayText
-        if (this.webviewPanel && text) {
-            this.webviewPanel.title = getChatPanelTitle(text)
-        }
-    }
-
-    /**
-     * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
-     */
-    private postError(error: Error, type?: MessageErrorType): void {
-        logDebug('SimpleChatPanelProvider: postError', error.message)
-        // Add error to transcript
-        if (type === 'transcript') {
-            this.chatModel.addErrorAsBotMessage(error)
-            this.postViewTranscript()
-            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
-            return
-        }
-
-        void this.postMessage({ type: 'errors', errors: error.message })
-    }
-
-    /**
-     * Finalizes adding a bot message to the chat model and triggers an update to the view.
-     */
-    private addBotMessage(requestID: string, rawResponse: string): void {
-        const displayText = reformatBotMessageForChat(rawResponse, '')
-        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
-        void this.saveSession()
-        this.postViewTranscript()
-
-        const authStatus = this.authProvider.getAuthStatus()
-
-        // Count code generated from response
-        const codeCount = countGeneratedCode(rawResponse)
-        if (codeCount?.charCount) {
-            // const metadata = lastInteraction?.getHumanMessage().metadata
-            telemetryService.log(
-                'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                metadata: {
-                    ...codeCount,
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
-                },
-                privateMetadata: {
-                    requestID,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
-                    responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
-                },
-            })
-        }
-    }
-
-    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        const customPromptActions = ['add', 'get', 'menu']
-        if (customPromptActions.includes(title)) {
-            title = title.trim()
-            switch (title) {
-                case 'menu':
-                    await this.commandsController?.menu('custom')
-                    break
-                case 'add':
-                    if (!type) {
-                        break
-                    }
-                    await this.commandsController?.configFileAction('add', type)
-                    telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked', undefined, {
-                        hasV2Event: true,
-                    })
-                    telemetryRecorder.recordEvent('cody.addCommandButton', 'clicked')
-                    break
-            }
-            await this.postCodyCommands()
-            return
-        }
-
-        await vscode.commands.executeCommand('cody.action.commands.exec', title)
-    }
-
-    /**
-     * Send a list of commands to webview that can be triggered via chat input box with slash
-     */
-    private async postCodyCommands(): Promise<void> {
-        const send = async (): Promise<void> => {
-            await this.commandsController?.refresh()
-            const allCommands = await this.commandsController?.getAllCommands(true)
-            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
-            const prompts =
-                allCommands?.filter(([id, { mode }]) => {
-                    /** The /ask command is only useful outside of chat */
-                    const isRedundantCommand = id === '/ask'
-                    return !isRedundantCommand
-                }) || []
-            void this.postMessage({
-                type: 'custom-prompts',
-                prompts,
-            })
-        }
-        this.commandsController?.setMessenger(send)
-        await send()
-    }
-
-    /**
-     * Webview state
-     */
-    private extensionUri: vscode.Uri
-    private _webviewPanel?: vscode.WebviewPanel
-    public get webviewPanel(): vscode.WebviewPanel | undefined {
-        return this._webviewPanel
-    }
-    private _webview?: ChatViewProviderWebview
-    public get webview(): ChatViewProviderWebview | undefined {
-        return this._webview
-    }
-
-    /**
-     * Posts a message to the webview, pending initialization.
-     *
-     * cody-invariant: this.webview?.postMessage should never be invoked directly
-     * except within this method.
-     */
-    private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
-        return this.initDoer.do(() => this.webview?.postMessage(message))
-    }
-
     private updateWebviewPanelTitle(title: string): void {
         if (this.webviewPanel) {
             this.webviewPanel.title =
@@ -1107,15 +1110,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    public transcriptForTesting(testing: TestSupport): ChatMessage[] {
-        if (!testing) {
-            console.error('used ForTesting method without test support object')
-            return []
-        }
-        const messages: ChatMessage[] = this.chatModel
-            .getMessagesWithContext()
-            .map(m => toViewMessage(m))
-        return messages
+    // =======================================================================
+    // Misc methods
+    // =======================================================================
+
+    // Convenience function for tests
+    public getViewTranscript(): ChatMessage[] {
+        return this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
     }
 }
 

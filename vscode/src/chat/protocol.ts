@@ -9,7 +9,6 @@ import type {
     ConfigurationWithAccessToken,
     ContextFile,
     ContextFileType,
-    CustomCommandType,
     EnhancedContextContextT,
     SearchPanelFile,
     TelemetryEventProperties,
@@ -73,7 +72,6 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
