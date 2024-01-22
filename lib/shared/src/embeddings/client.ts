@@ -1,7 +1,9 @@
 import type * as status from '../codebase-context/context-status'
 import type { EmbeddingsSearchResults, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
+import { Utils, type URI } from 'vscode-uri'
 import type { EmbeddingsSearch } from '.'
+import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     constructor(
@@ -17,15 +19,30 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     }
 
     public async search(
+        workspaceFolderUri: URI,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        if (this.web) {
-            return this.client.searchEmbeddings([this.repoId], query, codeResultsCount, textResultsCount)
+        const result = await (this.web
+            ? this.client.searchEmbeddings([this.repoId], query, codeResultsCount, textResultsCount)
+            : this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount))
+        if (result instanceof Error) {
+            return result
         }
-
-        return this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        const resolveFileNameToURI = ({
+            fileName,
+            ...result
+        }: Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string }): EmbeddingsSearchResult => {
+            return {
+                ...result,
+                uri: Utils.joinPath(workspaceFolderUri, fileName),
+            }
+        }
+        return {
+            codeResults: result.codeResults.map(resolveFileNameToURI),
+            textResults: result.textResults.map(resolveFileNameToURI),
+        }
     }
 
     public onDidChangeStatus(

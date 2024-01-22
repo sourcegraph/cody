@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     MAX_CURRENT_FILE_TOKENS,
@@ -176,10 +176,18 @@ async function getContextMessagesFromSelection(
     { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
-    const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
-        numCodeResults: 4,
-        numTextResults: 0,
-    })
+    const workspaceFolderUri = vscode.workspace.workspaceFolders?.at(0)?.uri
+    if (!workspaceFolderUri) {
+        return []
+    }
+    const selectedTextContext = await codebaseContext.getContextMessages(
+        workspaceFolderUri,
+        selectedText,
+        {
+            numCodeResults: 4,
+            numTextResults: 0,
+        }
+    )
 
     return selectedTextContext.concat(
         [precedingText, followingText]

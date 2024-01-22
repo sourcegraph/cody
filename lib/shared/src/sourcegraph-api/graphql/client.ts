@@ -110,12 +110,21 @@ interface RepositoryEmbeddingExistsResponse {
     repository: { id: string; embeddingExists: boolean } | null
 }
 
+/**
+ * {@link EmbeddingsSearchResults} with `fileName` instead of `uri` fields in the array elements,
+ * because that is what GraphQL returns.
+ */
+interface EmbeddingsSearchResultsWithoutURIs {
+    codeResults: (Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string })[]
+    textResults: (Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string })[]
+}
+
 interface EmbeddingsSearchResponse {
-    embeddingsSearch: EmbeddingsSearchResults
+    embeddingsSearch: EmbeddingsSearchResultsWithoutURIs
 }
 
 interface EmbeddingsMultiSearchResponse {
-    embeddingsMultiSearch: EmbeddingsSearchResults
+    embeddingsMultiSearch: EmbeddingsSearchResultsWithoutURIs
 }
 
 interface SearchAttributionResponse {
@@ -127,11 +136,14 @@ interface SearchAttributionResponse {
 
 type LogEventResponse = unknown
 
+/**
+ * Values of this type come from the GraphQL API as {@link EmbeddingsSearchResultsWithoutURIs}, but
+ * the `fileName` values are resolved to URIs for all other callers.
+ */
 export interface EmbeddingsSearchResult {
     repoName?: string
     revision?: string
-    fileName: string
-    uri: URI // TODO(beyang): this is not guaranteed to exist
+    uri: URI
     startLine: number
     endLine: number
     content: string
@@ -614,7 +626,7 @@ export class SourcegraphGraphQLAPIClient {
         query: string,
         codeResultsCount: number,
         textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
+    ): Promise<EmbeddingsSearchResultsWithoutURIs | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(
             SEARCH_EMBEDDINGS_QUERY,
             {
@@ -632,7 +644,7 @@ export class SourcegraphGraphQLAPIClient {
         query: string,
         codeResultsCount: number,
         textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
+    ): Promise<EmbeddingsSearchResultsWithoutURIs | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(
             LEGACY_SEARCH_EMBEDDINGS_QUERY,
             {

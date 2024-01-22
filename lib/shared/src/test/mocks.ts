@@ -22,12 +22,13 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
     }
 
     public search(
+        workspaceFolderUri: URI,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
         return (
-            this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
+            this.mocks.search?.(workspaceFolderUri, query, codeResultsCount, textResultsCount) ??
             Promise.resolve({ codeResults: [], textResults: [] })
         )
     }
