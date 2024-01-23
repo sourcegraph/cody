@@ -18,8 +18,7 @@ import {
     type InlineCompletionItemWithAnalytics,
 } from './text-processing/process-inline-completions'
 import type { ContextSnippet } from './types'
-import { getPrefixRange } from './doc-context-getters'
-import { removeIndentation } from './text-processing'
+import { lines, removeIndentation } from './text-processing'
 
 export interface RequestParams {
     /** The request's document */
@@ -248,22 +247,24 @@ class RequestCache {
 // We define a completion suggestion as still relevant if the prefix still overlap with the new new
 // completion while allowing for some slight changes to account for prefixes.
 export function computeStillRelevantCompletions(
-    currentRequest: RequestParams,
-    previousRequest: RequestParams,
+    currentRequest: Pick<RequestParams, 'docContext'> & { document: { uri: vscode.Uri } },
+    previousRequest: Pick<RequestParams, 'docContext'> & { document: { uri: vscode.Uri } },
     completions: InlineCompletionItemWithAnalytics[]
 ): InlineCompletionItemWithAnalytics[] {
     if (currentRequest.document.uri.toString() !== previousRequest.document.uri.toString()) {
         return []
     }
 
-    const currentPrefixRange = getPrefixRange(currentRequest.document, currentRequest.docContext)
-    const previousPrefixRange = getPrefixRange(previousRequest.document, previousRequest.docContext)
+    const currentPrefixStartLine =
+        currentRequest.docContext.position.line - (lines(currentRequest.docContext.prefix).length - 1)
+    const previousPrefixStartLine =
+        previousRequest.docContext.position.line - (lines(previousRequest.docContext.prefix).length - 1)
 
-    const sharedStartLine = Math.max(currentPrefixRange.start.line, previousPrefixRange.start.line)
+    const sharedStartLine = Math.max(currentPrefixStartLine, previousPrefixStartLine)
 
     // Truncate both prefixes to ensure they start at the same line
-    const currentPrefixDiff = sharedStartLine - currentPrefixRange.start.line
-    const previousPrefixDiff = sharedStartLine - previousPrefixRange.start.line
+    const currentPrefixDiff = sharedStartLine - currentPrefixStartLine
+    const previousPrefixDiff = sharedStartLine - previousPrefixStartLine
     if (currentPrefixDiff < 0 || previousPrefixDiff < 0) {
         // There is no overlap in prefixes, the completions are not relevant
         return []
