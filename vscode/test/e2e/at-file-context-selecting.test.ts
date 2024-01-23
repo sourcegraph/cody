@@ -22,7 +22,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.fill('@')
     await expect(
         chatPanelFrame.getByRole('heading', {
-            name: 'Search for a file to include, or type # to search symbols...',
+            name: 'Start typing a file to include, or use @# to search for symbols...',
         })
     ).toBeVisible()
 
@@ -49,7 +49,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     // Symbol empty state
     await chatInput.fill('@#')
     await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })
+        chatPanelFrame.getByRole('heading', { name: 'Start typing a symbol to include...' })
     ).toBeVisible()
 
     // Forward slashes
