@@ -25,6 +25,19 @@ export const VALID_TOKEN = 'sgp_1234567890123456789012345678901234567890'
 
 const responses = {
     chat: 'hello from the assistant',
+    chatWithSnippet: [
+        'Hello! Here is a code snippet:',
+        '',
+        '```',
+        'def fib(n):',
+        '  if n < 0:',
+        '    return n',
+        '  else:',
+        '    return fib(n-1) + fib(n-2)',
+        '```',
+        '',
+        'Hope this helps!',
+    ].join('\n'),
     fixup: '<CODE5711><title>Goodbye Cody</title></CODE5711>',
     code: {
         template: { completion: '', stopReason: 'stop_sequence' },
@@ -99,11 +112,16 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         // or have a method on the server to send a set response the next time it sees a trigger word in the request.
         const request = req as MockRequest
         const lastHumanMessageIndex = request.body.messages.length - 2
-        const response =
+        let response = responses.chat
+        if (
             request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
             request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
-                ? responses.fixup
-                : responses.chat
+        ) {
+            response = responses.fixup
+        }
+        if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
+            response = responses.chatWithSnippet
+        }
         res.send(
             `event: completion\ndata: {"completion": ${JSON.stringify(
                 response
@@ -165,6 +183,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.send(JSON.stringify(response))
     })
 
+    let attribution = false
     app.post('/.api/graphql', (req, res) => {
         if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
             res.sendStatus(401)
@@ -259,10 +278,36 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 )
                 break
             }
+            case 'CodyConfigFeaturesResponse': {
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            site: {
+                                codyConfigFeatures: {
+                                    chat: true,
+                                    autoComplete: true,
+                                    commands: true,
+                                    attribution,
+                                },
+                            },
+                        },
+                    })
+                )
+                break
+            }
             default:
                 res.sendStatus(400)
                 break
         }
+    })
+
+    app.post('/.test/attribution/enable', (req, res) => {
+        attribution = true
+        res.sendStatus(200)
+    })
+    app.post('/.test/attribution/disable', (req, res) => {
+        attribution = false
+        res.sendStatus(200)
     })
 
     const server = app.listen(SERVER_PORT)
