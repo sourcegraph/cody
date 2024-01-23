@@ -218,7 +218,7 @@ describe('RequestManager', () => {
 })
 
 describe('computeStillRelevantCompletions', () => {
-    it('returns the completion it it is a forward type of the updated document', async () => {
+    it('returns the completion if it is a forward type of the updated document', async () => {
         const currentRequest = docState('console.log')
         const previousRequest = docState('console.')
         const completion = { insertText: 'log("Hello, world!")' }
