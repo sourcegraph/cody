@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from 'react'
 
-import classNames from 'classnames'
-
 import { isMacOS } from '../../Chat'
 
 import styles from './ChatActions.module.css'
@@ -33,7 +31,6 @@ export const ChatActions: React.FunctionComponent<{
     const actions = [
         {
             name: 'Cancel Edit',
-            title: 'Cancel Edit',
             keybind: 'ESC',
             onClick: onCancelEditClick,
             focus: false,
@@ -41,7 +38,6 @@ export const ChatActions: React.FunctionComponent<{
         },
         {
             name: 'Edit Last Message',
-            title: 'Edit your last message',
             keybind: `${osIcon}K`,
             onClick: onEditLastMessageClick,
             focus: true,
@@ -49,7 +45,6 @@ export const ChatActions: React.FunctionComponent<{
         },
         {
             name: 'New Chat',
-            title: 'Start a new chat session',
             keybind: `${osIcon}/`,
             onClick: onChatResetClick,
             focus: false,
@@ -87,15 +82,15 @@ export const ChatActions: React.FunctionComponent<{
                 .filter(item => item.when)
                 .map(action => (
                     <button
-                        key={action.title}
+                        key={action.name}
                         ref={isMessageInProgress && action.focus ? buttonRef : undefined}
                         type="button"
-                        className={classNames(styles.chatActionButtonContainer)}
+                        className={styles.chatActionButton}
                         onClick={action.onClick}
-                        title={action.title}
                     >
                         <span className={styles.chatActionButtonTitle}>
-                            {action.name} {action.keybind}
+                            {action.name}
+                            <span className={styles.chatActionKeybind}>{action.keybind}</span>
                         </span>
                     </button>
                 ))}

@@ -7,34 +7,29 @@
     gap: 0.5rem;
 }
 
-.chat-action-button-container {
-    display: flex;
-    padding: 0.15rem 0.5rem;
-    justify-content: center;
-    align-items: center;
-    gap: 0.25rem;
-    align-self: stretch;
+.chat-action-button {
+    all: unset;
+    padding: 2px 8px;
+    font-size: var(--type-ramp-minus1-font-size);
+    background-color: var(--vscode-button-secondaryBackground, transparent);
     border-radius: 2px;
-    background: unset;
-    border: 1px solid var(--vscode-disabledForeground);
-    color: var(--vscode-disabledForeground);
+    border: 1px solid var(--vscode-button-border, transparent);
+    color: var(--vscode-button-secondaryForeground);
     cursor: pointer;
 }
 
-.chat-action-button-title {
-    color: var(--vscode-icon-foreground);
+.chat-action-button:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
-.disable {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.chat-action-button-container:focus,
-.chat-action-button-container:focus-visible,
-.chat-action-button-container:focus-within {
+.chat-action-button:focus,
+.chat-action-button:focus-visible,
+.chat-action-button:focus-within {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
-    color: var(--vscode-inputOption-activeForeground);
-    border-color: var(--vscode-inputOption-activeBorder, transparent);
+}
+
+.chat-action-keybind {
+    margin-left: 0.25rem;
+    opacity: 0.5;
 }
