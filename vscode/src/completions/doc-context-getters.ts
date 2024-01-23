@@ -33,16 +33,6 @@ export function getContextRange(
     )
 }
 
-export function getPrefixRange(
-    document: vscode.TextDocument,
-    params: GetContextRangeParams
-): vscode.Range {
-    const { prefix, position } = params
-    const offset = document.offsetAt(position)
-
-    return new vscode.Range(document.positionAt(offset - prefix.length), position)
-}
-
 interface GetCompletionIntentParams {
     document: vscode.TextDocument
     position: vscode.Position
