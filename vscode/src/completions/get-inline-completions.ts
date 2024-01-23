@@ -21,6 +21,7 @@ import { reuseLastCandidate } from './reuse-last-candidate'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
+import { isValidTestFile } from '../commands/prompt/utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -272,6 +273,7 @@ async function doGetInlineCompletions(
         providerIdentifier: providerConfig.identifier,
         providerModel: providerConfig.model,
         languageId: document.languageId,
+        testFile: isValidTestFile(document.uri),
         completionIntent,
         artificialDelay,
         traceId: getActiveTraceAndSpanId()?.traceId,
