@@ -18,14 +18,17 @@ const chatOption: QuickPickItemWithSlashCommand = {
     label: ASK_QUESTION_COMMAND.slashCommand,
     description: ASK_QUESTION_COMMAND.description,
     slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+    alwaysShow: true,
 }
 const fixOption: QuickPickItemWithSlashCommand = {
     label: EDIT_COMMAND.slashCommand,
     description: EDIT_COMMAND.description,
     slashCommand: EDIT_COMMAND.slashCommand,
+    alwaysShow: true,
 }
 // Seperators
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
+const customSeparator: QuickPickItem = { kind: -1, label: 'custom commands (beta)' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'Custom Commands (Beta)' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const lastUsedSeparator: QuickPickItem = { kind: -1, label: 'last used' }
@@ -44,6 +47,7 @@ export const menu_separators = {
     inline: inlineSeparator,
     commands: commandsSeparator,
     customCommands: customCommandsSeparator,
+    customBeta: customSeparator,
     settings: settingsSeparator,
     lastUsed: lastUsedSeparator,
 }
@@ -118,13 +122,6 @@ export const customPromptsContextOptions: ContextOption[] = [
         picked: false,
     },
 ]
-
-export const promptSizeInit = {
-    user: 0,
-    workspace: 0,
-    default: 0,
-    'recently used': 0,
-}
 
 // Ask user to confirm before trying to delete the cody.json file
 export async function showRemoveConfirmationInput(): Promise<'Yes' | 'No' | undefined> {

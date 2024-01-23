@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    ConfigFeaturesSingleton,
     FeatureFlag,
     featureFlagProvider,
     graphqlClient,
@@ -10,6 +9,7 @@ import {
     PromptMixin,
     setLogger,
     type ConfigurationWithAccessToken,
+    ConfigFeaturesSingleton,
 } from '@sourcegraph/cody-shared'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
@@ -48,11 +48,10 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { executeExplainCommand } from './commands/default/explain'
-import { executeSmellCommand } from './commands/default/smell'
 import { executeDocCommand } from './commands/default/doc'
-import { executeTestCommand } from './commands/default/test'
 import { executeNewTestCommand } from './commands/default/test-file'
+import { getDefaultCommand } from './commands/default'
+import { getEditor } from './editor/active-editor'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -304,19 +303,36 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
-    // Execute a Cody Custom Command
-    const executeCustomCommand = async (
-        commandKey: string,
+    // Execute a Cody Command
+    const executeCommand = async (
+        id: string,
         args?: Partial<CodyCommandArgs>
     ): Promise<ChatSession | undefined> => {
-        const commandArgs = newCodyCommandArgs(args)
-        const command = await commandsController?.startCommand(commandKey, commandArgs)
-        if (!command) {
-            return
+        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (!commands) {
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Sourcegraph site admin.'
+            )
+            return undefined
         }
 
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        return chatManager.executeCustomCommand(command, commandArgs, configFeatures.commands)
+        const editor = getEditor()
+        if (!editor.active || editor.ignored) {
+            const message = editor.ignored
+                ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
+                : 'No editor is active. Please open a file and try again.'
+            void vscode.window.showErrorMessage(message)
+            return undefined
+        }
+
+        if (id === 'test' || id === 'smell' || id === 'explain') {
+            const { prompt, args } = await getDefaultCommand(id)
+            return chatManager.executeChat(prompt, args)
+        }
+
+        // If it's not a default command, try it as a custom command
+        await commandsController?.execute(id, newCodyCommandArgs(args))
+        return undefined
     }
 
     const statusBar = createStatusBar()
@@ -361,14 +377,12 @@ const register = async (
         ),
 
         // Cody Commands
-        vscode.commands.registerCommand('cody.command.explain-code', () => executeExplainCommand()),
-        vscode.commands.registerCommand('cody.command.smell-code', () => executeSmellCommand()),
-        vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand()),
-        vscode.commands.registerCommand('cody.command.generate-tests', () => executeTestCommand()),
+        vscode.commands.registerCommand('cody.command.explain-code', a => executeCommand('explain', a)),
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeCommand('test', a)),
+        vscode.commands.registerCommand('cody.command.smell-code', a => executeCommand('smell', a)),
         vscode.commands.registerCommand('cody.command.unit-tests', () => executeNewTestCommand()),
-        vscode.commands.registerCommand('cody.action.commands.exec', (title, args) =>
-            executeCustomCommand(title, args)
-        ),
+        vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand()),
+        vscode.commands.registerCommand('cody.action.commands.exec', (id, a) => executeCommand(id, a)),
 
         // Cody Commands - Menus
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {

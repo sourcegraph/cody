@@ -15,7 +15,6 @@ import {
     Typewriter,
     type ChatClient,
     type ChatMessage,
-    type CodyCommand,
     type ContextFile,
     type ContextMessage,
     type Editor,
@@ -27,12 +26,9 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
+import { newCodyCommandArgs } from '../../commands'
 import type { CommandsController } from '../../commands/CommandsController'
-import {
-    createDisplayTextWithFileLinks,
-    createDisplayTextWithFileSelection,
-} from '../../commands/prompt/display-text'
+import { createDisplayTextWithFileLinks } from '../../commands/prompt/display-text'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import {
@@ -76,9 +72,9 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getCommandContext, getEnhancedContext } from './context'
+import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
-import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
+import { DefaultPrompter, type IPrompter } from './prompt'
 import {
     SimpleChatModel,
     toViewMessage,
@@ -315,7 +311,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+            verbose: configForWebview,
+        })
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
@@ -358,11 +356,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.startCommand(inputText, commandArgs)
-            if (command) {
-                return this.handleCommand(command, commandArgs)
-            }
+            const commandArgs = newCodyCommandArgs({
+                source: 'chat',
+                requestID,
+            })
+            return this.commandsController?.execute(inputText, commandArgs)
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -479,44 +477,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 )
             }
         }
-    }
-
-    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not an ask command, it's a fixup command, so we can exit early.
-        // This is because startCommand will start the CommandRunner,
-        // which would send all fixup command requests to the FixupController
-        if (command.mode !== 'ask') {
-            return
-        }
-
-        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (
-                command.context?.selection ||
-                command.context?.currentFile ||
-                command.context?.currentDir
-            ) {
-                return this.postError(
-                    new Error('Command failed. Please open a file and try again.'),
-                    'transcript'
-                )
-            }
-        }
-
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
-        const displayText = createDisplayTextWithFileSelection(
-            inputText,
-            this.editor.getActiveTextEditorSelectionOrEntireFile()
-        )
-        const promptText = command.prompt
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
-
-        this.postEmptyMessageInProgress()
-
-        const prompt = await this.buildPrompt(
-            new CommandPrompter(() => getCommandContext(this.editor, command))
-        )
-        this.streamAssistantResponse(args.requestID, prompt)
     }
 
     private handleAbort(): void {
@@ -660,7 +620,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
             this.postViewTranscript()
-            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            void this.postMessage({
+                type: 'transcript-errors',
+                isTranscriptError: true,
+            })
             return
         }
 

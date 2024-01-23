@@ -4,6 +4,7 @@ import {
     ConfigFeaturesSingleton,
     type ChatEventSource,
     type CodyCommand,
+    type ContextFile,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
@@ -17,17 +18,11 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { CodyCommandArgs } from '.'
 import { getContextForCommand } from './utils/get-context'
+import { executeChat } from './default'
 
 /**
  * CommandRunner class implements disposable interface.
- * Manages executing a Cody command and optional fixup.
- *
- * Has id, editor, contextOutput, and disposables properties.
- *
- * Constructor takes command CodyCommand, instruction string,
- * and isFixupRequest boolean. Sets up editor and calls runFixup if needed.
- *
- * TODO bee add status
+ * Manages executing a Cody command as either inline edit command or chat command.
  */
 export class CommandRunner implements vscode.Disposable {
     public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
@@ -64,7 +59,15 @@ export class CommandRunner implements vscode.Disposable {
         command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
         this.isFixupRequest = command.mode !== 'ask'
         this.command = command
+    }
 
+    /**
+     * Starts execution of the Cody command.
+     *
+     * Logs the request, gets the active editor, handles errors if no editor,
+     * runs fixup if it is a fixup request, otherwise handles it as a chat request.
+     */
+    public async start(): Promise<void> {
         this.logRequest()
 
         // Commands only work in active editor / workspace unless context specifies otherwise
@@ -77,7 +80,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         this.editor = editor.active
-        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
+        if (!this.editor && !this.command.context?.none && this.command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
@@ -86,8 +89,10 @@ export class CommandRunner implements vscode.Disposable {
 
         // Run fixup if this is a edit command
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(command.mode === 'insert')
+            return this.handleFixupRequest(this.command.mode === 'insert')
         }
+
+        return this.handleChatRequest()
     }
 
     private logRequest(): void {
@@ -129,6 +134,26 @@ export class CommandRunner implements vscode.Disposable {
                 verbose: { command: this.command.context?.command },
             })
         }
+    }
+
+    /**
+     * Handles a Cody chat command.
+     *
+     * Gets the command prompt and context messages.
+     * Filters context messages to get context files.
+     * Executes the chat request with the prompt, context files,
+     * whether to add codebase context, and the chat source.
+     */
+    private async handleChatRequest(): Promise<void> {
+        const prompt = this.command.prompt
+        const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
+        const filteredMessages = contextMessages?.filter(msg => msg.file !== undefined)
+        const contextFiles = filteredMessages?.map(msg => msg.file) as ContextFile[]
+        return executeChat(prompt, {
+            userContextFiles: contextFiles ?? [],
+            addEnhancedContext: this.command.context?.codebase ?? false,
+            source: this.args.source,
+        })
     }
 
     /**

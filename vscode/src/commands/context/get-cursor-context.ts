@@ -21,7 +21,7 @@ export async function getContextFileFromCursor(): Promise<ContextFile | undefine
 
     const selection = editor.active.selection
     const smartSelection = await getSmartSelection(document?.uri, selection?.start.line)
-    const content = document.getText(smartSelection || selection)
+    const content = document.getText(smartSelection ?? selection)
 
     return {
         type: 'file',

@@ -2,17 +2,9 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import {
-    ChatModelProvider,
-    type ChatClient,
-    type ChatEventSource,
-    type CodyCommand,
-    type Guardrails,
-    type ContextFile,
-} from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import type { CodyCommandArgs } from '../../commands'
 import type { CommandsController } from '../../commands/CommandsController'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
@@ -28,6 +20,7 @@ import type { AuthStatus } from '../protocol'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import type { ExecuteChatArguments } from '../../commands/default'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -119,53 +112,23 @@ export class ChatManager implements vscode.Disposable {
      */
     public async executeChat(
         question: string,
-        args?: {
-            contextFiles?: ContextFile[]
-            addEnhancedContext?: boolean
-            source?: ChatEventSource
-        }
-    ): Promise<void> {
+        args?: ExecuteChatArguments
+    ): Promise<ChatSession | undefined> {
         const requestID = uuid.v4()
         telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
             requestID,
             source: args?.source,
         })
 
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.handleNewUserMessage(
+        const provider = await this.getChatProvider()
+        await provider?.handleNewUserMessage(
             requestID,
             question,
             'user-newchat',
-            args?.contextFiles ?? [],
+            args?.userContextFiles ?? [],
             args?.addEnhancedContext ?? true
         )
-    }
-
-    /**
-     * Execute a custom command in a new chat panel
-     */
-    public async executeCustomCommand(
-        command: CodyCommand,
-        args: CodyCommandArgs,
-        enabled = true
-    ): Promise<ChatSession | undefined> {
-        if (!enabled) {
-            void vscode.window.showErrorMessage(
-                'This feature has been disabled by your Sourcegraph site admin.'
-            )
-            return
-        }
-
-        logDebug('ChatManager:executeCommand:called', command.slashCommand)
-        if (!vscode.window.visibleTextEditors.length) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
-            return
-        }
-
-        // Else, open a new chanel panel and run the command in the new panel
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.handleCommand(command, args)
-        return chatProvider
+        return provider
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

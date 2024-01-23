@@ -15,21 +15,21 @@ import {
     openCustomCommandDocsLink,
     saveJSONFile,
 } from './utils/helpers'
-import { promptSizeInit } from './utils/menu'
+import { showNewCustomCommandMenu } from './menus'
 
 /**
  * The CustomPromptsStore class is responsible for loading and building the custom prompts from the cody.json files.
  * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
  */
 export class CustomPromptsStore implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+
     public commandsJSON: CodyCommandsFileJSON | null = null
     public customCommandsMap = new Map<string, CodyCommand>()
 
-    public promptSize = promptSizeInit
     public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
 
     constructor(
-        private isActive: boolean,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
@@ -37,25 +37,11 @@ export class CustomPromptsStore implements vscode.Disposable {
             user: constructFileUri(ConfigFileName.vscode, homeDir),
             workspace: constructFileUri(ConfigFileName.vscode, workspaceRoot),
         }
-        this.activate()
-    }
-
-    /**
-     * Activate based on user's configuration setting
-     */
-    public activate(state = true): void {
-        this.isActive = state
-        if (this.isActive && !state) {
-            this.dispose()
-        }
-    }
-
-    /**
-     * Check if the user has custom prompts from any of the cody.json files
-     */
-    public hasCustomPrompts(): boolean {
-        const numberOfPrompts = this.promptSize.user + this.promptSize.workspace
-        return this.isActive && numberOfPrompts > 0
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.commands.add', () => this.newUserCommandMenu()),
+            vscode.commands.registerCommand('cody.commands.open.json', t => this.openConfig(t)),
+            vscode.commands.registerCommand('cody.commands.delete.json', t => this.deleteConfig(t))
+        )
     }
 
     /**
@@ -63,18 +49,15 @@ export class CustomPromptsStore implements vscode.Disposable {
      */
     public async refresh(): Promise<CodyCommandsFile> {
         try {
-            if (this.isActive) {
-                // reset map and set
-                this.customCommandsMap = new Map<string, CodyCommand>()
-                this.promptSize = { ...promptSizeInit }
-                // user prompts
-                if (this.homeDir) {
-                    await this.build('user')
-                }
-                // only build workspace prompts if the workspace is trusted
-                if (this.workspaceRoot && vscode.workspace.isTrusted) {
-                    await this.build('workspace')
-                }
+            // reset map and set
+            this.customCommandsMap = new Map<string, CodyCommand>()
+            // user prompts
+            if (this.homeDir) {
+                await this.build('user')
+            }
+            // only build workspace prompts if the workspace is trusted
+            if (this.workspaceRoot && vscode.workspace.isTrusted) {
+                await this.build('workspace')
             }
         } catch (error) {
             logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
@@ -157,17 +140,42 @@ export class CustomPromptsStore implements vscode.Disposable {
             if (type === 'user') {
                 this.commandsJSON = json
             }
-            this.promptSize[type] = this.customCommandsMap.size
         } catch (error) {
             logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }
         return this.customCommandsMap
     }
 
+    private async newUserCommandMenu(): Promise<void> {
+        const newCommand = await showNewCustomCommandMenu(this.customCommandsMap)
+        if (!newCommand) {
+            return
+        }
+        // Save the prompt to the current Map and Extension storage
+        await this.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.type)
+        await this.refresh()
+        // Notify user
+        const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
+        void vscode.window
+            .showInformationMessage(
+                `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
+                buttonTitle
+            )
+            .then(async choice => {
+                if (choice === buttonTitle) {
+                    await this.openConfig(newCommand.type)
+                }
+            })
+
+        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', {
+            verbose: newCommand,
+        })
+    }
+
     /**
      * Save the user prompts to the user json file
      */
-    public async save(
+    private async save(
         id: string,
         prompt: CodyCommand,
         deletePrompt = false,
@@ -237,10 +245,10 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Remove the cody.json file from the user's workspace or home directory
      */
-    public async deleteConfig(type: CustomCommandType = 'user'): Promise<void> {
+    private async deleteConfig(type: CustomCommandType = 'user'): Promise<void> {
         // delete .vscode/cody.json for user command using the vs code api
         const uri = this.getConfigUriByType(type)
-        if (this.promptSize[type] === 0 || !uri) {
+        if (!uri) {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
@@ -252,7 +260,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Open the .vscode/cody.json file for given type in the editor
      */
-    public async openConfig(type: CustomCommandType = 'user'): Promise<void> {
+    private async openConfig(type: CustomCommandType = 'user'): Promise<void> {
         const uri = this.getConfigUriByType(type)
         return vscode.commands.executeCommand('vscode.open', uri)
     }
@@ -272,9 +280,10 @@ export class CustomPromptsStore implements vscode.Disposable {
      * Reset
      */
     public dispose(): void {
-        this.isActive = false
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
         this.customCommandsMap = new Map<string, CodyCommand>()
-        this.promptSize = { ...promptSizeInit }
         this.commandsJSON = null
     }
 

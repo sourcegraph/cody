@@ -1,12 +1,15 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromCursor } from '../context/get-cursor-context'
+import type { ExecuteChatArguments } from '.'
 
-export async function executeSmellCommand(): Promise<void> {
+/**
+ * explainCommand generates the prompt and context arguments for the 'smell' command.
+ */
+export async function smellCommand(): Promise<{ prompt: string; args: ExecuteChatArguments }> {
+    const addEnhancedContext = false
     const prompt =
         "Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'"
-
-    const addEnhancedContext = false
 
     const contextFiles: ContextFile[] = []
     const contextFile = await getContextFileFromCursor()
@@ -14,9 +17,20 @@ export async function executeSmellCommand(): Promise<void> {
         contextFiles.push(contextFile)
     }
 
-    vscode.commands.executeCommand('cody.action.chat', prompt, {
-        contextFiles,
-        addEnhancedContext,
-        source: 'smell',
-    })
+    return {
+        prompt,
+        args: {
+            userContextFiles: contextFiles,
+            addEnhancedContext,
+            source: 'smell',
+        },
+    }
+}
+
+/**
+ * Executes the smell command as a chat command via 'cody.action.chat'
+ */
+export async function executeSmellCommand(): Promise<void> {
+    const { prompt, args } = await smellCommand()
+    vscode.commands.executeCommand('cody.action.chat', prompt, args)
 }

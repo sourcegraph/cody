@@ -6,6 +6,7 @@ import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { extractTestType } from '../prompt/utils'
+import { ToolsProvider } from './ToolsProvider'
 
 export const getContextForCommand = async (
     editor: VSCodeEditor,
@@ -28,8 +29,11 @@ export const getContextForCommand = async (
     if (contextConfig.none) {
         return []
     }
-    if (contextConfig.command && contextConfig.output) {
-        contextMessages.push(...editorContext.getTerminalOutputContext(contextConfig.output))
+    if (contextConfig.command) {
+        const output = await new ToolsProvider().exeCommand(contextConfig.command)
+        if (output) {
+            contextMessages.push(...editorContext.getTerminalOutputContext(output))
+        }
     }
     if (contextConfig.selection !== false) {
         contextMessages.push(...editorContext.getEditorSelectionContext())

@@ -1,15 +1,10 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { getDefaultCommandsMap } from '.'
-import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
+import { EDIT_COMMAND } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
 const editorCommands: CodyCommand[] = [
-    {
-        description: ASK_QUESTION_COMMAND.description,
-        prompt: ASK_QUESTION_COMMAND.slashCommand,
-        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
-    },
     {
         description: EDIT_COMMAND.description,
         prompt: EDIT_COMMAND.slashCommand,
@@ -17,27 +12,25 @@ const editorCommands: CodyCommand[] = [
     },
 ]
 
-export class PromptsProvider {
-    // The default prompts
-    private defaultPromptsMap
+export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
 
-    // The commands grouped by default prompts and custom prompts
+export class PromptsProvider {
+    // The commands grouped by default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
+    private defaultCommands = vscodeDefaultCommands
 
     constructor() {
-        // Filter commands that has the experimental type
-        this.defaultPromptsMap = getDefaultCommandsMap(editorCommands)
-
-        // add the default prompts to the all commands map
-        this.groupCommands(this.defaultPromptsMap)
+        // add the default commands to the all commands map
+        this.groupCommands(this.defaultCommands)
     }
 
     /**
-     * Find a prompt by its id
+     * Find a command by its id
      */
     public get(id: string): CodyCommand | undefined {
         return this.allCommands.get(id)
     }
+
     /**
      * Return default and custom commands without the separator which is added for quick pick menu
      */
@@ -49,14 +42,14 @@ export class PromptsProvider {
     }
 
     /**
-     * Group the default prompts with the custom prompts and add a separator
+     * Group the default commands with the custom commands and add a separator
      */
     public groupCommands(
         customCommands = new Map<string, CodyCommand>(),
         includeExperimentalCommands = false
     ): void {
         // Filter commands that has the experimental type if not enabled
-        let defaultCommands = [...this.defaultPromptsMap]
+        let defaultCommands = [...this.defaultCommands]
         if (!includeExperimentalCommands) {
             defaultCommands = defaultCommands.filter(command => command[1]?.type !== 'experimental')
         }

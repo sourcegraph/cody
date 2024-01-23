@@ -4,7 +4,10 @@ import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getContextFileFromCursor } from '../context/get-cursor-context'
 import { getContextFilesForTests } from '../context/get-test-context'
 
-// An experimental command that generates a new test file for the selected code.
+/**
+ * The experimental command that generates a new test file for the selected code.
+ * When calls, the command will be executed as an inline-edit command.
+ */
 // TODO (bee) replace old test command with this one
 export async function executeNewTestCommand(): Promise<void> {
     const prompt =
