@@ -31,6 +31,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Removed `cody.experimental.chatPredictions`.
 - Codebase-wide context for custom commands has been disabled.
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
+- Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
 
 ## [1.1.3]
 
