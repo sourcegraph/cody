@@ -413,7 +413,7 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     <VSCodeButton
         className={classNames(styles.editButton, className)}
         appearance="icon"
-        title={disabled ? 'Cannot edit a command message' : 'Edit your message'}
+        title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
         type="button"
         disabled={disabled}
         onClick={() => setMessageBeingEdited(messageBeingEdited)}

@@ -188,6 +188,12 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .edit-button-disabled {
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+}
+
+.edit-button[disabled] {
+    opacity: 0.4;
+    cursor: pointer;
 }
 
 .suggestion-button {
