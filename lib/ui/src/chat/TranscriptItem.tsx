@@ -107,8 +107,15 @@ export const TranscriptItem: React.FunctionComponent<
             )}
         >
             {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
-            {showEditButton && EditButtonContainer && !isInEditingMode && (
-                <div className={styles.editingButtonContainer}>
+            {showEditButton && EditButtonContainer && (
+                <div
+                    className={classNames(
+                        styles.editingButtonContainer,
+                        isInEditingMode && styles.editingButtonContainerIsEditingMode
+                    )}
+                    tabIndex={isInEditingMode ? -1 : undefined}
+                    aria-hidden={isInEditingMode}
+                >
                     <header
                         className={classNames(
                             styles.transcriptItemHeader,
@@ -190,10 +197,7 @@ export const TranscriptItem: React.FunctionComponent<
                         {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
                         {/* Hide the feedback buttons during editing mode */}
                         <FeedbackButtonsContainer
-                            className={classNames(
-                                styles.FeedbackEditButtonsContainer,
-                                isInEditingMode && styles.hide
-                            )}
+                            className={styles.feedbackEditButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         />
                     </footer>

@@ -19,17 +19,17 @@
 /* Apply a slight tint to the assistant transcript item. */
 body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
-    background-color: rgba(0, 0, 0, 0.04);
     /* slight dark tint */
+    background-color: rgb(0 0 0 / 4%);
 }
 
 body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
-    background-color: rgba(255, 255, 255, 0.04);
     /* slight light tint */
+    background-color: rgb(255 255 255 / 4%);
 }
 
-.human-transcript-item:before {
+.human-transcript-item::before {
     background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
@@ -68,9 +68,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 
 .code-blocks-copy-button,
 .code-blocks-insert-button {
-    color: var(--vscode-foreground);
-    border-radius: 5px;
-    border-radius: 5px;
     background: var(--button-icon-background);
     border-radius: var(--button-icon-corner-radius);
     color: var(--foreground);
@@ -86,7 +83,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
     gap: 0.5rem;
-    padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+    padding: 0.75rem;
 }
 
 /* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
@@ -98,8 +95,10 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .chat-input-container::after {
     /* Note the weird space! Needed to preventy jumpy behavior */
     content: attr(data-value) ' ';
+
     /* This is how textarea text behaves */
     white-space: pre-wrap;
+
     /* Hidden from view, clicks, and screen readers */
     visibility: hidden;
 }
@@ -112,16 +111,18 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     color: var(--vscode-input-foreground);
     border: 1px solid transparent;
     border-radius: 2px;
+
     /* Extra right padding to ensure it doesn't overlap with enhanced context button */
     padding: 0.5rem 32px 0.5rem 0.5rem;
     font: inherit;
     width: 100%;
     overflow: hidden;
+
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
     max-height: 80vh; /* 80% of viewport height */
+
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
-
     resize: none;
 }
 
@@ -146,6 +147,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     position: absolute;
     bottom: 6px;
     left: 4px;
+
     /* This is a small detail, but we always want clicks to fall through the textarea if buttons are disabled */
     pointer-events: none;
 }
@@ -193,7 +195,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     cursor: pointer;
     font-size: 90%;
     padding: 3px 6px;
-    border-radius: 5px;
     background: var(--button-icon-background);
     border-radius: var(--button-icon-corner-radius);
     color: var(--foreground);
