@@ -8,6 +8,7 @@ import {
     type ChatEventSource,
     type CodyCommand,
     type Guardrails,
+    type ContextFile,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -113,16 +114,37 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    // Execute a chat request in a new chat panel
-    public async executeChat(question: string, args?: { source?: ChatEventSource }): Promise<void> {
+    /**
+     * Execute a chat request in a new chat panel
+     */
+    public async executeChat(
+        question: string,
+        args?: {
+            contextFiles?: ContextFile[]
+            addEnhancedContext?: boolean
+            source?: ChatEventSource
+        }
+    ): Promise<void> {
         const requestID = uuid.v4()
-        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, ...args })
+        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
+            requestID,
+            source: args?.source,
+        })
+
         const chatProvider = await this.getChatProvider()
-        await chatProvider.handleNewUserMessage(requestID, question, 'user-newchat', [], true)
+        await chatProvider.handleNewUserMessage(
+            requestID,
+            question,
+            'user-newchat',
+            args?.contextFiles ?? [],
+            args?.addEnhancedContext ?? true
+        )
     }
 
-    // Execute a command request in a new chat panel
-    public async executeCommand(
+    /**
+     * Execute a custom command in a new chat panel
+     */
+    public async executeCustomCommand(
         command: CodyCommand,
         args: CodyCommandArgs,
         enabled = true
@@ -187,7 +209,9 @@ export class ChatManager implements vscode.Disposable {
         })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
-        const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
+        const exportPath = await vscode.window.showSaveDialog({
+            filters: { 'Chat History': ['json'] },
+        })
         if (!exportPath || !historyJson) {
             return
         }

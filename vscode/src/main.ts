@@ -48,6 +48,11 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { executeExplainCommand } from './commands/default/explain'
+import { executeSmellCommand } from './commands/default/smell'
+import { executeDocCommand } from './commands/default/doc'
+import { executeTestCommand } from './commands/default/test'
+import { executeNewTestCommand } from './commands/default/test-file'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -213,7 +218,12 @@ const register = async (
     const ghostHintDecorator = new GhostHintDecorator()
     disposables.push(
         ghostHintDecorator,
-        new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
+        new EditManager({
+            chat: chatClient,
+            editor,
+            contextProvider,
+            ghostHintDecorator,
+        }),
         new CodeActionProvider({ contextProvider })
     )
 
@@ -294,8 +304,8 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
-    // Execute Cody Commands and Cody Custom Commands
-    const executeCommand = async (
+    // Execute a Cody Custom Command
+    const executeCustomCommand = async (
         commandKey: string,
         args?: Partial<CodyCommandArgs>
     ): Promise<ChatSession | undefined> => {
@@ -306,7 +316,7 @@ const register = async (
         }
 
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        return chatManager.executeCommand(command, commandArgs, configFeatures.commands)
+        return chatManager.executeCustomCommand(command, commandArgs, configFeatures.commands)
     }
 
     const statusBar = createStatusBar()
@@ -349,7 +359,18 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai chat',
             })
         ),
+
         // Cody Commands
+        vscode.commands.registerCommand('cody.command.explain-code', () => executeExplainCommand()),
+        vscode.commands.registerCommand('cody.command.smell-code', () => executeSmellCommand()),
+        vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand()),
+        vscode.commands.registerCommand('cody.command.generate-tests', () => executeTestCommand()),
+        vscode.commands.registerCommand('cody.command.unit-tests', () => executeNewTestCommand()),
+        vscode.commands.registerCommand('cody.action.commands.exec', (title, args) =>
+            executeCustomCommand(title, args)
+        ),
+
+        // Cody Commands - Menus
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await commandsController?.menu('default')
         }),
@@ -358,24 +379,6 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.settings.commands', () =>
             commandsController?.menu('config')
-        ),
-        vscode.commands.registerCommand('cody.action.commands.exec', async (title, args) =>
-            executeCommand(title, args)
-        ),
-        vscode.commands.registerCommand('cody.command.explain-code', async args =>
-            executeCommand('/explain', args)
-        ),
-        vscode.commands.registerCommand('cody.command.generate-tests', async args =>
-            executeCommand('/test', args)
-        ),
-        vscode.commands.registerCommand('cody.command.unit-tests', async args =>
-            executeCommand('/unit', args)
-        ),
-        vscode.commands.registerCommand('cody.command.document-code', async args =>
-            executeCommand('/doc', args)
-        ),
-        vscode.commands.registerCommand('cody.command.smell-code', async args =>
-            executeCommand('/smell', args)
         ),
 
         // Account links
@@ -419,7 +422,10 @@ const register = async (
                 } else {
                     const option = await vscode.window.showInformationMessage(
                         'Rate Limit Exceeded',
-                        { modal: true, detail: `${userMessage}\n\n${retryMessage}` },
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\n${retryMessage}`,
+                        },
                         'Learn More'
                     )
                     if (option) {
