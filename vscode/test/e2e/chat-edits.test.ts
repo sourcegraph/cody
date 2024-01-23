@@ -17,8 +17,8 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
 
     // Chat Action Buttons - above the input box
     const editLastMessageButton = chatFrame.getByRole('button', { name: /^Edit Last Message / })
-    const newChatButton = chatFrame.getByRole('button', { name: /^New Chat / })
-    const cancelEditButton = chatFrame.getByTitle('Cancel Edit')
+    const newChatButton = chatFrame.getByRole('button', { name: /^Start New Chat / })
+    const cancelEditButton = chatFrame.getByRole('button', { name: /^Cancel Edit / })
 
     // Chat Submit Buttons - on the left of the input box
     const updateMessageButton = chatFrame.getByTitle('Update Message')

@@ -89,7 +89,7 @@ export const ChatActions: React.FunctionComponent<{
                         onClick={action.onClick}
                     >
                         <span className={styles.chatActionButtonTitle}>
-                            {action.name}
+                            {action.name}{' '}
                             <span className={styles.chatActionKeybind}>{action.keybind}</span>
                         </span>
                     </button>
