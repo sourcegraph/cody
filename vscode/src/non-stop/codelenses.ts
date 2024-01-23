@@ -19,11 +19,13 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
         }
         case CodyTaskState.inserting: {
             const title = getInsertingLens(codeLensRange)
-            return [title]
+            const cancel = getCancelLens(codeLensRange, task.id)
+            return [title, cancel]
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
-            return [title]
+            const cancel = getCancelLens(codeLensRange, task.id)
+            return [title, cancel]
         }
         case CodyTaskState.formatting: {
             const title = getFormattingLens(codeLensRange)
@@ -130,8 +132,9 @@ function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.
 
 function getCancelLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = process.platform === 'win32' ? 'Alt+C' : '⌥Z'
     lens.command = {
-        title: 'Cancel',
+        title: `Cancel [${shortcut}]`,
         command: 'cody.fixup.codelens.cancel',
         arguments: [id],
     }
@@ -171,7 +174,7 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
 
 function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Alt+U' : '⌥U'
+    const shortcut = process.platform === 'win32' ? 'Alt+X' : '⌥X'
     lens.command = {
         title: `Undo [${shortcut}]`,
         command: 'cody.fixup.codelens.undo',
@@ -182,7 +185,7 @@ function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
 
 function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Ctrl+S' : '⌘S'
+    const shortcut = process.platform === 'win32' ? 'Alt+A' : '⌥⇧A'
     lens.command = {
         title: `Accept [${shortcut}]`,
         command: 'cody.fixup.codelens.accept',
@@ -190,3 +193,17 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     }
     return lens
 }
+
+/**
+ * The task states where there is a direct command that the users is likely to action.
+ * This is used to help enable/disable keyboard shortcuts depending on the states in the document
+ */
+export const ACTIONABLE_TASK_STATES = [
+    // User can Accept, Undo, Retry, etc
+    CodyTaskState.applied,
+    // User can Cancel
+    CodyTaskState.pending,
+    CodyTaskState.working,
+    CodyTaskState.inserting,
+    CodyTaskState.applying,
+]

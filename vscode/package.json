@@ -529,13 +529,23 @@
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {
+        "command": "cody.fixup.acceptNearest",
+        "key": "alt+a",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.fixup.retryNearest",
         "key": "alt+r",
         "when": "cody.activated && !editorReadonly"
       },
       {
         "command": "cody.fixup.undoNearest",
-        "key": "alt+u",
+        "key": "alt+x",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.fixup.cancelNearest",
+        "key": "alt+z",
         "when": "cody.activated && !editorReadonly"
       }
     ],

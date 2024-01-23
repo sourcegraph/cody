@@ -34,6 +34,7 @@ import type {
     FixupTextChanged,
 } from './roles'
 import { CodyTaskState } from './utils'
+import { ACTIONABLE_TASK_STATES } from './codelenses'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -116,23 +117,36 @@ export class FixupController
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
                 return this.skipFormatting(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.retryNearest', () => {
-                const nearestTask = this.getNearestTask()
+            vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
+                const nearestTask = this.getNearestTask({
+                    filter: {
+                        states: [CodyTaskState.pending, CodyTaskState.working, CodyTaskState.applying],
+                    },
+                })
                 if (!nearestTask) {
                     return
                 }
-
-                void vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
+                return vscode.commands.executeCommand('cody.fixup.codelens.cancel', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.acceptNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.accept', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.retryNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
             }),
             vscode.commands.registerCommand('cody.fixup.undoNearest', () => {
-                const nearestTask = this.getNearestTask()
+                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
                 if (!nearestTask) {
                     return
                 }
-
-                console.log('RUNNING UNO...s')
-
-                // TODO: Check why this does not work
                 return vscode.commands.executeCommand('cody.fixup.codelens.undo', nearestTask.id)
             })
         )
@@ -1089,6 +1103,16 @@ export class FixupController
             task.spinCount++
         }
 
+        /**
+         * Check if the new state is something
+         * Checks if there is an actionable edit task in the current visible text editor.
+         * Used to set a context for enabling commands.
+         */
+        const hasActionableEdit =
+            ACTIONABLE_TASK_STATES.includes(task.state) &&
+            vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
+
         if (task.state === CodyTaskState.finished) {
             this.discard(task)
             return
@@ -1109,7 +1133,7 @@ export class FixupController
         }
     }
 
-    private getNearestTask(): FixupTask | undefined {
+    private getNearestTask({ filter }: { filter: { states: CodyTaskState[] } }): FixupTask | undefined {
         const editor = vscode.window.activeTextEditor
         if (!editor) {
             return
@@ -1127,9 +1151,13 @@ export class FixupController
          * Sorts by distance between task selection range start line and current cursor line.
          */
         const closestTask = this.tasksForFile(fixupFile)
-            .filter(({ state }) => state === CodyTaskState.applied)
+            .filter(({ state }) => filter.states.includes(state))
             .sort((a, b) => {
-                return position.line - a.selectionRange.start.line - (position.line - b.selectionRange.start.line)
+                return (
+                    position.line -
+                    a.selectionRange.start.line -
+                    (position.line - b.selectionRange.start.line)
+                )
             })[0]
 
         return closestTask
