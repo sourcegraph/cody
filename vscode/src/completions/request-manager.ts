@@ -19,6 +19,7 @@ import {
 } from './text-processing/process-inline-completions'
 import type { ContextSnippet } from './types'
 import { lines, removeIndentation } from './text-processing'
+import { logDebug } from '../log'
 
 export interface RequestParams {
     /** The request's document */
@@ -100,6 +101,7 @@ export class RequestManager {
                         'autocomplete.shared-post-process',
                         () => processInlineCompletions(completions, requestParams)
                     )
+                    request.lastCompletions = processedCompletions
 
                     // Cache even if the request was aborted or already fulfilled.
                     this.cache.set(requestParams, {
@@ -118,6 +120,11 @@ export class RequestManager {
 
                     // Save hot streak completions for later use.
                     for (const result of hotStreakCompletions) {
+                        request.lastRequestParams = {
+                            ...request.lastRequestParams,
+                            docContext: result.docContext,
+                        }
+                        request.lastCompletions = [result.completion]
                         this.cache.set(
                             { docContext: result.docContext },
                             {
@@ -133,6 +140,8 @@ export class RequestManager {
                 this.inflightRequests.delete(request)
             }
         }
+
+        this.cancelIrrelevantRequests(params)
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
@@ -193,12 +202,32 @@ export class RequestManager {
             }
         }
     }
+
+    private cancelIrrelevantRequests(params: RequestsManagerParams): void {
+        const currentRequest = params.requestParams
+        for (const request of this.inflightRequests) {
+            if (
+                !computeIfRequestStillRelevant(
+                    currentRequest,
+                    request.lastRequestParams,
+                    request.lastCompletions
+                )
+            ) {
+                logDebug('CodyCompletionProvider', 'Request aborted')
+                request.abortController.abort()
+                this.inflightRequests.delete(request)
+            }
+        }
+    }
 }
 
 class InflightRequest {
     public promise: Promise<RequestManagerResult>
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
+
+    public lastCompletions: InlineCompletionItemWithAnalytics[] | null = null
+    public lastRequestParams: RequestParams
 
     constructor(
         public params: RequestParams,
@@ -208,6 +237,8 @@ class InflightRequest {
         // make TS happy
         this.resolve = () => {}
         this.reject = () => {}
+
+        this.lastRequestParams = params
 
         this.promise = new Promise<RequestManagerResult>((res, rej) => {
             this.resolve = res
@@ -246,13 +277,13 @@ class RequestCache {
 //
 // We define a completion suggestion as still relevant if the prefix still overlap with the new new
 // completion while allowing for some slight changes to account for prefixes.
-export function computeStillRelevantCompletions(
+export function computeIfRequestStillRelevant(
     currentRequest: Pick<RequestParams, 'docContext'> & { document: { uri: vscode.Uri } },
     previousRequest: Pick<RequestParams, 'docContext'> & { document: { uri: vscode.Uri } },
-    completions: InlineCompletionItemWithAnalytics[]
-): InlineCompletionItemWithAnalytics[] {
+    completions: InlineCompletionItemWithAnalytics[] | null
+): boolean {
     if (currentRequest.document.uri.toString() !== previousRequest.document.uri.toString()) {
-        return []
+        return false
     }
 
     const currentPrefixStartLine =
@@ -267,7 +298,7 @@ export function computeStillRelevantCompletions(
     const previousPrefixDiff = sharedStartLine - previousPrefixStartLine
     if (currentPrefixDiff < 0 || previousPrefixDiff < 0) {
         // There is no overlap in prefixes, the completions are not relevant
-        return []
+        return false
     }
     const currentPrefix = currentRequest.docContext.prefix
         .split('\n')
@@ -281,12 +312,11 @@ export function computeStillRelevantCompletions(
 
     // Require some overlap in the prefixes
     if (currentPrefix === '' || previousPrefix === '') {
-        return []
+        return false
     }
 
     const current = removeIndentation(currentPrefix)
-    const relevantCompletions: InlineCompletionItemWithAnalytics[] = []
-    for (const completion of completions) {
+    for (const completion of completions ?? [{ insertText: '' }]) {
         const inserted = removeIndentation(previousPrefix + completion.insertText)
 
         const isFullContinuation = inserted.startsWith(current)
@@ -297,11 +327,13 @@ export function computeStillRelevantCompletions(
         const [currentLines, currentLastLine] = splitLastLine(current)
         const isTypo =
             insertedLines === currentLines && insertedLastLine.startsWith(currentLastLine.slice(0, -3))
+        console.log({ isFullContinuation, isTypo, inserted, current })
         if (isFullContinuation || isTypo) {
-            relevantCompletions.push(completion)
+            return true
         }
     }
-    return relevantCompletions
+
+    return false
 }
 
 function splitLastLine(text: string): [string, string] {
