@@ -66,6 +66,12 @@ export const ChatActions: React.FunctionComponent<{
             setInputFocus(false)
             buttonRef?.current?.focus()
         }
+        // Remove focus on the Edit button when stream ends
+        if (!isEditing && !isMessageInProgress) {
+            buttonRef?.current?.blur()
+            setInputFocus(true)
+            return
+        }
         // remove the focus when ESC key is pressed
         buttonRef?.current?.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
