@@ -157,16 +157,22 @@ class CodyEditorFactoryListener : EditorFactoryListener {
     }
 
     // Sends a textDocument/didChange notification to the agent server.
-    fun informAgentAboutEditorChange(editor: Editor, hasFileChanged: Boolean = false) {
+    fun informAgentAboutEditorChange(
+        editor: Editor,
+        hasFileChanged: Boolean = false,
+        afterUpdate: () -> Unit = {}
+    ) {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
       val document = TextDocument.fromPath(file.path, editor.document.text, getSelection(editor))
       val project = editor.project!!
-      CodyAgentService.applyAgentOnBackgroundThread(project) {
-        it.server.textDocumentDidChange(document)
-      }
 
       if (hasFileChanged) {
         CodyAgentCodebase.getInstance(project).onFileOpened(project, file)
+      }
+
+      CodyAgentService.applyAgentOnBackgroundThread(project) {
+        it.server.textDocumentDidOpen(document)
+        afterUpdate()
       }
     }
   }

@@ -13,6 +13,7 @@ import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
@@ -26,7 +27,7 @@ class Chat {
   fun sendMessageViaAgent(
       project: Project,
       humanMessage: ChatMessage,
-      recipeId: String,
+      commandId: CommandId?,
       chat: UpdatableChat,
       token: CancellationToken
   ) {
@@ -49,67 +50,64 @@ class Chat {
           chat.updateLastMessage(chatMessage)
         }
       }
-      if (recipeId == "chat-question") {
-        try {
-          val reply =
-              agent.server.chatSubmitMessage(
-                  ChatSubmitMessageParams(
-                      chat.id!!,
-                      WebviewMessage(
-                          command = "submit",
-                          text = humanMessage.actualMessage(),
-                          submitType = "user",
-                          addEnhancedContext = true,
-                          // TODO(#242): allow to manually add files to the context via `@`
-                          contextFiles = listOf())))
-          token.onCancellationRequested { reply.cancel(true) }
-          reply.handle { lastReply, error ->
-            if (error != null) {
-              logger.warn("Error while sending the message", error)
 
-              if (error.message?.startsWith("No panel with ID") == true) {
-                chat.loadNewChatId {
-                  sendMessageViaAgent(project, humanMessage, recipeId, chat, token)
-                }
-              } else {
-                handleError(project, error, chat)
-              }
-            } else {
-              val err = lastReply.messages?.lastOrNull()?.error
-              if (lastReply.type == ExtensionMessage.Type.TRANSCRIPT && err != null) {
-                val rateLimitError = err.toRateLimitError()
-                if (rateLimitError != null) {
-                  handleRateLimitError(project, chat, rateLimitError)
-                }
-              } else {
-                RateLimitStateManager.invalidateForChat(project)
-              }
+      if (commandId != null) {
+        chat.id =
+            when (commandId) {
+              CommandId.Explain -> agent.server.commandsExplain().get()
+              CommandId.Smell -> agent.server.commandsSmell().get()
+              CommandId.Test -> agent.server.commandsTest().get()
+              else -> chat.id
             }
-          }
-        } catch (ignored: Exception) {
-          // Ignore bugs in the agent when executing recipes
-          logger.warn("Ignored error executing recipe: $ignored")
-        }
       } else {
-        // TODO: migrate recipes to new webview-based API and then delete this else condition.
-        try {
-          val recipesExecuteFuture =
-              agent.server.recipesExecute(
-                  ExecuteRecipeParams(recipeId, humanMessage.actualMessage()))
-          token.onCancellationRequested { recipesExecuteFuture.cancel(true) }
-          recipesExecuteFuture.handle { _, error ->
-            if (error != null) {
-              handleError(project, error, chat)
-              null
-            } else {
-              RateLimitStateManager.invalidateForChat(project)
-            }
-          }
-        } catch (ignored: Exception) {
-          // Ignore bugs in the agent when executing recipes
-          logger.warn("Ignored error executing recipe: $ignored")
+        handleReply(project, chat, token) {
+          agent.server.chatSubmitMessage(
+              ChatSubmitMessageParams(
+                  chat.id!!,
+                  WebviewMessage(
+                      command = "submit",
+                      text = humanMessage.actualMessage(),
+                      submitType = "user",
+                      addEnhancedContext = true,
+                      // TODO(#242): allow to manually add files to the context via `@`
+                      contextFiles = listOf())))
         }
       }
+    }
+  }
+
+  fun handleReply(
+      project: Project,
+      chat: UpdatableChat,
+      token: CancellationToken,
+      requestFun: () -> CompletableFuture<ExtensionMessage>
+  ) {
+    try {
+      val request = requestFun()
+      token.onCancellationRequested { request.cancel(true) }
+      request.handle { lastReply, error ->
+        if (error != null) {
+          if (error.message?.startsWith("No panel with ID") == true) {
+            chat.loadNewChatId { handleReply(project, chat, token, requestFun) }
+          } else {
+            logger.warn("Error while sending the message", error)
+            handleError(project, error, chat)
+          }
+        } else {
+          val err = lastReply.messages?.lastOrNull()?.error
+          if (lastReply.type == ExtensionMessage.Type.TRANSCRIPT && err != null) {
+            val rateLimitError = err.toRateLimitError()
+            if (rateLimitError != null) {
+              handleRateLimitError(project, chat, rateLimitError)
+            }
+          } else {
+            RateLimitStateManager.invalidateForChat(project)
+          }
+        }
+      }
+    } catch (ignored: Exception) {
+      // Ignore bugs in the agent when executing recipes
+      logger.warn("Ignored error executing recipe: $ignored")
     }
   }
 

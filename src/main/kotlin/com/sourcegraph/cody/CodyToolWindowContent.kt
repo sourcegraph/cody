@@ -1,30 +1,23 @@
 package com.sourcegraph.cody
 
 import com.intellij.icons.AllIcons
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.ui.JBUI
 import com.intellij.xml.util.XmlStringUtil
 import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.*
-import com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ContextMessage
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.*
+import com.sourcegraph.cody.commands.ui.CommandsTabPanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -37,9 +30,10 @@ import java.awt.*
 import java.awt.event.ActionEvent
 import java.util.*
 import java.util.concurrent.ExecutionException
-import java.util.stream.Collectors
-import javax.swing.*
-import javax.swing.plaf.ButtonUI
+import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JPanel
 
 @Service(Service.Level.PROJECT)
 class CodyToolWindowContent(private val project: Project) : UpdatableChat {
@@ -53,7 +47,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private var inProgressChat = CancellationToken()
   private val stopGeneratingButton =
       JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend))
-  private val recipesPanel: JBPanelWithEmptyText
+  private val commandsPanel: CommandsTabPanel =
+      CommandsTabPanel(project) { cmdId: CommandId -> sendMessage(project, message = null, cmdId) }
   val embeddingStatusView: EmbeddingStatusView
   override var isChatVisible = false
   override var id: String? = null
@@ -69,12 +64,11 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         /* component = */ contentPanel,
         /* tip = */ null,
         CHAT_TAB_INDEX)
-    recipesPanel = JBPanelWithEmptyText(GridLayout(0, 1))
-    recipesPanel.layout = BoxLayout(recipesPanel, BoxLayout.Y_AXIS)
+
     tabbedPane.insertTab(
         /* title = */ "Commands",
         /* icon = */ null,
-        /* component = */ recipesPanel,
+        /* component = */ commandsPanel,
         /* tip = */ null,
         RECIPES_TAB_INDEX)
     subscriptionPanel = SubscriptionTabPanel()
@@ -93,16 +87,15 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
     stopGeneratingButtonPanel.preferredSize =
         Dimension(Short.MAX_VALUE.toInt(), stopGeneratingButton.getPreferredSize().height + 10)
+
     stopGeneratingButton.addActionListener {
       inProgressChat.abort()
       stopGeneratingButton.isVisible = false
       sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
       ensureBlinkingCursorIsNotDisplayed()
-      recipesPanel.components.filterIsInstance<JButton>().forEach {
-        it.isEnabled = true
-        it.toolTipText = null
-      }
+      commandsPanel.enableAllButtons()
     }
+
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
     stopGeneratingButtonPanel.isOpaque = false
@@ -123,9 +116,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     refreshPanelsVisibility()
 
     addWelcomeMessage()
-
-    // Initiate filling recipes panel in the background
-    refreshRecipes()
 
     ApplicationManager.getApplication().executeOnPooledThread {
       refreshSubscriptionTab()
@@ -198,110 +188,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         .get()
   }
 
-  private fun refreshRecipes() {
-    ApplicationManager.getApplication().invokeLater {
-      recipesPanel.removeAll()
-      recipesPanel.emptyText.text = "Loading commands..."
-      recipesPanel.revalidate()
-      recipesPanel.repaint()
-    }
-    loadCommands()
-  }
-
-  private fun loadCommands() {
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-      try {
-        agent.server.recipesList().thenAccept { recipes: List<RecipeInfo> ->
-          ApplicationManager.getApplication().invokeLater {
-            updateUIWithRecipeList(recipes)
-          } // Update on EDT
-        }
-      } catch (e: Exception) {
-        logger.warn("Error fetching commands from agent", e)
-        // Update on EDT
-        ApplicationManager.getApplication().invokeLater { setRecipesPanelError() }
-      }
-    }
-  }
-
-  @RequiresEdt
-  private fun setRecipesPanelError() {
-    val emptyText = recipesPanel.emptyText
-    emptyText.clear()
-    emptyText.appendLine("Error fetching commands. Check your connection.")
-    emptyText.appendLine("If the problem persists, please contact support.")
-    emptyText.appendLine(
-        "Retry",
-        SimpleTextAttributes(
-            SimpleTextAttributes.STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED)) {
-          refreshRecipes()
-        }
-  }
-
-  @RequiresEdt
-  private fun updateUIWithRecipeList(recipes: List<RecipeInfo>) {
-    // we don't want to display recipes with ID "chat-question" and "code-question"
-    val excludedRecipeIds: List<String?> =
-        listOf("chat-question", "code-question", "translate-to-language")
-    val recipesToDisplay =
-        recipes
-            .stream()
-            .filter { recipe: RecipeInfo -> !excludedRecipeIds.contains(recipe.id) }
-            .collect(Collectors.toList())
-    fillRecipesPanel(recipesToDisplay)
-    fillContextMenu(recipesToDisplay)
-  }
-
-  @RequiresEdt
-  private fun fillRecipesPanel(recipes: List<RecipeInfo>) {
-    recipesPanel.removeAll()
-
-    // Loop on recipes and add a button for each item
-    for (recipe in recipes) {
-      val recipeButton = createRecipeButton(recipe.title)
-      recipeButton.addActionListener {
-        ApplicationManager.getApplication().executeOnPooledThread {
-          GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
-        }
-        val selectedEditor = FileEditorManager.getInstance(project).selectedTextEditor
-        if (selectedEditor != null) {
-          CodyEditorFactoryListener.Util.informAgentAboutEditorChange(selectedEditor)
-        }
-
-        sendMessage(project, recipe.title, recipe.id)
-      }
-      recipesPanel.add(recipeButton)
-    }
-  }
-
-  private fun fillContextMenu(recipes: List<RecipeInfo>) {
-    val actionManager = ActionManager.getInstance()
-    val group = actionManager.getAction("CodyEditorActions") as DefaultActionGroup
-
-    // Loop on recipes and create an action for each new item
-    for (recipe in recipes) {
-      val actionId = "cody.recipe." + recipe.id
-      val existingAction = actionManager.getAction(actionId)
-      if (existingAction != null) {
-        continue
-      }
-      val action: DumbAwareAction =
-          object : DumbAwareAction(recipe.title) {
-            override fun actionPerformed(e: AnActionEvent) {
-              GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
-              val editorManager = FileEditorManager.getInstance(project)
-              editorManager.selectedTextEditor?.let {
-                CodyEditorFactoryListener.Util.informAgentAboutEditorChange(it)
-              }
-
-              sendMessage(project, recipe.title, recipe.id)
-            }
-          }
-      actionManager.registerAction(actionId, action)
-      group.addAction(action)
-    }
-  }
-
   @RequiresEdt
   override fun refreshPanelsVisibility() {
     val codyAuthenticationManager = CodyAuthenticationManager.instance
@@ -317,7 +203,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       newCodyOnboardingGuidancePanel.addMainButtonActionListener {
         CodyApplicationSettings.instance.isOnboardingGuidanceDismissed = true
         refreshPanelsVisibility()
-        refreshRecipes()
       }
       if (displayName != null) {
         if (codyOnboardingGuidancePanel?.originalDisplayName?.let { it != displayName } == true)
@@ -335,15 +220,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     }
     allContentLayout.show(allContentPanel, "tabbedPane")
     isChatVisible = true
-  }
-
-  private fun createRecipeButton(text: String): JButton {
-    val button = JButton(text)
-    button.alignmentX = Component.CENTER_ALIGNMENT
-    button.maximumSize = Dimension(Int.MAX_VALUE, button.getPreferredSize().height)
-    val buttonUI = DarculaButtonUI.createUI(button) as ButtonUI
-    button.setUI(buttonUI)
-    return button
   }
 
   private fun addWelcomeMessage() {
@@ -414,10 +290,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().invokeLater {
       stopGeneratingButton.isVisible = true
       sendButton.isEnabled = false
-      recipesPanel.components.filterIsInstance<JButton>().forEach {
-        it.isEnabled = false
-        it.toolTipText = "Message generation in progress..."
-      }
+      commandsPanel.disableAllButtons()
     }
   }
 
@@ -426,10 +299,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       ensureBlinkingCursorIsNotDisplayed()
       stopGeneratingButton.isVisible = false
       sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
-      recipesPanel.components.filterIsInstance<JButton>().forEach {
-        it.isEnabled = true
-        it.toolTipText = null
-      }
+      commandsPanel.enableAllButtons()
     }
   }
 
@@ -459,12 +329,12 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private fun sendChatMessage() {
     val text = promptPanel.textArea.text
     chatMessageHistory.messageSent(text)
-    sendMessage(project, text, "chat-question")
+    sendMessage(project, text, commandId = null)
     promptPanel.reset()
   }
 
   @RequiresEdt
-  private fun sendMessage(project: Project, message: String, recipeId: String) {
+  private fun sendMessage(project: Project, message: String?, commandId: CommandId?) {
     startMessageProcessing()
     val displayText = XmlStringUtil.escapeString(message)
     val humanMessage = ChatMessage(Speaker.HUMAN, message, displayText)
@@ -477,7 +347,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().executeOnPooledThread {
       val chat = Chat()
       try {
-        chat.sendMessageViaAgent(project, humanMessage, recipeId, this, inProgressChat)
+        chat.sendMessageViaAgent(project, humanMessage, commandId, this, inProgressChat)
       } catch (e: Exception) {
         logger.error("Error sending message '$humanMessage' to chat", e)
         addMessageToChat(
@@ -489,7 +359,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         finishMessageProcessing()
       }
     }
-    GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed")
+    GraphQlLogger.logCodyEvent(this.project, "command:chat-question", "executed")
   }
 
   override fun displayUsedContext(contextMessages: List<ContextMessage>) {
