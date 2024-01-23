@@ -44,7 +44,7 @@ export const ChatActions: React.FunctionComponent<{
             when: !isEditing,
         },
         {
-            name: 'New Chat',
+            name: 'Start New Chat',
             keybind: `${osIcon}/`,
             onClick: onChatResetClick,
             focus: false,
