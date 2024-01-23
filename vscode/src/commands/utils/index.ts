@@ -1,6 +1,6 @@
-import { type QuickPickItem } from 'vscode'
+import type { QuickPickItem } from 'vscode'
 
-import { type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import type { CustomCommandType } from '@sourcegraph/cody-shared'
 
 type CustomCommandMenuAction = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'docs' | 'back'
 

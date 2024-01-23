@@ -2,10 +2,10 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { type DocumentContext } from './get-current-doc-context'
-import { type CompletionItemID, type CompletionLogID } from './logger'
-import { type RequestParams } from './request-manager'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { DocumentContext } from './get-current-doc-context'
+import type { CompletionItemID, CompletionLogID } from './logger'
+import type { RequestParams } from './request-manager'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 interface AutocompleteItemParams {
     insertText: string | vscode.SnippetString
@@ -78,8 +78,12 @@ class SuggestedAutocompleteItemsCache {
         max: 60,
     })
 
-    public get<T extends object>(completionOrItemId: CompletionItemID | T): AutocompleteItem | T | undefined {
-        return typeof completionOrItemId === 'string' ? this.cache.get(completionOrItemId) : completionOrItemId
+    public get<T extends object>(
+        completionOrItemId: CompletionItemID | T
+    ): AutocompleteItem | T | undefined {
+        return typeof completionOrItemId === 'string'
+            ? this.cache.get(completionOrItemId)
+            : completionOrItemId
     }
 
     public add(item: AutocompleteItem): void {
@@ -103,27 +107,16 @@ export function analyticsItemToAutocompleteItem(
 ): AutocompleteItem[] {
     return items.map(item => {
         const { insertText, range } = item
-
         const currentLine = document.lineAt(position)
-        const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
 
-        // Return the completion from the start of the current line (instead of starting at the
-        // given position). This avoids UI jitter in VS Code; when typing or deleting individual
-        // characters, VS Code reuses the existing completion while it waits for the new one to
-        // come in.
-        const start = currentLine.range.start
+        const start = range?.start || position
 
         // If the completion does not have a range set it will always exclude the same line suffix,
         // so it has to overwrite the current same line suffix and reach to the end of the line.
         const end = range?.end || currentLine.range.end
 
         const vscodeInsertRange = new vscode.Range(start, end)
-        const trackedRange = new vscode.Range(
-            currentLine.range.start.line,
-            currentLinePrefix.length,
-            end.line,
-            end.character
-        )
+        const trackedRange = new vscode.Range(start.line, start.character, end.line, end.character)
 
         const command = {
             title: 'Completion accepted',
@@ -144,7 +137,7 @@ export function analyticsItemToAutocompleteItem(
         } satisfies RequestParams
 
         const autocompleteItem = new AutocompleteItem({
-            insertText: currentLinePrefix + insertText,
+            insertText,
             logId,
             range: vscodeInsertRange,
             trackedRange,
@@ -156,5 +149,36 @@ export function analyticsItemToAutocompleteItem(
         command.arguments[0].codyCompletion = autocompleteItem
 
         return autocompleteItem
+    })
+}
+
+/**
+ * Adjust the completion insert text and range to start from beginning of the current line
+ * (instead of starting at the given position). This avoids UI jitter in VS Code; when
+ * typing or deleting individual characters, VS Code reuses the existing completion
+ * while it waits for the new one to come in.
+ */
+export function updateInsertRangeForVSCode(items: AutocompleteItem[]): AutocompleteItem[] {
+    return items.map(item => {
+        const {
+            insertText,
+            range,
+            requestParams: { position, document },
+        } = item
+
+        const currentLine = document.lineAt(position)
+        const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+
+        const start = currentLine.range.start
+        // If the completion does not have a range set it will always exclude the same line suffix,
+        // so it has to overwrite the current same line suffix and reach to the end of the line.
+        const end = range?.end || currentLine.range.end
+
+        const vscodeInsertRange = new vscode.Range(start, end)
+
+        item.range = vscodeInsertRange
+        item.insertText = currentLinePrefix + (insertText as string)
+
+        return item
     })
 }

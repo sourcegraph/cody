@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
@@ -29,7 +29,7 @@ const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
 
-type StatusBarErrorName = 'auth' | 'RateLimitError'
+type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -48,17 +48,19 @@ export function createStatusBar(): CodyStatusBar {
             detail: string,
             setting: string,
             getValue: (config: Configuration) => boolean,
-            requiresReload: boolean = false
+            requiresReload = false
         ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
             const isEnabled = getValue(config)
             return {
-                label: (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) + name,
+                label:
+                    (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) +
+                    name,
                 description,
                 detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
                 onSelect: async () => {
                     await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
 
-                    const info = name + ' ' + (isEnabled ? 'disabled' : 'enabled') + '.'
+                    const info = `${name} ${isEnabled ? 'disabled' : 'enabled'}.`
                     const response = await (requiresReload
                         ? vscode.window.showInformationMessage(info, 'Reload Window')
                         : vscode.window.showInformationMessage(info))

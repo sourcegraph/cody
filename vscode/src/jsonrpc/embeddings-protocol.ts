@@ -80,8 +80,6 @@ interface IndexResult {
 interface LoadResult {
     repoName: string
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {
     'embeddings/echo': [string, string]
     // Instruct local embeddings to index the specified repository path.
@@ -89,15 +87,15 @@ export type Requests = {
     // Get statistics for the index for a given repository name.
     'embeddings/index-health': [IndexHealthRequest, IndexHealthResult]
     // Initializes the local embeddings service. You must call this first.
-    'embeddings/initialize': [InitializeParams, {}]
+    'embeddings/initialize': [InitializeParams, Record<string, never>]
     // Searches for and loads an index for the specified repository name.
     'embeddings/load': [string, LoadResult]
     // Queries loaded index.
     'embeddings/query': [QueryParams, QueryResultSet]
     // Sets the Sourcegraph access token.
-    'embeddings/set-token': [string, {}]
+    'embeddings/set-token': [string, Record<string, never>]
     // Shuts down the local embeddings service.
-    'embeddings/shutdown': [{}, {}]
+    'embeddings/shutdown': [Record<string, never>, Record<string, never>]
 }
 
 type ProgressValue = Progress | ProgressError | ProgressDone
@@ -121,8 +119,6 @@ interface ProgressError {
     repoName: string
     message: string
 }
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Notifications = {
     'embeddings/progress': [ProgressValue]
 }

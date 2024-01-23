@@ -1,4 +1,4 @@
-import { type EXPIRY_STRATEGY, type MODE, type Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
@@ -113,11 +113,10 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 recordIfMissing: options.recordIfMissing,
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
-            // Automatically pass through requests to download bfg binaries
-            // because we don't want to record the binary downloads for
-            // macOS/Windows/Linux
-            polly.server.get('https://github.com/sourcegraph/bfg/*path').passthrough()
-            polly.server.get('https://github.com/sourcegraph/symf/*path').passthrough()
+            // Automatically pass through requests to GitHub because we
+            // don't want to record huge binary downloads.
+            polly.server.get('https://github.com/*path').passthrough()
+            polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)

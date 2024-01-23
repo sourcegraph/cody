@@ -1,28 +1,37 @@
-import type { OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
+import type * as vscode from 'vscode'
+
+import {
+    createOllamaClient,
+    displayPath,
+    type OllamaGenerateParams,
+    type OllamaOptions,
+} from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import type { DocumentContext } from '../get-current-doc-context'
-import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import type { ContextSnippet } from '../types'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { fetchAndProcessCompletions } from './fetch-and-process-completions'
-import { generateCompletions } from './generate-completions'
-import { createOllamaClient, type OllamaClientParams } from './ollama-client'
-import { Provider, type CompletionProviderTracer, type ProviderConfig, type ProviderOptions } from './provider'
+import { fetchAndProcessCompletions, type FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    Provider,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
+} from './provider'
 
 interface LlamaCodePrompt {
-    snippets: { fileName: string; content: string }[]
+    snippets: { uri: vscode.Uri; content: string }[]
 
-    fileName: string
+    uri: vscode.Uri
     prefix: string
     suffix: string
 
     languageId: string
 }
 
-function fileNameLine(fileName: string, commentStart: string): string {
-    return `${commentStart} Path: ${fileName}\n`
+function fileNameLine(uri: vscode.Uri, commentStart: string): string {
+    return `${commentStart} Path: ${displayPath(uri)}\n`
 }
 
 function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: string): string {
@@ -31,8 +40,8 @@ function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: 
 
     const context = prompt.snippets
         .map(
-            ({ fileName, content }) =>
-                fileNameLine(fileName, commentStart) +
+            ({ uri, content }) =>
+                fileNameLine(uri, commentStart) +
                 content
                     .split('\n')
                     .map(line => `${commentStart} ${line}`)
@@ -40,7 +49,7 @@ function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: 
         )
         .join('\n\n')
 
-    const currentFileNameComment = fileNameLine(prompt.fileName, commentStart)
+    const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
 
     if (model.startsWith('codellama:') && infill) {
         const infillPrefix = context + currentFileNameComment + prompt.prefix
@@ -79,7 +88,7 @@ class UnstableOllamaProvider extends Provider {
     protected createPrompt(snippets: ContextSnippet[], infill: boolean): LlamaCodePrompt {
         const prompt: LlamaCodePrompt = {
             snippets: [],
-            fileName: this.options.document.uri.fsPath,
+            uri: this.options.document.uri,
             prefix: this.options.docContext.prefix,
             suffix: this.options.docContext.suffix,
             languageId: this.options.document.languageId,
@@ -108,22 +117,21 @@ class UnstableOllamaProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
+    ): AsyncGenerator<FetchCompletionResult[]> {
         // Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
+        let timeoutMs = 5_0000
 
         const requestParams = {
-            timeoutMs: 5_0000,
-            prompt: llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill, this.ollamaOptions.model),
+            prompt: llamaCodePromptString(
+                this.createPrompt(snippets, useInfill),
+                useInfill,
+                this.ollamaOptions.model
+            ),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
             options: {
@@ -133,10 +141,10 @@ class UnstableOllamaProvider extends Provider {
                 top_p: -1,
                 num_predict: 30,
             },
-        } satisfies OllamaClientParams
+        } satisfies OllamaGenerateParams
 
         if (this.options.multiline) {
-            requestParams.timeoutMs = 15_0000
+            timeoutMs = 15_0000
 
             Object.assign(requestParams.options, {
                 num_predict: 256,
@@ -152,18 +160,24 @@ class UnstableOllamaProvider extends Provider {
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
 
-        await generateCompletions({
-            // TODO(valery): remove `any` casts
-            client: ollamaClient as any,
-            requestParams: requestParams as any,
-            abortSignal,
-            providerSpecificPostProcess: insertText => insertText.trim(),
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl: fetchAndProcessCompletions,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                ollamaClient.complete(requestParams, abortController),
+                timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletions({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: insertText => insertText.trim(),
+                providerOptions: this.options,
+            })
         })
+
+        return zipGenerators(completionsGenerators)
     }
 }
 

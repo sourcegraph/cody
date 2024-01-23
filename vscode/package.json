@@ -35,7 +35,8 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
   "categories": [
     "Programming Languages",
@@ -94,6 +95,7 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": [
+    "onLanguage",
     "onStartupFinished",
     "onWebviewPanel:cody.chatPanel"
   ],
@@ -290,6 +292,13 @@
         "when": "cody.activated && editorTextFocus"
       },
       {
+        "command": "cody.command.unit-tests",
+        "category": "Cody Command",
+        "title": "Generate Unit Tests in File - Experimental",
+        "icon": "$(package)",
+        "when": "cody.activated && config.cody.internal.unstable && editorTextFocus"
+      },
+      {
         "command": "cody.command.document-code",
         "category": "Cody Command",
         "title": "Document Code",
@@ -396,7 +405,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "New Chat",
+        "title": "New Chat Panel",
         "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -457,9 +466,9 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.restart",
+        "command": "cody.chat.panel.reset",
         "category": "Cody",
-        "title": "Restart Chat Session...",
+        "title": "New Chat Session",
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory"
@@ -487,10 +496,22 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.chat.panel.new",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "cody.activated && config.cody.internal.unstable"
+      },
+      {
         "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.edit-code",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.action.commands.menu",
@@ -547,6 +568,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated && config.cody.internal.unstable && editorIsOpen"
+        },
+        {
           "command": "cody.command.document-code",
           "when": "cody.activated && editorIsOpen"
         },
@@ -601,6 +626,11 @@
         {
           "command": "cody.command.generate-tests",
           "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated && config.cody.internal.unstable",
           "group": "command"
         },
         {
@@ -677,7 +707,7 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.restart",
+          "command": "cody.chat.panel.reset",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@0",
           "visibility": "visible"
@@ -776,12 +806,6 @@
           "type": "boolean",
           "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
           "default": true
-        },
-        "cody.experimental.chatPredictions": {
-          "order": 8,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.commandCodeLenses": {
           "order": 8,
@@ -935,7 +959,6 @@
           "default": null,
           "enum": [
             null,
-            "lsp-light",
             "bfg",
             "bfg-mixed"
           ],
@@ -1053,6 +1076,7 @@
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
+    "@types/blueimp-md5": "^2.18.2",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
@@ -1068,12 +1092,14 @@
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/yaml": "^1.9.7",
-    "@vscode/test-electron": "^2.3.2",
+    "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
+    "blueimp-md5": "^2.19.0",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
     "express": "^4.18.2",
+    "fast-json-stable-stringify": "^2.1.0",
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",

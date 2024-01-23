@@ -4,13 +4,14 @@ import * as path from 'path'
 import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
-import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type ContextFileSource, type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import {
-    type ContextResult,
-    type FilenameContextFetcher as IFilenameContextFetcher,
-} from '@sourcegraph/cody-shared/src/local-context'
+import type {
+    ChatClient,
+    ContextFileSource,
+    ContextFileType,
+    ContextResult,
+    Editor,
+    FilenameContextFetcher as IFilenameContextFetcher,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -92,43 +93,55 @@ export class FilenameContextFetcher implements IFilenameContextFetcher {
                 queryToFileFragments: { duration: time2 - time1, fragments: filenameFragments },
                 getFilenames: { duration: time3 - time2 },
             }),
-            { verbose: { matchingFiles: unsortedMatchingFiles, results: results.map(r => r.fileName) } }
+            {
+                verbose: {
+                    matchingFiles: unsortedMatchingFiles,
+                    results: results.map(r => r.fileName),
+                },
+            }
         )
 
         return results
     }
 
     private async queryToFileFragments(query: string): Promise<string[]> {
-        const filenameFragments = await new Promise<string[]>((resolve, reject) => {
-            let responseText = ''
-            this.chatClient.chat(
-                [
-                    {
-                        speaker: 'human',
-                        text: `Write 3 filename fragments that would be contained by files in a git repository that are relevant to answering the following user query: <query>${query}</query> Your response should be only a space-delimited list of filename fragments and nothing else.`,
-                    },
-                ],
+        const stream = this.chatClient.chat(
+            [
                 {
-                    onChange: (text: string) => {
-                        responseText = text
-                    },
-                    onComplete: () => {
-                        resolve(responseText.split(/\s+/).filter(e => e.length > 0))
-                    },
-                    onError: (error: Error, statusCode?: number) => reject(error),
+                    speaker: 'human',
+                    text: `Write 3 filename fragments that would be contained by files in a git repository that are relevant to answering the following user query: <query>${query}</query> Your response should be only a space-delimited list of filename fragments and nothing else.`,
                 },
-                {
-                    temperature: 0,
-                    fast: true,
+            ],
+            {
+                temperature: 0,
+                fast: true,
+            }
+        )
+
+        let responseText = ''
+        for await (const message of stream) {
+            switch (message.type) {
+                case 'change': {
+                    responseText = message.text
+                    break
                 }
-            )
-        })
+                case 'error': {
+                    throw message.error
+                }
+            }
+        }
+
+        const filenameFragments = responseText.split(/\s+/).filter(e => e.length > 0)
         const uniqueFragments = uniq(filenameFragments.map(e => e.toLocaleLowerCase()))
         return uniqueFragments
     }
 
-    private async getFilenames(rootPath: string, filenameFragments: string[], maxDepth: number): Promise<string[]> {
-        const searchPattern = '{' + filenameFragments.map(fragment => `**${fragment}**`).join(',') + '}'
+    private async getFilenames(
+        rootPath: string,
+        filenameFragments: string[],
+        maxDepth: number
+    ): Promise<string[]> {
+        const searchPattern = `{${filenameFragments.map(fragment => `**${fragment}**`).join(',')}}`
         const rgArgs = [
             '--files',
             '--iglob',

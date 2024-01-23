@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { getLanguageConfig } from '../tree-sitter/language'
 import { execQueryWrapper, type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { type DocumentContext } from './get-current-doc-context'
+import type { DocumentContext } from './get-current-doc-context'
 
 export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
     const { currentLinePrefix, injectedPrefix } = docContext
@@ -20,11 +20,17 @@ interface GetContextRangeParams {
 /**
  * @returns the range that overlaps the included prefix and suffix.
  */
-export function getContextRange(document: vscode.TextDocument, params: GetContextRangeParams): vscode.Range {
+export function getContextRange(
+    document: vscode.TextDocument,
+    params: GetContextRangeParams
+): vscode.Range {
     const { prefix, suffix, position } = params
     const offset = document.offsetAt(position)
 
-    return new vscode.Range(document.positionAt(offset - prefix.length), document.positionAt(offset + suffix.length))
+    return new vscode.Range(
+        document.positionAt(offset - prefix.length),
+        document.positionAt(offset + suffix.length)
+    )
 }
 
 interface GetCompletionIntentParams {

@@ -3,7 +3,7 @@ import { getDerivedDocContext, type DocumentContext } from '../get-current-doc-c
 import { getFirstLine } from '../text-processing'
 import { getMatchingSuffixLength } from '../text-processing/process-inline-completions'
 
-import { type FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
+import type { FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
 
 interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsParams {
     initialCompletion: string
@@ -14,7 +14,7 @@ interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsPara
  * 2. If the updated document context has the multiline trigger, returns the updated document context.
  * 3. Otherwise, returns the initial document context.
  */
-export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
+export function getDynamicMultilineDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
     const { initialCompletion, providerOptions } = params
     const {
         position,

@@ -1,9 +1,9 @@
-import { type Meta, type StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { type ChatButtonProps } from '@sourcegraph/cody-ui/src/Chat'
+import { RateLimitError } from '@sourcegraph/cody-shared'
+import type { ChatButtonProps } from '@sourcegraph/cody-ui/src/Chat'
 import { ErrorItem } from '@sourcegraph/cody-ui/src/chat/ErrorItem'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
@@ -44,7 +44,12 @@ export default meta
 
 type Story = StoryObj<typeof ErrorItem>
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
+    label,
+    action,
+    onClick,
+    appearance,
+}) => (
     <VSCodeButton
         type="button"
         onClick={() => onClick(action)}
@@ -57,7 +62,13 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 
 export const ChatRateLimitFree: Story = {
     args: {
-        error: new RateLimitError('chat messages and commands', 'thing', true, 20, String(60 * 60 * 24 * 25)), // 25 days
+        error: new RateLimitError(
+            'chat messages and commands',
+            'thing',
+            true,
+            20,
+            String(60 * 60 * 24 * 25)
+        ), // 25 days
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,
@@ -69,7 +80,13 @@ export const ChatRateLimitFree: Story = {
 
 export const ChatRateLimitPro: Story = {
     args: {
-        error: new RateLimitError('chat messages and commands', 'thing', false, 500, String(60 * 60 * 24 * 5)), // 5 days
+        error: new RateLimitError(
+            'chat messages and commands',
+            'thing',
+            false,
+            500,
+            String(60 * 60 * 24 * 5)
+        ), // 5 days
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,

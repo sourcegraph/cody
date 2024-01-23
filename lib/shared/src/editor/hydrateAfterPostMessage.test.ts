@@ -12,12 +12,16 @@ describe('hydrateAfterPostMessage', () => {
     // its argument.
     test('re-hydrates a dehydrated URI object', () => {
         const dehydratedUri = () => ({ $mid: 1, path: '/path/to/resource', scheme: 'file' })
-        expect(hydrateAfterPostMessage(dehydratedUri(), mockHydrateUri)).toEqual(mockHydrateUri(dehydratedUri()))
+        expect(hydrateAfterPostMessage(dehydratedUri(), mockHydrateUri)).toEqual(
+            mockHydrateUri(dehydratedUri())
+        )
     })
 
     test('re-hydrates an array of dehydrated URIs', () => {
         const dehydratedUris = () => [{ $mid: 1, path: '/path/to/resource', scheme: 'file' }]
-        expect(hydrateAfterPostMessage(dehydratedUris(), mockHydrateUri)).toEqual(dehydratedUris().map(mockHydrateUri))
+        expect(hydrateAfterPostMessage(dehydratedUris(), mockHydrateUri)).toEqual(
+            dehydratedUris().map(mockHydrateUri)
+        )
     })
 
     test('re-hydrates nested objects containing dehydrated URIs', () => {

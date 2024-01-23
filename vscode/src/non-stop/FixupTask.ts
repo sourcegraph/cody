@@ -1,12 +1,11 @@
 import type * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import { type EditIntent } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 
-import { type Diff } from './diff'
-import { type FixupFile } from './FixupFile'
+import type { Diff } from './diff'
+import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string
@@ -44,16 +43,22 @@ export class FixupTask {
     public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
-        public readonly fixupFile: FixupFile,
+        /**
+         * The file that will be updated by Cody with the replacement text at the end of stream
+         * This is set by the FixupController when creating the task,
+         * and will be updated by the FixupController for tasks using the 'new' mode
+         */
+        public fixupFile: FixupFile,
         public readonly instruction: string,
         public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: EditIntent = 'edit',
+        public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
-        /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
-        public insertMode?: boolean,
+        /* The mode indicates how code should be inserted */
+        public mode: EditMode = 'edit',
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
-        public source?: ChatEventSource
+        public source?: ChatEventSource,
+        public readonly contextMessages?: ContextMessage[]
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

@@ -1,8 +1,11 @@
+import * as vscode from 'vscode'
+
 import {
     SourcegraphGraphQLAPIClient,
+    type EmbeddingsSearchResult,
     type EmbeddingsSearchResults,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+    type GraphQLAPIClientConfig,
+} from '@sourcegraph/cody-shared'
 
 export class CachedRemoteEmbeddingsClient {
     private client: SourcegraphGraphQLAPIClient
@@ -35,7 +38,8 @@ export class CachedRemoteEmbeddingsClient {
         return repoID
     }
 
-    public search(
+    public async search(
+        workspaceFolderUri: vscode.Uri,
         repoIDs: string[],
         query: string,
         codeResultsCount: number,
@@ -44,6 +48,27 @@ export class CachedRemoteEmbeddingsClient {
         if (repoIDs.length !== 1) {
             throw new Error('Only one repoID is supported for now')
         }
-        return this.client.legacySearchEmbeddings(repoIDs[0], query, codeResultsCount, textResultsCount)
+        const results = await this.client.legacySearchEmbeddings(
+            repoIDs[0],
+            query,
+            codeResultsCount,
+            textResultsCount
+        )
+        if (results instanceof Error) {
+            return results
+        }
+        function resolveFileNameToURI({
+            fileName,
+            ...result
+        }: Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string }): EmbeddingsSearchResult {
+            return {
+                ...result,
+                uri: vscode.Uri.joinPath(workspaceFolderUri, fileName),
+            }
+        }
+        return {
+            codeResults: results.codeResults.map(resolveFileNameToURI),
+            textResults: results.textResults.map(resolveFileNameToURI),
+        }
     }
 }

@@ -2,17 +2,17 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
-import {
-    type ApiPostMessage,
-    type ChatButtonProps,
-    type ChatUISubmitButtonProps,
-    type ChatUITextAreaProps,
-    type CodeBlockActionsProps,
-    type EditButtonProps,
-    type FeedbackButtonsProps,
-    type UserAccountInfo,
+import type {
+    ApiPostMessage,
+    ChatButtonProps,
+    ChatUISubmitButtonProps,
+    ChatUITextAreaProps,
+    CodeBlockActionsProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
@@ -57,7 +57,9 @@ export const TranscriptItem: React.FunctionComponent<
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
-        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        abortMessageInProgressComponent?: React.FunctionComponent<{
+            onAbortMessageInProgress: () => void
+        }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo: UserAccountInfo
@@ -120,9 +122,11 @@ export const TranscriptItem: React.FunctionComponent<
                             editButtonOnSubmit(formInput)
                         }
                     }}
+                    chatEnabled={true}
                 />
                 <SubmitButton
                     className={styles.submitButton}
+                    isFollowUp={false}
                     onClick={() => {
                         setBeingEdited(false)
                         editButtonOnSubmit(formInput)
@@ -140,18 +144,31 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
-            {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
-                <div className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}>
-                    <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
-                        {beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
-                        <EditButtonContainer
-                            className={styles.FeedbackEditButtonsContainer}
-                            messageBeingEdited={beingEdited}
-                            setMessageBeingEdited={setBeingEdited}
-                        />
-                    </header>
-                </div>
-            )}
+            {showEditButton &&
+                EditButtonContainer &&
+                editButtonOnSubmit &&
+                TextArea &&
+                message.speaker === 'human' && (
+                    <div
+                        className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}
+                    >
+                        <header
+                            className={classNames(
+                                styles.transcriptItemHeader,
+                                transcriptItemParticipantClassName
+                            )}
+                        >
+                            {beingEdited && (
+                                <p className={classNames(styles.editingLabel)}>Editing...</p>
+                            )}
+                            <EditButtonContainer
+                                className={styles.FeedbackEditButtonsContainer}
+                                messageBeingEdited={beingEdited}
+                                setMessageBeingEdited={setBeingEdited}
+                            />
+                        </header>
+                    </div>
+                )}
             {message.preciseContext && message.preciseContext.length > 0 && (
                 <div className={styles.actions}>
                     <PreciseContexts
@@ -173,7 +190,9 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 )
             ) : null}
-            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+            <div
+                className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}
+            >
                 {message.displayText ? (
                     EditTextArea ? (
                         !inProgress && !message.displayText.startsWith('/') && EditTextArea
@@ -185,7 +204,6 @@ export const TranscriptItem: React.FunctionComponent<
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             metadata={message.metadata}
-                            inProgress={inProgress}
                             guardrails={guardrails}
                         />
                     )
@@ -213,7 +231,12 @@ export const TranscriptItem: React.FunctionComponent<
                 FeedbackButtonsContainer &&
                 feedbackButtonsOnSubmit &&
                 message.speaker === 'assistant' && (
-                    <footer className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}>
+                    <footer
+                        className={classNames(
+                            styles.footerContainer,
+                            transcriptItemParticipantClassName
+                        )}
+                    >
                         {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
                         <FeedbackButtonsContainer
                             className={styles.FeedbackEditButtonsContainer}

@@ -11,8 +11,8 @@ describe('[getInlineCompletions] streaming', () => {
         expect(
             await getInlineCompletions({
                 ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(completion`├1337\ncon┤`)
+                    *completionResponseGenerator() {
+                        yield completion`├1337\ncon┤`
                     },
                 }),
             })
@@ -26,9 +26,9 @@ describe('[getInlineCompletions] streaming', () => {
         expect(
             await getInlineCompletions({
                 ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(completion`├13┤`)
-                        onPartialResponse?.(completion`├1337\n┤`)
+                    *completionResponseGenerator() {
+                        yield completion`├13┤`
+                        yield completion`├1337\n┤`
                     },
                 }),
             })
@@ -55,17 +55,17 @@ describe('[getInlineCompletions] streaming', () => {
                             `,
                 ],
                 {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(completion`
-                                        ├console.log('what?')┤
-                                    ┴┴┴┴
-                                `)
-                        onPartialResponse?.(completion`
-                                        ├console.log('what?')
-                                    }
+                    *completionResponseGenerator() {
+                        yield completion`
+                                ├console.log('what?')┤
+                            ┴┴┴┴
+                        `
+                        yield completion`
+                                ├console.log('what?')
+                            }
 
-                                    function never(){}┤
-                                `)
+                            function never(){}┤
+                        `
                     },
                 }
             ),
@@ -93,17 +93,17 @@ describe('[getInlineCompletions] streaming', () => {
                             `,
                     ],
                     {
-                        onNetworkRequest(_params, onPartialResponse) {
-                            onPartialResponse?.(completion`
-                                        ├const a = new Array()
-                                        console.log('oh no')┤
-                                    ┴┴┴┴
-                                `)
-                            onPartialResponse?.(completion`
-                                        ├const a = new Array()
-                                        console.log('oh no')
-                                    ┤
-                                `)
+                        *completionResponseGenerator() {
+                            yield completion`
+                                    ├const a = new Array()
+                                    console.log('oh no')┤
+                                ┴┴┴┴
+                            `
+                            yield completion`
+                                    ├const a = new Array()
+                                    console.log('oh no')
+                                ┤
+                            `
                         },
                     }
                 ),
@@ -126,13 +126,10 @@ describe('[getInlineCompletions] streaming', () => {
                     completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()`,
                 ],
                 {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(
-                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (`
-                        )
-                        onPartialResponse?.(
-                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()\n`
-                        )
+                    *completionResponseGenerator() {
+                        yield completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (`
+
+                        yield completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()\n`
                     },
                 }
             ),
@@ -158,8 +155,8 @@ describe('[getInlineCompletions] streaming', () => {
                 `,
                 [completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`],
                 {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`)
+                    *completionResponseGenerator() {
+                        yield completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`
                     },
                 }
             ),

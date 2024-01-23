@@ -1,21 +1,24 @@
 import * as vscode from 'vscode'
 
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { type CompletionParameters, type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import {
+    BotResponseMultiplexer,
+    getSimplePreamble,
+    Interaction,
+    MAX_CURRENT_FILE_TOKENS,
+    Transcript,
+    truncateText,
+    type CodebaseContext,
+    type CompletionParameters,
+    type Message,
+} from '@sourcegraph/cody-shared'
 
-import { type VSCodeEditor } from '../../editor/vscode-editor'
-import { type FixupTask } from '../../non-stop/FixupTask'
-import { type EditIntent } from '../types'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { FixupTask } from '../../non-stop/FixupTask'
+import type { EditIntent } from '../types'
 
 import { claude } from './claude'
 import { getContext } from './context'
-import { type EditLLMInteraction, type GetLLMInteractionOptions, type LLMInteraction } from './type'
+import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
 
@@ -38,6 +41,8 @@ const getInteractionArgsFromIntent = (
             return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
             return INTERACTION_MODELS[model].getEdit(options)
+        case 'new':
+            return INTERACTION_MODELS[model].getNew(options)
     }
 }
 
@@ -78,17 +83,14 @@ export const buildInteraction = async ({
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
 
-    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } = getInteractionArgsFromIntent(
-        task.intent,
-        model,
-        {
-            fileName: task.fixupFile.uri.fsPath,
+    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
+        getInteractionArgsFromIntent(task.intent, model, {
+            uri: task.fixupFile.uri,
             followingText,
             precedingText,
             selectedText,
             instruction: task.instruction,
-        }
-    )
+        })
 
     const transcript = new Transcript()
     const interaction = new Interaction(
@@ -99,6 +101,7 @@ export const buildInteraction = async ({
             uri: task.fixupFile.uri,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
+            contextMessages: task.contextMessages,
             context,
             editor,
             followingText,

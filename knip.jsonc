@@ -11,7 +11,13 @@
             ],
             "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
             "ignoreBinaries": ["code", "code-insiders"],
-            "ignoreDependencies": ["@vscode/vsce", "ovsx", "path-browserify", "os-browserify", "@vscode/codicons"]
+            "ignoreDependencies": [
+                "@vscode/vsce",
+                "ovsx",
+                "path-browserify",
+                "os-browserify",
+                "@vscode/codicons"
+            ]
         },
         "agent": {
             "vitest": {

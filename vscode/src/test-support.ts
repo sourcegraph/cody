@@ -1,6 +1,6 @@
-import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 
-import { type SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
+import type { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -38,6 +38,6 @@ export class TestSupport {
     public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
 
     public async chatMessages(): Promise<ChatMessage[]> {
-        return (await this.chatPanelProvider.get()).transcriptForTesting(this)
+        return (await this.chatPanelProvider.get()).getViewTranscript()
     }
 }

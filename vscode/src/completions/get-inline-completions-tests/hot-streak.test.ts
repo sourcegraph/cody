@@ -3,14 +3,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
-import { completion, initTreeSitterParser } from '../test-helpers'
+import { completion, initTreeSitterParser, sleep } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
-            const firstParams = params(
+            const { completionResponseGeneratorPromise, ...firstParams } = params(
                 dedent`
                     function myFunction() {
                         console.log(1)
@@ -27,25 +27,36 @@ describe('[getInlineCompletions] hot streak', () => {
                 `,
                 ],
                 {
-                    onNetworkRequest(_params, onPartialResponse) {
-                        onPartialResponse?.(completion`
+                    async *completionResponseGenerator() {
+                        yield completion`
                             ├console.log(2)
-                        ┤`)
-                        onPartialResponse?.(completion`
+                        ┤`
+
+                        // Add paused between completion chunks to emulate
+                        // the production behaviour where packets come with a delay.
+                        await sleep(100)
+
+                        yield completion`
                             ├console.log(2)
                             console.log(3)
                             console.┤
-                        ┴┴┴┴`)
-                        onPartialResponse?.(completion`
+                        ┴┴┴┴`
+
+                        await sleep(100)
+
+                        yield completion`
                             ├console.log(2)
                             console.log(3)
                             console.log(4)┤
-                        ┴┴┴┴`)
+                        ┴┴┴┴`
                     },
                     hotStreak: true,
                 }
             )
             const firstRequest = await getInlineCompletions(firstParams)
+
+            // Wait for hot streak completions be yielded and cached.
+            await completionResponseGeneratorPromise
 
             expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
 
@@ -194,7 +205,9 @@ describe('[getInlineCompletions] hot streak', () => {
             )
             const firstRequest = await getInlineCompletions(firstParams)
 
-            expect(firstRequest?.items[0]?.insertText).toEqual('if(i > 1) {\n        console.log(2)\n    }')
+            expect(firstRequest?.items[0]?.insertText).toEqual(
+                'if(i > 1) {\n        console.log(2)\n    }'
+            )
 
             const secondRequest = await getInlineCompletions({
                 ...params(
@@ -218,7 +231,9 @@ describe('[getInlineCompletions] hot streak', () => {
                 requestManager: firstParams.requestManager,
             })
 
-            expect(secondRequest?.items[0]?.insertText).toEqual('if(i > 2) {\n        console.log(3)\n    }')
+            expect(secondRequest?.items[0]?.insertText).toEqual(
+                'if(i > 2) {\n        console.log(3)\n    }'
+            )
             expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
     })

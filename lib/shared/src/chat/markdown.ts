@@ -1,4 +1,7 @@
-import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '../common/markdown'
+import {
+    registerHighlightContributions,
+    renderMarkdown as renderMarkdownCommon,
+} from '../common/markdown'
 
 /**
  * Supported URIs to render as links in outputted markdown.

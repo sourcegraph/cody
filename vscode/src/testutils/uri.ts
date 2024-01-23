@@ -1,5 +1,5 @@
 import { URI, Utils } from 'vscode-uri'
-import { type UriComponents } from 'vscode-uri/lib/umd/uri'
+import type { UriComponents } from 'vscode-uri/lib/umd/uri'
 
 /**
  *
@@ -36,7 +36,7 @@ export class Uri {
     }
 
     public static joinPath(base: Uri, ...pathSegments: string[]): Uri {
-        return new Uri(Utils.joinPath(base.uri, ...pathSegments))
+        return new Uri(Utils.joinPath(base.uri ?? new Uri(base), ...pathSegments))
     }
 
     public static from(components: {

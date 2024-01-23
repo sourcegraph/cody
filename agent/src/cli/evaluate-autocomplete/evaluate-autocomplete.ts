@@ -67,7 +67,9 @@ interface EvaluationFixture {
     codyAgentBinary?: string
 }
 
-async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
+async function loadEvaluationConfig(
+    options: EvaluateAutocompleteOptions
+): Promise<EvaluateAutocompleteOptions[]> {
     if (!options?.evaluationConfig) {
         return [options]
     }
@@ -76,12 +78,16 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
     const result: EvaluateAutocompleteOptions[] = []
     for (const test of config?.workspaces ?? []) {
         if (!test.workspace) {
-            console.error(`skipping test, missing required property 'workspace': ${JSON.stringify(test)}`)
+            console.error(
+                `skipping test, missing required property 'workspace': ${JSON.stringify(test)}`
+            )
             continue
         }
         const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
-        const fixtures: EvaluationFixture[] = config.fixtures ?? [{ name: 'default', strategy: EvaluationStrategy.BFG }]
+        const fixtures: EvaluationFixture[] = config.fixtures ?? [
+            { name: 'default', strategy: EvaluationStrategy.BFG },
+        ]
         for (const fixture of fixtures) {
             if (!fixture.strategy) {
                 throw new Error(`missing: fixture.strategy: ${JSON.stringify(fixture)}`)
@@ -89,8 +95,8 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
             const snapshotDirectory = test.snapshotDirectory
                 ? path.join(rootDir, test.snapshotDirectory, fixture.name, test.workspace)
                 : config.snapshotDirectory
-                ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
-                : options.snapshotDirectory
+                  ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
+                  : options.snapshotDirectory
 
             const codyAgentBinary = fixture.codyAgentBinary
                 ? path.resolve(path.dirname(options.evaluationConfig), fixture.codyAgentBinary)
@@ -114,8 +120,16 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
 
 export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
     .description('Evaluate Cody autocomplete by running the Agent in headless mode')
-    .option('--workspace <path>', 'The workspace directory where to run the autocomplete evaluation', process.cwd())
-    .option('--test-count <number>', 'The number of autocomplete requests to run in this evaluation', intOption)
+    .option(
+        '--workspace <path>',
+        'The workspace directory where to run the autocomplete evaluation',
+        process.cwd()
+    )
+    .option(
+        '--test-count <number>',
+        'The number of autocomplete requests to run in this evaluation',
+        intOption
+    )
     .option(
         '--max-file-test-count <number>',
         'The maximum number of autocomplete requests to evaluate in a single document',
@@ -143,7 +157,12 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         []
     )
     .option('--match-skip-singleline <bool>', 'Whether to skip single line ranges', booleanOption, false)
-    .option('--match-minimum-size <number>', 'Minimum size of a match to trigger an autocomplete', intOption, 20)
+    .option(
+        '--match-minimum-size <number>',
+        'Minimum size of a match to trigger an autocomplete',
+        intOption,
+        20
+    )
     .option(
         '--match-every-n <number>',
         'Only trigger autocomplete in every N-th match. The motivation to do this is a to get a wider spread of matches. ' +
@@ -167,9 +186,10 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         ).env('SRC_ACCESS_TOKEN')
     )
     .addOption(
-        new commander.Option('--src-endpoint <url>', 'The Sourcegraph URL endpoint to use for authentication').env(
-            'SRC_ENDPOINT'
-        )
+        new commander.Option(
+            '--src-endpoint <url>',
+            'The Sourcegraph URL endpoint to use for authentication'
+        ).env('SRC_ENDPOINT')
     )
     .option(
         '--include-workspace <glob>',
@@ -219,7 +239,9 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         arrayOption as any,
         []
     )
-    .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
+    .addOption(
+        new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY')
+    )
     .option(
         '--tree-sitter-grammars <path>',
         'Path to a directory containing tree-sitter grammars',
@@ -242,8 +264,16 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
             testOptions =>
-                matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace) &&
-                matchesGlobPatterns(options.includeFixture, options.excludeFixture, testOptions.fixture.name)
+                matchesGlobPatterns(
+                    options.includeWorkspace,
+                    options.excludeWorkspace,
+                    testOptions.workspace
+                ) &&
+                matchesGlobPatterns(
+                    options.includeFixture,
+                    options.excludeFixture,
+                    testOptions.fixture.name
+                )
         )
         await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })

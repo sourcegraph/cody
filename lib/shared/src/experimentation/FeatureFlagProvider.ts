@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -28,8 +27,6 @@ export enum FeatureFlag {
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
 
-    // Enable Cody PLG features
-    CodyPro = 'cody-pro',
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
 
@@ -76,9 +73,9 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint][flagName]
     }
 
-    public syncAuthStatus(): void {
+    public async syncAuthStatus(): Promise<void> {
         this.featureFlags = {}
-        void this.refreshFeatureFlags()
+        await this.refreshFeatureFlags()
     }
 
     private async refreshFeatureFlags(): Promise<void> {

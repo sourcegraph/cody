@@ -58,7 +58,10 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyLine.getText(emptyLine.lineAt(1).rangeIncludingLineBreak), '\n')
 
         assert.equal(noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).range), 'b')
-        assert.equal(noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).rangeIncludingLineBreak), 'b')
+        assert.equal(
+            noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).rangeIncludingLineBreak),
+            'b'
+        )
 
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(0).range), '')
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(0).rangeIncludingLineBreak), '\n')
@@ -66,9 +69,15 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(1).rangeIncludingLineBreak), 'b')
 
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).range), '')
-        assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).rangeIncludingLineBreak), '\r\n')
+        assert.equal(
+            emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).rangeIncludingLineBreak),
+            '\r\n'
+        )
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).range), 'b')
-        assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).rangeIncludingLineBreak), 'b')
+        assert.equal(
+            emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).rangeIncludingLineBreak),
+            'b'
+        )
     })
 
     it('lineAt().firstNonWhitespaceCharacterIndex', () => {

@@ -1,38 +1,24 @@
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-/* eslint-disable import/no-duplicates */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
-    Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
     Location as VSCodeLocation,
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
+import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export class Disposable implements VSCodeDisposable {
-    public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
-        return new Disposable(() => {
-            for (const disposable of disposableLikes) {
-                disposable.dispose()
-            }
-        })
-    }
-    constructor(private readonly callOnDispose: () => any) {}
-    public dispose(): void {
-        this.callOnDispose()
-    }
-}
+export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { Disposable } from './Disposable'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -41,7 +27,9 @@ export class Disposable implements VSCodeDisposable {
  */
 
 export enum InlineCompletionTriggerKind {
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
 }
 
@@ -104,6 +92,13 @@ export class ThemeIcon {
         public readonly id: string,
         public readonly color?: ThemeColor
     ) {}
+}
+
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3,
+    HighContrastLight = 4,
 }
 
 export class MarkdownString implements vscode_types.MarkdownString {
@@ -213,8 +208,7 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+// biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
@@ -233,7 +227,6 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
@@ -275,7 +268,10 @@ export class Position implements VSCodePosition {
 
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
-    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
+    public with(
+        arg?: number | { line?: number; character?: number },
+        character?: number
+    ): VSCodePosition {
         const newLine = typeof arg === 'number' ? arg : arg?.line
         const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
         return new Position(newLine ?? this.line, newCharacter ?? this.character)
@@ -379,11 +375,28 @@ export class Range implements VSCodeRange {
 }
 
 export class Selection extends Range {
+    public readonly anchor: Position
+    public readonly active: Position
     constructor(
-        public readonly anchor: Position,
-        public readonly active: Position
+        anchorLine: number | Position,
+        anchorCharacter: number | Position,
+        activeLine?: number,
+        activeCharacter?: number
     ) {
-        super(anchor, active)
+        if (
+            typeof anchorLine === 'number' &&
+            typeof anchorCharacter === 'number' &&
+            typeof activeLine === 'number' &&
+            typeof activeCharacter === 'number'
+        ) {
+            super(anchorLine, anchorCharacter, activeLine, activeCharacter)
+        } else if (typeof anchorLine === 'object' && typeof anchorCharacter === 'object') {
+            super(anchorLine, anchorCharacter)
+        } else {
+            throw new TypeError('this version of the constructor is not implemented')
+        }
+        this.anchor = this.start
+        this.active = this.end
     }
 
     /**
@@ -434,57 +447,7 @@ export class WorkspaceEdit {
     }
 }
 
-interface Callback {
-    handler: (arg?: any) => any
-    thisArg?: any
-}
-function invokeCallback(callback: Callback, arg?: any): any {
-    return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
-}
 export const emptyDisposable = new Disposable(() => {})
-
-export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
-    public on = (): undefined => undefined
-
-    constructor() {
-        this.on = () => undefined
-    }
-
-    private readonly listeners = new Set<Callback>()
-    event: vscode_types.Event<T> = (listener, thisArgs) => {
-        const value: Callback = { handler: listener, thisArg: thisArgs }
-        this.listeners.add(value)
-        return new Disposable(() => {
-            this.listeners.delete(value)
-        })
-    }
-
-    fire(data: T): void {
-        for (const listener of this.listeners) {
-            invokeCallback(listener, data)
-        }
-    }
-
-    /**
-     * Custom extension of the VS Code API to make it possible to `await` on the
-     * result of `EventEmitter.fire()`.  Most event listeners return a
-     * meaningful `Promise` that is discarded in the signature of the `fire()`
-     * function.  Being able to await on returned promise makes it possible to
-     * write more robust tests because we don't need to rely on magic timeouts.
-     */
-    public async cody_fireAsync(data: T): Promise<void> {
-        const promises: Promise<void>[] = []
-        for (const listener of this.listeners) {
-            const value = invokeCallback(listener, data)
-            promises.push(Promise.resolve(value))
-        }
-        await Promise.all(promises)
-    }
-
-    dispose(): void {
-        this.listeners.clear()
-    }
-}
 
 export enum EndOfLine {
     LF = 1,
@@ -527,10 +490,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         const type = stat.isFile()
             ? FileType.File
             : stat.isDirectory()
-            ? FileType.Directory
-            : stat.isSymbolicLink()
-            ? FileType.SymbolicLink
-            : FileType.Unknown
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                  ? FileType.SymbolicLink
+                  : FileType.Unknown
 
         return {
             type,
@@ -546,10 +509,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             const type = entry.isFile()
                 ? FileType.File
                 : entry.isDirectory()
-                ? FileType.Directory
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                      ? FileType.SymbolicLink
+                      : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -796,13 +759,12 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
-    public syncAuthStatus(): void {
-        return
+    public syncAuthStatus(): Promise<void> {
+        return Promise.resolve()
     }
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
 
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,
@@ -816,7 +778,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
-    experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,

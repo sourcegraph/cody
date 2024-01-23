@@ -1,7 +1,7 @@
 import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
-import { type default as Parser, type Query } from 'web-tree-sitter'
+import type { default as Parser, Query } from 'web-tree-sitter'
 
 import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 
@@ -18,8 +18,14 @@ export class Queries {
     private queryDirectoryExists: boolean | undefined
     private cache: CompiledQuery[] = []
     constructor(private queriesDirectory: string) {}
-    public async loadQuery(parser: Parser, language: SupportedLanguage, name: QueryName): Promise<Query | undefined> {
-        const fromCache = this.cache.find(compiled => compiled.language === language && compiled.queryName === name)
+    public async loadQuery(
+        parser: Parser,
+        language: SupportedLanguage,
+        name: QueryName
+    ): Promise<Query | undefined> {
+        const fromCache = this.cache.find(
+            compiled => compiled.language === language && compiled.queryName === name
+        )
         if (fromCache) {
             return fromCache.compiledQuery
         }
@@ -48,7 +54,9 @@ export class Queries {
             } catch {
                 if (this.queryDirectoryExists === undefined) {
                     try {
-                        this.queryDirectoryExists = (await fspromises.stat(this.queriesDirectory)).isDirectory()
+                        this.queryDirectoryExists = (
+                            await fspromises.stat(this.queriesDirectory)
+                        ).isDirectory()
                         if (!this.queryDirectoryExists) {
                             throw new Error(
                                 `Query directory ${this.queriesDirectory} is not a directory. To fix this problem, update the value of the flag --queries-directory <path>`

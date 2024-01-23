@@ -1,6 +1,6 @@
 import { findLast } from 'lodash'
 
-import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, type AuthStatus } from '../chat/protocol'
@@ -24,6 +24,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -48,7 +50,7 @@ export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTree
     }
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory)]
-    chatHistoryEntries.forEach(([id, entry]) => {
+    for (const [id, entry] of chatHistoryEntries) {
         const lastHumanMessage = findLast(
             entry?.interactions,
             message => message.humanMessage.displayText !== undefined
@@ -65,7 +67,7 @@ export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTree
                 },
             })
         }
-    })
+    }
     return chatTreeItems.reverse()
 }
 
@@ -77,14 +79,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.show-page', args: ['upgrade'] },
         requireDotCom: true,
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Settings',
@@ -94,7 +94,10 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
+        command: {
+            command: 'workbench.action.openGlobalKeybindings',
+            args: ['@ext:sourcegraph.cody-ai'],
+        },
     },
     {
         title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
@@ -163,6 +166,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

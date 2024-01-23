@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'vitest'
 
-import { testFileUri, type ContextFile } from '@sourcegraph/cody-shared'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
+    CodebaseContext,
     populateCurrentEditorSelectedContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
+    testFileUri,
+    type ContextFile,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from '../../testutils/mocks'
 
@@ -15,7 +16,7 @@ import {
     getChatPanelTitle,
     stripContextWrapper,
 } from './chat-helpers'
-import { type ContextItem } from './SimpleChatModel'
+import type { ContextItem } from './SimpleChatModel'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {
@@ -61,11 +62,17 @@ describe('unwrap context snippets', () => {
 
         const testCases: TestCase[] = [
             {
-                input: populateCurrentEditorSelectedContextTemplate('// This is the code', testFileUri('test.ts')),
+                input: populateCurrentEditorSelectedContextTemplate(
+                    '// This is the code',
+                    testFileUri('test.ts')
+                ),
                 expOut: '// This is the code',
             },
             {
-                input: populateCurrentSelectedCodeContextTemplate('// This is the code', testFileUri('test.ts')),
+                input: populateCurrentSelectedCodeContextTemplate(
+                    '// This is the code',
+                    testFileUri('test.ts')
+                ),
                 expOut: '// This is the code',
             },
         ]

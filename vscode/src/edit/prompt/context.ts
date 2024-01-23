@@ -1,22 +1,22 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
-import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
+    MAX_CURRENT_FILE_TOKENS,
     createContextMessageByFile,
     getContextMessageWithResponse,
-    type ContextFile,
-    type ContextMessage,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+    truncateText,
+    truncateTextStart,
+    type CodebaseContext,
+    type CodyCommand,
+    type ContextFile,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
-import { type VSCodeEditor } from '../../editor/vscode-editor'
-import { type EditIntent } from '../types'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 
@@ -45,7 +45,6 @@ const getContextFromIntent = async ({
     const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
-    /* eslint-disable no-case-declarations */
     switch (intent) {
         /**
          * Very broad set of possible instructions.
@@ -53,6 +52,7 @@ const getContextFromIntent = async ({
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
+        case 'new':
         case 'add': {
             return [
                 ...getContextMessageWithResponse(
@@ -79,18 +79,24 @@ const getContextFromIntent = async ({
             const contextMessages = []
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
-                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedPrecedingText, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedPrecedingText, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 )
             }
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
-                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedFollowingText, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedFollowingText, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 )
             }
             return contextMessages
@@ -100,10 +106,12 @@ const getContextFromIntent = async ({
          * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
          * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
          */
-        case 'edit':
+        case 'edit': {
             const range = selectionRange
             const diagnostics = range ? editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
-            const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
+            const errorsAndWarnings = diagnostics.filter(
+                ({ type }) => type === 'error' || type === 'warning'
+            )
             const selectionContext = await getContextMessagesFromSelection(
                 selectedText,
                 truncatedPrecedingText,
@@ -114,26 +122,37 @@ const getContextFromIntent = async ({
             return [
                 ...selectionContext,
                 ...errorsAndWarnings.flatMap(diagnostic =>
-                    getContextMessageWithResponse(populateCurrentEditorDiagnosticsTemplate(diagnostic, uri), {
-                        type: 'file',
-                        uri,
-                    })
+                    getContextMessageWithResponse(
+                        populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
+                        {
+                            type: 'file',
+                            uri,
+                        }
+                    )
                 ),
             ]
+        }
     }
-    /* eslint-enable no-case-declarations */
 }
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
+    contextMessages?: ContextMessage[]
     editor: VSCodeEditor
+    command?: CodyCommand
 }
 
 export const getContext = async ({
     userContextFiles,
     editor,
+    contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextMessage[]> => {
+    // return contextMessages is already provided by the caller
+    if (contextMessages) {
+        return contextMessages
+    }
+
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
@@ -157,10 +176,18 @@ async function getContextMessagesFromSelection(
     { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
-    const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
-        numCodeResults: 4,
-        numTextResults: 0,
-    })
+    const workspaceFolderUri = vscode.workspace.workspaceFolders?.at(0)?.uri
+    if (!workspaceFolderUri) {
+        return []
+    }
+    const selectedTextContext = await codebaseContext.getContextMessages(
+        workspaceFolderUri,
+        selectedText,
+        {
+            numCodeResults: 4,
+            numTextResults: 0,
+        }
+    )
 
     return selectedTextContext.concat(
         [precedingText, followingText]

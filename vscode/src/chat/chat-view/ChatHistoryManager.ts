@@ -1,8 +1,7 @@
-import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { TranscriptJSON, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../../services/LocalStorageProvider'
-import { type AuthStatus } from '../protocol'
+import type { AuthStatus } from '../protocol'
 
 export class ChatHistoryManager {
     public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {
@@ -14,7 +13,11 @@ export class ChatHistoryManager {
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
-    public async saveChat(authStatus: AuthStatus, chat: TranscriptJSON, input?: string): Promise<UserLocalHistory> {
+    public async saveChat(
+        authStatus: AuthStatus,
+        chat: TranscriptJSON,
+        input?: string
+    ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         if (input) {

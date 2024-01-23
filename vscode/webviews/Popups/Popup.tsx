@@ -21,7 +21,14 @@ const Backdrop: React.FunctionComponent<React.PropsWithoutRef<BackdropProps>> = 
         e.stopPropagation()
         dismiss()
     }
-    return <div className={styles.backdrop} onClick={handleClick} onKeyUp={handleKeyUp} role="presentation" />
+    return (
+        <div
+            className={styles.backdrop}
+            onClick={handleClick}
+            onKeyUp={handleKeyUp}
+            role="presentation"
+        />
+    )
 }
 
 interface PopupFrameProps {
@@ -29,13 +36,9 @@ interface PopupFrameProps {
     actionButtons?: React.ReactNode
 }
 
-export const PopupFrame: React.FunctionComponent<React.PropsWithChildren<PopupFrameProps & PopupOpenProps>> = ({
-    actionButtons,
-    classNames: extraClassNames,
-    onDismiss,
-    isOpen,
-    children,
-}) => {
+export const PopupFrame: React.FunctionComponent<
+    React.PropsWithChildren<PopupFrameProps & PopupOpenProps>
+> = ({ actionButtons, classNames: extraClassNames, onDismiss, isOpen, children }) => {
     const handleKeyUp = (e: React.KeyboardEvent<HTMLDialogElement>): void => {
         if (e.key === 'Escape') {
             e.stopPropagation()
@@ -52,7 +55,9 @@ export const PopupFrame: React.FunctionComponent<React.PropsWithChildren<PopupFr
                 >
                     <div className={styles.row}>{children}</div>
                     {actionButtons && (
-                        <div className={classNames(styles.actionButtonContainer, styles.row)}>{actionButtons}</div>
+                        <div className={classNames(styles.actionButtonContainer, styles.row)}>
+                            {actionButtons}
+                        </div>
                     )}
                 </dialog>
                 <div className={styles.pointyBit} />

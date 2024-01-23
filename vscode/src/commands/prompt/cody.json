@@ -2,7 +2,7 @@
   "commands": {
     "doc": {
       "description": "Generate code documentation",
-      "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not output any other code or comments besides the documentation. Output only the comment and do not enclose it in markdown.",
+      "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.",
       "context": {
         "currentFile": true,
         "selection": true
@@ -24,6 +24,17 @@
         "currentFile": true,
         "selection": true
       }
+    },
+    "unit": {
+      "description": "Experimental: Generate unit tests in test file directly",
+      "prompt": "Review the shared code context and configurations to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the functions in <selected> using the detected test framework and libraries. Be sure to import the function being tested. Follow the same patterns, testing conventions and testing library as shown in shared context. Only add packages, imports, dependencies, and assertions if they are used in the shared code. Pay attention to the file name of each shared context to see if test for <selected> already exists. If one exists, focus on generating new unit tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Only include mocks if one is detected in the shared code. Before writing the tests, identify which testing libraries and frameworks to use and import. Then, enclose the file name for the unit test file between <FILEPATH7041> tags. At the end, enclose the full completed code for the new unit tests without any comments, fragments or TODO. The new tests should validate expected functionality and cover edge cases for <selected> with all required imports, including the function being tested. Do not repeat tests in shared context. Do not include any markdown formatting or triple backticks. Enclose only the complete runnable tests. If there is a shared context that has the same test file name, only include import if no conflict exists.",
+      "context": {
+        "currentDir": true,
+        "currentFile": true,
+        "selection": true
+      },
+      "type": "experimental",
+      "mode": "file"
     },
     "smell": {
       "description": "Find code smells",

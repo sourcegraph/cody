@@ -1,15 +1,22 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
-import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    ConfigFeaturesSingleton,
+    type ChatEventSource,
+    type CodyCommand,
+} from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+
+import type { CodyCommandArgs } from '.'
+import { getContextForCommand } from './utils/get-context'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -28,45 +35,37 @@ export class CommandRunner implements vscode.Disposable {
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
     private kind: string
+    public isFixupRequest = false
 
     constructor(
-        private command: CodyCommand,
-        public instruction?: string,
-        private isFixupRequest?: boolean
+        private readonly vscodeEditor: VSCodeEditor,
+        public readonly command: CodyCommand,
+        private readonly args: CodyCommandArgs
     ) {
+        logDebug('CommandRunner:constructor', command.slashCommand, { verbose: { command, args } })
         // use commandKey to identify default command in telemetry
         const commandKey = command.slashCommand
         // all user and workspace custom command should be logged under 'custom'
         this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
 
-        if (instruction?.startsWith('/edit ')) {
-            command.mode = 'edit'
+        // remove '/ask' command key from the prompt, if any
+        if (commandKey === '/ask') {
+            command.prompt = command.prompt.replace('/ask', '')
+        }
+        // Set commmand mode - default mode to 'ask' if not specified
+        if (args.runInChatMode) {
+            command.mode = 'ask'
         } else {
-            command.mode = command.mode || 'ask'
+            const isEditPrompt = promptStatsWithEdit(command.prompt)
+            command.mode = isEditPrompt ? 'edit' : command.mode || 'ask'
         }
 
-        // Log non-edit commands usage
-        if (command.mode === 'ask') {
-            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
-                mode: command.mode,
-                useCodebaseContex: !!command.context?.codebase,
-                useShellCommand: !!command.context?.command,
-                requestID: command.requestID,
-            })
-            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
-                metadata: {
-                    useCodebaseContex: command.context?.codebase ? 1 : 0,
-                    useShellCommand: command.context?.command ? 1 : 0,
-                },
-                interactionID: command.requestID,
-                privateMetadata: {
-                    mode: command.mode,
-                    requestID: command.requestID,
-                },
-            })
-        }
+        // update prompt with additional input added at the end
+        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
+        this.isFixupRequest = command.mode !== 'ask'
+        this.command = command
 
-        logDebug('CommandRunner:init', this.kind)
+        this.logRequest()
 
         // Commands only work in active editor / workspace unless context specifies otherwise
         const editor = getEditor()
@@ -78,7 +77,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         this.editor = editor.active
-        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
+        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
@@ -86,12 +85,33 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert'
-        const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
-        this.isFixupRequest = isFixupRequest || fixupMode || insertMode
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(insertMode)
-            return
+            void this.handleFixupRequest(command.mode === 'insert')
+        }
+    }
+
+    private logRequest(): void {
+        // Log non-edit commands usage
+        if (this.command.mode === 'ask') {
+            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
+                mode: this.command.mode,
+                useCodebaseContex: !!this.command.context?.codebase,
+                useShellCommand: !!this.command.context?.command,
+                requestID: this.args.requestID,
+                source: this.args.source,
+            })
+            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+                metadata: {
+                    useCodebaseContex: this.command.context?.codebase ? 1 : 0,
+                    useShellCommand: this.command.context?.command ? 1 : 0,
+                },
+                interactionID: this.args.requestID,
+                privateMetadata: {
+                    mode: this.command.mode,
+                    requestID: this.args.requestID,
+                    source: this.args.source,
+                },
+            })
         }
     }
 
@@ -117,6 +137,13 @@ export class CommandRunner implements vscode.Disposable {
      */
     private async handleFixupRequest(insertMode = false): Promise<void> {
         logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+        if (!configFeatures.commands) {
+            const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
+            void vscode.window.showErrorMessage(disabledMsg)
+            return
+        }
 
         let selection = this.editor?.selection
         const doc = this.editor?.document
@@ -142,17 +169,24 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
-        const intent: EditIntent = this.kind === 'doc' ? 'doc' : 'edit'
-        const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
+        const range =
+            this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
+        const intent: EditIntent =
+            this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
+        const instruction = insertMode
+            ? addSelectionToPrompt(this.command.prompt, code)
+            : this.command.prompt
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
+
+        const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
         await executeEdit(
             {
                 range,
                 instruction,
                 document: doc,
                 intent,
-                insertMode,
+                mode: this.command.mode as EditMode,
+                contextMessages,
             } satisfies ExecuteEditArguments,
             source as ChatEventSource
         )
@@ -176,7 +210,7 @@ export class CommandRunner implements vscode.Disposable {
  * @returns The updated prompt string with the code snippet added
  */
 function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
+    return `${prompt}\nHere is the code: \n<code>${code}</code>`
 }
 
 /**
@@ -204,4 +238,8 @@ function getDocCommandRange(
     }
 
     return new vscode.Selection(adjustedStartPosition, selection.end)
+}
+
+function promptStatsWithEdit(prompt: string): boolean {
+    return prompt.startsWith('/edit ')
 }

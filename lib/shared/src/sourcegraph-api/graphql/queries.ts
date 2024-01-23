@@ -58,6 +58,18 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_CONFIG_FEATURES = `
+query CodyConfigFeaturesResponse {
+    site {
+        codyConfigFeatures {
+            chat
+            autoComplete
+            commands
+            attribution
+        }
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
 query CurrentSiteCodyLlmConfiguration {
     site {

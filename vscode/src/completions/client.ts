@@ -1,71 +1,42 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import type {
-    CompletionLogger,
-    CompletionsClientConfig,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import type {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import {
-    isAbortError,
-    isRateLimitError,
+    FeatureFlag,
     NetworkError,
     RateLimitError,
-    TimeoutError,
+    STOP_REASON_STREAMING_CHUNK,
     TracedError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { isNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+    addTraceparent,
+    featureFlagProvider,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    isNodeResponse,
+    isRateLimitError,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type CompletionLogger,
+    type CompletionResponse,
+    type CompletionResponseGenerator,
+    type CompletionsClientConfig,
+} from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-
-import { forkSignal } from './utils'
-
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
-
-export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(
-        params: T,
-        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse>
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
-}
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
-export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
-    function getCodeCompletionsEndpoint(): string {
-        return new URL('/.api/completions/code', config.serverEndpoint).href
-    }
-
-    function completeWithTimeout(
+export function createClient(
+    config: CompletionsClientConfig,
+    logger?: CompletionLogger
+): CodeCompletionsClient {
+    async function* complete(
         params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const abortController = signal ? forkSignal(signal) : new AbortController()
-        return Promise.race([
-            complete(params, onPartialResponse, abortController.signal),
-            createTimeout(params.timeoutMs).finally(() => {
-                // We abort the network request in the next run loop so that the race promise can be
-                // rejected with the timeout error before that.
-                setTimeout(() => abortController.abort(), 0)
-            }),
-        ])
-    }
-
-    async function complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const url = getCodeCompletionsEndpoint()
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
 
-        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteTracing
+        )
 
         const headers = new Headers(config.customHeaders)
         // Force HTTP connection reuse to reduce latency.
@@ -102,7 +73,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 stream: enableStreaming,
             }),
             headers,
-            signal,
+            signal: abortController.signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
@@ -113,7 +84,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             // is no upgrade available.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
-                typeof response.headers.get('x-is-cody-pro-user') !== undefined
+                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
@@ -149,15 +120,17 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     }
 
                     if (event === 'completion') {
-                        if (signal?.aborted) {
+                        if (abortController.signal.aborted) {
                             break // Stop processing the already received chunks.
                         }
 
                         lastResponse = JSON.parse(data) as CompletionResponse
-                        wrapInActiveSpan(
-                            `autocomplete.onPartialResponse.${chunkIndex}`,
-                            () => onPartialResponse?.(lastResponse!)
-                        )
+
+                        if (!lastResponse.stopReason) {
+                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
+                        }
+
+                        yield lastResponse
                     }
 
                     chunkIndex += 1
@@ -190,10 +163,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     const message = `response does not satisfy CodeCompletionResponse: ${result}`
                     log?.onError(message)
                     throw new TracedError(message, traceId)
-                } else {
-                    log?.onComplete(response)
-                    return response
                 }
+                log?.onComplete(response)
+                return response
             } catch (error) {
                 const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
                 log?.onError(message, error)
@@ -203,7 +175,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
     }
 
     return {
-        complete: completeWithTimeout,
+        complete,
         onConfigurationChange(newConfig) {
             config = newConfig
         },
@@ -224,6 +196,7 @@ export async function* createSSEIterator(iterator: NodeJS.ReadableStream): Async
         buffer += event.toString()
 
         let index: number
+        // biome-ignore lint/suspicious/noAssignInExpressions: useful
         while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
             const message = buffer.slice(0, index)
             buffer = buffer.slice(index + SSE_TERMINATOR.length)
@@ -269,8 +242,4 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
-}
-
-export function createTimeout(timeoutMs: number): Promise<never> {
-    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

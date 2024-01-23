@@ -2,9 +2,9 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 
-import { type ExtensionApi } from '../../src/extension-api'
+import type { ExtensionApi } from '../../src/extension-api'
 import * as mockServer from '../fixtures/mock-server'
 
 /**
@@ -75,7 +75,9 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
 export async function getTextEditorWithSelection(): Promise<void> {
     // Open Main.java
     assert.ok(vscode.workspace.workspaceFolders)
-    const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
+    const mainJavaUri = vscode.Uri.parse(
+        `${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`
+    )
     const textEditor = await vscode.window.showTextDocument(mainJavaUri)
 
     // Select the "main" method
@@ -94,7 +96,9 @@ export async function getTextEditorWithSelection(): Promise<void> {
  * ESM).
  */
 export function testFileUri(relativePath: string): vscode.Uri {
-    return vscode.Uri.file(isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`)
+    return vscode.Uri.file(
+        isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`
+    )
 }
 
 /**

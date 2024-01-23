@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { type TelemetryEventInput } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { handleExportModeTransforms } from './GraphQLTelemetryExporter'
 

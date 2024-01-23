@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -35,8 +35,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true }
-                    case 'cody.experimental.chatPredictions':
-                        return true
                     case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
@@ -89,7 +87,7 @@ describe('getConfiguration', () => {
                             url: 'http://localhost:11434',
                         }
                     case 'cody.autocomplete.experimental.graphContext':
-                        return 'lsp-light'
+                        return 'bfg'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
@@ -114,7 +112,6 @@ describe('getConfiguration', () => {
             autocompleteLanguages: {
                 '*': true,
             },
-            experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSymfContext: true,
@@ -136,7 +133,7 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
-            autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: 'http://localhost:11434',

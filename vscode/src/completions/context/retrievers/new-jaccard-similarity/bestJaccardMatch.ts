@@ -46,7 +46,10 @@ export function bestJaccardMatches(
     const windowOccurrences: WordOccurrences = new Map()
     for (let i = firstWindowStart; i <= firstWindowEnd; i++) {
         for (const [wordInThisLine, wordInThisLineCount] of wordsForEachLine[i].entries()) {
-            windowOccurrences.set(wordInThisLine, (windowOccurrences.get(wordInThisLine) || 0) + wordInThisLineCount)
+            windowOccurrences.set(
+                wordInThisLine,
+                (windowOccurrences.get(wordInThisLine) || 0) + wordInThisLineCount
+            )
         }
     }
     let windowWordCounts = sumWordCounts(windowOccurrences)
@@ -106,7 +109,12 @@ export function bestJaccardMatches(
 
         const startLine = i
         const endLine = i + windowSize - 1
-        windows.push({ score, content: lines.slice(startLine, endLine + 1).join('\n'), startLine, endLine })
+        windows.push({
+            score,
+            content: lines.slice(startLine, endLine + 1).join('\n'),
+            startLine,
+            endLine,
+        })
     }
 
     // Rank and pick the top n results

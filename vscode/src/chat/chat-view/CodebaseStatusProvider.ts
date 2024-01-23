@@ -2,23 +2,25 @@ import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
+    isDotCom,
+    isError,
+    isFileURI,
+    uriBasename,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
     type Disposable,
-} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+    type Editor,
+} from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../../configuration'
 import { getEditor } from '../../editor/active-editor'
-import { type SymfRunner } from '../../local-context/symf'
+import type { SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
-import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 interface CodebaseIdentifiers {
-    local: string
+    localFolder: vscode.Uri
     remote?: string
     remoteRepoId?: string
     setting?: string
@@ -30,7 +32,8 @@ interface CodebaseIdentifiers {
 
 export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusProvider {
     private disposables: vscode.Disposable[] = []
-    private eventEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter<ContextStatusProvider>()
+    private eventEmitter: vscode.EventEmitter<ContextStatusProvider> =
+        new vscode.EventEmitter<ContextStatusProvider>()
 
     // undefined means uninitialized, null means there is no current codebase
     private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
@@ -98,7 +101,8 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         return [
             {
-                name: codebase.local,
+                dir: codebase.localFolder,
+                displayName: uriBasename(codebase.localFolder),
                 providers,
             },
         ]
@@ -169,7 +173,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         const config = getConfiguration()
         if (
             this._currentCodebase !== undefined &&
-            workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            workspaceRoot?.toString() === this._currentCodebase?.localFolder &&
             config.codebase === this._currentCodebase?.setting &&
             this._currentCodebase?.remoteRepoId
         ) {
@@ -179,12 +183,13 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
-            newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
+            newCodebase = { localFolder: workspaceRoot, setting: config.codebase }
             const currentFile = getEditor()?.active?.document?.uri
             // Get codebase from config or fallback to getting codebase name from current file URL
             // Always use the codebase from config as this is manually set by the user
             newCodebase.remote =
-                config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+                config.codebase ||
+                (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
             if (newCodebase.remote) {
                 const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
                 if (!isError(repoId)) {
@@ -202,9 +207,10 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         if (!this.symf) {
             return false
         }
-        const newSymfStatus = this._currentCodebase?.local
-            ? await this.symf.getIndexStatus(this._currentCodebase.local)
-            : undefined
+        const newSymfStatus =
+            this._currentCodebase?.localFolder && isFileURI(this._currentCodebase.localFolder)
+                ? await this.symf.getIndexStatus(this._currentCodebase.localFolder)
+                : undefined
         const didSymfStatusChange = this.symfIndexStatus !== newSymfStatus
         this.symfIndexStatus = newSymfStatus
         return didSymfStatusChange

@@ -1,6 +1,6 @@
-import { type AutocompleteItem } from '../../protocol-alias'
+import type { AutocompleteItem } from '../../protocol-alias'
 
-import { type AutocompleteParameters } from './triggerAutocomplete'
+import type { AutocompleteParameters } from './triggerAutocomplete'
 
 export interface TestParameters extends AutocompleteParameters {
     item: AutocompleteItem

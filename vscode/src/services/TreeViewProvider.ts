@@ -1,16 +1,16 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
+import { getFullConfig } from '../configuration'
 
 import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []
     private _disposables: vscode.Disposable[] = []
-    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
+    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
     private treeItems: CodySidebarTreeItem[]
@@ -55,22 +55,29 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         const updatedTree: vscode.TreeItem[] = []
         this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
         for (const item of this.treeItems) {
+            if (item.isUnstable) {
+                const config = await getFullConfig()
+                if (!config.internalUnstable) {
+                    continue
+                }
+            }
+
             if (item.requireDotCom) {
-                const isConnectedtoDotCom = this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
+                const isConnectedtoDotCom =
+                    this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
                 if (!isConnectedtoDotCom) {
                     continue
                 }
             }
 
-            if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
+            if (
+                item.requireFeature &&
+                !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))
+            ) {
                 continue
             }
 
-            if (
-                item.requireUpgradeAvailable &&
-                (await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
-                !(this.authStatus?.userCanUpgrade ?? false)
-            ) {
+            if (item.requireUpgradeAvailable && !(this.authStatus?.userCanUpgrade ?? false)) {
                 continue
             }
 
@@ -78,15 +85,23 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
             treeItem.description = item.description
-            treeItem.command = { command: item.command.command, title: item.title, arguments: item.command.args }
+            treeItem.command = {
+                command: item.command.command,
+                title: item.title,
+                arguments: item.command.args,
+            }
 
             updatedTree.push(treeItem)
         }
 
         if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
+            void vscode.commands.executeCommand(
+                'setContext',
+                'cody.hasChatHistory',
+                this.treeNodes.length
+            )
         }
-        this._onDidChangeTreeData.fire()
+        this._onDidChangeTreeData.fire(undefined)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {

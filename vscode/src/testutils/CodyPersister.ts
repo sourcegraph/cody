@@ -1,8 +1,26 @@
-import { type Har } from '@pollyjs/persister'
+import crypto from 'crypto'
+
+import type { Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
 import { decodeCompressedBase64 } from './base64'
 import { PollyYamlWriter } from './pollyapi'
+
+/**
+ * SHA-256 digests a Sourcegraph access token so that it's value is redacted but
+ * remains uniquely identifyable. The token needs to be uniquely identifiable so
+ * that we can correctly replay HTTP responses based on the access token.
+ */
+export function redactAccessToken(token: string): string {
+    if (token.startsWith('token REDACTED_')) {
+        return token
+    }
+    return `token REDACTED_${sha256(`prefix${token}`)}`
+}
+
+function sha256(input: string): string {
+    return crypto.createHash('sha256').update(input).digest('hex')
+}
 
 /**
  * The default file system persister with the following customizations
@@ -39,7 +57,11 @@ export class CodyPersister extends FSPersister {
         }
         for (const entry of har.log.entries) {
             const postData = entry?.request?.postData
-            if (postData !== undefined && postData?.text === undefined && (postData as any)?.textJSON !== undefined) {
+            if (
+                postData !== undefined &&
+                postData?.text === undefined &&
+                (postData as any)?.textJSON !== undefined
+            ) {
                 // Format `postData.textJSON` back into the escaped string for the `.text` format.
                 postData.text = JSON.stringify((postData as any).textJSON)
                 ;(postData as any).textJSON = undefined
@@ -61,25 +83,14 @@ export class CodyPersister extends FSPersister {
             }
             // Clean up the entries to reduce the size of the diff when re-recording
             // and to remove any access tokens.
-            // Update any headers
-            entry.request.bodySize = undefined
-            entry.request.headersSize = 0
-            entry.response.bodySize = undefined
-            entry.response.headersSize = 0
             const headers = [...entry.request.headers, ...entry.response.headers]
             for (const header of headers) {
                 switch (header.name) {
                     case 'authorization':
-                        header.value = 'token REDACTED'
+                        header.value = redactAccessToken(header.value)
                         break
-                    case 'date':
-                        header.value = 'Fri, 05 Jan 2024 11:11:11 GMT'
-                        break
-                    case 'retry-after':
-                        header.value = '0'
-                        break
-                    case 'x-cloud-trace-context':
-                        header.value = 'e3280902f3d7c7e5307db550c8425e2c'
+                    // We should not harcode the dates to minimize diffs because
+                    // that breaks the expiration feature in Polly.
                 }
             }
 
@@ -90,7 +101,6 @@ export class CodyPersister extends FSPersister {
             entry.response.cookies.length = 0
 
             // And other misc fields.
-            entry.startedDateTime = 'Fri, 05 Jan 2024 00:00:00 GMT'
             entry.time = 0
             entry.timings = {
                 blocked: -1,
@@ -125,7 +135,9 @@ export class CodyPersister extends FSPersister {
         return super.onSaveRecording(recordingId, recording)
     }
 
-    private filterHeaders(headers: { name: string; value: string }[]): { name: string; value: string }[] {
+    private filterHeaders(
+        headers: { name: string; value: string }[]
+    ): { name: string; value: string }[] {
         const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
         const removeHeaderPrefixes = ['x-trace', 'cf-']
         return headers.filter(

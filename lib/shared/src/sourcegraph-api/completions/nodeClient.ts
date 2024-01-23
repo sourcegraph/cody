@@ -1,6 +1,8 @@
 import http from 'http'
 import https from 'https'
 
+import { onAbort } from '../../common/abortController'
+import { logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
@@ -8,18 +10,23 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { type CompletionCallbacks, type CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+    protected _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void {
         if (isTemperatureZero) {
             params = {
                 ...params,
                 temperature: 0,
             }
         }
+
         const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
@@ -46,12 +53,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // Disable gzip compression since the sg instance will start to batch
                     // responses afterwards.
                     'Accept-Encoding': 'gzip;q=0',
-                    ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...(this.config.accessToken
+                        ? { Authorization: `token ${this.config.accessToken}` }
+                        : null),
                     ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                rejectUnauthorized:
+                    process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
             },
             (res: http.IncomingMessage) => {
                 if (res.statusCode === undefined) {
@@ -69,7 +79,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // Check for explicit false, because if the header is not set, there
                         // is no upgrade available.
                         const upgradeIsAvailable =
-                            typeof res.headers['x-is-cody-pro-user'] !== undefined &&
+                            typeof res.headers['x-is-cody-pro-user'] !== 'undefined' &&
                             res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
 
@@ -130,7 +140,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
-                        console.error(parseResult)
+                        logError(
+                            'SourcegraphNodeCompletionsClient',
+                            'isError(parseEvents(bufferText))',
+                            parseResult
+                        )
                         return
                     }
 
@@ -170,7 +184,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         request.write(JSON.stringify(params))
         request.end()
 
-        return () => request.destroy()
+        onAbort(signal, () => request.destroy())
     }
 }
 

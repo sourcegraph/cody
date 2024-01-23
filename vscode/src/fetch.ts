@@ -10,7 +10,7 @@ import {
     addCustomUserAgent,
     customUserAgent,
     type BrowserOrNodeResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+} from '@sourcegraph/cody-shared'
 
 /**
  * In node environments, it might be necessary to set up a custom agent to control the network

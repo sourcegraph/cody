@@ -15,7 +15,7 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Cody"]')
+    await page.click('.badge[aria-label="Cody"]')
 
     await page.getByText('Explain code').hover()
     await page.getByText('Explain code').click()

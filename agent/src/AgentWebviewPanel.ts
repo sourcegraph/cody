@@ -1,9 +1,9 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { type ChatModelProvider } from '@sourcegraph/cody-shared'
+import type { ChatModelProvider } from '@sourcegraph/cody-shared'
 
-import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 
@@ -16,7 +16,7 @@ export class AgentWebviewPanels {
     public getPanelOrError(id: string): AgentWebviewPanel {
         const result = this.panels.get(id)
         if (!result) {
-            throw new Error('No panel with ID' + id)
+            throw new Error(`No panel with ID${id}`)
         }
         return result
     }
@@ -43,7 +43,9 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     constructor(
         viewType: string,
         title: string,
-        showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean },
+        showOptions:
+            | vscode.ViewColumn
+            | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean },
         options?: vscode.WebviewPanelOptions & vscode.WebviewOptions
     ) {
         this.panel = defaultWebviewPanel({
@@ -75,7 +77,10 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
         this.panel.title = value
     }
 
-    public get iconPath(): vscode.Uri | { readonly light: vscode.Uri; readonly dark: vscode.Uri } | undefined {
+    public get iconPath():
+        | vscode.Uri
+        | { readonly light: vscode.Uri; readonly dark: vscode.Uri }
+        | undefined {
         return this.panel.iconPath
     }
     public set iconPath(value) {

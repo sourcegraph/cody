@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { execSync } from 'child_process'
 import path from 'path'
 
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
+
+import { logDebug } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -21,14 +22,15 @@ import type * as vscode from 'vscode'
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
+import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import {
     CancellationTokenSource,
+    ColorThemeKind,
     CommentThreadCollapsibleState,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
     emptyDisposable,
     emptyEvent,
-    EventEmitter,
     ExtensionKind,
     FileType,
     LogLevel,
@@ -52,6 +54,8 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // traffic.
 const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
+export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
+
 export {
     CancellationTokenSource,
     CodeAction,
@@ -65,7 +69,6 @@ export {
     emptyDisposable,
     emptyEvent,
     EndOfLine,
-    EventEmitter,
     ExtensionMode,
     FileType,
     InlineCompletionItem,
@@ -118,6 +121,10 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
         return true
     }
 
+    if (!newConfig.accessToken || !newConfig.serverEndpoint) {
+        return false
+    }
+
     return (
         extensionConfiguration.accessToken !== newConfig.accessToken ||
         extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint
@@ -130,7 +137,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
-export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
@@ -149,7 +156,11 @@ let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({ name: 'Workspace Root', uri: newWorkspaceDocuments.workspaceRootUri, index: 0 })
+        workspaceFolders.push({
+            name: 'Workspace Root',
+            uri: newWorkspaceDocuments.workspaceRootUri,
+            index: 0,
+        })
     }
 }
 
@@ -169,7 +180,7 @@ const _workspace: typeof vscode.workspace = {
     onWillRenameFiles: emptyEvent(),
     onWillSaveNotebookDocument: emptyEvent(),
     onWillSaveTextDocument: emptyEvent(),
-    applyEdit: () => Promise.resolve(false),
+    applyEdit: () => Promise.resolve(false), // TODO: this API is used by Cody
     isTrusted: false,
     name: undefined,
     notebookDocuments: [],
@@ -177,7 +188,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: [],
+    textDocuments: [], // Cody uses `vscode.window.tabGroups.all` instead of this API
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
@@ -201,7 +212,13 @@ const _workspace: typeof vscode.workspace = {
                 if (fileType.valueOf() === FileType.Directory.valueOf()) {
                     await loop(workspaceRoot, uri)
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
-                    if (!matchesGlobPatterns(include ? [include] : [], exclude ? [exclude] : [], relativePath)) {
+                    if (
+                        !matchesGlobPatterns(
+                            include ? [include] : [],
+                            exclude ? [exclude] : [],
+                            relativePath
+                        )
+                    ) {
                         continue
                     }
                     result.push(uri)
@@ -220,9 +237,10 @@ const _workspace: typeof vscode.workspace = {
                         await loop(folder.uri, folder.uri)
                     }
                 } catch (error) {
-                    console.log(new Error().stack)
-                    console.error(`workspace.workspace.finFiles: failed to stat workspace folder ${folder.uri}`, error)
-                    // ignore invalid workspace folders
+                    console.error(
+                        `workspace.workspace.findFiles: failed to stat workspace folder ${folder.uri}. Error ${error}`,
+                        new Error().stack
+                    )
                 }
             })
         )
@@ -244,6 +262,7 @@ const _workspace: typeof vscode.workspace = {
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
+        // TODO: support multiple workspace roots
         if (workspaceDocuments?.workspaceRootUri === undefined) {
             throw new Error(
                 'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
@@ -260,13 +279,17 @@ const _workspace: typeof vscode.workspace = {
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
     onDidCloseTextDocument: onDidCloseTextDocument.event,
-    onDidSaveTextDocument: onDidSaveTextDocument.event,
-    onDidRenameFiles: onDidRenameFiles.event,
-    onDidDeleteFiles: onDidDeleteFiles.event,
-    registerTextDocumentContentProvider: () => emptyDisposable,
+    onDidSaveTextDocument: onDidSaveTextDocument.event, // TODO: used by fixup controller to hide code lenses
+    onDidRenameFiles: onDidRenameFiles.event, // TODO: used by persistence tracker
+    onDidDeleteFiles: onDidDeleteFiles.event, // TODO: used by persistence tracker
+    registerTextDocumentContentProvider: () => emptyDisposable, // TODO: used by fixup controller
     asRelativePath: (pathOrUri: string | vscode.Uri): string => {
         const uri: vscode.Uri | undefined =
-            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+            typeof pathOrUri === 'string'
+                ? Uri.file(pathOrUri)
+                : pathOrUri instanceof Uri
+                  ? pathOrUri
+                  : undefined
         if (uri === undefined) {
             // Not sure what to do about non-string/non-uri arguments.
             return `${pathOrUri}`
@@ -282,7 +305,7 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    createFileSystemWatcher: () => emptyFileWatcher,
+    createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
     getConfiguration: section => {
         if (section) {
             return configuration.withPrefix(section)
@@ -320,7 +343,9 @@ export function setAgent(newAgent: Agent): void {
 export function defaultWebviewPanel(params: {
     viewType: string
     title: string
-    showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+    showOptions:
+        | vscode.ViewColumn
+        | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
     options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
@@ -333,7 +358,8 @@ export function defaultWebviewPanel(params: {
         options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
         reveal: () => {},
         title: params.title,
-        viewColumn: typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
+        viewColumn:
+            typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
         viewType: params.viewType,
         visible: false,
         webview: {
@@ -412,13 +438,15 @@ let shimmedCreateWebviewPanel: typeof vscode.window.createWebviewPanel = () => {
     return webviewPanel
 }
 
-export function setCreateWebviewPanel(newCreateWebviewPanel: typeof vscode.window.createWebviewPanel): void {
+export function setCreateWebviewPanel(
+    newCreateWebviewPanel: typeof vscode.window.createWebviewPanel
+): void {
     shimmedCreateWebviewPanel = newCreateWebviewPanel
 }
 
 export const progressBars = new Map<string, CancellationTokenSource>()
 
-const _window: Partial<typeof vscode.window> = {
+const _window: typeof vscode.window = {
     createTreeView: () => defaultTreeView,
     tabGroups,
     createWebviewPanel: (...params) => {
@@ -456,11 +484,18 @@ const _window: Partial<typeof vscode.window> = {
         token.onCancellationRequested(() => progressBars.delete(id))
 
         if (progressClient) {
-            const location = typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
-            const locationViewId = typeof options.location === 'object' ? options.location.viewId : undefined
+            const location =
+                typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
+            const locationViewId =
+                typeof options.location === 'object' ? options.location.viewId : undefined
             progressClient.notify('progress/start', {
                 id,
-                options: { title: options.title, cancellable: options.cancellable, location, locationViewId },
+                options: {
+                    title: options.title,
+                    cancellable: options.cancellable,
+                    location,
+                    locationViewId,
+                },
             })
         }
         try {
@@ -509,9 +544,63 @@ const _window: Partial<typeof vscode.window> = {
     },
     createOutputChannel: (name: string) => outputChannel(name),
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+    showTextDocument: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showTextDocument')
+    },
+    showNotebookDocument: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showNotebookDocument')
+    },
+    showQuickPick: () => {
+        console.log(new Error().stack)
+        // TODO: this API is used a lot. We may need to return undefined
+        // to not break functionality.
+        throw new Error('Not implemented: vscode.window.showQuickPick')
+    },
+    showWorkspaceFolderPick: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showWorkspaceFolderPick')
+    },
+    showOpenDialog: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showOpenDialog')
+    },
+    showSaveDialog: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showSaveDialog')
+    },
+    showInputBox: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showInputBox')
+    },
+    createQuickPick: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.createQuickPick')
+    },
+    createInputBox: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.createInputBox')
+    },
+    setStatusBarMessage: () => emptyDisposable,
+    withScmProgress: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.withScmProgress')
+    },
+    createTerminal: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.createTerminal')
+    },
+    activeTextEditor: undefined, // Updated by AgentWorkspaceDocuments
+    visibleNotebookEditors: [],
+    activeNotebookEditor: undefined,
+    terminals: [],
+    activeTerminal: undefined,
+    state: { focused: true },
+    activeColorTheme: { kind: ColorThemeKind.Light },
 }
 
-export const window = _window as typeof vscode.window
+export const window = _window
 const gitRepositories: Repository[] = []
 
 export function gitRepository(uri: vscode.Uri, headCommit: string): Repository {
@@ -572,11 +661,15 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' }).toString().trim()
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' }).toString().trim()
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
                     return gitRepository(Uri.file(toplevel), commit)
                 } catch {
                     return null
@@ -601,7 +694,8 @@ const _extensions: typeof vscode.extensions = {
     all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension = clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
+        const shouldActivateGitExtension =
+            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
         if (shouldActivateGitExtension && extensionId === 'vscode.git') {
             const extension: vscode.Extension<any> = gitExtension
             return extension
@@ -616,6 +710,7 @@ interface RegisteredCommand {
     callback: (...args: any[]) => any
     thisArg?: any
 }
+const context = new Map<string, any>()
 const registeredCommands = new Map<string, RegisteredCommand>()
 
 const _commands: Partial<typeof vscode.commands> = {
@@ -642,9 +737,24 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         }
 
+        // We only log a debug warning when unknown commands are invoked because
+        // the extension triggers quite a few commands that are not getting activated
+        // inside the agent yet.
+        logDebug('vscode.commands.executeCommand', 'not found', command)
+
         return Promise.resolve(undefined)
     },
 }
+
+// TODO: register 'vscode.executeFoldingRangeProvider' (high priority, influences commands)
+// TODO: register 'vscode.executeDocumentSymbolProvider' (low priority)
+
+_commands?.registerCommand?.('setContext', (key, value) => {
+    if (typeof key !== 'string') {
+        throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
+    }
+    context.set(key, value)
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)

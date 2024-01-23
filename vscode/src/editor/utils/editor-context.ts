@@ -4,19 +4,23 @@ import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
-import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
+    displayPath,
+    isCodyIgnoredFile,
+    isWindows,
+    type ContextFile,
     type ContextFileFile,
     type ContextFileSource,
     type ContextFileSymbol,
     type ContextFileType,
     type SymbolKind,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+} from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
-const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
+const findWorkspaceFiles = async (
+    cancellationToken: vscode.CancellationToken
+): Promise<vscode.Uri[]> => {
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
@@ -58,9 +62,11 @@ export async function getFileContextFiles(
         return []
     }
 
-    // On Windows, if the user has typed forward slashes, map them to backslashes before
-    // running the search so they match the real paths.
-    query = query.replaceAll(path.posix.sep, path.sep)
+    if (isWindows()) {
+        // On Windows, if the user has typed forward slashes, map them to backslashes before
+        // running the search so they match the real paths.
+        query = query.replaceAll('/', '\\')
+    }
 
     // Add on the relative URIs for search, so we only search the visible part
     // of the path and not the full FS path.
@@ -109,7 +115,10 @@ export async function getFileContextFiles(
     return sortedResults.map(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
 }
 
-export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFileSymbol[]> {
+export async function getSymbolContextFiles(
+    query: string,
+    maxResults = 20
+): Promise<ContextFileSymbol[]> {
     if (!query.trim()) {
         return []
     }
@@ -138,7 +147,9 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    const symbols = results.map(result => result.obj).filter(symbol => !isCodyIgnoredFile(symbol.location.uri))
+    const symbols = results
+        .map(result => result.obj)
+        .filter(symbol => !isCodyIgnoredFile(symbol.location.uri))
 
     if (!symbols.length) {
         return []
@@ -194,7 +205,7 @@ function createContextFileFromUri(
 ): ContextFileFile
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource = 'user',
+    source: ContextFileSource,
     type: ContextFileType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,

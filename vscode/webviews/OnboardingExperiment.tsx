@@ -1,14 +1,14 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import type { TelemetryService } from '@sourcegraph/cody-shared'
 
-import { type AuthMethod } from '../src/chat/protocol'
+import type { AuthMethod } from '../src/chat/protocol'
 
 import onboardingSplashImage from './cody-onboarding-splash.svg'
 import signInLogoGitHub from './sign-in-logo-github.svg'
 import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
-import { type VSCodeWrapper } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
 
@@ -38,6 +38,7 @@ const WebLogin: React.FunctionComponent<
                 </a>
             </li>
             <li>
+                {/* biome-ignore lint/a11y/useValidAnchor: can fix with a lot of CSS but not a priority */}
                 <a
                     href="about:blank"
                     onClick={event => {
@@ -84,7 +85,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                         className={styles.button}
                                         type="button"
                                         onClick={() => {
-                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitHubClick')
+                                            telemetryService.log(
+                                                'CodyVSCodeExtension:auth:simplifiedSignInGitHubClick'
+                                            )
                                             simplifiedLoginRedirect('github')
                                         }}
                                     >
@@ -95,7 +98,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                         className={styles.button}
                                         type="button"
                                         onClick={() => {
-                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitLabClick')
+                                            telemetryService.log(
+                                                'CodyVSCodeExtension:auth:simplifiedSignInGitLabClick'
+                                            )
                                             simplifiedLoginRedirect('gitlab')
                                         }}
                                     >
@@ -106,7 +111,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                         className={styles.button}
                                         type="button"
                                         onClick={() => {
-                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGoogleClick')
+                                            telemetryService.log(
+                                                'CodyVSCodeExtension:auth:simplifiedSignInGoogleClick'
+                                            )
                                             simplifiedLoginRedirect('google')
                                         }}
                                     >
@@ -122,13 +129,18 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Enterprise</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            <VSCodeButton className={styles.button} type="button" onClick={otherSignInClick}>
+                            <VSCodeButton
+                                className={styles.button}
+                                type="button"
+                                onClick={otherSignInClick}
+                            >
                                 Sign In to Your Enterprise&nbsp;Instance
                             </VSCodeButton>
                         </div>
                     </div>
                     <p>
-                        Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                        Learn more about{' '}
+                        <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
                     </p>
                 </div>
             </div>

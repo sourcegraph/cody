@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { displayPath } from '@sourcegraph/cody-shared'
-import { type ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { displayPath, type ActiveTextEditorSelection, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { trailingNonAlphaNumericRegex } from './utils'
 
@@ -98,8 +96,13 @@ export function replaceFileNameWithMarkdownLink(
     )})`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
-    const textToBeReplaced = new RegExp(`\\s*@${inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')
-    const text = humanInput.replace(trailingNonAlphaNumericRegex, '').replaceAll(textToBeReplaced, ` ${markdownText}`)
+    const textToBeReplaced = new RegExp(
+        `\\s*@${inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`,
+        'g'
+    )
+    const text = humanInput
+        .replace(trailingNonAlphaNumericRegex, '')
+        .replaceAll(textToBeReplaced, ` ${markdownText}`)
     const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
     return (text + lastChar).trim()
 }
@@ -107,7 +110,9 @@ export function replaceFileNameWithMarkdownLink(
 function inputRepresentation(file: vscode.Uri, range?: vscode.Range, symbolName?: string): string {
     return [
         displayPath(file),
-        range && !(range.start.line === 0 && range.end.line === 0) ? `:${range.start.line}-${range.end.line}` : '',
+        range && !(range.start.line === 0 && range.end.line === 0)
+            ? `:${range.start.line}-${range.end.line}`
+            : '',
         symbolName ? `#${symbolName}` : '',
     ]
         .join('')

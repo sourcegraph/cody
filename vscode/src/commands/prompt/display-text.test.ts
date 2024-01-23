@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
-import { type DisplayPathEnvInfo } from '@sourcegraph/cody-shared/src/editor/displayPath'
+import { setDisplayPathEnvInfo, type DisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 
 import { replaceFileNameWithMarkdownLink } from './display-text'
 
@@ -18,14 +17,20 @@ describe('replaceFileNameWithMarkdownLink', () => {
     })
 
     it('replaces file name with markdown link', () => {
-        expect(replaceFileNameWithMarkdownLink('Hello @path/to/test.js', URI.file('/path/to/test.js'))).toEqual(
+        expect(
+            replaceFileNameWithMarkdownLink('Hello @path/to/test.js', URI.file('/path/to/test.js'))
+        ).toEqual(
             'Hello [_@path/to/test.js_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Fpath%2Fto%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
         )
     })
 
     it('replaces file name with range with markdown link', () => {
         expect(
-            replaceFileNameWithMarkdownLink('What is @foo.ts:2-2?', URI.file('/foo.ts'), new vscode.Range(2, 0, 2, 0))
+            replaceFileNameWithMarkdownLink(
+                'What is @foo.ts:2-2?',
+                URI.file('/foo.ts'),
+                new vscode.Range(2, 0, 2, 0)
+            )
         ).toEqual(
             'What is [_@foo.ts:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
         )
@@ -66,14 +71,18 @@ describe('replaceFileNameWithMarkdownLink', () => {
         })
 
         it('uses OS-native path separator', () => {
-            expect(replaceFileNameWithMarkdownLink('Loaded @a\\b.js', windowsFileURI('C:\\a\\b.js'))).toEqual(
+            expect(
+                replaceFileNameWithMarkdownLink('Loaded @a\\b.js', windowsFileURI('C:\\a\\b.js'))
+            ).toEqual(
                 'Loaded [_@a\\b.js_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2FC%3A%2Fa%2Fb.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
             )
         })
     })
 
     it('returns original text if no match', () => {
-        expect(replaceFileNameWithMarkdownLink('No file name', URI.file('/test.js'))).toEqual('No file name')
+        expect(replaceFileNameWithMarkdownLink('No file name', URI.file('/test.js'))).toEqual(
+            'No file name'
+        )
     })
 
     it('handles special characters in path', () => {
@@ -89,7 +98,11 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles line numbers', () => {
         expect(
-            replaceFileNameWithMarkdownLink('Error in @test.js:2-2', URI.file('/test.js'), new vscode.Range(2, 0, 2, 0))
+            replaceFileNameWithMarkdownLink(
+                'Error in @test.js:2-2',
+                URI.file('/test.js'),
+                new vscode.Range(2, 0, 2, 0)
+            )
         ).toEqual(
             'Error in [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
         )
@@ -97,7 +110,11 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles non alphanumeric characters follows the file name in input', () => {
         expect(
-            replaceFileNameWithMarkdownLink('What is @test.js:2-2?', URI.file('/test.js'), new vscode.Range(2, 0, 2, 0))
+            replaceFileNameWithMarkdownLink(
+                'What is @test.js:2-2?',
+                URI.file('/test.js'),
+                new vscode.Range(2, 0, 2, 0)
+            )
         ).toEqual(
             'What is [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
         )
@@ -105,7 +122,11 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
         expect(
-            replaceFileNameWithMarkdownLink('Error in @test.js', URI.file('/test.js'), new vscode.Range(0, 0, 0, 0))
+            replaceFileNameWithMarkdownLink(
+                'Error in @test.js',
+                URI.file('/test.js'),
+                new vscode.Range(0, 0, 0, 0)
+            )
         ).toEqual(
             'Error in [_@test.js_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A0%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A0%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
         )

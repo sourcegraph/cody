@@ -1,10 +1,10 @@
-import { type ComponentMeta, type ComponentStoryObj } from '@storybook/react'
+import type { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
 import { App } from './App'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
-import { type VSCodeWrapper } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const meta: ComponentMeta<typeof App> = {
     title: 'cody/App',

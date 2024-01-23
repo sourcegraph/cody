@@ -1,18 +1,22 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
-import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type {
+    ActiveTextEditorSelectionRange,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    CodyLLMSiteConfiguration,
+    ConfigurationWithAccessToken,
+    ContextFile,
+    ContextFileType,
+    EnhancedContextContextT,
+    SearchPanelFile,
+    TelemetryEventProperties,
+    UserLocalHistory,
+} from '@sourcegraph/cody-shared'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
-import { type View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/NavBar'
 
 /**
  * A message sent from the webview to the extension host.
@@ -68,7 +72,6 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
@@ -103,7 +106,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
@@ -113,6 +115,13 @@ export type ExtensionMessage =
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
@@ -122,6 +131,8 @@ interface ExtensionAttributionMessage {
     }
     error?: string
 }
+
+export type ChatSubmitType = 'user' | 'user-newchat'
 
 interface WebviewSubmitMessage {
     text: string
@@ -140,7 +151,10 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -256,7 +270,10 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false
     }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return (
+        authStatus.authenticated &&
+        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

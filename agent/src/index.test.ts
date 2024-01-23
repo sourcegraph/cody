@@ -4,22 +4,23 @@ import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
-import { MessageHandler } from './jsonrpc-alias'
-import {
-    type ClientInfo,
-    type ProgressReportParams,
-    type ProgressStartParams,
-    type ServerInfo,
-    type WebviewPostMessageParams,
+import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
+import type {
+    ClientInfo,
+    ExtensionConfiguration,
+    ProgressReportParams,
+    ProgressStartParams,
+    ServerInfo,
+    WebviewPostMessageParams,
 } from './protocol-alias'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
@@ -36,7 +37,7 @@ interface ProgressReportMessage {
 interface ProgressEndMessage {
     method: 'progress/end'
     id: string
-    message: {}
+    message: Record<string, never>
 }
 
 export class TestClient extends MessageHandler {
@@ -47,12 +48,15 @@ export class TestClient extends MessageHandler {
     public progressMessages: ProgressMessage[] = []
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
+    public readonly serverEndpoint: string
 
     constructor(
         public readonly name: string,
-        public readonly accessToken?: string
+        public readonly accessToken?: string,
+        serverEndpoint?: string
     ) {
         super()
+        this.serverEndpoint = serverEndpoint ?? 'https://sourcegraph.com'
 
         this.name = name
         this.info = this.getClientInfo()
@@ -125,7 +129,7 @@ export class TestClient extends MessageHandler {
         }).finally(() => vscode.Disposable.from(...disposables).dispose())
     }
 
-    public async initialize() {
+    public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
         this.agentProcess = this.spawnAgentProcess()
 
         this.connectProcess(this.agentProcess, error => {
@@ -138,16 +142,19 @@ export class TestClient extends MessageHandler {
         })
 
         try {
-            const serverInfo = await this.handshake(this.info)
+            const serverInfo = await this.handshake(this.info, additionalConfig)
             assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+            return serverInfo
         } catch (error) {
             if (error === undefined) {
                 throw new Error('Agent failed to initialize, error is undefined')
-            } else if (error instanceof Error) {
-                throw error
-            } else {
-                throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, { cause: error })
             }
+            if (error instanceof Error) {
+                throw error
+            }
+            throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, {
+                cause: error,
+            })
         }
     }
 
@@ -208,7 +215,10 @@ export class TestClient extends MessageHandler {
         return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
     }
 
-    private async handshake(clientInfo: ClientInfo): Promise<ServerInfo> {
+    private async handshake(
+        clientInfo: ClientInfo,
+        additionalConfig?: Partial<ExtensionConfiguration>
+    ): Promise<ServerInfo> {
         return new Promise((resolve, reject) => {
             setTimeout(
                 () =>
@@ -221,7 +231,16 @@ export class TestClient extends MessageHandler {
                     ),
                 10_000
             )
-            this.request('initialize', clientInfo).then(
+            this.request('initialize', {
+                ...clientInfo,
+                extensionConfiguration: {
+                    serverEndpoint: 'https://invalid',
+                    accessToken: 'invalid',
+                    customHeaders: {},
+                    ...clientInfo.extensionConfiguration,
+                    ...additionalConfig,
+                },
+            }).then(
                 info => {
                     this.notify('initialized', null)
                     resolve(info)
@@ -242,7 +261,6 @@ export class TestClient extends MessageHandler {
             env: {
                 CODY_SHIM_TESTING: 'true',
                 CODY_TEMPERATURE_ZERO: 'true',
-                CODY_LOCAL_EMBEDDINGS_DISABLED: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: this.name,
@@ -264,9 +282,9 @@ export class TestClient extends MessageHandler {
                 progressBars: 'enabled',
             },
             extensionConfiguration: {
-                anonymousUserID: this.name + 'abcde1234',
+                anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: 'https://sourcegraph.com',
+                serverEndpoint: this.serverEndpoint,
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
@@ -304,22 +322,18 @@ const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
-const mayRecord = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+const mayRecord =
+    process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
-    // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
-    // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
-    // post in #wg-cody-agent to let the team know the tests have been disabled so that we can
-    // investigate the problem and get the passing again.
-    // if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
-    //     it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
-    //     return
-    // }
-
     const dotcom = 'https://sourcegraph.com'
     if (mayRecord) {
         execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
+        assert.strictEqual(
+            process.env.SRC_ENDPOINT,
+            dotcom,
+            'SRC_ENDPOINT must be https://sourcegraph.com'
+        )
     }
 
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
@@ -327,7 +341,15 @@ describe('Agent', () => {
         return
     }
 
-    const client = new TestClient('defaultClient', process.env.SRC_ACCESS_TOKEN)
+    const client = new TestClient(
+        'defaultClient',
+        // The redacted ID below is copy-pasted from the recording file and
+        // needs to be updated whenever we change the underlying access token.
+        // We can't return a random string here because then Polly won't be able
+        // to associate the HTTP requests between record mode and replay mode.
+        process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
+    )
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     //
@@ -341,66 +363,115 @@ describe('Agent', () => {
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
         await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
-        await client.initialize()
-    }, 10_000)
-
-    it('handles config changes correctly', () => {
-        // Send two config change notifications because this is what the
-        // JetBrains client does and there was a bug where everything worked
-        // fine as long as we didn't send the second unauthenticated config
-        // change.
-        client.notify('extensionConfiguration/didChange', {
-            ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
-            accessToken: '',
-            serverEndpoint: 'https://sourcegraph.com/',
-            customHeaders: {},
+        const serverInfo = await client.initialize({
+            serverEndpoint: 'https://sourcegraph.com',
+            // Initialization should always succeed even if authentication fails
+            // because otherwise clients need to restart the process to test
+            // with a new access token.
+            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
         })
-        client.notify('extensionConfiguration/didChange', {
+        expect(serverInfo?.authStatus?.isLoggedIn).toBeFalsy()
+
+        // Log in so test cases are authenticated by default
+        const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
             customHeaders: {},
         })
+        expect(valid?.isLoggedIn).toBeTruthy()
+    }, 10_000)
+
+    beforeEach(async () => {
+        await client.request('testing/reset', null)
     })
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
+    const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
+    const squirrelUri = Uri.file(squirrelPath)
+    const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
+    const multipleSelectionsUri = Uri.file(multipleSelections)
 
-    async function openFile(uri: Uri) {
+    function openFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didOpen', params)
+    }
+    function changeFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
+        return textDocumentEvent(uri, 'textDocument/didChange', params)
+    }
+
+    async function textDocumentEvent(
+        uri: Uri,
+        method: NotificationMethodName,
+        params?: { selectionName?: string }
+    ): Promise<void> {
+        const selectionName = params?.selectionName ?? 'SELECTION'
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStart = content.indexOf('/* SELECTION_START */')
-        const selectionEnd = content.indexOf('/* SELECTION_END */')
+        const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionStart = content.indexOf(selectionStartMarker)
+        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
         const cursor = content.indexOf('/* CURSOR */')
-
-        content = content
-            .replace('/* CURSOR */', '')
-            .replace('/* SELECTION_START */', '')
-            .replace('/* SELECTION_END */', '')
+        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
+            throw new Error(`No selection found for name ${params.selectionName}`)
+        }
+        content = content.replace('/* CURSOR */', '')
 
         const document = AgentTextDocument.from(uri, content)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionStart)
-                : undefined
-        const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        client.notify('textDocument/didOpen', {
+                  ? document.positionAt(selectionStart + selectionStartMarker.length)
+                  : undefined
+        const end =
+            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
+        client.notify(method, {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
         })
     }
 
-    it('accepts textDocument/didOpen notifications', async () => {
-        await openFile(sumUri)
-    })
+    it('extensionConfiguration/change (handle errors)', async () => {
+        // Send two config change notifications because this is what the
+        // JetBrains client does and there was a bug where everything worked
+        // fine as long as we didn't send the second unauthenticated config
+        // change.
+        const invalid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEEE',
+            serverEndpoint: 'https://sourcegraph.com/',
+            customHeaders: {},
+        })
+        expect(invalid?.isLoggedIn).toBeFalsy()
+        const valid = await client.request('extensionConfiguration/change', {
+            ...client.info.extensionConfiguration,
+            anonymousUserID: 'abcde1234',
+            accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            customHeaders: {},
+        })
+        expect(valid?.isLoggedIn).toBeTruthy()
 
-    it('returns non-empty autocomplete', async () => {
+        // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
+        // When changing an account, you also need to update the REDACTED_ hash above.
+        //
+        // To update the recordings with the correct account, run the following command
+        // from the root of this repository:
+        //
+        //    source agent/scripts/export-cody-http-recording-tokens.sh
+        //
+        // If you don't have access to this private file then you need to ask
+        // for sombody on the Sourcegraph team to help you update the HTTP requests.
+        expect(valid?.username).toStrictEqual('olafurpg-testing')
+    }, 10_000)
+
+    it('autocomplete/execute (non-empty result)', async () => {
+        await openFile(sumUri)
         const completions = await client.request('autocomplete/execute', {
             uri: sumUri.toString(),
             position: { line: 1, character: 3 },
@@ -419,69 +490,29 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    it('allows us to send a very short chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
-        expect(lastMessage).toMatchInlineSnapshot(
-            `
-              {
-                "contextFiles": [],
-                "displayText": " Hello!",
-                "speaker": "assistant",
-                "text": " Hello!",
-              }
-            `,
-            explainPollyError
-        )
-    }, 20_000)
+    describe('Chat', () => {
+        it('chat/submitMessage (short message)', async () => {
+            const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
+            expect(lastMessage).toMatchInlineSnapshot(
+                `
+          {
+            "contextFiles": [],
+            "displayText": " Hello! Nice to meet you.",
+            "speaker": "assistant",
+            "text": " Hello! Nice to meet you.",
+          }
+        `,
+                explainPollyError
+            )
+        }, 30_000)
 
-    it('allows us to restore a chat', async () => {
-        // Step 1: create a chat session where I share my name.
-        const id1 = await client.request('chat/new', null)
-        const reply1 = asTranscriptMessage(
-            await client.request('chat/submitMessage', {
-                id: id1,
-                message: {
-                    command: 'submit',
-                    text: 'My name is Lars Monsen',
-                    submitType: 'user',
-                    addEnhancedContext: false,
-                },
-            })
-        )
-
-        // Step 2: restore a new chat session with a transcript including my name, and
-        //  and assert that it can retrieve my name from the transcript.
-        const {
-            models: [model],
-        } = await client.request('chat/models', { id: id1 })
-
-        const id2 = await client.request('chat/restore', {
-            modelID: model.model,
-            messages: reply1.messages,
-            chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
-        })
-        const reply2 = asTranscriptMessage(
-            await client.request('chat/submitMessage', {
-                id: id2,
-                message: {
-                    command: 'submit',
-                    text: 'What is my name?',
-                    submitType: 'user',
-                    addEnhancedContext: false,
-                },
-            })
-        )
-        expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-            '" You told me your name is Lars Monsen."',
-            explainPollyError
-        )
-    }, 20_000)
-
-    it('allows us to send a longer chat message', async () => {
-        const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
-        const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
-        expect(trimmedMessage).toMatchInlineSnapshot(
-            `
+        it('chat/submitMessage (long message)', async () => {
+            const lastMessage = await client.sendSingleMessageToNewChat(
+                'Generate simple hello world function in java!'
+            )
+            const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
+            expect(trimmedMessage).toMatchInlineSnapshot(
+                `
           " Here is a simple Hello World program in Java:
 
           \`\`\`java
@@ -494,141 +525,271 @@ describe('Agent', () => {
           }
           \`\`\`
 
-          This program prints "Hello World!" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
+          This program defines a Main class with a main method, which is the entry point for a Java program.
 
-          To run this:
+          Inside the main method, it uses System.out.println to print "Hello World!" to the console.
 
-          1. Save the code in a file called Main.java
-          2. Compile it with: javac Main.java
-          3. Run it with: java Main
+          To run this program, you would need to:
 
-          The "Hello World!" text will be printed to the console.
+          1. Save it as Main.java
+          2. Compile it with \`javac Main.java\`
+          3. Run it with \`java Main\`
 
-          Let me know if you need any clarification or have additional requirements for the Java program!"
+          The output would be:
+
+          \`\`\`
+          Hello World!
+          \`\`\`
+
+          Let me know if you need any clarification or have additional requirements for the Hello World program!"
         `,
-            explainPollyError
-        )
-    }, 20_000)
+                explainPollyError
+            )
+        }, 30_000)
 
-    // This test is skipped because it shells out to `symf expand-query`, which
-    // requires an access token to send an llm request and is, therefore, not
-    // able to return stable results in replay mode. Also, we don't have an
-    // access token in ci so this test can only pass when running locally (for
-    // now).
-    it('allows us to send a chat message with enhanced context enabled', async () => {
-        await openFile(animalUri)
-        await client.request('command/execute', { command: 'cody.search.index-update' })
-        const lastMessage = await client.sendSingleMessageToNewChat(
-            'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
-            {
+        it('chat/restore', async () => {
+            // Step 1: create a chat session where I share my name.
+            const id1 = await client.request('chat/new', null)
+            const reply1 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id1,
+                    message: {
+                        command: 'submit',
+                        text: 'My name is Lars Monsen',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+
+            // Step 2: restore a new chat session with a transcript including my name, and
+            //  and assert that it can retrieve my name from the transcript.
+            const {
+                models: [model],
+            } = await client.request('chat/models', { id: id1 })
+
+            const id2 = await client.request('chat/restore', {
+                modelID: model.model,
+                messages: reply1.messages,
+                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
+            })
+            const reply2 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id2,
+                    message: {
+                        command: 'submit',
+                        text: 'What is my name?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+            expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
+                '" You told me your name is Lars Monsen."',
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('chat/submitMessage (addEnhancedContext: true)', async () => {
+            await openFile(animalUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const lastMessage = await client.sendSingleMessageToNewChat(
+                'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+                {
+                    addEnhancedContext: true,
+                }
+            )
+            // TODO: make this test return a TypeScript implementation of
+            // `animal.ts`. It currently doesn't do this because the workspace root
+            // is not a git directory and symf reports some git-related error.
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " \`\`\`typescript
+              class Dog implements Animal {
+                name: string;
+
+                makeAnimalSound() {
+                  return "Woof!";
+                }
+
+                isMammal = true;
+              }
+              \`\`\`"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
+            await openFile(squirrelUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
                 addEnhancedContext: true,
+            })
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
+            expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+        }, 30_000)
+
+        it('webview/receiveMessage (type: chatModel)', async () => {
+            const id = await client.request('chat/new', null)
+            {
+                await client.setChatModel(id, 'openai/gpt-3.5-turbo')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('openai')).toBeTruthy()
             }
+            {
+                await client.setChatModel(id, 'anthropic/claude-2.0')
+                const lastMessage = await client.sendMessage(
+                    id,
+                    'which company, other than sourcegraph, created you?'
+                )
+                expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
+            }
+        }, 30_000)
+
+        it('webview/receiveMessage (type: reset)', async () => {
+            const id = await client.request('chat/new', null)
+            await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+            await client.sendMessage(
+                id,
+                'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+            )
+            {
+                const lastMessage = await client.sendMessage(id, 'kramer')
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeTruthy()
+            }
+            await client.reset(id)
+            {
+                const lastMessage = await client.sendMessage(id, 'kramer')
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+            }
+        })
+
+        it(
+            'edits the chat',
+            async () => {
+                const id = await client.request('chat/new', null)
+                await client.setChatModel(
+                    id,
+                    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                )
+                await client.sendMessage(
+                    id,
+                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                )
+                await client.editMessage(
+                    id,
+                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                )
+                {
+                    const lastMessage = await client.sendMessage(id, 'kramer')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                }
+                {
+                    const lastMessage = await client.sendMessage(id, 'georgey')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                }
+            },
+            { timeout: mayRecord ? 10_000 : undefined }
         )
-        // TODO: make this test return a TypeScript implementation of
-        // `animal.ts`. It currently doesn't do this because the workspace root
-        // is not a git directory and symf reports some git-related error.
-        expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
-            `
-          " \`\`\`typescript
-          export class Dog implements Animal {
-            name: string;
+    })
 
-            constructor(name: string) {
-              this.name = name;
-            }
+    describe('Text documents', () => {
+        it('chat/submitMessage (understands the selected text)', async () => {
+            await client.request('command/execute', { command: 'cody.search.index-update' })
 
-            makeAnimalSound() {
-              return 'Woof!';
-            }
-
-            isMammal = true;
-          }
-          \`\`\`"
-        `,
-            explainPollyError
-        )
-    }, 20_000)
+            await openFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri)
+            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            const reply = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply?.text?.trim()).includes('anotherFunction')
+            expect(reply?.text?.trim()).not.includes('inner')
+            await changeFile(multipleSelectionsUri)
+            const reply2 = await client.sendSingleMessageToNewChat(
+                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                { addEnhancedContext: true }
+            )
+            expect(reply2?.text?.trim()).includes('inner')
+            expect(reply2?.text?.trim()).not.includes('anotherFunction')
+        }, 20_000)
+    })
 
     describe('Commands', () => {
-        it('explain', async () => {
+        it('commands/explain', async () => {
             await openFile(animalUri)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " The selected code defines an Animal interface in TypeScript.
+              " The Animal interface:
 
-              An interface in TypeScript is a way to define a "contract" that other classes or objects can implement. This allows enforcing certain properties and methods on objects that implement the interface.
+              The Animal interface defines the shape of objects that represent animals. Interfaces in TypeScript are used to define the structure of an object - what properties and methods it should have.
 
-              Specifically, this Animal interface defines:
+              This interface has three properties:
 
-              1. A name property of type string. This will be used to store the animal's name.
+              1. name - This will be a string property to represent the animal's name.
 
-              2. A makeAnimalSound() method that returns a string. This will be implemented by classes to make an animal noise unique to that animal.
+              2. makeAnimalSound() - This is a method that will be implemented by classes that implement the Animal interface. It allows each animal to have its own implementation of making a sound.
 
-              3. An isMammal property of type boolean. This indicates whether the animal is a mammal or not.
+              3. isMammal - This is a boolean property that will specify if the animal is a mammal or not.
 
-              So in summary, this Animal interface defines the blueprint for an object representing an animal. Anything implementing this interface would need to have a name, have a way to make a sound, and specify whether it's a mammal or not. This allows enforcing a consistent API for animal objects in the codebase.
+              The interface does not contain any actual implementation, just the definition of what properties and methods any class implementing Animal should have. This allows us to define a consistent structure that can be reused across different animal classes.
 
-              The interface itself doesn't contain any implementation logic. It just defines the contract. Concrete classes would then implement the Animal interface to provide the actual logic and data for specific animal instances. Those classes would ensure they fulfill the contract by matching the interface's property and method signatures.
+              By defining an Animal interface, we can then create multiple classes like Dog, Cat, Bird etc that implement the interface and provide their own specific logic while ensuring they match the general Animal structure.
 
-              So in essence, this interface sets up a reusable way to model animal objects in a standardized way. The consuming code can just rely on the Animal interface without worrying about the details of specific animal types."
+              Interfaces are a powerful way to define contracts in TypeScript code and allow different implementations to guarantee they can work together smoothly. This Animal interface creates a reusable way to model animals in a type-safe way."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_000)
 
-        it('test', async () => {
+        it('commands/test', async () => {
             await openFile(animalUri)
             const id = await client.request('commands/test', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " No test framework or libraries are imported in the shared context code. Since this is TypeScript code, I will generate Jest tests:
+              " Okay, based on the provided code context, it looks like no test framework or libraries are already in use. Since this is TypeScript code, I will generate Jest unit tests for the Animal interface:
 
-              \`\`\`typescript
+              \`\`\`ts
+              // New imports needed
               import { Animal } from './animal';
 
               describe('Animal', () => {
-                it('should return the animal sound', () => {
-                  const dog: Animal = {
-                    name: 'Dog',
-                    makeAnimalSound: () => 'Woof',
-                    isMammal: true
-                  };
 
-                  expect(dog.makeAnimalSound()).toBe('Woof');
+                it('should have a name property', () => {
+                  const animal = {} as Animal;
+                  expect(animal.name).toBeDefined();
                 });
 
-                it('should have a boolean isMammal property', () => {
-                  const cat: Animal = {
-                    name: 'Cat',
-                    makeAnimalSound: () => 'Meow',
-                    isMammal: true
-                  };
-
-                  expect(typeof cat.isMammal).toBe('boolean');
+                it('should have a makeAnimalSound method', () => {
+                  const animal = {} as Animal;
+                  expect(animal.makeAnimalSound).toBeDefined();
+                  expect(typeof animal.makeAnimalSound).toBe('function');
                 });
 
-                it('should throw if makeAnimalSound is not a function', () => {
-                  const invalidAnimal: Animal = {
-                    name: 'Fish',
-                    makeAnimalSound: 'Blub',
-                    isMammal: false
-                  };
-
-                  expect(() => invalidAnimal.makeAnimalSound()).toThrow();
+                it('should have an isMammal property', () => {
+                  const animal = {} as Animal;
+                  expect(animal.isMammal).toBeDefined();
+                  expect(typeof animal.isMammal).toBe('boolean');
                 });
+
               });
               \`\`\`
 
-              This adds Jest and generates a basic test suite that validates the Animal interface contract. It tests the makeAnimalSound method returns the expected sound, isMammal is a boolean, and makeAnimalSound throws if not a function. There may be more edge cases to cover, but this provides a starting set of tests."
+              This generates a basic Jest test suite for the Animal interface, validating the name, makeAnimalSound, and isMammal properties. I focused on simple and complete validations of the key functionality. Since no test framework was detected in the context, I imported Jest and created new tests from scratch. Please let me know if you would like me to modify or expand the tests in any way."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_000)
 
-        it('smell', async () => {
+        it('commands/smell', async () => {
             await openFile(animalUri)
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -641,78 +802,82 @@ describe('Agent', () => {
 
               \`\`\`
               export interface Animal {
-                name: string;
-                makeAnimalSound(volume?: number): string;
-                isMammal: boolean;
+                name: string
+                makeAnimalSound(volume?: number): string
+                isMammal: boolean
               }
               \`\`\`
 
-              Adding type annotations makes the code more self-documenting and enables stronger type checking.
+              Adding explicit types for methods makes the interface clearer and allows TypeScript to catch more errors at compile time.
 
-              2. Make interface name PascalCase:
+              2. Make name readonly:
 
               \`\`\`
               export interface Animal {
+                readonly name: string
                 // ...
               }
               \`\`\`
 
-              The PascalCase convention is standard for TypeScript interfaces.
+              This prevents the name from being reassigned after initialization, making the code more robust.
 
-              3. Make method names camelCase:
-
-              \`\`\`
-              makeAnimalSound() {
-                // ...
-              }
-              \`\`\`
-
-              camelCase is the standard naming convention for methods in TypeScript.
-
-              4. Add JSDoc comments for documentation:
+              3. Add alternate method name:
 
               \`\`\`
-              /**
-               * Represents an animal.
-               */
               export interface Animal {
+
+                // ...
+
+                getSound(): string
+              }
+              \`\`\`
+
+              Adding a method like \`getSound()\` as an alias for \`makeAnimalSound()\` improves readability.
+
+              4. Use boolean getter instead of property for isMammal:
+
+              \`\`\`
+              export interface Animal {
+
+                // ...
+
+                get isMammal(): boolean
+              }
+              \`\`\`
+
+              This allows encapsulation of the logic for determining if mammal.
+
+              5. Extend a base interface like LivingThing:
+
+              \`\`\`
+              interface LivingThing {
+                name: string
+              }
+
+              interface Animal extends LivingThing {
                 // ...
               }
               \`\`\`
 
-              JSDoc comments improve documentation and discoverability.
+              This improves maintainability by separating common properties into a base interface.
 
-              5. Export class instead of interface:
-
-              \`\`\`
-              export class Animal {
-                // ...
-              }
-              \`\`\`
-
-              A class is more standard and flexible than an interface for this use case.
-
-              Overall, the selected code follows reasonable design practices. The suggestions above are minor enhancements to improve type safety, conventions, documentation and flexibility. Aside from those opportunities, the code is well-structured."
+              Overall, the code is well-written but could benefit from some minor changes like adding types, encapsulation, and semantic method names. The interface follows sound principles like read-only properties andboolean getters. No major issues were found."
             `,
                 explainPollyError
             )
-        }, 20_000)
+        }, 30_000)
     })
 
-    // TODO Fix test - fails intermittently on CI
-    // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
-    it.skip('allows us to cancel chat', async () => {
-        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('chat/new', null)
-    }, 600)
-
-    describe('progress bars', () => {
-        it('messages are sent', async () => {
+    describe('Progress bars', () => {
+        it('progress/report', async () => {
             const { result } = await client.request('testing/progress', { title: 'Susan' })
             expect(result).toStrictEqual('Hello Susan')
             let progressID: string | undefined
             for (const message of client.progressMessages) {
-                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
+                if (
+                    message.method === 'progress/start' &&
+                    message.message.options.title === 'testing/progress'
+                ) {
                     progressID = message.message.id
                     break
                 }
@@ -764,101 +929,84 @@ describe('Agent', () => {
               ]
             `)
         })
-        it('progress can be cancelled', async () => {
+
+        it('progress/cancel', async () => {
             const disposable = client.progressStartEvents.event(params => {
                 if (params.options.title === 'testing/progressCancelation') {
                     client.notify('progress/cancel', { id: params.id })
                 }
             })
             try {
-                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
+                const { result } = await client.request('testing/progressCancelation', {
+                    title: 'Leona',
+                })
                 expect(result).toStrictEqual("request with title 'Leona' cancelled")
             } finally {
                 disposable.dispose()
             }
         })
-
-        it('allows us to set the chat model', async () => {
-            const id = await client.request('chat/new', null)
-            {
-                await client.setChatModel(id, 'openai/gpt-3.5-turbo')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
-                expect(lastMessage?.text?.toLocaleLowerCase().includes('openai')).toBeTruthy()
-            }
-            {
-                await client.setChatModel(id, 'anthropic/claude-2.0')
-                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
-                expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
-            }
-        })
-
-        it('resets the chat', async () => {
-            const id = await client.request('chat/new', null)
-            await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
-            await client.sendMessage(
-                id,
-                'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
-            )
-            {
-                const lastMessage = await client.sendMessage(id, 'kramer')
-                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeTruthy()
-            }
-            await client.reset(id)
-            {
-                const lastMessage = await client.sendMessage(id, 'kramer')
-                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
-            }
-        })
-
-        it(
-            'edits the chat',
-            async () => {
-                const id = await client.request('chat/new', null)
-                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
-                await client.sendMessage(
-                    id,
-                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
-                )
-                await client.editMessage(
-                    id,
-                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
-                )
-                {
-                    const lastMessage = await client.sendMessage(id, 'kramer')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
-                }
-                {
-                    const lastMessage = await client.sendMessage(id, 'georgey')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
-                }
-            },
-            { timeout: mayRecord ? 10_000 : undefined }
-        )
     })
 
     describe('RateLimitedAgent', () => {
-        const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
+        const rateLimitedClient = new TestClient(
+            'rateLimitedClient',
+            process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5'
+        )
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            await rateLimitedClient.initialize()
+            const serverInfo = await rateLimitedClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('david.veszelovszki')
         }, 10_000)
 
-        it('get rate limit error if exceeding usage on rate limited account', async () => {
+        it('chat/submitMessage (RateLimitError)', async () => {
             const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
-            expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
-        }, 20_000)
+            // Intentionally not a snapshot assertion because we should never
+            // automatically update 'RateLimitError' to become another value.
+            expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
+        }, 30_000)
 
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_000)
+    })
+
+    describe('Enterprise', () => {
+        const enterpriseClient = new TestClient(
+            'enterpriseClient',
+            process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
+            'https://demo.sourcegraph.com'
+        )
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }, 10_000)
+
+        it('chat/submitMessage', async () => {
+            const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
+            expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
+
+        afterAll(async () => {
+            await enterpriseClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_000)
     })
 
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
-    }, 20_000)
+    }, 30_000)
 })
 
 function trimEndOfLine(text: string): string {

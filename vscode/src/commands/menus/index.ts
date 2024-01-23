@@ -3,9 +3,9 @@ import { platform } from 'os'
 import { debounce } from 'lodash'
 import { commands, window, type QuickPickItem, type QuickPickOptions } from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
+import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import { type CustomCommandsItem } from '../utils'
+import type { CustomCommandsItem } from '../utils'
 import {
     ASK_QUESTION_COMMAND,
     CustomCommandConfigMenuItems,
@@ -79,11 +79,16 @@ export async function showCommandMenu(
             if (isSlashCommand(normalizedValue)) {
                 const [slashCommand] = normalizedValue.split(' ')
                 const matchingCommands = defaultItems.filter(
-                    item => 'slashCommand' in item && item.slashCommand?.toLowerCase().startsWith(slashCommand)
+                    item =>
+                        'slashCommand' in item &&
+                        item.slashCommand?.toLowerCase().startsWith(slashCommand)
                 )
                 if (matchingCommands.length > 0) {
                     // show only item for a matching slash command (ignore other label or description matches)
-                    quickPick.items = matchingCommands.map(command => ({ ...command, alwaysShow: true }))
+                    quickPick.items = matchingCommands.map(command => ({
+                        ...command,
+                        alwaysShow: true,
+                    }))
                     return
                 }
 
@@ -94,8 +99,8 @@ export async function showCommandMenu(
 
             const hasMatch = items.some(item =>
                 // label may include placeholder which we don't want to match against - use slash command instead
-                ['slashCommand' in item ? item.slashCommand : item.label, item.description].some(
-                    str => str?.toLowerCase().includes(normalizedValue)
+                ['slashCommand' in item ? item.slashCommand : item.label, item.description].some(str =>
+                    str?.toLowerCase().includes(normalizedValue)
                 )
             )
             if (!normalizedValue || hasMatch) {

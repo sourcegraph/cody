@@ -1,14 +1,18 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import {
+    ConfigFeaturesSingleton,
+    FeatureFlag,
+    featureFlagProvider,
+    isCodyIgnoredFile,
+    RateLimitError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import { type CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
@@ -27,18 +31,19 @@ import {
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import { isCompletionVisible } from './is-completion-visible'
+import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
-import { type CompletionBookkeepingEvent, type CompletionItemID, type CompletionLogID } from './logger'
-import { type ProviderConfig } from './providers/provider'
+import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
 import {
     analyticsItemToAutocompleteItem,
     suggestedAutocompleteItemsCache,
+    updateInsertRangeForVSCode,
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
-import { type ProvideInlineCompletionItemsTracer, type ProvideInlineCompletionsItemTraceData } from './tracer'
+import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -47,7 +52,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-interface CodyCompletionItemProviderConfig {
+export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
@@ -75,7 +80,9 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
-export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
+export class InlineCompletionItemProvider
+    implements vscode.InlineCompletionItemProvider, vscode.Disposable
+{
     private lastCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -94,7 +101,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
-    private lastAcceptedCompletionItem: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'> | undefined
+    private lastAcceptedCompletionItem:
+        | Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
+        | undefined
 
     private disposables: vscode.Disposable[] = []
 
@@ -134,7 +143,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // find a workaround that is not silently updating the user's VS Code settings.
             void vscode.workspace
                 .getConfiguration()
-                .update('editor.inlineSuggest.suppressSuggestions', true, vscode.ConfigurationTarget.Global)
+                .update(
+                    'editor.inlineSuggest.suppressSuggestions',
+                    true,
+                    vscode.ConfigurationTarget.Global
+                )
         }
 
         this.requestManager = new RequestManager()
@@ -186,6 +199,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const completionRequest: CompletionRequest = { document, position, context }
             this.lastCompletionRequest = completionRequest
 
+            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+            try {
+                if (!configFeatures.autoComplete) {
+                    // If Configfeatures exists and autocomplete is disabled then raise
+                    // the error banner for autocomplete config turned off
+                    throw new Error('AutocompleteConfigTurnedOff')
+                }
+            } catch (error) {
+                this.onError(error as Error)
+                throw error
+            }
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {
@@ -194,10 +219,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // We start feature flag requests early so that we have a high chance of getting a response
             // before we need it.
-            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency)
+            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteUserLatency
+            )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
-            let stopLoading: () => void | undefined
+            let stopLoading: (() => void) | undefined
             const setIsLoading = (isLoading: boolean): void => {
                 if (isLoading) {
                     // We do not want to show a loading spinner when the user is rate limited to
@@ -206,7 +233,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     // We still make the request to find out if the user is still rate limited.
                     const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
                     if (!hasRateLimitError) {
-                        stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                        stopLoading = this.config.statusBar.startLoading(
+                            'Completions are being generated'
+                        )
                     }
                 } else {
                     stopLoading?.()
@@ -239,13 +268,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             }
 
             const triggerKind =
-                this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+                this.lastManualCompletionTimestamp &&
+                this.lastManualCompletionTimestamp > Date.now() - 500
                     ? TriggerKind.Manual
                     : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
-                    ? TriggerKind.Automatic
-                    : takeSuggestWidgetSelectionIntoAccount
-                    ? TriggerKind.SuggestWidget
-                    : TriggerKind.Hover
+                      ? TriggerKind.Automatic
+                      : takeSuggestWidgetSelectionIntoAccount
+                          ? TriggerKind.SuggestWidget
+                          : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
@@ -293,7 +323,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     setIsLoading,
                     abortSignal: abortController.signal,
                     tracer,
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
@@ -329,19 +358,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     lastTriggeredPrefix !== undefined &&
                     currentPrefix.length < lastTriggeredPrefix.length
                 ) {
-                    this.handleUnwantedCompletionItem(getRequestParamsFromLastCandidate(document, this.lastCandidate))
+                    this.handleUnwantedCompletionItem(
+                        getRequestParamsFromLastCandidate(document, this.lastCandidate)
+                    )
                 }
 
-                const items = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    result.items,
-                    context
-                )
-
-                const visibleItems = items.filter(item =>
+                const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
@@ -376,24 +398,33 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     }
                 }
 
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    visibleItems,
+                    context
+                )
+
                 // Store the log ID for each completion item so that we can later map to the selected
                 // item from the ID alone
-                for (const item of visibleItems) {
+                for (const item of autocompleteItems) {
                     suggestedAutocompleteItemsCache.add(item)
+                }
+
+                // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+                const autocompleteResult: AutocompleteResult = {
+                    logId: result.logId,
+                    items: updateInsertRangeForVSCode(autocompleteItems),
+                    completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
                 if (!this.config.isRunningInsideAgent) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
-                }
-
-                // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
-                const autocompleteResult: AutocompleteResult = {
-                    logId: result.logId,
-                    items: visibleItems,
-                    completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+                    this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
                 return autocompleteResult
@@ -410,7 +441,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     public async handleDidAcceptCompletionItem(
         completionOrItemId:
-            | Pick<AutocompleteItem, 'range' | 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+            | Pick<
+                  AutocompleteItem,
+                  'range' | 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'
+              >
             | CompletionItemID
     ): Promise<void> {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
@@ -566,7 +600,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,
-                description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
+                description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
                 onSelect: () => {
                     if (canUpgrade) {
@@ -605,6 +639,28 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
+        if (error.message === 'AutocompleteConfigTurnedOff') {
+            const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
+            // If there's already an existing error, don't add another one.
+            const hasAutocompleteDisabledBanner = this.config.statusBar.hasError(
+                'AutoCompleteDisabledByAdmin'
+            )
+            if (hasAutocompleteDisabledBanner) {
+                return
+            }
+            let shown = false
+            this.config.statusBar.addError({
+                title: errorTitle,
+                description: 'Contact your Sourcegraph site admin to enable autocomplete',
+                errorType: 'AutoCompleteDisabledByAdmin',
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                },
+            })
+        }
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
@@ -640,8 +696,12 @@ let globalInvocationSequenceForTracer = 0
  * {@link InlineCompletionItemProvider.provideInlineCompletionItems} that accumulates all of the
  * data for that invocation.
  */
-function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): InlineCompletionsParams['tracer'] {
-    let data: ProvideInlineCompletionsItemTraceData = { invocationSequence: ++globalInvocationSequenceForTracer }
+function createTracerForInvocation(
+    tracer: ProvideInlineCompletionItemsTracer
+): InlineCompletionsParams['tracer'] {
+    let data: ProvideInlineCompletionsItemTraceData = {
+        invocationSequence: ++globalInvocationSequenceForTracer,
+    }
     return (update: Partial<ProvideInlineCompletionsItemTraceData>) => {
         data = { ...data, ...update }
         tracer(data)
@@ -679,7 +739,10 @@ function currentEditorContentMatchesPopupItem(
  * Returns true if the only difference between the two requests is the selected completions info
  * item from the completions widget.
  */
-function onlyCompletionWidgetSelectionChanged(prev: CompletionRequest, next: CompletionRequest): boolean {
+function onlyCompletionWidgetSelectionChanged(
+    prev: CompletionRequest,
+    next: CompletionRequest
+): boolean {
     if (prev.document.uri.toString() !== next.document.uri.toString()) {
         return false
     }

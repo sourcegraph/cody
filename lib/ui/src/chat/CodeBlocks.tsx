@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
+import { isError, renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
 
-import { type CodeBlockActionsProps } from '../Chat'
+import type { CodeBlockActionsProps } from '../Chat'
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,
@@ -16,8 +16,6 @@ import {
 import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
-    inProgress: boolean
-
     displayText: string
 
     copyButtonClassName?: string
@@ -133,7 +131,9 @@ function createCodeBlockActionButton(
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
             codeBlockActions.copy(text, 'Button', metadata)
-            setTimeout(() => (button.innerHTML = iconSvg), 5000)
+            setTimeout(() => {
+                button.innerHTML = iconSvg
+            }, 5000)
         })
     }
 
@@ -154,104 +154,115 @@ function createCodeBlockActionButton(
     return button
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
-    displayText,
-    copyButtonClassName,
-    copyButtonOnSubmit,
-    insertButtonClassName,
-    insertButtonOnSubmit,
-    metadata,
-    inProgress,
-    guardrails,
-}) {
-    const rootRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        // Attach code block actions only when the message is completed
-        if (inProgress) {
-            return
-        }
-
-        const preElements = rootRef.current?.querySelectorAll('pre')
-        if (!preElements?.length || !copyButtonOnSubmit) {
-            return
-        }
-
-        for (const preElement of preElements) {
-            const preText = preElement.textContent
-            if (preText?.trim() && preElement.parentNode) {
-                const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
-                const buttons = createButtons(
-                    preText,
-                    copyButtonClassName,
-                    copyButtonOnSubmit,
-                    insertButtonClassName,
-                    insertButtonOnSubmit,
-                    eventMetadata
-                )
-                if (guardrails) {
-                    const flexFiller = document.createElement('div')
-                    flexFiller.classList.add(styles.flexFiller)
-                    buttons.append(flexFiller)
-                    const attributionContainer = document.createElement('div')
-                    attributionContainer.innerHTML = ShieldIcon
-                    attributionContainer.classList.add(styles.attributionIcon)
-                    attributionContainer.title = 'Attribution search running...'
-                    buttons.append(attributionContainer)
-
-                    guardrails
-                        .searchAttribution(preText)
-                        .then(attribution => {
-                            if (attribution instanceof Error || attribution.limitHit) {
-                                attributionContainer.classList.add(styles.attributionIconUnavailable)
-                                attributionContainer.title = 'Attribution search unavailable.'
-                                return
-                            }
-                            if (attribution.repositories.length > 0) {
-                                attributionContainer.classList.add(styles.attributionIconFound)
-                                let tooltip = `Attribution found in ${attribution.repositories[0].name}`
-                                if (attribution.repositories.length > 1) {
-                                    tooltip = `${tooltip} and ${attribution.repositories.length - 1} more.`
-                                } else {
-                                    tooltip = `${tooltip}.`
-                                }
-                                attributionContainer.title = tooltip
-                                return
-                            }
-                            attributionContainer.classList.add(styles.attributionIconNotFound)
-                            attributionContainer.title = 'Attribution not found.'
-                        })
-                        .catch(error => {
-                            console.error('promise failed', error)
-                        })
-                }
-
-                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
-
-                // capture copy events (right click or keydown) on code block
-                preElement.addEventListener('copy', () => {
-                    if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
-                    }
-                })
-            }
-        }
-    }, [
+export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
+    function CodeBlocksContent({
         displayText,
         copyButtonClassName,
-        insertButtonClassName,
-        rootRef,
         copyButtonOnSubmit,
+        insertButtonClassName,
         insertButtonOnSubmit,
-        metadata?.requestID,
-        metadata?.source,
-        inProgress,
+        metadata,
         guardrails,
-    ])
+    }) {
+        const rootRef = useRef<HTMLDivElement>(null)
 
-    return useMemo(
-        () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
-        [displayText]
-    )
-})
+        useEffect(() => {
+            const preElements = rootRef.current?.querySelectorAll('pre')
+            if (!preElements?.length || !copyButtonOnSubmit) {
+                return
+            }
+
+            for (const preElement of preElements) {
+                const preText = preElement.textContent
+                if (preText?.trim() && preElement.parentNode) {
+                    const eventMetadata = {
+                        requestID: metadata?.requestID,
+                        source: metadata?.source,
+                    }
+                    const buttons = createButtons(
+                        preText,
+                        copyButtonClassName,
+                        copyButtonOnSubmit,
+                        insertButtonClassName,
+                        insertButtonOnSubmit,
+                        eventMetadata
+                    )
+                    if (guardrails) {
+                        const flexFiller = document.createElement('div')
+                        flexFiller.classList.add(styles.flexFiller)
+                        buttons.append(flexFiller)
+                        const attributionContainer = document.createElement('div')
+                        attributionContainer.innerHTML = ShieldIcon
+                        attributionContainer.classList.add(styles.attributionIcon)
+                        attributionContainer.title = 'Attribution search running...'
+                        attributionContainer.setAttribute('data-testid', 'attribution-indicator')
+                        buttons.append(attributionContainer)
+
+                        guardrails
+                            .searchAttribution(preText)
+                            .then(attribution => {
+                                if (isError(attribution)) {
+                                    attributionContainer.classList.add(styles.attributionIconUnavailable)
+                                    attributionContainer.title = 'Attribution search unavailable.'
+                                    return
+                                }
+                                if (attribution.repositories.length > 0) {
+                                    attributionContainer.classList.add(styles.attributionIconFound)
+                                    let tooltip = `Attribution found in ${attribution.repositories[0].name}`
+                                    if (attribution.repositories.length > 1 && attribution.limitHit) {
+                                        tooltip = `${tooltip} and ${
+                                            attribution.repositories.length - 1
+                                        } or more.`
+                                    } else if (attribution.repositories.length > 1) {
+                                        tooltip = `${tooltip} and ${
+                                            attribution.repositories.length - 1
+                                        } more.`
+                                    } else {
+                                        tooltip = `${tooltip}.`
+                                    }
+                                    attributionContainer.title = tooltip
+                                    return
+                                }
+                                attributionContainer.classList.add(styles.attributionIconNotFound)
+                                attributionContainer.title = 'Attribution not found.'
+                            })
+                            .catch(error => {
+                                console.error('promise failed', error)
+                            })
+                    }
+
+                    // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
+                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+
+                    // capture copy events (right click or keydown) on code block
+                    preElement.addEventListener('copy', () => {
+                        if (copyButtonOnSubmit) {
+                            copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
+                        }
+                    })
+                }
+            }
+        }, [
+            copyButtonClassName,
+            insertButtonClassName,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            metadata?.requestID,
+            metadata?.source,
+            guardrails,
+        ])
+
+        return useMemo(
+            () => (
+                <div
+                    ref={rootRef}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
+                    dangerouslySetInnerHTML={{
+                        __html: renderCodyMarkdown(displayText),
+                    }}
+                />
+            ),
+            [displayText]
+        )
+    }
+)

@@ -6,14 +6,20 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
-import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
 
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
-type OpenTelemetryServiceConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
+type OpenTelemetryServiceConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'experimentalTracing'
+>
 
 export class OpenTelemetryService {
     private sdk: NodeSDK | undefined

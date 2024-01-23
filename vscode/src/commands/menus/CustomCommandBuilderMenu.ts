@@ -1,7 +1,10 @@
 import { window, type QuickPickItem } from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
-import { defaultCodyCommandContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import {
+    defaultCodyCommandContext,
+    type CodyCommand,
+    type CustomCommandType,
+} from '@sourcegraph/cody-shared'
 
 import { toSlashCommand } from '../prompt/utils'
 import { customPromptsContextOptions } from '../utils/menu'
@@ -166,7 +169,7 @@ export class CustomCommandsBuilderMenu {
     }
 }
 
-async function showPromptCreationInputBox(): Promise<string | void> {
+async function showPromptCreationInputBox(): Promise<string | undefined> {
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',
