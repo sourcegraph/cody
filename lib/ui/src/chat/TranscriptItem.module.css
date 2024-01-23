@@ -182,6 +182,7 @@
 }
 
 .unfocused .feedback-edit-buttons-container {
+    opacity: 0;
     pointer-events: none;
 }
 

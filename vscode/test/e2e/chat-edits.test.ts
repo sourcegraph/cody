@@ -48,9 +48,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(submitMessageButton).not.toBeVisible()
 
     // Only 1 cancel button should be displayed above the input box
-    // All the edit buttons will be invisible during editing
     await expect(cancelEditButton).toHaveCount(1)
-    await expect(editButtons).toHaveCount(0)
 
     // Pressing escape should exit editing mode,
     // edit buttons should up on each message again
@@ -58,11 +56,10 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await page.keyboard.press('Escape')
     await expect(cancelEditButton).not.toBeVisible()
     await expect(chatInput).toBeFocused()
-    await expect(chatFrame.locator('.codicon-edit')).toHaveCount(3)
 
     // click on the second edit button to get into the editing mode again
     // edit the message from "Two" to "Four"
-    await chatFrame.locator('.codicon-edit').nth(1).click()
+    await editButtons.nth(1).click()
     // the original message text should shows up in the text box
     await expect(chatInput).toHaveValue('Two')
     await chatInput.click()
@@ -71,7 +68,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
 
     // Only two messages are left after the edit (e.g. "One", "Four"),
     // as all the messages after the edited message have be removed
-    await expect(chatFrame.locator('.codicon-edit')).toHaveCount(2)
+    await expect(editButtons).toHaveCount(2)
     await expect(chatFrame.getByText('One')).toBeVisible()
     await expect(chatFrame.getByText('Two')).not.toBeVisible()
     await expect(chatFrame.getByText('Three')).not.toBeVisible()

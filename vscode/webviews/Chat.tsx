@@ -403,12 +403,14 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
     messageBeingEdited,
     setMessageBeingEdited,
+    disabled,
 }) => (
     <VSCodeButton
         className={classNames(styles.editButton, className)}
         appearance="icon"
         title="Edit your message"
         type="button"
+        disabled={disabled}
         onClick={() => setMessageBeingEdited(messageBeingEdited)}
     >
         <i className="codicon codicon-edit" />

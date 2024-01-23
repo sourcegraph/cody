@@ -123,9 +123,10 @@ export const TranscriptItem: React.FunctionComponent<
                         )}
                     >
                         <EditButtonContainer
-                            className={styles.FeedbackEditButtonsContainer}
+                            className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
+                            disabled={isInEditingMode}
                         />
                     </header>
                 </div>
