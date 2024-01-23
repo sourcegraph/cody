@@ -387,3 +387,8 @@ export function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
+
+export function removeIndentation(text: string): string {
+    const lines = text.split('\n')
+    return lines.map(line => line.replace(INDENTATION_REGEX, '')).join('\n')
+}

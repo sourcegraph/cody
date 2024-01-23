@@ -277,6 +277,16 @@ describe('computeStillRelevantCompletions', () => {
         )
     })
 
+    it('supports a change in indentation', async () => {
+        const currentRequest = docState('    console.log')
+        const previousRequest = docState('\tconsole.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeStillRelevantCompletions(currentRequest, previousRequest, [completion])).toEqual([
+            completion,
+        ])
+    })
+
     it('accounts for typos', async () => {
         const currentRequest = docState('console.dir')
         const previousRequest = docState('console.')

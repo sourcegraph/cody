@@ -19,6 +19,7 @@ import {
 } from './text-processing/process-inline-completions'
 import type { ContextSnippet } from './types'
 import { getPrefixRange } from './doc-context-getters'
+import { removeIndentation } from './text-processing'
 
 export interface RequestParams {
     /** The request's document */
@@ -271,6 +272,7 @@ export function computeStillRelevantCompletions(
         .split('\n')
         .slice(currentPrefixDiff)
         .join('\n')
+
     const previousPrefix = previousRequest.docContext.prefix
         .split('\n')
         .slice(previousPrefixDiff)
@@ -281,10 +283,10 @@ export function computeStillRelevantCompletions(
         return []
     }
 
-    const current = currentPrefix
+    const current = removeIndentation(currentPrefix)
     const relevantCompletions: InlineCompletionItemWithAnalytics[] = []
     for (const completion of completions) {
-        const inserted = previousPrefix + completion.insertText
+        const inserted = removeIndentation(previousPrefix + completion.insertText)
 
         const isFullContinuation = inserted.startsWith(current)
         // We consider a completion still relevant if the prefixes and the continuation diverge up
