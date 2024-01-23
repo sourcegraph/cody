@@ -10,39 +10,55 @@ import {
     type RequestManagerResult,
     type RequestParams,
 } from './request-manager'
-import { documentAndPosition } from './test-helpers'
+import { documentAndPosition, nextTick } from './test-helpers'
+import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
     public didAbort = false
-    protected resolve: (value: FetchCompletionResult[]) => void = () => {}
+    protected next: () => void = () => {}
+    protected responseQueue: FetchCompletionResult[][] = []
 
-    public yield(completions: string[], keepAlive = false): void {
+    public yield(completions: string[] | InlineCompletionItemWithAnalytics[], keepAlive = false) {
+        const result = completions.map(content =>
+            typeof content === 'string'
+                ? {
+                      completion: { insertText: content, stopReason: 'test' },
+                      docContext: this.options.docContext,
+                  }
+                : {
+                      completion: content,
+                      docContext: this.options.docContext,
+                  }
+        )
+
+        this.responseQueue.push(result)
         this.didFinishNetworkRequest = !keepAlive
-
-        const result = completions.map(content => ({
-            completion: { insertText: content, stopReason: 'test' },
-            docContext: this.options.docContext,
-        }))
-
-        this.resolve(result)
+        this.next()
     }
 
-    public generateCompletions(abortSignal: AbortSignal): AsyncGenerator<FetchCompletionResult[]> {
+    public async *generateCompletions(
+        abortSignal: AbortSignal
+    ): AsyncGenerator<FetchCompletionResult[]> {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
 
-        async function* generateMockedCompletions(this: MockProvider) {
-            while (!this.didFinishNetworkRequest) {
-                // Wait for the next yield
-                yield await new Promise<FetchCompletionResult[]>(resolve => {
-                    this.resolve = resolve
+        //  generateMockedCompletions(this: MockProvider) {
+        while (!(this.didFinishNetworkRequest && this.responseQueue.length === 0)) {
+            while (this.responseQueue.length > 0) {
+                yield this.responseQueue.shift()!
+            }
+
+            // Wait for the next yield
+            this.responseQueue = []
+            if (!this.didFinishNetworkRequest) {
+                await new Promise<void>(resolve => {
+                    this.next = resolve
                 })
             }
         }
-
-        return generateMockedCompletions.bind(this)()
     }
 }
 
@@ -226,7 +242,7 @@ describe('RequestManager', () => {
             const provider1 = createProvider(prefix1)
             createRequest(prefix1, provider1)
 
-            const prefix2 = 'console.table'
+            const prefix2 = 'console.tabletop'
             const provider2 = createProvider(prefix2)
             createRequest(prefix2, provider2)
 
@@ -236,17 +252,34 @@ describe('RequestManager', () => {
 
             // ok now we diverted (note do don't update the docContext so we have to start the
             // completion at the same prefix as the first request)
-            provider1.yield(['tabulatore'], true)
+            provider1.yield(
+                [
+                    {
+                        insertText: 'tabulatore',
+                        stopReason: STOP_REASON_HOT_STREAK,
+                    },
+                ],
+                true
+            )
+            await nextTick()
             expect(provider1.didAbort).toBe(true)
         })
     })
 })
 
 describe('computeIfRequestStillRelevant', () => {
-    it('returns true if it is a forward type of the updated document', async () => {
+    it('returns true if the latest insertion is a forward type of the latest document', async () => {
         const currentRequest = docState('console.log')
         const previousRequest = docState('console.')
         const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('returns true if the latest document is a forward type of the latest insertion document', async () => {
+        const currentRequest = docState('console.log("Hello, world!")')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log' }
 
         expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
     })
@@ -300,7 +333,7 @@ describe('computeIfRequestStillRelevant', () => {
         expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
     })
 
-    it('accounts for typos', async () => {
+    it('handles typos in the latest document', async () => {
         const currentRequest = docState('console.dir')
         const previousRequest = docState('console.')
         const completion = { insertText: 'log("Hello, world!")' }
@@ -308,8 +341,16 @@ describe('computeIfRequestStillRelevant', () => {
         expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
     })
 
+    it('handles typos in the latest insertion', async () => {
+        const currentRequest = docState('console.log')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'dir' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
     describe('when the request has not yielded a completion yet', () => {
-        it.only('handles cases where the current document is ahead (as the user is typing forward)', async () => {
+        it('handles cases where the current document is ahead (as the user is typing forward)', async () => {
             const currentRequest = docState('console.log')
             const previousRequest = docState('con')
 

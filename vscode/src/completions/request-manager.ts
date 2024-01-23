@@ -64,8 +64,11 @@ interface RequestsManagerParams {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
+    private latestRequestParams: null | RequestsManagerParams = null
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
+        this.latestRequestParams = params
+
         const { requestParams, provider, context, isCacheEnabled, tracer } = params
 
         const cachedCompletions = this.cache.get(requestParams)
@@ -93,30 +96,32 @@ export class RequestManager {
                         result => result.completion.stopReason === STOP_REASON_HOT_STREAK
                     )
 
-                    // Process regular completions that will shown to the user.
-                    const completions = currentCompletions.map(result => result.completion)
+                    if (currentCompletions.length > 0) {
+                        // Process regular completions that will shown to the user.
+                        const completions = currentCompletions.map(result => result.completion)
 
-                    // Shared post-processing logic
-                    const processedCompletions = wrapInActiveSpan(
-                        'autocomplete.shared-post-process',
-                        () => processInlineCompletions(completions, requestParams)
-                    )
-                    request.lastCompletions = processedCompletions
+                        // Shared post-processing logic
+                        const processedCompletions = wrapInActiveSpan(
+                            'autocomplete.shared-post-process',
+                            () => processInlineCompletions(completions, requestParams)
+                        )
 
-                    // Cache even if the request was aborted or already fulfilled.
-                    this.cache.set(requestParams, {
-                        completions: processedCompletions,
-                        source: InlineCompletionsResultSource.Cache,
-                    })
+                        // Cache even if the request was aborted or already fulfilled.
+                        this.cache.set(requestParams, {
+                            completions: processedCompletions,
+                            source: InlineCompletionsResultSource.Cache,
+                        })
 
-                    // A promise will never resolve twice, so we do not need to
-                    // check if the request was already fulfilled.
-                    request.resolve({
-                        completions: processedCompletions,
-                        source: InlineCompletionsResultSource.Network,
-                    })
+                        // A promise will never resolve twice, so we do not need to
+                        // check if the request was already fulfilled.
+                        request.resolve({
+                            completions: processedCompletions,
+                            source: InlineCompletionsResultSource.Network,
+                        })
 
-                    this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                        request.lastCompletions = processedCompletions
+                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                    }
 
                     // Save hot streak completions for later use.
                     for (const result of hotStreakCompletions) {
@@ -133,6 +138,8 @@ export class RequestManager {
                             }
                         )
                     }
+
+                    this.cancelIrrelevantRequests()
                 }
             } catch (error) {
                 request.reject(error as Error)
@@ -141,7 +148,7 @@ export class RequestManager {
             }
         }
 
-        this.cancelIrrelevantRequests(params)
+        this.cancelIrrelevantRequests()
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
@@ -203,12 +210,15 @@ export class RequestManager {
         }
     }
 
-    private cancelIrrelevantRequests(params: RequestsManagerParams): void {
-        const currentRequest = params.requestParams
+    private cancelIrrelevantRequests(): void {
+        if (!this.latestRequestParams) {
+            return
+        }
+
         for (const request of this.inflightRequests) {
             if (
                 !computeIfRequestStillRelevant(
-                    currentRequest,
+                    this.latestRequestParams.requestParams,
                     request.lastRequestParams,
                     request.lastCompletions
                 )
@@ -319,7 +329,7 @@ export function computeIfRequestStillRelevant(
     for (const completion of completions ?? [{ insertText: '' }]) {
         const inserted = removeIndentation(previousPrefix + completion.insertText)
 
-        const isFullContinuation = inserted.startsWith(current)
+        const isFullContinuation = inserted.startsWith(current) || current.startsWith(inserted)
         // We consider a completion still relevant if the prefixes and the continuation diverge up
         // to three characters. For this, we only consider typos in the last line (= the line at the
         // cursor position)
@@ -327,7 +337,7 @@ export function computeIfRequestStillRelevant(
         const [currentLines, currentLastLine] = splitLastLine(current)
         const isTypo =
             insertedLines === currentLines && insertedLastLine.startsWith(currentLastLine.slice(0, -3))
-        console.log({ isFullContinuation, isTypo, inserted, current })
+
         if (isFullContinuation || isTypo) {
             return true
         }
