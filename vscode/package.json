@@ -497,8 +497,7 @@
       },
       {
         "command": "cody.chat.panel.new",
-        "key": "ctrl+l",
-        "mac": "cmd+l",
+        "key": "alt+l",
         "when": "cody.activated && config.cody.internal.unstable"
       },
       {
@@ -509,8 +508,7 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+k",
-        "mac": "cmd+k",
+        "key": "alt+k",
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {

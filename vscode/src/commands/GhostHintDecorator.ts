@@ -1,8 +1,8 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
+const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
