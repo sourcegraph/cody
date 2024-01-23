@@ -60,7 +60,10 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
+        command: {
+            command: 'workbench.action.openGlobalKeybindings',
+            args: ['@ext:sourcegraph.cody-ai'],
+        },
     },
     {
         title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,

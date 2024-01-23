@@ -5,7 +5,6 @@ import packageJson from '../package.json'
 const { properties } = packageJson.contributes.configuration
 
 export function defaultConfigurationValue(key: string): any {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const value = (properties as any)[key as any]?.default
     return value
 }
@@ -22,12 +21,10 @@ function getConfigFromPackageJson(): ConfigurationKeysMap {
         const keyProperty = camelCase(key.split('.').slice(1).join('.')) as keyof ConfigurationKeysMap
 
         // This is just to hard to type correctly 😜 and it's doesn't make any difference.
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         acc[keyProperty] = key as ConfigurationKeysMap[typeof keyProperty]
 
         return acc
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     }, {} as ConfigurationKeysMap)
 }
 

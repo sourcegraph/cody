@@ -2,7 +2,7 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
-import { type BrowserOrNodeResponse } from './graphql/client'
+import type { BrowserOrNodeResponse } from './graphql/client'
 
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()
@@ -33,7 +33,9 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: string | null
     ) {
         super(message)
-        this.userMessage = `You've used all ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
+        this.userMessage = `You've used all ${feature} for ${
+            upgradeIsAvailable ? 'the month' : 'today'
+        }.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
@@ -50,7 +52,6 @@ In particular, 'autocomplete/execute' in `agent.ts` and was affected.
 It was required to add `(error as any)?.name === RateLimitError.errorName`.
  *  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
@@ -71,7 +72,9 @@ export class NetworkError extends Error {
         content: string,
         public traceId: string | undefined
     ) {
-        super(`Request to ${response.url} failed with ${response.status} ${response.statusText}: ${content}`)
+        super(
+            `Request to ${response.url} failed with ${response.status} ${response.statusText}: ${content}`
+        )
         this.status = response.status
     }
 }

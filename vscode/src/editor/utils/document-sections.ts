@@ -144,7 +144,10 @@ async function removeOutermostFoldingRanges(
  * @param ranges - Array of folding ranges
  * @returns Array containing only folding ranges that do not contain any nested child ranges
  */
-function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = false): vscode.FoldingRange[] {
+function removeNestedFoldingRanges(
+    ranges: vscode.FoldingRange[],
+    isTextBased = false
+): vscode.FoldingRange[] {
     const filtered = isTextBased ? combineNeighborFoldingRanges(ranges) : ranges
 
     return filtered.filter(
@@ -230,6 +233,9 @@ async function defaultGetSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformat
 
 async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingRange[]> {
     return (
-        (await vscode.commands.executeCommand<vscode.FoldingRange[]>('vscode.executeFoldingRangeProvider', uri)) || []
+        (await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+            'vscode.executeFoldingRangeProvider',
+            uri
+        )) || []
     )
 }

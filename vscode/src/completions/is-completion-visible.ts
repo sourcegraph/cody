@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 
-import { type DocumentContext } from './get-current-doc-context'
-import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { DocumentContext } from './get-current-doc-context'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 export function isCompletionVisible(
     completion: InlineCompletionItemWithAnalytics,
@@ -77,7 +77,6 @@ export function completionMatchesSuffix(
 
     const insertion = completion.insertText
     let j = 0
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < insertion.length; i++) {
         if (insertion[i] === currentLineSuffix[j]) {
             j++

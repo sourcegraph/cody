@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared'
+import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { vsCodeMocks } from '../../testutils/mocks'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
@@ -53,7 +53,9 @@ describe('[getInlineCompletions] common', () => {
         const abortController = new AbortController()
         expect(
             await getInlineCompletions({
-                ...params('const x = █', [completion`├1337┤`], { onNetworkRequest: () => abortController.abort() }),
+                ...params('const x = █', [completion`├1337┤`], {
+                    onNetworkRequest: () => abortController.abort(),
+                }),
                 abortSignal: abortController.signal,
             })
         ).toEqual<V>({
@@ -139,7 +141,9 @@ describe('[getInlineCompletions] common', () => {
 
         // Start a second completions query before the first one is finished. The second one never
         // receives a network response
-        const promise2 = getInlineCompletions(params('console.log(█', 'never-resolve', { requestManager }))
+        const promise2 = getInlineCompletions(
+            params('console.log(█', 'never-resolve', { requestManager })
+        )
 
         await promise1
         const completions = await promise2

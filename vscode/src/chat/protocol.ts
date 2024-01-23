@@ -1,24 +1,22 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import {
-    type ActiveTextEditorSelectionRange,
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type CodyLLMSiteConfiguration,
-    type ConfigurationWithAccessToken,
-    type ContextFile,
-    type ContextFileType,
-    type CustomCommandType,
-    type EnhancedContextContextT,
-    type SearchPanelFile,
-    type TelemetryEventProperties,
-    type UserLocalHistory,
+import type {
+    ActiveTextEditorSelectionRange,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    CodyLLMSiteConfiguration,
+    ConfigurationWithAccessToken,
+    ContextFile,
+    ContextFileType,
+    EnhancedContextContextT,
+    SearchPanelFile,
+    TelemetryEventProperties,
+    UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
-import { type View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/NavBar'
 
 /**
  * A message sent from the webview to the extension host.
@@ -74,7 +72,6 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
@@ -109,7 +106,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
@@ -130,6 +126,8 @@ interface ExtensionAttributionMessage {
     error?: string
 }
 
+export type ChatSubmitType = 'user' | 'user-newchat'
+
 interface WebviewSubmitMessage {
     text: string
     submitType: ChatSubmitType
@@ -147,7 +145,10 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -263,7 +264,10 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false
     }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return (
+        authStatus.authenticated &&
+        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

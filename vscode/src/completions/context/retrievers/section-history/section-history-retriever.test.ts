@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vitest, type Mock } from 'vitest'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { testFileUri } from '@sourcegraph/cody-shared'
 
@@ -56,11 +56,17 @@ describe('GraphSectionObserver', () => {
         const getContextRangeSpy = vitest.spyOn(docContextGetters, 'getContextRange')
         getContextRangeSpy.mockImplementation(() => range(0, 0, 20, 0))
 
-        visibleTextEditors = vitest.fn().mockImplementation(() => [{ document: testDocuments.document1 }])
-        getDocumentSections = vitest.fn().mockImplementation((document: typeof testDocuments.document1) => {
-            const doc = Object.values(testDocuments).find(doc => doc.uri.toString() === document.uri.toString())
-            return doc?.sections ?? []
-        })
+        visibleTextEditors = vitest
+            .fn()
+            .mockImplementation(() => [{ document: testDocuments.document1 }])
+        getDocumentSections = vitest
+            .fn()
+            .mockImplementation((document: typeof testDocuments.document1) => {
+                const doc = Object.values(testDocuments).find(
+                    doc => doc.uri.toString() === document.uri.toString()
+                )
+                return doc?.sections ?? []
+            })
 
         sectionObserver = SectionHistoryRetriever.createInstance(
             {
@@ -95,7 +101,7 @@ describe('GraphSectionObserver', () => {
 
     it('loads visible documents when it loads', () => {
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "file:///document1.ts
             ├─ foo
             └─ bar"
         `)
@@ -109,10 +115,10 @@ describe('GraphSectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document2.ts
+          "file:///document2.ts
             ├─ baz
             └─ qux
-          file:/document1.ts
+          file:///document1.ts
             ├─ foo
             └─ bar"
         `)
@@ -123,10 +129,10 @@ describe('GraphSectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document2.ts
+          "file:///document2.ts
             ├─ baz
             └─ qux
-          file:/document1.ts
+          file:///document1.ts
             ├─ foo
             └─ bar"
         `)
@@ -144,7 +150,7 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "file:///document1.ts
             ├─ foo
             └─ baz"
         `)
@@ -156,12 +162,12 @@ describe('GraphSectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "file:///document1.ts
             ├─ foo
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ file:///document1.ts foo"
         `)
 
         testDocuments.document1.lineCount = 10
@@ -174,11 +180,11 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "file:///document1.ts
             └─ baz
 
           Last visited sections:
-            └ file:/document1.ts baz"
+            └ file:///document1.ts baz"
         `)
     })
 
@@ -205,16 +211,16 @@ describe('GraphSectionObserver', () => {
 
             // We opened and preloaded the first section of both documents and have visited them
             expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-              "file:/document1.ts
+              "file:///document1.ts
                 ├─ foo
                 └─ bar
-              file:/document2.ts
+              file:///document2.ts
                 ├─ baz
                 └─ qux
 
               Last visited sections:
-                ├ file:/document1.ts foo
-                └ file:/document2.ts baz"
+                ├ file:///document1.ts foo
+                └ file:///document2.ts baz"
             `)
 
             const context = await sectionObserver.retrieve({
@@ -228,8 +234,7 @@ describe('GraphSectionObserver', () => {
 
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
-                fileName: document2Uri.fsPath,
-                fileUri: document2Uri,
+                uri: document2Uri,
             })
         })
 
@@ -245,13 +250,13 @@ describe('GraphSectionObserver', () => {
             })
 
             expect(withPosixPathsInString(sectionObserver.debugPrint())).toMatchInlineSnapshot(`
-              "file:/document1.ts
+              "file:///document1.ts
                 ├─ foo
                 └─ bar
 
               Last visited sections:
-                ├ file:/document1.ts bar
-                └ file:/document1.ts foo"
+                ├ file:///document1.ts bar
+                └ file:///document1.ts foo"
             `)
 
             const context = await sectionObserver.retrieve({

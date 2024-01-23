@@ -19,7 +19,10 @@ export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof brow
 
 export abstract class SentryService {
     constructor(
-        protected config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'>
+        protected config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'
+        >
     ) {
         this.prepareReconfigure()
     }
@@ -45,8 +48,8 @@ export abstract class SentryService {
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'
-                    ? 'vscode-web'
-                    : 'vscode-node',
+                      ? 'vscode-web'
+                      : 'vscode-node',
 
                 // In dev mode, have Sentry log extended debug information to the console.
                 debug: !isProd,

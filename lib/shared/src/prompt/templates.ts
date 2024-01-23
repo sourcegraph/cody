@@ -1,7 +1,11 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import { languageFromFilename, markdownCodeBlockLanguageIDForFilename, ProgrammingLanguage } from '../common/languages'
-import { type ActiveTextEditorDiagnostic } from '../editor'
+import {
+    languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+    ProgrammingLanguage,
+} from '../common/languages'
+import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
 
 const CODE_CONTEXT_TEMPLATE = `Use the following code snippet from file \`{filePath}\`:
@@ -15,7 +19,11 @@ const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use the following code snippet from fil
 \`\`\``
 
 export function populateCodeContextTemplate(code: string, fileUri: URI, repoName?: string): string {
-    return (repoName ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : CODE_CONTEXT_TEMPLATE)
+    return (
+        repoName
+            ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : CODE_CONTEXT_TEMPLATE
+    )
         .replace('{filePath}', displayPath(fileUri))
         .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
         .replace('{text}', code)
@@ -38,8 +46,16 @@ const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
     'Use the following text from file `{filePath}` in repository `{repoName}`:\n{text}'
 
-export function populateMarkdownContextTemplate(markdown: string, fileUri: URI, repoName?: string): string {
-    return (repoName ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : MARKDOWN_CONTEXT_TEMPLATE)
+export function populateMarkdownContextTemplate(
+    markdown: string,
+    fileUri: URI,
+    repoName?: string
+): string {
+    return (
+        repoName
+            ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : MARKDOWN_CONTEXT_TEMPLATE
+    )
         .replace('{filePath}', displayPath(fileUri))
         .replace('{text}', markdown)
 }
@@ -49,7 +65,11 @@ const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my 
 const CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO =
     'I have the `{filePath}` file from the repository `{repoName}` opened in my editor. '
 
-export function populateCurrentEditorContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+export function populateCurrentEditorContextTemplate(
+    code: string,
+    fileUri: URI,
+    repoName?: string
+): string {
     const context =
         languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
             ? populateMarkdownContextTemplate(code, fileUri, repoName)
@@ -62,12 +82,17 @@ export function populateCurrentEditorContextTemplate(code: string, fileUri: URI,
     )
 }
 
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'Here is the selected {languageID} code from file path `{filePath}`: '
+const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE =
+    'Here is the selected {languageID} code from file path `{filePath}`: '
 
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
     'Here is the selected code from file `{filePath}` in the {repoName} repository, written in {languageID}: '
 
-export function populateCurrentEditorSelectedContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+export function populateCurrentEditorSelectedContextTemplate(
+    code: string,
+    fileUri: URI,
+    repoName?: string
+): string {
     const context =
         languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
             ? populateMarkdownContextTemplate(code, fileUri, repoName)
@@ -117,7 +142,11 @@ const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} co
 {code}
 </selected>`
 
-export function populateCurrentSelectedCodeContextTemplate(code: string, fileUri: URI, repoName?: string): string {
+export function populateCurrentSelectedCodeContextTemplate(
+    code: string,
+    fileUri: URI,
+    repoName?: string
+): string {
     return (
         repoName
             ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
@@ -128,7 +157,8 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, fileUri
         .replace('{languageName}', languageFromFilename(fileUri))
 }
 
-const DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the directory contains {fileName} in my codebase: '
+const DIRECTORY_FILE_LIST_TEMPLATE =
+    'Here is a list of files from the directory contains {fileName} in my codebase: '
 const ROOT_DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the root codebase directory: '
 
 export function populateListOfFilesContextTemplate(fileList: string, fileUri?: URI): string {
@@ -139,7 +169,11 @@ export function populateListOfFilesContextTemplate(fileList: string, fileUri?: U
     )
 }
 
-export function populateContextTemplateFromText(templateText: string, content: string, fileUri: URI): string {
+export function populateContextTemplateFromText(
+    templateText: string,
+    content: string,
+    fileUri: URI
+): string {
     return templateText.replace('{fileName}', displayPath(fileUri)) + content
 }
 

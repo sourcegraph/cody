@@ -1,13 +1,17 @@
 import * as vscode from 'vscode'
-import { type default as Parser, type Tree } from 'web-tree-sitter'
+import type { default as Parser, Tree } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 
 import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'
-import { type Queries } from './Queries'
+import type { Queries } from './Queries'
 
-export type AutocompleteMatchKind = 'if_statement' | 'call_expression' | 'assignment_statement' | 'function_declaration'
+export type AutocompleteMatchKind =
+    | 'if_statement'
+    | 'call_expression'
+    | 'assignment_statement'
+    | 'function_declaration'
 interface AutocompleteMatch {
     kind: AutocompleteMatchKind
     newText: string
@@ -76,7 +80,11 @@ export class AutocompleteMatcher {
                     if (!openParen) {
                         throw new Error('Missing capture group @opening_paren for @function_declaration')
                     }
-                    const newText = [text.slice(0, openParen.startIndex), '()', text.slice(capture.node.endIndex)]
+                    const newText = [
+                        text.slice(0, openParen.startIndex),
+                        '()',
+                        text.slice(capture.node.endIndex),
+                    ]
                     result.push({
                         kind: 'function_declaration',
                         newText: newText.join(''),
@@ -85,11 +93,15 @@ export class AutocompleteMatcher {
                             document.textDocument.positionAt(capture.node.startIndex),
                             document.textDocument.positionAt(capture.node.endIndex)
                         ),
-                        requestPosition: document.textDocument.positionAt(openParen.startIndex + '('.length),
+                        requestPosition: document.textDocument.positionAt(
+                            openParen.startIndex + '('.length
+                        ),
                     })
                 } else if (capture.name === 'call_expression') {
-                    const openParenPosition = queryMatch.captures.find(c => c.name === 'opening_paren')?.node.startIndex
-                    const closeParenPosition = queryMatch.captures.find(c => c.name === 'closing_paren')?.node.endIndex
+                    const openParenPosition = queryMatch.captures.find(c => c.name === 'opening_paren')
+                        ?.node.startIndex
+                    const closeParenPosition = queryMatch.captures.find(c => c.name === 'closing_paren')
+                        ?.node.endIndex
                     if (openParenPosition && closeParenPosition) {
                         const openParenSyntax = text.charAt(openParenPosition) ?? '('
                         const closeParenSyntax = text.charAt(closeParenPosition - 1) ?? ')'
@@ -124,10 +136,9 @@ export class AutocompleteMatcher {
                                 openParenPosition + openParenSyntax.length
                             ),
                         })
-                        continue
                     } else {
                         throw new Error(
-                            'Missing @opening_paren and/or @closing_parent captures for node: ' + capture.node.text
+                            `Missing @opening_paren and/or @closing_parent captures for node: ${capture.node.text}`
                         )
                     }
                 } else if (capture.name === 'assignment_statement') {
@@ -135,7 +146,9 @@ export class AutocompleteMatcher {
                     if (equalSign) {
                         const startIndex = equalSign.startIndex
                         const endIndex =
-                            text.at(capture.node.endIndex) === ';' ? capture.node.endIndex + 1 : capture.node.endIndex
+                            text.at(capture.node.endIndex) === ';'
+                                ? capture.node.endIndex + 1
+                                : capture.node.endIndex
                         const newText = [text.slice(0, startIndex), text.slice(endIndex)]
                         result.push({
                             kind: 'assignment_statement',
@@ -147,9 +160,8 @@ export class AutocompleteMatcher {
                             ),
                             requestPosition: document.textDocument.positionAt(startIndex - 1),
                         })
-                        continue
                     } else {
-                        throw new Error('Missing @equal_sign capture for node: ' + capture.node.text)
+                        throw new Error(`Missing @equal_sign capture for node: ${capture.node.text}`)
                     }
                 }
             }

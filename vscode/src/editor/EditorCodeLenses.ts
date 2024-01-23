@@ -148,6 +148,10 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
 }
 
 const editorCodeLenses = {
-    cody: { title: '$(cody-logo) Cody', command: 'cody.editor.codelens.click', tooltip: 'Open command menu' },
+    cody: {
+        title: '$(cody-logo) Cody',
+        command: 'cody.editor.codelens.click',
+        tooltip: 'Open command menu',
+    },
     inline: { title: 'Inline Chat', command: 'cody.editor.codelens.click', tooltip: 'Ask Cody inline' },
 }

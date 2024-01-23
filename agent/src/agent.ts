@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { type Polly } from '@pollyjs/core'
+import type { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -12,17 +12,18 @@ import {
     featureFlagProvider,
     graphqlClient,
     isRateLimitError,
+    logError,
     NoOpTelemetryRecorderProvider,
     setUserAgent,
     type BillingCategory,
     type BillingProduct,
 } from '@sourcegraph/cody-shared'
-import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
-import { type ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
-import { type AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import type { ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
+import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -31,11 +32,12 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
-import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
+import type { AutocompleteItem, ClientInfo, ExtensionConfiguration } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const inMemorySecretStorageMap = new Map<string, string>()
+const globalState = new AgentGlobalState()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -58,7 +60,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: new AgentGlobalState(),
+        globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
@@ -86,7 +88,9 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     await activate(context)
 }
 
-export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: string }): Promise<MessageHandler> {
+export async function newAgentClient(
+    clientInfo: ClientInfo & { codyAgentPath?: string }
+): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const serverHandler = new MessageHandler()
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
@@ -141,14 +145,15 @@ export class Agent extends MessageHandler {
      * vscode/src/...) will continue to use the shared recorder initialized and
      * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
      */
-    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider = new NoOpTelemetryRecorderProvider([
-        {
-            processEvent: event =>
-                process.stderr.write(
-                    `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
-                ),
-        },
-    ])
+    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider =
+        new NoOpTelemetryRecorderProvider([
+            {
+                processEvent: event =>
+                    process.stderr.write(
+                        `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
+                    ),
+            },
+        ])
 
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
@@ -175,9 +180,12 @@ export class Agent extends MessageHandler {
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(this.clientInfo, {
-                getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-            })
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
+                this.clientInfo,
+                {
+                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
+                }
+            )
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -236,12 +244,21 @@ export class Agent extends MessageHandler {
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
-            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+            const textEditor = newTextEditor(textDocument)
+            this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
                 reason: undefined,
             })
+
+            if (document.selection) {
+                vscode_shim.onDidChangeTextEditorSelection.fire({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -279,7 +296,11 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
-                { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
+                {
+                    title: 'testing/progress',
+                    location: vscode.ProgressLocation.Notification,
+                    cancellable: true,
+                },
                 progress => {
                     progress.report({ message: 'message1' })
                     progress.report({ increment: 50 })
@@ -321,6 +342,12 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
+        this.registerAuthenticatedRequest('testing/reset', async () => {
+            await this.workspace.reset()
+            globalState.reset()
+            return null
+        })
+
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
@@ -328,17 +355,19 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
-                console.log('Completion provider is not initialized')
+                logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
                 return { items: [] }
             }
             const uri =
                 typeof params.uri === 'string'
                     ? vscode.Uri.parse(params.uri)
                     : params?.filePath
-                    ? vscode.Uri.file(params.filePath)
-                    : undefined
+                      ? vscode.Uri.file(params.filePath)
+                      : undefined
             if (!uri) {
-                console.log(
+                logError(
+                    'Agent',
+                    'autocomplete/execute',
                     `No uri provided for autocomplete request ${JSON.stringify(
                         params
                     )}. To fix this problem, set the 'uri' property.`
@@ -347,7 +376,13 @@ export class Agent extends MessageHandler {
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
+                logError(
+                    'Agent',
+                    'autocomplete/execute',
+                    'No document found for file path',
+                    params.uri,
+                    [...this.workspace.allUris()]
+                )
                 return { items: [] }
             }
 
@@ -360,7 +395,8 @@ export class Agent extends MessageHandler {
                     document,
                     new vscode.Position(params.position.line, params.position.character),
                     {
-                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                        triggerKind:
+                            vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
                         selectedCompletionInfo:
                             params.selectedCompletionInfo?.text === undefined ||
                             params.selectedCompletionInfo?.text === null
@@ -380,7 +416,9 @@ export class Agent extends MessageHandler {
 
                 const items: AutocompleteItem[] =
                     result?.items.flatMap(({ insertText, range, id }) =>
-                        typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
+                        typeof insertText === 'string' && range !== undefined
+                            ? [{ id, insertText, range }]
+                            : []
                     ) ?? []
 
                 return { items, completionEvent: result?.completionEvent }
@@ -434,7 +472,11 @@ export class Agent extends MessageHandler {
                 // it. DO NOT do this elsewhere!
                 event.feature as 'feature',
                 event.action as 'action',
-                event.parameters as TelemetryEventParameters<{ key: number }, BillingProduct, BillingCategory>
+                event.parameters as TelemetryEventParameters<
+                    { key: number },
+                    BillingProduct,
+                    BillingCategory
+                >
             )
             return Promise.resolve(null)
         })
@@ -496,15 +538,21 @@ export class Agent extends MessageHandler {
         const commandArgs = [{ runInChatMode: true, source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
+            )
         })
 
         this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
+            )
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
+            )
         })
 
         this.registerAuthenticatedRequest('chat/new', () => {
@@ -512,7 +560,7 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const chatModel = new SimpleChatModel(modelID, [], chatID, undefined)
+            const chatModel = new SimpleChatModel(modelID, [], chatID)
             for (const message of messages) {
                 if (message.error) {
                     chatModel.addErrorAsBotMessage(message.error)
@@ -524,7 +572,9 @@ export class Agent extends MessageHandler {
             }
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
-            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.chat.panel.restore', [chatID])
+            )
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
@@ -554,7 +604,11 @@ export class Agent extends MessageHandler {
                         if (message.type === 'transcript' && !message.isMessageInProgress) {
                             resolve(message)
                         } else if (message.type !== 'transcript') {
-                            reject(new Error(`expected transcript message, received ${JSON.stringify(message)}`))
+                            reject(
+                                new Error(
+                                    `expected transcript message, received ${JSON.stringify(message)}`
+                                )
+                            )
                         }
                     })
                 )
@@ -587,7 +641,9 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
+            return featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag[flagName as keyof typeof FeatureFlag]
+            )
         })
     }
 
@@ -646,7 +702,9 @@ export class Agent extends MessageHandler {
                             // JetBrains plugin from updating to the new chat
                             // UI. If changing this, at least manually confirm that
                             // it works OK to get rate limit errors in JetBrains.
-                            chatMessage.error.retryAfterDateString = JSON.stringify(chatMessage.error.retryAfterDate)
+                            chatMessage.error.retryAfterDateString = JSON.stringify(
+                                chatMessage.error.retryAfterDate
+                            )
                             chatMessage.error.retryAfterDate = undefined
                         }
                     }
@@ -702,7 +760,10 @@ export class Agent extends MessageHandler {
 
     // Alternative to `registerRequest` that awaits on authentication changes to
     // propagate before calling the method handler.
-    public registerAuthenticatedRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
+    public registerAuthenticatedRequest<M extends RequestMethodName>(
+        method: M,
+        callback: RequestCallback<M>
+    ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
             return callback(params, token)

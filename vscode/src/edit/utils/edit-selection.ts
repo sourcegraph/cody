@@ -6,7 +6,10 @@ import { getSmartSelection } from '../../editor/utils'
  * Checks if the current selection and editor represent a generate intent.
  * A generate intent means the user has an empty selection on an empty line.
  */
-export function isGenerateIntent(document: vscode.TextDocument, selection: vscode.Selection | vscode.Range): boolean {
+export function isGenerateIntent(
+    document: vscode.TextDocument,
+    selection: vscode.Selection | vscode.Range
+): boolean {
     return selection.isEmpty && document.lineAt(selection.start.line).isEmptyOrWhitespace
 }
 
@@ -41,7 +44,8 @@ export async function getEditSmartSelection(
     // If we find a new expanded selection position then we set it as the new start position
     // and if we don't then we fallback to the original selection made by the user
     const newSelectionStartingPosition =
-        (await getSmartSelection(document, activeCursorStartPosition.line))?.start || selectionRange.start
+        (await getSmartSelection(document, activeCursorStartPosition.line))?.start ||
+        selectionRange.start
 
     // Retrieve the ending line of the current selection
     const activeCursorEndPosition = selectionRange.end

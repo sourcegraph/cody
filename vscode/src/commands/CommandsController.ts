@@ -1,21 +1,36 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type CustomCommandType, type VsCodeCommandsController } from '@sourcegraph/cody-shared'
+import type { CodyCommand, CustomCommandType, VsCodeCommandsController } from '@sourcegraph/cody-shared'
 
 import { getFullConfig } from '../configuration'
 import { executeEdit } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
-import { type VSCodeEditor } from '../editor/vscode-editor'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
-import { type CodyCommandArgs } from '.'
+import type { CodyCommandArgs } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
-import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
+import {
+    showCommandConfigMenu,
+    showCommandMenu,
+    showCustomCommandMenu,
+    showNewCustomCommandMenu,
+} from './menus'
 import { PromptsProvider } from './PromptsProvider'
-import { constructFileUri, createFileWatchers, createQuickPickItem, openCustomCommandDocsLink } from './utils/helpers'
-import { menu_options, menu_separators, showAskQuestionQuickPick, showRemoveConfirmationInput } from './utils/menu'
+import {
+    constructFileUri,
+    createFileWatchers,
+    createQuickPickItem,
+    openCustomCommandDocsLink,
+} from './utils/helpers'
+import {
+    menu_options,
+    menu_separators,
+    showAskQuestionQuickPick,
+    showRemoveConfirmationInput,
+} from './utils/menu'
 import { ToolsProvider } from './utils/ToolsProvider'
 
 /**
@@ -196,11 +211,17 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
-                        return await vscode.commands.executeCommand('cody.action.chat', input, { source: 'command' })
+                        await vscode.commands.executeCommand(
+                            'cody.action.commands.exec',
+                            `${selectedCommandID} input`
+                        )
+                        return
                     }
                     input = await showAskQuestionQuickPick()
-                    await vscode.commands.executeCommand('cody.chat.panel.new')
-                    return await vscode.commands.executeCommand('cody.action.chat', input, { source: 'command' })
+                    return await vscode.commands.executeCommand(
+                        'cody.action.commands.exec',
+                        `${selectedCommandID} ${input}`
+                    )
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     const source = 'menu'
@@ -290,7 +311,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async configFileAction(action: string, fileType?: CustomCommandType, filePath?: string): Promise<void> {
+    public async configFileAction(
+        action: string,
+        fileType?: CustomCommandType,
+        filePath?: string
+    ): Promise<void> {
         switch (action) {
             case 'add': {
                 await this.addNewUserCommandQuick()
@@ -346,7 +371,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
             })
 
-        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
+        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', {
+            verbose: newCommand,
+        })
     }
 
     /**
@@ -375,7 +402,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Save the last used commands to local storage
      */
     private async saveLastUsedCommands(): Promise<void> {
-        const commands = [...this.lastUsedCommands].filter(key => this.default.get(key)?.slashCommand.length)
+        const commands = [...this.lastUsedCommands].filter(
+            key => this.default.get(key)?.slashCommand.length
+        )
 
         if (commands.length > 0) {
             // store the last 5 used commands

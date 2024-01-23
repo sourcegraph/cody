@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { type CompletionParameters } from '@sourcegraph/cody-shared'
+import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
@@ -53,8 +53,8 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function bubbleSort() {\n  █', [], {
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -65,8 +65,8 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('bar(█)', [], {
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -77,8 +77,8 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('foo.bar(█)', [], {
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -98,8 +98,8 @@ describe('[getInlineCompletions] triggers', () => {
                     `,
                         [],
                         {
-                            onNetworkRequest(request) {
-                                requests.push(request)
+                            onNetworkRequest(params) {
+                                requests.push(params)
                             },
                         }
                     )
@@ -120,8 +120,8 @@ describe('[getInlineCompletions] triggers', () => {
                     `,
                         [],
                         {
-                            onNetworkRequest(request) {
-                                requests.push(request)
+                            onNetworkRequest(params) {
+                                requests.push(params)
                             },
                         }
                     )
@@ -134,8 +134,8 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('method.hello () {█', [], {
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -147,8 +147,8 @@ describe('[getInlineCompletions] triggers', () => {
             await getInlineCompletions(
                 params('function looksLegit() {\n  █', [], {
                     languageId: 'elixir',
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -159,8 +159,8 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function bubbleSort() {\n█', [], {
-                    onNetworkRequest(request) {
-                        requests.push(request)
+                    onNetworkRequest(params) {
+                        requests.push(params)
                     },
                 })
             )
@@ -185,7 +185,9 @@ describe('[getInlineCompletions] triggers', () => {
 
         it('does not trigger when the line above is empty', async () =>
             expect(
-                await getInlineCompletions(params('function foo(){\n console.log()\n}\n\n█', [completion`bar`]))
+                await getInlineCompletions(
+                    params('function foo(){\n console.log()\n}\n\n█', [completion`bar`])
+                )
             ).toBeNull())
 
         it('does trigger for empty document', async () =>
@@ -196,14 +198,18 @@ describe('[getInlineCompletions] triggers', () => {
 
         it('does trigger for empty line with non-empty line above', async () =>
             expect(
-                await getInlineCompletions(params('function log(foo: string){\n█', [completion`console.log(foo)`]))
+                await getInlineCompletions(
+                    params('function log(foo: string){\n█', [completion`console.log(foo)`])
+                )
             ).toEqual<V>({
                 items: [{ insertText }],
                 source: InlineCompletionsResultSource.Network,
             }))
 
         it('does trigger when cursor beyond character position zero', async () =>
-            expect(await getInlineCompletions(params('\n   █', [completion`console.log(foo)`]))).toEqual<V>({
+            expect(
+                await getInlineCompletions(params('\n   █', [completion`console.log(foo)`]))
+            ).toEqual<V>({
                 items: [{ insertText }],
                 source: InlineCompletionsResultSource.Network,
             }))

@@ -1,22 +1,32 @@
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
-import { testFileUri, type CompletionParameters, type CompletionResponse } from '@sourcegraph/cody-shared'
+import {
+    STOP_REASON_STREAMING_CHUNK,
+    testFileUri,
+    type CodeCompletionsClient,
+    type CompletionParameters,
+    type CompletionResponse,
+    type CompletionResponseGenerator,
+} from '@sourcegraph/cody-shared'
 
-import { type SupportedLanguage } from '../../tree-sitter/grammars'
+import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { STOP_REASON_STREAMING_CHUNK, type CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
-    getInlineCompletions as _getInlineCompletions,
     TriggerKind,
+    getInlineCompletions as _getInlineCompletions,
     type InlineCompletionsParams,
 } from '../get-inline-completions'
-import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
+import {
+    MULTI_LINE_STOP_SEQUENCES,
+    SINGLE_LINE_STOP_SEQUENCES,
+    createProviderConfig,
+} from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 
@@ -29,11 +39,20 @@ const URI_FIXTURE = testFileUri('test.ts')
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
-    onNetworkRequest?: (
-        params: CompletionParameters,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void
-    ) => void | Promise<void>
     takeSuggestWidgetSelectionIntoAccount?: boolean
+    onNetworkRequest?: (params: CompletionParameters) => void
+    completionResponseGenerator?: (
+        params: CompletionParameters
+    ) => CompletionResponseGenerator | Generator<CompletionResponse>
+}
+
+interface ParamsResult extends InlineCompletionsParams {
+    /**
+     * A promise that's resolved once `completionResponseGenerator` is done.
+     * Used to wait for all the completion response chunks to be processed by the
+     * request manager in autocomplete tests.
+     */
+    completionResponseGeneratorPromise: Promise<unknown>
 }
 
 /**
@@ -44,28 +63,36 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
 export function params(
     code: string,
     responses: CompletionResponse[] | 'never-resolve',
-    {
+    params: Params = {}
+): ParamsResult {
+    const {
         languageId = 'typescript',
         onNetworkRequest,
+        completionResponseGenerator,
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
-        ...params
-    }: Params = {}
-): InlineCompletionsParams {
+        ...restParams
+    } = params
+
     let requestCounter = 0
+    let resolveCompletionResponseGenerator: (value?: unknown) => void
+    const completionResponseGeneratorPromise = new Promise(resolve => {
+        resolveCompletionResponseGenerator = resolve
+    })
 
     const client: Pick<CodeCompletionsClient, 'complete'> = {
-        async *complete(params) {
-            const partialResponses: CompletionResponse[] = []
+        async *complete(completeParams) {
+            onNetworkRequest?.(completeParams)
 
-            await onNetworkRequest?.(params, (incompleteResponse: CompletionResponse): void => {
-                partialResponses.push(incompleteResponse)
-            })
+            if (completionResponseGenerator) {
+                for await (const response of completionResponseGenerator(completeParams)) {
+                    yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                }
 
-            for (const response of partialResponses) {
-                yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                // Signal to tests that all streaming chunks are processed.
+                resolveCompletionResponseGenerator?.()
             }
 
             if (responses === 'never-resolve') {
@@ -118,7 +145,10 @@ export function params(
             prefix: docContext.prefix,
         }),
         isDotComUser,
-        ...params,
+        ...restParams,
+
+        // Test-specific helpers
+        completionResponseGeneratorPromise,
     }
 }
 
@@ -158,7 +188,8 @@ expect.extend({
         const { isNot } = this
 
         return {
-            pass: requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
+            pass:
+                requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
             message: () => `Completion requests are${isNot ? ' not' : ''} single-line`,
             actual: requests.map(r => ({ stopSequences: r.stopSequences })),
             expected: [{ stopSequences: SINGLE_LINE_STOP_SEQUENCES }],
@@ -171,10 +202,13 @@ expect.extend({
         const { isNot } = this
 
         return {
-            pass: requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
+            pass:
+                requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
             message: () => `Completion requests are${isNot ? ' not' : ''} multi-line`,
             actual: requests.map(r => ({ stopSequences: r.stopSequences })),
-            expected: Array.from({ length: 3 }).map(() => ({ stopSequences: MULTI_LINE_STOP_SEQUENCES })),
+            expected: Array.from({ length: 3 }).map(() => ({
+                stopSequences: MULTI_LINE_STOP_SEQUENCES,
+            })),
         }
     },
 })

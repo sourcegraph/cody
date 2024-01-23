@@ -85,7 +85,11 @@ export async function createOrUpdateTelemetryRecorderProvider(
     // Add timestamp processor for realistic data in output for dev or no-op scenarios
     const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
+    if (
+        config.telemetryLevel === 'off' ||
+        !extensionDetails.ide ||
+        extensionDetails.ideExtensionType !== 'Cody'
+    ) {
         updateGlobalInstances(defaultNoOpProvider)
         return
     }
@@ -98,13 +102,20 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        updateGlobalInstances(
+            new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
+        )
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalInstances(defaultNoOpProvider)
     } else {
         updateGlobalInstances(
-            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+            new TelemetryRecorderProvider(
+                extensionDetails,
+                config,
+                anonymousUserID,
+                legacyBackcompatLogEventMode
+            )
         )
     }
 
@@ -172,13 +183,14 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
                 break
             case 'object': {
                 const { metadata } = splitSafeMetadata(value)
-                Object.entries(metadata).forEach(([nestedKey, value]) => {
+                for (const [nestedKey, value] of Object.entries(metadata)) {
                     // We know splitSafeMetadata returns only an object with
                     // numbers as values. Unit tests ensures this property holds.
                     safe[`${key}.${nestedKey}`] = value as number
-                })
+                }
                 // Preserve the entire original value in unsafe
                 unsafe[key] = value
+                break
             }
 
             // By default, treat as potentially unsafe.

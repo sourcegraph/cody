@@ -83,7 +83,9 @@ export class Typewriter implements IncrementalTextConsumer {
          * This is an accepted trade-off in order to ensure we stay in sync with the incoming text.
          */
         const charChunkSize =
-            calculatedDelay < MIN_DELAY_MS ? Math.round(MIN_DELAY_MS / calculatedDelay) : MIN_CHAR_CHUNK_SIZE
+            calculatedDelay < MIN_DELAY_MS
+                ? Math.round(MIN_DELAY_MS / calculatedDelay)
+                : MIN_CHAR_CHUNK_SIZE
 
         this.interval = setInterval(() => {
             this.i = Math.min(this.text.length, this.i + charChunkSize)

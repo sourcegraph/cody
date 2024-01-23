@@ -1,39 +1,39 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import type React from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import {
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type ContextFile,
-    type Guardrails,
-    type TelemetryService,
+import type {
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    ContextFile,
+    Guardrails,
+    TelemetryService,
 } from '@sourcegraph/cody-shared'
 import {
     Chat as ChatUI,
     type ChatButtonProps,
     type ChatSubmitType,
     type ChatUISubmitButtonProps,
-    type ChatUISuggestionButtonProps,
     type ChatUITextAreaProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
     type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
-import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
+import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import { type VSCodeWrapper } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -50,8 +50,6 @@ interface ChatboxProps {
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
-    suggestions?: string[]
-    setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
@@ -73,8 +71,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    suggestions,
-    setSuggestions,
     chatCommands,
     isTranscriptError,
     contextSelection,
@@ -191,7 +187,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
-            suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
             symbolLinkComponent={SymbolLink}
             className={styles.innerContainer}
@@ -210,8 +205,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
             insertButtonOnSubmit={onInsertBtnClick}
-            suggestions={suggestions}
-            setSuggestions={setSuggestions}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
@@ -238,8 +231,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 }
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
-    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton} appearance={appearance}>
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
+    label,
+    action,
+    onClick,
+    appearance,
+}) => (
+    <VSCodeButton
+        type="button"
+        onClick={() => onClick(action)}
+        className={styles.chatButton}
+        appearance={appearance}
+    >
         {label}
     </VSCodeButton>
 )
@@ -253,6 +256,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    onKeyUp,
     onFocus,
     chatModels,
 }) => {
@@ -260,6 +264,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     const placeholder = 'Message (@ to include code, / for commands)'
     const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
         if (autoFocus) {
             inputRef.current?.focus()
@@ -285,8 +290,15 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         (event: React.KeyboardEvent<HTMLElement>): void => {
             onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
         },
-        [inputRef, onKeyDown]
+        [onKeyDown]
     )
+    const onTextAreaKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            onKeyUp?.(event, inputRef.current?.selectionStart ?? null)
+        },
+        [onKeyUp]
+    )
+
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
 
@@ -308,6 +320,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 required={required}
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
+                onKeyUp={onTextAreaKeyUp}
                 onFocus={onFocus}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
@@ -322,6 +335,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
     className,
     disabled,
     onClick,
+    isFollowUp,
     onAbortMessageInProgress,
 }) => (
     <VSCodeButton
@@ -331,14 +345,14 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
         onClick={onAbortMessageInProgress ?? onClick}
         title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
     >
-        {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
+        {onAbortMessageInProgress ? (
+            <i className="codicon codicon-debug-stop" />
+        ) : isFollowUp ? (
+            <i className="codicon codicon-comment-discussion" />
+        ) : (
+            <i className="codicon codicon-comment" />
+        )}
     </VSCodeButton>
-)
-
-const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
-    <button className={styles.suggestionButton} type="button" onClick={onClick}>
-        {suggestion}
-    </button>
 )
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({
@@ -359,7 +373,10 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     </div>
 )
 
-const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
+    className,
+    feedbackButtonsOnSubmit,
+}) => {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState('')
 
     const onFeedbackBtnSubmit = useCallback(
@@ -438,7 +455,10 @@ function normalize(input: string): string {
     return input.trim().toLowerCase()
 }
 
-function filterChatCommands(chatCommands: [string, CodyCommand][], query: string): [string, CodyCommand][] {
+function filterChatCommands(
+    chatCommands: [string, CodyCommand][],
+    query: string
+): [string, CodyCommand][] {
     const normalizedQuery = normalize(query)
 
     if (!isSlashCommand(normalizedQuery)) {
@@ -447,7 +467,8 @@ function filterChatCommands(chatCommands: [string, CodyCommand][], query: string
 
     const [slashCommand] = normalizedQuery.split(' ')
     const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
-        ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
+        ([key, command]) =>
+            key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
     return matchingCommands.sort()
 }

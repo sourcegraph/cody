@@ -4,7 +4,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import { getSingleLineRange } from '../services/InlineAssist'
 
-import { type FixupTask } from './FixupTask'
+import type { FixupTask } from './FixupTask'
 import { CodyTaskState } from './utils'
 
 // Create Lenses based on state
@@ -55,13 +55,21 @@ function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.Code
             lens.command = {
                 title: '⚡️ Upgrade to Cody Pro',
                 command: 'cody.show-rate-limit-modal',
-                arguments: [task.error.userMessage, task.error.retryMessage, task.error.upgradeIsAvailable],
+                arguments: [
+                    task.error.userMessage,
+                    task.error.retryMessage,
+                    task.error.upgradeIsAvailable,
+                ],
             }
         } else {
             lens.command = {
                 title: '$(warning) Rate Limit Exceeded',
                 command: 'cody.show-rate-limit-modal',
-                arguments: [task.error.userMessage, task.error.retryMessage, task.error.upgradeIsAvailable],
+                arguments: [
+                    task.error.userMessage,
+                    task.error.retryMessage,
+                    task.error.upgradeIsAvailable,
+                ],
             }
         }
     } else {

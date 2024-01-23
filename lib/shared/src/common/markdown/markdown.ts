@@ -88,16 +88,16 @@ export const renderMarkdown = (
         typeof options.dompurifyConfig === 'object'
             ? options.dompurifyConfig
             : options.plainText
-            ? {
-                  ALLOWED_TAGS: [],
-                  ALLOWED_ATTR: [],
-                  KEEP_CONTENT: true,
-              }
-            : {
-                  USE_PROFILES: { html: true },
-                  FORBID_TAGS: ['style', 'form', 'input', 'button'],
-                  FORBID_ATTR: ['rel', 'style', 'method', 'action'],
-              }
+              ? {
+                      ALLOWED_TAGS: [],
+                      ALLOWED_ATTR: [],
+                      KEEP_CONTENT: true,
+                  }
+              : {
+                      USE_PROFILES: { html: true },
+                      FORBID_TAGS: ['style', 'form', 'input', 'button'],
+                      FORBID_ATTR: ['rel', 'style', 'method', 'action'],
+                  }
 
     if (options.addTargetBlankToAllLinks) {
         // Add a hook that adds target="_blank" and rel="noopener" to all links. DOMPurify does not
