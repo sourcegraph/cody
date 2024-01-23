@@ -3,7 +3,6 @@ package com.sourcegraph.cody
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
@@ -54,15 +53,12 @@ class SubscriptionTabPanel : JPanel() {
               "</tr>" +
               "</table>")
     }
-    if (ApplicationInfo.getInstance().build.baselineVersion < 223) {
-      separator()
-    } else {
-      row {
-        if (ThemeUtil.isDarkTheme()) {
-          text("<div style=\"height: 1px; background-color: #404245;\"></div>")
-        } else {
-          text("<div style=\"height: 1px; background-color: #ECEDF1;\"></div>")
-        }
+
+    row {
+      if (ThemeUtil.isDarkTheme()) {
+        text("<div style=\"height: 1px; background-color: #404245;\"></div>")
+      } else {
+        text("<div style=\"height: 1px; background-color: #ECEDF1;\"></div>")
       }
     }
   }
