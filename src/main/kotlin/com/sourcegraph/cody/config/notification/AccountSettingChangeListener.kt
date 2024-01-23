@@ -5,7 +5,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
@@ -20,7 +19,6 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
           override fun beforeAction(serverUrlChanged: Boolean) {}
 
           override fun afterAction(context: AccountSettingChangeContext) {
-            val codyApplicationSettings = CodyApplicationSettings.instance
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
@@ -36,12 +34,12 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               // Refresh onboarding panels
               if (ConfigUtil.isCodyEnabled()) {
                 refreshPanelsVisibility()
-                embeddingStatusView.updateEmbeddingStatus()
               }
 
               UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
               UpgradeToCodyProNotification.chatRateLimitError.set(null)
               CodyAutocompleteStatusService.resetApplication(project)
+
               ApplicationManager.getApplication().executeOnPooledThread { refreshSubscriptionTab() }
             }
 

@@ -15,7 +15,9 @@ import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
-import javax.swing.*
+import javax.swing.JButton
+import javax.swing.JLayeredPane
+import javax.swing.KeyStroke
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.text.DefaultEditorKit
@@ -28,7 +30,7 @@ class PromptPanel(
 ) : JLayeredPane() {
 
   private var isInHistoryMode = true
-  private val autoGrowingTextArea = AutoGrowingTextArea(3, 9, this)
+  private val autoGrowingTextArea = AutoGrowingTextArea(5, 9, this)
   private val scrollPane = autoGrowingTextArea.scrollPane
   private val margin = 14
   val textArea = autoGrowingTextArea.textArea

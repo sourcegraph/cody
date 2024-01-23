@@ -29,7 +29,8 @@ class Chat {
       humanMessage: ChatMessage,
       commandId: CommandId?,
       chat: UpdatableChat,
-      token: CancellationToken
+      token: CancellationToken,
+      isEnhancedContextEnabled: Boolean
   ) {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       val isFirstMessage = AtomicBoolean(false)
@@ -68,7 +69,7 @@ class Chat {
                       command = "submit",
                       text = humanMessage.actualMessage(),
                       submitType = "user",
-                      addEnhancedContext = true,
+                      addEnhancedContext = isEnhancedContextEnabled,
                       // TODO(#242): allow to manually add files to the context via `@`
                       contextFiles = listOf())))
         }

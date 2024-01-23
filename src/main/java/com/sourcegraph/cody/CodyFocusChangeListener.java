@@ -35,7 +35,6 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
     if (!ConfigUtil.isCodyEnabled()) {
       return;
     }
-
     Project project = editor.getProject();
     if (project == null) {
       return;
@@ -48,7 +47,15 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
 
     CodyAgentService.applyAgentOnBackgroundThread(
         project,
-        agent -> agent.getServer().textDocumentDidFocus(TextDocument.fromPath(file.getPath())));
+        agent -> {
+          try {
+            // TODO: This is bad but needed to avoid race with file context of commands executed
+            // through context menu
+            Thread.sleep(100);
+          } catch (InterruptedException ignored) {
+          }
+          agent.getServer().textDocumentDidFocus(TextDocument.fromPath(file.getPath()));
+        });
 
     CodyAgentCodebase.getInstance(project).onFileOpened(project, file);
   }

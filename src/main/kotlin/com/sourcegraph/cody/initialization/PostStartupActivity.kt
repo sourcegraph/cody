@@ -29,6 +29,6 @@ class PostStartupActivity : StartupActivity.DumbAware {
     if (ConfigUtil.isCodyEnabled()) CodyAgentService.getInstance(project).startAgent(project)
     CodyAutocompleteStatusService.resetApplication(project)
     CodyFocusChangeListener().runActivity(project)
-    CodyAgentCodebase.getInstance(project).initializeRepoName()
+    CodyAgentCodebase.getInstance(project).onFileOpened(project, null)
   }
 }

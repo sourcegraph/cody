@@ -21,7 +21,7 @@ import com.sourcegraph.cody.commands.ui.CommandsTabPanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.context.EmbeddingStatusView
+import com.sourcegraph.cody.context.ui.EnhancedContextPanel
 import com.sourcegraph.cody.ui.ChatScrollPane
 import com.sourcegraph.cody.ui.SendButton
 import com.sourcegraph.cody.vscode.CancellationToken
@@ -48,8 +48,12 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private val stopGeneratingButton =
       JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend))
   private val commandsPanel: CommandsTabPanel =
-      CommandsTabPanel(project) { cmdId: CommandId -> sendMessage(project, message = null, cmdId) }
-  val embeddingStatusView: EmbeddingStatusView
+      CommandsTabPanel(project) { cmdId: CommandId ->
+        ApplicationManager.getApplication().invokeLater {
+          sendMessage(project, message = null, cmdId)
+        }
+      }
+  val contextView: EnhancedContextPanel
   override var isChatVisible = false
   override var id: String? = null
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
@@ -85,9 +89,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             sendButton,
             isGenerating = stopGeneratingButton::isVisible)
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
-    stopGeneratingButtonPanel.preferredSize =
-        Dimension(Short.MAX_VALUE.toInt(), stopGeneratingButton.getPreferredSize().height + 10)
-
+    stopGeneratingButtonPanel.minimumSize = Dimension(Short.MAX_VALUE.toInt(), 0)
     stopGeneratingButton.addActionListener {
       inProgressChat.abort()
       stopGeneratingButton.isVisible = false
@@ -99,8 +101,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
     stopGeneratingButtonPanel.isOpaque = false
-    embeddingStatusView = EmbeddingStatusView(project)
-    val lowerPanel = LowerPanel(stopGeneratingButtonPanel, promptPanel, embeddingStatusView)
+    contextView = EnhancedContextPanel(project)
+    val lowerPanel = LowerPanel(stopGeneratingButtonPanel, promptPanel, contextView)
 
     // Main content panel
     contentPanel.layout = BorderLayout(0, 0)
@@ -128,6 +130,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       fetchSubscriptionPanelData(project, agent.server).thenAccept {
         if (it != null) {
+
           ApplicationManager.getApplication().invokeLater { refreshSubscriptionTab(it) }
         }
       }
@@ -136,8 +139,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
   @RequiresEdt
   private fun refreshSubscriptionTab(data: SubscriptionTabPanelData) {
+    val isSubscriptionTabPresent = tabbedPane.tabCount >= SUBSCRIPTION_TAB_INDEX + 1
+
     if (data.isDotcomAccount && data.codyProFeatureFlag) {
-      if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
+      if (!isSubscriptionTabPresent) {
         tabbedPane.insertTab(
             /* title = */ "Subscription",
             /* icon = */ null,
@@ -146,7 +151,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             SUBSCRIPTION_TAB_INDEX)
       }
       subscriptionPanel.update(data.isCurrentUserPro)
-    } else if (SUBSCRIPTION_TAB_INDEX < tabbedPane.tabCount) {
+    } else if (isSubscriptionTabPresent) {
       tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
     }
   }
@@ -347,7 +352,13 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().executeOnPooledThread {
       val chat = Chat()
       try {
-        chat.sendMessageViaAgent(project, humanMessage, commandId, this, inProgressChat)
+        chat.sendMessageViaAgent(
+            project,
+            humanMessage,
+            commandId,
+            this,
+            inProgressChat,
+            contextView.isEnhancedContextEnabled.get())
       } catch (e: Exception) {
         logger.error("Error sending message '$humanMessage' to chat", e)
         addMessageToChat(

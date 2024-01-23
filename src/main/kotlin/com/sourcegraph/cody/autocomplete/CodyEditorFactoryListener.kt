@@ -131,7 +131,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         val current = editorManager.getSelectedTextEditor(true)
         return current != null && current == editor
       }
-      val current = editorManager.getSelectedEditor()
+      val current = editorManager.selectedEditor
       return current is TextEditor && editor == current.editor
     }
 
