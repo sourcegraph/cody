@@ -11,6 +11,7 @@ export const ChatActions: React.FunctionComponent<{
     onCancelEditClick: () => void
     onEditLastMessageClick: () => void
     setInputFocus: (focus: boolean) => void
+    onRestoreLastChatClick?: () => void
     disableEditLastMessage: boolean
 }> = React.memo(function ContextFilesContent({
     isEditing,
@@ -20,6 +21,7 @@ export const ChatActions: React.FunctionComponent<{
     onEditLastMessageClick,
     setInputFocus,
     disableEditLastMessage,
+    onRestoreLastChatClick,
 }) {
     // "⌘" on Mac or "Ctrl" on other systems
     const isMac = isMacOS()
@@ -45,6 +47,13 @@ export const ChatActions: React.FunctionComponent<{
             onClick: onEditLastMessageClick,
             focus: true,
             when: !isEditing && !disableEditLastMessage,
+        },
+        {
+            name: 'Return to Previous Chat',
+            keybind: '',
+            onClick: onRestoreLastChatClick,
+            focus: false,
+            when: onRestoreLastChatClick !== undefined,
         },
         {
             name: 'Start New Chat',

@@ -81,6 +81,7 @@ interface ChatProps extends ChatClassNames {
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
+    chatIDHistory: string[]
 }
 
 export interface UserAccountInfo {
@@ -228,6 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     userInfo,
     postMessage,
     guardrails,
+    chatIDHistory,
 }) => {
     const isMac = isMacOS()
     const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker)
@@ -716,13 +718,27 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 {/* Don't show chat action buttons on empty chat session */}
                 {transcript.length > 0 && (
                     <ChatActions
+                        setInputFocus={setInputFocus}
                         isMessageInProgress={!!messageInProgress?.speaker}
                         isEditing={messageBeingEdited !== undefined}
                         onChatResetClick={onChatResetClick}
                         onCancelEditClick={() => setEditMessageState()}
                         onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
                         disableEditLastMessage={isLastItemCommand}
-                        setInputFocus={setInputFocus}
+                        onRestoreLastChatClick={
+                            // Display the restore button if there is a previous chat id in current window
+                            // And the current chat window is new with less than 4 messages
+                            // Less than 4 messages includes the following cases:
+                            // - users who just submitted a question in new chat mode
+                            // - users who just started a new chat session from current chat session
+                            chatIDHistory.length > 1 && transcript.length < 4
+                                ? () =>
+                                      postMessage?.({
+                                          command: 'restoreHistory',
+                                          chatID: chatIDHistory.at(-2),
+                                      })
+                                : undefined
+                        }
                     />
                 )}
                 <div className={styles.textAreaContainer}>

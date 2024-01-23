@@ -288,6 +288,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'attribution-search':
                 void this.handleAttributionSearch(message.snippet)
                 break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
+                break
             case 'reset':
                 await this.clearAndRestartSession()
                 break

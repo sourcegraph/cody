@@ -58,6 +58,7 @@ interface ChatboxProps {
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    chatIDHistory: string[]
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -80,6 +81,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled,
     userInfo,
     guardrails,
+    chatIDHistory,
 }) => {
     const abortMessageInProgress = useCallback(() => {
         vscodeAPI.postMessage({ command: 'abort' })
@@ -253,6 +255,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
+            chatIDHistory={chatIDHistory}
         />
     )
 }
