@@ -10,6 +10,13 @@ import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
+import { evaluateSimpleChatStrategy } from './strategy-simple-chat'
+
+export interface SimpleChatEvalConfig {
+    question: string,
+    ground_truth_answer: string,
+    open_files?: string[]
+}
 
 export interface EvaluateAutocompleteOptions {
     workspace: string
@@ -48,6 +55,8 @@ export interface EvaluateAutocompleteOptions {
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
+
+    chat_config?: SimpleChatEvalConfig[]
 }
 
 interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
@@ -58,6 +67,7 @@ interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
 enum EvaluationStrategy {
     BFG = 'bfg',
     GitLog = 'git-log',
+    SimpleChat = 'simple-chat',
 }
 
 interface EvaluationFixture {
@@ -313,6 +323,8 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             await evaluateBfgStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
+        } else if (options.fixture.strategy==EvaluationStrategy.SimpleChat) {
+            await evaluateSimpleChatStrategy(client, options)
         }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)
