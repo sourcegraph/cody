@@ -93,6 +93,8 @@ export const TranscriptItem: React.FunctionComponent<
     const isInEditingMode = beingEdited !== undefined
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
+    // A boolean indicating whether the current message is a command input.
+    const isCommandInput = message?.displayText?.startsWith('/')
 
     return (
         <div
@@ -126,7 +128,7 @@ export const TranscriptItem: React.FunctionComponent<
                             className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
-                            disabled={isInEditingMode}
+                            disabled={isCommandInput || isInEditingMode}
                         />
                     </header>
                 </div>

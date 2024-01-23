@@ -246,11 +246,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
     const [enableNewChatMode, setEnableNewChatMode] = useState(false)
 
+    const [isLastItemCommand, setIsLastItemCommand] = useState(false)
+
     const lastHumanMessageIndex = useMemo<number | undefined>(() => {
         if (!transcript?.length) {
             return undefined
         }
-        return transcript.findLastIndex(msg => msg.speaker === 'human')
+        const index = transcript.findLastIndex(msg => msg.speaker === 'human')
+        const isCommand = transcript[index]?.displayText?.startsWith('/') ?? false
+        setIsLastItemCommand(isCommand)
+        return index
     }, [transcript])
 
     /**
@@ -716,6 +721,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         onChatResetClick={onChatResetClick}
                         onCancelEditClick={() => setEditMessageState()}
                         onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
+                        disableEditLastMessage={isLastItemCommand}
                         setInputFocus={setInputFocus}
                     />
                 )}

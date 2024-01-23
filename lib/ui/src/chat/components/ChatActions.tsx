@@ -11,6 +11,7 @@ export const ChatActions: React.FunctionComponent<{
     onCancelEditClick: () => void
     onEditLastMessageClick: () => void
     setInputFocus: (focus: boolean) => void
+    disableEditLastMessage: boolean
 }> = React.memo(function ContextFilesContent({
     isEditing,
     isMessageInProgress,
@@ -18,10 +19,12 @@ export const ChatActions: React.FunctionComponent<{
     onCancelEditClick,
     onEditLastMessageClick,
     setInputFocus,
+    disableEditLastMessage,
 }) {
     // "⌘" on Mac or "Ctrl" on other systems
     const isMac = isMacOS()
     const osIcon = isMac ? '⌘' : 'Ctrl+'
+
     // The Chat Actions are conditionally rendered based on the 'when' property.
     // The "Cancel Edit" action is only available when isEditing is true, meaning
     // the user is in the process of editing a message.
@@ -41,7 +44,7 @@ export const ChatActions: React.FunctionComponent<{
             keybind: `${osIcon}K`,
             onClick: onEditLastMessageClick,
             focus: true,
-            when: !isEditing,
+            when: !isEditing && !disableEditLastMessage,
         },
         {
             name: 'Start New Chat',
@@ -53,6 +56,32 @@ export const ChatActions: React.FunctionComponent<{
     ]
 
     const buttonRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        // Listen to chat action from key down events in document
+        // so that it works even when the chat input is not focused
+        const onKeyDown = (event: KeyboardEvent): void => {
+            const isModifierDown = isMac ? event.metaKey : event.ctrlKey
+            if (isModifierDown) {
+                // Ctrl/Cmd + K: edits the last human message
+                if (event.key === 'k') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onEditLastMessageClick()
+                    return
+                }
+
+                // Ctrl/Cmd + /: starts a new chat
+                if (event.key === '/') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onChatResetClick()
+                    return
+                }
+            }
+        }
+        document.addEventListener('keydown', onKeyDown)
+    }, [onEditLastMessageClick, onChatResetClick, isMac])
 
     useEffect(() => {
         // Focus on the Edit button after a question has been submitted
@@ -89,8 +118,8 @@ export const ChatActions: React.FunctionComponent<{
                         onClick={action.onClick}
                     >
                         <span className={styles.chatActionButtonTitle}>
-                            {action.name}{' '}
-                            <span className={styles.chatActionKeybind}>{action.keybind}</span>
+                            {action.name}
+                            <span className={styles.chatActionKeybind}> {action.keybind}</span>
                         </span>
                     </button>
                 ))}
