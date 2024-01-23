@@ -225,7 +225,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleInitialized()
                 break
             case 'submit': {
-                await this.handleNewUserMessage(
+                await this.handleUserMessageSubmission(
                     uuid.v4(),
                     message.text,
                     message.submitType,
@@ -347,7 +347,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
-    public async handleNewUserMessage(
+    /**
+     * Handles user input text for both new and edit submissions
+     */
+    public async handleUserMessageSubmission(
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
@@ -481,7 +484,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return
             }
             this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
-            return await this.handleNewUserMessage(
+            return await this.handleUserMessageSubmission(
                 requestID,
                 text,
                 'user',
