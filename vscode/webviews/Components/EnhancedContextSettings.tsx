@@ -306,8 +306,8 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                             <h1>Enhanced Context ✨</h1>
                         </label>
                         <p>
-                            Include additional code context with your message.{' '}
-                            {/* <a href="about:blank#TODO">Learn more</a> */}
+                            Automatically include additional context from your codebase.
+                            {/* {' '}<a href="about:blank#TODO">Learn more</a> */}
                         </p>
                         <dl className={styles.foldersList}>
                             {context.groups.map(group => (
