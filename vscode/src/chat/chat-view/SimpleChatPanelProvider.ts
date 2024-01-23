@@ -729,6 +729,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        logDebug(
+            'HiteshCustom: [Post error block] abort error when calling LLM',
+            JSON.stringify(error),
+            ' -- Type error:  -- ',
+            JSON.stringify(type)
+        )
         logDebug('SimpleChatPanelProvider: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
@@ -774,6 +780,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             JSON.stringify(this.contextStatusAggregator.status)
         )
         void this.postMessage({
+            context: null, // Add the missing 'context' property
             type: 'enhanced-context',
             enhancedContextStatus: {
                 groups: this.contextStatusAggregator.status,
@@ -875,13 +882,39 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
             error: (partialResponse, error) => {
                 if (!isAbortError(error)) {
+                    logDebug(
+                        'HiteshCustom: [Abort block] abort error when calling LLM',
+                        JSON.stringify(error),
+                        ' -- Partial response:  -- ',
+                        JSON.stringify(partialResponse),
+                        ' -- requestId -- ',
+                        requestID
+                    )
+
                     this.postError(error, 'transcript')
                 }
                 try {
+                    logDebug(
+                        'HiteshCustom: [Try block] transcript error when calling LLM',
+                        JSON.stringify(error),
+                        ' -- Partial response:  -- ',
+                        JSON.stringify(partialResponse),
+                        ' -- requestId -- ',
+                        requestID
+                    )
                     // We should still add the partial response if there was an error
                     // This'd throw an error if one has already been added
                     this.addBotMessage(requestID, partialResponse)
                 } catch {
+                    logDebug(
+                        'HiteshCustom: [Catch block] streaming error when calling LLM',
+                        JSON.stringify(error),
+                        ' -- Partial response:  -- ',
+                        JSON.stringify(partialResponse),
+                        ' -- requestId -- ',
+                        requestID
+                    )
+
                     console.error('Streaming Error', error)
                 }
                 recordErrorToSpan(span, error)

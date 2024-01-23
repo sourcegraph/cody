@@ -29,6 +29,7 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@types/js-levenshtein": "^1.1.1",
+    "async-mutex": "^0.5.0",
     "commander": "^11.1.0",
     "csv-writer": "^1.6.0",
     "dedent": "^0.7.0",

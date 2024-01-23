@@ -111,6 +111,9 @@ importers:
       '@types/js-levenshtein':
         specifier: ^1.1.1
         version: 1.1.1
+      async-mutex:
+        specifier: ^0.5.0
+        version: 0.5.0
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -6958,6 +6961,12 @@ packages:
 
   /async-mutex@0.4.0:
     resolution: {integrity: sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==}
+    dependencies:
+      tslib: 2.1.0
+    dev: false
+
+  /async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
     dependencies:
       tslib: 2.1.0
     dev: false
