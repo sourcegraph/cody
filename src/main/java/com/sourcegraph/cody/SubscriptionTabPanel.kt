@@ -54,7 +54,7 @@ class SubscriptionTabPanel : JPanel() {
               "</tr>" +
               "</table>")
     }
-    if (ApplicationInfo.getInstance().build.baselineVersion <= 223) {
+    if (ApplicationInfo.getInstance().build.baselineVersion < 223) {
       separator()
     } else {
       row {
