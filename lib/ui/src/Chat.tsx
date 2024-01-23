@@ -107,6 +107,7 @@ export interface ChatUITextAreaProps {
     className: string
     rows: number
     isFocusd: boolean
+    isNewChat: boolean
     value: string
     required: boolean
     chatEnabled: boolean
@@ -715,32 +716,30 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         />
                     </div>
                 )}
-                {/* Don't show chat action buttons on empty chat session */}
-                {transcript.length > 0 && (
-                    <ChatActions
-                        setInputFocus={setInputFocus}
-                        isMessageInProgress={!!messageInProgress?.speaker}
-                        isEditing={messageBeingEdited !== undefined}
-                        onChatResetClick={onChatResetClick}
-                        onCancelEditClick={() => setEditMessageState()}
-                        onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
-                        disableEditLastMessage={isLastItemCommand}
-                        onRestoreLastChatClick={
-                            // Display the restore button if there is a previous chat id in current window
-                            // And the current chat window is new with less than 4 messages
-                            // Less than 4 messages includes the following cases:
-                            // - users who just submitted a question in new chat mode
-                            // - users who just started a new chat session from current chat session
-                            chatIDHistory.length > 1 && transcript.length < 4
-                                ? () =>
-                                      postMessage?.({
-                                          command: 'restoreHistory',
-                                          chatID: chatIDHistory.at(-2),
-                                      })
-                                : undefined
-                        }
-                    />
-                )}
+                {/* Don't show chat action buttons on empty chat session unless it's a new cha*/}
+
+                <ChatActions
+                    setInputFocus={setInputFocus}
+                    isEmptyChat={transcript.length < 1}
+                    isMessageInProgress={!!messageInProgress?.speaker}
+                    isEditing={transcript.length > 1 && messageBeingEdited !== undefined}
+                    disableEditLastMessage={isLastItemCommand}
+                    onChatResetClick={onChatResetClick}
+                    onCancelEditClick={() => setEditMessageState()}
+                    onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
+                    onRestoreLastChatClick={
+                        // Display the restore button if there is a previous chat id in current window
+                        // And the current chat window is new
+                        chatIDHistory.length > 1
+                            ? () =>
+                                  postMessage?.({
+                                      command: 'restoreHistory',
+                                      chatID: chatIDHistory.at(-2),
+                                  })
+                            : undefined
+                    }
+                />
+
                 <div className={styles.textAreaContainer}>
                     {displayCommands && ChatCommandsComponent && formInput.startsWith('/') && (
                         <ChatCommandsComponent
@@ -777,6 +776,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             chatEnabled={chatEnabled}
                             chatModels={chatModels}
                             messageBeingEdited={messageBeingEdited}
+                            isNewChat={!transcript.length}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>

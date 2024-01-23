@@ -289,9 +289,11 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     onFocus,
     chatModels,
     messageBeingEdited,
+    isNewChat,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = 'Message (@ to include code, / for commands)'
+    const tips = '(@ to include code, / for commands)'
+    const placeholder = isNewChat ? `Message ${tips}` : `Follow-Up Message ${tips}`
     const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it

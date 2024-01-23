@@ -7,6 +7,7 @@ import styles from './ChatActions.module.css'
 export const ChatActions: React.FunctionComponent<{
     isEditing: boolean
     isMessageInProgress: boolean
+    isEmptyChat: boolean
     onChatResetClick: () => void
     onCancelEditClick: () => void
     onEditLastMessageClick: () => void
@@ -15,6 +16,7 @@ export const ChatActions: React.FunctionComponent<{
     disableEditLastMessage: boolean
 }> = React.memo(function ContextFilesContent({
     isEditing,
+    isEmptyChat,
     isMessageInProgress,
     onChatResetClick,
     onCancelEditClick,
@@ -39,28 +41,28 @@ export const ChatActions: React.FunctionComponent<{
             keybind: 'ESC',
             onClick: onCancelEditClick,
             focus: false,
-            when: isEditing,
+            when: isEditing && !isEmptyChat,
         },
         {
             name: 'Edit Last Message',
             keybind: `${osIcon}K`,
             onClick: onEditLastMessageClick,
             focus: true,
-            when: !isEditing && !disableEditLastMessage,
+            when: !isEmptyChat && !isEditing && !disableEditLastMessage,
         },
         {
-            name: 'Return to Previous Chat',
+            name: '← Return to Previous Chat',
             keybind: '',
             onClick: onRestoreLastChatClick,
             focus: false,
-            when: onRestoreLastChatClick !== undefined,
+            when: isEmptyChat && onRestoreLastChatClick !== undefined,
         },
         {
             name: 'Start New Chat',
             keybind: `${osIcon}/`,
             onClick: onChatResetClick,
             focus: false,
-            when: !isEditing,
+            when: !isEmptyChat && !isEditing,
         },
     ]
 
