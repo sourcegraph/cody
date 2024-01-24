@@ -306,8 +306,10 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                             <h1>Enhanced Context ✨</h1>
                         </label>
                         <p>
-                            Automatically include additional context from your codebase.
-                            {/* {' '}<a href="about:blank#TODO">Learn more</a> */}
+                            Automatically include additional context from your codebase.{' '}
+                            <a href="https://sourcegraph.com/docs/cody/clients/install-vscode#enhanced-context-selector">
+                                Learn more
+                            </a>
                         </p>
                         <dl className={styles.foldersList}>
                             {context.groups.map(group => (
