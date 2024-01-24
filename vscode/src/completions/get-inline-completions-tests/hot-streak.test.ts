@@ -164,5 +164,93 @@ describe('[getInlineCompletions] hot streak', () => {
             )
             expect(secondRequest.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
+
+        // TODO(valery): add more test cases
+        it('yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready', async () => {
+            const { requestManager, ...firstRequest } = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction█() {
+                    if(i > 1) {█
+                        console.log(2)
+                    }
+                    if(i > 2) {
+                        console.log(3)
+                    }█
+                    if(i > 3) {
+                        console.log(4)
+                    }
+                }
+                myFunction()
+                █
+                const`,
+                {
+                    dynamicMultilineCompletions: true,
+                    hotStreak: true,
+                    delayBetweenChunks: 20,
+                    providerOptions: {
+                        firstCompletionTimeout: 10,
+                    },
+                }
+            )
+
+            await firstRequest.completionResponseGeneratorPromise
+            expect(firstRequest.items[0].insertText).toEqual('() {')
+
+            const secondRequest = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction() {
+                    █
+                const`,
+                {
+                    dynamicMultilineCompletions: true,
+                    hotStreak: true,
+                    // Reuse the request manager to get a cache hit
+                    requestManager,
+                }
+            )
+
+            expect(secondRequest.source).toBe(InlineCompletionsResultSource.HotStreak)
+            expect(secondRequest.items[0].insertText).toMatchInlineSnapshot(
+                `
+              "if(i > 1) {
+                      console.log(2)
+                  }
+                  if(i > 2) {
+                      console.log(3)
+                  }
+                  if(i > 3) {
+                      console.log(4)
+                  }
+              }"
+            `
+            )
+
+            const thirdRequest = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction() {
+                    if(i > 1) {
+                        console.log(2)
+                    }
+                    if(i > 2) {
+                        console.log(3)
+                    }
+                    if(i > 3) {
+                        console.log(4)
+                    }
+                }
+                █
+                const`,
+                {
+                    dynamicMultilineCompletions: true,
+                    hotStreak: true,
+                    // Reuse the request manager to get a cache hit
+                    requestManager,
+                }
+            )
+
+            expect(thirdRequest.source).toBe(InlineCompletionsResultSource.HotStreak)
+            expect(thirdRequest.items[0].insertText).toMatchInlineSnapshot(
+                `
+              "myFunction()"
+            `
+            )
+        })
     })
 })

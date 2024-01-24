@@ -10,11 +10,28 @@ import {
     getPrevNonEmptyLine,
     lines,
 } from './text-processing'
+import { getMatchingSuffixLength } from './text-processing/process-inline-completions'
 
 export interface DocumentContext extends DocumentDependentContext, LinesContext {
     position: vscode.Position
     multilineTrigger: string | null
     multilineTriggerPosition: vscode.Position | null
+    /**
+     * A temporary workaround for the fact that we cannot modify `TextDocument` text.
+     * Having these fields set on a `DocumentContext` means we can still get the full
+     * document text in the `parse-completion` function with the "virtually" inserted
+     * completion text.
+     *
+     * TODO(valery): we need a better abstraction that would allow us to mutate
+     * the `TextDocument` text in memory without actually pasting it into the `TextDocument`
+     * and that would not require copy-pasting and modifiying the whole document text
+     * on every completion update or new virtual completion creation.
+     */
+    injectedCompletionText?: string
+    /**
+     * Actually current cursor position that exists in the `TextDocument`.
+     */
+    actualPosition?: vscode.Position
 }
 
 export interface DocumentDependentContext {
@@ -173,20 +190,33 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
  *
  *       When inserting `2` into: `f(1, █);`, the document context will look like this `f(1, 2);█`
  */
-export function insertIntoDocContext(
-    docContext: DocumentContext,
-    insertText: string,
-    languageId: string,
-    dynamicMultilineCompletions = false
-): DocumentContext {
-    const { position, prefix, currentLinePrefix, currentLineSuffix, suffix } = docContext
+interface InsertIntoDocContextParams {
+    docContext: DocumentContext
+    insertText: string
+    languageId: string
+    dynamicMultilineCompletions: boolean
+}
+
+export function insertIntoDocContext(params: InsertIntoDocContextParams): DocumentContext {
+    const {
+        insertText,
+        languageId,
+        dynamicMultilineCompletions,
+        docContext,
+        docContext: { position, prefix, suffix, currentLineSuffix },
+    } = params
 
     const insertedLines = lines(insertText)
 
     const updatedPosition =
         insertedLines.length <= 1
-            ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
+            ? position.translate(0, Math.max(getFirstLine(insertText).length, 0))
             : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+
+    addAutocompleteDebugEvent('getDerivedDocContext', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: insertText,
+    })
 
     return getDerivedDocContext({
         languageId,
@@ -194,7 +224,9 @@ export function insertIntoDocContext(
         dynamicMultilineCompletions,
         documentDependentContext: {
             prefix: prefix + insertText,
-            suffix: suffix.slice(currentLineSuffix.length),
+            // Remove the characters that are being replaced by the completion
+            // to reduce the chances of breaking the parse tree with redundant symbols.
+            suffix: suffix.slice(getMatchingSuffixLength(insertText, currentLineSuffix)),
             injectedPrefix: null,
         },
     })

@@ -382,3 +382,9 @@ export function getPrevNonEmptyLine(prefix: string): string {
 export function lines(text: string): string[] {
     return text.split(/\r?\n/)
 }
+
+export function hasCompleteFirstLine(text: string): boolean {
+    const lastNewlineIndex = text.lastIndexOf('\n')
+
+    return lastNewlineIndex !== -1
+}

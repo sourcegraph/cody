@@ -25,13 +25,18 @@ interface DetectMultilineResult {
     multilineTriggerPosition: Position | null
 }
 
+export function endsWithBlockStart(text: string, languageId: string): string | null {
+    const blockStart = getLanguageConfig(languageId)?.blockStart
+    return blockStart && text.trimEnd().endsWith(blockStart) ? blockStart : null
+}
+
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, dynamicMultilineCompletions, position } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } =
         docContext
 
-    const blockStart = getLanguageConfig(languageId)?.blockStart
-    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
+    const blockStart = endsWithBlockStart(prefix, languageId)
+    const isBlockStartActive = Boolean(blockStart)
 
     const currentLineText =
         currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
@@ -114,6 +119,14 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
         }
     }
+
+    addAutocompleteDebugEvent('detectMultiline', {
+        dynamicMultilineCompletions,
+        nonEmptyLineEndsWithBlockStart,
+        isEmptyLineAfterBlockStart,
+        isNewLineOpeningBracketMatch,
+        isSameLineOpeningBracketMatch,
+    })
 
     return {
         multilineTrigger: null,
