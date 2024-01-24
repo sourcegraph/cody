@@ -71,6 +71,9 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** Language of the document being completed. */
     languageId: string
 
+    /** If we're inside a test file */
+    testFile: boolean
+
     /**
      * Information about the context retrieval process that lead to this autocomplete request. Refer
      * to the documentation of {@link ContextSummary}
