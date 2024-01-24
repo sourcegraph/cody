@@ -2,11 +2,12 @@ import type * as vscode from 'vscode'
 
 import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import type { EditIntent, EditMode } from '../edit/types'
+import type { EditIntent, EditMode, EditRangeSource } from '../edit/types'
 
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
+import type { EditSupportedModels } from '../edit/prompt'
 
 export type taskID = string
 
@@ -54,11 +55,13 @@ export class FixupTask {
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
+        public rangeSource: EditRangeSource,
         /* The mode indicates how code should be inserted */
         public mode: EditMode = 'edit',
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[]
+        public readonly contextMessages?: ContextMessage[],
+        public readonly model: EditSupportedModels = 'anthropic/claude-2.1'
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

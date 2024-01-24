@@ -13,7 +13,8 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import type { EditIntent, EditMode } from './types'
+import type { EditIntent, EditMode, EditRangeSource } from './types'
+import { getEditSmartSelection } from './utils/edit-selection'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -80,14 +81,21 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        const range = args.range || editor.active?.selection
+        let range = args.range || editor.active?.selection
         if (!range) {
             return
         }
+        let rangeSource: EditRangeSource = 'selection'
 
         if (editor.active) {
             // Clear out any active ghost text
             this.options.ghostHintDecorator.clearGhostText(editor.active)
+        }
+
+        // Support expanding the selection range for intents where it is useful
+        if (args.intent !== 'add') {
+            range = await getEditSmartSelection(document, range)
+            rangeSource = 'expanded'
         }
 
         const task = args.instruction?.trim()
@@ -96,6 +104,7 @@ export class EditManager implements vscode.Disposable {
                   args.instruction,
                   args.userContextFiles ?? [],
                   range,
+                  rangeSource,
                   args.intent,
                   args.mode,
                   source,
