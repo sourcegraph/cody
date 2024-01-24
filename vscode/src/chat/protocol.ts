@@ -138,6 +138,13 @@ export type ExtensionMessage =
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'webview-state'; isActive: boolean }
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string

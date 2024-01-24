@@ -64,6 +64,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
+    const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
     const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
@@ -120,8 +121,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
                         break
-                    case 'setChatEnabledConfigFeature':
-                        setChatEnabled(message.data)
+                    case 'setConfigFeatures':
+                        setChatEnabled(message.configFeatures.chat)
+                        setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -311,7 +313,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
-                                            config.experimentalGuardrails ? guardrails : undefined
+                                            config.experimentalGuardrails && attributionEnabled
+                                                ? guardrails
+                                                : undefined
                                         }
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}

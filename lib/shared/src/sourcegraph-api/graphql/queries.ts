@@ -65,7 +65,8 @@ query CodyConfigFeaturesResponse {
             chat
             autoComplete
             commands
-          }
+            attribution
+        }
     }
 }`
 
