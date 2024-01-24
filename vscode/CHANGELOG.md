@@ -31,6 +31,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Renamed the "Restart Chat Session" button to "New Chat Session". [pull/2786](https://github.com/sourcegraph/cody/pull/2786)
 - Removed `cody.experimental.chatPredictions`.
 - Codebase-wide context for custom commands has been disabled.
+- Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 
 ## [1.1.3]
 

@@ -1081,8 +1081,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         void this.postMessage({
-            type: 'setChatEnabledConfigFeature',
-            data: configFeatures.chat,
+            type: 'setConfigFeatures',
+            configFeatures: {
+                chat: configFeatures.chat,
+                attribution: configFeatures.attribution,
+            },
         })
 
         return panel
