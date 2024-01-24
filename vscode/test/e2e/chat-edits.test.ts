@@ -106,26 +106,32 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(chatFrame.getByText('Explain @Main.java')).toBeVisible()
     await chatInput.press('Escape')
 
-    // "MetaKey(MacOS)/Control" + "Shift" to toggle "New Chat Mode" on and off
-    // When it's on, the submit button will be replaced with "Start New Chat" button
-    await expect(submitMessageButton).toBeVisible()
-    await chatInput.press(`${osKey}+Shift`)
-    await expect(submitMessageButton).not.toBeVisible()
-    await expect(startNewChatButton).toBeVisible()
-    await chatInput.press(`${osKey}+Shift`)
-    await expect(startNewChatButton).not.toBeVisible()
-    await chatInput.press(`${osKey}+Shift`)
-    await expect(startNewChatButton).toBeVisible()
-
-    // With "New Chat Mode" enabled,  submit a new message to start a new chat
-    // The new message should be "The End"
-    // And the last message should not be visible anymore
-    await chatInput.fill('The End')
-    await chatInput.press('Enter')
-    await expect(chatFrame.getByText('The End')).toBeVisible()
-    await expect(chatFrame.getByText('Explain @Main.java')).not.toBeVisible()
-
     // Meta+/ also creates a new chat session
     await chatInput.press(`${osKey}+/`)
     await expect(chatFrame.getByText('The End')).not.toBeVisible()
+
+    // TODO (bee) - update after switching to the new keybinding for toggling "New Chat Mode"
+    await expect(startNewChatButton).not.toBeVisible()
+    // // "MetaKey(MacOS)/Control" + "Shift" to toggle "New Chat Mode" on and off
+    // // When it's on, the submit button will be replaced with "Start New Chat" button
+    // await expect(submitMessageButton).toBeVisible()
+    // await chatInput.press(`${osKey}+Shift`)
+    // await expect(submitMessageButton).not.toBeVisible()
+    // await expect(startNewChatButton).toBeVisible()
+    // await chatInput.press(`${osKey}+Shift`)
+    // await expect(startNewChatButton).not.toBeVisible()
+    // await chatInput.press(`${osKey}+Shift`)
+    // await expect(startNewChatButton).toBeVisible()
+
+    // // With "New Chat Mode" enabled, submit a new message to start a new chat
+    // // The new message should be "The End"
+    // // And the last message should not be visible anymore
+    // await chatInput.fill('The End')
+    // await chatInput.press('Enter')
+    // await expect(chatFrame.getByText('The End')).toBeVisible()
+    // await expect(chatFrame.getByText('Explain @Main.java')).not.toBeVisible()
+
+    // // Meta+/ also creates a new chat session
+    // await chatInput.press(`${osKey}+/`)
+    // await expect(chatFrame.getByText('The End')).not.toBeVisible()
 })

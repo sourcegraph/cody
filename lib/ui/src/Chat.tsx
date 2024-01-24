@@ -612,8 +612,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
-            // Ctrl/Cmd + Shift - Toggles between new chat mode and regular chat mode
-            if (isModifierDown && event.shiftKey) {
+            // TODO (bee) - Update to use Option key instead
+            // TODO (bee) - remove once updated to use Option key
+            // Toggles between new chat mode and regular chat mode
+            if (event.altKey && event.shiftKey && isModifierDown) {
+                // use as a temporary block for this key combination
                 event.preventDefault()
                 setEnableNewChatMode(!enableNewChatMode)
                 return
