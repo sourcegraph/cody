@@ -1,7 +1,7 @@
 import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
-import { getFoldingRanges } from '../../editor-context/helpers'
+import { getFoldingRanges } from './get-folding-range'
 
 export async function getContextFileFromImports(): Promise<ContextFile | undefined> {
     try {

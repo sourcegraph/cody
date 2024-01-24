@@ -9,7 +9,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
-import { doesFileExist } from '../editor-context/helpers'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import { NewFixupFileMap } from '../non-stop/FixupFile'
@@ -20,6 +19,7 @@ import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
+import { doesFileExist } from '../commands/utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask

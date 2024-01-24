@@ -7,13 +7,20 @@ import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 import { logDebug, logError } from '../../log'
 
-import type { UserWorkspaceInfo } from '.'
 import { outputWrapper } from '../custom-commands/helpers'
 
 const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.toString()
 const currentFilePath: () => string | undefined = () => getEditor().active?.document.uri.fsPath
 const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
+
+export interface UserWorkspaceInfo {
+    homeDir: string
+    workspaceRoot?: string
+    currentFilePath?: string
+    appRoot: string
+}
+
 /**
  * Provides utility methods and tools for working with the file system, running commands,
  * and getting user/workspace info.

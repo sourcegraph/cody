@@ -1,10 +1,10 @@
 import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { decodeVSCodeTextDoc, findVSCodeFiles } from '../../editor-context/helpers'
 import path from 'path'
 import { type URI, Utils } from 'vscode-uri'
 import { isValidTestFile } from '../prompt/utils'
+import { decodeVSCodeTextDoc, findVSCodeFiles } from '../utils'
 
 export async function getContextFilesForTests(currentFile: vscode.Uri): Promise<ContextFile[]> {
     const contextFiles: ContextFile[] = []

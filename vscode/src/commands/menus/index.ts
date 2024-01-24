@@ -2,10 +2,11 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { platform } from 'os'
 import { window, type QuickPickItem, commands } from 'vscode'
 import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separators } from './const'
-import type { CustomCommandsItem } from '../utils'
+
 import { vscodeDefaultCommands } from '../manager'
 import { openCustomCommandDocsLink } from '../custom-commands/helpers'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './custom-builder'
+import type { CustomCommandsItem } from './types'
 
 const commandMenuByType = {
     default: {
