@@ -163,7 +163,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         let firstGroup = true
 
         // Create a ChatTreeItem for each group and add to treeNodes
-        Object.entries(groupedChats).forEach(([groupLabel, chats]) => {
+        for (const [groupLabel, chats] of Object.entries(groupedChats)) {
             // only display the group in the treeview for which chat exists
 
             if (chats.length) {
@@ -197,7 +197,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 this.treeNodes.push(groupItem)
                 firstGroup = false
             }
-        })
+        }
         await Promise.resolve()
     }
 

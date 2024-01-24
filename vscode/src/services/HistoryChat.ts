@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
 
-import { type CodySidebarTreeItem } from './treeViewItems'
+import type { CodySidebarTreeItem } from './treeViewItems'
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
@@ -57,7 +57,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         return null
     }
     const chatHistoryEntries = [...Object.entries(chats)]
-    chatHistoryEntries.forEach(([id, entry]) => {
+    for (const [id, entry] of chatHistoryEntries) {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
@@ -87,7 +87,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
                 },
             })
         }
-    })
+    }
 
     return {
         Today: todayChats.reverse(),
@@ -118,14 +118,14 @@ export async function displayHistoryQuickPick(authStatus: AuthStatus): Promise<v
         if (chats.length > 0) {
             addGroupSeparator(groupName)
 
-            chats.forEach(chat => {
+            for (const chat of chats) {
                 quickPickItems.push({
                     label: chat.title,
                     onSelect: async () => {
                         await vscode.commands.executeCommand('cody.chat.panel.restore', chat.id)
                     },
                 })
-            })
+            }
         }
     }
 

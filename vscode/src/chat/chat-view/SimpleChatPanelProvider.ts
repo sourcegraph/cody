@@ -959,7 +959,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree((this.authProvider.getAuthStatus()))
+        await this.treeView.updateTree(this.authProvider.getAuthStatus())
     }
 
     public async clearAndRestartSession(): Promise<void> {
