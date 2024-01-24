@@ -24,7 +24,6 @@ import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClie
 import { viewRangeToRange } from './chat-helpers'
 import type { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextItem } from './SimpleChatModel'
-import { fuseContext } from '../../context/fuse-context'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -122,32 +121,30 @@ async function getEnhancedContextFused({
     providers,
     hints,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    console.log({ hints })
     // use user attention context only if config is set to none
     if (strategy === 'none') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
         return getVisibleEditorContext(editor)
     }
 
-    const retrievers: Promise<ContextItem[]>[] = []
     // Get embeddings context if useContext Config is not set to 'keyword' only
-    if (strategy !== 'keyword') {
-        // Query local embeddings (dense)
-        retrievers.push(
-            retrieveContextGracefully(
-                searchEmbeddingsLocal(providers.localEmbeddings, text),
-                'local-embeddings'
-            )
-        )
-    }
-    if (providers.symf) {
-        // Query symf context (sparse)
-        retrievers.push(retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf'))
-    }
+    const keywordContextItemsPromise =
+        strategy !== 'keyword'
+            ? retrieveContextGracefully(
+                  searchEmbeddingsLocal(providers.localEmbeddings, text),
+                  'local-embeddings'
+              )
+            : []
+    const searchContextItemsPromise = providers.symf
+        ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+        : []
 
-    const searchContext = await Promise.all(retrievers)
+    const [keywordContextItems, searchContextItems] = await Promise.all([
+        keywordContextItemsPromise,
+        searchContextItemsPromise,
+    ])
 
-    const fusedContext = fuseContext(searchContext, item => item.uri.toString())
+    const fusedContext = fuseContext(keywordContextItems, searchContextItems, hints.maxChars)
 
     const priorityContext = await getPriorityContext(text, editor, fusedContext)
     return priorityContext.concat(fusedContext)
@@ -549,4 +546,33 @@ async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: str
     } finally {
         logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
     }
+}
+
+// A simple context fusion engine that picks the top most keyword results to fill up 80% of the
+// context window and picks the top ranking embeddings items for the remainder.
+function fuseContext(
+    keywordItems: ContextItem[],
+    embeddingsItems: ContextItem[],
+    maxChars: number
+): ContextItem[] {
+    const charsUsed = 0
+    const fused = []
+
+    for (const item of keywordItems) {
+        const len = item.text.length
+
+        if (charsUsed + len <= maxChars * 0.8) {
+            fused.push(item)
+        }
+    }
+
+    for (const item of embeddingsItems) {
+        const len = item.text.length
+
+        if (charsUsed + len <= maxChars) {
+            fused.push(item)
+        }
+    }
+
+    return fused
 }
