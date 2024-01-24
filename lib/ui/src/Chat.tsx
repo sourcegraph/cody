@@ -82,6 +82,7 @@ interface ChatProps extends ChatClassNames {
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
     chatIDHistory: string[]
+    isWebviewActive: boolean
 }
 
 export interface UserAccountInfo {
@@ -231,6 +232,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     postMessage,
     guardrails,
     chatIDHistory,
+    isWebviewActive,
 }) => {
     const isMac = isMacOS()
     const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker)
@@ -274,6 +276,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // we will reset the form input fill to empty state
             if (index === undefined && index !== messageBeingEdited) {
                 setFormInput('')
+                setInputFocus(true)
             }
             setMessageBeingEdited(index)
             if (index === undefined || index > transcript.length) {
@@ -720,6 +723,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
                 <ChatActions
                     setInputFocus={setInputFocus}
+                    isWebviewActive={isWebviewActive}
                     isEmptyChat={transcript.length < 1}
                     isMessageInProgress={!!messageInProgress?.speaker}
                     isEditing={transcript.length > 1 && messageBeingEdited !== undefined}

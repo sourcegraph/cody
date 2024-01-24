@@ -36,6 +36,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
     >(null)
     const [view, setView] = useState<View | undefined>()
+    // If the current webview is active (vs user is working in another editor tab)
+    const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -136,6 +138,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'view':
                         setView(message.messages)
+                        break
+                    case 'webview-state':
+                        setIsWebviewActive(message.isActive)
                         break
                     case 'custom-prompts': {
                         let prompts: [
@@ -309,6 +314,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                             config.experimentalGuardrails ? guardrails : undefined
                                         }
                                         chatIDHistory={chatIDHistory}
+                                        isWebviewActive={isWebviewActive}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

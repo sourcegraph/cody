@@ -5,6 +5,7 @@ import { isMacOS } from '../../Chat'
 import styles from './ChatActions.module.css'
 
 export const ChatActions: React.FunctionComponent<{
+    isWebviewActive: boolean
     isEditing: boolean
     isMessageInProgress: boolean
     isEmptyChat: boolean
@@ -24,7 +25,10 @@ export const ChatActions: React.FunctionComponent<{
     setInputFocus,
     disableEditLastMessage,
     onRestoreLastChatClick,
+    isWebviewActive,
 }) {
+    const buttonRef = useRef<HTMLButtonElement>(null)
+
     // "⌘" on Mac or "Ctrl" on other systems
     const isMac = isMacOS()
     const osIcon = isMac ? '⌘' : 'Ctrl+'
@@ -65,8 +69,6 @@ export const ChatActions: React.FunctionComponent<{
             when: !isEmptyChat && !isEditing,
         },
     ]
-
-    const buttonRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
         // Listen to chat action from key down events in document
@@ -130,7 +132,9 @@ export const ChatActions: React.FunctionComponent<{
                     >
                         <span className={styles.chatActionButtonTitle}>
                             {action.name}
-                            <span className={styles.chatActionKeybind}> {action.keybind}</span>
+                            {isWebviewActive && (
+                                <span className={styles.chatActionKeybind}> {action.keybind}</span>
+                            )}
                         </span>
                     </button>
                 ))}

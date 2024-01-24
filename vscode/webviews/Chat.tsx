@@ -59,6 +59,7 @@ interface ChatboxProps {
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
+    isWebviewActive: boolean
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -82,6 +83,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     userInfo,
     guardrails,
     chatIDHistory,
+    isWebviewActive,
 }) => {
     const abortMessageInProgress = useCallback(() => {
         vscodeAPI.postMessage({ command: 'abort' })
@@ -256,6 +258,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
             chatIDHistory={chatIDHistory}
+            isWebviewActive={isWebviewActive}
         />
     )
 }
