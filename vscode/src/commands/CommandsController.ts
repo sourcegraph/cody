@@ -84,7 +84,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.enableExperimentalCommands = enable
     }
 
-    public async startCommand(text: string, args: CodyCommandArgs): Promise<CodyCommand | null> {
+    public async startCommand(text: string, args: CodyCommandArgs): Promise<CommandRunner | null> {
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
@@ -122,7 +122,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             await runner.runShell(this.tools.exeCommand(shellCommand))
         }
 
-        return runner.command
+        return runner
     }
 
     /**
@@ -225,7 +225,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     const source = 'menu'
-                    return await executeEdit({ instruction: userPrompt.trim() }, source)
+                    await executeEdit({ instruction: userPrompt.trim() }, source)
+                    return
                 }
             }
 

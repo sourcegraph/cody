@@ -1,4 +1,4 @@
-import type { Position, TextDocument } from './protocol-alias'
+import type { Position, ProtocolTextDocument } from './protocol-alias'
 
 /**
  * Utility class to convert line/character positions into offsets.
@@ -6,7 +6,7 @@ import type { Position, TextDocument } from './protocol-alias'
 export class DocumentOffsets {
     private lines: number[] = []
     private content: string
-    constructor(public readonly document: TextDocument) {
+    constructor(public readonly document: ProtocolTextDocument) {
         this.content = document?.content || ''
         this.lines.push(0)
         let index = 0
