@@ -183,13 +183,13 @@ export class FixupController
             document,
             input.instruction,
             input.userContextFiles,
+            input.model,
             input.range,
             input.rangeSource,
             args.intent,
             args.mode,
             source,
-            args.contextMessages,
-            input.model
+            args.contextMessages
         )
 
         // Return focus to the editor
@@ -202,13 +202,13 @@ export class FixupController
         document: vscode.TextDocument,
         instruction: string,
         userContextFiles: ContextFile[],
+        model: EditSupportedModels,
         selectionRange: vscode.Range,
         rangeSource: EditRangeSource,
         intent?: EditIntent,
         mode: EditMode = 'edit',
         source?: ChatEventSource,
-        contextMessages?: ContextMessage[],
-        model?: EditSupportedModels
+        contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -1043,39 +1043,38 @@ export class FixupController
         if (!task) {
             return
         }
-        // const previousRange = task.originalRange
-        // const previousInstruction = task.instruction
-        // const previousUserContextFiles = task.userContextFiles
-        // const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        // const input = await this.typingUI.getInputFromQuickPick({
-        //     filePath: displayPath(task.fixupFile.uri),
-        //     range: previousRange,
-        //     initialValue: previousInstruction,
-        //     initialSelectedContextFiles: previousUserContextFiles,
-        //     source: 'code-lens',
-        // })
-        const input = null
+        const input = await getInput(
+            {
+                document,
+                range: task.selectionRange,
+                initialValue: task.instruction,
+                initialSelectedContextFiles: task.userContextFiles,
+                initialModel: task.model,
+            },
+            'code-lens'
+        )
         if (!input) {
             return
         }
 
-        // // Revert and remove the previous task
-        // await this.undoTask(task)
+        // Revert and remove the previous task
+        await this.undoTask(task)
 
-        // void vscode.commands.executeCommand(
-        //     'cody.command.edit-code',
-        //     {
-        //         range: previousRange,
-        //         instruction: input.instruction,
-        //         userContextFiles: input.userContextFiles,
-        //         document,
-        //         intent: task.intent,
-        //         mode: task.mode,
-        //     } satisfies ExecuteEditArguments,
-        //     'code-lens'
-        // )
+        void vscode.commands.executeCommand(
+            'cody.command.edit-code',
+            {
+                range: task.originalRange, // TODO: We ignore the range from the input here...
+                instruction: input.instruction,
+                userContextFiles: input.userContextFiles,
+                document,
+                intent: task.intent,
+                mode: task.mode,
+            } satisfies ExecuteEditArguments,
+            'code-lens'
+        )
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {

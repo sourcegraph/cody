@@ -24,8 +24,8 @@ interface QuickPickInput {
     instruction: string
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextFile[]
-    /** The LLM that the user has selected, if selected */
-    model?: EditSupportedModels
+    /** The LLM that the user has selected */
+    model: EditSupportedModels
     /** The range that the user has selected */
     range: vscode.Range
     /** The source of the range selection */
@@ -35,6 +35,8 @@ interface QuickPickInput {
 export interface EditInputParams extends ExecuteEditArguments {
     initialValue?: string
     initialSelectedContextFiles?: ContextFile[]
+    initialModel?: EditSupportedModels
+    initialRangeSource?: EditRangeSource
 }
 
 export const getInput = async (
@@ -104,8 +106,8 @@ export const getInput = async (
         selectedContextItems.set(getLabelForContextFile(file), file)
     }
 
-    let activeModel: EditSupportedModels = 'anthropic/claude-2.1'
-    let activeRangeSource: EditRangeSource = 'selection'
+    let activeModel: EditSupportedModels = params.initialModel ?? 'anthropic/claude-2.1'
+    let activeRangeSource: EditRangeSource = params.initialRangeSource ?? 'selection'
 
     return new Promise(resolve => {
         const modelInput = createQuickPick({
