@@ -50,8 +50,9 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { executeDocCommand } from './commands/default-commands/doc'
 import { executeNewTestCommand } from './commands/default-commands/test-file'
-import { getDefaultCommand } from './commands/default-commands'
+import { getDefaultCommandParams } from './commands/default-commands'
 import { getEditor } from './editor/active-editor'
+import { codyCommandsController, executeCodyCommand } from './commands/CommandsController'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -125,7 +126,6 @@ const register = async (
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     const editor = new VSCodeEditor()
-    const commandsController = platform.createCommandsController?.(editor)
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -210,9 +210,11 @@ const register = async (
         embeddingsClient,
         localEmbeddings || null,
         symfRunner || null,
-        guardrails,
-        commandsController
+        guardrails
     )
+
+    const commandsController = codyCommandsController
+    commandsController.init()
 
     const ghostHintDecorator = new GhostHintDecorator()
     disposables.push(
@@ -326,12 +328,12 @@ const register = async (
         }
 
         if (id === 'test' || id === 'smell' || id === 'explain') {
-            const { prompt, args } = await getDefaultCommand(id)
+            const { prompt, args } = await getDefaultCommandParams(id)
             return chatManager.executeChat(prompt, args)
         }
 
-        // If it's not a default command, try it as a custom command
-        await commandsController?.execute(id, newCodyCommandArgs(args))
+        // If it's not a default command, execute it as a custom command
+        await executeCodyCommand(id, newCodyCommandArgs(args))
         return undefined
     }
 
@@ -377,23 +379,12 @@ const register = async (
         ),
 
         // Cody Commands
+        vscode.commands.registerCommand('cody.action.commands.exec', (id, a) => executeCommand(id, a)),
         vscode.commands.registerCommand('cody.command.explain-code', a => executeCommand('explain', a)),
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeCommand('test', a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeCommand('smell', a)),
         vscode.commands.registerCommand('cody.command.unit-tests', () => executeNewTestCommand()),
         vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand()),
-        vscode.commands.registerCommand('cody.action.commands.exec', (id, a) => executeCommand(id, a)),
-
-        // Cody Commands - Menus
-        vscode.commands.registerCommand('cody.action.commands.menu', async () => {
-            await commandsController?.menu('default')
-        }),
-        vscode.commands.registerCommand('cody.action.commands.custom.menu', () =>
-            commandsController?.menu('custom')
-        ),
-        vscode.commands.registerCommand('cody.settings.commands', () =>
-            commandsController?.menu('config')
-        ),
 
         // Account links
         vscode.commands.registerCommand('cody.show-page', (page: string) => {

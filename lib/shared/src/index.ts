@@ -82,10 +82,8 @@ export type {
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    VsCodeCommandsController,
 } from './editor'
 export {
     displayPath,

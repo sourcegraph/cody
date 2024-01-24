@@ -1,10 +1,10 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import { getDefaultCommandsMap } from '.'
-import { EDIT_COMMAND } from './menus/utils'
-import { CustomCommandsStore } from './custom-commands/store'
-
+import { EDIT_COMMAND } from './menus/const'
+import { CustomCommandsProvider } from './custom-commands/provider'
+import { showCommandMenu } from './menus'
 const editorCommands: CodyCommand[] = [
     {
         description: EDIT_COMMAND.description,
@@ -16,11 +16,11 @@ const editorCommands: CodyCommand[] = [
 
 export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
 
-export class CommandsProvider implements vscode.Disposable {
+export class CommandsManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     protected readonly defaultCommands = vscodeDefaultCommands
-    private customCommandsProvider = new CustomCommandsStore()
+    protected customCommandsProvider = new CustomCommandsProvider()
 
     // The commands grouped by default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
@@ -29,6 +29,13 @@ export class CommandsProvider implements vscode.Disposable {
         this.disposables.push(this.customCommandsProvider)
         // adds the default commands to the all commands map
         this.groupCommands(this.defaultCommands)
+
+        // Cody Command Menus
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
+            vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
+            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config'))
+        )
     }
 
     /**
@@ -38,39 +45,29 @@ export class CommandsProvider implements vscode.Disposable {
         return this.allCommands.get(id)
     }
 
-    public async getCustomCommands(): Promise<Map<string, CodyCommand>> {
+    private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
+        const customCommands = await this.getCustomCommands()
+        const commandArray = [...customCommands].map(command => command[1])
+        await showCommandMenu(type, commandArray)
+    }
+
+    protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
         const { commands } = await this.customCommandsProvider.refresh()
         this.groupCommands(commands)
         return commands
     }
 
     /**
-     * Grouped default and custom commands
-     * Separators are added for quick pick menu
-     */
-    public async getGroupedCommands(keepSeparator: boolean): Promise<[string, CodyCommand][]> {
-        await this.refresh()
-
-        if (keepSeparator) {
-            return [...this.allCommands]
-        }
-        return [...this.allCommands].filter(command => command[1].prompt !== 'separator')
-    }
-
-    /**
      * Group the default commands with the custom commands and add a separator
      */
-    private groupCommands(customCommands = new Map<string, CodyCommand>()): void {
-        // Filter commands that has the experimental type if not enabled
+    protected groupCommands(customCommands = new Map<string, CodyCommand>()): void {
         const defaultCommands = [...this.defaultCommands]
-        // Add a separator between the default and custom commands
         const combinedMap = new Map([...defaultCommands])
-        combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
         // Add the custom commands to the all commands map
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())
     }
 
-    private async refresh(): Promise<void> {
+    protected async refresh(): Promise<void> {
         const { commands } = await this.customCommandsProvider.refresh()
         this.groupCommands(commands)
     }

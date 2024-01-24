@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 import { ChatModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import type { CommandsController } from '../../commands/CommandsController'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -44,8 +43,7 @@ export class ChatManager implements vscode.Disposable {
         private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
-        private guardrails: Guardrails,
-        private commandsController?: CommandsController
+        private guardrails: Guardrails
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -62,8 +60,7 @@ export class ChatManager implements vscode.Disposable {
             this.embeddingsClient,
             this.localEmbeddings,
             this.symf,
-            this.guardrails,
-            this.commandsController
+            this.guardrails
         )
 
         // Register Commands
@@ -124,10 +121,11 @@ export class ChatManager implements vscode.Disposable {
         await provider?.handleNewUserMessage(
             requestID,
             question,
-            'user-newchat',
+            args?.submitType ?? 'user-newchat',
             args?.userContextFiles ?? [],
             args?.addEnhancedContext ?? true
         )
+
         return provider
     }
 

@@ -4,6 +4,7 @@ import { getContextFileFromCursor } from '../context/get-selection-context'
 import { getContextFilesForTests } from '../context/get-test-context'
 import type { ExecuteChatArguments } from '.'
 import * as vscode from 'vscode'
+import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 
 /**
  * testCommand generates the prompt and context arguments for the 'text' command.
@@ -44,7 +45,7 @@ export async function testCommand(): Promise<{ prompt: string; args: ExecuteChat
 /**
  * Executes the text command as a chat command via 'cody.action.chat'
  */
-export async function executeSmellCommand(): Promise<void> {
+export async function executeTestCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await testCommand()
-    vscode.commands.executeCommand('cody.action.chat', prompt, args)
+    return vscode.commands.executeCommand<ChatSession | undefined>('cody.action.chat', prompt, args)
 }

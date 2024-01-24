@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { CommandsController } from './commands/CommandsController'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import type { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
@@ -37,7 +36,6 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
             ? undefined
             : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
                   createLocalEmbeddingsController(context, config),
-        createCommandsController: (...args) => new CommandsController(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createSymfRunner: (...args) => new SymfRunner(...args),

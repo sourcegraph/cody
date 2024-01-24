@@ -3,6 +3,7 @@ import { getContextFileFromCursor } from '../context/get-selection-context'
 import type { ExecuteChatArguments } from '.'
 import * as vscode from 'vscode'
 import { getContextFileFromFile } from '../context/get-current-file-context'
+import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 
 /**
  * explainCommand generates the prompt and arguments for the 'explain' command.
@@ -40,7 +41,11 @@ export async function explainCommand(): Promise<{ prompt: string; args: ExecuteC
 /**
  * Executes the explain command as a chat command via 'cody.action.chat'
  */
-export async function executeExplainCommand(): Promise<void> {
+export async function executeExplainCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await explainCommand()
-    vscode.commands.executeCommand('cody.action.chat', prompt, args)
+    return await vscode.commands.executeCommand<ChatSession | undefined>(
+        'cody.action.chat',
+        prompt,
+        args
+    )
 }

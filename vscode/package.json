@@ -313,7 +313,7 @@
         "when": "cody.activated && editorFocus"
       },
       {
-        "command": "cody.action.commands.custom.menu",
+        "command": "cody.menu.custom-commands",
         "category": "Cody Command",
         "title": "Custom Commands",
         "icon": "$(tools)",
@@ -384,7 +384,7 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.action.commands.menu",
+        "command": "cody.menu.commands",
         "category": "Cody",
         "title": "Commands",
         "when": "cody.activated",
@@ -514,7 +514,7 @@
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
-        "command": "cody.action.commands.menu",
+        "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",
         "when": "cody.activated"
@@ -566,7 +566,7 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
-          "command": "cody.action.commands.custom.menu",
+          "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
         {
@@ -634,7 +634,7 @@
           "group": "command"
         },
         {
-          "command": "cody.action.commands.custom.menu",
+          "command": "cody.menu.custom-commands",
           "when": "cody.activated",
           "group": "custom-commands"
         },
@@ -685,7 +685,7 @@
       ],
       "editor/title": [
         {
-          "command": "cody.action.commands.menu",
+          "command": "cody.menu.commands",
           "when": "cody.activated && config.cody.editorTitleCommandIcon && resourceScheme == file && !editorReadonly",
           "group": "navigation",
           "visibility": "visible"

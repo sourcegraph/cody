@@ -21,7 +21,7 @@ import { commandTools } from '../utils/tools-provider'
 /**
  * Handles loading, building, and maintaining custom commands from the cody.json files.
  */
-export class CustomCommandsStore implements vscode.Disposable {
+export class CustomCommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     public commandsJSON: CodyCommandsFileJSON | null = null
@@ -42,9 +42,6 @@ export class CustomCommandsStore implements vscode.Disposable {
         )
     }
 
-    /**
-     * Get the formatted context from the json config file
-     */
     public async refresh(): Promise<CodyCommandsFile> {
         try {
             // reset map and set
@@ -61,21 +58,15 @@ export class CustomCommandsStore implements vscode.Disposable {
                 await this.build('workspace')
             }
         } catch (error) {
-            logError('CustomCommandsStore:refresh', 'failed', { verbose: error })
+            logError('CustomCommandsProvider:refresh', 'failed', { verbose: error })
         }
         return { commands: this.customCommandsMap }
     }
 
-    /**
-     * Returns customCommandsMap as an array with keys as the id
-     */
     public getCommands(): [string, CodyCommand][] {
         return [...this.customCommandsMap].sort((a, b) => a[0].localeCompare(b[0]))
     }
 
-    /**
-     * Build the map of prompts using the json string
-     */
     public async build(type: CustomCommandType): Promise<Map<string, CodyCommand> | null> {
         // Security: Make sure workspace is trusted before building commands from workspace
         if (type === 'workspace' && !vscode.workspace.isTrusted) {
@@ -99,7 +90,7 @@ export class CustomCommandsStore implements vscode.Disposable {
                 this.commandsJSON = json
             }
         } catch (error) {
-            logDebug('CustomCommandsStore:build', 'failed', { verbose: error })
+            logDebug('CustomCommandsProvider:build', 'failed', { verbose: error })
         }
         return this.customCommandsMap
     }
@@ -202,7 +193,7 @@ export class CustomCommandsStore implements vscode.Disposable {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            logDebug('CustomCommandsStore:addJSONFile:create', 'failed', { verbose: error })
+            logDebug('CustomCommandsProvider:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
@@ -216,7 +207,7 @@ export class CustomCommandsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            logError('CustomCommandsStore:clear:error:', `Failed to remove cody.json file for${type}`)
+            logError('CustomCommandsProvider:clear:error:', `Failed to remove cody.json file for${type}`)
         }
         await deleteFile(uri)
     }

@@ -27,7 +27,6 @@ import {
 
 import type { View } from '../../../webviews/NavBar'
 import { newCodyCommandArgs } from '../../commands'
-import type { CommandsController } from '../../commands/CommandsController'
 import { createDisplayTextWithFileLinks } from '../../commands/prompt/display-text'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
@@ -95,7 +94,6 @@ interface SimpleChatPanelProviderOptions {
     featureFlagProvider: FeatureFlagProvider
     models: ChatModelProvider[]
     guardrails: Guardrails
-    commandsController?: CommandsController
 }
 
 export interface ChatSession {
@@ -144,7 +142,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly guardrails: Guardrails
-    private readonly commandsController?: CommandsController
 
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
@@ -166,7 +163,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         editor,
         treeView,
         models,
-        commandsController,
         guardrails,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
@@ -176,7 +172,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
-        this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
@@ -330,7 +325,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.postChatModels()
         await this.saveSession()
-        await this.postCodyCommands()
         this.initDoer.signalInitialized()
     }
 
@@ -352,13 +346,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             if (inputText === '/commands-settings') {
                 // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.settings.commands')
+                return vscode.commands.executeCommand('cody.menu.commands-settings')
             }
             const commandArgs = newCodyCommandArgs({
                 source: 'chat',
                 requestID,
             })
-            return this.commandsController?.execute(inputText, commandArgs)
+            return vscode.commands.executeCommand('cody.action.commands.exec', inputText, commandArgs)
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -642,21 +636,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             type: 'chatModels',
             models,
         })
-    }
-
-    // Send a list of commands to webview that can be triggered via chat input box with slash
-    private async postCodyCommands(): Promise<void> {
-        const send = async (): Promise<void> => {
-            const allCommands = await this.commandsController?.getCommands(true)
-            // HACK: Filter out commands that make inline changes
-            const prompts = allCommands?.filter(([_id, { mode }]) => mode !== 'ask') || []
-            void this.postMessage({
-                type: 'custom-prompts',
-                prompts,
-            })
-        }
-        this.commandsController?.setMessenger(send)
-        await send()
     }
 
     private postContextStatus(): void {

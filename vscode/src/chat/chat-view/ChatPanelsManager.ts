@@ -9,7 +9,6 @@ import {
     type Guardrails,
 } from '@sourcegraph/cody-shared'
 
-import type { CommandsController } from '../../commands/CommandsController'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -68,8 +67,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
-        private readonly guardrails: Guardrails,
-        private readonly commandsController?: CommandsController
+        private readonly guardrails: Guardrails
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
@@ -211,7 +209,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
             models,
-            commandsController: this.commandsController,
             guardrails: this.guardrails,
         })
     }

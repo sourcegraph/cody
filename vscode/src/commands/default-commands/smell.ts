@@ -2,6 +2,7 @@ import type { ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromCursor } from '../context/get-selection-context'
 import type { ExecuteChatArguments } from '.'
+import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 
 /**
  * explainCommand generates the prompt and context arguments for the 'smell' command.
@@ -32,7 +33,7 @@ export async function smellCommand(): Promise<{ prompt: string; args: ExecuteCha
 /**
  * Executes the smell command as a chat command via 'cody.action.chat'
  */
-export async function executeSmellCommand(): Promise<void> {
+export async function executeSmellCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await smellCommand()
-    vscode.commands.executeCommand('cody.action.chat', prompt, args)
+    return vscode.commands.executeCommand<ChatSession | undefined>('cody.action.chat', prompt, args)
 }

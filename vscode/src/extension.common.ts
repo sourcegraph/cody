@@ -7,7 +7,6 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import type { CommandsController } from './commands/CommandsController'
 import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
@@ -30,7 +29,6 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     getRgPath?: typeof getRgPath
-    createCommandsController?: Constructor<typeof CommandsController>
     createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever

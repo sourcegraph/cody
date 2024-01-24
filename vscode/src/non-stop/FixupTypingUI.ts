@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { displayPath, type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
-import { EDIT_COMMAND, menu_buttons } from '../commands/menus/utils'
+import { EDIT_COMMAND, menu_buttons } from '../commands/menus/const'
 import type { ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/editor-context'
@@ -151,7 +151,7 @@ export class FixupTypingUI {
             quickPick.buttons = [menu_buttons.back]
             quickPick.onDidTriggerButton((target: vscode.QuickInputButton) => {
                 if (target === menu_buttons.back) {
-                    void vscode.commands.executeCommand('cody.action.commands.menu')
+                    void vscode.commands.executeCommand('cody.menu.commands')
                     quickPick.hide()
                 }
             })

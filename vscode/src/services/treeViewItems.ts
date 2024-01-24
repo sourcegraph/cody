@@ -177,7 +177,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     {
         title: 'Custom',
         icon: 'tools',
-        command: { command: 'cody.action.commands.custom.menu' },
+        command: { command: 'cody.menu.custom-commands' },
         description: 'Custom commands',
     },
 ]

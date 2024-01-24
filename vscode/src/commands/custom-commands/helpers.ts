@@ -19,16 +19,16 @@ export async function createJSONFile(configFileUri: vscode.Uri): Promise<void> {
 }
 
 // Add context from the sample files to the .vscode/cody.json file
-export async function saveJSONFile(data: unknown, filePath: vscode.Uri): Promise<void> {
+export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<void> {
     try {
         const workspaceEditor = new vscode.WorkspaceEdit()
         // Clear the file before writing to it
-        workspaceEditor.deleteFile(filePath, { ignoreIfNotExists: true })
-        workspaceEditor.createFile(filePath, { ignoreIfExists: true })
-        workspaceEditor.insert(filePath, new vscode.Position(0, 0), JSON.stringify(data, null, 2))
+        workspaceEditor.deleteFile(file, { ignoreIfNotExists: true })
+        workspaceEditor.createFile(file, { ignoreIfExists: true })
+        workspaceEditor.insert(file, new vscode.Position(0, 0), JSON.stringify(data, null, 2))
         await vscode.workspace.applyEdit(workspaceEditor)
         // Save the file
-        const doc = await vscode.workspace.openTextDocument(filePath)
+        const doc = await vscode.workspace.openTextDocument(file)
         await doc.save()
     } catch (error) {
         throw new Error(`Failed to save your Custom Commands to a JSON file: ${error}`)
