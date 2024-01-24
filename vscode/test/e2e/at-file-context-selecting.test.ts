@@ -4,10 +4,27 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
+
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:chat-question:executed',
+    'CodyVSCodeExtension:chat-question:executed',
+    'CodyVSCodeExtension:Auth:connected'
+  ]
+
+test.beforeEach(() => {
+    void resetLoggedEvents()
+})
 
 test('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -116,6 +133,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('and @Main.ja', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
+    console.log(loggedEvents)
+    // check to see if loggedEvents == expectedEvents
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
 function withPlatformSlashes(input: string) {
