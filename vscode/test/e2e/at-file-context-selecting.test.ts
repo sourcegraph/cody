@@ -19,8 +19,8 @@ const expectedEvents = [
     'CodyVSCodeExtension:Auth:connected',
     'CodyVSCodeExtension:chat-question:executed',
     'CodyVSCodeExtension:chat-question:executed',
-    'CodyVSCodeExtension:Auth:connected'
-  ]
+    'CodyVSCodeExtension:Auth:connected',
+]
 
 test.beforeEach(() => {
     void resetLoggedEvents()
