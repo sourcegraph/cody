@@ -301,7 +301,8 @@ const register = async (
     ): Promise<ChatSession | undefined> => {
         const commandArgs = newCodyCommandArgs(args)
         const command = await commandsController?.startCommand(commandKey, commandArgs)
-        if (!command) {
+        // Stop processing the command if it is not an ask(chat) request
+        if (!command || command.mode !== 'ask') {
             return
         }
 
