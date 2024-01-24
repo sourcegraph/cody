@@ -29,6 +29,7 @@ import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { applyPatch } from 'fast-myers-diff'
+import { isNode16 } from './isNode16'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 interface ProgressStartMessage {
@@ -45,11 +46,6 @@ interface ProgressEndMessage {
     method: 'progress/end'
     id: string
     message: Record<string, never>
-}
-
-export function isNode16(): boolean {
-    const [major] = process.versions.node.split('.')
-    return Number.parseInt(major, 10) <= 16
 }
 
 export class TestClient extends MessageHandler {
