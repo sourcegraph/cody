@@ -628,6 +628,7 @@ describe('Agent', () => {
             })
             expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
             expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+            expect(lastMessage?.contextFiles?.length).toBeGreaterThan(0)
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
