@@ -2,7 +2,7 @@ import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getContextFileFromCursor } from '../context/get-selection-context'
 import type { ExecuteChatArguments } from '.'
 import * as vscode from 'vscode'
-import { getContextFileFromFile } from '../context/get-file-context'
+import { getContextFileFromFile } from '../context/get-current-file-context'
 
 /**
  * explainCommand generates the prompt and arguments for the 'explain' command.

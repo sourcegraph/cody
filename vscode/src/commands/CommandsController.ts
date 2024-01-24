@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import type { CodyCommand, VsCodeCommandsController } from '@sourcegraph/cody-shared'
 
-import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
@@ -43,15 +42,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * starting the command execution with CommandRunner.
      */
     public async execute(text: string, args: CodyCommandArgs): Promise<void> {
-        const editor = getEditor()
-        if (!editor.active || editor.ignored) {
-            const message = editor.ignored
-                ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
-                : 'No editor is active. Please open a file and try again.'
-            void vscode.window.showErrorMessage(message)
-            return
-        }
-
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text

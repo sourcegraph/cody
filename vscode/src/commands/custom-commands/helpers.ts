@@ -12,7 +12,8 @@ export function constructFileUri(fileName: string, rootDirPath?: string): vscode
     return codyJsonFilePath
 }
 
-// Create a .vscode/cody.json file in the root directory of the workspace or user's home directory using the sample files
+// Create a .vscode/cody.json file in the root directory of the workspace
+// or user's home directory, using the sample files
 export async function createJSONFile(configFileUri: vscode.Uri): Promise<void> {
     await saveJSONFile({ commands: [] }, configFileUri)
 }

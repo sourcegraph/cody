@@ -5,30 +5,6 @@ import type { ChatEventSource, CodyCommand } from '@sourcegraph/cody-shared'
 import * as defaultCommands from './prompt/cody.json'
 import { toSlashCommand } from './prompt/utils'
 
-export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
-    const map = new Map<string, CodyCommand>()
-
-    // Add editor specific commands
-    for (const command of editorCommands) {
-        if (command.slashCommand) {
-            map.set(command.slashCommand, command)
-        }
-    }
-
-    // Add default commands
-    const commands = defaultCommands.commands as Record<string, unknown>
-    for (const key in commands) {
-        if (Object.prototype.hasOwnProperty.call(commands, key)) {
-            const command = commands[key] as CodyCommand
-            command.type = command.type || 'default'
-            command.slashCommand = toSlashCommand(key)
-            map.set(command.slashCommand, command)
-        }
-    }
-
-    return map
-}
-
 export interface CodyCommandsFile {
     // A set of reusable commands where instructions (prompts) and context can be configured.
     commands: Map<string, CodyCommand>
@@ -50,6 +26,31 @@ export interface CodyCommandArgs {
     source?: ChatEventSource
     // runs the command in chat mode, even if it's an edit command
     runInChatMode?: boolean
+}
+
+export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
+    const map = new Map<string, CodyCommand>()
+
+    // Add editor specific commands
+    for (const command of editorCommands) {
+        if (command.slashCommand) {
+            map.set(command.slashCommand, command)
+        }
+    }
+
+    // Add default commands
+    const commands = defaultCommands.commands as Record<string, unknown>
+    for (const key in commands) {
+        if (Object.prototype.hasOwnProperty.call(commands, key)) {
+            const command = commands[key] as CodyCommand
+            command.type = command.type || 'default'
+            command.slashCommand = toSlashCommand(key)
+            command.mode = command.mode ?? 'ask'
+            map.set(command.slashCommand, command)
+        }
+    }
+
+    return map
 }
 
 /**

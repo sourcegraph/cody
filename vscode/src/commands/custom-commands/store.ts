@@ -19,7 +19,7 @@ import { showNewCustomCommandMenu } from '../menus'
 import { commandTools } from '../utils/tools-provider'
 
 /**
- * Handles loading, building, and maintaining the custom commands from the cody.json files.
+ * Handles loading, building, and maintaining custom commands from the cody.json files.
  */
 export class CustomCommandsStore implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -61,7 +61,7 @@ export class CustomCommandsStore implements vscode.Disposable {
                 await this.build('workspace')
             }
         } catch (error) {
-            logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
+            logError('CustomCommandsStore:refresh', 'failed', { verbose: error })
         }
         return { commands: this.customCommandsMap }
     }
@@ -77,7 +77,7 @@ export class CustomCommandsStore implements vscode.Disposable {
      * Build the map of prompts using the json string
      */
     public async build(type: CustomCommandType): Promise<Map<string, CodyCommand> | null> {
-        // Make sure workspace is trusted when trying to build commands from workspace config
+        // Security: Make sure workspace is trusted before building commands from workspace
         if (type === 'workspace' && !vscode.workspace.isTrusted) {
             return null
         }
@@ -88,75 +88,36 @@ export class CustomCommandsStore implements vscode.Disposable {
                 return null
             }
             const json = JSON.parse(content) as CodyCommandsFileJSON
-            const promptEntries = Object.entries(json.commands)
-
-            const isOldFormat = promptEntries.some(
-                ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
-            )
-            if (isOldFormat) {
-                void vscode.window
-                    .showInformationMessage(
-                        `Your custom commands ${type} JSON (${
-                            type === 'user' ? '~/.vscode/cody.json' : '.vscode/cody.json'
-                        }) is using an old format, and needs to be upgraded.`,
-                        'Upgrade JSON',
-                        'Ignore'
-                    )
-                    .then(choice => {
-                        if (choice === 'Upgrade JSON') {
-                            // transform old format commands to the new format
-                            const commands = promptEntries.reduce(
-                                (
-                                    acc: Record<string, Omit<CodyCommand, 'slashCommand'>>,
-                                    [key, { prompt, type, context }]
-                                ) => {
-                                    const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
-                                    acc[slashCommand] = { description: key, prompt, type, context }
-                                    return acc
-                                },
-                                {}
-                            )
-
-                            // write transformed commands to the corresponding config file
-                            void this.updateJSONFile({ ...json, commands }, type).then(() => {
-                                // open the updated settings file
-                                const filePath =
-                                    type === 'user'
-                                        ? this.jsonFileUris.user
-                                        : this.jsonFileUris.workspace
-                                if (filePath) {
-                                    void vscode.window.showTextDocument(filePath)
-                                }
-                            })
-                        }
-                    })
-
-                return null
-            }
-            for (const [key, prompt] of promptEntries) {
+            const commands = Object.entries(json.commands)
+            for (const [key, prompt] of commands) {
                 const current: CodyCommand = { ...prompt, slashCommand: toSlashCommand(key) }
                 current.type = type
+                current.mode = current.mode ?? 'ask'
                 this.customCommandsMap.set(current.slashCommand, current)
             }
             if (type === 'user') {
                 this.commandsJSON = json
             }
         } catch (error) {
-            logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
+            logDebug('CustomCommandsStore:build', 'failed', { verbose: error })
         }
         return this.customCommandsMap
     }
 
+    /**
+     * Quick pick for creating a new custom command
+     */
     private async newCustomCommandQuickPick(): Promise<void> {
         const commands = [...this.customCommandsMap.values()].map(c => c.slashCommand)
         const newCommand = await showNewCustomCommandMenu(commands)
-        console.log(newCommand, 'newCommand', commands)
         if (!newCommand) {
             return
         }
+
         // Save the prompt to the current Map and Extension storage
         await this.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.type)
         await this.refresh()
+
         // Notify user
         const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
@@ -241,7 +202,7 @@ export class CustomCommandsStore implements vscode.Disposable {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            logDebug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
+            logDebug('CustomCommandsStore:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
@@ -255,7 +216,7 @@ export class CustomCommandsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            logError('CustomPromptsStore:clear:error:', `Failed to remove cody.json file for${type}`)
+            logError('CustomCommandsStore:clear:error:', `Failed to remove cody.json file for${type}`)
         }
         await deleteFile(uri)
     }

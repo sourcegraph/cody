@@ -648,13 +648,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             const allCommands = await this.commandsController?.getCommands(true)
-            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
-            const prompts =
-                allCommands?.filter(([id, { mode }]) => {
-                    // The /ask command is only useful outside of chat
-                    const isRedundantCommand = id === '/ask'
-                    return !isRedundantCommand
-                }) || []
+            // HACK: Filter out commands that make inline changes
+            const prompts = allCommands?.filter(([_id, { mode }]) => mode !== 'ask') || []
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,

@@ -13,15 +13,7 @@ export async function getContextFileFromCursor(): Promise<ContextFile | undefine
     const editor = getEditor()
     const document = editor?.active?.document
 
-    if (!editor?.active || editor?.ignored) {
-        const message = editor.ignored
-            ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
-            : 'No editor is active. Please open a file and try again.'
-        void vscode.window.showErrorMessage(message)
-        return
-    }
-
-    if (!editor || !document) {
+    if (!editor?.active || !document) {
         return undefined
     }
 

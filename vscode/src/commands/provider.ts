@@ -10,6 +10,7 @@ const editorCommands: CodyCommand[] = [
         description: EDIT_COMMAND.description,
         prompt: EDIT_COMMAND.slashCommand,
         slashCommand: EDIT_COMMAND.slashCommand,
+        mode: 'edit',
     },
 ]
 
@@ -44,7 +45,8 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     /**
-     * Return default and custom commands without the separator which is added for quick pick menu
+     * Grouped default and custom commands
+     * Separators are added for quick pick menu
      */
     public async getGroupedCommands(keepSeparator: boolean): Promise<[string, CodyCommand][]> {
         await this.refresh()

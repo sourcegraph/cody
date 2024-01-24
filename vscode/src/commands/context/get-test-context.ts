@@ -72,6 +72,15 @@ async function getTestFilesInCurrentDirContext(currentFile: vscode.Uri): Promise
         }
     }
 
+    // Additional context for unit tests requests
+    // if (isUnitTestRequest && contextFiles.length < 2) {
+    //     if (selection) {
+    //         contextFiles.push(
+    //             ...(await editorContext.getUnitTestcontextFiles(selection, workspaceRootUri))
+    //         )
+    //     }
+    // }
+
     return contextFiles
 }
 
