@@ -727,27 +727,27 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " The selected code defines an Animal interface in TypeScript.
+              " Here is an explanation of the selected TypeScript code in simple terms:
 
-              This interface defines the structure for Animal objects. Interfaces are a way to define contracts in TypeScript - they specify the shape of objects, what properties and methods they must have.
+              The Animal interface
 
-              The Animal interface has 3 members:
+              The Animal interface defines the shape of an Animal object. It does not contain any actual implementation, just declarations for what properties and methods an Animal object should have.
 
-              1. name - This is a string property that represents the animal's name.
+              The interface has three members:
 
-              2. makeAnimalSound() - This is a method that returns a string. It represents the sound the animal makes.
+              1. name - This is a string property to store the animal's name.
 
-              3. isMammal - This is a boolean property that indicates if the animal is a mammal.
+              2. makeAnimalSound() - This is a method that should return a string representing the sound the animal makes.
 
-              Any object that implements the Animal interface must contain these 3 members with these types.
+              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
 
-              This allows us to define a consistent structure for different animal objects. For example, we could create Dog and Cat classes that implement the Animal interface. This would guarantee that all animal objects have a name, makeAnimalSound() method, and isMammal property available since they adhere to the contract defined by Animal.
+              The purpose of this interface is to define a consistent structure for Animal objects. Any class that implements the Animal interface will be required to have these three members with these types.
 
-              The purpose of the interface is to define a reusable structure that can be applied to multiple different objects (such as Dog and Cat). This allows us to treat all animal objects similarly despite having different implementations. The interface defines what members animal objects must have, but not how they are implemented.
+              This allows code dealing with Animal objects to know it can call animal.makeAnimalSound() and access animal.name and animal.isMammal, regardless of the specific class. The interface defines the contract between the implementation and usage of Animals, without caring about specific details.
 
-              This enables polymorphism - the ability to treat objects with a common interface interchangeably. We can write functions that accept Animal objects as parameters and call methods like makeAnimalSound() on them without caring about the concrete implementation.
+              Interfaces like this are useful for writing reusable code that can handle different types of objects in a consistent way. The code using the interface doesn't need to know about the specifics of each class, just that it implements the Animal interface. This allows easily extending the code to handle new types of animals by simply creating a new class implementing Animal.
 
-              So in summary, this Animal interface defines a contract for objects representing animals. It standardizes properties and methods animal objects must have to ensure a consistent structure and enable polymorphism."
+              So in summary, the Animal interface defines the input expectations and output guarantees for objects representing animals in the system, allowing code to work with any animal in a generic way based on this contract."
             `,
                 explainPollyError
             )
