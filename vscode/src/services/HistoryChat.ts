@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
-import { findLast } from 'lodash'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import type { AuthStatus } from '../chat/protocol'
 
 import type { CodySidebarTreeItem } from './treeViewItems'
+import type { InteractionMessage } from '@sourcegraph/cody-shared'
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
@@ -59,10 +59,16 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
     }
     const chatHistoryEntries = [...Object.entries(chats)]
     for (const [id, entry] of chatHistoryEntries) {
-        const lastHumanMessage =
-            entry?.interactions && findLast(entry.interactions, interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+        let lastHumanMessage: InteractionMessage | undefined = undefined
+        // Can use Array.prototype.findLast once we drop Node 16
+        for (let index = entry.interactions.length - 1; index >= 0; index--) {
+            lastHumanMessage = entry.interactions[index]?.humanMessage
+            if (lastHumanMessage) {
+                break
+            }
+        }
+        if (lastHumanMessage?.displayText && lastHumanMessage?.text) {
+            const lastDisplayText = lastHumanMessage.displayText.split('\n')[0]
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText)
 
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
