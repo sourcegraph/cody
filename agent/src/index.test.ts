@@ -8,7 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import type { ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
+import { logError, type ChatMessage, type ContextFile, isWindows } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
@@ -16,12 +16,20 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     ClientInfo,
+    EditTask,
     ExtensionConfiguration,
     ProgressReportParams,
     ProgressStartParams,
+    ProtocolCodeLens,
     ServerInfo,
     WebviewPostMessageParams,
 } from './protocol-alias'
+import { URI } from 'vscode-uri'
+import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { applyPatch } from 'fast-myers-diff'
+import { isNode16 } from './isNode16'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 interface ProgressStartMessage {
@@ -49,6 +57,7 @@ export class TestClient extends MessageHandler {
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
     public readonly serverEndpoint: string
+    public workspace = new AgentWorkspaceDocuments()
 
     constructor(
         public readonly name: string,
@@ -64,19 +73,117 @@ export class TestClient extends MessageHandler {
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/start', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/start',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/report', message => {
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/report', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/report',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/end', ({ id }) => {
-            this.progressMessages.push({ method: 'progress/end', id: this.progressID(id), message: {} })
+            this.progressMessages.push({
+                method: 'progress/end',
+                id: this.progressID(id),
+                message: {},
+            })
+        })
+        this.registerNotification('codeLenses/display', async params => {
+            this.codeLenses.set(params.uri, params.codeLenses)
+        })
+        this.registerRequest('textDocument/edit', async params => {
+            const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
+            if (!document) {
+                logError('textDocument/edit: document not found', params.uri)
+                return false
+            }
+            const patches = params.edits.map<[number, number, string]>(edit => {
+                switch (edit.type) {
+                    case 'delete':
+                        return [
+                            document.offsetAt(edit.range.start),
+                            document.offsetAt(edit.range.end),
+                            '',
+                        ]
+                    case 'insert':
+                        return [
+                            document.offsetAt(edit.position),
+                            document.offsetAt(edit.position),
+                            edit.value,
+                        ]
+                    case 'replace':
+                        return [
+                            document.offsetAt(edit.range.start),
+                            document.offsetAt(edit.range.end),
+                            edit.value,
+                        ]
+                }
+            })
+            const updatedContent = [...applyPatch(document.content, patches)].join('')
+            this.workspace.addDocument(
+                ProtocolTextDocumentWithUri.from(document.uri, { content: updatedContent })
+            )
+            return true
         })
         this.registerNotification('debug/message', message => {
             // Uncomment below to see `logDebug` messages.
             // console.log(`${message.channel}: ${message.message}`)
         })
+    }
+
+    public openFile(
+        uri: Uri,
+        params?: { selectionName?: string; removeCursor?: boolean }
+    ): Promise<void> {
+        return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
+    }
+    public changeFile(
+        uri: Uri,
+        params?: { selectionName?: string; removeCursor?: boolean }
+    ): Promise<void> {
+        return this.textDocumentEvent(uri, 'textDocument/didChange', params)
+    }
+
+    public async textDocumentEvent(
+        uri: Uri,
+        method: NotificationMethodName,
+        params?: { selectionName?: string; removeCursor?: boolean }
+    ): Promise<void> {
+        const selectionName = params?.selectionName ?? 'SELECTION'
+        let content = await fspromises.readFile(uri.fsPath, 'utf8')
+        const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionStart = content.indexOf(selectionStartMarker)
+        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
+        const cursor = content.indexOf('/* CURSOR */')
+        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
+            throw new Error(`No selection found for name ${params.selectionName}`)
+        }
+        if (params?.removeCursor ?? true) {
+            content = content.replace('/* CURSOR */', '')
+        }
+
+        const document = AgentTextDocument.from(uri, content)
+        const start =
+            cursor >= 0
+                ? document.positionAt(cursor)
+                : selectionStart >= 0
+                  ? document.positionAt(selectionStart + selectionStartMarker.length)
+                  : undefined
+        const end =
+            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
+        const protocolDocument = {
+            uri: uri.toString(),
+            content,
+            selection: start && end ? { start, end } : undefined,
+        }
+        this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        this.notify(method, protocolDocument)
     }
 
     private progressID(id: string): string {
@@ -89,6 +196,43 @@ export class TestClient extends MessageHandler {
         return `ID_${freshID}`
     }
 
+    /**
+     * Promise that resolves when the provided task has reached the 'applied' state.
+     */
+    public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
+        switch (params.state) {
+            case CodyTaskState.applied:
+                return Promise.resolve()
+            case CodyTaskState.finished:
+            case CodyTaskState.error:
+                return Promise.reject(
+                    new Error(`Task reached terminal state before being applied ${params}`)
+                )
+        }
+
+        let disposable: vscode.Disposable
+        return new Promise<void>((resolve, reject) => {
+            disposable = this.onDidChangeTaskState(({ id, state }) => {
+                if (id === params.id) {
+                    switch (state) {
+                        case CodyTaskState.applied:
+                            return resolve()
+                        case CodyTaskState.error:
+                        case CodyTaskState.finished:
+                            return reject(
+                                new Error(
+                                    `Task reached terminal state before being applied ${{ id, state }}`
+                                )
+                            )
+                    }
+                }
+            })
+        }).finally(() => disposable.dispose())
+    }
+
+    public codeLenses = new Map<string, ProtocolCodeLens[]>()
+    public newTaskState = new vscode.EventEmitter<EditTask>()
+    public onDidChangeTaskState = this.newTaskState.event
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
 
@@ -135,6 +279,9 @@ export class TestClient extends MessageHandler {
         this.connectProcess(this.agentProcess, error => {
             console.error(error)
         })
+        this.registerNotification('editTaskState/didChange', params => {
+            this.newTaskState.fire(params)
+        })
 
         this.registerNotification('webview/postMessage', params => {
             this.webviewMessages.push(params)
@@ -159,11 +306,37 @@ export class TestClient extends MessageHandler {
     }
 
     public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'chatModel', model },
+        })
     }
 
     public async reset(id: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'reset' } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'reset' },
+        })
+    }
+
+    public async editMessage(
+        id: string,
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
+    ): Promise<ChatMessage | undefined> {
+        const reply = asTranscriptMessage(
+            await this.request('chat/editMessage', {
+                id,
+                message: {
+                    command: 'edit',
+                    text,
+                    index: params?.index,
+                    contextFiles: params?.contextFiles ?? [],
+                    addEnhancedContext: params?.addEnhancedContext ?? false,
+                },
+            })
+        )
+        return reply.messages.at(-1)
     }
 
     public async sendMessage(
@@ -171,6 +344,22 @@ export class TestClient extends MessageHandler {
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
+            ?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChat(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChatWithFullTranscript(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
+    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
+        const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -183,22 +372,7 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-        return reply.messages.at(-1)
-    }
-
-    public async editMessage(id: string, text: string): Promise<ChatMessage | undefined> {
-        const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', { id, message: { command: 'edit', text } })
-        )
-        return reply.messages.at(-1)
-    }
-
-    public async sendSingleMessageToNewChat(
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        const id = await this.request('chat/new', null)
-        return this.sendMessage(id, text, params)
+        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
     }
 
     public async shutdownAndExit() {
@@ -280,6 +454,8 @@ export class TestClient extends MessageHandler {
             workspaceRootPath: workspaceRootUri.fsPath,
             capabilities: {
                 progressBars: 'enabled',
+                edit: 'enabled',
+                codeLenses: 'enabled',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
@@ -357,7 +533,10 @@ describe('Agent', () => {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', { cwd: client.getAgentDir(), stdio: 'inherit' })
+    execSync('pnpm run build:agent', {
+        cwd: client.getAgentDir(),
+        stdio: 'inherit',
+    })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -396,45 +575,6 @@ describe('Agent', () => {
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
     const multipleSelectionsUri = Uri.file(multipleSelections)
 
-    function openFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
-        return textDocumentEvent(uri, 'textDocument/didOpen', params)
-    }
-    function changeFile(uri: Uri, params?: { selectionName?: string }): Promise<void> {
-        return textDocumentEvent(uri, 'textDocument/didChange', params)
-    }
-
-    async function textDocumentEvent(
-        uri: Uri,
-        method: NotificationMethodName,
-        params?: { selectionName?: string }
-    ): Promise<void> {
-        const selectionName = params?.selectionName ?? 'SELECTION'
-        let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStartMarker = `/* ${selectionName}_START */`
-        const selectionStart = content.indexOf(selectionStartMarker)
-        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
-        const cursor = content.indexOf('/* CURSOR */')
-        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
-            throw new Error(`No selection found for name ${params.selectionName}`)
-        }
-        content = content.replace('/* CURSOR */', '')
-
-        const document = AgentTextDocument.from(uri, content)
-        const start =
-            cursor >= 0
-                ? document.positionAt(cursor)
-                : selectionStart >= 0
-                  ? document.positionAt(selectionStart + selectionStartMarker.length)
-                  : undefined
-        const end =
-            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        client.notify(method, {
-            uri: uri.toString(),
-            content,
-            selection: start && end ? { start, end } : undefined,
-        })
-    }
-
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
@@ -471,7 +611,7 @@ describe('Agent', () => {
     }, 10_000)
 
     it('autocomplete/execute (non-empty result)', async () => {
-        await openFile(sumUri)
+        await client.openFile(sumUri)
         const completions = await client.request('autocomplete/execute', {
             uri: sumUri.toString(),
             position: { line: 1, character: 3 },
@@ -487,7 +627,9 @@ describe('Agent', () => {
         `,
             explainPollyError
         )
-        client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
+        client.notify('autocomplete/completionAccepted', {
+            completionID: completions.items[0].id,
+        })
     }, 10_000)
 
     describe('Chat', () => {
@@ -591,7 +733,7 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
-            await openFile(animalUri)
+            await client.openFile(animalUri)
             await client.request('command/execute', { command: 'cody.search.index-update' })
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
@@ -605,11 +747,11 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
               " \`\`\`typescript
-              class Dog implements Animal {
+              export class Dog implements Animal {
                 name: string;
 
                 makeAnimalSound() {
-                  return "Woof!";
+                  return "Bark!";
                 }
 
                 isMammal = true;
@@ -621,14 +763,35 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
-            await openFile(squirrelUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
-            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
-                addEnhancedContext: true,
+            await client.openFile(squirrelUri)
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
             })
+            const { lastMessage, transcript } =
+                await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
+                    addEnhancedContext: true,
+                })
             expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
             expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            expect(contextFiles).not.toHaveLength(0)
+            expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
+
+        // Workaround for the fact that `ContextFile.uri` is a class that
+        // serializes to JSON as an object, and deserializes back into a JS
+        // object instead of the class. Without this,
+        // `ContextFile.uri.toString()` return `"[Object object]".
+        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
+            for (const message of transcript.messages) {
+                if (message.contextFiles) {
+                    for (const file of message.contextFiles) {
+                        file.uri = URI.from(file.uri)
+                    }
+                }
+            }
+        }
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -668,49 +831,87 @@ describe('Agent', () => {
             }
         })
 
-        it(
-            'edits the chat',
-            async () => {
+        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
+        describe.skipIf(isNode16())('chat/editMessage', () => {
+            it(
+                'edits the last human chat message',
+                async () => {
+                    const id = await client.request('chat/new', null)
+                    await client.setChatModel(
+                        id,
+                        'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                    )
+                    await client.sendMessage(
+                        id,
+                        'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                    )
+                    await client.editMessage(
+                        id,
+                        'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                    )
+                    {
+                        const lastMessage = await client.sendMessage(id, 'kramer')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    }
+                    {
+                        const lastMessage = await client.sendMessage(id, 'georgey')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                    }
+                },
+                { timeout: mayRecord ? 10_000 : undefined }
+            )
+
+            it('edits messages by index', async () => {
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(
                     id,
                     'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
                 )
+                // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
                     id,
-                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                    'I have a turtle named "potter", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a bird named "skywalker", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a dog named "happy", reply single "ok" if you understand.'
                 )
                 await client.editMessage(
                     id,
-                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                    'I have a tiger named "zorro", reply single "ok" if you understand',
+                    { index: 2 }
                 )
                 {
-                    const lastMessage = await client.sendMessage(id, 'kramer')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    const lastMessage = await client.sendMessage(id, 'What pets do I have?')
+                    const answer = lastMessage?.text?.toLocaleLowerCase()
+                    expect(answer?.includes('turtle')).toBeTruthy()
+                    expect(answer?.includes('tiger')).toBeTruthy()
+                    expect(answer?.includes('bird')).toBeFalsy()
+                    expect(answer?.includes('dog')).toBeFalsy()
                 }
-                {
-                    const lastMessage = await client.sendMessage(id, 'georgey')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
-                }
-            },
-            { timeout: mayRecord ? 10_000 : undefined }
-        )
+            }, 30_000)
+        })
     })
 
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
             await client.request('command/execute', { command: 'cody.search.index-update' })
-
-            await openFile(multipleSelectionsUri)
-            await changeFile(multipleSelectionsUri)
-            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            await client.openFile(multipleSelectionsUri)
+            await client.changeFile(multipleSelectionsUri)
+            await client.changeFile(multipleSelectionsUri, {
+                selectionName: 'SELECTION_2',
+            })
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 { addEnhancedContext: true }
             )
             expect(reply?.text?.trim()).includes('anotherFunction')
             expect(reply?.text?.trim()).not.includes('inner')
-            await changeFile(multipleSelectionsUri)
+            await client.changeFile(multipleSelectionsUri)
             const reply2 = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 { addEnhancedContext: true }
@@ -722,7 +923,8 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            await openFile(animalUri)
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.openFile(animalUri)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
@@ -749,48 +951,79 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it('commands/test', async () => {
-            await openFile(animalUri)
-            const id = await client.request('commands/test', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              " Okay, based on the provided code context, it looks like no test framework or libraries are already in use. Since this is TypeScript code, I will generate Jest unit tests for the Animal interface:
+        // This test seems extra sensitive on Node v16 for some reason.
+        it.skipIf(isNode16() || isWindows())(
+            'commands/test',
+            async () => {
+                await client.request('command/execute', { command: 'cody.search.index-update' })
+                await client.openFile(animalUri)
+                const id = await client.request('commands/test', null)
+                const lastMessage = await client.firstNonEmptyTranscript(id)
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                    `
+              " Okay, based on the shared context, it looks like:
+
+              - The test framework in use is Vitest
+              - The assertion library is vitest's built-in expect
+
+              No additional packages or imports are needed.
+
+              I will focus on testing the Animal interface by validating:
+
+              - The name property is a string
+              - makeAnimalSound returns a string
+              - isMammal is a boolean
 
               \`\`\`ts
-              // New imports needed
-              import { Animal } from './animal';
+              import { expect } from 'vitest'
+              import { describe, it } from 'vitest'
+              import { Animal } from './animal'
 
               describe('Animal', () => {
 
-                it('should have a name property', () => {
-                  const animal = {} as Animal;
-                  expect(animal.name).toBeDefined();
-                });
+                it('has a name property that is a string', () => {
+                  const animal: Animal = {
+                    name: 'Lion',
+                    makeAnimalSound: () => '',
+                    isMammal: true
+                  }
 
-                it('should have a makeAnimalSound method', () => {
-                  const animal = {} as Animal;
-                  expect(animal.makeAnimalSound).toBeDefined();
-                  expect(typeof animal.makeAnimalSound).toBe('function');
-                });
+                  expect(typeof animal.name).toBe('string')
+                })
 
-                it('should have an isMammal property', () => {
-                  const animal = {} as Animal;
-                  expect(animal.isMammal).toBeDefined();
-                  expect(typeof animal.isMammal).toBe('boolean');
-                });
+                it('makeAnimalSound returns a string', () => {
+                  const animal: Animal = {
+                    name: 'Lion',
+                    makeAnimalSound: () => 'Roar!',
+                    isMammal: true
+                  }
 
-              });
+                  expect(typeof animal.makeAnimalSound()).toBe('string')
+                })
+
+                it('isMammal is a boolean', () => {
+                  const animal: Animal = {
+                    name: 'Lion',
+                    makeAnimalSound: () => '',
+                    isMammal: true
+                  }
+
+                  expect(typeof animal.isMammal).toBe('boolean')
+                })
+
+              })
               \`\`\`
 
-              This generates a basic Jest test suite for the Animal interface, validating the name, makeAnimalSound, and isMammal properties. I focused on simple and complete validations of the key functionality. Since no test framework was detected in the context, I imported Jest and created new tests from scratch. Please let me know if you would like me to modify or expand the tests in any way."
+              This covers basic validation of the Animal interface's properties and methods. Let me know if you'd like me to expand the tests further."
             `,
-                explainPollyError
-            )
-        }, 30_000)
+                    explainPollyError
+                )
+            },
+            30_000
+        )
 
         it('commands/smell', async () => {
-            await openFile(animalUri)
+            await client.openFile(animalUri)
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 
@@ -866,11 +1099,133 @@ describe('Agent', () => {
                 explainPollyError
             )
         }, 30_000)
+
+        describe('Document code', () => {
+            function check(name: string, filename: string, assertion: (obtained: string) => void): void {
+                it(name, async () => {
+                    await client.request('command/execute', { command: 'cody.search.index-update' })
+                    const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
+                    await client.openFile(uri, { removeCursor: false })
+                    const task = await client.request('commands/document', null)
+                    await client.taskHasReachedAppliedPhase(task)
+                    const lenses = client.codeLenses.get(uri.toString()) ?? []
+                    expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+                    const acceptCommand = lenses.find(
+                        ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+                    )
+                    if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                        throw new Error(
+                            `Expected accept command, found none. Lenses ${JSON.stringify(
+                                lenses,
+                                null,
+                                2
+                            )}`
+                        )
+                    }
+                    await client.request('command/execute', acceptCommand.command)
+                    expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+                    const newContent = client.workspace.getDocument(uri)?.content
+                    assertion(trimEndOfLine(newContent))
+                })
+            }
+
+            check('commands/document (basic function)', 'sum.ts', obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "/**
+                   * Sums two numbers.
+                   * @param a - The first number to sum.
+                   * @param b - The second number to sum.
+                   * @returns The sum of a and b.
+                   */
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+                  "
+                `)
+            )
+
+            check('commands/document (Method as part of a class)', 'TestClass.ts', obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "const foo = 42
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      /**
+                       * Prints "Hello World!" to the console if this.shouldGreet is true.
+                       * This allows conditionally greeting the user.
+                       */
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+                  "
+                `)
+            )
+
+            check('commands/document (Function within a property)', 'TestLogger.ts', obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "const foo = 42
+                  /**
+                   * TestLogger object that contains a startLogging method to initialize logging.
+                   * startLogging sets up a recordLog function that writes log messages to the console.
+                   */
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+                  "
+                `)
+            )
+
+            check('commands/document (nested test case)', 'example.test.ts', obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
+
+                  /**
+                   * Test block that runs a set of test cases.
+                   *
+                   * Contains 3 test cases:
+                   * - 'does 1' checks an expectation
+                   * - 'does 2' checks an expectation
+                   * - 'does something else' has a commented out line that errors
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `)
+            )
+        })
     })
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
-            const { result } = await client.request('testing/progress', { title: 'Susan' })
+            const { result } = await client.request('testing/progress', {
+                title: 'Susan',
+            })
             expect(result).toStrictEqual('Hello Susan')
             let progressID: string | undefined
             for (const message of client.progressMessages) {
@@ -1003,13 +1358,19 @@ describe('Agent', () => {
     })
 
     afterAll(async () => {
-        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
+        await fspromises.rm(workspaceRootPath, {
+            recursive: true,
+            force: true,
+        })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 30_000)
 })
 
-function trimEndOfLine(text: string): string {
+function trimEndOfLine(text: string | undefined): string {
+    if (text === undefined) {
+        return ''
+    }
     return text
         .split('\n')
         .map(line => line.trimEnd())

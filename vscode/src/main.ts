@@ -10,6 +10,7 @@ import {
     PromptMixin,
     setLogger,
     type ConfigurationWithAccessToken,
+    isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
@@ -49,6 +50,7 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import type { FixupTask } from './non-stop/FixupTask'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -214,7 +216,12 @@ const register = async (
     const ghostHintDecorator = new GhostHintDecorator()
     disposables.push(
         ghostHintDecorator,
-        new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
+        new EditManager({
+            chat: chatClient,
+            editor,
+            contextProvider,
+            ghostHintDecorator,
+        }),
         new CodeActionProvider({ contextProvider })
     )
 
@@ -296,18 +303,47 @@ const register = async (
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     // Execute Cody Commands and Cody Custom Commands
-    const executeCommand = async (
+    const executeCommand = (
         commandKey: string,
         args?: Partial<CodyCommandArgs>
-    ): Promise<ChatSession | undefined> => {
+    ): Promise<CommandResult | undefined> => {
+        return executeCommandUnsafe(commandKey, args).catch(error => {
+            if (error instanceof Error) {
+                console.log(error.stack)
+            }
+            logError('executeCommand', commandKey, args, error)
+            return undefined
+        })
+    }
+    const executeCommandUnsafe = async (
+        commandKey: string,
+        args?: Partial<CodyCommandArgs>
+    ): Promise<CommandResult | undefined> => {
+        logDebug('executeCommand', commandKey, args)
         const commandArgs = newCodyCommandArgs(args)
-        const command = await commandsController?.startCommand(commandKey, commandArgs)
+        const runner = await commandsController?.startCommand(commandKey, commandArgs)
+        const command = runner?.command
+        // Stop processing the command if it is not an ask(chat) request
         if (!command) {
-            return
+            return undefined
+        }
+        if (isFixupCommand(command)) {
+            return {
+                type: 'edit',
+                task: await runner.fixupTask,
+            }
         }
 
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        return chatManager.executeCommand(command, commandArgs, configFeatures.commands)
+        const session = await chatManager.executeCommand(
+            runner.command,
+            commandArgs,
+            configFeatures.commands
+        )
+        return {
+            type: 'chat',
+            session,
+        }
     }
 
     const statusBar = createStatusBar()
@@ -423,7 +459,10 @@ const register = async (
                 } else {
                     const option = await vscode.window.showInformationMessage(
                         'Rate Limit Exceeded',
-                        { modal: true, detail: `${userMessage}\n\n${retryMessage}` },
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\n${retryMessage}`,
+                        },
                         'Learn More'
                     )
                     if (option) {
@@ -617,4 +656,14 @@ async function configureEventsInfra(
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
+}
+
+export type CommandResult = ChatCommandResult | EditCommandResult
+export interface ChatCommandResult {
+    type: 'chat'
+    session?: ChatSession
+}
+export interface EditCommandResult {
+    type: 'edit'
+    task?: FixupTask
 }

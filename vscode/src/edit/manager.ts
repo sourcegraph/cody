@@ -50,7 +50,7 @@ export class EditManager implements vscode.Disposable {
     public async executeEdit(
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor'
-    ): Promise<void> {
+    ): Promise<FixupTask | undefined> {
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
             void vscode.window.showErrorMessage(
@@ -107,7 +107,8 @@ export class EditManager implements vscode.Disposable {
         }
 
         const provider = this.getProviderForTask(task)
-        return provider.startEdit()
+        await provider.startEdit()
+        return task
     }
 
     public getProviderForTask(task: FixupTask): EditProvider {

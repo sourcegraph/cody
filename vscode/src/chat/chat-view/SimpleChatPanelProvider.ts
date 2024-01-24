@@ -24,6 +24,7 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
+    isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -223,7 +224,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleInitialized()
                 break
             case 'submit': {
-                await this.handleNewUserMessage(
+                await this.handleUserMessageSubmission(
                     uuid.v4(),
                     message.text,
                     message.submitType,
@@ -233,7 +234,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             }
             case 'edit': {
-                await this.handleEdit(uuid.v4(), message.text)
+                await this.handleEdit(
+                    uuid.v4(),
+                    message.text,
+                    message.index,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext || false
+                )
                 break
             }
             case 'abort':
@@ -280,6 +287,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'attribution-search':
                 void this.handleAttributionSearch(message.snippet)
                 break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
+                break
             case 'reset':
                 await this.clearAndRestartSession()
                 break
@@ -314,7 +324,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+            verbose: configForWebview,
+        })
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
@@ -337,7 +349,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
-    public async handleNewUserMessage(
+    /**
+     * Handles user input text for both new and edit submissions
+     */
+    public async handleUserMessageSubmission(
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
@@ -351,14 +366,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return this.clearAndRestartSession()
             }
             if (inputText.match(/^\/edit(\s)?/)) {
-                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
+                await executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
+                return
             }
             if (inputText === '/commands-settings') {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.startCommand(inputText, commandArgs)
+            const commandArgs = newCodyCommandArgs({
+                source: 'chat',
+                requestID,
+            })
+            const command = (await this.commandsController?.startCommand(inputText, commandArgs))
+                ?.command
             if (command) {
                 return this.handleCommand(command, commandArgs)
             }
@@ -441,50 +461,48 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleEdit(requestID: string, text: string): Promise<void> {
+    /**
+     * Handles editing a human chat message in current chat session.
+     *
+     * Removes any existing messages from the provided index,
+     * before submitting the replacement text as a new question.
+     * When no index is provided, default to the last human message.
+     */
+    private async handleEdit(
+        requestID: string,
+        text: string,
+        index?: number,
+        contextFiles: ContextFile[] = [],
+        addEnhancedContext = true
+    ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
 
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-
-        const prompter = new DefaultPrompter(
-            [], // TODO(beyang): support user context items in the edit input
-            (
-                query // TODO(beyang): get useEnhancedContext
-            ) =>
-                getEnhancedContext(
-                    this.config.useContext,
-                    this.editor,
-                    this.embeddingsClient,
-                    this.localEmbeddings,
-                    this.config.experimentalSymfContext ? this.symf : null,
-                    this.codebaseStatusProvider,
-                    query
-                )
-        )
-
         try {
-            const prompt = await this.buildPrompt(prompter)
-            this.streamAssistantResponse(requestID, prompt)
-        } catch (error) {
-            if (isRateLimitError(error)) {
-                this.postError(error, 'transcript')
-            } else {
-                this.postError(
-                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
-                )
+            const humanMessage = index ?? this.chatModel.getLastSpeakerMessageIndex('human')
+            if (humanMessage === undefined) {
+                return
             }
+            this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
+            return await this.handleUserMessageSubmission(
+                requestID,
+                text,
+                'user',
+                contextFiles,
+                addEnhancedContext
+            )
+        } catch {
+            this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
     }
 
     public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not an ask command, it's a fixup command, so we can exit early.
+        // It's a fixup command, so we can exit early.
         // This is because startCommand will start the CommandRunner,
         // which would send all fixup command requests to the FixupController
-        if (command.mode !== 'ask') {
+        if (isFixupCommand(command)) {
             return
         }
 
@@ -659,7 +677,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
             this.postViewTranscript()
-            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            void this.postMessage({
+                type: 'transcript-errors',
+                isTranscriptError: true,
+            })
             return
         }
 
@@ -1067,6 +1088,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             this._webview = undefined
             panel.dispose()
         })
+
+        // Let the webview know if it is active
+        panel.onDidChangeViewState(event =>
+            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+        )
 
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>

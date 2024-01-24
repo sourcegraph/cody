@@ -1,24 +1,16 @@
-import os from 'os'
 import path from 'path'
 
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { isNode16 } from '../../isNode16'
 import { getLanguageForFileName } from '../../language'
 
 import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
-
-function isWindows(): boolean {
-    return os.platform().startsWith('win')
-}
-
-function isNode16(): boolean {
-    const [major] = process.versions.node.split('.')
-    return Number.parseInt(major, 10) <= 16
-}
+import { isWindows } from './isWindows'
 
 describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
     const queriesDirectory = path.join(__dirname, 'queries')
