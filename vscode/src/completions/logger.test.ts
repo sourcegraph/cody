@@ -14,6 +14,7 @@ import { documentAndPosition } from './test-helpers'
 const defaultArgs = {
     multiline: false,
     triggerKind: TriggerKind.Automatic,
+    testFile: false,
     providerIdentifier: 'bfl',
     providerModel: 'blazing-fast-llm',
     languageId: 'typescript',
