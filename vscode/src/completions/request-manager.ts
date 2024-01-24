@@ -223,7 +223,7 @@ export class RequestManager {
                     request.lastCompletions
                 )
             ) {
-                logDebug('CodyCompletionProvider', 'Request aborted')
+                logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
