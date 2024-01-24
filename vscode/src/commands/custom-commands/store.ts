@@ -3,10 +3,10 @@ import * as vscode from 'vscode'
 
 import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
 
-import { logDebug, logError } from '../log'
+import { logDebug, logError } from '../../log'
 
-import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '.'
-import { fromSlashCommand, toSlashCommand } from './prompt/utils'
+import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '..'
+import { fromSlashCommand, toSlashCommand } from '../prompt/utils'
 import {
     constructFileUri,
     createJSONFile,
@@ -14,14 +14,14 @@ import {
     getFileContentText,
     openCustomCommandDocsLink,
     saveJSONFile,
-} from './utils/helpers'
-import { showNewCustomCommandMenu } from './menus'
+} from './helpers'
+import { showNewCustomCommandMenu } from '../menus'
+import { commandTools } from '../utils/tools-provider'
 
 /**
- * The CustomPromptsStore class is responsible for loading and building the custom prompts from the cody.json files.
- * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
+ * Handles loading, building, and maintaining the custom commands from the cody.json files.
  */
-export class CustomPromptsStore implements vscode.Disposable {
+export class CustomCommandsStore implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     public commandsJSON: CodyCommandsFileJSON | null = null
@@ -29,16 +29,14 @@ export class CustomPromptsStore implements vscode.Disposable {
 
     public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
 
-    constructor(
-        private workspaceRoot?: string,
-        private homeDir?: string
-    ) {
+    constructor() {
+        const { homeDir, workspaceRoot } = commandTools.getUserInfo()
         this.jsonFileUris = {
             user: constructFileUri(ConfigFileName.vscode, homeDir),
             workspace: constructFileUri(ConfigFileName.vscode, workspaceRoot),
         }
         this.disposables.push(
-            vscode.commands.registerCommand('cody.commands.add', () => this.newUserCommandMenu()),
+            vscode.commands.registerCommand('cody.commands.add', () => this.newCustomCommandQuickPick()),
             vscode.commands.registerCommand('cody.commands.open.json', t => this.openConfig(t)),
             vscode.commands.registerCommand('cody.commands.delete.json', t => this.deleteConfig(t))
         )
@@ -51,12 +49,15 @@ export class CustomPromptsStore implements vscode.Disposable {
         try {
             // reset map and set
             this.customCommandsMap = new Map<string, CodyCommand>()
-            // user prompts
-            if (this.homeDir) {
+            const { homeDir, workspaceRoot } = commandTools.getUserInfo()
+
+            // user commands
+            if (homeDir) {
                 await this.build('user')
             }
+
             // only build workspace prompts if the workspace is trusted
-            if (this.workspaceRoot && vscode.workspace.isTrusted) {
+            if (workspaceRoot && vscode.workspace.isTrusted) {
                 await this.build('workspace')
             }
         } catch (error) {
@@ -146,8 +147,10 @@ export class CustomPromptsStore implements vscode.Disposable {
         return this.customCommandsMap
     }
 
-    private async newUserCommandMenu(): Promise<void> {
-        const newCommand = await showNewCustomCommandMenu(this.customCommandsMap)
+    private async newCustomCommandQuickPick(): Promise<void> {
+        const commands = [...this.customCommandsMap.values()].map(c => c.slashCommand)
+        const newCommand = await showNewCustomCommandMenu(commands)
+        console.log(newCommand, 'newCommand', commands)
         if (!newCommand) {
             return
         }

@@ -182,8 +182,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
         this.guardrails = guardrails
 
-        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
-
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
         }
@@ -649,8 +647,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // Send a list of commands to webview that can be triggered via chat input box with slash
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.commandsController?.refresh()
-            const allCommands = await this.commandsController?.getAllCommands(true)
+            const allCommands = await this.commandsController?.getCommands(true)
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id, { mode }]) => {

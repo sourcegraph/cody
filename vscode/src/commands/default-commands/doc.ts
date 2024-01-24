@@ -1,11 +1,13 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
-import { getContextFileFromCursor } from '../context/get-cursor-context'
+import { getContextFileFromCursor } from '../context/get-selection-context'
 
 /**
  * The command that generates a new docstring for the selected code.
  * When calls, the command will be executed as an inline-edit command.
+ *
+ * Context: Current selection
  */
 export async function executeDocCommand(): Promise<void> {
     const prompt =

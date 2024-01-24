@@ -1,10 +1,13 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
-import { getContextFileFromCursor } from '../context/get-cursor-context'
+import { getContextFileFromCursor } from '../context/get-selection-context'
 import type { ExecuteChatArguments } from '.'
 import * as vscode from 'vscode'
+import { getContextFileFromFile } from '../context/get-file-context'
 
 /**
  * explainCommand generates the prompt and arguments for the 'explain' command.
+ *
+ * Context: Current selection and current file
  */
 export async function explainCommand(): Promise<{ prompt: string; args: ExecuteChatArguments }> {
     const addEnhancedContext = false
@@ -13,9 +16,15 @@ export async function explainCommand(): Promise<{ prompt: string; args: ExecuteC
 
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextFile[] = []
-    const contextFile = await getContextFileFromCursor()
-    if (contextFile) {
-        contextFiles.push(contextFile)
+
+    const cursorContext = await getContextFileFromCursor()
+    if (cursorContext) {
+        contextFiles.push(cursorContext)
+    }
+
+    const currentContext = await getContextFileFromFile()
+    if (currentContext) {
+        contextFiles.push(currentContext)
     }
 
     return {

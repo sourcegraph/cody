@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { displayPath, type ChatEventSource, type ContextFile } from '@sourcegraph/cody-shared'
 
-import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
+import { EDIT_COMMAND, menu_buttons } from '../commands/menus/utils'
 import type { ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/editor-context'

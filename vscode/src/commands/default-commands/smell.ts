@@ -1,10 +1,12 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getContextFileFromCursor } from '../context/get-cursor-context'
+import { getContextFileFromCursor } from '../context/get-selection-context'
 import type { ExecuteChatArguments } from '.'
 
 /**
  * explainCommand generates the prompt and context arguments for the 'smell' command.
+ *
+ * Context: Current selection
  */
 export async function smellCommand(): Promise<{ prompt: string; args: ExecuteChatArguments }> {
     const addEnhancedContext = false

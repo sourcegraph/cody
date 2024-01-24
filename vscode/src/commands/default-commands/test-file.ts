@@ -1,12 +1,14 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getContextFileFromCursor } from '../context/get-cursor-context'
+import { getContextFileFromCursor } from '../context/get-selection-context'
 import { getContextFilesForTests } from '../context/get-test-context'
 
 /**
  * The experimental command that generates a new test file for the selected code.
  * When calls, the command will be executed as an inline-edit command.
+ *
+ * Context: Test files, current selection, and current file
  */
 // TODO (bee) replace old test command with this one
 export async function executeNewTestCommand(): Promise<void> {

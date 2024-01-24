@@ -20,7 +20,7 @@ import type { AuthStatus } from '../protocol'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { ExecuteChatArguments } from '../../commands/default'
+import type { ExecuteChatArguments } from '../../commands/default-commands'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**

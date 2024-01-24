@@ -8,9 +8,9 @@ import { getEditor } from '../../editor/active-editor'
 import { logDebug, logError } from '../../log'
 
 import type { UserWorkspaceInfo } from '.'
-import { outputWrapper } from './helpers'
+import { outputWrapper } from '../custom-commands/helpers'
 
-const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
+const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.toString()
 const currentFilePath: () => string | undefined = () => getEditor().active?.document.uri.fsPath
 const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
@@ -96,3 +96,6 @@ export class ToolsProvider {
         }
     }
 }
+
+const provider = new ToolsProvider()
+export const commandTools = provider

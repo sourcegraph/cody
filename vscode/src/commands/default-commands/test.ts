@@ -1,12 +1,14 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-import { getContextFileFromCursor } from '../context/get-cursor-context'
+import { getContextFileFromCursor } from '../context/get-selection-context'
 import { getContextFilesForTests } from '../context/get-test-context'
 import type { ExecuteChatArguments } from '.'
 import * as vscode from 'vscode'
 
 /**
  * testCommand generates the prompt and context arguments for the 'text' command.
+ *
+ * Context: Test files, current selection, and current file
  */
 export async function testCommand(): Promise<{ prompt: string; args: ExecuteChatArguments }> {
     const prompt =

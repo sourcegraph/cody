@@ -1,6 +1,6 @@
 import { QuickInputButtons, ThemeIcon, commands, window, type QuickPickItem } from 'vscode'
 
-import type { ContextOption } from '.'
+import type { ContextOption } from '../utils'
 
 export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
 

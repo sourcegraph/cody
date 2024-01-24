@@ -6,8 +6,9 @@ import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { extractTestType } from '../prompt/utils'
-import { ToolsProvider } from './ToolsProvider'
+import { commandTools } from './tools-provider'
 
+// TODO bee clean up
 export const getContextForCommand = async (
     editor: VSCodeEditor,
     command: CodyCommand
@@ -30,7 +31,7 @@ export const getContextForCommand = async (
         return []
     }
     if (contextConfig.command) {
-        const output = await new ToolsProvider().exeCommand(contextConfig.command)
+        const output = await commandTools.exeCommand(contextConfig.command)
         if (output) {
             contextMessages.push(...editorContext.getTerminalOutputContext(output))
         }

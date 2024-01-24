@@ -1,9 +1,8 @@
 import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-import { getSmartSelection } from '../../editor/utils'
 import * as vscode from 'vscode'
 
-export async function getContextFileFromCursor(): Promise<ContextFile | undefined> {
+export async function getContextFileFromFile(): Promise<ContextFile | undefined> {
     const editor = getEditor()
     const document = editor?.active?.document
 
@@ -19,9 +18,19 @@ export async function getContextFileFromCursor(): Promise<ContextFile | undefine
         return undefined
     }
 
-    const selection = editor.active.selection
-    const smartSelection = await getSmartSelection(document?.uri, selection?.start.line)
-    const content = document.getText(smartSelection ?? selection)
+    // get the current file length as selection
+    const selection = new vscode.Selection(
+        1,
+        0,
+        document.lineCount,
+        document.lineAt(document.lineCount - 1).text.length
+    )
+
+    const content = document.getText(selection)
+
+    if (!content.trim()) {
+        return undefined
+    }
 
     return {
         type: 'file',
