@@ -22,6 +22,7 @@ import type {
     ServerInfo,
     WebviewPostMessageParams,
 } from './protocol-alias'
+import { URI } from 'vscode-uri'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 interface ProgressStartMessage {
@@ -189,11 +190,47 @@ export class TestClient extends MessageHandler {
         })
     }
 
+    public async editMessage(
+        id: string,
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
+    ): Promise<ChatMessage | undefined> {
+        const reply = asTranscriptMessage(
+            await this.request('chat/editMessage', {
+                id,
+                message: {
+                    command: 'edit',
+                    text,
+                    index: params?.index,
+                    contextFiles: params?.contextFiles ?? [],
+                    addEnhancedContext: params?.addEnhancedContext ?? false,
+                },
+            })
+        )
+        return reply.messages.at(-1)
+    }
+
     public async sendMessage(
         id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
+            ?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChat(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChatWithFullTranscript(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
+    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
+        const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -206,36 +243,7 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-        return reply.messages.at(-1)
-    }
-
-    public async editMessage(
-        id: string,
-        text: string,
-        index?: number,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', {
-                id,
-                message: {
-                    command: 'edit',
-                    text,
-                    index,
-                    contextFiles: params?.contextFiles ?? [],
-                    addEnhancedContext: params?.addEnhancedContext ?? false,
-                },
-            })
-        )
-        return reply.messages.at(-1)
-    }
-
-    public async sendSingleMessageToNewChat(
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        const id = await this.request('chat/new', null)
-        return this.sendMessage(id, text, params)
+        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
     }
 
     public async shutdownAndExit() {
@@ -667,16 +675,32 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
-            await openFile(squirrelUri)
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
-            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
-                addEnhancedContext: true,
-            })
+            await client.request('command/execute', { command: 'cody.search.index-update' })
+            const { lastMessage, transcript } =
+                await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
+                    addEnhancedContext: true,
+                })
             expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
             expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            expect(contextFiles).not.toHaveLength(0)
+            expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
+
+        // Workaround for the fact that `ContextFile.uri` is a class that
+        // serializes to JSON as an object, and deserializes back into a JS
+        // object instead of the class. Without this,
+        // `ContextFile.uri.toString()` return `"[Object object]".
+        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
+            for (const message of transcript.messages) {
+                if (message.contextFiles) {
+                    for (const file of message.contextFiles) {
+                        file.uri = URI.from(file.uri)
+                    }
+                }
+            }
+        }
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -768,7 +792,7 @@ describe('Agent', () => {
                 await client.editMessage(
                     id,
                     'I have a tiger named "zorro", reply single "ok" if you understand',
-                    2
+                    { index: 2 }
                 )
                 {
                     const lastMessage = await client.sendMessage(id, 'What pets do I have?')
