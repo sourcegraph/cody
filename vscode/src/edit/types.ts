@@ -11,3 +11,11 @@ export type EditIntent = 'add' | 'edit' | 'fix' | 'doc' | 'new'
  * - 'file': Create a new file and insert code there..
  */
 export type EditMode = 'edit' | 'insert' | 'file'
+
+/**
+ * The source of the edit range.
+ * - 'selection': The users' selection in their editor.
+ * - 'expanded': An expanded selection, derived from the users' selection to the nearest block of code.
+ * - 'maximum': The maximum possible selection for the given file that still can be used as context.
+ */
+export type EditRangeSource = 'selection' | 'expanded' | 'maximum'
