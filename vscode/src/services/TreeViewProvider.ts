@@ -140,7 +140,11 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
         if (this.type === 'chat') {
             await this.initializeGroupedChats()
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
+            void vscode.commands.executeCommand(
+                'setContext',
+                'cody.hasChatHistory',
+                this.treeNodes.length
+            )
         }
         this._onDidChangeTreeData.fire(undefined)
     }
@@ -176,7 +180,14 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                     undefined,
                     collapsibleState,
                     chats.map(
-                        chat => new ChatTreeItem(chat.id as string, chat.title, chat.icon, chat.command, 'cody.chats')
+                        chat =>
+                            new ChatTreeItem(
+                                chat.id as string,
+                                chat.title,
+                                chat.icon,
+                                chat.command,
+                                'cody.chats'
+                            )
                     )
                 )
                 if (collapsibleState === vscode.TreeItemCollapsibleState.Expanded) {
