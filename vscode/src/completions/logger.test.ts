@@ -74,6 +74,7 @@ describe('logger', () => {
         const shared = {
             id: expect.any(String),
             languageId: 'typescript',
+            testFile: false,
             source: 'Network',
             triggerKind: 'Automatic',
             multiline: false,
