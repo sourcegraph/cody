@@ -428,6 +428,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const onChatSubmit = useCallback((): void => {
         // Submit edits when there is one being edited
         if (messageBeingEdited !== undefined) {
+            onAbortMessageInProgress()
             submitInput(formInput, 'edit')
             return
         }
@@ -437,7 +438,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const submitType = enableNewChatMode ? 'user-newchat' : 'user'
             submitInput(formInput, submitType)
         }
-    }, [formInput, messageBeingEdited, messageInProgress?.speaker, enableNewChatMode, submitInput])
+    }, [
+        formInput,
+        messageBeingEdited,
+        messageInProgress?.speaker,
+        enableNewChatMode,
+        submitInput,
+        onAbortMessageInProgress,
+    ])
 
     const onChatKeyUp = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
