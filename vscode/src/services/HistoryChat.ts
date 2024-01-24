@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { findLast } from 'lodash'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
@@ -58,7 +59,8 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
     }
     const chatHistoryEntries = [...Object.entries(chats)]
     for (const [id, entry] of chatHistoryEntries) {
-        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
+        const lastHumanMessage =
+            entry?.interactions && findLast(entry.interactions, interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText)
