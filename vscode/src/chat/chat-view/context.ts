@@ -28,31 +28,46 @@ import { fuseContext } from '../../context/fuse-context'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
-export async function getEnhancedContext(
-    useContextConfig: ConfigurationUseContext,
-    editor: VSCodeEditor,
-    embeddingsClient: CachedRemoteEmbeddingsClient,
-    localEmbeddings: LocalEmbeddingsController | null,
-    symf: SymfRunner | null,
-    codebaseStatusProvider: CodebaseStatusProvider,
-    text: string,
-    internalUnstable: boolean
-): Promise<ContextItem[]> {
-    if (internalUnstable) {
-        return getEnhancedContextFused(
-            useContextConfig,
+export interface GetEnhancedContextOptions {
+    strategy: ConfigurationUseContext
+    editor: VSCodeEditor
+    text: string
+    providers: {
+        codebaseStatusProvider: CodebaseStatusProvider
+        embeddingsClient: CachedRemoteEmbeddingsClient
+        localEmbeddings: LocalEmbeddingsController | null
+        symf: SymfRunner | null
+    }
+    featureFlags: {
+        internalUnstable: boolean
+    }
+    hints: {
+        maxChars: number
+    }
+    // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
+}
+export async function getEnhancedContext({
+    strategy,
+    editor,
+    text,
+    providers,
+    featureFlags,
+    hints,
+}: GetEnhancedContextOptions): Promise<ContextItem[]> {
+    if (featureFlags.internalUnstable) {
+        return getEnhancedContextFused({
+            strategy,
             editor,
-            embeddingsClient,
-            localEmbeddings,
-            symf,
-            codebaseStatusProvider,
-            text
-        )
+            text,
+            providers,
+            featureFlags,
+            hints,
+        })
     }
     const searchContext: ContextItem[] = []
 
     // use user attention context only if config is set to none
-    if (useContextConfig === 'none') {
+    if (strategy === 'none') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
         searchContext.push(...getVisibleEditorContext(editor))
         return searchContext
@@ -60,12 +75,12 @@ export async function getEnhancedContext(
 
     let hasEmbeddingsContext = false
     // Get embeddings context if useContext Config is not set to 'keyword' only
-    if (useContextConfig !== 'keyword') {
+    if (strategy !== 'keyword') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const localEmbeddingsResults = searchEmbeddingsLocal(localEmbeddings, text)
+        const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
         const remoteEmbeddingsResults = searchEmbeddingsRemote(
-            embeddingsClient,
-            codebaseStatusProvider,
+            providers.embeddingsClient,
+            providers.codebaseStatusProvider,
             text
         )
         try {
@@ -86,10 +101,10 @@ export async function getEnhancedContext(
     }
 
     // Fallback to symf if embeddings provided no results or if useContext is set to 'keyword' specifically
-    if (!hasEmbeddingsContext && symf) {
+    if (!hasEmbeddingsContext && providers.symf) {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
         try {
-            searchContext.push(...(await searchSymf(symf, editor, text)))
+            searchContext.push(...(await searchSymf(providers.symf, editor, text)))
         } catch (error) {
             // TODO(beyang): handle this error better
             logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
@@ -100,32 +115,34 @@ export async function getEnhancedContext(
     return priorityContext.concat(searchContext)
 }
 
-async function getEnhancedContextFused(
-    useContextConfig: ConfigurationUseContext,
-    editor: VSCodeEditor,
-    _embeddingsClient: CachedRemoteEmbeddingsClient,
-    localEmbeddings: LocalEmbeddingsController | null,
-    symf: SymfRunner | null,
-    _codebaseStatusProvider: CodebaseStatusProvider,
-    text: string
-): Promise<ContextItem[]> {
+async function getEnhancedContextFused({
+    strategy,
+    editor,
+    text,
+    providers,
+    hints,
+}: GetEnhancedContextOptions): Promise<ContextItem[]> {
+    console.log({ hints })
     // use user attention context only if config is set to none
-    if (useContextConfig === 'none') {
+    if (strategy === 'none') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
         return getVisibleEditorContext(editor)
     }
 
     const retrievers: Promise<ContextItem[]>[] = []
     // Get embeddings context if useContext Config is not set to 'keyword' only
-    if (useContextConfig !== 'keyword') {
+    if (strategy !== 'keyword') {
         // Query local embeddings (dense)
         retrievers.push(
-            retrieveContextGracefully(searchEmbeddingsLocal(localEmbeddings, text), 'local-embeddings')
+            retrieveContextGracefully(
+                searchEmbeddingsLocal(providers.localEmbeddings, text),
+                'local-embeddings'
+            )
         )
     }
-    if (symf) {
+    if (providers.symf) {
         // Query symf context (sparse)
-        retrievers.push(retrieveContextGracefully(searchSymf(symf, editor, text), 'symf'))
+        retrievers.push(retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf'))
     }
 
     const searchContext = await Promise.all(retrievers)
