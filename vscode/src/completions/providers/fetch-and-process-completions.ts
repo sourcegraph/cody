@@ -210,12 +210,12 @@ export async function* fetchAndProcessCompletions(
             continue
         }
 
-        const parsedComletion = isFinal
+        const parsedCompletion = isFinal
             ? parseAndTruncateCompletion(rawCompletion, providerOptions)
             : canUsePartialCompletion(rawCompletion, providerOptions)
 
-        if (parsedComletion) {
-            const completedCompletion = processCompletion(parsedComletion, providerOptions)
+        if (parsedCompletion) {
+            const completedCompletion = processCompletion(parsedCompletion, providerOptions)
 
             yield {
                 docContext,

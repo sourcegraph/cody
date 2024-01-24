@@ -4,8 +4,8 @@ import { smellCommand } from './smell'
 import { testCommand } from './test'
 
 import * as vscode from 'vscode'
-import type { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import type { ChatSubmitType } from '../../chat/protocol'
 
 export type DefaultCodyCommands = 'test' | 'smell' | 'explain'
 

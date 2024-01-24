@@ -382,3 +382,13 @@ export function getPrevNonEmptyLine(prefix: string): string {
 export function lines(text: string): string[] {
     return text.split(/\r?\n/)
 }
+
+export function lastNLines(text: string, n: number): string {
+    const lines = text.split('\n')
+    return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+export function removeIndentation(text: string): string {
+    const lines = text.split('\n')
+    return lines.map(line => line.replace(INDENTATION_REGEX, '')).join('\n')
+}

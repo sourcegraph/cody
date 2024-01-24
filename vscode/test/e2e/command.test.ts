@@ -42,4 +42,9 @@ test('execute command from sidebar', async ({ page, sidebar }) => {
     await expect(page.getByText('Explain code')).toBeVisible()
     await page.getByText('Explain code').click()
     await chatPanelFrame.getByText('✨ Context: 9 lines from 1 file').click()
+
+    // Edit button should shows up as disabled for command messages
+    const editButtons = chatPanelFrame.locator('.codicon-edit')
+    await expect(editButtons).toHaveCount(1)
+    await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
 })

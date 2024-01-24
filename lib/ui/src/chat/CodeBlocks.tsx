@@ -195,6 +195,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         attributionContainer.innerHTML = ShieldIcon
                         attributionContainer.classList.add(styles.attributionIcon)
                         attributionContainer.title = 'Attribution search running...'
+                        attributionContainer.setAttribute('data-testid', 'attribution-indicator')
                         buttons.append(attributionContainer)
 
                         guardrails

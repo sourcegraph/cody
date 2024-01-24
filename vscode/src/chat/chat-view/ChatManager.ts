@@ -118,14 +118,13 @@ export class ChatManager implements vscode.Disposable {
         })
 
         const provider = await this.getChatProvider()
-        await provider?.handleNewUserMessage(
+        await provider?.handleUserMessageSubmission(
             requestID,
             question,
             args?.submitType ?? 'user-newchat',
             args?.userContextFiles ?? [],
             args?.addEnhancedContext ?? true
         )
-
         return provider
     }
 

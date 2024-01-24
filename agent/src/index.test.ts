@@ -22,6 +22,7 @@ import type {
     ServerInfo,
     WebviewPostMessageParams,
 } from './protocol-alias'
+import { URI } from 'vscode-uri'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 interface ProgressStartMessage {
@@ -38,6 +39,11 @@ interface ProgressEndMessage {
     method: 'progress/end'
     id: string
     message: Record<string, never>
+}
+
+export function isNode16(): boolean {
+    const [major] = process.versions.node.split('.')
+    return Number.parseInt(major, 10) <= 16
 }
 
 export class TestClient extends MessageHandler {
@@ -64,14 +70,26 @@ export class TestClient extends MessageHandler {
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/start', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/start',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/report', message => {
             message.id = this.progressID(message.id)
-            this.progressMessages.push({ method: 'progress/report', id: message.id, message })
+            this.progressMessages.push({
+                method: 'progress/report',
+                id: message.id,
+                message,
+            })
         })
         this.registerNotification('progress/end', ({ id }) => {
-            this.progressMessages.push({ method: 'progress/end', id: this.progressID(id), message: {} })
+            this.progressMessages.push({
+                method: 'progress/end',
+                id: this.progressID(id),
+                message: {},
+            })
         })
         this.registerNotification('debug/message', message => {
             // Uncomment below to see `logDebug` messages.
@@ -159,11 +177,37 @@ export class TestClient extends MessageHandler {
     }
 
     public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'chatModel', model },
+        })
     }
 
     public async reset(id: string): Promise<void> {
-        await this.request('webview/receiveMessage', { id, message: { command: 'reset' } })
+        await this.request('webview/receiveMessage', {
+            id,
+            message: { command: 'reset' },
+        })
+    }
+
+    public async editMessage(
+        id: string,
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
+    ): Promise<ChatMessage | undefined> {
+        const reply = asTranscriptMessage(
+            await this.request('chat/editMessage', {
+                id,
+                message: {
+                    command: 'edit',
+                    text,
+                    index: params?.index,
+                    contextFiles: params?.contextFiles ?? [],
+                    addEnhancedContext: params?.addEnhancedContext ?? false,
+                },
+            })
+        )
+        return reply.messages.at(-1)
     }
 
     public async sendMessage(
@@ -171,6 +215,22 @@ export class TestClient extends MessageHandler {
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
+            ?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChat(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
+        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
+    }
+
+    public async sendSingleMessageToNewChatWithFullTranscript(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
+    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
+        const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -183,22 +243,7 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-        return reply.messages.at(-1)
-    }
-
-    public async editMessage(id: string, text: string): Promise<ChatMessage | undefined> {
-        const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', { id, message: { command: 'edit', text } })
-        )
-        return reply.messages.at(-1)
-    }
-
-    public async sendSingleMessageToNewChat(
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        const id = await this.request('chat/new', null)
-        return this.sendMessage(id, text, params)
+        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
     }
 
     public async shutdownAndExit() {
@@ -357,12 +402,17 @@ describe('Agent', () => {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', { cwd: client.getAgentDir(), stdio: 'inherit' })
+    execSync('pnpm run build:agent', {
+        cwd: client.getAgentDir(),
+        stdio: 'inherit',
+    })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, {
+            recursive: true,
+        })
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -487,7 +537,9 @@ describe('Agent', () => {
         `,
             explainPollyError
         )
-        client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
+        client.notify('autocomplete/completionAccepted', {
+            completionID: completions.items[0].id,
+        })
     }, 10_000)
 
     describe('Chat', () => {
@@ -592,7 +644,9 @@ describe('Agent', () => {
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await openFile(animalUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
                 {
@@ -621,14 +675,32 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
-            await openFile(squirrelUri)
             await client.request('command/execute', { command: 'cody.search.index-update' })
-            const lastMessage = await client.sendSingleMessageToNewChat('What is Squirrel?', {
-                addEnhancedContext: true,
-            })
+            const { lastMessage, transcript } =
+                await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
+                    addEnhancedContext: true,
+                })
             expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
             expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            expect(contextFiles).not.toHaveLength(0)
+            expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
+
+        // Workaround for the fact that `ContextFile.uri` is a class that
+        // serializes to JSON as an object, and deserializes back into a JS
+        // object instead of the class. Without this,
+        // `ContextFile.uri.toString()` return `"[Object object]".
+        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
+            for (const message of transcript.messages) {
+                if (message.contextFiles) {
+                    for (const file of message.contextFiles) {
+                        file.uri = URI.from(file.uri)
+                    }
+                }
+            }
+        }
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -668,42 +740,83 @@ describe('Agent', () => {
             }
         })
 
-        it(
-            'edits the chat',
-            async () => {
+        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
+        describe.skipIf(isNode16())('chat/editMessage', () => {
+            it(
+                'edits the last human chat message',
+                async () => {
+                    const id = await client.request('chat/new', null)
+                    await client.setChatModel(
+                        id,
+                        'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+                    )
+                    await client.sendMessage(
+                        id,
+                        'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                    )
+                    await client.editMessage(
+                        id,
+                        'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                    )
+                    {
+                        const lastMessage = await client.sendMessage(id, 'kramer')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    }
+                    {
+                        const lastMessage = await client.sendMessage(id, 'georgey')
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                    }
+                },
+                { timeout: mayRecord ? 10_000 : undefined }
+            )
+
+            it('edits messages by index', async () => {
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(
                     id,
                     'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
                 )
+                // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
                     id,
-                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                    'I have a turtle named "potter", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a bird named "skywalker", reply single "ok" if you understand.'
+                )
+                await client.sendMessage(
+                    id,
+                    'I have a dog named "happy", reply single "ok" if you understand.'
                 )
                 await client.editMessage(
                     id,
-                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                    'I have a tiger named "zorro", reply single "ok" if you understand',
+                    { index: 2 }
                 )
                 {
-                    const lastMessage = await client.sendMessage(id, 'kramer')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                    const lastMessage = await client.sendMessage(id, 'What pets do I have?')
+                    const answer = lastMessage?.text?.toLocaleLowerCase()
+                    expect(answer?.includes('turtle')).toBeTruthy()
+                    expect(answer?.includes('tiger')).toBeTruthy()
+                    expect(answer?.includes('bird')).toBeFalsy()
+                    expect(answer?.includes('dog')).toBeFalsy()
                 }
-                {
-                    const lastMessage = await client.sendMessage(id, 'georgey')
-                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
-                }
-            },
-            { timeout: mayRecord ? 10_000 : undefined }
-        )
+            }, 30_000)
+        })
     })
 
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
 
             await openFile(multipleSelectionsUri)
             await changeFile(multipleSelectionsUri)
-            await changeFile(multipleSelectionsUri, { selectionName: 'SELECTION_2' })
+            await changeFile(multipleSelectionsUri, {
+                selectionName: 'SELECTION_2',
+            })
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 { addEnhancedContext: true }
@@ -865,7 +978,9 @@ describe('Agent', () => {
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
-            const { result } = await client.request('testing/progress', { title: 'Susan' })
+            const { result } = await client.request('testing/progress', {
+                title: 'Susan',
+            })
             expect(result).toStrictEqual('Hello Susan')
             let progressID: string | undefined
             for (const message of client.progressMessages) {
@@ -998,7 +1113,10 @@ describe('Agent', () => {
     })
 
     afterAll(async () => {
-        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
+        await fspromises.rm(workspaceRootPath, {
+            recursive: true,
+            force: true,
+        })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 30_000)

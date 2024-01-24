@@ -213,7 +213,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleInitialized()
                 break
             case 'submit': {
-                await this.handleNewUserMessage(
+                await this.handleUserMessageSubmission(
                     uuid.v4(),
                     message.text,
                     message.submitType,
@@ -223,7 +223,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             }
             case 'edit': {
-                await this.handleEdit(uuid.v4(), message.text)
+                await this.handleEdit(
+                    uuid.v4(),
+                    message.text,
+                    message.index,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext || false
+                )
                 break
             }
             case 'abort':
@@ -269,6 +275,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'attribution-search':
                 void this.handleAttributionSearch(message.snippet)
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'reset':
                 await this.clearAndRestartSession()
@@ -328,7 +337,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
-    public async handleNewUserMessage(
+    /**
+     * Handles user input text for both new and edit submissions
+     */
+    public async handleUserMessageSubmission(
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
@@ -432,42 +444,42 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleEdit(requestID: string, text: string): Promise<void> {
+    /**
+     * Handles editing a human chat message in current chat session.
+     *
+     * Removes any existing messages from the provided index,
+     * before submitting the replacement text as a new question.
+     * When no index is provided, default to the last human message.
+     *
+     * TODO (bee) set index as required once confirmed this change doesn't affect other clients
+     */
+    private async handleEdit(
+        requestID: string,
+        text: string,
+        index?: number,
+        contextFiles: ContextFile[] = [],
+        addEnhancedContext = true
+    ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
 
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-
-        const prompter = new DefaultPrompter(
-            [], // TODO(beyang): support user context items in the edit input
-            (
-                query // TODO(beyang): get useEnhancedContext
-            ) =>
-                getEnhancedContext(
-                    this.config.useContext,
-                    this.editor,
-                    this.embeddingsClient,
-                    this.localEmbeddings,
-                    this.config.experimentalSymfContext ? this.symf : null,
-                    this.codebaseStatusProvider,
-                    query
-                )
-        )
-
         try {
-            const prompt = await this.buildPrompt(prompter)
-            this.streamAssistantResponse(requestID, prompt)
-        } catch (error) {
-            if (isRateLimitError(error)) {
-                this.postError(error, 'transcript')
-            } else {
-                this.postError(
-                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
-                )
+            const humanMessage = index ?? this.chatModel.getLastSpeakerMessageIndex('human')
+            if (humanMessage === undefined) {
+                return
             }
+            this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
+            return await this.handleUserMessageSubmission(
+                requestID,
+                text,
+                'user',
+                contextFiles,
+                addEnhancedContext
+            )
+        } catch {
+            this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
     }
 
@@ -1003,6 +1015,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             panel.dispose()
         })
 
+        // Let the webview know if it is active
+        panel.onDidChangeViewState(event =>
+            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+        )
+
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
                 this.onDidReceiveMessage(
@@ -1016,8 +1033,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         void this.postMessage({
-            type: 'setChatEnabledConfigFeature',
-            data: configFeatures.chat,
+            type: 'setConfigFeatures',
+            configFeatures: {
+                chat: configFeatures.chat,
+                attribution: configFeatures.attribution,
+            },
         })
 
         return panel

@@ -36,8 +36,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
     >(null)
     const [view, setView] = useState<View | undefined>()
+    // If the current webview is active (vs user is working in another editor tab)
+    const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -49,6 +51,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+    const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
@@ -61,6 +64,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
+    const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
     const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
@@ -97,6 +101,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        setChatIDHistory([...chatIDHistory, message.chatID])
                         vscodeAPI.setState(message.chatID)
                         break
                     }
@@ -116,8 +121,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
                         break
-                    case 'setChatEnabledConfigFeature':
-                        setChatEnabled(message.data)
+                    case 'setConfigFeatures':
+                        setChatEnabled(message.configFeatures.chat)
+                        setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -134,6 +140,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'view':
                         setView(message.messages)
+                        break
+                    case 'webview-state':
+                        setIsWebviewActive(message.isActive)
                         break
                     case 'custom-prompts': {
                         let prompts: [
@@ -304,8 +313,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
-                                            config.experimentalGuardrails ? guardrails : undefined
+                                            config.experimentalGuardrails && attributionEnabled
+                                                ? guardrails
+                                                : undefined
                                         }
+                                        chatIDHistory={chatIDHistory}
+                                        isWebviewActive={isWebviewActive}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
