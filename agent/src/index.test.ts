@@ -929,6 +929,7 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
+            await client.request('command/execute', { command: 'cody.search.index-update' })
             await client.openFile(animalUri)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -957,6 +958,7 @@ describe('Agent', () => {
         }, 30_000)
 
         it('commands/test', async () => {
+            await client.request('command/execute', { command: 'cody.search.index-update' })
             await client.openFile(animalUri)
             const id = await client.request('commands/test', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -1102,6 +1104,7 @@ describe('Agent', () => {
         describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
                 it(name, async () => {
+                    await client.request('command/execute', { command: 'cody.search.index-update' })
                     const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
                     await client.openFile(uri, { removeCursor: false })
                     const task = await client.request('commands/document', null)
