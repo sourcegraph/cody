@@ -40,9 +40,10 @@ export function activate(
     // NOTE: local embeddings are only going to be supported in VSC for now.
     // Until we revisit this decision, we disable local embeddings for all agent
     // clients like the JetBrains plugin.
-    const isLocalEmbeddingsDisabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.advanced.agent.running', false)
+    // const isLocalEmbeddingsDisabled = vscode.workspace
+    //     .getConfiguration()
+    //     .get<boolean>('cody.advanced.agent.running', false)
+    const isLocalEmbeddingsDisabled = false
 
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled

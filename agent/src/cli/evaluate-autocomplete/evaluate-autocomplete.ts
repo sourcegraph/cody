@@ -70,11 +70,16 @@ enum EvaluationStrategy {
     SimpleChat = 'simple-chat',
 }
 
+interface webViewConfiguration {
+    useEnhancedContext: boolean
+}
+
 interface EvaluationFixture {
     name: string
     customConfiguration?: Record<string, any>
     strategy: EvaluationStrategy
     codyAgentBinary?: string
+    webViewConfiguration?: webViewConfiguration
 }
 
 async function loadEvaluationConfig(
@@ -285,7 +290,11 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                     testOptions.fixture.name
                 )
         )
-        await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
+        for(const workspace of workspacesToRun) {
+            await evaluateWorkspace(workspace)
+        }
+
+        // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
