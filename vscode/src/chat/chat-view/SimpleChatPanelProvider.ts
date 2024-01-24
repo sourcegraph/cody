@@ -465,8 +465,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Removes any existing messages from the provided index,
      * before submitting the replacement text as a new question.
      * When no index is provided, default to the last human message.
-     *
-     * TODO (bee) set index as required once confirmed this change doesn't affect other clients
      */
     private async handleEdit(
         requestID: string,
