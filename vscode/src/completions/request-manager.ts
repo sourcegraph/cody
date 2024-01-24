@@ -64,6 +64,8 @@ interface RequestsManagerParams {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
+    // Tracks the last request that the request manager is called with. We use this to evaluate
+    // the relevance of existing requests (i.e to find out if the generations are still relevant)
     private latestRequestParams: null | RequestsManagerParams = null
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
@@ -236,6 +238,9 @@ class InflightRequest {
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
 
+    // Remember the latest completion candidates emitted by an inflight request. This is necessary
+    // since we want to detect when a completion generation is diverging from the current document
+    // context in order to effectively abort it.
     public lastCompletions: InlineCompletionItemWithAnalytics[] | null = null
     public lastRequestParams: RequestParams
 
