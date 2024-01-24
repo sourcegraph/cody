@@ -15,7 +15,7 @@ import {
     getEditInputItems,
     getModelInputItems,
     getRangeInputItems,
-    RANGE_ITEMS
+    RANGE_ITEMS,
 } from './get-items'
 import type { EditRangeSource } from '../types'
 
@@ -41,8 +41,6 @@ export const getInput = async (
     params: EditInputParams,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
-    const label = 'get input'
-    performance.mark(label)
     const editor = getEditor().active
     if (!editor) {
         return null
@@ -292,7 +290,5 @@ export const getInput = async (
 
         editInput.render(activeTitle, params.initialValue || '')
         editInput.input.activeItems = []
-        performance.mark(label)
-
     })
 }
