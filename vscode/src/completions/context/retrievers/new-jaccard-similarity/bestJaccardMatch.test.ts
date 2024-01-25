@@ -230,6 +230,4 @@ describe('bestJaccardMatch', () => {
         expect(matches[0].content).toBe('\n\n// foo')
         expect(matches[1].content).toBe('// foo\n// unrelated\n// unrelated')
     })
-
-    it('should not yield overlapping windows')
 })
