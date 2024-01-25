@@ -15,6 +15,7 @@ import type {
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
+import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -46,6 +47,7 @@ export type Requests = {
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the
@@ -72,6 +74,8 @@ export type Requests = {
     'command/execute': [ExecuteCommandParams, any]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
+    'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
 
     'graphql/currentUserId': [null, string]
 

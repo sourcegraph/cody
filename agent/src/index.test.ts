@@ -1351,6 +1351,67 @@ describe('Agent', () => {
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
+        it('chat/submitMessage (addEnhancedContext: true, multi-repo test)', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repos } = await enterpriseClient.request('graphql/getRepoIds', {
+                names: ['github.com/sourcegraph/sourcegraph'],
+                first: 1,
+            })
+            await enterpriseClient.request('webview/receiveMessage', {
+                id,
+                message: { command: 'context/add-remote-search-repo', explicitRepos: repos },
+            })
+            const { lastMessage, transcript } =
+                await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
+                    'What is Squirrel?',
+                    {
+                        id,
+                        addEnhancedContext: true,
+                    }
+                )
+
+            expect(lastMessage?.text ?? '').includes('code intelligence')
+            expect(lastMessage?.text ?? '').includes('tree-sitter')
+
+            const contextUris: URI[] = []
+            for (const message of transcript.messages) {
+                for (const file of message.contextFiles ?? []) {
+                    if (file.type === 'file') {
+                        file.uri = URI.from(file.uri)
+                        contextUris.push(file.uri)
+                    }
+                }
+            }
+            const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
+
+            expect(paths).toMatchInlineSnapshot(`
+              [
+                "client/branded/src/search-ui/input/BaseCodeMirrorQueryInput.tsx",
+                "client/branded/src/search-ui/input/experimental/suggestionsExtension.ts",
+                "client/web-sveltekit/src/routes/[...repo=reporev]/(validrev)/(code)/+layout.ts",
+                "client/web/src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
+                "client/wildcard/src/global-styles/GlobalStylesStory/FormFieldVariants/FormFieldVariants.tsx",
+                "client/wildcard/src/global-styles/input-group.scss",
+                "cmd/executor/internal/worker/runtime/kubernetes.go",
+                "cmd/frontend/graphqlbackend/repository_text_search_index.go",
+                "cmd/frontend/internal/dotcom/productsubscription/licenses_db_test.go",
+                "cmd/symbols/squirrel/README.md",
+                "dev/release/src/release.ts",
+                "dev/sg/ci/command.go",
+                "doc/admin/config/webhooks/outgoing.md",
+                "docker-images/syntax-highlighter/crates/scip-syntax/src/bin/scip-local-nav.rs",
+                "go.mod",
+                "internal/authz/providers/perforce/cmd/scanprotects/README.md",
+                "internal/codeintel/sentinel/internal/store/observability.go",
+                "internal/oobmigration/downgrade_test.go",
+                "internal/usagestats/codehost_integration.go",
+              ]
+            `)
+
+            const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
+            expect(remoteRepos).toStrictEqual(repos)
+        }, 30_000)
+
         afterAll(async () => {
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings

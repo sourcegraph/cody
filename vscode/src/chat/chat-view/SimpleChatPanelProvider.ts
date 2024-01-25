@@ -86,6 +86,7 @@ import {
 } from './SimpleChatModel'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
+import type { Repo } from '../../context/repo-fetcher'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -299,8 +300,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 handleCodeFromSaveToNewFile(message.text, message.metadata)
                 await this.editor.createWorkspaceFile(message.text)
                 break
+            case 'context/get-remote-search-repos': {
+                await this.postMessage({
+                    type: 'context/remote-repos',
+                    repos: this.chatModel.getSelectedRepos() ?? [],
+                })
+                break
+            }
             case 'context/add-remote-search-repo': {
-                void this.handleAddRemoteSearchRepo()
+                await this.handleAddRemoteSearchRepo(message.explicitRepos)
                 break
             }
             case 'context/remove-remote-search-repo':
@@ -673,11 +681,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleAddRemoteSearchRepo(): Promise<void> {
+    private async handleAddRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
         if (!this.remoteSearch) {
             return
         }
-        const repos = await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual))
+        const repos =
+            explicitRepos ??
+            (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
         if (repos) {
             this.chatModel.setSelectedRepos(repos)
             this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
