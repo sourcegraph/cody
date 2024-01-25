@@ -79,6 +79,31 @@ export class NetworkError extends Error {
     }
 }
 
+/*
+ * Error for incompleted requests aborted by the server side error
+ * E.g. context deadline exceeded, request timeout, etc.
+ */
+export class ServerError extends Error {
+    public static readonly errorName = 'ServerError'
+    public readonly name = ServerError.errorName
+
+    /**
+     * Checks if the given error message indicates a request that was aborted by the server,
+     * such as from a context deadline exceeded.
+     *
+     * @param message The error message to check
+     * @returns True if the message matches a known incompleted error, false otherwise
+     */
+    public static isServerError(message: string): boolean {
+        const knownErrors = ['context deadline exceeded']
+        return knownErrors.includes(message)
+    }
+
+    constructor(public readonly message: string) {
+        super(message)
+    }
+}
+
 export function isNetworkError(error: Error): error is NetworkError {
     return error instanceof NetworkError
 }

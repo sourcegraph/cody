@@ -5,6 +5,7 @@ import { RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
 import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
 import styles from './ErrorItem.module.css'
+import { ServerError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 /**
  * An error message shown in the chat.
@@ -24,6 +25,12 @@ export const ErrorItem: React.FunctionComponent<{
                 postMessage={postMessage}
             />
         )
+    }
+
+    // Skip errors that should not be user-facing
+    if (typeof error !== 'string' && error.name === ServerError.errorName) {
+        // TODO (bee) display helpful tips in chat
+        return null
     }
 
     return <RequestErrorItem error={error.message} />

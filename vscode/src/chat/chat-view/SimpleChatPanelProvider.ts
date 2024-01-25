@@ -84,6 +84,7 @@ import {
     type ContextItem,
     type MessageWithContext,
 } from './SimpleChatModel'
+import { ServerError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -814,7 +815,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.addBotMessage(requestID, content)
             },
             error: (partialResponse, error) => {
-                if (!isAbortError(error)) {
+                if (ServerError.isServerError(error.message)) {
+                    this.postError(new ServerError(error.message), 'transcript')
+                } else if (!isAbortError(error)) {
                     this.postError(error, 'transcript')
                 }
                 try {
