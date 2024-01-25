@@ -23,7 +23,6 @@ import {
 
 interface PromptInfo {
     prompt: Message[]
-    contextLimitWarnings: string[]
     newContextUsed: ContextItem[]
 }
 
@@ -39,7 +38,6 @@ export class CommandPrompter implements IPrompter {
         const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
         const promptBuilder = new PromptBuilder(charLimit)
         const newContextUsed: ContextItem[] = []
-        const warnings: string[] = []
         const preInstruction: string | undefined = vscode.workspace
             .getConfiguration('cody.chat')
             .get('preInstruction')
@@ -56,12 +54,12 @@ export class CommandPrompter implements IPrompter {
             const messageWithContext = reverseTranscript[i]
             const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
-                warnings.push(
+                logDebug(
+                    'CommandPrompter.makePrompt',
                     `Ignored ${reverseTranscript.length - i} transcript messages due to context limit`
                 )
                 return {
                     prompt: promptBuilder.build(),
-                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
@@ -85,7 +83,6 @@ export class CommandPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }
@@ -99,20 +96,18 @@ export class DefaultPrompter implements IPrompter {
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
     //
-    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
-    // the new context that was used in the prompt for the current message.
+    // Returns the reverse prompt and the new context that was used in the
+    // prompt for the current message.
     public async makePrompt(
         chat: SimpleChatModel,
         charLimit: number
     ): Promise<{
         prompt: Message[]
-        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }> {
         const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
         const promptBuilder = new PromptBuilder(charLimit)
         const newContextUsed: ContextItem[] = []
-        const warnings: string[] = []
         const preInstruction: string | undefined = vscode.workspace
             .getConfiguration('cody.chat')
             .get('preInstruction')
@@ -129,12 +124,12 @@ export class DefaultPrompter implements IPrompter {
             const messageWithContext = reverseTranscript[i]
             const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
-                warnings.push(
+                logDebug(
+                    'DefaultPrompter.makePrompt',
                     `Ignored ${reverseTranscript.length - i} transcript messages due to context limit`
                 )
                 return {
                     prompt: promptBuilder.build(),
-                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
@@ -145,8 +140,11 @@ export class DefaultPrompter implements IPrompter {
             const { limitReached, used } = promptBuilder.tryAddContext(this.explicitContext)
             newContextUsed.push(...used)
             if (limitReached) {
-                warnings.push('Ignored current user-specified context items due to context limit')
-                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    'Ignored current user-specified context items due to context limit'
+                )
+                return { prompt: promptBuilder.build(), newContextUsed }
             }
         }
 
@@ -158,8 +156,11 @@ export class DefaultPrompter implements IPrompter {
                 reverseTranscript.flatMap((message: MessageWithContext) => message.newContextUsed || [])
             )
             if (limitReached) {
-                warnings.push('Ignored prior context items due to context limit')
-                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    'Ignored prior context items due to context limit'
+                )
+                return { prompt: promptBuilder.build(), newContextUsed }
             }
         }
 
@@ -191,7 +192,6 @@ export class DefaultPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }

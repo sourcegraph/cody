@@ -1200,7 +1200,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:36:17 GMT
+            value: Wed, 24 Jan 2024 11:05:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1229,7 +1229,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:36:16.248Z
+      startedDateTime: 2024-01-24T11:05:30.900Z
       time: 0
       timings:
         blocked: -1
@@ -2060,7 +2060,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:36:19 GMT
+            value: Wed, 24 Jan 2024 11:05:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2089,7 +2089,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:36:18.607Z
+      startedDateTime: 2024-01-24T11:05:34.119Z
       time: 0
       timings:
         blocked: -1
@@ -2715,7 +2715,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:36:20 GMT
+            value: Wed, 24 Jan 2024 11:05:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2744,7 +2744,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:36:20.170Z
+      startedDateTime: 2024-01-24T11:05:35.974Z
       time: 0
       timings:
         blocked: -1
@@ -3544,7 +3544,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:36:22 GMT
+            value: Wed, 24 Jan 2024 11:05:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3573,7 +3573,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:36:21.540Z
+      startedDateTime: 2024-01-24T11:05:37.340Z
       time: 0
       timings:
         blocked: -1
@@ -4723,7 +4723,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Jan 2024 17:36:24 GMT
+            value: Wed, 24 Jan 2024 11:05:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -4752,7 +4752,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-17T17:36:23.430Z
+      startedDateTime: 2024-01-24T11:05:39.288Z
       time: 0
       timings:
         blocked: -1

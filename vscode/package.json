@@ -450,6 +450,14 @@
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
+        "command": "cody.chat.history.panel",
+        "category": "Cody",
+        "title": "Show History",
+        "group": "Cody",
+        "icon": "$(list-unordered)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
         "command": "cody.search.index-update",
         "category": "Cody",
         "group": "Cody",
@@ -707,17 +715,23 @@
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
+        },
+        {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
         }
       ],
       "view/item/context": [
         {
           "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@1"
         },
         {
           "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
         }
       ]
@@ -928,6 +942,19 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
+        },
+        "cody.experimental.foldingRanges": {
+          "type": "string",
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
+          "enumDescriptions": [
+            "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
+            "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
+          ],
+          "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
+          "default": "all"
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",
