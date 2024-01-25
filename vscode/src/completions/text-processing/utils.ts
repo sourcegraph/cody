@@ -384,7 +384,7 @@ export function lines(text: string): string[] {
 }
 
 export function hasCompleteFirstLine(text: string): boolean {
-    const lastNewlineIndex = text.lastIndexOf('\n')
+    const lastNewlineIndex = text.indexOf('\n')
     return lastNewlineIndex !== -1
 }
 
