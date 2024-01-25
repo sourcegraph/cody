@@ -450,6 +450,14 @@
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
+        "command": "cody.chat.history.panel",
+        "category": "Cody",
+        "title": "Show History",
+        "group": "Cody",
+        "icon": "$(list-unordered)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
         "command": "cody.search.index-update",
         "category": "Cody",
         "group": "Cody",
@@ -707,17 +715,23 @@
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
+        },
+        {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
         }
       ],
       "view/item/context": [
         {
           "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@1"
         },
         {
           "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
         }
       ]

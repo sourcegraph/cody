@@ -42,6 +42,7 @@ import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
+import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
@@ -380,6 +381,9 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai',
             })
         ),
+        vscode.commands.registerCommand('cody.chat.history.panel', async () => {
+            await displayHistoryQuickPick(authProvider.getAuthStatus())
+        }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: '@ext:sourcegraph.cody-ai chat',
