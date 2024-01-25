@@ -80,14 +80,14 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
         const isFullResponse = stopReason !== STOP_REASON_STREAMING_CHUNK
-        const shouldFirstCompletion = isFullResponse || isFirstCompletionTimeoutElapsed
+        const shouldYieldFirstCompletion = isFullResponse || isFirstCompletionTimeoutElapsed
 
-        const extractCompletion = shouldFirstCompletion
+        const extractCompletion = shouldYieldFirstCompletion
             ? parseAndTruncateCompletion
             : canUsePartialCompletion
         const rawCompletion = providerSpecificPostProcess(completion)
 
-        if (!getFirstLine(rawCompletion) && !shouldFirstCompletion) {
+        if (!getFirstLine(rawCompletion) && !shouldYieldFirstCompletion) {
             continue
         }
 
