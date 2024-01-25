@@ -50,7 +50,7 @@ export const getEditInputItems = (
         items.push(SUBMIT_ITEM)
     }
     items.push({
-        label: 'modifiers',
+        label: 'edit options',
         kind: vscode.QuickPickItemKind.Separator,
     })
 
@@ -154,8 +154,9 @@ const symbolIsFunctionLike = (symbol: vscode.SymbolInformation) =>
     symbol.kind === vscode.SymbolKind.Method ||
     symbol.kind === vscode.SymbolKind.Constructor
 
-const DEFAULT_TEST_ITEM = {
-    label: '$(symbol-file) This file',
+export const DEFAULT_TEST_ITEM = {
+    label: '$(code) Selection',
+    alwaysShow: true,
 }
 
 /**
@@ -196,12 +197,12 @@ export const getTestInputItems = async (
 
     return {
         items: [
-            { label: 'functions', kind: vscode.QuickPickItemKind.Separator },
+            { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
             ...items,
             { label: 'other', kind: vscode.QuickPickItemKind.Separator },
             DEFAULT_TEST_ITEM,
         ],
-        activeItems: activeItem ? [activeItem] : undefined,
+        activeItems: activeItem ? [activeItem] : [DEFAULT_TEST_ITEM],
     }
 }
 
@@ -212,8 +213,9 @@ const symbolIsVariableLike = (symbol: vscode.SymbolInformation) =>
     symbol.kind === vscode.SymbolKind.Enum ||
     symbol.kind === vscode.SymbolKind.Interface
 
-const DEFAULT_NOOP_DOCUMENT_ITEM = {
-    label: 'No documentable symbols found',
+export const DEFAULT_DOCUMENT_ITEM = {
+    label: '$(code) Selection',
+    alwaysShow: true,
 }
 
 /**
@@ -235,7 +237,7 @@ export const getDocumentInputItems = async (
     )
 
     if (!symbols || symbols.length === 0) {
-        return { items: [DEFAULT_NOOP_DOCUMENT_ITEM] }
+        return { items: [DEFAULT_DOCUMENT_ITEM] }
     }
 
     const relevantSymbols = symbols.filter(sym => symbolIsFunctionLike(sym) || symbolIsVariableLike(sym))
@@ -253,7 +255,12 @@ export const getDocumentInputItems = async (
         : null
 
     return {
-        items: [{ label: 'functions', kind: vscode.QuickPickItemKind.Separator }, ...items],
-        activeItems: activeItem ? [activeItem] : undefined,
+        items: [
+            { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
+            ...items,
+            { label: 'other', kind: vscode.QuickPickItemKind.Separator },
+            DEFAULT_DOCUMENT_ITEM,
+        ],
+        activeItems: activeItem ? [activeItem] : [DEFAULT_DOCUMENT_ITEM],
     }
 }

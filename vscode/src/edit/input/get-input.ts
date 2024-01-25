@@ -22,6 +22,8 @@ import {
     getTestInputItems,
     DOCUMENT_ITEMS_RANGE_MAP,
     TEST_ITEMS_RANGE_MAP,
+    DEFAULT_TEST_ITEM,
+    DEFAULT_DOCUMENT_ITEM,
 } from './get-items'
 import type { EditRangeSource } from '../types'
 
@@ -92,10 +94,16 @@ export const getInput = async (
         })
     }
     let textDocumentListener = registerRangeListener()
-    const updateActiveRange = (newRange: vscode.Range) => {
+    const updateActiveRange = (newSelection: vscode.Selection, selectionSource: EditRangeSource) => {
         // Pause listening to range changes to avoid a possible race condition
         textDocumentListener.dispose()
-        activeRange = newRange
+
+        // Update the current selection and the stored range and source
+        editor.selection = newSelection
+        editor.revealRange(newSelection, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+        activeRange = newSelection
+        activeRangeSource = selectionSource
+
         // Resume listening to range changes
         textDocumentListener = registerRangeListener()
         // Update the title to reflect the new range
@@ -159,9 +167,10 @@ export const getInput = async (
                 }
 
                 if (item.label === RANGE_ITEMS.selection.label) {
-                    editor.selection = new vscode.Selection(initialRange.start, initialRange.end)
-                    updateActiveRange(editor.selection)
-                    activeRangeSource = 'selection'
+                    updateActiveRange(
+                        new vscode.Selection(initialRange.start, initialRange.end),
+                        'selection'
+                    )
                     return
                 }
 
@@ -169,17 +178,16 @@ export const getInput = async (
                     const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
                         ignoreSelection: true,
                     })
-                    editor.selection = new vscode.Selection(smartSelection.start, smartSelection.end)
-                    updateActiveRange(editor.selection)
-                    activeRangeSource = 'expanded'
+                    updateActiveRange(
+                        new vscode.Selection(smartSelection.start, smartSelection.end),
+                        'expanded'
+                    )
                     return
                 }
 
                 if (item.label === RANGE_ITEMS.maximum.label) {
                     const fullRange = new vscode.Range(0, 0, editor.document.lineCount, 0)
-                    editor.selection = new vscode.Selection(fullRange.start, fullRange.end)
-                    updateActiveRange(editor.selection)
-                    activeRangeSource = 'maximum'
+                    updateActiveRange(new vscode.Selection(fullRange.start, fullRange.end), 'maximum')
                     return
                 }
             },
@@ -202,18 +210,23 @@ export const getInput = async (
                     return
                 }
 
+                if (item.label === DEFAULT_DOCUMENT_ITEM.label) {
+                    updateActiveRange(
+                        new vscode.Selection(initialRange.start, initialRange.end),
+                        'selection'
+                    )
+                    return
+                }
+
                 const selectedRange = DOCUMENT_ITEMS_RANGE_MAP.get(item)
                 if (!selectedRange) {
                     return
                 }
 
-                editor.selection = new vscode.Selection(selectedRange.start, selectedRange.end)
-                editor.revealRange(
-                    editor.selection,
-                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                updateActiveRange(
+                    new vscode.Selection(selectedRange.start, selectedRange.end),
+                    'selection'
                 )
-                updateActiveRange(editor.selection)
-                activeRangeSource = 'selection'
             },
             onDidAccept: () => {
                 // TODO: Better interopability with the `doc` functionality.
@@ -244,24 +257,29 @@ export const getInput = async (
                     return
                 }
 
+                if (item.label === DEFAULT_TEST_ITEM.label) {
+                    updateActiveRange(
+                        new vscode.Selection(initialRange.start, initialRange.end),
+                        'selection'
+                    )
+                    return
+                }
+
                 const selectedRange = TEST_ITEMS_RANGE_MAP.get(item)
                 if (!selectedRange) {
                     return
                 }
 
-                editor.selection = new vscode.Selection(selectedRange.start, selectedRange.end)
-                editor.revealRange(
-                    editor.selection,
-                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                updateActiveRange(
+                    new vscode.Selection(selectedRange.start, selectedRange.end),
+                    'selection'
                 )
-                updateActiveRange(editor.selection)
-                activeRangeSource = 'selection'
             },
             onDidAccept: () => {
                 // TODO: Better interopability with the `test` functionality.
                 // Return edit mode too? or intent or whatever
                 return resolve({
-                    instruction: 'Test this finction',
+                    instruction: 'Test this function',
                     userContextFiles: [],
                     model: activeModel,
                     range: activeRange,
@@ -272,7 +290,7 @@ export const getInput = async (
 
         const editInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Instructions (@ to include code)',
+            placeHolder: 'Your edit instructions (@ to include code, ⏎ to submit)',
             getItems: () =>
                 getEditInputItems(params, editInput.input.value, activeRangeSource, activeModel),
             ...(source === 'menu'
