@@ -16,6 +16,12 @@ import {
     getModelInputItems,
     getRangeInputItems,
     RANGE_ITEMS,
+    getDocumentInputItems,
+    DOCUMENT_ITEM,
+    TEST_ITEM,
+    getTestInputItems,
+    DOCUMENT_ITEMS_RANGE_MAP,
+    TEST_ITEMS_RANGE_MAP,
 } from './get-items'
 import type { EditRangeSource } from '../types'
 
@@ -113,7 +119,7 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Change Model',
-            getItems: () => getModelInputItems(params, activeModel),
+            getItems: () => getModelInputItems(activeModel),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: target => {
                 if (target === vscode.QuickInputButtons.Back) {
@@ -139,7 +145,7 @@ export const getInput = async (
         const rangeInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Change Range',
-            getItems: () => getRangeInputItems(params, activeRangeSource),
+            getItems: () => getRangeInputItems(activeRangeSource),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: target => {
                 if (target === vscode.QuickInputButtons.Back) {
@@ -178,6 +184,90 @@ export const getInput = async (
                 }
             },
             onDidAccept: () => editInput.render(activeTitle, editInput.input.value),
+        })
+
+        const documentInput = createQuickPick({
+            title: activeTitle,
+            placeHolder: 'Document...',
+            getItems: () => getDocumentInputItems(document, activeRange),
+            buttons: [vscode.QuickInputButtons.Back],
+            onDidTriggerButton: target => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+            },
+            onDidChangeActive: async items => {
+                const item = items[0]
+                if (!editor) {
+                    return
+                }
+
+                const selectedRange = DOCUMENT_ITEMS_RANGE_MAP.get(item)
+                if (!selectedRange) {
+                    return
+                }
+
+                editor.selection = new vscode.Selection(selectedRange.start, selectedRange.end)
+                editor.revealRange(
+                    editor.selection,
+                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                )
+                updateActiveRange(editor.selection)
+                activeRangeSource = 'selection'
+            },
+            onDidAccept: () => {
+                // TODO: Better interopability with the `doc` functionality.
+                // Return edit mode too? or intent or whatever
+                return resolve({
+                    instruction: 'Document this symbol',
+                    userContextFiles: [],
+                    model: activeModel,
+                    range: activeRange,
+                    rangeSource: activeRangeSource,
+                })
+            },
+        })
+
+        const unitTestInput = createQuickPick({
+            title: activeTitle,
+            placeHolder: 'Generate a Unit Test for...',
+            getItems: () => getTestInputItems(document, activeRange),
+            buttons: [vscode.QuickInputButtons.Back],
+            onDidTriggerButton: target => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+            },
+            onDidChangeActive: async items => {
+                const item = items[0]
+                if (!editor) {
+                    return
+                }
+
+                const selectedRange = TEST_ITEMS_RANGE_MAP.get(item)
+                if (!selectedRange) {
+                    return
+                }
+
+                editor.selection = new vscode.Selection(selectedRange.start, selectedRange.end)
+                editor.revealRange(
+                    editor.selection,
+                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                )
+                updateActiveRange(editor.selection)
+                activeRangeSource = 'selection'
+            },
+            onDidAccept: () => {
+                // TODO: Better interopability with the `test` functionality.
+                // Return edit mode too? or intent or whatever
+                return resolve({
+                    instruction: 'Test this finction',
+                    userContextFiles: [],
+                    model: activeModel,
+                    range: activeRange,
+                    rangeSource: activeRangeSource,
+                })
+            },
         })
 
         const editInput = createQuickPick({
@@ -220,7 +310,12 @@ export const getInput = async (
                 if (matchingContext === null) {
                     // Nothing to match, clear existing items
                     // eslint-disable-next-line no-self-assign
-                    input.items = getEditInputItems(params, input.value, activeRangeSource, activeModel)
+                    input.items = getEditInputItems(
+                        params,
+                        input.value,
+                        activeRangeSource,
+                        activeModel
+                    ).items
                     return
                 }
 
@@ -248,14 +343,19 @@ export const getInput = async (
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = input.selectedItems[0]
-                if (selectedItem.label === MODEL_ITEM.label) {
-                    modelInput.render(activeTitle, '')
-                    return
-                }
-
-                if (selectedItem.label === RANGE_ITEM.label) {
-                    rangeInput.render(activeTitle, '')
-                    return
+                switch (selectedItem.label) {
+                    case MODEL_ITEM.label:
+                        modelInput.render(activeTitle, '')
+                        return
+                    case RANGE_ITEM.label:
+                        rangeInput.render(activeTitle, '')
+                        return
+                    case DOCUMENT_ITEM.label:
+                        documentInput.render(activeTitle, '')
+                        return
+                    case TEST_ITEM.label:
+                        unitTestInput.render(activeTitle, '')
+                        return
                 }
 
                 // Empty input flow, do nothing

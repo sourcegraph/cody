@@ -1,12 +1,17 @@
 import * as vscode from 'vscode'
 
+export interface GetItemsResult {
+    items: vscode.QuickPickItem[]
+    activeItems?: vscode.QuickPickItem[]
+}
+
 interface QuickPickConfiguration {
     title: string
     placeHolder: string
     onDidAccept: () => void
     onDidChangeActive?: (items: readonly vscode.QuickPickItem[]) => void
     onDidChangeValue?: (value: string) => void
-    getItems?: () => vscode.QuickPickItem[]
+    getItems: () => GetItemsResult | Promise<GetItemsResult>
     value?: string
     buttons?: vscode.QuickInputButton[]
     onDidTriggerButton?: (target: vscode.QuickInputButton) => void
@@ -19,6 +24,8 @@ export const createQuickPick = ({
     onDidChangeActive,
     onDidChangeValue,
     getItems,
+    buttons,
+    onDidTriggerButton,
     value = '',
 }: QuickPickConfiguration): {
     input: vscode.QuickPick<vscode.QuickPickItem>
@@ -42,6 +49,11 @@ export const createQuickPick = ({
         quickPick.onDidChangeValue(onDidChangeValue)
     }
 
+    if (buttons && onDidTriggerButton) {
+        quickPick.buttons = buttons
+        quickPick.onDidTriggerButton(onDidTriggerButton)
+    }
+
     quickPick.matchOnDescription = false
     quickPick.matchOnDetail = false
 
@@ -50,7 +62,24 @@ export const createQuickPick = ({
         render: (title, value) => {
             quickPick.title = title
             quickPick.value = value
-            quickPick.items = getItems ? getItems() : []
+
+            const itemsOrPromise = getItems()
+            if (itemsOrPromise instanceof Promise) {
+                quickPick.busy = true
+                itemsOrPromise.then(({ items, activeItems }) => {
+                    quickPick.items = items
+                    if (activeItems) {
+                        quickPick.activeItems = activeItems
+                    }
+                    quickPick.busy = false
+                })
+            } else {
+                quickPick.items = itemsOrPromise.items
+                if (itemsOrPromise.activeItems) {
+                    quickPick.activeItems = itemsOrPromise.activeItems
+                }
+            }
+
             quickPick.show()
         },
     }

@@ -103,6 +103,7 @@ export class EditManager implements vscode.Disposable {
                   document,
                   args.instruction,
                   args.userContextFiles ?? [],
+                  'anthropic/claude-2.1', // TODO: Find a better place for the default model or derive from settings
                   range,
                   rangeSource,
                   args.intent,
