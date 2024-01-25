@@ -150,7 +150,6 @@ export type {
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
-    ContextWindowLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,

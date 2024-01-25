@@ -12,11 +12,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const {
-            prompt,
-            contextLimitWarnings: warnings,
-            newContextUsed,
-        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(chat, 100000)
+        const { prompt, newContextUsed } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            100000
+        )
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -34,7 +33,6 @@ describe('DefaultPrompter', () => {
             },
           ]
         `)
-        expect(warnings).toMatchInlineSnapshot('[]')
         expect(newContextUsed).toMatchInlineSnapshot('[]')
     })
 
@@ -50,11 +48,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const {
-            prompt,
-            contextLimitWarnings: warnings,
-            newContextUsed,
-        } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(chat, 100000)
+        const { prompt, newContextUsed } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            100000
+        )
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -72,7 +69,6 @@ describe('DefaultPrompter', () => {
             },
           ]
         `)
-        expect(warnings).toMatchInlineSnapshot('[]')
         expect(newContextUsed).toMatchInlineSnapshot('[]')
     })
 })
