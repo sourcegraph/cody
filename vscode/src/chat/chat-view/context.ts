@@ -550,7 +550,7 @@ async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: str
 
 // A simple context fusion engine that picks the top most keyword results to fill up 80% of the
 // context window and picks the top ranking embeddings items for the remainder.
-function fuseContext(
+export function fuseContext(
     keywordItems: ContextItem[],
     embeddingsItems: ContextItem[],
     maxChars: number
