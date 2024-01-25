@@ -3,7 +3,7 @@ import { platform } from 'os'
 import { window, type QuickPickItem, commands } from 'vscode'
 import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separators } from './const'
 
-import { vscodeDefaultCommands } from '../manager'
+import { vscodeDefaultCommands } from '../provider'
 import { openCustomCommandDocsLink } from '../custom-commands/helpers'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import type { CustomCommandsItem } from './types'

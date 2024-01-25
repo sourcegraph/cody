@@ -1,6 +1,6 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getContextFileFromUri } from './get-file-context'
+import { getContextFileFromUri } from './file-path'
 
 export async function getContextFileFromTabs(): Promise<ContextFile[]> {
     const contextFiles: ContextFile[] = []

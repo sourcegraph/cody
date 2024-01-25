@@ -1,8 +1,8 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getContextFileFromCursor } from '../context/get-selection-context'
-import { getContextFilesForTests } from '../context/get-test-context'
+import { getContextFileFromCursor } from '../context/selection'
+import { getContextFilesForTests } from '../context/test-files'
 
 /**
  * The experimental command that generates a new test file for the selected code.

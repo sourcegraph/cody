@@ -1,12 +1,12 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
-import { getContextFileFromCursor } from '../context/get-selection-context'
-import type { ExecuteChatArguments } from '.'
-import * as vscode from 'vscode'
-import { getContextFileFromFile } from '../context/get-current-file-context'
+import { getContextFileFromCursor } from '../context/selection'
+import { getContextFileFromFile } from '../context/current-file'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { executeChat } from './ask'
+import type { ExecuteChatArguments } from '.'
 
 /**
- * explainCommand generates the prompt and arguments for the 'explain' command.
+ * Generates the prompt and context files with arguments for the 'explain' command.
  *
  * Context: Current selection and current file
  */
@@ -18,14 +18,14 @@ export async function explainCommand(): Promise<{ prompt: string; args: ExecuteC
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextFile[] = []
 
-    const cursorContext = await getContextFileFromCursor()
-    if (cursorContext) {
-        contextFiles.push(cursorContext)
+    const currentSelection = await getContextFileFromCursor()
+    if (currentSelection) {
+        contextFiles.push(currentSelection)
     }
 
-    const currentContext = await getContextFileFromFile()
-    if (currentContext) {
-        contextFiles.push(currentContext)
+    const currentFile = await getContextFileFromFile()
+    if (currentFile) {
+        contextFiles.push(currentFile)
     }
 
     return {
@@ -43,9 +43,6 @@ export async function explainCommand(): Promise<{ prompt: string; args: ExecuteC
  */
 export async function executeExplainCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await explainCommand()
-    return await vscode.commands.executeCommand<ChatSession | undefined>(
-        'cody.action.chat',
-        prompt,
-        args
-    )
+
+    return executeChat(prompt, args)
 }

@@ -15,7 +15,7 @@ import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
-import { CommandsManager } from './commands/manager'
+import { CommandsProvider } from './commands/provider'
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).
@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
 
     return activateCommon(context, {
         getRgPath,
-        createCommandsController: () => new CommandsManager(),
+        createCommandsProvider: () => new CommandsProvider(),
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
             : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>

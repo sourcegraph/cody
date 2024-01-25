@@ -15,9 +15,9 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { CodyCommandArgs } from '.'
-import { executeChat } from './default-commands'
 import { getCommandContextFiles } from './context'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
+import { executeChat } from './default-commands/ask'
 
 /**
  * Handles executing a Cody command as:
@@ -25,12 +25,10 @@ import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
  * - a chat command (mode === 'ask')
  *
  * Handles prompt building and context fetching for commands.
- * Used by Command Controller only.
+ * NOTE: Used by Command Controller only.
  */
 export class CommandRunner implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-
-    public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
 
     constructor(
         private readonly command: CodyCommand,

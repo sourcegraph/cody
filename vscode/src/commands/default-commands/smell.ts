@@ -1,11 +1,11 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
-import { getContextFileFromCursor } from '../context/get-selection-context'
+import { getContextFileFromCursor } from '../context/selection'
 import type { ExecuteChatArguments } from '.'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { executeChat } from './ask'
 
 /**
- * explainCommand generates the prompt and context arguments for the 'smell' command.
+ * Generates the prompt and context files with arguments for the 'smell' command.
  *
  * Context: Current selection
  */
@@ -15,9 +15,9 @@ export async function smellCommand(): Promise<{ prompt: string; args: ExecuteCha
         "Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'"
 
     const contextFiles: ContextFile[] = []
-    const contextFile = await getContextFileFromCursor()
-    if (contextFile) {
-        contextFiles.push(contextFile)
+    const currentSelection = await getContextFileFromCursor()
+    if (currentSelection) {
+        contextFiles.push(currentSelection)
     }
 
     return {
@@ -35,5 +35,6 @@ export async function smellCommand(): Promise<{ prompt: string; args: ExecuteCha
  */
 export async function executeSmellCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await smellCommand()
-    return vscode.commands.executeCommand<ChatSession | undefined>('cody.action.chat', prompt, args)
+
+    return executeChat(prompt, args)
 }

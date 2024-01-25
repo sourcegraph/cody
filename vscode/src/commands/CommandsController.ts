@@ -4,18 +4,18 @@ import { logDebug } from '../log'
 
 import type { CodyCommandArgs } from '.'
 import { CommandRunner } from './CommandRunner'
-import type { CommandsManager } from './manager'
+import type { CommandsProvider } from './provider'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
 
 /**
- * Handles commands execution with commands from CommandsManager
+ * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
  */
 class CommandsController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private provider: CommandsManager | undefined
+    private provider: CommandsProvider | undefined
 
-    public init(provider?: CommandsManager) {
+    public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
             this.disposables.push(this.provider)
@@ -58,6 +58,6 @@ class CommandsController implements vscode.Disposable {
 
 const controller = new CommandsController()
 
-export const setCommandController = (provider?: CommandsManager) => controller.init(provider)
+export const setCommandController = (provider?: CommandsProvider) => controller.init(provider)
 
 export const executeCodyCommand = controller.execute.bind(controller)

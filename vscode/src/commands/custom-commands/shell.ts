@@ -8,34 +8,35 @@ import { logError } from '../../log'
 
 import { outputWrapper } from './helpers'
 import { MAX_CURRENT_FILE_TOKENS, type ContextFile, truncateText } from '@sourcegraph/cody-shared'
+import path from 'node:path/posix'
 
 const _exec = promisify(exec)
 
-const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
-const wsRoot: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.toString()
-
 /**
- * Execute a command in the terminal
+ * Creates a context file from executing a shell command. Used by CommandsController.
+ *
+ * Executes the given shell command, captures the output, wraps it in a context format,
+ * and returns it as a ContextFile.
  */
 export async function getContextFileFromShell(command: string): Promise<ContextFile[]> {
+    const rootDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
+
     if (!vscode.env.shell) {
         void vscode.window.showErrorMessage('Shell command is not supported your current workspace.')
         return []
     }
 
     // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
-    const homeDir = `${homePath}/` || ''
-    const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}`)
-
+    const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${rootDir}${path.sep}`)
+    const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri?.path
     try {
         const { stdout, stderr } = await _exec(filteredCommand, {
-            cwd: wsRoot(),
+            cwd: wsRoot,
             encoding: 'utf8',
         })
 
-        const output = stdout || stderr
-
         // stringify the output of the command first
+        const output = stdout ?? stderr
         const outputString = JSON.stringify(output.trim())
         if (!outputString) {
             throw new Error('Empty output')
@@ -53,9 +54,10 @@ export async function getContextFileFromShell(command: string): Promise<ContextF
 
         return [file]
     } catch (error) {
-        logError('ToolsProvider:exeCommand', 'failed', { verbose: error })
-        vscode.window.showErrorMessage('Command Failed: Please sure the command works in your terminal.')
+        // Handles errors and empty output
+        console.error('getContextFileFromShell > failed', error)
+        logError('getContextFileFromShell', 'failed', { verbose: error })
+        void vscode.window.showErrorMessage('Command Failed: Make sure the command works locally.')
+        return []
     }
-
-    return []
 }

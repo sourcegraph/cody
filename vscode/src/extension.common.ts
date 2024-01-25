@@ -20,7 +20,7 @@ import { start } from './main'
 import type { getRgPath } from './rg'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
-import type { CommandsManager } from './commands/manager'
+import type { CommandsProvider } from './commands/provider'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -30,7 +30,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     getRgPath?: typeof getRgPath
-    createCommandsController?: Constructor<typeof CommandsManager>
+    createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever

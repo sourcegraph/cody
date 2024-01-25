@@ -1,16 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type URI, Utils } from 'vscode-uri'
-import { isValidTestFile } from './commands'
-
-/**
- * Checks if a file URI is part of the current workspace.
- * @param fileToCheck - The file URI to check
- * @returns True if the file URI belongs to a workspace folder, false otherwise
- */
-export function isInWorkspace(fileToCheck: URI): boolean {
-    return vscode.workspace.getWorkspaceFolder(fileToCheck) !== undefined
-}
+import type { URI } from 'vscode-uri'
 
 /**
  * Checks if a file URI exists in current workspace.
@@ -32,38 +22,6 @@ export async function getFilePathContext(fileUri: vscode.Uri): Promise<string> {
         console.error(error)
     }
     return ''
-}
-
-/**
- * Gets files from a directory, optionally filtering for test files only.
- * @param dirUri - The URI of the directory to get files from.
- * @param testFilesOnly - Whether to only return file names with test in it.
- * @returns A Promise resolving to an array of [fileName, fileType] tuples.
- */
-export const getFilesFromDir = async (
-    dirUri: vscode.Uri,
-    testFilesOnly: boolean
-): Promise<[string, vscode.FileType][]> => {
-    try {
-        const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
-        // Filter out directories, non-test files, and dot files
-        return filesInDir.filter(file => {
-            const fileName = file[0]
-            const fileType = file[1]
-            const isDirectory = fileType === vscode.FileType.Directory
-            const isHiddenFile = fileName.startsWith('.')
-
-            if (!testFilesOnly) {
-                return !isDirectory && !isHiddenFile
-            }
-
-            const isTestFile = isValidTestFile(Utils.joinPath(dirUri, fileName))
-            return !isDirectory && !isHiddenFile && isTestFile
-        })
-    } catch (error) {
-        console.error(error)
-        return []
-    }
 }
 
 /**
@@ -106,24 +64,6 @@ export async function decodeVSCodeTextDoc(fileUri: URI): Promise<string> {
         const bytes = await vscode.workspace.fs.readFile(fileUri)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         return decoded
-    } catch {
-        return ''
-    }
-}
-
-/**
- * Gets the text content of a VS Code text document specified by URI.
- * @param uri - The URI of the text document to get content for.
- * @param range - Optional VS Code range to get only a subset of the document text.
- * @returns A Promise resolving to the text content of the specified document.
- */
-export async function getCurrentVSCodeDocTextByURI(uri: URI, range?: vscode.Range): Promise<string> {
-    try {
-        const doc = await vscode.workspace.openTextDocument(uri)
-        if (!doc) {
-            return ''
-        }
-        return doc?.getText(range) || ''
     } catch {
         return ''
     }

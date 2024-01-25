@@ -3,7 +3,7 @@ import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getDefaultCommandsMap } from '.'
 import { EDIT_COMMAND } from './menus/const'
-import { CustomCommandsProvider } from './custom-commands/provider'
+import { CustomCommandsManager } from './custom-commands/manager'
 import { showCommandMenu } from './menus'
 import { getContextFileFromShell } from './custom-commands/shell'
 
@@ -18,16 +18,22 @@ const editorCommands: CodyCommand[] = [
 
 export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
 
-export class CommandsManager implements vscode.Disposable {
+/**
+ * Provides management and interaction capabilities for both default and custom Cody commands.
+ *
+ * It is responsible for initializing, grouping, and refreshing command sets,
+ * as well as handling command menus and execution.
+ */
+export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     protected readonly defaultCommands = vscodeDefaultCommands
-    protected customCommandsProvider = new CustomCommandsProvider()
+    protected customCommandsStore = new CustomCommandsManager()
 
-    // The commands grouped by default commands and custom commands
+    // The commands grouped with default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
 
     constructor() {
-        this.disposables.push(this.customCommandsProvider)
+        this.disposables.push(this.customCommandsStore)
         // adds the default commands to the all commands map
         this.groupCommands(this.defaultCommands)
 
@@ -38,7 +44,13 @@ export class CommandsManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config'))
         )
 
-        this.customCommandsProvider.init()
+        this.customCommandsStore.init()
+    }
+
+    private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
+        const customCommands = await this.getCustomCommands()
+        const commandArray = [...customCommands].map(command => command[1])
+        await showCommandMenu(type, commandArray)
     }
 
     /**
@@ -48,14 +60,8 @@ export class CommandsManager implements vscode.Disposable {
         return this.allCommands.get(id)
     }
 
-    private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
-        const customCommands = await this.getCustomCommands()
-        const commandArray = [...customCommands].map(command => command[1])
-        await showCommandMenu(type, commandArray)
-    }
-
     protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
-        const { commands } = await this.customCommandsProvider.refresh()
+        const { commands } = await this.customCommandsStore.refresh()
         this.groupCommands(commands)
         return commands
     }
@@ -70,11 +76,18 @@ export class CommandsManager implements vscode.Disposable {
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())
     }
 
+    /**
+     * Refresh the custom commands from store before combining with default commands
+     */
     protected async refresh(): Promise<void> {
-        const { commands } = await this.customCommandsProvider.refresh()
+        const { commands } = await this.customCommandsStore.refresh()
         this.groupCommands(commands)
     }
 
+    /**
+     * Gets the context file content from executing a shell command.
+     * Used for retreiving context for the command field in custom command
+     */
     public async runShell(shell: string): Promise<ContextFile[]> {
         return getContextFileFromShell(shell)
     }

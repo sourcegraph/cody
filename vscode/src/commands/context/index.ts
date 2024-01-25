@@ -1,14 +1,24 @@
 import * as vscode from 'vscode'
 
-import type { CodyCommandContext, ContextFile } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, type CodyCommandContext, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
-import { getContextFileFromCursor } from './get-selection-context'
-import { getContextFileFromFile } from './get-current-file-context'
-import { getContextFileFromUri } from './get-file-context'
-import { getContextFileFromDirectory } from './get-directory-context'
-import { getContextFileFromTabs } from './get-open-tabs-context'
+import { getContextFileFromCursor } from './selection'
+import { getContextFileFromFile } from './current-file'
+import { getContextFileFromUri } from './file-path'
+import { getContextFileFromDirectory } from './directory'
+import { getContextFileFromTabs } from './open-tabs'
 
+/**
+ * Gets the context files for a Cody command based on the given configuration.
+ *
+ * This handles getting context files from the selection, current file,
+ * file path, directories, and open tabs based on the `config` object passed in.
+ *
+ * Context from context.command is added during the initial step in CommandController.
+ *
+ * The returned context files are filtered to remove any files ignored by Cody.
+ */
 export const getCommandContextFiles = async (config: CodyCommandContext): Promise<ContextFile[]> => {
     try {
         const contextFiles: ContextFile[] = []
@@ -53,7 +63,7 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
             contextFiles.push(...(await getContextFileFromTabs()))
         }
 
-        return contextFiles
+        return contextFiles.filter(file => !isCodyIgnoredFile(file.uri))
     } catch (error) {
         logDebug('getCommandContextFiles', 'Error getting command context files', error)
 

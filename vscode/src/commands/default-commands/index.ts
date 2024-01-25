@@ -3,11 +3,12 @@ import { explainCommand } from './explain'
 import { smellCommand } from './smell'
 import { testCommand } from './test'
 
-import * as vscode from 'vscode'
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import type { ChatSubmitType } from '../../chat/protocol'
 
-export type DefaultCodyCommands = 'test' | 'smell' | 'explain'
+// Default Cody Commands
+export type DefaultCodyCommands = DefaultCodyChatCommands | DefaultCodyEditCommands
+export type DefaultCodyChatCommands = 'test' | 'smell' | 'explain'
+export type DefaultCodyEditCommands = 'doc' | 'edit'
 
 export interface ExecuteChat {
     prompt: string
@@ -20,26 +21,14 @@ export interface ExecuteChatArguments {
     source?: ChatEventSource
     submitType?: ChatSubmitType
 }
-
 /**
- * Wrapper around the `chat` command that can be used anywhere but with better type-safety.
+ * Gets the default command prompt and context with arguments for the given default command.
  */
-export const executeChat = async (
-    prompt: string,
-    args?: ExecuteChatArguments
-): Promise<ChatSession | undefined> => {
-    return await vscode.commands.executeCommand('cody.action.chat', prompt, args)
-}
-
-/**
- * Gets the default command prompt and arguments for the given command ID.
- * @param id - The ID of the command to get the default for. One of 'test', 'smell', or 'explain'.
- * @returns A promise resolving to the default command prompt and arguments.
- */
-export async function getDefaultCommandParams(id: DefaultCodyCommands): Promise<ExecuteChat> {
+export async function getDefaultChatCommandParams(id: DefaultCodyCommands): Promise<ExecuteChat> {
     if (id === 'explain') {
         return await explainCommand()
     }
+
     if (id === 'smell') {
         return await smellCommand()
     }

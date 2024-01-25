@@ -1,13 +1,13 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-import { getContextFileFromCursor } from '../context/get-selection-context'
-import { getContextFilesForTests } from '../context/get-test-context'
+import { getContextFileFromCursor } from '../context/selection'
+import { getContextFilesForTests } from '../context/test-files'
 import type { ExecuteChatArguments } from '.'
-import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { executeChat } from './ask'
 
 /**
- * testCommand generates the prompt and context arguments for the 'text' command.
+ * Generates the prompt and context files with arguments for the 'test' command.
  *
  * Context: Test files, current selection, and current file
  */
@@ -47,5 +47,5 @@ export async function testCommand(): Promise<{ prompt: string; args: ExecuteChat
  */
 export async function executeTestCommand(): Promise<ChatSession | undefined> {
     const { prompt, args } = await testCommand()
-    return vscode.commands.executeCommand<ChatSession | undefined>('cody.action.chat', prompt, args)
+    return executeChat(prompt, args)
 }
