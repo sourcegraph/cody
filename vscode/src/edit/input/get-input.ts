@@ -12,7 +12,7 @@ import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constant
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent, EditRangeSource } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
-import { getModelInputItems } from './get-items/model'
+import { MODEL_ITEMS, getModelInputItems } from './get-items/model'
 import { RANGE_ITEMS, getRangeInputItems } from './get-items/range'
 import {
     DEFAULT_DOCUMENT_ITEMS,
@@ -36,15 +36,15 @@ interface QuickPickInput {
 }
 
 export interface EditInputInitialValues {
-    initialValue?: string
+    initialRange: vscode.Range
+    initialModel: EditSupportedModels
+    initialRangeSource: EditRangeSource
+    initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
-    initialModel?: EditSupportedModels
-    initialRangeSource?: EditRangeSource
 }
 
 export const getInput = async (
     document: vscode.TextDocument,
-    range: vscode.Range,
     intent: EditIntent,
     initialValues: EditInputInitialValues,
     source: ChatEventSource
@@ -53,9 +53,20 @@ export const getInput = async (
     if (!editor) {
         return null
     }
-    const initialRange = range
-    let activeModel: EditSupportedModels = initialValues.initialModel ?? 'anthropic/claude-2.1'
-    let activeRangeSource: EditRangeSource = initialValues.initialRangeSource ?? 'selection'
+
+    let activeRange = initialValues.initialRange
+    let activeModel: EditSupportedModels = initialValues.initialModel
+    let activeRangeSource: EditRangeSource = initialValues.initialRangeSource
+
+    // ContextItems to store possible user-provided context
+    const contextItems = new Map<string, ContextFile>()
+    const selectedContextItems = new Map<string, ContextFile>()
+
+    // Initialize the selectedContextItems with any previous items
+    // This is primarily for edit retries, where a user may want to reuse their context
+    for (const file of initialValues.initialSelectedContextFiles ?? []) {
+        selectedContextItems.set(getLabelForContextFile(file), file)
+    }
 
     /**
      * Set the title of the quick pick to include the file and range
@@ -67,14 +78,13 @@ export const getInput = async (
         const fileRange = getTitleRange(newRange)
         activeTitle = `Edit ${relativeFilePath}:${fileRange} with Cody`
     }
-    updateActiveTitle(initialRange)
+    updateActiveTitle(activeRange)
 
     /**
      * Listens for text document changes and updates the range when changes occur.
      * This allows the range to stay in sync if the user continues editing after
      * requesting the refactoring.
      */
-    let activeRange = initialRange
     const registerRangeListener = () => {
         return vscode.workspace.onDidChangeTextDocument(event => {
             if (event.document !== document) {
@@ -106,34 +116,20 @@ export const getInput = async (
         updateActiveTitle(activeRange)
     }
 
-    // ContextItems to store possible context
-    const contextItems = new Map<string, ContextFile>()
-    const selectedContextItems = new Map<string, ContextFile>()
-
-    // Initialize the selectedContextItems with any previous items
-    // This is primarily for edit retries, where a user may want to reuse their context
-    for (const file of initialValues.initialSelectedContextFiles ?? []) {
-        selectedContextItems.set(getLabelForContextFile(file), file)
-    }
-
     return new Promise(resolve => {
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Change Model',
             getItems: () => getModelInputItems(activeModel),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: target => {
-                if (target === vscode.QuickInputButtons.Back) {
-                    editInput.render(activeTitle, editInput.input.value)
-                }
-            },
+            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidChangeActive: items => {
                 const item = items[0]
-                if (item.label === '$(anthropic-logo) Claude 2.1') {
+                if (item.label === MODEL_ITEMS['anthropic/claude-2.1'].label) {
                     activeModel = 'anthropic/claude-2.1'
                     return
                 }
-                if (item.label === '$(anthropic-logo) Claude Instant') {
+                if (item.label === MODEL_ITEMS['anthropic/claude-instant-1.2'].label) {
                     activeModel = 'anthropic/claude-instant-1.2'
                     return
                 }
@@ -144,26 +140,29 @@ export const getInput = async (
         const rangeInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Change Range',
-            getItems: () => getRangeInputItems(activeRangeSource),
+            getItems: () => getRangeInputItems(activeRangeSource, initialValues.initialRangeSource),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: target => {
-                if (target === vscode.QuickInputButtons.Back) {
-                    editInput.render(activeTitle, editInput.input.value)
-                }
-            },
+            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidChangeActive: async items => {
                 const item = items[0]
                 if (item.label === RANGE_ITEMS.selection.label) {
                     updateActiveRange(
-                        new vscode.Selection(initialRange.start, initialRange.end),
+                        new vscode.Selection(
+                            initialValues.initialRange.start,
+                            initialValues.initialRange.end
+                        ),
                         'selection'
                     )
                     return
                 }
                 if (item.label === RANGE_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
-                        ignoreSelection: true,
-                    })
+                    const smartSelection = await getEditSmartSelection(
+                        editor.document,
+                        initialValues.initialRange,
+                        {
+                            ignoreSelection: true,
+                        }
+                    )
                     updateActiveRange(
                         new vscode.Selection(smartSelection.start, smartSelection.end),
                         'expanded'
@@ -171,7 +170,10 @@ export const getInput = async (
                     return
                 }
                 if (item.label === RANGE_ITEMS.maximum.label) {
-                    const maximumRange = getEditMaximumSelection(editor.document, initialRange)
+                    const maximumRange = getEditMaximumSelection(
+                        editor.document,
+                        initialValues.initialRange
+                    )
                     updateActiveRange(
                         new vscode.Selection(maximumRange.start, maximumRange.end),
                         'maximum'
@@ -185,26 +187,30 @@ export const getInput = async (
         const documentInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Document...',
-            getItems: () => getDocumentInputItems(editor.document, activeRange),
+            getItems: () =>
+                getDocumentInputItems(editor.document, activeRange, initialValues.initialRangeSource),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: target => {
-                if (target === vscode.QuickInputButtons.Back) {
-                    editInput.render(activeTitle, editInput.input.value)
-                }
-            },
+            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidChangeActive: async items => {
                 const item = items[0]
                 if (item.label === DEFAULT_DOCUMENT_ITEMS.selection.label) {
                     updateActiveRange(
-                        new vscode.Selection(initialRange.start, initialRange.end),
+                        new vscode.Selection(
+                            initialValues.initialRange.start,
+                            initialValues.initialRange.end
+                        ),
                         'selection'
                     )
                     return
                 }
                 if (item.label === DEFAULT_DOCUMENT_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
-                        ignoreSelection: true,
-                    })
+                    const smartSelection = await getEditSmartSelection(
+                        editor.document,
+                        initialValues.initialRange,
+                        {
+                            ignoreSelection: true,
+                        }
+                    )
                     updateActiveRange(
                         new vscode.Selection(smartSelection.start, smartSelection.end),
                         'expanded'
@@ -241,26 +247,30 @@ export const getInput = async (
         const unitTestInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Generate a Unit Test for...',
-            getItems: () => getTestInputItems(editor.document, activeRange),
+            getItems: () =>
+                getTestInputItems(editor.document, activeRange, initialValues.initialRangeSource),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: target => {
-                if (target === vscode.QuickInputButtons.Back) {
-                    editInput.render(activeTitle, editInput.input.value)
-                }
-            },
+            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidChangeActive: async items => {
                 const item = items[0]
                 if (item.label === DEFAULT_TEST_ITEMS.selection.label) {
                     updateActiveRange(
-                        new vscode.Selection(initialRange.start, initialRange.end),
+                        new vscode.Selection(
+                            initialValues.initialRange.start,
+                            initialValues.initialRange.end
+                        ),
                         'selection'
                     )
                     return
                 }
                 if (item.label === DEFAULT_TEST_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
-                        ignoreSelection: true,
-                    })
+                    const smartSelection = await getEditSmartSelection(
+                        editor.document,
+                        initialValues.initialRange,
+                        {
+                            ignoreSelection: true,
+                        }
+                    )
                     updateActiveRange(
                         new vscode.Selection(smartSelection.start, smartSelection.end),
                         'expanded'
@@ -286,6 +296,10 @@ export const getInput = async (
             },
         })
 
+        unitTestInput.input.onDidHide(() => {
+            console.log('HIDDEEENNN!!')
+        })
+
         const editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Your edit instructions (@ to include code, ⏎ to submit)',
@@ -304,7 +318,10 @@ export const getInput = async (
                 : {}),
             onDidChangeValue: async value => {
                 const input = editInput.input
-                if (initialValues.initialValue !== undefined && value === initialValues.initialValue) {
+                if (
+                    initialValues.initialInputValue !== undefined &&
+                    value === initialValues.initialInputValue
+                ) {
                     // Noop, this event is fired when an initial value is set
                     return
                 }
@@ -406,7 +423,8 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, initialValues.initialValue || '')
+        // TODO: Restore selection on input?
+        editInput.render(activeTitle, initialValues.initialInputValue || '')
         editInput.input.activeItems = []
     })
 }

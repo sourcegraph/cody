@@ -163,15 +163,15 @@ export class FixupController
         range: vscode.Range,
         rangeSource: EditRangeSource,
         mode: EditMode,
+        model: EditSupportedModels,
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
-            range,
             intent,
-            { initialRangeSource: rangeSource },
+            { initialRange: range, initialModel: model, initialRangeSource: rangeSource },
             source
         )
         if (!input) {
@@ -1065,10 +1065,11 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
             document,
-            task.selectionRange,
             task.intent,
             {
-                initialValue: task.instruction,
+                initialInputValue: task.instruction,
+                initialRange: task.selectionRange,
+                initialRangeSource: 'selection',
                 initialSelectedContextFiles: task.userContextFiles,
                 initialModel: task.model,
             },

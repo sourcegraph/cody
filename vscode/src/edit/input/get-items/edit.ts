@@ -36,7 +36,7 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 export const getEditInputItems = (
     intent: EditIntent,
     activeValue: string,
-    activeRange: EditRangeSource,
+    activeRangeSource: EditRangeSource,
     activeModel: EditSupportedModels
 ): GetItemsResult => {
     const items: vscode.QuickPickItem[] = []
@@ -51,7 +51,7 @@ export const getEditInputItems = (
     })
 
     if (intent === 'edit') {
-        items.push({ ...RANGE_ITEM, detail: RANGE_ITEMS[activeRange].label })
+        items.push({ ...RANGE_ITEM, detail: RANGE_ITEMS[activeRangeSource].label })
     }
 
     // Ever-present items

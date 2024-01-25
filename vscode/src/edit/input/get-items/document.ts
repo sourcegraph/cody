@@ -26,7 +26,8 @@ export const DOCUMENT_ITEMS_RANGE_MAP = new Map<vscode.QuickPickItem, vscode.Ran
 
 export const getDocumentInputItems = async (
     document: vscode.TextDocument,
-    activeRange: vscode.Range
+    activeRange: vscode.Range,
+    initialRangeSource: EditRangeSource
 ): Promise<GetItemsResult> => {
     // Clear any cached document items
     DOCUMENT_ITEMS_RANGE_MAP.clear()
@@ -36,8 +37,14 @@ export const getDocumentInputItems = async (
         document.uri
     )
 
+    const defaultDocumentItems = [DEFAULT_DOCUMENT_ITEMS.expanded]
+    if (initialRangeSource !== 'expanded') {
+        // Only if the initial range was not already expanded, otherwise there's no point showing this option
+        defaultDocumentItems.unshift(DEFAULT_DOCUMENT_ITEMS.selection)
+    }
+
     if (!symbols || symbols.length === 0) {
-        return { items: Object.values(DEFAULT_DOCUMENT_ITEMS) }
+        return { items: defaultDocumentItems }
     }
 
     const relevantSymbols = symbols.filter(sym => symbolIsFunctionLike(sym) || symbolIsVariableLike(sym))
@@ -51,15 +58,17 @@ export const getDocumentInputItems = async (
     }
     const activeItem = wrappingSymbol
         ? items.find(({ label }) => label === `$(symbol-method) ${wrappingSymbol.name}`)
-        : null
+        : initialRangeSource === 'expanded'
+          ? DEFAULT_DOCUMENT_ITEMS.expanded
+          : DEFAULT_DOCUMENT_ITEMS.selection
 
     return {
         items: [
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
             ...items,
             { label: 'other', kind: vscode.QuickPickItemKind.Separator },
-            ...Object.values(DEFAULT_DOCUMENT_ITEMS),
+            ...defaultDocumentItems,
         ],
-        activeItems: activeItem ? [activeItem] : [DEFAULT_DOCUMENT_ITEMS.selection],
+        activeItems: activeItem ? [activeItem] : [],
     }
 }

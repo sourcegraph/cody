@@ -19,10 +19,18 @@ export const RANGE_ITEMS: Record<EditRangeSource, vscode.QuickPickItem> = {
     },
 } as const
 
-export const getRangeInputItems = (activeRangeType: EditRangeSource): GetItemsResult => {
-    const activeItem = RANGE_ITEMS[activeRangeType]
+export const getRangeInputItems = (
+    activeRangeSource: EditRangeSource,
+    initialRangeSource: EditRangeSource
+): GetItemsResult => {
+    const activeItem = RANGE_ITEMS[activeRangeSource]
     const remainingItems = Object.entries(RANGE_ITEMS)
-        .filter(([key]) => key !== activeRangeType)
+        .filter(
+            ([key]) =>
+                key !== activeRangeSource &&
+                // If the initial range was already expanded, there's no point showing the selection option
+                !(key === 'selection' && initialRangeSource === 'expanded')
+        )
         .map(([_, item]) => item)
 
     return {

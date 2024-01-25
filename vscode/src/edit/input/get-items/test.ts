@@ -23,7 +23,8 @@ export const TEST_ITEMS_RANGE_MAP = new Map<vscode.QuickPickItem, vscode.Range>(
 
 export const getTestInputItems = async (
     document: vscode.TextDocument,
-    activeRange: vscode.Range
+    activeRange: vscode.Range,
+    initialRangeSource: EditRangeSource
 ): Promise<GetItemsResult> => {
     // Clear any cached test items
     TEST_ITEMS_RANGE_MAP.clear()
@@ -33,8 +34,14 @@ export const getTestInputItems = async (
         document.uri
     )
 
+    const defaultTestItems = [DEFAULT_TEST_ITEMS.expanded]
+    if (initialRangeSource !== 'expanded') {
+        // Only if the initial range was not already expanded, otherwise there's no point showing this option
+        defaultTestItems.unshift(DEFAULT_TEST_ITEMS.selection)
+    }
+
     if (!symbols || symbols.length === 0) {
-        return { items: Object.values(DEFAULT_TEST_ITEMS) }
+        return { items: defaultTestItems }
     }
 
     const relevantSymbols = symbols.filter(symbolIsFunctionLike)
@@ -48,15 +55,17 @@ export const getTestInputItems = async (
     }
     const activeItem = wrappingSymbol
         ? items.find(({ label }) => label === `$(symbol-method) ${wrappingSymbol.name}`)
-        : null
+        : initialRangeSource === 'expanded'
+          ? DEFAULT_TEST_ITEMS.expanded
+          : DEFAULT_TEST_ITEMS.selection
 
     return {
         items: [
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
             ...items,
             { label: 'other', kind: vscode.QuickPickItemKind.Separator },
-            ...Object.values(DEFAULT_TEST_ITEMS),
+            ...defaultTestItems,
         ],
-        activeItems: activeItem ? [activeItem] : [DEFAULT_TEST_ITEMS.selection],
+        activeItems: activeItem ? [activeItem] : [],
     }
 }

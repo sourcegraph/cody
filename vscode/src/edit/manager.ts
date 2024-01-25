@@ -101,28 +101,33 @@ export class EditManager implements vscode.Disposable {
         const intent = isGenerateIntent(document, range) ? 'add' : args.intent || DEFAULT_EDIT_INTENT
         const model = args.model || DEFAULT_EDIT_MODEL
 
-        const task = args.instruction?.trim()
-            ? await this.controller.createTask(
-                  document,
-                  args.instruction,
-                  args.userContextFiles ?? [],
-                  model,
-                  range,
-                  rangeSource,
-                  intent,
-                  mode,
-                  source,
-                  args.contextMessages
-              )
-            : await this.controller.promptUserForTask(
-                  document,
-                  range,
-                  rangeSource,
-                  mode,
-                  intent,
-                  args.contextMessages || [],
-                  source
-              )
+        let task: FixupTask | null
+        if (args.instruction?.trim()) {
+            task = await this.controller.createTask(
+                document,
+                args.instruction,
+                args.userContextFiles ?? [],
+                model,
+                range,
+                rangeSource,
+                intent,
+                mode,
+                source,
+                args.contextMessages
+            )
+        } else {
+            task = await this.controller.promptUserForTask(
+                document,
+                range,
+                rangeSource,
+                mode,
+                model,
+                intent,
+                args.contextMessages || [],
+                source
+            )
+        }
+
         if (!task) {
             return
         }
