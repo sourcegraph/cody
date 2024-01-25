@@ -771,8 +771,8 @@ describe('Agent', () => {
                 await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
                     addEnhancedContext: true,
                 })
-            expect(lastMessage?.text?.toLocaleLowerCase().includes('code nav')).toBeTruthy()
-            expect(lastMessage?.text?.toLocaleLowerCase().includes('sourcegraph')).toBeTruthy()
+            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
+            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)

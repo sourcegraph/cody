@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
-    ContextWindowLimitError,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -766,25 +765,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
+        const { prompt, newContextUsed } = await prompter.makePrompt(
             this.chatModel,
             getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
         this.chatModel.setNewContextUsed(newContextUsed)
-        if (contextLimitWarnings.length > 0) {
-            const warningMsg = contextLimitWarnings
-                .map(w => {
-                    w = w.trim()
-                    if (!w.endsWith('.')) {
-                        w += '.'
-                    }
-                    return w
-                })
-                .join(' ')
-            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
-        }
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
