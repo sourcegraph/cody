@@ -1,0 +1,36 @@
+.chat-actions-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.chat-action-button {
+    all: unset;
+    padding: 2px 8px;
+    font-size: var(--type-ramp-minus1-font-size);
+    background-color: var(--vscode-button-secondaryBackground, transparent);
+    border-radius: 2px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+}
+
+.chat-action-button:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.chat-action-button:focus,
+.chat-action-button:focus-visible,
+.chat-action-button:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.chat-action-keybind {
+    margin-left: 0.25rem;
+    opacity: 0.5;
+}
+

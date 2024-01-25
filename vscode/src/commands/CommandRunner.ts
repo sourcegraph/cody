@@ -17,6 +17,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { CodyCommandArgs } from '.'
 import { getContextForCommand } from './utils/get-context'
+import type { FixupTask } from '../non-stop/FixupTask'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -36,6 +37,7 @@ export class CommandRunner implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private kind: string
     public isFixupRequest = false
+    public fixupTask?: Promise<FixupTask | undefined>
 
     constructor(
         private readonly vscodeEditor: VSCodeEditor,
@@ -86,7 +88,7 @@ export class CommandRunner implements vscode.Disposable {
 
         // Run fixup if this is a edit command
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(command.mode === 'insert')
+            this.fixupTask = this.handleFixupRequest(command.mode === 'insert')
         }
     }
 
@@ -135,7 +137,7 @@ export class CommandRunner implements vscode.Disposable {
      * handleFixupRequest method handles executing fixup based on editor selection.
      * Creates range and instruction, calls fixup command.
      */
-    private async handleFixupRequest(insertMode = false): Promise<void> {
+    private async handleFixupRequest(insertMode = false): Promise<FixupTask | undefined> {
         logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
@@ -179,7 +181,7 @@ export class CommandRunner implements vscode.Disposable {
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
 
         const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
-        await executeEdit(
+        return executeEdit(
             {
                 range,
                 instruction,

@@ -47,7 +47,7 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export { defaultCodyCommandContext } from './commands'
+export { defaultCodyCommandContext, isFixupCommand } from './commands'
 export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
