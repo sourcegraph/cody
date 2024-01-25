@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from './types'
+import type { EditSupportedModels } from './prompt'
 
 export interface ExecuteEditArguments {
     document?: vscode.TextDocument
@@ -12,6 +13,7 @@ export interface ExecuteEditArguments {
     intent?: EditIntent
     range?: vscode.Range
     mode?: EditMode
+    model?: EditSupportedModels
 }
 
 /**

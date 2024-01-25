@@ -2,7 +2,8 @@ import * as vscode from 'vscode'
 import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 
 import type { EditSupportedModels } from '../prompt'
-import type { ExecuteEditArguments } from '../execute'
+import * as defaultCommands from '../../commands/prompt/cody.json'
+import { executeEdit } from '../execute'
 import { getEditor } from '../../editor/active-editor'
 import { getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
@@ -10,7 +11,7 @@ import { getEditSmartSelection } from '../utils/edit-selection'
 import { createQuickPick } from './quick-pick'
 import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
-import type { EditRangeSource } from '../types'
+import type { EditMode, EditRangeSource } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems } from './get-items/model'
 import { RANGE_ITEMS, getRangeInputItems } from './get-items/range'
@@ -34,7 +35,7 @@ interface QuickPickInput {
     rangeSource: EditRangeSource
 }
 
-export interface EditInputParams extends ExecuteEditArguments {
+export interface EditInputInitialValues {
     initialValue?: string
     initialSelectedContextFiles?: ContextFile[]
     initialModel?: EditSupportedModels
@@ -42,19 +43,17 @@ export interface EditInputParams extends ExecuteEditArguments {
 }
 
 export const getInput = async (
-    params: EditInputParams,
+    document: vscode.TextDocument,
+    range: vscode.Range,
+    mode: EditMode,
+    initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
     const editor = getEditor().active
     if (!editor) {
         return null
     }
-    const document = params.document || editor.document
-    const initialRange = params.range || editor.selection
-    if (!document || !initialRange) {
-        return null
-    }
-
+    const initialRange = range
     /**
      * Set the title of the quick pick to include the file and range
      * Update the title as the range changes
@@ -110,12 +109,12 @@ export const getInput = async (
 
     // Initialize the selectedContextItems with any previous items
     // This is primarily for edit retries, where a user may want to reuse their context
-    for (const file of params.initialSelectedContextFiles ?? []) {
+    for (const file of initialValues.initialSelectedContextFiles ?? []) {
         selectedContextItems.set(getLabelForContextFile(file), file)
     }
 
-    let activeModel: EditSupportedModels = params.initialModel ?? 'anthropic/claude-2.1'
-    let activeRangeSource: EditRangeSource = params.initialRangeSource ?? 'selection'
+    let activeModel: EditSupportedModels = initialValues.initialModel ?? 'anthropic/claude-2.1'
+    let activeRangeSource: EditRangeSource = initialValues.initialRangeSource ?? 'selection'
 
     return new Promise(resolve => {
         const modelInput = createQuickPick({
@@ -219,15 +218,20 @@ export const getInput = async (
                 )
             },
             onDidAccept: () => {
-                // TODO: Better interopability with the `doc` functionality.
-                // Return edit mode too? or intent or whatever
-                return resolve({
-                    instruction: 'Document this symbol',
-                    userContextFiles: [],
-                    model: activeModel,
-                    range: activeRange,
-                    rangeSource: activeRangeSource,
-                })
+                // Hide the input and execute a new edit for 'Document'
+                documentInput.input.hide()
+                return executeEdit(
+                    {
+                        document,
+                        instruction: defaultCommands.commands.doc.prompt,
+                        range: activeRange,
+                        intent: 'doc',
+                        mode: 'insert',
+                        contextMessages: [],
+                        userContextFiles: [],
+                    },
+                    'menu'
+                )
             },
         })
 
@@ -270,15 +274,11 @@ export const getInput = async (
                 )
             },
             onDidAccept: () => {
-                // TODO: Better interopability with the `test` functionality.
-                // Return edit mode too? or intent or whatever
-                return resolve({
-                    instruction: 'Test this function',
-                    userContextFiles: [],
-                    model: activeModel,
-                    range: activeRange,
-                    rangeSource: activeRangeSource,
-                })
+                // Hide the input and execute a new edit for 'Test'
+                unitTestInput.input.hide()
+                // TODO: This should entirely run through `executeEdit` when
+                // the unit test command has fully moved over to Edit.
+                return vscode.commands.executeCommand('cody.command.unit-tests')
             },
         })
 
@@ -286,7 +286,7 @@ export const getInput = async (
             title: activeTitle,
             placeHolder: 'Your edit instructions (@ to include code, ⏎ to submit)',
             getItems: () =>
-                getEditInputItems(params, editInput.input.value, activeRangeSource, activeModel),
+                getEditInputItems(mode, editInput.input.value, activeRangeSource, activeModel),
             ...(source === 'menu'
                 ? {
                       buttons: [vscode.QuickInputButtons.Back],
@@ -300,7 +300,7 @@ export const getInput = async (
                 : {}),
             onDidChangeValue: async value => {
                 const input = editInput.input
-                if (params.initialValue !== undefined && value === params.initialValue) {
+                if (initialValues.initialValue !== undefined && value === initialValues.initialValue) {
                     // Noop, this event is fired when an initial value is set
                     return
                 }
@@ -323,7 +323,7 @@ export const getInput = async (
                     // Nothing to match, clear existing items
                     // eslint-disable-next-line no-self-assign
                     input.items = getEditInputItems(
-                        params,
+                        mode,
                         input.value,
                         activeRangeSource,
                         activeModel
@@ -402,7 +402,7 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, params.initialValue || '')
+        editInput.render(activeTitle, initialValues.initialValue || '')
         editInput.input.activeItems = []
     })
 }

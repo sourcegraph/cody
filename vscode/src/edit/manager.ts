@@ -13,8 +13,9 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import type { EditIntent, EditMode, EditRangeSource } from './types'
+import type { EditRangeSource } from './types'
 import { getEditSmartSelection } from './utils/edit-selection'
+import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE, DEFAULT_EDIT_MODEL } from './constants'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -34,16 +35,7 @@ export class EditManager implements vscode.Disposable {
             this.controller,
             vscode.commands.registerCommand(
                 'cody.command.edit-code',
-                (
-                    args: {
-                        range?: vscode.Range
-                        instruction?: string
-                        intent?: EditIntent
-                        document?: vscode.TextDocument
-                        mode?: EditMode
-                    },
-                    source?: ChatEventSource
-                ) => this.executeEdit(args, source)
+                (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
             )
         )
     }
@@ -98,20 +90,32 @@ export class EditManager implements vscode.Disposable {
             rangeSource = 'expanded'
         }
 
+        // Set default edit configuration, if not provided
+        const mode = args.mode || DEFAULT_EDIT_MODE
+        const intent = args.intent || DEFAULT_EDIT_INTENT
+        const model = args.model || DEFAULT_EDIT_MODEL
+
         const task = args.instruction?.trim()
             ? await this.controller.createTask(
                   document,
                   args.instruction,
                   args.userContextFiles ?? [],
-                  'anthropic/claude-2.1', // TODO: Find a better place for the default model or derive from settings
+                  model,
                   range,
                   rangeSource,
-                  args.intent,
-                  args.mode,
+                  intent,
+                  mode,
                   source,
                   args.contextMessages
               )
-            : await this.controller.promptUserForTask(args, source)
+            : await this.controller.promptUserForTask(
+                  document,
+                  range,
+                  mode,
+                  intent,
+                  args.contextMessages || [],
+                  source
+              )
         if (!task) {
             return
         }

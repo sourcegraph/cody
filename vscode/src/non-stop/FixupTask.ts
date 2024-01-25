@@ -57,7 +57,7 @@ export class FixupTask {
         public selectionRange: vscode.Range,
         public rangeSource: EditRangeSource,
         /* The mode indicates how code should be inserted */
-        public mode: EditMode = 'edit',
+        public readonly mode: EditMode,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
         public readonly contextMessages?: ContextMessage[],

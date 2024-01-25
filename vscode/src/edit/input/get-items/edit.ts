@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
-import type { EditInputParams } from '../get-input'
 import type { EditSupportedModels } from '../../prompt'
-import type { EditRangeSource } from '../../types'
+import type { EditMode, EditRangeSource } from '../../types'
 import type { GetItemsResult } from '../quick-pick'
 import { RANGE_ITEMS } from './range'
 import { MODEL_ITEMS } from './model'
@@ -35,7 +34,7 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 }
 
 export const getEditInputItems = (
-    params: EditInputParams,
+    mode: EditMode,
     activeValue: string,
     activeRange: EditRangeSource,
     activeModel: EditSupportedModels
@@ -50,7 +49,7 @@ export const getEditInputItems = (
         kind: vscode.QuickPickItemKind.Separator,
     })
 
-    if (params.mode !== 'file' && params.mode !== 'insert') {
+    if (mode !== 'file' && mode !== 'insert') {
         items.push({ ...RANGE_ITEM, detail: RANGE_ITEMS[activeRange].label })
     }
     items.push({ ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label })

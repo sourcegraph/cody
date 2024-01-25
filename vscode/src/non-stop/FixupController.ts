@@ -159,33 +159,33 @@ export class FixupController
     }
 
     public async promptUserForTask(
-        args: ExecuteEditArguments,
+        document: vscode.TextDocument,
+        range: vscode.Range,
+        mode: EditMode,
+        intent: EditIntent,
+        contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
-        if (!args.document) {
-            return null
-        }
-
-        const input = await getInput(args, source)
+        const input = await getInput(document, range, mode, {}, source)
         if (!input) {
             return null
         }
 
         const task = this.createTask(
-            args.document,
+            document,
             input.instruction,
             input.userContextFiles,
             input.model,
             input.range,
             input.rangeSource,
-            args.intent,
-            args.mode,
+            intent,
+            mode,
             source,
-            args.contextMessages
+            contextMessages
         )
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(args.document)
+        void vscode.window.showTextDocument(document)
 
         return task
     }
@@ -197,8 +197,8 @@ export class FixupController
         model: EditSupportedModels,
         selectionRange: vscode.Range,
         rangeSource: EditRangeSource,
-        intent?: EditIntent,
-        mode: EditMode = 'edit',
+        intent: EditIntent,
+        mode: EditMode,
         source?: ChatEventSource,
         contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {
@@ -207,7 +207,7 @@ export class FixupController
             fixupFile,
             instruction,
             userContextFiles,
-            intent ?? 'edit',
+            intent,
             selectionRange,
             rangeSource,
             mode,
@@ -1039,9 +1039,10 @@ export class FixupController
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
+            document,
+            task.selectionRange,
+            task.mode,
             {
-                document,
-                range: task.selectionRange,
                 initialValue: task.instruction,
                 initialSelectedContextFiles: task.userContextFiles,
                 initialModel: task.model,
