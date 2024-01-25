@@ -139,8 +139,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         const config = getConfiguration()
         if (
             this._currentCodebase !== undefined &&
-            // TODO(dpc): This comparison must always fail because one is a string and one is a URI
-            workspaceRoot?.toString() === this._currentCodebase?.localFolder &&
+            workspaceRoot?.toString() === this._currentCodebase?.localFolder.toString() &&
             config.codebase === this._currentCodebase?.setting &&
             this._currentCodebase?.remoteRepoId
         ) {
@@ -155,8 +154,6 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             // Get codebase from config or fallback to getting codebase name from current file URL
             // Always use the codebase from config as this is manually set by the user
             newCodebase.remote =
-                // TODO(dpc): config.codebase is set to the first workspace folder, even if the cody.codebase setting is not explicitly set,
-                // so changing the current file never has an effect.
                 config.codebase ||
                 (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
             if (newCodebase.remote) {
