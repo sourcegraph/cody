@@ -8,6 +8,7 @@ import { Semaphore } from 'async-mutex';
 
 
 interface ChatReply {
+    repo_path: string
     question: string
     ground_truth_answer: string
     reply: ExtensionMessage
@@ -140,6 +141,7 @@ async function simulateChatInRepo(
 
     await client.request('webview/didDispose', {id})
     return {
+        repo_path: options.workspace,
         question: chatEvalConfig.question,
         ground_truth_answer: chatEvalConfig.ground_truth_answer,
         reply: reply,
