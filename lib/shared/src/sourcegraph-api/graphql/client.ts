@@ -118,7 +118,7 @@ interface RepositoryIdResponse {
 
 interface RepositoryIdsResponse {
     repositories: {
-        nodes: { name: string, id: string }[]
+        nodes: { name: string; id: string }[]
     }
 }
 
@@ -443,13 +443,14 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getRepoIds(names: string[], first: number): Promise<{name: string, id: string}[] | Error> {
+    public async getRepoIds(
+        names: string[],
+        first: number
+    ): Promise<{ name: string; id: string }[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
             names,
             first,
-        }).then(response =>
-            extractDataOrError(response, data => data.repositories?.nodes || [])
-        )
+        }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
     public async contextSearch(
@@ -467,7 +468,11 @@ export class SourcegraphGraphQLAPIClient {
                     commit: item.blob.commit.oid,
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
-                    uri: URI.parse(`${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${item.startLine}-${item.endLine}`),
+                    uri: URI.parse(
+                        `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
+                            item.startLine
+                        }-${item.endLine}`
+                    ),
                     startLine: item.startLine,
                     endLine: item.endLine,
                     content: item.chunkContent,

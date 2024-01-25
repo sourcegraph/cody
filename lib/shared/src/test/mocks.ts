@@ -8,7 +8,7 @@ import type {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '../editor'
-import { type IntentClassificationOption, type IntentDetector } from '../intent-detector'
+import type { IntentClassificationOption, IntentDetector } from '../intent-detector'
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
