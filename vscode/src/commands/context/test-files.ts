@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import path from 'path'
 import { type URI, Utils } from 'vscode-uri'
 import { isValidTestFile } from '../utils/commands'
-import { decodeVSCodeTextDoc, findVSCodeFiles } from '../utils/workspace-files'
+import { getDocText, findVSCodeFiles } from '../utils/workspace-files'
 
 export async function getContextFilesForTests(currentFile: vscode.Uri): Promise<ContextFile[]> {
     const contextFiles: ContextFile[] = []
@@ -122,7 +122,7 @@ function createVSCodeTestSearchPattern(file: vscode.Uri, allTestFiles?: boolean)
 
 async function createContextFile(file: URI): Promise<ContextFile | undefined> {
     try {
-        const decoded = await decodeVSCodeTextDoc(file)
+        const decoded = await getDocText(file)
         const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
         // From line 0 to the end of truncatedContent
         const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)

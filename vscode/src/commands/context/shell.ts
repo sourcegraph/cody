@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 
 import { logError } from '../../log'
 
-import { outputWrapper } from '../utils/helpers'
+import { outputWrapper } from '../utils/config-file'
 import { MAX_CURRENT_FILE_TOKENS, type ContextFile, truncateText } from '@sourcegraph/cody-shared'
 import path from 'node:path/posix'
 

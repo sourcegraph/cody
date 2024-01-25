@@ -13,6 +13,8 @@ import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
  */
 class CommandsController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
+
+    // Provider of default commands and custom commands
     private provider: CommandsProvider | undefined
 
     public init(provider?: CommandsProvider) {
@@ -56,8 +58,15 @@ class CommandsController implements vscode.Disposable {
     }
 }
 
+/**
+ * A aingleton instance of the CommandsController class.
+ * Activate on extension activation that will initialize the CommandsProvider.
+ */
 const controller = new CommandsController()
-
 export const setCommandController = (provider?: CommandsProvider) => controller.init(provider)
 
+/**
+ * Binds the execute method of the CommandsController instance to be exported as a constant function.
+ * This allows the execute method to be called without needing a reference to the controller instance.
+ */
 export const executeCodyCommand = controller.execute.bind(controller)

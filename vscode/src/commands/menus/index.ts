@@ -4,7 +4,7 @@ import { window, type QuickPickItem, commands } from 'vscode'
 import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separators } from './constant'
 
 import { vscodeDefaultCommands } from '../services/commands-provider'
-import { openCustomCommandDocsLink } from '../utils/helpers'
+import { openCustomCommandDocsLink } from '../utils/config-file'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import type { CustomCommandsItem } from './types'
 

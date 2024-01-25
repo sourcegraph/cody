@@ -20,12 +20,13 @@ import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
 import { executeChat } from './default/ask'
 
 /**
- * Handles executing a Cody command as:
+ * NOTE: Used by Command Controller only.
+ *
+ * Handles sorting and executing a Cody command into one of the following:
  * - an inline edit command (mode !== 'ask)
  * - a chat command (mode === 'ask')
  *
  * Handles prompt building and context fetching for commands.
- * NOTE: Used by Command Controller only.
  */
 export class CommandRunner implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []

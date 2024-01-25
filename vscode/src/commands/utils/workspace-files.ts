@@ -14,16 +14,6 @@ export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
     }
 }
 
-export async function getFilePathContext(fileUri: vscode.Uri): Promise<string> {
-    try {
-        const decoded = await decodeVSCodeTextDoc(fileUri)
-        return decoded
-    } catch (error) {
-        console.error(error)
-    }
-    return ''
-}
-
 /**
  * Finds VS Code workspace files matching a global pattern.
  * @param globalPattern - The global file search pattern to match.
@@ -59,7 +49,7 @@ export async function findVSCodeFiles(
  * @param fileUri - The VS Code URI of the file to decode.
  * @returns A Promise resolving to the decoded text contents of the file.
  */
-export async function decodeVSCodeTextDoc(fileUri: URI): Promise<string> {
+export async function getDocText(fileUri: URI): Promise<string> {
     try {
         const bytes = await vscode.workspace.fs.readFile(fileUri)
         const decoded = new TextDecoder('utf-8').decode(bytes)

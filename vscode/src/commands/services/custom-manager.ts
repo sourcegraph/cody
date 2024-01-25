@@ -13,7 +13,7 @@ import {
     createJSONFile,
     openCustomCommandDocsLink,
     saveJSONFile,
-} from '../utils/helpers'
+} from '../utils/config-file'
 import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 

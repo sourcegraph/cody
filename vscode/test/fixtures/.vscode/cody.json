@@ -1,0 +1,12 @@
+{
+    "commands": {
+        "e2e-test": {
+            "description": "E2E Test Example",
+            "prompt": "This is an example created for the e2e test.",
+            "context": {
+                "selection": false,
+                "currentDir": true
+            }
+        }
+    }
+}
