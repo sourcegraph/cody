@@ -16,11 +16,6 @@ interface GetContextOptions {
     maxChars: number
 }
 
-// k parameter for the reciprocal rank fusion scoring. 60 is the default value in many places
-//
-// c.f. https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking#how-rrf-ranking-works
-const RRF_K = 60
-
 export interface ContextSummary {
     /** Name of the strategy being used */
     strategy: ContextStrategy
