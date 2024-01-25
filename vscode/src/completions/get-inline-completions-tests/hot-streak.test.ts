@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
@@ -7,6 +7,14 @@ import { initTreeSitterParser } from '../test-helpers'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
+    beforeEach(() => {
+        vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
             const { requestManager, ...firstRequest } = await getInlineCompletionsWithInlinedChunks(
@@ -23,6 +31,7 @@ describe('[getInlineCompletions] hot streak', () => {
                 }
             )
 
+            await vi.runAllTimersAsync()
             // Wait for hot streak completions be yielded and cached.
             await firstRequest.completionResponseGeneratorPromise
             expect(firstRequest.items[0].insertText).toEqual('console.log(2)')
@@ -167,7 +176,7 @@ describe('[getInlineCompletions] hot streak', () => {
 
         // TODO(valery): add more test cases
         it('yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready', async () => {
-            const { requestManager, ...firstRequest } = await getInlineCompletionsWithInlinedChunks(
+            const completionsPromise = getInlineCompletionsWithInlinedChunks(
                 `function myFunction█() {
                     if(i > 1) {█
                         console.log(2)
@@ -192,6 +201,12 @@ describe('[getInlineCompletions] hot streak', () => {
                 }
             )
 
+            // Wait for the first completion to be ready
+            vi.advanceTimersByTime(15)
+            // Release the `completionsPromise`
+            await vi.runAllTimersAsync()
+
+            const { requestManager, ...firstRequest } = await completionsPromise
             await firstRequest.completionResponseGeneratorPromise
             expect(firstRequest.items[0].insertText).toEqual('() {')
 

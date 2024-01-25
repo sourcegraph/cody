@@ -61,7 +61,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             },
         }
 
-        // TODO(valery): disable hot-streak for long multline completions?
+        // TODO(valery): disable hot-streak for long multiline completions?
         if (hotStreak) {
             hotStreakExtractor = createHotStreakExtractor({
                 completedCompletion,
@@ -104,10 +104,10 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
         /**
          * This completion was triggered with the multiline trigger at the end of current line.
-         * Process it as the usual multline completion: continue streaming until it's truncated.
+         * Process it as the usual multiline completion: continue streaming until it's truncated.
          */
         if (multiline) {
-            addAutocompleteDebugEvent('multline_branch')
+            addAutocompleteDebugEvent('multiline_branch')
             const completion = extractCompletion(rawCompletion, {
                 document: providerOptions.document,
                 docContext,
