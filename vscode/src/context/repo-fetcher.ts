@@ -81,8 +81,7 @@ export class RepoFetcher implements vscode.Disposable {
     }
 
     private async fetch(): Promise<void> {
-        // DONOTCOMMIT: Increase this and remove the timeout.
-        const numResultsPerQuery = 100
+        const numResultsPerQuery = 10_000
         const client = this.client
         if (this.state === RepoFetcherState.Paused) {
             return
@@ -103,9 +102,6 @@ export class RepoFetcher implements vscode.Disposable {
             this.repos.push(...newRepos)
             this.repoListChangedEmitter.fire(this.repos)
             this.after = result.repositories.pageInfo.endCursor || undefined
-
-            // DONOTCOMMIT remove this artificial delay
-            await new Promise(resolve => setTimeout(resolve, 3000))
         } while (this.state === RepoFetcherState.Fetching && this.after)
 
         if (!this.after) {
