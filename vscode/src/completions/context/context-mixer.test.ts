@@ -136,21 +136,21 @@ describe('ContextMixer', () => {
 
                     [
                         {
-                            uri: testFileUri('baz.ts'),
-                            content: 'function baz2() {}',
-                            startLine: 0,
-                            endLine: 0,
+                            uri: testFileUri('foo.ts'),
+                            content: 'function foo3() {}',
+                            startLine: 10,
+                            endLine: 10,
                         },
                         {
-                            uri: testFileUri('baz.ts'),
-                            content: 'function baz2.2() {}',
-                            startLine: 1,
+                            uri: testFileUri('foo.ts'),
+                            content: 'function foo1() {}\nfunction foo2() {}',
+                            startLine: 0,
                             endLine: 1,
                         },
                         {
                             uri: testFileUri('bar.ts'),
-                            content: 'function bar2() {}',
-                            startLine: 1,
+                            content: 'function bar1() {}\nfunction bar2() {}',
+                            startLine: 0,
                             endLine: 1,
                         },
                     ],
@@ -158,20 +158,11 @@ describe('ContextMixer', () => {
             )
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
+            // The results have overlaps in `foo.ts` and `bar.ts`. `foo.ts` is ranked higher in both
+            // result sets, thus we expect the overlapping `foo.ts` ranges to appear first.
+            // `foo3()` only appears in one result set and should thus be ranked last.
             expect(normalize(context)).toMatchInlineSnapshot(`
               [
-                {
-                  "content": "function bar1() {}",
-                  "endLine": 0,
-                  "fileName": "bar.ts",
-                  "startLine": 0,
-                },
-                {
-                  "content": "function bar2() {}",
-                  "endLine": 1,
-                  "fileName": "bar.ts",
-                  "startLine": 1,
-                },
                 {
                   "content": "function foo1() {}",
                   "endLine": 0,
@@ -179,16 +170,30 @@ describe('ContextMixer', () => {
                   "startLine": 0,
                 },
                 {
-                  "content": "function baz2() {}",
-                  "endLine": 0,
-                  "fileName": "baz.ts",
+                  "content": "function foo1() {}
+              function foo2() {}",
+                  "endLine": 1,
+                  "fileName": "foo.ts",
                   "startLine": 0,
                 },
                 {
-                  "content": "function baz2.2() {}",
+                  "content": "function bar1() {}",
+                  "endLine": 0,
+                  "fileName": "bar.ts",
+                  "startLine": 0,
+                },
+                {
+                  "content": "function bar1() {}
+              function bar2() {}",
                   "endLine": 1,
-                  "fileName": "baz.ts",
-                  "startLine": 1,
+                  "fileName": "bar.ts",
+                  "startLine": 0,
+                },
+                {
+                  "content": "function foo3() {}",
+                  "endLine": 10,
+                  "fileName": "foo.ts",
+                  "startLine": 10,
                 },
               ]
             `)
@@ -209,7 +214,7 @@ describe('ContextMixer', () => {
                     },
                 },
                 strategy: 'jaccard-similarity',
-                totalChars: 100,
+                totalChars: 136,
             })
         })
     })
