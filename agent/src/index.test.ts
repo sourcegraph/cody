@@ -174,6 +174,21 @@ describe('Agent', () => {
         })
     }, 10_000)
 
+    it('graphql/getCurrentUserCodySubscription', async () => {
+        const currentUserCodySubscription = await client.request(
+            'graphql/getCurrentUserCodySubscription',
+            null
+        )
+        expect(currentUserCodySubscription).toMatchInlineSnapshot(`
+            {
+              "status": "PENDING",
+              "plan": "PRO",
+              "currentPeriodStartAt": "Jan 4, 2024, 1:00:00 AM",
+              "currentPeriodEndAt": "Feb 4, 2024, 12:59:59 AM"
+            }
+        `)
+    }, 10_000)
+
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
