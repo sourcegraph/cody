@@ -48,5 +48,5 @@ export function getEditorIndentString(uri: vscode.Uri): string {
     const insertSpaces = getEditorInsertSpaces(uri)
     const tabSize = getEditorTabSize(uri)
 
-    return insertSpaces ? new Array(tabSize + 1).join(' ') : '\t'
+    return insertSpaces ? ' '.repeat(tabSize) : '\t'
 }
