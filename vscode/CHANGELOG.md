@@ -13,6 +13,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
 - Chat: Added support for editing any non-command chat messages. [pull/2826](https://github.com/sourcegraph/cody/pull/2826)
 - Chat: New action buttons added above the chat input area for easy keyboard access. [pull/2826](https://github.com/sourcegraph/cody/pull/2826)
+- Chat: Enterprise users can now search multiple repositories for context. [pull/2879](https://github.com/sourcegraph/cody/pull/2879)
 
 ### Fixed
 
@@ -36,6 +37,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Better cancellation of requests that are no longer relevant. [pull/2855](https://github.com/sourcegraph/cody/pull/2855)
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 - Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
+- Context: Embeddings search by sourcegraph.com have been removed. For the moment, remote embeddings may still affect results for Sourcegraph Enterprise users through the new multi-repo search feature described above. Local embeddings are not affected by this change. [pull/2879](https://github.com/sourcegraph/cody/pull/2879)
 
 ## [1.1.3]
 
