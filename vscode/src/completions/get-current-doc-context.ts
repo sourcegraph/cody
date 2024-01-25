@@ -7,6 +7,7 @@ import {
     getFirstLine,
     getLastLine,
     getNextNonEmptyLine,
+    getPositionAfterTextInsertion,
     getPrevNonEmptyLine,
     lines,
 } from './text-processing'
@@ -24,14 +25,10 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
      *
      * TODO(valery): we need a better abstraction that would allow us to mutate
      * the `TextDocument` text in memory without actually pasting it into the `TextDocument`
-     * and that would not require copy-pasting and modifiying the whole document text
+     * and that would not require copy-pasting and modifying the whole document text
      * on every completion update or new virtual completion creation.
      */
     injectedCompletionText?: string
-    /**
-     * Actually current cursor position that exists in the `TextDocument`.
-     */
-    actualPosition?: vscode.Position
 }
 
 export interface DocumentDependentContext {
@@ -206,12 +203,7 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         docContext: { position, prefix, suffix, currentLineSuffix },
     } = params
 
-    const insertedLines = lines(insertText)
-
-    const updatedPosition =
-        insertedLines.length <= 1
-            ? position.translate(0, Math.max(getFirstLine(insertText).length, 0))
-            : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+    const updatedPosition = getPositionAfterTextInsertion(position, insertText)
 
     addAutocompleteDebugEvent('getDerivedDocContext', {
         currentLinePrefix: docContext.currentLinePrefix,

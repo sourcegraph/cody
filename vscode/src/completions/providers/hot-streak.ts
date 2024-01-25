@@ -67,7 +67,6 @@ function insertCompletionAndPressEnter(
 
     updatedDocContext.injectedCompletionText =
         (docContext.injectedCompletionText || '') + insertTextWitPressedEnter
-    updatedDocContext.actualPosition = docContext.position
 
     return updatedDocContext
 }

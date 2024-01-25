@@ -10,7 +10,7 @@ import {
     getMatchingSuffixLength,
     type InlineCompletionItemWithAnalytics,
 } from './process-inline-completions'
-import { getLastLine, lines } from './utils'
+import { getLastLine, getPositionAfterTextDeletion, lines } from './utils'
 
 interface CompletionContext {
     completion: InlineCompletionItem
@@ -45,7 +45,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    // Do nothig if the syntactic post-processing is not enabled.
+    // Do nothing if the syntactic post-processing is not enabled.
     if (!parseTreeCache) {
         return completion
     }
@@ -113,20 +113,16 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         document,
         tree,
         parser,
-        docContext: {
-            position,
-            currentLineSuffix,
-            // biome-ignore lint/nursery/noInvalidUseBeforeDeclaration: because it's correct
-            actualPosition = position,
-            injectedCompletionText: textToBeInserted = '',
-        },
+        docContext: { position, currentLineSuffix, injectedCompletionText = '' },
         completionEndPosition,
     } = params
 
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
+    const actualPosition = getPositionAfterTextDeletion(position, injectedCompletionText)
 
     // Adjust suffix and prefix based on completion insert range.
-    const prefix = document.getText(new Range(new Position(0, 0), actualPosition)) + textToBeInserted
+    const prefix =
+        document.getText(new Range(new Position(0, 0), actualPosition)) + injectedCompletionText
     const suffix = document.getText(
         new Range(actualPosition, document.positionAt(document.getText().length))
     )
@@ -146,7 +142,7 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
     treeCopy.edit({
         startIndex: offset,
         oldEndIndex: offset,
-        newEndIndex: offset + textToBeInserted.length + insertText.length,
+        newEndIndex: offset + injectedCompletionText.length + insertText.length,
         startPosition: asPoint(actualPosition),
         oldEndPosition: asPoint(actualPosition),
         newEndPosition: asPoint(completionEndPosition),
