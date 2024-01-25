@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.context.ui
 
 import com.intellij.openapi.actionSystem.ActionToolbarPosition
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.CheckboxTree
@@ -60,8 +61,12 @@ class EnhancedContextPanel(private val project: Project) : JPanel() {
 
   init {
     layout = VerticalFlowLayout(VerticalFlowLayout.BOTTOM, 14, 0, true, false)
-    tree.expandRow(0)
 
-    add(toolbarPanel)
+    // Fix for https://github.com/sourcegraph/jetbrains/issues/344
+    // Sometimes we are not instantiated on the EDT.
+    ApplicationManager.getApplication().invokeLater {
+      tree.expandRow(0)
+      add(toolbarPanel)
+    }
   }
 }
