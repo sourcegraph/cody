@@ -56,7 +56,6 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
             if (isCodyIgnoredFile(uri) || abortSignal?.aborted) {
                 continue
             }
-            const lines = contents.split('\n')
             const fileMatches = bestJaccardMatches(
                 targetText,
                 contents,
@@ -67,14 +66,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
             // Ignore matches with 0 overlap to our source file
             const relatedMatches = fileMatches.filter(match => match.score > 0)
 
-            // TODO: Cluster matches by score. For now we assume that every match that is returned
-            // is of equal importance to the user (we truncate the list by maxMatchesPerFile to
-            // avoid this being too many results), but ideally we can create clusters so that merged
-            // sections do not become too big
-
-            const mergedMatches = mergeOverlappingMatches(document.uri, lines, relatedMatches)
-
-            for (const match of mergedMatches) {
+            for (const match of relatedMatches) {
                 if (
                     uri.toString() === document.uri.toString() &&
                     startOrEndOverlapsLineRange(
@@ -248,45 +240,4 @@ function startOrEndOverlapsLineRange(
         (lineRangeA.start >= lineRangeB.start && lineRangeA.start <= lineRangeB.end) ||
         (lineRangeA.end >= lineRangeB.start && lineRangeA.end <= lineRangeB.end)
     )
-}
-
-function mergeOverlappingMatches(
-    uri: vscode.Uri,
-    lines: string[],
-    matches: JaccardMatch[]
-): JaccardMatch[] {
-    if (matches.length <= 1) {
-        return matches
-    }
-
-    // We first sort the ranges based on the startLine to avoid creating a second match for
-    // something that would be merged into another one later
-    const sortedMatches = matches.slice(0).sort((a, b) => a.startLine - b.startLine)
-
-    const mergedMatches = [sortedMatches[0]]
-    for (let i = 1; i < sortedMatches.length; i++) {
-        const match = sortedMatches[i]
-        let merged = false
-        for (const mergedMatch of mergedMatches) {
-            if (
-                startOrEndOverlapsLineRange(uri, { start: match.startLine, end: match.endLine }, uri, {
-                    start: mergedMatch.startLine,
-                    end: mergedMatch.endLine,
-                })
-            ) {
-                // TODO: We may need to boost the score but for now we pick the max of both matches
-                mergedMatch.score = Math.max(mergedMatch.score, match.score)
-                mergedMatch.startLine = Math.min(mergedMatch.startLine, match.startLine)
-                mergedMatch.endLine = Math.max(mergedMatch.endLine, match.endLine)
-                mergedMatch.content = lines.slice(mergedMatch.startLine, mergedMatch.endLine).join('\n')
-                merged = true
-                break
-            }
-        }
-
-        if (!merged) {
-            mergedMatches.push(match)
-        }
-    }
-    return mergedMatches
 }

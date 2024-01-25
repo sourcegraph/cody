@@ -1,0 +1,12 @@
+{
+  "formatter": {
+    "external": {
+      "command": "./node_modules/.bin/biome",
+      "arguments": [
+        "format",
+        "--write",
+        "--stdin-file-path={buffer_path}"
+      ]
+    }
+  }
+}
