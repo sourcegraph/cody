@@ -62,4 +62,10 @@ describe('fuseContext', () => {
         const result = fuseContext(keywordItems, embeddingsItems, 0)
         expect(result).toEqual([])
     })
+
+    it('includes all keyword items if there are no embeddings items', () => {
+        const maxChars = 10
+        const result = fuseContext(keywordItems, [], maxChars)
+        expect(joined(result)).toEqual('0123456789')
+    })
 })
