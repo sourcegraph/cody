@@ -198,9 +198,15 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         attributionContainer.setAttribute('data-testid', 'attribution-indicator')
                         buttons.append(attributionContainer)
 
+                        const spinnerContainer = document.createElement('div')
+                        spinnerContainer.className = styles.spinner
+                        spinnerContainer.innerHTML = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`
+                        buttons.append(spinnerContainer)
+
                         guardrails
                             .searchAttribution(preText)
                             .then(attribution => {
+                                spinnerContainer.innerHTML = '<i class="codicon codicon-pass"></i>'
                                 if (isError(attribution)) {
                                     attributionContainer.classList.add(styles.attributionIconUnavailable)
                                     attributionContainer.title = 'Attribution search unavailable.'
@@ -227,7 +233,9 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                                 attributionContainer.title = 'Attribution not found.'
                             })
                             .catch(error => {
-                                console.error('promise failed', error)
+                                attributionContainer.classList.add(styles.attributionIconUnavailable)
+                                attributionContainer.title = `Attribution search unavailable. ${error.message}`
+                                return
                             })
                     }
 
