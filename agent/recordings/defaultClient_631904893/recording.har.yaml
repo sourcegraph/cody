@@ -77,7 +77,7 @@ log:
                 text: "<CODE5711>export function sum(a: number, b: number): number {"
             stopSequences:
               - |-
-                
+
 
                 Human:
               - </CODE5711>
@@ -253,7 +253,7 @@ log:
                 text: "<CODE5711>export function sum(a: number, b: number): number {"
             stopSequences:
               - |-
-                
+
 
                 Human:
               - </CODE5711>
@@ -19307,7 +19307,7 @@ log:
                       return function inner() {}
 
 
-                      
+
                   </selected>
               - speaker: assistant
                 text: Ok.
@@ -21293,7 +21293,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -21334,7 +21334,7 @@ log:
 
                   Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
 
-                  Here is the code: 
+                  Here is the code:
 
                   <code>export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -21691,7 +21691,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -21733,7 +21733,7 @@ log:
 
                   Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
 
-                  Here is the code: 
+                  Here is the code:
 
                   <code>    public functionName() {
                           if (this.shouldGreet) {
@@ -22037,7 +22037,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -22086,7 +22086,7 @@ log:
 
                   Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
 
-                  Here is the code: 
+                  Here is the code:
 
                   <code>export const TestLogger = {
                       startLogging: () => {
@@ -22428,7 +22428,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -22480,7 +22480,7 @@ log:
 
                   Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
 
-                  Here is the code: 
+                  Here is the code:
 
                   <code>describe('test block', () => {
                       it('does 1', () => {
@@ -22882,7 +22882,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -22989,7 +22989,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -23103,7 +23103,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -23219,7 +23219,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23324,7 +23324,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23424,7 +23424,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23529,7 +23529,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23629,7 +23629,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23750,7 +23750,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23859,7 +23859,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -23980,7 +23980,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -24084,7 +24084,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -24189,7 +24189,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -24294,7 +24294,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -24405,7 +24405,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -24526,7 +24526,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -24624,7 +24624,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -24722,7 +24722,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -24824,7 +24824,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -24926,7 +24926,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25023,7 +25023,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25120,7 +25120,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25217,7 +25217,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25314,7 +25314,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25411,7 +25411,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25508,7 +25508,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25604,7 +25604,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25703,7 +25703,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25802,7 +25802,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25899,7 +25899,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -25996,7 +25996,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -26093,7 +26093,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -26190,7 +26190,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -26287,7 +26287,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -26384,7 +26384,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -26483,7 +26483,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -26582,7 +26582,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -26731,7 +26731,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -26848,7 +26848,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -27000,7 +27000,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27114,7 +27114,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -27225,7 +27225,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27339,7 +27339,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -27450,7 +27450,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27564,7 +27564,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27680,7 +27680,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27796,7 +27796,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -27910,7 +27910,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -28021,7 +28021,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -28135,7 +28135,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -28249,7 +28249,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -28363,7 +28363,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -28472,7 +28472,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -28581,7 +28581,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -28699,7 +28699,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -28812,7 +28812,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -28927,7 +28927,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29047,7 +29047,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29162,7 +29162,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29282,7 +29282,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29397,7 +29397,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29512,7 +29512,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29632,7 +29632,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29741,7 +29741,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29854,7 +29854,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -29967,7 +29967,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30080,7 +30080,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30193,7 +30193,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30311,7 +30311,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30424,7 +30424,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30542,7 +30542,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30655,7 +30655,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -30772,7 +30772,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -30877,7 +30877,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -30982,7 +30982,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -31092,7 +31092,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -31202,7 +31202,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -31305,7 +31305,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -31408,7 +31408,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -31520,7 +31520,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -31631,7 +31631,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -31740,7 +31740,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -31838,7 +31838,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -31936,7 +31936,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -32042,7 +32042,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
