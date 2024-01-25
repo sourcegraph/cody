@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import type { EditSupportedModels } from '../prompt'
 import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
+
+import type { EditSupportedModels } from '../prompt'
 import type { ExecuteEditArguments } from '../execute'
 import { getEditor } from '../../editor/active-editor'
 import { getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
@@ -9,23 +10,16 @@ import { getEditSmartSelection } from '../utils/edit-selection'
 import { createQuickPick } from './quick-pick'
 import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
-import {
-    MODEL_ITEM,
-    RANGE_ITEM,
-    getEditInputItems,
-    getModelInputItems,
-    getRangeInputItems,
-    RANGE_ITEMS,
-    getDocumentInputItems,
-    DOCUMENT_ITEM,
-    TEST_ITEM,
-    getTestInputItems,
-    DOCUMENT_ITEMS_RANGE_MAP,
-    TEST_ITEMS_RANGE_MAP,
-    DEFAULT_TEST_ITEM,
-    DEFAULT_DOCUMENT_ITEM,
-} from './get-items'
 import type { EditRangeSource } from '../types'
+import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
+import { getModelInputItems } from './get-items/model'
+import { RANGE_ITEMS, getRangeInputItems } from './get-items/range'
+import {
+    DEFAULT_DOCUMENT_ITEMS,
+    DOCUMENT_ITEMS_RANGE_MAP,
+    getDocumentInputItems,
+} from './get-items/document'
+import { DEFAULT_TEST_ITEMS, TEST_ITEMS_RANGE_MAP, getTestInputItems } from './get-items/test'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -136,12 +130,10 @@ export const getInput = async (
             },
             onDidChangeActive: items => {
                 const item = items[0]
-
                 if (item.label === '$(anthropic-logo) Claude 2.1') {
                     activeModel = 'anthropic/claude-2.1'
                     return
                 }
-
                 if (item.label === '$(anthropic-logo) Claude Instant') {
                     activeModel = 'anthropic/claude-instant-1.2'
                     return
@@ -162,10 +154,6 @@ export const getInput = async (
             },
             onDidChangeActive: async items => {
                 const item = items[0]
-                if (!editor) {
-                    return
-                }
-
                 if (item.label === RANGE_ITEMS.selection.label) {
                     updateActiveRange(
                         new vscode.Selection(initialRange.start, initialRange.end),
@@ -173,7 +161,6 @@ export const getInput = async (
                     )
                     return
                 }
-
                 if (item.label === RANGE_ITEMS.expanded.label) {
                     const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
                         ignoreSelection: true,
@@ -184,7 +171,6 @@ export const getInput = async (
                     )
                     return
                 }
-
                 if (item.label === RANGE_ITEMS.maximum.label) {
                     const fullRange = new vscode.Range(0, 0, editor.document.lineCount, 0)
                     updateActiveRange(new vscode.Selection(fullRange.start, fullRange.end), 'maximum')
@@ -206,23 +192,27 @@ export const getInput = async (
             },
             onDidChangeActive: async items => {
                 const item = items[0]
-                if (!editor) {
-                    return
-                }
-
-                if (item.label === DEFAULT_DOCUMENT_ITEM.label) {
+                if (item.label === DEFAULT_DOCUMENT_ITEMS.selection.label) {
                     updateActiveRange(
                         new vscode.Selection(initialRange.start, initialRange.end),
                         'selection'
                     )
                     return
                 }
-
+                if (item.label === DEFAULT_DOCUMENT_ITEMS.expanded.label) {
+                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
+                        ignoreSelection: true,
+                    })
+                    updateActiveRange(
+                        new vscode.Selection(smartSelection.start, smartSelection.end),
+                        'expanded'
+                    )
+                    return
+                }
                 const selectedRange = DOCUMENT_ITEMS_RANGE_MAP.get(item)
                 if (!selectedRange) {
                     return
                 }
-
                 updateActiveRange(
                     new vscode.Selection(selectedRange.start, selectedRange.end),
                     'selection'
@@ -253,23 +243,27 @@ export const getInput = async (
             },
             onDidChangeActive: async items => {
                 const item = items[0]
-                if (!editor) {
-                    return
-                }
-
-                if (item.label === DEFAULT_TEST_ITEM.label) {
+                if (item.label === DEFAULT_TEST_ITEMS.selection.label) {
                     updateActiveRange(
                         new vscode.Selection(initialRange.start, initialRange.end),
                         'selection'
                     )
                     return
                 }
-
+                if (item.label === DEFAULT_TEST_ITEMS.expanded.label) {
+                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
+                        ignoreSelection: true,
+                    })
+                    updateActiveRange(
+                        new vscode.Selection(smartSelection.start, smartSelection.end),
+                        'expanded'
+                    )
+                    return
+                }
                 const selectedRange = TEST_ITEMS_RANGE_MAP.get(item)
                 if (!selectedRange) {
                     return
                 }
-
                 updateActiveRange(
                     new vscode.Selection(selectedRange.start, selectedRange.end),
                     'selection'
