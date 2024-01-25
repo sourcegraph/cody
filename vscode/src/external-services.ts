@@ -2,17 +2,14 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    CodebaseContext,
     SourcegraphGuardrailsClient,
     SourcegraphIntentDetectorClient,
     graphqlClient,
     isError,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
-    type Editor,
     type Guardrails,
     type IntentDetector,
-    isDotCom,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
@@ -23,7 +20,6 @@ import { logDebug, logger } from './log'
 
 interface ExternalServices {
     intentDetector: IntentDetector
-    codebaseContext: CodebaseContext
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
@@ -49,7 +45,6 @@ type ExternalServicesConfiguration = Pick<
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
     initialConfig: ExternalServicesConfiguration,
-    editor: Editor,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -78,22 +73,14 @@ export async function configureExternalServices(
         )
     }
 
-    const isConsumer = isDotCom(initialConfig.serverEndpoint)
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
-    const codebaseContext = new CodebaseContext(
-        initialConfig,
-        initialConfig.codebase,
-        isConsumer ? localEmbeddings : undefined,
-        isConsumer ? symfRunner : undefined
-    )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
         intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
-        codebaseContext,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -104,7 +91,6 @@ export async function configureExternalServices(
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
-            codebaseContext.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }

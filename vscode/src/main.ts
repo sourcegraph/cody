@@ -155,27 +155,28 @@ const register = async (
 
     const {
         intentDetector,
-        codebaseContext: initialCodebaseContext,
         chatClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, editor, platform)
+    } = await configureExternalServices(context, initialConfig, platform)
 
     if (symfRunner) {
         disposables.push(symfRunner)
     }
 
-    // TODO(dpc): Introduce remoteSearch to ContextProvider for inline edits
+    const enterpriseContextFactory = new EnterpriseContextFactory(initialConfig)
+    disposables.push(enterpriseContextFactory)
+
     const contextProvider = new ContextProvider(
         initialConfig,
-        initialCodebaseContext,
         editor,
         symfRunner,
         authProvider,
-        localEmbeddings
+        localEmbeddings,
+        enterpriseContextFactory.createRemoteSearch()
     )
     disposables.push(contextProvider)
     await contextProvider.init()
@@ -192,9 +193,6 @@ const register = async (
 
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
-
-    const enterpriseContextFactory = new EnterpriseContextFactory(initialConfig)
-    disposables.push(enterpriseContextFactory)
 
     const chatManager = new ChatManager(
         {

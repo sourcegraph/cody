@@ -24,6 +24,7 @@ import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
 import type { SidebarChatWebview } from './chat-view/SidebarViewController'
 import type { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import type { RemoteSearch } from '../context/remote-search'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -63,14 +64,15 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined
+    private codebaseContext: CodebaseContext | undefined
 
     constructor(
         public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
-        private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
-        public readonly localEmbeddings: LocalEmbeddingsController | undefined
+        public readonly localEmbeddings: LocalEmbeddingsController | undefined,
+        private readonly remoteSearch: RemoteSearch | undefined
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
@@ -95,9 +97,16 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 })
             )
         }
+
+        if (this.remoteSearch) {
+            this.disposables.push(this.remoteSearch)
+        }
     }
 
     public get context(): CodebaseContext {
+        if (!this.codebaseContext) {
+            throw new Error('retrieved codebase context before initialization')
+        }
         return this.codebaseContext
     }
 
@@ -149,7 +158,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             this.authProvider.getAuthStatus(),
             this.symf,
             this.editor,
-            this.localEmbeddings
+            this.localEmbeddings,
+            this.remoteSearch
         )
         if (!codebaseContext) {
             return
@@ -185,7 +195,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 this.authProvider.getAuthStatus(),
                 this.symf,
                 this.editor,
-                this.localEmbeddings
+                this.localEmbeddings,
+                this.remoteSearch
             )
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
@@ -268,7 +279,8 @@ async function getCodebaseContext(
     authStatus: AuthStatus,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
-    localEmbeddings: LocalEmbeddingsController | undefined
+    localEmbeddings: LocalEmbeddingsController | undefined,
+    remoteSearch: RemoteSearch | undefined
 ): Promise<CodebaseContext | null> {
     const workspaceRoot = editor.getWorkspaceRootUri()
     if (!workspaceRoot) {
@@ -291,13 +303,13 @@ async function getCodebaseContext(
     const repoDirUri = gitDirectoryUri(workspaceRoot)
     const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
 
-    // TODO(dpc): Symf was passed here but was unused. Integrate symf and remote search.
     return new CodebaseContext(
         config,
         codebase,
         // Use local embeddings if we have them.
         isConsumer && (await hasLocalEmbeddings) ? localEmbeddings : undefined,
         // TODO(dpc): This should query index availability before passing symf.
-        isConsumer ? symf : undefined
+        isConsumer ? symf : undefined,
+        isConsumer ? undefined : remoteSearch
     )
 }

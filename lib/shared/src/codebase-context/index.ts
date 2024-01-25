@@ -2,7 +2,11 @@ import type { URI } from 'vscode-uri'
 import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
 import type { Configuration } from '../configuration'
 import type { ActiveTextEditorSelectionRange } from '../editor'
-import type { IndexedKeywordContextFetcher, LocalEmbeddingsFetcher } from '../local-context'
+import type {
+    IndexedKeywordContextFetcher,
+    IRemoteSearch,
+    LocalEmbeddingsFetcher,
+} from '../local-context'
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import type { Message } from '../sourcegraph-api'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -24,7 +28,8 @@ export class CodebaseContext {
         private config: Pick<Configuration, 'useContext'>,
         private codebase: string | undefined,
         public readonly localEmbeddings: LocalEmbeddingsFetcher | undefined,
-        _symf: IndexedKeywordContextFetcher | undefined
+        _symf: IndexedKeywordContextFetcher | undefined,
+        private readonly remoteSearch: IRemoteSearch | undefined
     ) {}
 
     public onConfigurationChange(newConfig: typeof this.config): void {
@@ -44,18 +49,43 @@ export class CodebaseContext {
             case 'embeddings':
                 return this.getEmbeddingsContextMessages(query, options)
             case 'keyword':
-                // TODO: Implement remote search here for enterprise.
-                // TODO(dpc): Implement symf for inline edits.
-                return []
+                return this.getKeywordContextMessages(workspaceFolderUri, query, options)
             case 'none':
                 return []
             default: {
-                // TODO: Implement remote search here for enterprise.
-                // TODO: Implement symf for inline edits.
-                // TODO: Implement RRF blending when https://github.com/sourcegraph/cody/pull/2804 lands.
-                return this.getEmbeddingsContextMessages(query, options)
+                return (
+                    // TODO: Implement blending when https://github.com/sourcegraph/cody/pull/2804 lands.
+                    (
+                        await Promise.all([
+                            this.getKeywordContextMessages(workspaceFolderUri, query, options),
+                            this.getEmbeddingsContextMessages(query, options),
+                        ])
+                    ).flat()
+                )
             }
         }
+    }
+
+    private async getKeywordContextMessages(
+        workspaceFolderUri: URI,
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<ContextMessage[]> {
+        // TODO: Add symf here for local keyword context.
+        if (this.remoteSearch) {
+            await this.remoteSearch.setWorkspaceUri(workspaceFolderUri)
+            const files = (await this.remoteSearch.search(query)).slice(
+                0,
+                options.numCodeResults + options.numTextResults
+            )
+            return files.flatMap(file =>
+                getContextMessageWithResponse(
+                    populateCodeContextTemplate(file.content || '', file.uri, file.repoName),
+                    file
+                )
+            )
+        }
+        return []
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.

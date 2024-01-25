@@ -1,15 +1,20 @@
 import * as vscode from 'vscode'
 
-import type {
-    ContextGroup,
-    ContextSearchResult,
-    ContextStatusProvider,
-    Disposable,
-    GraphQLAPIClientConfig,
-    SourcegraphGraphQLAPIClient,
+import {
+    isError,
+    type ContextGroup,
+    type ContextSearchResult,
+    type ContextStatusProvider,
+    type Disposable,
+    type GraphQLAPIClientConfig,
+    type IRemoteSearch,
+    type SourcegraphGraphQLAPIClient,
+    type ContextFileFile,
 } from '@sourcegraph/cody-shared'
 
 import type * as repofetcher from './repo-fetcher'
+import type { URI } from 'vscode-uri'
+import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 
 export enum RepoInclusion {
     Automatic = 'auto',
@@ -20,7 +25,7 @@ interface DisplayRepo {
     displayName: string
 }
 
-export class RemoteSearch implements ContextStatusProvider {
+export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
 
     private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
@@ -116,5 +121,45 @@ export class RemoteSearch implements ContextStatusProvider {
             throw result
         }
         return result || []
+    }
+
+    // IRemoteSearch implementation. This is only used for inline edit context.
+
+    public async setWorkspaceUri(uri: URI): Promise<void> {
+        const codebase = getCodebaseFromWorkspaceUri(uri)
+        if (!codebase) {
+            this.setRepos([], RepoInclusion.Automatic)
+            return
+        }
+        const repos = await this.client.getRepoIds([codebase], 10)
+        if (isError(repos)) {
+            throw repos
+        }
+        this.setRepos(repos, RepoInclusion.Automatic)
+    }
+
+    public async search(query: string): Promise<ContextFileFile[]> {
+        const results = await this.query(query)
+        if (isError(results)) {
+            throw results
+        }
+        return (results || []).map(result => ({
+            type: 'file',
+            uri: result.uri,
+            repoName: result.repoName,
+            revision: result.commit,
+            source: 'unified',
+            content: result.content,
+            range: {
+                start: {
+                    line: result.startLine,
+                    character: 0,
+                },
+                end: {
+                    line: result.endLine,
+                    character: 0,
+                },
+            },
+        }))
     }
 }
