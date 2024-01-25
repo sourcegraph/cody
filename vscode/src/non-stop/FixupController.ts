@@ -28,7 +28,6 @@ import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from 
 import { CodyTaskState } from './utils'
 import type { EditSupportedModels } from '../edit/prompt'
 import { getInput } from '../edit/input/get-input'
-import { getEditor } from '../editor/active-editor'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -163,24 +162,17 @@ export class FixupController
         args: ExecuteEditArguments,
         source: ChatEventSource
     ): Promise<FixupTask | null> {
-        const editor = getEditor().active
-        if (!editor) {
-            return null
-        }
-        const document = args.document || editor.document
-        const initialRange = args.range || editor.selection
-        if (!document || !initialRange) {
+        if (!args.document) {
             return null
         }
 
         const input = await getInput(args, source)
-
         if (!input) {
             return null
         }
 
         const task = this.createTask(
-            document,
+            args.document,
             input.instruction,
             input.userContextFiles,
             input.model,
@@ -193,7 +185,7 @@ export class FixupController
         )
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(document)
+        void vscode.window.showTextDocument(args.document)
 
         return task
     }
@@ -1060,13 +1052,21 @@ export class FixupController
             return
         }
 
+        /**
+         * If the selected range is the same as what we provided, we actually want the original
+         * range, which is the range which will be left in the document after the task is undone.
+         *
+         * Otherwise, use the new selected range.
+         */
+        const updatedRange = input.range.isEqual(task.selectionRange) ? task.originalRange : input.range
+
         // Revert and remove the previous task
         await this.undoTask(task)
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
             {
-                range: task.originalRange, // TODO: We ignore the range from the input here...
+                range: updatedRange,
                 instruction: input.instruction,
                 userContextFiles: input.userContextFiles,
                 document,
