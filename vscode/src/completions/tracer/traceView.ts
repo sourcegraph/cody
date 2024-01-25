@@ -274,7 +274,6 @@ function markdownInlineCode(value: string): string {
 }
 
 function markdownCodeBlock(value: string): string {
-    // biome-ignore lint/style/useTemplate: this is clearer
     return '```\n' + value.replaceAll('`', '\\`') + '\n```\n'
 }
 

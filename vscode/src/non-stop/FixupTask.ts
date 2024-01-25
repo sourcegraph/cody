@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
@@ -14,6 +14,8 @@ export type taskID = string
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
+    private stateChanges = new vscode.EventEmitter<CodyTaskState>()
+    public onDidStateChange = this.stateChanges.event
     /**
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
@@ -75,8 +77,14 @@ export class FixupTask {
      */
     public set state(state: CodyTaskState) {
         this.state_ = state
+        this.stateChanges.fire(state)
     }
 
+    /**
+     * Gets the state of the fixup task.
+     *
+     * @returns The current state of the fixup task.
+     */
     public get state(): CodyTaskState {
         return this.state_
     }

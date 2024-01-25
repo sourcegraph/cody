@@ -5,6 +5,7 @@ import {
     TimestampTelemetryProcessor,
     type TelemetryEventInput,
     type TelemetryProcessor,
+    TestTelemetryExporter,
 } from '@sourcegraph/telemetry'
 
 import {
@@ -51,7 +52,9 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 }`,
                 clientVersion: extensionDetails.version,
             },
-            new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
+            process.env.CODY_SHIM_TESTING === 'true'
+                ? new TestTelemetryExporter()
+                : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config),
                 // Generate timestamps when recording events, instead of serverside

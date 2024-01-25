@@ -4,6 +4,7 @@ import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/
 
 import type { EditIntent, EditMode } from './types'
 import type { EditSupportedModels } from './prompt'
+import type { FixupTask } from '../non-stop/FixupTask'
 
 export interface ExecuteEditArguments {
     document?: vscode.TextDocument
@@ -22,6 +23,6 @@ export interface ExecuteEditArguments {
 export const executeEdit = async (
     args: ExecuteEditArguments,
     source: ChatEventSource
-): Promise<void> => {
-    await vscode.commands.executeCommand('cody.command.edit-code', args, source)
+): Promise<FixupTask | undefined> => {
+    return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args, source)
 }
