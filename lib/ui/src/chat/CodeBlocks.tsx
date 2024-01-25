@@ -155,75 +155,70 @@ function createCodeBlockActionButton(
 }
 
 class GuardrailsStatusController {
-    readonly statusSpinning = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`;
-    readonly statusPass = '<i class="codicon codicon-pass"></i>';
-    readonly statusFailed = "Guard Rails Check Failed";
-    readonly statusUnavailable = "Guard Rails API Error";
+    readonly statusSpinning = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`
+    readonly statusPass = '<i class="codicon codicon-pass"></i>'
+    readonly statusFailed = 'Guard Rails Check Failed'
+    readonly statusUnavailable = 'Guard Rails API Error'
 
-    readonly iconClass = "guardrails-icon";
-    readonly statusClass = "guardrails-status";
+    readonly iconClass = 'guardrails-icon'
+    readonly statusClass = 'guardrails-status'
 
-    private status: HTMLElement;
+    private status: HTMLElement
 
     constructor(public container: HTMLElement) {
         this.findOrAppend(this.iconClass, () => {
-            const icon = document.createElement("div");
-            icon.innerHTML = ShieldIcon;
-            icon.classList.add(styles.attributionIcon, this.iconClass);
-            icon.setAttribute("data-testid", "attribution-indicator");
-            return icon;
-        });
+            const icon = document.createElement('div')
+            icon.innerHTML = ShieldIcon
+            icon.classList.add(styles.attributionIcon, this.iconClass)
+            icon.setAttribute('data-testid', 'attribution-indicator')
+            return icon
+        })
         this.status = this.findOrAppend(this.statusClass, () => {
-            const status = document.createElement("div");
-            status.classList.add(styles.status, this.statusClass);
-            return status;
-        });
+            const status = document.createElement('div')
+            status.classList.add(styles.status, this.statusClass)
+            return status
+        })
     }
 
     public setPending() {
-        this.container.title = "Guard Rails: Running Code Attribution Check…";
-        this.status.innerHTML = this.statusSpinning;
+        this.container.title = 'Guard Rails: Running Code Attribution Check…'
+        this.status.innerHTML = this.statusSpinning
     }
 
     public setSuccess() {
-        this.container.title = "Guard Rails Check Passed";
-        this.status.innerHTML = this.statusPass;
+        this.container.title = 'Guard Rails Check Passed'
+        this.status.innerHTML = this.statusPass
     }
 
     public setFailure(repos: string[], limitHit: boolean) {
-        this.container.classList.add(styles.attributionIconFound);
-        this.container.title = this.tooltip(repos, limitHit);
-        this.status.innerHTML = this.statusFailed;
+        this.container.classList.add(styles.attributionIconFound)
+        this.container.title = this.tooltip(repos, limitHit)
+        this.status.innerHTML = this.statusFailed
     }
 
     public setUnavailable() {
-        this.container.classList.add(styles.attributionIconUnavailable);
-        this.container.title = "Attribution search unavailable.";
-        this.status.innerHTML = this.statusUnavailable;
+        this.container.classList.add(styles.attributionIconUnavailable)
+        this.container.title = 'Attribution search unavailable.'
+        this.status.innerHTML = this.statusUnavailable
     }
 
-    private findOrAppend(
-        className: string,
-        make: () => HTMLElement
-    ): HTMLElement {
-        const elements = this.container.getElementsByClassName(className);
+    private findOrAppend(className: string, make: () => HTMLElement): HTMLElement {
+        const elements = this.container.getElementsByClassName(className)
         if (elements.length > 0) {
-            return elements[0] as HTMLElement;
+            return elements[0] as HTMLElement
         }
-        const newElement = make();
-        this.container.append(newElement);
-        return newElement;
+        const newElement = make()
+        this.container.append(newElement)
+        return newElement
     }
 
     private tooltip(repos: string[], limitHit: boolean) {
-        const prefix = "Guard Rails Check Failed. Code found in";
+        const prefix = 'Guard Rails Check Failed. Code found in'
         if (repos.length === 1) {
-            return `${prefix} ${repos[0]}.`;
+            return `${prefix} ${repos[0]}.`
         }
-        const tooltip = `${prefix} ${repos.length} repositories: ${repos.join(
-            ", "
-        )}`;
-        return limitHit ? `${tooltip} or more...` : `${tooltip}.`;
+        const tooltip = `${prefix} ${repos.length} repositories: ${repos.join(', ')}`
+        return limitHit ? `${tooltip} or more...` : `${tooltip}.`
     }
 }
 
@@ -237,21 +232,21 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
         metadata,
         guardrails,
     }) {
-        const rootRef = useRef<HTMLDivElement>(null);
+        const rootRef = useRef<HTMLDivElement>(null)
 
         useEffect(() => {
-            const preElements = rootRef.current?.querySelectorAll("pre");
+            const preElements = rootRef.current?.querySelectorAll('pre')
             if (!preElements?.length || !copyButtonOnSubmit) {
-                return;
+                return
             }
 
             for (const preElement of preElements) {
-                const preText = preElement.textContent;
+                const preText = preElement.textContent
                 if (preText?.trim() && preElement.parentNode) {
                     const eventMetadata = {
                         requestID: metadata?.requestID,
                         source: metadata?.source,
-                    };
+                    }
                     const buttons = createButtons(
                         preText,
                         copyButtonClassName,
@@ -259,54 +254,43 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         insertButtonClassName,
                         insertButtonOnSubmit,
                         eventMetadata
-                    );
+                    )
                     if (guardrails) {
-                        const flexFiller = document.createElement("div");
-                        flexFiller.classList.add(styles.flexFiller);
-                        buttons.append(flexFiller);
-                        const g = new GuardrailsStatusController(buttons);
-                        g.setPending();
+                        const flexFiller = document.createElement('div')
+                        flexFiller.classList.add(styles.flexFiller)
+                        buttons.append(flexFiller)
+                        const g = new GuardrailsStatusController(buttons)
+                        g.setPending()
 
                         guardrails
                             .searchAttribution(preText)
-                            .then((attribution) => {
+                            .then(attribution => {
                                 if (isError(attribution)) {
-                                    g.setUnavailable();
-                                } else if (
-                                    attribution.repositories.length === 0
-                                ) {
-                                    g.setSuccess();
+                                    g.setUnavailable()
+                                } else if (attribution.repositories.length === 0) {
+                                    g.setSuccess()
                                 } else {
                                     g.setFailure(
-                                        attribution.repositories.map(
-                                            (r) => r.name
-                                        ),
+                                        attribution.repositories.map(r => r.name),
                                         attribution.limitHit
-                                    );
+                                    )
                                 }
                             })
                             .catch(() => {
-                                g.setUnavailable();
-                                return;
-                            });
+                                g.setUnavailable()
+                                return
+                            })
                     }
 
                     // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                    preElement.parentNode.insertBefore(
-                        buttons,
-                        preElement.nextSibling
-                    );
+                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
 
                     // capture copy events (right click or keydown) on code block
-                    preElement.addEventListener("copy", () => {
+                    preElement.addEventListener('copy', () => {
                         if (copyButtonOnSubmit) {
-                            copyButtonOnSubmit(
-                                preText,
-                                "Keydown",
-                                eventMetadata
-                            );
+                            copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
                         }
-                    });
+                    })
                 }
             }
         }, [
@@ -317,7 +301,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
             metadata?.requestID,
             metadata?.source,
             guardrails,
-        ]);
+        ])
 
         return useMemo(
             () => (
@@ -330,6 +314,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                 />
             ),
             [displayText]
-        );
+        )
     }
-);
+)
