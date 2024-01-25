@@ -555,13 +555,14 @@ function fuseContext(
     embeddingsItems: ContextItem[],
     maxChars: number
 ): ContextItem[] {
-    const charsUsed = 0
+    let charsUsed = 0
     const fused = []
 
     for (const item of keywordItems) {
         const len = item.text.length
 
         if (charsUsed + len <= maxChars * 0.8) {
+            charsUsed += len
             fused.push(item)
         }
     }
@@ -570,6 +571,7 @@ function fuseContext(
         const len = item.text.length
 
         if (charsUsed + len <= maxChars) {
+            charsUsed += len
             fused.push(item)
         }
     }
