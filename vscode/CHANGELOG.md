@@ -31,8 +31,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - New chats are now the default when the user submits a new quesetion. Previously, follow-up questions were the default, but this frequently led to exceeding the LLM context window, which users interpreted as an error state. Follow-up questions are still accessible via ⌘-Enter or Ctrl-Enter. [pull/2768](https://github.com/sourcegraph/cody/pull/2768)
 - We now allocate no more than 60% of the overall LLM context window for enhanced context. This preserves more room for follow-up questions and context. [pull/2768](https://github.com/sourcegraph/cody/pull/2768)
 - Chat: Renamed the "Restart Chat Session" button to "New Chat Session". [pull/2786](https://github.com/sourcegraph/cody/pull/2786)
-- Removed `cody.experimental.chatPredictions`.
-- Codebase-wide context for custom commands has been disabled.
+- Removed the `cody.experimental.chatPredictions` setting. [pull/2848](https://github.com/sourcegraph/cody/pull/2848)
+- Removed support for the `context.codebase` custom command property. [pull/2848](https://github.com/sourcegraph/cody/pull/2848)
 - Autocomplete: Better cancellation of requests that are no longer relevant. [pull/2855](https://github.com/sourcegraph/cody/pull/2855)
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 - Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
