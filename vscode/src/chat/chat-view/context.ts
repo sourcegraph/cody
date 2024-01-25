@@ -19,7 +19,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { viewRangeToRange } from './chat-helpers'
-import type { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextItem } from './SimpleChatModel'
 import type { RemoteSearch } from '../../context/remote-search'
 
@@ -31,8 +30,6 @@ export async function getEnhancedContext(
     localEmbeddings: LocalEmbeddingsController | null,
     symf: SymfRunner | null,
     remoteSearch: RemoteSearch | null,
-    // TODO: This is unused so remove it
-    codebaseStatusProvider: CodebaseStatusProvider,
     text: string
 ): Promise<ContextItem[]> {
     const searchContext: ContextItem[] = []
