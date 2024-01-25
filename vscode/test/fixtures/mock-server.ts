@@ -334,12 +334,12 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
+const loggedTestRun: Record<string, boolean> = {}
+
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
     }
-
-    const loggedTestRun: Record<string, boolean> = {}
 
     const message = {
         type,
