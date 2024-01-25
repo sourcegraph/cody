@@ -8,6 +8,7 @@ import { getContextFileFromCurrentFile } from './current-file'
 import { getContextFileFromUri } from './file-path'
 import { getContextFileFromDirectory } from './directory'
 import { getContextFileFromTabs } from './open-tabs'
+import { Utils } from 'vscode-uri'
 
 /**
  * Gets the context files for a Cody command based on the given configuration.
@@ -22,6 +23,7 @@ import { getContextFileFromTabs } from './open-tabs'
 export const getCommandContextFiles = async (config: CodyCommandContext): Promise<ContextFile[]> => {
     try {
         const contextFiles: ContextFile[] = []
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri
 
         if (config.none) {
             return []
@@ -41,15 +43,18 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
             }
         }
 
-        if (config.filePath) {
-            const filePath = await getContextFileFromUri(vscode.Uri.file(config.filePath))
+        if (config.filePath && workspaceRoot?.path) {
+            // Create an workspace uri with the given relative file path
+            const file = Utils.joinPath(workspaceRoot, config.filePath)
+            const filePath = await getContextFileFromUri(file)
             if (filePath) {
                 contextFiles.push(filePath)
             }
         }
 
-        if (config.directoryPath) {
-            const dir = vscode.Uri.file(config.directoryPath)
+        if (config.directoryPath && workspaceRoot?.path) {
+            // Create an workspace uri with the given relative directory path
+            const dir = Utils.joinPath(workspaceRoot, config.directoryPath)
             const dirContext = await getContextFileFromDirectory(dir)
             contextFiles.push(...dirContext)
         }

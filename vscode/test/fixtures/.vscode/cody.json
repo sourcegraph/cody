@@ -1,11 +1,25 @@
 {
+    "description": "E2E Test for Cody Custom Commands Context",
     "commands": {
-        "e2e-test": {
-            "description": "E2E Test Example",
-            "prompt": "This is an example created for the e2e test.",
+        "currentDir": {
+            "description": "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
+            "prompt": "Add four context files from the current directory.",
             "context": {
                 "selection": false,
                 "currentDir": true
+            }
+        },
+        "filePath": {
+            "prompt": "Add lib/batches/env/var.go as context.",
+            "context": {
+                "filePath": "lib/batches/env/var.go"
+            }
+        },
+        "directoryPath": {
+            "description": "Get files from directory.",
+            "prompt": "Directory has one context file.",
+            "context": {
+                "directoryPath": "lib/batches/env"
             }
         }
     }

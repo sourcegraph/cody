@@ -39,17 +39,29 @@ type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
 
 // Type of context available for prompt building
 export interface CodyCommandContext {
-    codebase: boolean
-    openTabs?: boolean
-    currentDir?: boolean
-    currentFile?: boolean
-    selection?: boolean
-    command?: string
-    output?: string
-    filePath?: string
-    filePaths?: string[]
-    directoryPath?: string
+    // Exclude any context.
+    // It takes precedence over all other context.
     none?: boolean
+
+    // Tabs from the current workspace
+    openTabs?: boolean
+    // The directory with the current file opened in the editor
+    currentDir?: boolean
+    // The current file opened in the editor
+    currentFile?: boolean
+    // The current selection in the editor
+    // Default to use smart selection unless set to false specifically
+    selection?: boolean
+    // Shell command to run to get context
+    command?: string
+    // The relative path of a file within your workspace root
+    filePath?: string
+    // The relative path of a directory within your workspace root
+    directoryPath?: string
+
+    // NOTE: Currently not supported
+    // Codebase context from current codebase
+    codebase?: boolean
 }
 
 export type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'

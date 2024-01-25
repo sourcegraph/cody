@@ -21,9 +21,9 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
         return []
     }
 
-    const dirUri = directory || Utils.joinPath(document.uri, '..')
-
     try {
+        const dirUri = directory ?? Utils.joinPath(document.uri, '..')
+        // Get the files in the directory
         const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
         // Filter out directories and dot files
         const filtered = filesInDir.filter(file => {
@@ -35,9 +35,10 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             return !isDirectory && !isHiddenFile
         })
 
+        // Get the context from each file in the directory
         for (const [name, _type] of filtered) {
-            // Get the context from each file
-            const fileUri = Utils.joinPath(document.uri, name)
+            // Reconstruct the file URI with the file name and directory URI
+            const fileUri = Utils.joinPath(dirUri, name)
 
             // check file size before opening the file. skip file if it's larger than 1MB
             const fileSize = await vscode.workspace.fs.stat(fileUri)
@@ -60,10 +61,9 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
 
             contextFiles.push(contextFile)
         }
-
-        return contextFiles
     } catch (error) {
         console.error(error)
-        return []
     }
+
+    return contextFiles
 }
