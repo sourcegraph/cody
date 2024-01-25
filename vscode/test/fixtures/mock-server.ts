@@ -334,11 +334,12 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-let loggedTestRun = false
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
     }
+
+    const loggedTestRun: Record<string, boolean> = {}
 
     const message = {
         type,
@@ -356,11 +357,11 @@ async function logTestingData(type: 'legacy' | 'new', data: string): Promise<voi
     await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    if (!loggedTestRun) {
+    if (!loggedTestRun[currentTestRunID]) {
         console.log(
             `Message published - TestRunId: ${currentTestRunID}, TestName: ${currentTestName}, TestID: ${currentTestID}`
         )
-        loggedTestRun = true
+        loggedTestRun[currentTestRunID] = true
     }
 }
 
