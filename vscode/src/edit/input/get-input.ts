@@ -2,12 +2,10 @@ import * as vscode from 'vscode'
 import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 
 import type { EditSupportedModels } from '../prompt'
-import * as defaultCommands from '../../commands/prompt/cody.json'
-import { executeEdit } from '../execute'
 import { getEditor } from '../../editor/active-editor'
 import { getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
-import { getEditSmartSelection } from '../utils/edit-selection'
+import { getEditMaximumSelection, getEditSmartSelection } from '../utils/edit-selection'
 import { createQuickPick } from './quick-pick'
 import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
@@ -15,12 +13,8 @@ import type { EditMode, EditRangeSource } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems } from './get-items/model'
 import { RANGE_ITEMS, getRangeInputItems } from './get-items/range'
-import {
-    DEFAULT_DOCUMENT_ITEMS,
-    DOCUMENT_ITEMS_RANGE_MAP,
-    getDocumentInputItems,
-} from './get-items/document'
-import { DEFAULT_TEST_ITEMS, TEST_ITEMS_RANGE_MAP, getTestInputItems } from './get-items/test'
+import { DEFAULT_DOCUMENT_ITEMS, getDocumentInputItems } from './get-items/document'
+import { DEFAULT_TEST_ITEMS, getTestInputItems } from './get-items/test'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -161,7 +155,7 @@ export const getInput = async (
                     return
                 }
                 if (item.label === RANGE_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
+                    const smartSelection = await getEditSmartSelection(document, initialRange, {
                         ignoreSelection: true,
                     })
                     updateActiveRange(
@@ -171,8 +165,11 @@ export const getInput = async (
                     return
                 }
                 if (item.label === RANGE_ITEMS.maximum.label) {
-                    const fullRange = new vscode.Range(0, 0, editor.document.lineCount, 0)
-                    updateActiveRange(new vscode.Selection(fullRange.start, fullRange.end), 'maximum')
+                    const maximumRange = getEditMaximumSelection(document, initialRange)
+                    updateActiveRange(
+                        new vscode.Selection(maximumRange.start, maximumRange.end),
+                        'maximum'
+                    )
                     return
                 }
             },
@@ -199,7 +196,7 @@ export const getInput = async (
                     return
                 }
                 if (item.label === DEFAULT_DOCUMENT_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
+                    const smartSelection = await getEditSmartSelection(document, initialRange, {
                         ignoreSelection: true,
                     })
                     updateActiveRange(
@@ -208,30 +205,10 @@ export const getInput = async (
                     )
                     return
                 }
-                const selectedRange = DOCUMENT_ITEMS_RANGE_MAP.get(item)
-                if (!selectedRange) {
-                    return
-                }
-                updateActiveRange(
-                    new vscode.Selection(selectedRange.start, selectedRange.end),
-                    'selection'
-                )
             },
             onDidAccept: () => {
                 // Hide the input and execute a new edit for 'Document'
                 documentInput.input.hide()
-                return executeEdit(
-                    {
-                        document,
-                        instruction: defaultCommands.commands.doc.prompt,
-                        range: activeRange,
-                        intent: 'doc',
-                        mode: 'insert',
-                        contextMessages: [],
-                        userContextFiles: [],
-                    },
-                    'menu'
-                )
             },
         })
 
@@ -255,7 +232,7 @@ export const getInput = async (
                     return
                 }
                 if (item.label === DEFAULT_TEST_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(editor.document, initialRange, {
+                    const smartSelection = await getEditSmartSelection(document, initialRange, {
                         ignoreSelection: true,
                     })
                     updateActiveRange(
@@ -264,14 +241,6 @@ export const getInput = async (
                     )
                     return
                 }
-                const selectedRange = TEST_ITEMS_RANGE_MAP.get(item)
-                if (!selectedRange) {
-                    return
-                }
-                updateActiveRange(
-                    new vscode.Selection(selectedRange.start, selectedRange.end),
-                    'selection'
-                )
             },
             onDidAccept: () => {
                 // Hide the input and execute a new edit for 'Test'
