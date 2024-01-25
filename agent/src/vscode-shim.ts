@@ -29,8 +29,6 @@ import {
     CommentThreadCollapsibleState,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
-    emptyDisposable,
-    emptyEvent,
     ExtensionKind,
     FileType,
     LogLevel,
@@ -42,12 +40,16 @@ import {
     ViewColumn,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+
+import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import { AgentQuickPick } from './AgentQuickPick'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -68,8 +70,6 @@ export {
     DiagnosticSeverity,
     FoldingRange,
     Disposable,
-    emptyDisposable,
-    emptyEvent,
     EndOfLine,
     ExtensionMode,
     FileType,
@@ -585,35 +585,7 @@ const _window: typeof vscode.window = {
         throw new Error('Not implemented: vscode.window.showInputBox')
     },
     createQuickPick: <T extends vscode.QuickPickItem>() => {
-        console.log('creating stub quickpick', new Error().stack)
-        const quickPick: vscode.QuickPick<T> = {
-            title: '',
-            items: [],
-            activeItems: [],
-            selectedItems: [],
-            busy: false,
-            enabled: false,
-            step: 1,
-            totalSteps: 1,
-            canSelectMany: false,
-            matchOnDescription: false,
-            matchOnDetail: false,
-            placeholder: '',
-            ignoreFocusOut: false,
-            value: '',
-            buttons: [],
-            onDidAccept: new EventEmitter<void>().event,
-            onDidChangeActive: new EventEmitter<readonly T[]>().event,
-            onDidTriggerItemButton: new EventEmitter<vscode.QuickPickItemButtonEvent<T>>().event,
-            onDidChangeValue: new EventEmitter<string>().event,
-            onDidTriggerButton: new EventEmitter<vscode.QuickInputButton>().event,
-            onDidHide: new EventEmitter<void>().event,
-            onDidChangeSelection: new EventEmitter<T[]>().event,
-            show: () => {},
-            hide: () => {},
-            dispose: () => {},
-        }
-        return quickPick
+        return new AgentQuickPick<T>()
     },
     createInputBox: () => {
         console.log(new Error().stack)
