@@ -359,7 +359,7 @@ async function logTestingData(type: 'legacy' | 'new', data: string): Promise<voi
     })
     if (!loggedTestRun[currentTestRunID]) {
         console.log(
-            `Message published - TestRunId: ${currentTestRunID}, TestName: ${currentTestName}, TestID: ${currentTestID}`
+            `Messages published - TestRunId: ${currentTestRunID}, TestName: ${currentTestName}, TestID: ${currentTestID}`
         )
         loggedTestRun[currentTestRunID] = true
     }
