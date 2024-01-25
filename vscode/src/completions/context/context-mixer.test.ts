@@ -71,10 +71,14 @@ describe('ContextMixer', () => {
                         {
                             uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
+                            startLine: 0,
+                            endLine: 0,
                         },
                         {
                             uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
+                            startLine: 0,
+                            endLine: 0,
                         },
                     ],
                 ])
@@ -85,10 +89,14 @@ describe('ContextMixer', () => {
                 {
                     fileName: 'foo.ts',
                     content: 'function foo() {}',
+                    startLine: 0,
+                    endLine: 0,
                 },
                 {
                     fileName: 'bar.ts',
                     content: 'function bar() {}',
+                    startLine: 0,
+                    endLine: 0,
                 },
             ])
             expect(logSummary).toEqual({
@@ -115,10 +123,14 @@ describe('ContextMixer', () => {
                         {
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
+                            startLine: 0,
+                            endLine: 0,
                         },
                         {
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
+                            startLine: 0,
+                            endLine: 0,
                         },
                     ],
 
@@ -126,14 +138,20 @@ describe('ContextMixer', () => {
                         {
                             uri: testFileUri('baz.ts'),
                             content: 'function baz2() {}',
+                            startLine: 0,
+                            endLine: 0,
                         },
                         {
                             uri: testFileUri('baz.ts'),
                             content: 'function baz2.2() {}',
+                            startLine: 1,
+                            endLine: 1,
                         },
                         {
                             uri: testFileUri('bar.ts'),
                             content: 'function bar2() {}',
+                            startLine: 1,
+                            endLine: 1,
                         },
                     ],
                 ])
@@ -144,23 +162,33 @@ describe('ContextMixer', () => {
               [
                 {
                   "content": "function bar1() {}",
+                  "endLine": 0,
                   "fileName": "bar.ts",
+                  "startLine": 0,
                 },
                 {
                   "content": "function bar2() {}",
+                  "endLine": 1,
                   "fileName": "bar.ts",
+                  "startLine": 1,
                 },
                 {
                   "content": "function foo1() {}",
+                  "endLine": 0,
                   "fileName": "foo.ts",
+                  "startLine": 0,
                 },
                 {
                   "content": "function baz2() {}",
+                  "endLine": 0,
                   "fileName": "baz.ts",
+                  "startLine": 0,
                 },
                 {
                   "content": "function baz2.2() {}",
+                  "endLine": 1,
                   "fileName": "baz.ts",
+                  "startLine": 1,
                 },
               ]
             `)

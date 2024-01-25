@@ -104,6 +104,11 @@ export class ContextMixer implements vscode.Disposable {
             })
         )
 
+        // const fusedResults = fuseResults(results.map(r => new Set(r.snippets)), (result => {
+        //     const lines = []
+        //     for (let i = result.)
+        // })
+
         // For every retrieval strategy, create a map of snippets by document.
         const resultsByDocument = new Map<string, { [identifier: string]: ContextSnippet[] }>()
         for (const { identifier, snippets } of results) {
