@@ -7,17 +7,17 @@ import {
     type ContextFile,
 } from '@sourcegraph/cody-shared'
 
-import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
-import type { EditIntent, EditMode } from '../edit/types'
-import { getEditor } from '../editor/active-editor'
-import { logDebug } from '../log'
-import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { executeEdit, type ExecuteEditArguments } from '../../edit/execute'
+import type { EditIntent, EditMode } from '../../edit/types'
+import { getEditor } from '../../editor/active-editor'
+import { logDebug } from '../../log'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import type { CodyCommandArgs } from '.'
-import { getCommandContextFiles } from './context'
-import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
-import { executeChat } from './default/ask'
+import type { CodyCommandArgs } from '../types'
+import { getCommandContextFiles } from '../context'
+import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { executeChat } from '../default/ask'
 
 /**
  * NOTE: Used by Command Controller only.
@@ -39,8 +39,6 @@ export class CommandRunner implements vscode.Disposable {
         // If runInChatMode is true, set mode to 'ask' to run as chat command
         // This allows users to run any edit commands in chat mode
         command.mode = args.runInChatMode ? 'ask' : command.mode ?? 'ask'
-        // update prompt with additional input added at the end
-        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
 
         this.command = command
     }
@@ -114,11 +112,13 @@ export class CommandRunner implements vscode.Disposable {
         const prompt = this.command.prompt
 
         // Fetch context for the command
-        const userContextFiles = await this.getContextFiles()
+        const contextFiles = await this.getContextFiles()
 
         // NOTE: (bee) codebase context is not supported for custom commands
-        return executeChat(prompt, {
-            userContextFiles,
+        return executeChat({
+            text: prompt,
+            submitType: 'user',
+            contextFiles,
             addEnhancedContext: this.command.context?.codebase ?? false,
             source: this.args.source,
         })

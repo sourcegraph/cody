@@ -16,13 +16,12 @@ export function createFileWatchers(configFile?: vscode.Uri): vscode.FileSystemWa
     return watcher
 }
 
-// Create a .vscode/cody.json file in the root directory of the workspace
-// or user's home directory
+// Create an empty Json file at the given path
 export async function createJSONFile(file: vscode.Uri): Promise<void> {
     await saveJSONFile({ commands: [] }, file)
 }
 
-// Add context from the sample files to the .vscode/cody.json file
+// Add context to the given file
 export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<void> {
     try {
         const workspaceEditor = new vscode.WorkspaceEdit()

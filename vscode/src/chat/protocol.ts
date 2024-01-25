@@ -157,7 +157,7 @@ interface ExtensionAttributionMessage {
 
 export type ChatSubmitType = 'user' | 'user-newchat'
 
-interface WebviewSubmitMessage extends WebviewContextMessage {
+export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
 }

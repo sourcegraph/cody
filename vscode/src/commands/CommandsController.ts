@@ -2,9 +2,9 @@ import type * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
-import type { CodyCommandArgs } from '.'
-import { CommandRunner } from './CommandRunner'
-import type { CommandsProvider } from './services/commands-provider'
+import type { CodyCommandArgs } from './types'
+import { CommandRunner } from './services/runner'
+import type { CommandsProvider } from './services/provider'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
 
 /**
@@ -26,6 +26,8 @@ class CommandsController implements vscode.Disposable {
 
     /**
      * Executes a Cody command from user input text and command args.
+     *
+     * Handles prompt building and context fetching for commands.
      */
     public async execute(text: string, args: CodyCommandArgs): Promise<ChatSession | undefined> {
         const commandSplit = text.split(' ')
@@ -37,9 +39,13 @@ class CommandsController implements vscode.Disposable {
         }
 
         // Additional instruction that will be added to end of prompt in the custom command prompt
-        command.additionalInput = commandKey === text ? '' : commandSplit.join(' ')
+        // It's added at execution time to allow dynamic arguments
+        // E.g. if the command is `/edit replace dash with period`,
+        // the additionalInput is `replace dash with period`
+        const additionalArgs = commandKey === text ? '' : commandSplit.join(' ')
+        command.prompt = [command.prompt, additionalArgs].join(' ')?.trim()
 
-        // Add shell output as context if needed
+        // Add shell output as context if any before passing to the runner
         const shell = command.context?.command
         if (shell) {
             const contextFile = await this.provider?.runShell(shell)

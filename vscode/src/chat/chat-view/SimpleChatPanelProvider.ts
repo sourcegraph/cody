@@ -26,7 +26,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { newCodyCommandArgs } from '../../commands'
 import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
@@ -80,6 +79,7 @@ import {
     type ContextItem,
     type MessageWithContext,
 } from './SimpleChatModel'
+import { newCodyCommandArgs } from '../../commands/utils/get-commands'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -364,7 +364,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 source: 'chat',
                 requestID,
             })
-            return vscode.commands.executeCommand('cody.action.commands.exec', inputText, commandArgs)
+            return vscode.commands.executeCommand('cody.action.command', inputText, commandArgs)
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {

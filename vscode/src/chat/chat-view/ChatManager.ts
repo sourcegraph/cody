@@ -19,7 +19,7 @@ import type { AuthStatus } from '../protocol'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { ExecuteChatArguments } from '../../commands/default'
+import type { ExecuteChatArguments } from '../../commands/default/ask'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -65,9 +65,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Register Commands
         this.disposables.push(
-            vscode.commands.registerCommand('cody.action.chat', (input, args) =>
-                this.executeChat(input, args)
-            ),
+            vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
@@ -107,10 +105,7 @@ export class ChatManager implements vscode.Disposable {
     /**
      * Execute a chat request in a new chat panel
      */
-    public async executeChat(
-        question: string,
-        args?: ExecuteChatArguments
-    ): Promise<ChatSession | undefined> {
+    public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const requestID = uuid.v4()
         telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
             requestID,
@@ -120,9 +115,9 @@ export class ChatManager implements vscode.Disposable {
         const provider = await this.getChatProvider()
         await provider?.handleUserMessageSubmission(
             requestID,
-            question,
-            args?.submitType ?? 'user-newchat',
-            args?.userContextFiles ?? [],
+            args.text,
+            args?.submitType,
+            args?.contextFiles ?? [],
             args?.addEnhancedContext ?? true
         )
         return provider

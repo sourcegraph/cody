@@ -25,7 +25,7 @@ import {
     type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { newCodyCommandArgs, type CodyCommandArgs } from './commands'
+import type { CodyCommandArgs } from './commands/types'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -49,10 +49,15 @@ import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './se
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { executeDocCommand } from './commands/default/doc'
-import { executeNewTestCommand } from './commands/default/test-file'
-import { getDefaultChatCommandParams } from './commands/default'
+import { executeNewTestCommand } from './commands/default/unit'
+import { getDefaultChatCommandPrompts } from './commands/default'
 import { getEditor } from './editor/active-editor'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
+import { newCodyCommandArgs } from './commands/utils/get-commands'
+import type {
+    DefaultChatCommands,
+    DefaultCodyCommands,
+} from '@sourcegraph/cody-shared/src/commands/types'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -307,7 +312,7 @@ const register = async (
 
     // Execute a Cody Command
     const executeCommand = async (
-        id: string,
+        id: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<ChatSession | undefined> => {
         const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
@@ -327,15 +332,25 @@ const register = async (
             return undefined
         }
 
-        if (id === 'test' || id === 'smell' || id === 'explain') {
-            const { prompt, args } = await getDefaultChatCommandParams(id)
-            return chatManager.executeChat(prompt, args)
+        // Process default chat commands
+        const defaultChatParams = await getDefaultChatCommandPrompts(id as DefaultChatCommands)
+        if (defaultChatParams) {
+            return chatManager.executeChat(defaultChatParams)
         }
 
-        // If it's not a default command, execute it as a custom command
-        await executeCodyCommand(id, newCodyCommandArgs(args))
-        return undefined
+        // Process the rest (edit commands and custom commands) with the commands controller
+        return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Register Cody Commands
+    disposables.push(
+        vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
+        vscode.commands.registerCommand('cody.command.explain-code', a => executeCommand('explain', a)),
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeCommand('test', a)),
+        vscode.commands.registerCommand('cody.command.smell-code', a => executeCommand('smell', a)),
+        vscode.commands.registerCommand('cody.command.unit-tests', () => executeNewTestCommand()),
+        vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand())
+    )
 
     const statusBar = createStatusBar()
 
@@ -377,14 +392,6 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai chat',
             })
         ),
-
-        // Cody Commands
-        vscode.commands.registerCommand('cody.command.explain-code', a => executeCommand('explain', a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeCommand('test', a)),
-        vscode.commands.registerCommand('cody.command.smell-code', a => executeCommand('smell', a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', () => executeNewTestCommand()),
-        vscode.commands.registerCommand('cody.command.document-code', () => executeDocCommand()),
-        vscode.commands.registerCommand('cody.action.commands.exec', (id, a) => executeCommand(id, a)),
 
         // Account links
         vscode.commands.registerCommand('cody.show-page', (page: string) => {

@@ -6,8 +6,8 @@ import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
-import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '..'
-import { fromSlashCommand, toSlashCommand } from '../utils/commands'
+import { ConfigFiles, type CodyCommandsFile } from '../types'
+import { fromSlashCommand } from '../utils/commands'
 import {
     createFileWatchers,
     createJSONFile,
@@ -16,6 +16,7 @@ import {
 } from '../utils/config-file'
 import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
+import { buildCodyCommandMap } from '../utils/get-commands'
 
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
@@ -26,7 +27,7 @@ export class CustomCommandsManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     public customCommandsMap = new Map<string, CodyCommand>()
-    public userJSON: CodyCommandsFileJSON | null = null
+    public userJSON: Record<string, unknown> | null = null
 
     private userConfigFile: vscode.Uri | undefined
     private get workspaceConfigFile(): vscode.Uri | undefined {
@@ -34,12 +35,12 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (!workspaceRoot) {
             return undefined
         }
-        return Utils.joinPath(workspaceRoot, ConfigFileName.vscode)
+        return Utils.joinPath(workspaceRoot, ConfigFiles.VSCODE)
     }
 
     constructor() {
         const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
-        this.userConfigFile = Utils.joinPath(URI.file(userHomePath), ConfigFileName.vscode)
+        this.userConfigFile = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
 
         this.disposables.push(
             vscode.commands.registerCommand('cody.commands.add', () => this.newCustomCommandQuickPick()),
@@ -122,20 +123,15 @@ export class CustomCommandsManager implements vscode.Disposable {
         try {
             const bytes = await vscode.workspace.fs.readFile(uri)
             const content = new TextDecoder('utf-8').decode(bytes)
-            if (!content) {
-                return null
+            if (!content.trim()) {
+                throw new Error('Empty file')
             }
-            const json = JSON.parse(content) as CodyCommandsFileJSON
-            const commands = Object.entries(json.commands)
-            for (const [key, prompt] of commands) {
-                const current: CodyCommand = { ...prompt, slashCommand: toSlashCommand(key) }
-                current.type = type
-                current.mode = current.mode ?? 'ask'
-                this.customCommandsMap.set(current.slashCommand, current)
-            }
+            const customCommandsMap = buildCodyCommandMap(type, content)
+            this.customCommandsMap = new Map([...this.customCommandsMap, ...customCommandsMap])
+
             // Keep a copy of the user json file for recreating the commands later
             if (type === 'user') {
-                this.userJSON = json
+                this.userJSON = JSON.parse(content)
             }
         } catch (error) {
             logDebug('CustomCommandsProvider:build', 'failed', { verbose: error })
@@ -204,9 +200,8 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (!uri) {
             throw new Error('Invalid file path')
         }
-
         try {
-            await saveJSONFile(jsonContext as CodyCommandsFileJSON, uri)
+            await saveJSONFile(jsonContext, uri)
         } catch (error) {
             logError('CustomCommandsProvider:save', 'failed', { verbose: error })
         }

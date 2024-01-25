@@ -1,16 +1,32 @@
-// A list of default cody commands
-export type CodyDefaultCommands = 'ask' | 'doc' | 'edit' | 'explain' | 'smell' | 'test' | 'reset'
+// The default Cody Commands
+export type DefaultCodyCommands = DefaultChatCommands | DefaultEditCommands
 
-// The blueprint of a Cody Command
+// Default Cody Commands that runs as a Chat request
+export enum DefaultChatCommands {
+    Ask = 'chat', // Submit a question in chat
+    Explain = 'explain', // Explain code
+    Test = 'test', // Generate unit tests in Chat
+    Smell = 'smell', // Generate code smell report in Chat
+}
+
+// Default Cody Commands that runs as an Inline Edit command
+export enum DefaultEditCommands {
+    Edit = 'edit', // Inline edit request
+    Unit = 'unit', // Generate unit tests with inline edit
+    Doc = 'doc', // Generate documentation with inline edit
+}
+
+// The blueprint of a Cody Custom Command
 export interface CodyCommand {
-    requestID?: string
-    description?: string
+    slashCommand: string
     prompt: string
+    description?: string
     context?: CodyCommandContext
     type?: CodyCommandType
-    slashCommand: string
     mode?: CodyCommandMode
-    additionalInput?: string
+
+    // Internal use - the ID of the request
+    requestID?: string
 }
 
 /**
@@ -36,10 +52,6 @@ export interface CodyCommandContext {
     none?: boolean
 }
 
-type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
+export type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
 
 export type CustomCommandType = 'workspace' | 'user'
-
-export const defaultCodyCommandContext: CodyCommandContext = {
-    codebase: false,
-}

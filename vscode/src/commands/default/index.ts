@@ -1,37 +1,43 @@
-import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 import { explainCommand } from './explain'
 import { smellCommand } from './smell'
 import { testCommand } from './test'
+import type { ExecuteChatArguments } from './ask'
+import { DefaultChatCommands, DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 
-import type { ChatSubmitType } from '../../chat/protocol'
+export { commands as defaultCommands } from './cody.json'
 
-// Default Cody Commands
-export type DefaultCodyCommands = DefaultCodyChatCommands | DefaultCodyEditCommands
-export type DefaultCodyChatCommands = 'test' | 'smell' | 'explain'
-export type DefaultCodyEditCommands = 'doc' | 'edit'
-
-export interface ExecuteChat {
-    prompt: string
-    args?: ExecuteChatArguments
+export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
+    // Remove leading slash if any
+    const key = id.replace(/^\//, '').trim() as DefaultChatCommands
+    if (Object.values(DefaultChatCommands).includes(key)) {
+        return key
+    }
+    return undefined
 }
 
-export interface ExecuteChatArguments {
-    userContextFiles?: ContextFile[]
-    addEnhancedContext?: boolean
-    source?: ChatEventSource
-    submitType?: ChatSubmitType
+export function isDefaultEditCommand(id: string): DefaultEditCommands | undefined {
+    // Remove leading slash if any
+    const key = id.replace(/^\//, '').trim() as DefaultEditCommands
+    if (Object.values(DefaultEditCommands).includes(key)) {
+        return key
+    }
+    return undefined
 }
+
 /**
  * Gets the default command prompt and context with arguments for the given default command.
  */
-export async function getDefaultChatCommandParams(id: DefaultCodyCommands): Promise<ExecuteChat> {
-    if (id === 'explain') {
-        return await explainCommand()
+export async function getDefaultChatCommandPrompts(
+    id: DefaultChatCommands
+): Promise<ExecuteChatArguments | undefined> {
+    switch (id) {
+        case DefaultChatCommands.Explain:
+            return await explainCommand()
+        case DefaultChatCommands.Smell:
+            return await smellCommand()
+        case DefaultChatCommands.Test:
+            return await testCommand()
+        default:
+            return undefined
     }
-
-    if (id === 'smell') {
-        return await smellCommand()
-    }
-
-    return await testCommand()
 }

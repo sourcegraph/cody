@@ -3,7 +3,7 @@ import { platform } from 'os'
 import { window, type QuickPickItem, commands } from 'vscode'
 import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separators } from './constant'
 
-import { vscodeDefaultCommands } from '../services/commands-provider'
+import { vscodeDefaultCommands } from '../services/provider'
 import { openCustomCommandDocsLink } from '../utils/config-file'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import type { CustomCommandsItem } from './types'
@@ -132,7 +132,7 @@ export async function showCommandMenu(
 
             // Else, process the selection as a command
             if (selected.startsWith('/')) {
-                void commands.executeCommand('cody.action.commands.exec', selected)
+                void commands.executeCommand('cody.action.command', selected)
             }
 
             quickPick.hide()

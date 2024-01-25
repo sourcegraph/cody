@@ -1,11 +1,11 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { getDefaultCommandsMap } from '..'
 import { EDIT_COMMAND } from '../menus/constant'
-import { CustomCommandsManager } from './custom-manager'
+import { CustomCommandsManager } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
+import { getDefaultCommandsMap } from '../utils/get-commands'
 
 const editorCommands: CodyCommand[] = [
     {

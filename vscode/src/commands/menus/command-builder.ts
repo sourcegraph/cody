@@ -1,10 +1,6 @@
 import { window, type QuickPickItem } from 'vscode'
 
-import {
-    defaultCodyCommandContext,
-    type CodyCommand,
-    type CustomCommandType,
-} from '@sourcegraph/cody-shared'
+import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
 
 import { toSlashCommand } from '../utils/commands'
 import { customPromptsContextOptions } from './constant'
@@ -108,7 +104,7 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        newPrompt.context = { ...defaultCodyCommandContext }
+        newPrompt.context = { ...{ codebase: false } }
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'New Custom Cody Command: Context Options',
             placeHolder: 'For accurate responses, choose only the necessary options.',
