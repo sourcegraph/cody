@@ -155,59 +155,51 @@ function createCodeBlockActionButton(
 }
 
 class GuardrailsStatusController {
-    readonly iconClass = "guardrails-icon";
-    readonly spinnerClass = "guardrails-spinner";
+    readonly statusSpinning = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`;
+    readonly statusPass = '<i class="codicon codicon-pass"></i>';
+    readonly statusFailed = "Guard Rails Check Failed";
+    readonly statusUnavailable = "Guard Rails API Error";
 
-    private icon: HTMLElement;
-    private spinner: HTMLElement;
+    readonly iconClass = "guardrails-icon";
+    readonly statusClass = "guardrails-status";
+
+    private status: HTMLElement;
 
     constructor(public container: HTMLElement) {
-        this.icon = this.findOrAppend(this.iconClass, () => this.makeIcon());
-        this.spinner = this.findOrAppend(this.spinnerClass, () => {
-            const spinner = this.makeSpinner();
-            this.hide(spinner);
-            return spinner;
+        this.findOrAppend(this.iconClass, () => {
+            const icon = document.createElement("div");
+            icon.innerHTML = ShieldIcon;
+            icon.classList.add(styles.attributionIcon, this.iconClass);
+            icon.setAttribute("data-testid", "attribution-indicator");
+            return icon;
+        });
+        this.status = this.findOrAppend(this.statusClass, () => {
+            const status = document.createElement("div");
+            status.classList.add(styles.status, this.statusClass);
+            return status;
         });
     }
 
     public setPending() {
-        this.spinner.innerHTML = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`;
-        this.show(this.spinner);
         this.container.title = "Guard Rails: Running Code Attribution Check…";
+        this.status.innerHTML = this.statusSpinning;
     }
 
     public setSuccess() {
-        this.spinner.innerHTML = '<i class="codicon codicon-pass></i>';
-        this.show(this.spinner);
-        this.icon.classList.add(styles.attributionIconNotFound);
         this.container.title = "Guard Rails Check Passed";
+        this.status.innerHTML = this.statusPass;
     }
 
     public setFailure(repos: string[], limitHit: boolean) {
-        this.icon.classList.add(styles.attributionIconFound);
-        this.hide(this.spinner);
+        this.container.classList.add(styles.attributionIconFound);
         this.container.title = this.tooltip(repos, limitHit);
+        this.status.innerHTML = this.statusFailed;
     }
 
     public setUnavailable() {
-        this.icon.classList.add(styles.attributionIconUnavailable);
-        this.icon.title = "Attribution search unavailable.";
-        this.hide(this.spinner);
-    }
-
-    private makeIcon(): HTMLElement {
-        const icon = document.createElement("div");
-        icon.innerHTML = ShieldIcon;
-        icon.classList.add(styles.attributionIcon, this.iconClass);
-        icon.title = "Attribution search running...";
-        icon.setAttribute("data-testid", "attribution-indicator");
-        return icon;
-    }
-
-    private makeSpinner(): HTMLElement {
-        const spinner = document.createElement("div");
-        spinner.classList.add(styles.spinner, this.spinnerClass);
-        return spinner;
+        this.container.classList.add(styles.attributionIconUnavailable);
+        this.container.title = "Attribution search unavailable.";
+        this.status.innerHTML = this.statusUnavailable;
     }
 
     private findOrAppend(
@@ -215,20 +207,12 @@ class GuardrailsStatusController {
         make: () => HTMLElement
     ): HTMLElement {
         const elements = this.container.getElementsByClassName(className);
-        if (elements.length === 0) {
-            const newElement = make();
-            this.container.append(newElement);
-            return newElement;
+        if (elements.length > 0) {
+            return elements[0] as HTMLElement;
         }
-        return elements[0] as HTMLElement;
-    }
-
-    private hide(element: HTMLElement) {
-        element.style.visibility = "hidden";
-    }
-
-    private show(element: HTMLElement) {
-        element.style.visibility = "visible";
+        const newElement = make();
+        this.container.append(newElement);
+        return newElement;
     }
 
     private tooltip(repos: string[], limitHit: boolean) {

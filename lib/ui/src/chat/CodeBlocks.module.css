@@ -21,10 +21,10 @@
 .copy-button,
 .insert-button,
 .attribution-icon,
-.spinner {
+.status {
     all: unset;
     padding: 3px;
-    width: 16px;
+    min-width: 16px;  /* Status element needs to be able to expand. */
     height: 16px;
     background-color: transparent;
 }
@@ -35,18 +35,14 @@
 }
 
 .attribution-icon-unavailable {
-    color: var(--hl-dark-yellow);
+    color: var(--hl-orange);
 }
 
 .attribution-icon-found {
     color: var(--hl-dark-red);
 }
 
-.attribution-icon-not-found {
-    color: var(--hl-dark-green);
-}
-
-.spinner {
+.status {
     display: flex;
     align-items: center;
 }
