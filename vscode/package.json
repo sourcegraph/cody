@@ -1041,7 +1041,7 @@
         "description": "Anthropic logo",
         "default": {
           "fontPath": "resources/cody-icons.woff",
-          "fontCharacter": "\\0044"
+          "fontCharacter": "\\0043"
         }
       },
       "new-comment-icon": {
