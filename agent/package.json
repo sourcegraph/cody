@@ -1,71 +1,57 @@
 {
-  "name": "@sourcegraph/cody-agent",
-  "version": "0.0.5",
-  "description": "Cody JSON-RPC agent for consistent cross-editor support",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sourcegraph/cody",
-    "directory": "agent"
-  },
-  "main": "src/index.ts",
-  "sideEffects": false,
-  "scripts": {
-    "build:root": "pnpm -C .. run -s build",
-    "build:agent": "node src/esbuild.mjs",
-    "build": "pnpm run -s build:root && pnpm run -s build:agent",
-    "build-minify": "pnpm run build --minify",
-    "agent": "pnpm run build && node dist/index.js",
-    "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js",
-    "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && pkg --compress GZip --no-bytecode --public-packages \"*\" --public . --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
-    "test-agent-binary": "esbuild ./scripts/test-agent-binary.ts --bundle --platform=node --alias:vscode=./src/vscode-shim.ts --outdir=dist && node ./dist/test-agent-binary.js",
-    "test": "vitest",
-    "prepublishOnly": "pnpm run build"
-  },
-  "pkg": {
-    "targets": [
-      "latest-linux-arm64",
-      "latest-linux-x64",
-      "latest-macos-x64",
-      "latest-win-x64",
-      "latest-macos-arm64"
-    ],
-    "assets": "dist/*.{wasm,map}"
-  },
-  "bin": "dist/index.js",
-  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
-  "dependencies": {
-    "@pollyjs/core": "^6.0.6",
-    "@pollyjs/persister": "^6.0.6",
-    "@pollyjs/persister-fs": "^6.0.6",
-    "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/telemetry": "^0.16.0",
-    "@types/js-levenshtein": "^1.1.1",
-    "commander": "^11.1.0",
-    "csv-writer": "^1.6.0",
-    "dedent": "^0.7.0",
-    "env-paths": "^3.0.0",
-    "fast-myers-diff": "^3.1.0",
-    "js-levenshtein": "^1.1.6",
-    "mac-ca": "^2.0.3",
-    "minimatch": "^9.0.3",
-    "pretty-ms": "^8.0.0",
-    "uuid": "^9.0.0",
-    "vscode-uri": "^3.0.7"
-  },
-  "devDependencies": {
-    "@types/dedent": "^0.7.0",
-    "@types/diff": "^5.0.9",
-    "@types/google-protobuf": "3.15.12",
-    "@types/minimatch": "^5.1.2",
-    "@types/uuid": "^9.0.2",
-    "@types/vscode": "^1.80.0",
-    "diff": "^5.2.0",
-    "esbuild": "^0.18.19",
-    "google-protobuf": "^3.21.2",
-    "parse-git-diff": "^0.0.14",
-    "pkg": "^5.8.1",
-    "rimraf": "^5.0.5"
-  }
+    "private": true,
+    "name": "@sourcegraph/cody-agent",
+    "version": "0.0.1",
+    "description": "Cody JSON-RPC agent for consistent cross-editor support",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sourcegraph/cody",
+        "directory": "agent"
+    },
+    "main": "src/index.ts",
+    "sideEffects": false,
+    "scripts": {
+        "build:root": "cd .. && pnpm build && cd $(pwd)/agent",
+        "build:agent": "node src/esbuild.mjs",
+        "build": "pnpm run build:root && pnpm run build:agent",
+        "build-minify": "pnpm run build --minify",
+        "agent": "pnpm run build && node dist/index.js",
+        "agent:debug": "pnpm run build && node --inspect --enable-source-maps ./dist/index.js",
+        "build-ts": "tsc --build",
+        "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
+        "test": "vitest"
+    },
+    "dependencies": {
+        "@pollyjs/core": "^6.0.6",
+        "@pollyjs/persister": "^6.0.6",
+        "@pollyjs/persister-fs": "^6.0.6",
+        "@sourcegraph/cody-shared": "workspace:*",
+        "@sourcegraph/telemetry": "^0.16.0",
+        "@types/js-levenshtein": "^1.1.1",
+        "commander": "^11.1.0",
+        "csv-writer": "^1.6.0",
+        "dedent": "^0.7.0",
+        "env-paths": "^3.0.0",
+        "fast-myers-diff": "^3.1.0",
+        "js-levenshtein": "^1.1.6",
+        "minimatch": "^9.0.3",
+        "pretty-ms": "^8.0.0",
+        "uuid": "^9.0.0",
+        "vscode-uri": "^3.0.7"
+    },
+    "devDependencies": {
+        "@types/dedent": "^0.7.0",
+        "@types/diff": "^5.0.9",
+        "@types/google-protobuf": "3.15.12",
+        "@types/minimatch": "^5.1.2",
+        "@types/uuid": "^9.0.2",
+        "@types/vscode": "^1.80.0",
+        "diff": "^5.2.0",
+        "esbuild": "^0.18.19",
+        "google-protobuf": "^3.21.2",
+        "parse-git-diff": "^0.0.14",
+        "pkg": "^5.8.1",
+        "rimraf": "^5.0.5"
+    }
 }

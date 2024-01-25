@@ -11,6 +11,7 @@ import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateSimpleChatStrategy } from './strategy-simple-chat'
+import { Semaphore } from 'async-mutex';
 
 export interface SimpleChatEvalConfig {
     question: string,
@@ -278,7 +279,10 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         true
     )
     .action(async (options: EvaluateAutocompleteOptions) => {
-        const testOptions = await loadEvaluationConfig(options)
+        // const concurrencyLimit = 10
+        // const semaphore = new Semaphore(concurrencyLimit);
+
+        const testOptions = await loadEvaluationConfig(options);
         const workspacesToRun = testOptions.filter(
             testOptions =>
                 matchesGlobPatterns(
@@ -291,13 +295,30 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                     options.excludeFixture,
                     testOptions.fixture.name
                 )
-        )
-        await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
+        );
+        
+        const concurrencyLimit = 100
+        const semaphore = new Semaphore(concurrencyLimit);
+
+        // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
+        // let remainingWorkspaces = workspacesToRun.length;
+        // for(const workspace of workspacesToRun) {
+        //     console.log('------------------------------------------------------')
+        //     console.log(`remaining workspace to eval are: ${remainingWorkspaces}`)
+        //     await evaluateWorkspace(workspace);
+        //     remainingWorkspaces-=1
+        // }
+        await Promise.all(workspacesToRun.map(async (workspace) => {
+            const [_, release] = await semaphore.acquire();
+            try {
+                await evaluateWorkspace(workspace);
+            } finally {
+                release();
+            }
+        }));
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
-    console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
-
     if (!options.queriesDirectory) {
         console.error('missing required options: --queries-directory')
         process.exit(1)
