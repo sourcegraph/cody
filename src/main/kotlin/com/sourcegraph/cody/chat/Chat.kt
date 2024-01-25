@@ -43,8 +43,7 @@ class Chat {
           val contextMessages =
               agentChatMessage.contextFiles?.map { contextFile: ContextFile ->
                 ContextMessage(Speaker.ASSISTANT, agentChatMessageText, contextFile)
-              }
-                  ?: emptyList()
+              } ?: emptyList()
           chat.displayUsedContext(contextMessages)
           chat.addMessageToChat(chatMessage)
         } else {

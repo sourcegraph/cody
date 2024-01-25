@@ -28,8 +28,7 @@ abstract class CodyAutocompleteElementRenderer(
         if (isCustomAutocompleteColorEnabled())
             getCustomAutocompleteColor()?.let {
               AutocompleteRenderUtil.getCustomTextAttributes(editor, it)
-            }
-                ?: textAttributesFallback.get()
+            } ?: textAttributesFallback.get()
         else textAttributesFallback.get()
   }
 

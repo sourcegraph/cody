@@ -22,8 +22,9 @@ fun fetchSubscriptionPanelData(
   if (activeAccountType != null) {
     ensureUserIdMatchInAgent(activeAccountType.id, server)
     return if (activeAccountType.isDotcomAccount()) {
-      val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-      if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+      val codyProFeatureFlag =
+          server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).get() == true
+      if (codyProFeatureFlag) {
         val isCurrentUserPro = getIsCurrentUserPro(server) ?: false
         CompletableFuture.completedFuture(
             SubscriptionTabPanelData(

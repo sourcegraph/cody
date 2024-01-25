@@ -11,7 +11,6 @@ import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.xml.util.XmlStringUtil
-import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextMessage
@@ -130,7 +129,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       fetchSubscriptionPanelData(project, agent.server).thenAccept {
         if (it != null) {
-
           ApplicationManager.getApplication().invokeLater { refreshSubscriptionTab(it) }
         }
       }
@@ -181,16 +179,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         loadNewChatId(callback)
       }
     }
-  }
-
-  private fun getUserId(server: CodyAgentServer): String? {
-    return server
-        .currentUserId()
-        .exceptionally {
-          logger.warn("Unable to fetch user id from agent")
-          null
-        }
-        .get()
   }
 
   @RequiresEdt

@@ -82,7 +82,7 @@ internal class CodyTokenCredentialsUi(
   override fun getValidator(): () -> ValidationInfo? = {
     getServerPathValidationInfo()
         ?: notBlank(tokenTextField, "Token cannot be empty")
-            ?: custom(tokenTextField, "Invalid access token") {
+        ?: custom(tokenTextField, "Invalid access token") {
           AuthorizationUtil.isValidAccessToken(tokenTextField.text)
         }
   }

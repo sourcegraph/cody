@@ -324,7 +324,7 @@ class SettingsMigration : Activity {
   private fun extractAccountType(project: Project): AccountType {
     return project.service<CodyProjectService>().getInstanceType()?.let { toAccountType(it) }
         ?: service<CodyApplicationService>().getInstanceType()?.let { toAccountType(it) }
-            ?: AccountType.DOTCOM
+        ?: AccountType.DOTCOM
   }
 
   private fun toAccountType(it: String): AccountType? {

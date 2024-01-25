@@ -161,14 +161,17 @@ public class RepoUtil {
                         agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
                 .completeOnTimeout(/* value= */ null, /* timeout= */ 4, TimeUnit.SECONDS)
                 .get();
+
+        if (codebaseName == null) {
+          logger.warn(
+              "Failed to convert git clone URL to codebase name for cloneURL via agent for cloneUrl="
+                  + cloneURL);
+        }
       }
 
-      if (codebaseName == null) {
-        logger.warn(
-            "Failed to convert git clone URL to codebase name for cloneURL via agent: " + cloneURL);
-        codebaseName = convertGitCloneURLToCodebaseNameOrError(cloneURL);
-      }
-      return codebaseName;
+      return codebaseName != null
+          ? codebaseName
+          : convertGitCloneURLToCodebaseNameOrError(cloneURL);
     }
 
     if (vcsType == VCSType.PERFORCE) {

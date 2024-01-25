@@ -88,7 +88,7 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
       if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
         return CodyAgentService.getAgent(project)
             .thenCompose { agent ->
-              agent.server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+              agent.server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains)
             }
             .thenApply { it == true }
       }
