@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import type { EditSupportedModels } from '../../prompt'
-import type { EditMode, EditRangeSource } from '../../types'
+import type { EditIntent, EditRangeSource } from '../../types'
 import type { GetItemsResult } from '../quick-pick'
 import { RANGE_ITEMS } from './range'
 import { MODEL_ITEMS } from './model'
@@ -34,7 +34,7 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 }
 
 export const getEditInputItems = (
-    mode: EditMode,
+    intent: EditIntent,
     activeValue: string,
     activeRange: EditRangeSource,
     activeModel: EditSupportedModels
@@ -44,26 +44,31 @@ export const getEditInputItems = (
     if (activeValue.trim().length > 0) {
         items.push(SUBMIT_ITEM)
     }
+
     items.push({
         label: 'edit options',
         kind: vscode.QuickPickItemKind.Separator,
     })
 
-    if (mode !== 'file' && mode !== 'insert') {
+    if (intent === 'edit') {
         items.push({ ...RANGE_ITEM, detail: RANGE_ITEMS[activeRange].label })
     }
-    items.push({ ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label })
 
+    // Ever-present items
     items.push(
+        { ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label },
         {
             label: 'commands',
             kind: vscode.QuickPickItemKind.Separator,
         },
-        DOCUMENT_ITEM,
-        TEST_ITEM
+        DOCUMENT_ITEM
     )
 
-    return {
-        items,
+    const config = vscode.workspace.getConfiguration('cody')
+    const unstableTestCommandEnabled = config.get('internal.unstable') as boolean
+    if (unstableTestCommandEnabled) {
+        items.push(TEST_ITEM)
     }
+
+    return { items }
 }

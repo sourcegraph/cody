@@ -101,8 +101,11 @@ export function getEditMaximumSelection(
         )
         const newCharCount = document.getText(newRange).length
 
-        if (newCharCount > MAXIMUM_EDIT_SELECTION_LENGTH) {
-            break // Stop expanding if the next expansion goes over the limit
+        if (
+            newCharCount > MAXIMUM_EDIT_SELECTION_LENGTH ||
+            (newStartLine === 0 && newEndLine === document.lineCount - 1)
+        ) {
+            break // Stop expanding if the next expansion goes over the limit or the entire document is selected
         }
 
         expandedRange = newRange

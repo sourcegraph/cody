@@ -14,7 +14,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import type { EditRangeSource } from './types'
-import { getEditSmartSelection } from './utils/edit-selection'
+import { getEditSmartSelection, isGenerateIntent } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE, DEFAULT_EDIT_MODEL } from './constants'
 
 export interface EditManagerOptions {
@@ -87,12 +87,18 @@ export class EditManager implements vscode.Disposable {
         // Support expanding the selection range for intents where it is useful
         if (args.intent !== 'add') {
             range = await getEditSmartSelection(document, range)
+        }
+
+        if (editor.active && !range.isEqual(editor.active.selection)) {
+            // Update the editor selection to show the range that will be edited
+            editor.active.selection = new vscode.Selection(range.start, range.end)
             rangeSource = 'expanded'
         }
 
         // Set default edit configuration, if not provided
         const mode = args.mode || DEFAULT_EDIT_MODE
-        const intent = args.intent || DEFAULT_EDIT_INTENT
+        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
+        const intent = isGenerateIntent(document, range) ? 'add' : args.intent || DEFAULT_EDIT_INTENT
         const model = args.model || DEFAULT_EDIT_MODEL
 
         const task = args.instruction?.trim()
@@ -111,6 +117,7 @@ export class EditManager implements vscode.Disposable {
             : await this.controller.promptUserForTask(
                   document,
                   range,
+                  rangeSource,
                   mode,
                   intent,
                   args.contextMessages || [],

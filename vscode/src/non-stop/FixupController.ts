@@ -161,12 +161,19 @@ export class FixupController
     public async promptUserForTask(
         document: vscode.TextDocument,
         range: vscode.Range,
+        rangeSource: EditRangeSource,
         mode: EditMode,
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
-        const input = await getInput(document, range, mode, {}, source)
+        const input = await getInput(
+            document,
+            range,
+            intent,
+            { initialRangeSource: rangeSource },
+            source
+        )
         if (!input) {
             return null
         }
@@ -1059,7 +1066,7 @@ export class FixupController
         const input = await getInput(
             document,
             task.selectionRange,
-            task.mode,
+            task.intent,
             {
                 initialValue: task.instruction,
                 initialSelectedContextFiles: task.userContextFiles,

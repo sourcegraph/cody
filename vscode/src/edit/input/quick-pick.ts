@@ -17,6 +17,11 @@ interface QuickPickConfiguration {
     onDidTriggerButton?: (target: vscode.QuickInputButton) => void
 }
 
+export interface QuickPick {
+    input: vscode.QuickPick<vscode.QuickPickItem>
+    render: (title: string, value: string) => void
+}
+
 export const createQuickPick = ({
     title,
     placeHolder,
@@ -27,10 +32,7 @@ export const createQuickPick = ({
     buttons,
     onDidTriggerButton,
     value = '',
-}: QuickPickConfiguration): {
-    input: vscode.QuickPick<vscode.QuickPickItem>
-    render: (title: string, value: string) => void
-} => {
+}: QuickPickConfiguration): QuickPick => {
     const quickPick = vscode.window.createQuickPick()
     quickPick.title = title
     quickPick.placeholder = placeHolder
