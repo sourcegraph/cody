@@ -1,7 +1,24 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, assertEvents } from './helpers'
+import { resetLoggedEvents, loggedEvents } from '../fixtures/mock-server'
+
+// list of events we expect this test to log, add to this list as needed
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:chat-question:executed',
+    'CodyVSCodeExtension:chat-question:executed',
+    'CodyVSCodeExtension:Auth:connected',
+]
+
+test.beforeEach(() => {
+    void resetLoggedEvents()
+})
 
 test('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -61,4 +78,8 @@ test('shows chat history in sidebar and update chat panel correctly', async ({ p
 
     // Once the chat history is empty, the 'New Chat' button should show up
     await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })

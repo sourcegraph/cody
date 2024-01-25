@@ -1,7 +1,22 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { newChat, test } from './helpers'
+import { newChat, test, assertEvents } from './helpers'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+
+// list of events we expect this test to log, add to this list as needed
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+]
+
+test.beforeEach(() => {
+    void resetLoggedEvents()
+})
 
 test('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -27,4 +42,8 @@ test('enhanced context selector is keyboard accessible', async ({ page, sidebar 
     await expect(enhancedContextCheckbox).not.toBeVisible()
     // ... and focus the button which re-opens it.
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })

@@ -1,7 +1,22 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+
+import { assertEvents, test } from './helpers'
+
+// list of events we expect this test to log, add to this list as needed
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:command:explain:executed',
+]
+test.beforeEach(() => {
+    void resetLoggedEvents()
+})
 
 test('submit command from command palette', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -39,4 +54,8 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     const editButtons = chatPanelFrame.locator('.codicon-edit')
     await expect(editButtons).toHaveCount(1)
     await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })

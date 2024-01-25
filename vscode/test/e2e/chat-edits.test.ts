@@ -1,11 +1,27 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
+import { resetLoggedEvents, loggedEvents } from '../fixtures/mock-server'
 
 const isPlatform = (platform: string) => process.platform === platform
 const isMac = isPlatform('darwin')
 const osKey = isMac ? 'Meta' : 'Control'
+
+// list of events we expect this test to log, add to this list as needed
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:chat-question:executed',
+    'CodyVSCodeExtension:chatResponse:hasCode',
+]
+
+test.beforeEach(() => {
+    void resetLoggedEvents()
+})
 
 test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -134,4 +150,8 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     // // Meta+/ also creates a new chat session
     // await chatInput.press(`${osKey}+/`)
     // await expect(chatFrame.getByText('The End')).not.toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    assertEvents(loggedEvents, expectedEvents)
 })

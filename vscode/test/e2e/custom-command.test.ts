@@ -1,9 +1,18 @@
 import { expect } from '@playwright/test'
 
-import { resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
+
+// list of events we expect this test to log, add to this list as needed
+const expectedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+]
 
 test.beforeEach(() => {
     resetLoggedEvents()
@@ -33,4 +42,8 @@ test('open the Custom Commands in sidebar and add new user command', async ({ pa
     const commandName = 'ATestCommand'
     await page.keyboard.type(commandName)
     await page.keyboard.press('Enter')
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })

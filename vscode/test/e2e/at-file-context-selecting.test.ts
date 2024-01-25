@@ -11,6 +11,7 @@ import { assertEvents, test } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
+// list of events we expect this test to log, add to this list as needed
 const expectedEvents = [
     'CodyVSCodeExtension:auth:clickOtherSignInOptions',
     'CodyVSCodeExtension:login:clicked',
@@ -133,8 +134,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('and @Main.ja', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
-    console.log(loggedEvents)
-    // check to see if loggedEvents == expectedEvents
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
     await assertEvents(loggedEvents, expectedEvents)
 })
 
