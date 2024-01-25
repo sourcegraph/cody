@@ -50,23 +50,23 @@ function insertCompletionAndPressEnter(
         : docContext.currentLinePrefix
 
     const indentString = '\n' + detectIndent(currentIndentReference).indent + newBlockIndent
-    const insertTextWitPressedEnter = insertText + indentString
+    const insertTextWithPressedEnter = insertText + indentString
 
     addAutocompleteDebugEvent('insertCompletionAndPressEnter', {
         currentLinePrefix: docContext.currentLinePrefix,
         startsNewBlock,
-        text: insertTextWitPressedEnter,
+        text: insertTextWithPressedEnter,
     })
 
     const updatedDocContext = insertIntoDocContext({
         docContext,
         languageId,
-        insertText: insertTextWitPressedEnter,
+        insertText: insertTextWithPressedEnter,
         dynamicMultilineCompletions,
     })
 
     updatedDocContext.injectedCompletionText =
-        (docContext.injectedCompletionText || '') + insertTextWitPressedEnter
+        (docContext.injectedCompletionText || '') + insertTextWithPressedEnter
 
     return updatedDocContext
 }
