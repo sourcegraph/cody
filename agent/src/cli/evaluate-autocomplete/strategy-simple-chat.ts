@@ -3,6 +3,8 @@ import * as path from 'path'
 import type { ExtensionMessage } from '../../../../vscode/src/chat/protocol'
 import { type MessageHandler } from '../../jsonrpc-alias'
 import { type EvaluateAutocompleteOptions, SimpleChatEvalConfig, EvaluationFixture } from './evaluate-autocomplete'
+import { exit } from 'process'
+import { Semaphore } from 'async-mutex';
 
 
 interface ChatReply {
@@ -68,6 +70,9 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
             await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
             await client.request('webview/didDispose', {id})
             await waitForVariable(embeddingDoneFlag)
+            console.log('--------- --------- --------- --------- --------- --------- ---------')
+            console.log(`embedding creation completed for repo: ${repoDisplayName}`)
+            console.log('--------- --------- --------- --------- --------- --------- ---------')
         }
     }
 }
@@ -88,9 +93,31 @@ const waitForVariable = (variable: EmbeddingFlag): Promise<void> => {
 async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     client.registerNotification('webview/postMessage', () => {})
     const all_chat_configs = options.chat_config ?? []
-    const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
-    await saveListToFile(replies, path.join(options.snapshotDirectory, 'strategy-chat.json'))
 
+    const concurrencyLimit = 5
+    const semaphore = new Semaphore(concurrencyLimit);
+    const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
+        const [_, release] = await semaphore.acquire();
+        try {
+            const reply = await simulateChatInRepo(client, options, single_chat_config);
+            return reply
+        } finally {
+            release();
+        }
+    }));
+
+    // const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
+    
+    if(replies.length<=0) {
+        console.log('--------- --------- --------- --------- --------- --------- ---------')
+        console.log(`length of replies is 0 ${replies}`)
+        exit(1)
+    }
+
+    await saveListToFile(replies, path.join(options.snapshotDirectory, 'strategy-chat.json'))
+    console.log('--------- --------- --------- --------- --------- --------- ---------')
+    console.log(`Saved results for workspace ${options.workspace}`)
+    console.log('--------- --------- --------- --------- --------- --------- ---------')
 }
 
 async function simulateChatInRepo(
@@ -108,6 +135,8 @@ async function simulateChatInRepo(
                 addEnhancedContext: true,
             },
         })
+    
+    checkInvalidReplyAndExit(reply)
 
     await client.request('webview/didDispose', {id})
     return {
@@ -116,6 +145,21 @@ async function simulateChatInRepo(
         reply: reply,
         fixture: options.fixture,
     }
+}
+
+function checkInvalidReplyAndExit(reply: ExtensionMessage): void {
+    if (reply.type === 'transcript') {
+        const llm_reply_message = reply.messages.at(-1)
+        if (llm_reply_message == undefined || llm_reply_message.error)  {
+            console.log('--------- --------- --------- --------- --------- --------- ---------')
+            console.log(`Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
+            exit(1)
+        }
+        return
+    }
+    console.log('--------- --------- --------- --------- --------- --------- ---------')
+    console.log(`Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
+    exit(1)
 }
 
 async function saveListToFile(list: any[], filePath: string): Promise<void> {
