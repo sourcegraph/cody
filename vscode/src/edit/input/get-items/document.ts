@@ -41,8 +41,7 @@ export const getDocumentInputItems = async (
     }
 
     const relevantSymbols = symbols.filter(sym => symbolIsFunctionLike(sym) || symbolIsVariableLike(sym))
-    // TODO: Improve so it actually finds the nearest, not the first containing
-    const nearestSymbol = relevantSymbols.find(sym => sym.location.range.contains(activeRange.start))
+    const wrappingSymbol = relevantSymbols.find(sym => sym.location.range.contains(activeRange.start))
 
     const items: vscode.QuickPickItem[] = []
     for (const symbol of relevantSymbols) {
@@ -50,8 +49,8 @@ export const getDocumentInputItems = async (
         DOCUMENT_ITEMS_RANGE_MAP.set(item, symbol.location.range)
         items.push(item)
     }
-    const activeItem = nearestSymbol
-        ? items.find(({ label }) => label === `$(symbol-method) ${nearestSymbol.name}`)
+    const activeItem = wrappingSymbol
+        ? items.find(({ label }) => label === `$(symbol-method) ${wrappingSymbol.name}`)
         : null
 
     return {
