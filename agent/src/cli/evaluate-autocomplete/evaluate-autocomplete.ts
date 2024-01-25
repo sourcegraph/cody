@@ -48,6 +48,7 @@ export interface EvaluateAutocompleteOptions {
     matchKindDistribution?: number
 
     evaluationConfig: string
+    shouldUpdateEmbedding: string
     snapshotDirectory: string
     csvPath?: string
     bfgBinary?: string
@@ -74,7 +75,7 @@ interface webViewConfiguration {
     useEnhancedContext: boolean
 }
 
-interface EvaluationFixture {
+export interface EvaluationFixture {
     name: string
     customConfiguration?: Record<string, any>
     strategy: EvaluationStrategy
@@ -153,6 +154,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         // across different autocomplete kinds
         100
     )
+    .option('--should-update-embedding <boolean>', 'If enabled, creates embeddings for repositories')
     .option('--evaluation-config <path>', 'Path to a JSON with configuration for this evaluation', '')
     .option(
         '--snapshot-directory <path>',
@@ -290,11 +292,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                     testOptions.fixture.name
                 )
         )
-        for(const workspace of workspacesToRun) {
-            await evaluateWorkspace(workspace)
-        }
-
-        // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
+        await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
