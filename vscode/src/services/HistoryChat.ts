@@ -69,7 +69,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         }
         if (lastHumanMessage?.displayText && lastHumanMessage?.text) {
             const lastDisplayText = lastHumanMessage.displayText.split('\n')[0]
-            const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText)
+            const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText, false)
 
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
             let groupLabel = 'N months ago'
