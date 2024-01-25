@@ -452,11 +452,11 @@
       {
         "command": "cody.chat.history.panel",
         "category": "Cody",
-        "title": "Show History",
+        "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
         "when": "cody.activated && cody.hasChatHistory"
-      },
+    },
       {
         "command": "cody.search.index-update",
         "category": "Cody",
