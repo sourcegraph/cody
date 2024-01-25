@@ -1,7 +1,5 @@
 import type * as vscode from 'vscode'
 
-
-
 import type { FixupFile } from './FixupFile'
 import type { FixupTask } from './FixupTask'
 
