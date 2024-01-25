@@ -385,6 +385,15 @@ export function lines(text: string): string[] {
 
 export function hasCompleteFirstLine(text: string): boolean {
     const lastNewlineIndex = text.lastIndexOf('\n')
-
     return lastNewlineIndex !== -1
+}
+
+export function lastNLines(text: string, n: number): string {
+    const lines = text.split('\n')
+    return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+export function removeIndentation(text: string): string {
+    const lines = text.split('\n')
+    return lines.map(line => line.replace(INDENTATION_REGEX, '')).join('\n')
 }

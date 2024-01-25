@@ -92,7 +92,9 @@ function defaultPollyOptions(
             }
     }
     const recordingDirectory = (): string => {
-        const rootDirectory = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim()
+        const rootDirectory = execSync('git rev-parse --show-toplevel', {
+            encoding: 'utf-8',
+        }).trim()
         return path.join(rootDirectory, 'recordings')
     }
     return {

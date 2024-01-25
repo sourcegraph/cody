@@ -239,14 +239,14 @@ export async function* fetchAndProcessCompletions(
         }
 
         const extractCompletion = isFullResponse ? parseAndTruncateCompletion : canUsePartialCompletion
-        const parsedComletion = extractCompletion(rawCompletion, {
+        const parsedCompletion = extractCompletion(rawCompletion, {
             document: providerOptions.document,
             docContext,
             isDynamicMultilineCompletion: false,
         })
 
-        if (parsedComletion) {
-            const completedCompletion = processCompletion(parsedComletion, providerOptions)
+        if (parsedCompletion) {
+            const completedCompletion = processCompletion(parsedCompletion, providerOptions)
 
             yield {
                 docContext,

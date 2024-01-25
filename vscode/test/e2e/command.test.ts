@@ -34,4 +34,9 @@ test('submit command from command palette', async ({ page, sidebar }) => {
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
+
+    // Edit button should shows up as disabled for command messages
+    const editButtons = chatPanelFrame.locator('.codicon-edit')
+    await expect(editButtons).toHaveCount(1)
+    await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
 })

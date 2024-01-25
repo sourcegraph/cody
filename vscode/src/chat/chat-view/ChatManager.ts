@@ -116,9 +116,12 @@ export class ChatManager implements vscode.Disposable {
     // Execute a chat request in a new chat panel
     public async executeChat(question: string, args?: { source?: ChatEventSource }): Promise<void> {
         const requestID = uuid.v4()
-        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, ...args })
+        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
+            requestID,
+            ...args,
+        })
         const chatProvider = await this.getChatProvider()
-        await chatProvider.handleNewUserMessage(requestID, question, 'user-newchat', [], true)
+        await chatProvider.handleUserMessageSubmission(requestID, question, 'user-newchat', [], true)
     }
 
     // Execute a command request in a new chat panel
@@ -187,7 +190,9 @@ export class ChatManager implements vscode.Disposable {
         })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
-        const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
+        const exportPath = await vscode.window.showSaveDialog({
+            filters: { 'Chat History': ['json'] },
+        })
         if (!exportPath || !historyJson) {
             return
         }
