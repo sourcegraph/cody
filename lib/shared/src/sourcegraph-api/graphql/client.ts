@@ -20,6 +20,7 @@ import {
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
+    CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -388,7 +389,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
-            CURRENT_USER_CODY_PRO_ENABLED_QUERY,
+            CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>

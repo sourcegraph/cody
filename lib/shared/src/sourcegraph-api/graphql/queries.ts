@@ -12,6 +12,18 @@ query CurrentUserCodyProEnabled {
     }
 }`
 
+export const CURRENT_USER_CODY_SUBSCRIPTION_QUERY = `
+query CurrentUserCodySubscription {
+    currentUser {
+        codySubscription {
+            status
+            plan
+            currentPeriodStartAt
+            currentPeriodEndAt
+        }
+    }
+}`
+
 export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
