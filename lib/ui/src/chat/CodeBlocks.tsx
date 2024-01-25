@@ -154,6 +154,95 @@ function createCodeBlockActionButton(
     return button
 }
 
+class GuardrailsStatusController {
+    readonly iconClass = "guardrails-icon";
+    readonly spinnerClass = "guardrails-spinner";
+
+    private icon: HTMLElement;
+    private spinner: HTMLElement;
+
+    constructor(public container: HTMLElement) {
+        this.icon = this.findOrAppend(this.iconClass, () => this.makeIcon());
+        this.spinner = this.findOrAppend(this.spinnerClass, () => {
+            const spinner = this.makeSpinner();
+            this.hide(spinner);
+            return spinner;
+        });
+    }
+
+    public setPending() {
+        this.spinner.innerHTML = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`;
+        this.show(this.spinner);
+        this.container.title = "Guard Rails: Running Code Attribution Check…";
+    }
+
+    public setSuccess() {
+        this.spinner.innerHTML = '<i class="codicon codicon-pass></i>';
+        this.show(this.spinner);
+        this.icon.classList.add(styles.attributionIconNotFound);
+        this.container.title = "Guard Rails Check Passed";
+    }
+
+    public setFailure(repos: string[], limitHit: boolean) {
+        this.icon.classList.add(styles.attributionIconFound);
+        this.hide(this.spinner);
+        this.container.title = this.tooltip(repos, limitHit);
+    }
+
+    public setUnavailable() {
+        this.icon.classList.add(styles.attributionIconUnavailable);
+        this.icon.title = "Attribution search unavailable.";
+        this.hide(this.spinner);
+    }
+
+    private makeIcon(): HTMLElement {
+        const icon = document.createElement("div");
+        icon.innerHTML = ShieldIcon;
+        icon.classList.add(styles.attributionIcon, this.iconClass);
+        icon.title = "Attribution search running...";
+        icon.setAttribute("data-testid", "attribution-indicator");
+        return icon;
+    }
+
+    private makeSpinner(): HTMLElement {
+        const spinner = document.createElement("div");
+        spinner.classList.add(styles.spinner, this.spinnerClass);
+        return spinner;
+    }
+
+    private findOrAppend(
+        className: string,
+        make: () => HTMLElement
+    ): HTMLElement {
+        const elements = this.container.getElementsByClassName(className);
+        if (elements.length === 0) {
+            const newElement = make();
+            this.container.append(newElement);
+            return newElement;
+        }
+        return elements[0] as HTMLElement;
+    }
+
+    private hide(element: HTMLElement) {
+        element.style.visibility = "hidden";
+    }
+
+    private show(element: HTMLElement) {
+        element.style.visibility = "visible";
+    }
+
+    private tooltip(repos: string[], limitHit: boolean) {
+        const prefix = "Guard Rails Check Failed. Code found in";
+        if (repos.length === 1) {
+            return `${prefix} ${repos[0]}.`;
+        }
+        const tooltip = `${prefix} ${repos.length} repositories: ${repos.join(
+            ", "
+        )}`;
+        return limitHit ? `${tooltip} or more...` : `${tooltip}.`;
+    }
+}
+
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
     function CodeBlocksContent({
         displayText,
@@ -164,21 +253,21 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
         metadata,
         guardrails,
     }) {
-        const rootRef = useRef<HTMLDivElement>(null)
+        const rootRef = useRef<HTMLDivElement>(null);
 
         useEffect(() => {
-            const preElements = rootRef.current?.querySelectorAll('pre')
+            const preElements = rootRef.current?.querySelectorAll("pre");
             if (!preElements?.length || !copyButtonOnSubmit) {
-                return
+                return;
             }
 
             for (const preElement of preElements) {
-                const preText = preElement.textContent
+                const preText = preElement.textContent;
                 if (preText?.trim() && preElement.parentNode) {
                     const eventMetadata = {
                         requestID: metadata?.requestID,
                         source: metadata?.source,
-                    }
+                    };
                     const buttons = createButtons(
                         preText,
                         copyButtonClassName,
@@ -186,68 +275,54 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         insertButtonClassName,
                         insertButtonOnSubmit,
                         eventMetadata
-                    )
+                    );
                     if (guardrails) {
-                        const flexFiller = document.createElement('div')
-                        flexFiller.classList.add(styles.flexFiller)
-                        buttons.append(flexFiller)
-                        const attributionContainer = document.createElement('div')
-                        attributionContainer.innerHTML = ShieldIcon
-                        attributionContainer.classList.add(styles.attributionIcon)
-                        attributionContainer.title = 'Attribution search running...'
-                        attributionContainer.setAttribute('data-testid', 'attribution-indicator')
-                        buttons.append(attributionContainer)
-
-                        const spinnerContainer = document.createElement('div')
-                        spinnerContainer.className = styles.spinner
-                        spinnerContainer.innerHTML = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`
-                        buttons.append(spinnerContainer)
+                        const flexFiller = document.createElement("div");
+                        flexFiller.classList.add(styles.flexFiller);
+                        buttons.append(flexFiller);
+                        const g = new GuardrailsStatusController(buttons);
+                        g.setPending();
 
                         guardrails
                             .searchAttribution(preText)
-                            .then(attribution => {
-                                spinnerContainer.innerHTML = '<i class="codicon codicon-pass"></i>'
+                            .then((attribution) => {
                                 if (isError(attribution)) {
-                                    attributionContainer.classList.add(styles.attributionIconUnavailable)
-                                    attributionContainer.title = 'Attribution search unavailable.'
-                                    return
+                                    g.setUnavailable();
+                                } else if (
+                                    attribution.repositories.length === 0
+                                ) {
+                                    g.setSuccess();
+                                } else {
+                                    g.setFailure(
+                                        attribution.repositories.map(
+                                            (r) => r.name
+                                        ),
+                                        attribution.limitHit
+                                    );
                                 }
-                                if (attribution.repositories.length > 0) {
-                                    attributionContainer.classList.add(styles.attributionIconFound)
-                                    let tooltip = `Attribution found in ${attribution.repositories[0].name}`
-                                    if (attribution.repositories.length > 1 && attribution.limitHit) {
-                                        tooltip = `${tooltip} and ${
-                                            attribution.repositories.length - 1
-                                        } or more.`
-                                    } else if (attribution.repositories.length > 1) {
-                                        tooltip = `${tooltip} and ${
-                                            attribution.repositories.length - 1
-                                        } more.`
-                                    } else {
-                                        tooltip = `${tooltip}.`
-                                    }
-                                    attributionContainer.title = tooltip
-                                    return
-                                }
-                                attributionContainer.classList.add(styles.attributionIconNotFound)
-                                attributionContainer.title = 'Attribution not found.'
                             })
-                            .catch(error => {
-                                attributionContainer.classList.add(styles.attributionIconUnavailable)
-                                attributionContainer.title = `Attribution search unavailable. ${error.message}`
-                                return
-                            })
+                            .catch(() => {
+                                g.setUnavailable();
+                                return;
+                            });
                     }
 
                     // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                    preElement.parentNode.insertBefore(
+                        buttons,
+                        preElement.nextSibling
+                    );
 
                     // capture copy events (right click or keydown) on code block
-                    preElement.addEventListener('copy', () => {
+                    preElement.addEventListener("copy", () => {
                         if (copyButtonOnSubmit) {
-                            copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
+                            copyButtonOnSubmit(
+                                preText,
+                                "Keydown",
+                                eventMetadata
+                            );
                         }
-                    })
+                    });
                 }
             }
         }, [
@@ -258,7 +333,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
             metadata?.requestID,
             metadata?.source,
             guardrails,
-        ])
+        ]);
 
         return useMemo(
             () => (
@@ -271,6 +346,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                 />
             ),
             [displayText]
-        )
+        );
     }
-)
+);
