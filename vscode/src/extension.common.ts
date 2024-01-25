@@ -20,7 +20,7 @@ import { start } from './main'
 import type { getRgPath } from './rg'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
-import type { CommandsProvider } from './commands/provider'
+import type { CommandsProvider } from './commands/services/commands-provider'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A

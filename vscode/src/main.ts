@@ -48,9 +48,9 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { executeDocCommand } from './commands/default-commands/doc'
-import { executeNewTestCommand } from './commands/default-commands/test-file'
-import { getDefaultChatCommandParams } from './commands/default-commands'
+import { executeDocCommand } from './commands/default/doc'
+import { executeNewTestCommand } from './commands/default/test-file'
+import { getDefaultChatCommandParams } from './commands/default'
 import { getEditor } from './editor/active-editor'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 

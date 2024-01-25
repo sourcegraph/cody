@@ -15,7 +15,7 @@ import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
-import { CommandsProvider } from './commands/provider'
+import { CommandsProvider } from './commands/services/commands-provider'
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).

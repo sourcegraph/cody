@@ -8,7 +8,12 @@ import { logDebug, logError } from '../../log'
 
 import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '..'
 import { fromSlashCommand, toSlashCommand } from '../utils/commands'
-import { createFileWatchers, createJSONFile, openCustomCommandDocsLink, saveJSONFile } from './helpers'
+import {
+    createFileWatchers,
+    createJSONFile,
+    openCustomCommandDocsLink,
+    saveJSONFile,
+} from '../utils/helpers'
 import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 

@@ -2,6 +2,9 @@ import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@source
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
+/**
+ * Generate ContextFile for a file URI.
+ */
 export async function getContextFileFromUri(file: URI): Promise<ContextFile | undefined> {
     try {
         const doc = await vscode.workspace.openTextDocument(file)

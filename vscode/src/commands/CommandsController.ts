@@ -4,7 +4,7 @@ import { logDebug } from '../log'
 
 import type { CodyCommandArgs } from '.'
 import { CommandRunner } from './CommandRunner'
-import type { CommandsProvider } from './provider'
+import type { CommandsProvider } from './services/commands-provider'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
 
 /**

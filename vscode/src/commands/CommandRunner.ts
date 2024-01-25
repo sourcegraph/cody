@@ -17,7 +17,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import type { CodyCommandArgs } from '.'
 import { getCommandContextFiles } from './context'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
-import { executeChat } from './default-commands/ask'
+import { executeChat } from './default/ask'
 
 /**
  * Handles executing a Cody command as:

@@ -9,7 +9,7 @@
   },
   "include": [
     "src",
-    "src/commands/default-commands/cody.json",
+    "src/commands/default/cody.json",
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",

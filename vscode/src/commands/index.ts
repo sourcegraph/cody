@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 
 import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
-import * as defaultCommands from './default-commands/cody.json'
+import * as defaultCommands from './default/cody.json'
 import { toSlashCommand } from './utils/commands'
 
 export interface CodyCommandsFile {

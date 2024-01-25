@@ -2,7 +2,7 @@ import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@source
 import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
 
-export async function getContextFileFromFile(): Promise<ContextFile | undefined> {
+export async function getContextFileFromCurrentFile(): Promise<ContextFile | undefined> {
     const editor = getEditor()
     const document = editor?.active?.document
 
@@ -10,7 +10,6 @@ export async function getContextFileFromFile(): Promise<ContextFile | undefined>
         return undefined
     }
 
-    // get the current file length as selection
     const selection = new vscode.Selection(
         1,
         0,

@@ -4,7 +4,7 @@ import { isCodyIgnoredFile, type CodyCommandContext, type ContextFile } from '@s
 
 import { logDebug } from '../../log'
 import { getContextFileFromCursor } from './selection'
-import { getContextFileFromFile } from './current-file'
+import { getContextFileFromCurrentFile } from './current-file'
 import { getContextFileFromUri } from './file-path'
 import { getContextFileFromDirectory } from './directory'
 import { getContextFileFromTabs } from './open-tabs'
@@ -35,7 +35,7 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
         }
 
         if (config.currentFile) {
-            const curFile = await getContextFileFromFile()
+            const curFile = await getContextFileFromCurrentFile()
             if (curFile) {
                 contextFiles.push(curFile)
             }

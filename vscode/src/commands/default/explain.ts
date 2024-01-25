@@ -1,6 +1,6 @@
 import type { ContextFile } from '@sourcegraph/cody-shared'
 import { getContextFileFromCursor } from '../context/selection'
-import { getContextFileFromFile } from '../context/current-file'
+import { getContextFileFromCurrentFile } from '../context/current-file'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import { executeChat } from './ask'
 import type { ExecuteChatArguments } from '.'
@@ -23,7 +23,7 @@ export async function explainCommand(): Promise<{ prompt: string; args: ExecuteC
         contextFiles.push(currentSelection)
     }
 
-    const currentFile = await getContextFileFromFile()
+    const currentFile = await getContextFileFromCurrentFile()
     if (currentFile) {
         contextFiles.push(currentFile)
     }
