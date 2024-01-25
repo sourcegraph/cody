@@ -27,7 +27,7 @@ import {
 
 import type { View } from '../../../webviews/NavBar'
 import { newCodyCommandArgs } from '../../commands'
-import { createDisplayTextWithFileLinks } from '../../commands/prompt/display-text'
+import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import {

@@ -6,7 +6,7 @@ import {
     type CustomCommandType,
 } from '@sourcegraph/cody-shared'
 
-import { toSlashCommand } from '../prompt/utils'
+import { toSlashCommand } from '../utils/commands'
 import { customPromptsContextOptions } from './const'
 
 export interface CustomCommandsBuilder {

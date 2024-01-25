@@ -1,9 +1,9 @@
 import * as uuid from 'uuid'
 
-import type { ChatEventSource, CodyCommand } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
-import * as defaultCommands from './prompt/cody.json'
-import { toSlashCommand } from './prompt/utils'
+import * as defaultCommands from './default-commands/cody.json'
+import { toSlashCommand } from './utils/commands'
 
 export interface CodyCommandsFile {
     // A set of reusable commands where instructions (prompts) and context can be configured.
@@ -26,6 +26,8 @@ export interface CodyCommandArgs {
     source?: ChatEventSource
     // runs the command in chat mode, even if it's an edit command
     runInChatMode?: boolean
+    // current context to add on top of the command context
+    userContextFiles?: ContextFile[]
 }
 
 export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {

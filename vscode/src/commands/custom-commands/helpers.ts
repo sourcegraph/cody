@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import { ConfigFileName } from '..'
-
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
         return undefined
@@ -36,52 +34,24 @@ export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<voi
 }
 
 // Create a file watcher for each .vscode/cody.json file
-export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
-    const fileUri = constructFileUri(ConfigFileName.vscode, fsPath)
-    if (!fileUri) {
+export function createFileWatchers(configFile?: vscode.Uri): vscode.FileSystemWatcher | null {
+    if (!configFile) {
         return null
     }
     // Use the file as the first arg to RelativePattern because a file watcher will be set up on the
     // first arg given. If this is a directory with many files, such as the user's home directory,
     // it will cause a very large number of watchers to be created, which will exhaust the system.
     // This occurs even if the second arg is a relative file path with no wildcards.
-    const watchPattern = new vscode.RelativePattern(fileUri, '*')
+    const watchPattern = new vscode.RelativePattern(configFile, '*')
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }
 
-export async function deleteFile(uri?: vscode.Uri): Promise<void> {
-    if (!uri) {
-        return
-    }
-    await vscode.workspace.fs.delete(uri)
-}
-
-export const createQuickPickItem = (
-    label = '',
-    description = '',
-    alwaysShow = false
-): vscode.QuickPickItem => ({
-    label,
-    description,
-    alwaysShow,
-})
-
-export async function getFileContentText(uri: vscode.Uri): Promise<string> {
-    try {
-        const bytes = await vscode.workspace.fs.readFile(uri)
-        const content = new TextDecoder('utf-8').decode(bytes)
-        return content
-    } catch {
-        return ''
-    }
-}
-
 export const outputWrapper = `
-Here is the output of \`{command}\` command from my terminal inside <output> tags:
-<output>
+Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
+<OUTPUT0412>
 {output}
-</output>`
+</OUTPUT0412>`
 
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'

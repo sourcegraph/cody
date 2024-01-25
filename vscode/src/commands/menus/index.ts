@@ -5,7 +5,7 @@ import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separato
 
 import { vscodeDefaultCommands } from '../manager'
 import { openCustomCommandDocsLink } from '../custom-commands/helpers'
-import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './custom-builder'
+import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import type { CustomCommandsItem } from './types'
 
 const commandMenuByType = {

@@ -4,6 +4,7 @@ import {
     ConfigFeaturesSingleton,
     type ChatEventSource,
     type CodyCommand,
+    type ContextFile,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
@@ -19,7 +20,7 @@ import { getCommandContextFiles } from './context'
 import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
 
 /**
- * Manages executing a Cody command as either:
+ * Handles executing a Cody command as:
  * - an inline edit command (mode !== 'ask)
  * - a chat command (mode === 'ask')
  *
@@ -30,8 +31,6 @@ export class CommandRunner implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
-
-    private editor: vscode.TextEditor | undefined = undefined
 
     constructor(
         private readonly command: CodyCommand,
@@ -48,10 +47,7 @@ export class CommandRunner implements vscode.Disposable {
     }
 
     /**
-     * Starts execution of the Cody command.
-     *
-     * Logs the request, gets the active editor, handles errors if no editor,
-     * Runs fixup if it is a fixup request, otherwise handles it as a chat request.
+     * Starts executing the Cody command.
      */
     public async start(): Promise<ChatSession | undefined> {
         // all user and workspace custom command should be logged under 'custom'
@@ -60,16 +56,18 @@ export class CommandRunner implements vscode.Disposable {
 
         // Only log the chat commands (mode === ask) to avoid double logging by the edit commands
         if (this.command.mode === 'ask') {
+            // NOTE: codebase context is not supported for custom commands
+            const addCodebaseContex = false
             telemetryService.log(`CodyVSCodeExtension:command:${name}:executed`, {
                 mode: this.command.mode,
-                useCodebaseContex: !!this.command.context?.codebase,
+                useCodebaseContex: addCodebaseContex,
                 useShellCommand: !!this.command.context?.command,
                 requestID: this.args.requestID,
                 source: this.args.source,
             })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'executed', {
                 metadata: {
-                    useCodebaseContex: this.command.context?.codebase ? 1 : 0,
+                    useCodebaseContex: addCodebaseContex ? 1 : 0,
                     useShellCommand: this.command.context?.command ? 1 : 0,
                 },
                 interactionID: this.args.requestID,
@@ -88,21 +86,12 @@ export class CommandRunner implements vscode.Disposable {
             void vscode.window.showErrorMessage(disabledMsg)
             return
         }
-
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
                 ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
                 : 'No editor is active. Please open a file and try again.'
             void vscode.window.showErrorMessage(message)
-            return
-        }
-
-        this.editor = editor.active
-        if (!this.editor && !this.command.context?.none && this.command.slashCommand !== '/ask') {
-            const errorMsg = 'Failed to create command: No active text editor found.'
-            logDebug('CommandRunner:int:fail', errorMsg)
-            void vscode.window.showErrorMessage(errorMsg)
             return
         }
 
@@ -118,7 +107,6 @@ export class CommandRunner implements vscode.Disposable {
 
     /**
      * Handles a Cody chat command.
-     *
      * Executes the chat request with the prompt and context files
      */
     private async handleChatRequest(): Promise<ChatSession | undefined> {
@@ -127,10 +115,11 @@ export class CommandRunner implements vscode.Disposable {
         const prompt = this.command.prompt
 
         // Fetch context for the command
-        const contextFiles = await getCommandContextFiles(this.command)
+        const userContextFiles = await this.getContextFiles()
 
+        // NOTE: (bee) codebase context is not supported for custom commands
         return executeChat(prompt, {
-            userContextFiles: contextFiles,
+            userContextFiles,
             addEnhancedContext: this.command.context?.codebase ?? false,
             source: this.args.source,
         })
@@ -138,7 +127,6 @@ export class CommandRunner implements vscode.Disposable {
 
     /**
      * handleFixupRequest method handles executing fixup based on editor selection.
-     *
      * Creates range and instruction, calls fixup command.
      */
     private async handleEditRequest(): Promise<void> {
@@ -149,27 +137,40 @@ export class CommandRunner implements vscode.Disposable {
         const isFileMode = this.command.mode === 'file'
         const isDocKind = this.command.slashCommand === '/doc'
         const isDefaultCommand = this.command.type === 'default'
+
         // Assign intent based on command type
         const intent: EditIntent = isDocKind ? 'doc' : isFileMode ? 'new' : 'edit'
         const instruction = this.command.prompt
         const source = isDefaultCommand ? commandKey : 'custom-commands'
+
         // Fetch context for the command
-        const contextFiles = await getCommandContextFiles(this.command)
+        const userContextFiles = await this.getContextFiles()
 
         await executeEdit(
             {
                 instruction,
                 intent,
                 mode: this.command.mode as EditMode,
-                userContextFiles: contextFiles,
+                userContextFiles,
             } satisfies ExecuteEditArguments,
             source as ChatEventSource
         )
     }
 
     /**
-     * dispose method cleans up disposables.
+     * Combine userContextFiles and context fetched for the command
      */
+    private async getContextFiles(): Promise<ContextFile[]> {
+        const userContextFiles = this.args.userContextFiles ?? []
+        const contextConfig = this.command.context
+        if (contextConfig) {
+            const commandContext = await getCommandContextFiles(contextConfig)
+            userContextFiles.push(...commandContext)
+        }
+
+        return userContextFiles
+    }
+
     public dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose()

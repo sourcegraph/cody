@@ -14,23 +14,6 @@ export function extractTestType(text: string): string {
     return text.match(testTypeRegex)?.[0] || ''
 }
 
-const leadingForwardSlashRegex = /^\/+/
-
-/**
- * Removes leading forward slashes from slash command string.
- */
-export function fromSlashCommand(slashCommand: string): string {
-    return slashCommand.replace(leadingForwardSlashRegex, '')
-}
-
-/**
- * Returns command starting with a forward slash.
- */
-export function toSlashCommand(command: string): string {
-    // ensure there is only one leading forward slash
-    return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
-}
-
 /**
  * Checks if the given file uri has a valid test file name.
  * @param uri - The file uri to check
@@ -49,3 +32,20 @@ export function isValidTestFile(uri: URI): boolean {
 
 // REGEX for trailing non-alphanumeric characters
 export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/
+
+const leadingForwardSlashRegex = /^\/+/
+
+/**
+ * Removes leading forward slashes from slash command string.
+ */
+export function fromSlashCommand(slashCommand: string): string {
+    return slashCommand.replace(leadingForwardSlashRegex, '')
+}
+
+/**
+ * Returns command starting with a forward slash.
+ */
+export function toSlashCommand(command: string): string {
+    // ensure there is only one leading forward slash
+    return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
+}

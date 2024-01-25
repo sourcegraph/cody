@@ -21,7 +21,7 @@ import { reuseLastCandidate } from './reuse-last-candidate'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isValidTestFile } from '../commands/prompt/utils'
+import { isValidTestFile } from '../commands/utils/commands'
 
 export interface InlineCompletionsParams {
     // Context

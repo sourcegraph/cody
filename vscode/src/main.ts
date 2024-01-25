@@ -52,7 +52,7 @@ import { executeDocCommand } from './commands/default-commands/doc'
 import { executeNewTestCommand } from './commands/default-commands/test-file'
 import { getDefaultCommandParams } from './commands/default-commands'
 import { getEditor } from './editor/active-editor'
-import { codyCommandsController, executeCodyCommand } from './commands/CommandsController'
+import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -213,8 +213,7 @@ const register = async (
         guardrails
     )
 
-    const commandsController = codyCommandsController
-    commandsController.init()
+    // codyCommandsController.init(platform.createCommandFileManager?.())
 
     const ghostHintDecorator = new GhostHintDecorator()
     disposables.push(
@@ -304,6 +303,8 @@ const register = async (
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    const commandsManager = platform.createCommandsController?.()
+    setCommandController(commandsManager)
 
     // Execute a Cody Command
     const executeCommand = async (

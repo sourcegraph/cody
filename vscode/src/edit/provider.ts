@@ -19,7 +19,7 @@ import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
-import { doesFileExist } from '../commands/utils'
+import { doesFileExist } from '../commands/utils/workspace-files'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask

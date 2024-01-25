@@ -3,8 +3,8 @@ import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@source
 import * as vscode from 'vscode'
 import path from 'path'
 import { type URI, Utils } from 'vscode-uri'
-import { isValidTestFile } from '../prompt/utils'
-import { decodeVSCodeTextDoc, findVSCodeFiles } from '../utils'
+import { isValidTestFile } from '../utils/commands'
+import { decodeVSCodeTextDoc, findVSCodeFiles } from '../utils/workspace-files'
 
 export async function getContextFilesForTests(currentFile: vscode.Uri): Promise<ContextFile[]> {
     const contextFiles: ContextFile[] = []

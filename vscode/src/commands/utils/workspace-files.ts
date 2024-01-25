@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { type URI, Utils } from 'vscode-uri'
-import { isValidTestFile } from '../prompt/utils'
+import { isValidTestFile } from './commands'
 
 /**
  * Checks if a file URI is part of the current workspace.

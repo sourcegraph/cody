@@ -1,10 +1,12 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
+import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { getDefaultCommandsMap } from '.'
 import { EDIT_COMMAND } from './menus/const'
 import { CustomCommandsProvider } from './custom-commands/provider'
 import { showCommandMenu } from './menus'
+import { getContextFileFromShell } from './custom-commands/shell'
+
 const editorCommands: CodyCommand[] = [
     {
         description: EDIT_COMMAND.description,
@@ -18,7 +20,6 @@ export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
 
 export class CommandsManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-
     protected readonly defaultCommands = vscodeDefaultCommands
     protected customCommandsProvider = new CustomCommandsProvider()
 
@@ -36,6 +37,8 @@ export class CommandsManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
             vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config'))
         )
+
+        this.customCommandsProvider.init()
     }
 
     /**
@@ -70,6 +73,10 @@ export class CommandsManager implements vscode.Disposable {
     protected async refresh(): Promise<void> {
         const { commands } = await this.customCommandsProvider.refresh()
         this.groupCommands(commands)
+    }
+
+    public async runShell(shell: string): Promise<ContextFile[]> {
+        return getContextFileFromShell(shell)
     }
 
     public dispose(): void {

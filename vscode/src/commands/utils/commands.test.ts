@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { extractTestType, isValidTestFile } from './utils'
+import { extractTestType, isValidTestFile } from './commands'
 
 describe('extractTestType', () => {
     it('extracts "unit" from test type', () => {

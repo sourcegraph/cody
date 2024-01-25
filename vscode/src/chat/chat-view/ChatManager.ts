@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { ChatModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
+import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'

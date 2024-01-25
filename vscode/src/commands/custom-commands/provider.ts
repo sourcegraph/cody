@@ -1,60 +1,93 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
+import os from 'os'
 
 import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
 import { ConfigFileName, type CodyCommandsFile, type CodyCommandsFileJSON } from '..'
-import { fromSlashCommand, toSlashCommand } from '../prompt/utils'
-import {
-    constructFileUri,
-    createJSONFile,
-    deleteFile,
-    getFileContentText,
-    openCustomCommandDocsLink,
-    saveJSONFile,
-} from './helpers'
+import { fromSlashCommand, toSlashCommand } from '../utils/commands'
+import { createFileWatchers, createJSONFile, openCustomCommandDocsLink, saveJSONFile } from './helpers'
 import { showNewCustomCommandMenu } from '../menus'
-import { commandTools } from '../utils/tools-provider'
+import { URI, Utils } from 'vscode-uri'
 
 /**
  * Handles loading, building, and maintaining custom commands from the cody.json files.
  */
 export class CustomCommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
+    // Watchers for the cody.json files
+    private fileWatcherDisposables: vscode.Disposable[] = []
 
     public commandsJSON: CodyCommandsFileJSON | null = null
     public customCommandsMap = new Map<string, CodyCommand>()
 
-    public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
+    private userConfigFile: vscode.Uri | undefined
 
     constructor() {
-        const { homeDir, workspaceRoot } = commandTools.getUserInfo()
-        this.jsonFileUris = {
-            user: constructFileUri(ConfigFileName.vscode, homeDir),
-            workspace: constructFileUri(ConfigFileName.vscode, workspaceRoot),
-        }
+        const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
+        this.userConfigFile = Utils.joinPath(URI.file(userHomePath), ConfigFileName.vscode)
+
         this.disposables.push(
             vscode.commands.registerCommand('cody.commands.add', () => this.newCustomCommandQuickPick()),
-            vscode.commands.registerCommand('cody.commands.open.json', t => this.openConfig(t)),
-            vscode.commands.registerCommand('cody.commands.delete.json', t => this.deleteConfig(t))
+            vscode.commands.registerCommand('cody.commands.open.json', t =>
+                this.configActions(t, 'open')
+            ),
+            vscode.commands.registerCommand('cody.commands.delete.json', t =>
+                this.configActions(t, 'delete')
+            )
         )
+    }
+
+    /**
+     * Create file watchers for cody.json files
+     */
+    public init(): void {
+        this.disposeWatchers()
+
+        const userConfigWatcher = createFileWatchers(this.userConfigFile)
+        if (userConfigWatcher) {
+            this.fileWatcherDisposables.push(
+                userConfigWatcher,
+                userConfigWatcher.onDidChange(() => this.refresh?.()),
+                userConfigWatcher.onDidDelete(() => this.refresh?.())
+            )
+        }
+
+        // Create file watchers in trusted workspaces only
+        if (vscode.workspace.isTrusted) {
+            const wsConfigWatcher = createFileWatchers(this.workspaceConfigFile)
+            if (wsConfigWatcher) {
+                this.fileWatcherDisposables.push(
+                    wsConfigWatcher,
+                    wsConfigWatcher.onDidChange(() => this.refresh?.()),
+                    wsConfigWatcher.onDidDelete(() => this.refresh?.())
+                )
+            }
+        }
+
+        logDebug('CommandsController:fileWatcherInit', 'watchers created')
+    }
+
+    private get workspaceConfigFile(): vscode.Uri | undefined {
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (!workspaceRoot) {
+            return undefined
+        }
+        return Utils.joinPath(workspaceRoot, ConfigFileName.vscode)
     }
 
     public async refresh(): Promise<CodyCommandsFile> {
         try {
             // reset map and set
             this.customCommandsMap = new Map<string, CodyCommand>()
-            const { homeDir, workspaceRoot } = commandTools.getUserInfo()
-
             // user commands
-            if (homeDir) {
+            if (this.userConfigFile?.path) {
                 await this.build('user')
             }
-
             // only build workspace prompts if the workspace is trusted
-            if (workspaceRoot && vscode.workspace.isTrusted) {
+            if (vscode.workspace.isTrusted) {
                 await this.build('workspace')
             }
         } catch (error) {
@@ -74,7 +107,7 @@ export class CustomCommandsProvider implements vscode.Disposable {
         }
 
         try {
-            const content = await this.getPromptsFromFileSystem(type)
+            const content = await this.getCommandsFromFileSystem(type)
             if (!content) {
                 return null
             }
@@ -118,7 +151,7 @@ export class CustomCommandsProvider implements vscode.Disposable {
             )
             .then(async choice => {
                 if (choice === buttonTitle) {
-                    await this.openConfig(newCommand.type)
+                    await this.configActions(newCommand.type, 'open')
                 }
             })
 
@@ -154,81 +187,72 @@ export class CustomCommandsProvider implements vscode.Disposable {
         // turn prompt map into json
         const jsonContext = { ...this.commandsJSON }
         jsonContext.commands = Object.fromEntries(filtered)
-        return this.updateJSONFile(jsonContext as CodyCommandsFileJSON, type)
-    }
-
-    /**
-     * Updates the corresponding Cody config file with the given prompts.
-     */
-    private async updateJSONFile(prompts: CodyCommandsFileJSON, type: CustomCommandType): Promise<void> {
-        try {
-            const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-            if (!rootDirPath) {
-                throw new Error('Invalid file path')
-            }
-            await saveJSONFile(prompts, rootDirPath)
-        } catch (error) {
-            void vscode.window.showErrorMessage(`Failed to save to cody.json file: ${error}`)
+        const uri = this.getConfigUriByType(type)
+        if (!uri) {
+            throw new Error('Invalid file path')
         }
-    }
-
-    /**
-     * Create a new cody.json file to the user's workspace or home directory
-     */
-    public async createConfig(type: CustomCommandType = 'user'): Promise<void> {
-        const configFileUri = this.getConfigUriByType(type)
-        try {
-            if (configFileUri) {
-                await createJSONFile(configFileUri)
-                void vscode.window
-                    .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
-                    .then(async choice => {
-                        if (choice === 'View Documentation') {
-                            await openCustomCommandDocsLink()
-                        }
-                    })
-                return
-            }
-            throw new Error('Please make sure you have a repository opened in your workspace.')
-        } catch (error) {
-            const errorMessage = 'Failed to create cody.json file: '
-            void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            logDebug('CustomCommandsProvider:addJSONFile:create', 'failed', { verbose: error })
-        }
+        await saveJSONFile(jsonContext as CodyCommandsFileJSON, uri)
     }
 
     /**
      * Remove the cody.json file from the user's workspace or home directory
      */
-    private async deleteConfig(type: CustomCommandType = 'user'): Promise<void> {
-        // delete .vscode/cody.json for user command using the vs code api
+    private async configActions(
+        type: CustomCommandType,
+        action: 'open' | 'delete' | 'create'
+    ): Promise<void> {
         const uri = this.getConfigUriByType(type)
         if (!uri) {
-            void vscode.window.showInformationMessage(
-                'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
-            )
-            logError('CustomCommandsProvider:clear:error:', `Failed to remove cody.json file for${type}`)
+            return
         }
-        await deleteFile(uri)
-    }
-
-    /**
-     * Open the .vscode/cody.json file for given type in the editor
-     */
-    private async openConfig(type: CustomCommandType = 'user'): Promise<void> {
-        const uri = this.getConfigUriByType(type)
-        return vscode.commands.executeCommand('vscode.open', uri)
+        switch (action) {
+            case 'open':
+                void vscode.commands.executeCommand('vscode.open', uri)
+                break
+            case 'delete':
+                void vscode.workspace.fs.delete(uri)
+                break
+            case 'create':
+                await createJSONFile(uri)
+                    .then(() => {
+                        vscode.window
+                            .showInformationMessage(
+                                `Cody ${type} settings file created`,
+                                'View Documentation'
+                            )
+                            .then(async choice => {
+                                if (choice === 'View Documentation') {
+                                    await openCustomCommandDocsLink()
+                                }
+                            })
+                    })
+                    .catch(error => {
+                        const errorMessage = 'Failed to create cody.json file: '
+                        void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
+                        logDebug('CustomCommandsProvider:addJSONFile:create', 'failed', {
+                            verbose: error,
+                        })
+                    })
+                break
+        }
     }
 
     /**
      * Get the file content of the cody.json file for the given type
      */
-    private async getPromptsFromFileSystem(type: CustomCommandType): Promise<string | null> {
-        const codyJsonFilePathUri = this.getConfigUriByType(type)
-        if (!codyJsonFilePathUri) {
+    private async getCommandsFromFileSystem(type: CustomCommandType): Promise<string | null> {
+        const uri = this.getConfigUriByType(type)
+        if (!uri) {
             return null
         }
-        return getFileContentText(codyJsonFilePathUri)
+        try {
+            const bytes = await vscode.workspace.fs.readFile(uri)
+            const content = new TextDecoder('utf-8').decode(bytes)
+
+            return content
+        } catch {
+            return null
+        }
     }
 
     /**
@@ -246,7 +270,15 @@ export class CustomCommandsProvider implements vscode.Disposable {
      * Get the uri of the cody.json file for the given type
      */
     private getConfigUriByType(type: CustomCommandType): vscode.Uri | undefined {
-        const configFileUri = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+        const configFileUri = type === 'user' ? this.userConfigFile : this.workspaceConfigFile
         return configFileUri
+    }
+
+    private disposeWatchers(): void {
+        for (const disposable of this.fileWatcherDisposables) {
+            disposable.dispose()
+        }
+        this.fileWatcherDisposables = []
+        logDebug('CommandsController:disposeWatchers', 'watchers disposed')
     }
 }
