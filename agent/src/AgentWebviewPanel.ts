@@ -141,4 +141,3 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
         this.panel.dispose()
     }
 }
-
