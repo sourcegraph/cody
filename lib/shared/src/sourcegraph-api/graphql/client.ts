@@ -5,7 +5,7 @@ import { URI } from 'vscode-uri'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import type { ConfigurationWithAccessToken } from '../../configuration'
-import { logError } from '../../logger'
+import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -559,6 +559,26 @@ export class SourcegraphGraphQLAPIClient {
          */
         if (this.isDotCom()) {
             return this.sendEventLogRequestToAPI(event)
+        }
+
+        switch (process.env.CODY_LOG_EVENT_MODE) {
+            case 'connected-instance-only':
+                mode = 'connected-instance-only'
+                break
+            case 'dotcom-only':
+                mode = 'dotcom-only'
+                break
+            case 'all':
+                mode = 'all'
+                break
+            default:
+                if (process.env.CODY_LOG_EVENT_MODE) {
+                    logDebug(
+                        'SourcegraphGraphQLAPIClient.logEvent',
+                        'unknown mode',
+                        process.env.CODY_LOG_EVENT_MODE
+                    )
+                }
         }
 
         switch (mode) {

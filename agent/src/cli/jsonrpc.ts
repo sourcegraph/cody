@@ -1,4 +1,4 @@
-import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
@@ -98,6 +98,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             .default(false)
     )
     .action((options: JsonrpcCommandOptions) => {
+        const networkRequests: Request[] = []
         let polly: Polly | undefined
         if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {
@@ -112,6 +113,9 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 expiresIn: options.expiresIn,
                 recordIfMissing: options.recordIfMissing,
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
+            })
+            polly.server.any().on('request', req => {
+                networkRequests.push(req)
             })
             // Automatically pass through requests to GitHub because we
             // don't want to record huge binary downloads.
@@ -132,7 +136,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             process.stderr.write('Starting Cody Agent...\n')
         }
 
-        const agent = new Agent({ polly })
+        const agent = new Agent({ polly, networkRequests })
 
         // Force the agent process to exit when stdin/stdout close as an attempt to
         // prevent zombie agent processes. We experienced this problem when we

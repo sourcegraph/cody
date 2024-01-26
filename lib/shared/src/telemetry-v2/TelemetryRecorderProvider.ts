@@ -52,7 +52,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 }`,
                 clientVersion: extensionDetails.version,
             },
-            process.env.CODY_SHIM_TESTING === 'true'
+            process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? new TestTelemetryExporter()
                 : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
