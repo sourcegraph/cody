@@ -1,12 +1,27 @@
 import type { QuickPickItem } from 'vscode'
 
-import type { CustomCommandType } from '@sourcegraph/cody-shared'
+import type { CodyCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 
-type CustomCommandMenuAction = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'docs' | 'back'
+export enum CommandMenuAction {
+    Add = 'add',
+    File = 'file',
+    Delete = 'delete',
+    List = 'list',
+    Open = 'open',
+    Cancel = 'cancel',
+    Docs = 'docs',
+    Back = 'back',
+    Command = 'command',
+    Config = 'config',
+}
 
-export interface CustomCommandsItem extends QuickPickItem {
-    id?: CustomCommandMenuAction
-    type: CustomCommandType
+export interface CommandMenuItem extends QuickPickItem {
+    id?: CommandMenuAction
+    type?: CodyCommandType
+    // vs code command, e.g. 'cody.commands.open.json'
+    command?: string
+    // cody command, e.g. '/ask'
+    slashCommand?: string
 }
 
 export interface ContextOption {
@@ -15,4 +30,9 @@ export interface ContextOption {
     detail: string
     picked: boolean
     description?: string
+}
+
+export enum CustomCommandConfigFile {
+    User = '~/.vscode/cody.json',
+    Workspace = '.vscode/cody.json',
 }

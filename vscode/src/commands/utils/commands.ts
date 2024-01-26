@@ -49,3 +49,11 @@ export function toSlashCommand(command: string): string {
     // ensure there is only one leading forward slash
     return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
 }
+
+/**
+ * Removes trailing non-alphanumeric characters from slash command string.
+ */
+export function normalize(commandKey: string): string {
+    // e.g. /edit -> edit
+    return commandKey.trim().toLowerCase().replace(/^\//, '')
+}

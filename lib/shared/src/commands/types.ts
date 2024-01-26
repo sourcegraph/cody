@@ -64,6 +64,11 @@ export interface CodyCommandContext {
     codebase?: boolean
 }
 
-export type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
+export type CodyCommandType = CustomCommandType | DefaultCommandType | 'recently used'
 
-export type CustomCommandType = 'workspace' | 'user'
+export enum CustomCommandType {
+    Workspace = 'workspace',
+    User = 'user',
+}
+
+export type DefaultCommandType = 'default' | 'experimental'

@@ -1,9 +1,10 @@
 import { window, type QuickPickItem } from 'vscode'
 
-import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
+import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { toSlashCommand } from '../utils/commands'
-import { customPromptsContextOptions } from './constant'
+import { customPromptsContextOptions } from './items'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 
 export interface CustomCommandsBuilder {
     slashCommand: string
@@ -143,14 +144,14 @@ export class CustomCommandsBuilderMenu {
                 {
                     label: 'User Settings',
                     detail: 'Stored on your machine and usable across all your workspaces/repositories',
-                    type: 'user',
+                    type: CustomCommandType.User,
                     description: '~/.vscode/cody.json',
                     picked: true,
                 },
                 {
                     label: 'Workspace Settings',
                     detail: 'Project-specific and shared with anyone using this workspace/repository',
-                    type: 'workspace',
+                    type: CustomCommandType.Workspace,
                     description: '.vscode/cody.json',
                 },
             ],
@@ -161,7 +162,9 @@ export class CustomCommandsBuilderMenu {
             }
         )
 
-        return option?.type === 'workspace' ? 'workspace' : 'user'
+        return option?.type === CustomCommandType.Workspace
+            ? CustomCommandType.Workspace
+            : CustomCommandType.User
     }
 }
 

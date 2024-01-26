@@ -37,8 +37,3 @@ export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<voi
         throw new Error(`Failed to save your Custom Commands to a JSON file: ${error}`)
     }
 }
-
-export async function openCustomCommandDocsLink(): Promise<void> {
-    const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
-    await vscode.env.openExternal(vscode.Uri.parse(uri))
-}

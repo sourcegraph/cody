@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildCodyCommandMap } from './get-commands'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 
 describe('buildCodyCommandMap', () => {
     it('builds a command map from json file', () => {
@@ -19,7 +20,7 @@ describe('buildCodyCommandMap', () => {
         }
         // Turn file into Record<string, unknown>
 
-        const commandMap = buildCodyCommandMap('workspace', JSON.stringify(file))
+        const commandMap = buildCodyCommandMap(CustomCommandType.Workspace, JSON.stringify(file))
 
         expect(commandMap.size).toBe(2)
         expect(commandMap.get('/hello')).toStrictEqual({
@@ -48,7 +49,7 @@ describe('buildCodyCommandMap', () => {
             },
         }
 
-        const commandMap = buildCodyCommandMap('user', JSON.stringify(file))
+        const commandMap = buildCodyCommandMap(CustomCommandType.User, JSON.stringify(file))
 
         expect(commandMap.get('hello')?.mode).toBe(undefined)
         expect(commandMap.get('/hello')?.mode).toBe('edit')

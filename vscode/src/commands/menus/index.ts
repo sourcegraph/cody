@@ -1,68 +1,49 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
-import { platform } from 'os'
-import { window, type QuickPickItem, commands } from 'vscode'
-import { CustomCommandConfigMenuItems, menu_buttons, menu_options, menu_separators } from './constant'
+import { window, commands } from 'vscode'
+import { CustomCommandConfigMenuItems, CommandMenuOption } from './items'
 
 import { vscodeDefaultCommands } from '../services/provider'
-import { openCustomCommandDocsLink } from '../utils/config-file'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
-import type { CustomCommandsItem } from './types'
-
-const commandMenuByType = {
-    default: {
-        title: `Cody Commands (Shortcut: ${platform() === 'darwin' ? '⌥' : 'Alt+'}C)`,
-        placeHolder: 'Search for a command or enter your question here...',
-    },
-    custom: {
-        title: 'Cody: Custom Commands (Beta)',
-        placeHolder: 'Search command to run...',
-    },
-    config: {
-        title: 'Cody: Configure Custom Commands (Beta)',
-        placeHolder: 'Choose an option',
-    },
-}
-
-const buttonsByType = {
-    default: [menu_buttons.gear],
-    custom: [menu_buttons.back, menu_buttons.gear],
-    config: [menu_buttons.back],
-}
+import type { CommandMenuItem } from './types'
+import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
+import { openCustomCommandDocsLink } from '../services/custom-commands'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
     customCommands: CodyCommand[]
 ): Promise<void> {
-    const items: QuickPickItem[] = []
-    const configOption = menu_options.config
-    const addOption = menu_options.add
+    const items: CommandMenuItem[] = []
+    const configOption = CommandMenuOption.config
+    const addOption = CommandMenuOption.add
 
     // Add items to menu
     if (type === 'config') {
         items.push(...CustomCommandConfigMenuItems)
     } else {
         if (type === 'default') {
-            items.push(menu_separators.commands)
-            for (const [_name, command] of vscodeDefaultCommands) {
-                const label = command.slashCommand
-                const description = command.description
-                items.push({ label, description })
+            items.push(CommandMenuSeperator.commands)
+            for (const [_name, _command] of vscodeDefaultCommands) {
+                const label = _command.slashCommand
+                const description = _command.description
+                const command = _command.slashCommand
+                items.push({ label, description, command })
             }
         }
 
         // Add custom commands
-        items.push(menu_separators.customBeta)
+        items.push(CommandMenuSeperator.custom)
         for (const customCommand of customCommands) {
             const label = customCommand.slashCommand
             const description = customCommand.description
-            items.push({ label, description })
+            const command = customCommand.slashCommand
+            items.push({ label, description, command })
         }
 
         // Extra options
-        items.push(menu_separators.settings, configOption, addOption)
+        items.push(CommandMenuSeperator.settings, configOption, addOption)
     }
 
-    const options = commandMenuByType[type]
+    const options = CommandMenuTitleItem[type]
 
     return new Promise(resolve => {
         const quickPick = window.createQuickPick()
@@ -70,7 +51,7 @@ export async function showCommandMenu(
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
         quickPick.matchOnDescription = true
-        quickPick.buttons = buttonsByType[type]
+        quickPick.buttons = CommandMenuTitleItem[type].buttons
         quickPick.matchOnDescription = true
 
         quickPick.onDidTriggerButton(async item => {
@@ -86,33 +67,35 @@ export async function showCommandMenu(
 
         // Open or delete custom command files
         quickPick.onDidTriggerItemButton(item => {
-            const selected = item.item as CustomCommandsItem
-            if (selected.type) {
-                void commands.executeCommand(
-                    item.button.tooltip?.startsWith('Delete')
-                        ? 'cody.commands.delete.json'
-                        : 'cody.commands.open.json',
-                    selected.type
-                )
+            const selected = item.item as CommandMenuItem
+            const button = item.button as CommandMenuButton
+            if (selected.type && button?.command) {
+                void commands.executeCommand(button.command, selected.type)
             }
             quickPick.hide()
         })
 
         quickPick.onDidChangeValue(value => {
             if (value && !value.startsWith('/')) {
-                quickPick.items = [menu_options.fix, menu_options.chat, ...items]
+                quickPick.items = [CommandMenuOption.edit, CommandMenuOption.chat, ...items]
             } else {
                 quickPick.items = items
             }
         })
 
         quickPick.onDidAccept(async () => {
-            const selection = quickPick.activeItems[0]
+            const selection = quickPick.activeItems[0] as CommandMenuItem
             const value = normalize(quickPick.value)
             const selected = selection?.label || value
 
-            if (selected === addOption.label) {
-                void commands.executeCommand('cody.commands.add', selected)
+            // On item button click
+            if (selection.buttons && selection.type && selection.command) {
+                void commands.executeCommand(selection.command, selection.type)
+            }
+
+            // Option to create a new custom command
+            if (selected === addOption.label && addOption.command) {
+                void commands.executeCommand(addOption.command, selected)
                 quickPick.hide()
                 return
             }
@@ -126,7 +109,7 @@ export async function showCommandMenu(
 
             // Check if selection has a field called id
             const selectionHasIdField = Object.prototype.hasOwnProperty.call(selection, 'id')
-            if (selectionHasIdField && (selection as CustomCommandsItem).id === 'docs') {
+            if (selectionHasIdField && (selection as CommandMenuItem).id === 'docs') {
                 return openCustomCommandDocsLink()
             }
 
@@ -135,6 +118,7 @@ export async function showCommandMenu(
                 void commands.executeCommand('cody.action.command', selected)
             }
 
+            resolve()
             quickPick.hide()
             return
         })

@@ -1,7 +1,7 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { EDIT_COMMAND } from '../menus/constant'
+import { EDIT_COMMAND } from '../menus/items'
 import { CustomCommandsManager } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'

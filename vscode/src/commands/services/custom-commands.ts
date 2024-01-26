@@ -2,21 +2,17 @@ import { omit } from 'lodash'
 import * as vscode from 'vscode'
 import os from 'os'
 
-import type { CodyCommand, CustomCommandType } from '@sourcegraph/cody-shared'
+import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
 import { ConfigFiles, type CodyCommandsFile } from '../types'
 import { fromSlashCommand } from '../utils/commands'
-import {
-    createFileWatchers,
-    createJSONFile,
-    openCustomCommandDocsLink,
-    saveJSONFile,
-} from '../utils/config-file'
+import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
 import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
@@ -92,7 +88,8 @@ export class CustomCommandsManager implements vscode.Disposable {
      * Get the uri of the cody.json file for the given type
      */
     private getConfigFileByType(type: CustomCommandType): vscode.Uri | undefined {
-        const configFileUri = type === 'user' ? this.userConfigFile : this.workspaceConfigFile
+        const configFileUri =
+            type === CustomCommandType.User ? this.userConfigFile : this.workspaceConfigFile
         return configFileUri
     }
 
@@ -102,11 +99,11 @@ export class CustomCommandsManager implements vscode.Disposable {
             this.customCommandsMap = new Map<string, CodyCommand>()
             // user commands
             if (this.userConfigFile?.path) {
-                await this.build('user')
+                await this.build(CustomCommandType.User)
             }
             // only build workspace prompts if the workspace is trusted
             if (vscode.workspace.isTrusted) {
-                await this.build('workspace')
+                await this.build(CustomCommandType.Workspace)
             }
         } catch (error) {
             logError('CustomCommandsProvider:refresh', 'failed', { verbose: error })
@@ -117,7 +114,7 @@ export class CustomCommandsManager implements vscode.Disposable {
     public async build(type: CustomCommandType): Promise<Map<string, CodyCommand> | null> {
         const uri = this.getConfigFileByType(type)
         // Security: Make sure workspace is trusted before building commands from workspace
-        if (!uri || (type === 'workspace' && !vscode.workspace.isTrusted)) {
+        if (!uri || (type === CustomCommandType.Workspace && !vscode.workspace.isTrusted)) {
             return null
         }
         try {
@@ -130,7 +127,7 @@ export class CustomCommandsManager implements vscode.Disposable {
             this.customCommandsMap = new Map([...this.customCommandsMap, ...customCommandsMap])
 
             // Keep a copy of the user json file for recreating the commands later
-            if (type === 'user') {
+            if (type === CustomCommandType.User) {
                 this.userJSON = JSON.parse(content)
             }
         } catch (error) {
@@ -154,7 +151,8 @@ export class CustomCommandsManager implements vscode.Disposable {
         await this.refresh()
 
         // Notify user
-        const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
+        const isUserCommand = newCommand.type === CustomCommandType.User
+        const buttonTitle = `Open ${isUserCommand ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
             .showInformationMessage(
                 `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
@@ -177,7 +175,7 @@ export class CustomCommandsManager implements vscode.Disposable {
     private async save(
         id: string,
         prompt: CodyCommand,
-        type: CustomCommandType = 'user'
+        type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
         this.customCommandsMap.set(id, prompt)
 
@@ -266,4 +264,9 @@ export class CustomCommandsManager implements vscode.Disposable {
         this.fileWatcherDisposables = []
         logDebug('CommandsController:disposeWatchers', 'watchers disposed')
     }
+}
+
+export async function openCustomCommandDocsLink(): Promise<void> {
+    const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
+    await vscode.env.openExternal(vscode.Uri.parse(uri))
 }

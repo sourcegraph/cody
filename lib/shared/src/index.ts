@@ -49,7 +49,7 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands/types'
+export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
