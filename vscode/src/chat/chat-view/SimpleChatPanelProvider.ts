@@ -27,6 +27,7 @@ import {
 import type { View } from '../../../webviews/NavBar'
 import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
+import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -52,7 +53,6 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
-import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import type { MessageErrorType } from '../MessageProvider'
 import type {
     AuthStatus,
@@ -76,15 +76,18 @@ import {
     type ContextItem,
     type MessageWithContext,
 } from './SimpleChatModel'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { RemoteRepoPicker } from '../../context/repo-picker'
+import type { Repo } from '../../context/repo-fetcher'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
-    embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
     symf: SymfRunner | null
+    enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
@@ -129,7 +132,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private config: ChatPanelConfig
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
-    private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly symf: SymfRunner | null
@@ -137,6 +139,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly guardrails: Guardrails
+    private readonly remoteSearch: RemoteSearch | null
+    private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
@@ -152,21 +156,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         extensionUri,
         authProvider,
         chatClient,
-        embeddingsClient,
         localEmbeddings,
         symf,
         editor,
         treeView,
         models,
         guardrails,
+        enterpriseContext,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
-        this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
+        this.repoPicker = enterpriseContext?.repoPicker || null
+        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
@@ -189,10 +194,33 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         this.codebaseStatusProvider = new CodebaseStatusProvider(
             this.editor,
-            embeddingsClient,
-            this.config.experimentalSymfContext ? this.symf : null
+            this.config.experimentalSymfContext ? this.symf : null,
+            enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+
+        if (this.remoteSearch) {
+            this.disposables.push(
+                // Display enhanced context status from the remote search provider
+                this.contextStatusAggregator.addProvider(this.remoteSearch),
+
+                // When the codebase has a remote ID, include it automatically
+                this.codebaseStatusProvider.onDidChangeStatus(async () => {
+                    const codebase = await this.codebaseStatusProvider.currentCodebase()
+                    if (codebase?.remote && codebase.remoteRepoId) {
+                        this.remoteSearch?.setRepos(
+                            [
+                                {
+                                    name: codebase.remote,
+                                    id: codebase.remoteRepoId,
+                                },
+                            ],
+                            RepoInclusion.Automatic
+                        )
+                    }
+                })
+            )
+        }
     }
 
     /**
@@ -257,6 +285,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'newFile':
                 handleCodeFromSaveToNewFile(message.text, message.metadata)
                 await this.editor.createWorkspaceFile(message.text)
+                break
+            case 'context/get-remote-search-repos': {
+                await this.postMessage({
+                    type: 'context/remote-repos',
+                    repos: this.chatModel.getSelectedRepos() ?? [],
+                })
+                break
+            }
+            case 'context/choose-remote-search-repo': {
+                await this.handleChooseRemoteSearchRepo(message.explicitRepos)
+                break
+            }
+            case 'context/remove-remote-search-repo':
+                void this.handleRemoveRemoteSearchRepo(message.repoId)
                 break
             case 'embeddings/index':
                 void this.localEmbeddings?.index()
@@ -373,10 +415,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                           editor: this.editor,
                           text,
                           providers: {
-                              embeddingsClient: this.embeddingsClient,
                               localEmbeddings: this.localEmbeddings,
                               symf: this.config.experimentalSymfContext ? this.symf : null,
-                              codebaseStatusProvider: this.codebaseStatusProvider,
+                              remoteSearch: this.remoteSearch,
                           },
                           featureFlags: this.config,
                           hints: { maxChars },
@@ -564,6 +605,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 error: `${error}`,
             })
         }
+    }
+
+    private async handleChooseRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
+        if (!this.remoteSearch) {
+            return
+        }
+        const repos =
+            explicitRepos ??
+            (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
+        if (repos) {
+            this.chatModel.setSelectedRepos(repos)
+            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
+        }
+    }
+
+    private handleRemoveRemoteSearchRepo(repoId: string): void {
+        this.remoteSearch?.removeRepo(repoId)
     }
 
     // #endregion
@@ -848,6 +906,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return this.chatModel.sessionID
     }
 
+    // Sets the provider up for a new chat that is not being restored from a
+    // saved session.
+    public async newSession(): Promise<void> {
+        // Set the remote search's selected repos to the workspace repo list
+        // by default.
+        this.remoteSearch?.setRepos(
+            (await this.repoPicker?.getDefaultRepos()) || [],
+            RepoInclusion.Manual
+        )
+    }
+
     // Attempts to restore the chat to the given sessionID, if it exists in
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
@@ -855,11 +924,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
-            return
+            return this.newSession()
         }
         this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
+
+        // Restore per-chat enhanced context settings
+        if (this.remoteSearch) {
+            const repos =
+                this.chatModel.getSelectedRepos() || (await this.repoPicker?.getDefaultRepos()) || []
+            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
+        }
 
         this.postViewTranscript()
     }
@@ -1014,6 +1090,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async setWebviewView(view: View): Promise<void> {
+        if (view !== 'chat') {
+            // Only chat view is supported in the webview panel.
+            // When a different view is requested,
+            // Set context to notifiy the webview panel to close.
+            // This should close the webview panel and open the login view in the sidebar.
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
+            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+            return
+        }
         if (!this.webviewPanel) {
             await this.createWebviewPanel()
         }
@@ -1076,7 +1161,8 @@ async function newChatModelfromTranscriptJSON(
         json.chatModel || modelID,
         (await Promise.all(messages)).flat(),
         json.id,
-        json.chatTitle
+        json.chatTitle,
+        json.enhancedContext?.selectedRepos
     )
 }
 
@@ -1137,6 +1223,9 @@ function deserializedContextFilesToContextItems(
             range,
             text: text || '',
             source: file.source,
+            repoName: file.repoName,
+            revision: file.revision,
+            title: file.title,
         }
     })
 }

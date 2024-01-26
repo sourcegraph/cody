@@ -1,478 +1,19 @@
 import assert from 'assert'
-import { execSync, spawn, type ChildProcessWithoutNullStreams } from 'child_process'
+import { execSync } from 'child_process'
 import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { logError, type ChatMessage, type ContextFile, isWindows } from '@sourcegraph/cody-shared'
+import { isWindows } from '@sourcegraph/cody-shared'
 
-import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
+import type { ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
-import { AgentTextDocument } from './AgentTextDocument'
-import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
-import type {
-    ClientInfo,
-    EditTask,
-    ExtensionConfiguration,
-    ProgressReportParams,
-    ProgressStartParams,
-    ProtocolCodeLens,
-    ServerInfo,
-    WebviewPostMessageParams,
-} from './protocol-alias'
 import { URI } from 'vscode-uri'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
-import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { applyPatch } from 'fast-myers-diff'
 import { isNode16 } from './isNode16'
-
-type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
-interface ProgressStartMessage {
-    method: 'progress/start'
-    id: string
-    message: ProgressStartParams
-}
-interface ProgressReportMessage {
-    method: 'progress/report'
-    id: string
-    message: ProgressReportParams
-}
-interface ProgressEndMessage {
-    method: 'progress/end'
-    id: string
-    message: Record<string, never>
-}
-
-export class TestClient extends MessageHandler {
-    public info: ClientInfo
-    public agentProcess?: ChildProcessWithoutNullStreams
-    // Array of all raw `progress/*` notification. Typed as `any` because
-    // start/end/report have different types.
-    public progressMessages: ProgressMessage[] = []
-    public progressIDs = new Map<string, number>()
-    public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
-    public readonly serverEndpoint: string
-    public workspace = new AgentWorkspaceDocuments()
-
-    constructor(
-        public readonly name: string,
-        public readonly accessToken?: string,
-        serverEndpoint?: string
-    ) {
-        super()
-        this.serverEndpoint = serverEndpoint ?? 'https://sourcegraph.com'
-
-        this.name = name
-        this.info = this.getClientInfo()
-
-        this.registerNotification('progress/start', message => {
-            this.progressStartEvents.fire(message)
-            message.id = this.progressID(message.id)
-            this.progressMessages.push({
-                method: 'progress/start',
-                id: message.id,
-                message,
-            })
-        })
-        this.registerNotification('progress/report', message => {
-            message.id = this.progressID(message.id)
-            this.progressMessages.push({
-                method: 'progress/report',
-                id: message.id,
-                message,
-            })
-        })
-        this.registerNotification('progress/end', ({ id }) => {
-            this.progressMessages.push({
-                method: 'progress/end',
-                id: this.progressID(id),
-                message: {},
-            })
-        })
-        this.registerNotification('codeLenses/display', async params => {
-            this.codeLenses.set(params.uri, params.codeLenses)
-        })
-        this.registerRequest('textDocument/edit', async params => {
-            const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
-            if (!document) {
-                logError('textDocument/edit: document not found', params.uri)
-                return false
-            }
-            const patches = params.edits.map<[number, number, string]>(edit => {
-                switch (edit.type) {
-                    case 'delete':
-                        return [
-                            document.offsetAt(edit.range.start),
-                            document.offsetAt(edit.range.end),
-                            '',
-                        ]
-                    case 'insert':
-                        return [
-                            document.offsetAt(edit.position),
-                            document.offsetAt(edit.position),
-                            edit.value,
-                        ]
-                    case 'replace':
-                        return [
-                            document.offsetAt(edit.range.start),
-                            document.offsetAt(edit.range.end),
-                            edit.value,
-                        ]
-                }
-            })
-            const updatedContent = [...applyPatch(document.content, patches)].join('')
-            this.workspace.addDocument(
-                ProtocolTextDocumentWithUri.from(document.uri, { content: updatedContent })
-            )
-            return true
-        })
-        this.registerNotification('debug/message', message => {
-            // Uncomment below to see `logDebug` messages.
-            // console.log(`${message.channel}: ${message.message}`)
-        })
-    }
-
-    public openFile(
-        uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
-    }
-    public changeFile(
-        uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didChange', params)
-    }
-
-    public async textDocumentEvent(
-        uri: Uri,
-        method: NotificationMethodName,
-        params?: { selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
-        const selectionName = params?.selectionName ?? 'SELECTION'
-        let content = await fspromises.readFile(uri.fsPath, 'utf8')
-        const selectionStartMarker = `/* ${selectionName}_START */`
-        const selectionStart = content.indexOf(selectionStartMarker)
-        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
-        const cursor = content.indexOf('/* CURSOR */')
-        if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
-            throw new Error(`No selection found for name ${params.selectionName}`)
-        }
-        if (params?.removeCursor ?? true) {
-            content = content.replace('/* CURSOR */', '')
-        }
-
-        const document = AgentTextDocument.from(uri, content)
-        const start =
-            cursor >= 0
-                ? document.positionAt(cursor)
-                : selectionStart >= 0
-                  ? document.positionAt(selectionStart + selectionStartMarker.length)
-                  : undefined
-        const end =
-            cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        const protocolDocument = {
-            uri: uri.toString(),
-            content,
-            selection: start && end ? { start, end } : undefined,
-        }
-        this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
-        this.notify(method, protocolDocument)
-    }
-
-    private progressID(id: string): string {
-        const fromCache = this.progressIDs.get(id)
-        if (fromCache !== undefined) {
-            return `ID_${fromCache}`
-        }
-        const freshID = this.progressIDs.size
-        this.progressIDs.set(id, freshID)
-        return `ID_${freshID}`
-    }
-
-    /**
-     * Promise that resolves when the provided task has reached the 'applied' state.
-     */
-    public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
-        switch (params.state) {
-            case CodyTaskState.applied:
-                return Promise.resolve()
-            case CodyTaskState.finished:
-            case CodyTaskState.error:
-                return Promise.reject(
-                    new Error(`Task reached terminal state before being applied ${params}`)
-                )
-        }
-
-        let disposable: vscode.Disposable
-        return new Promise<void>((resolve, reject) => {
-            disposable = this.onDidChangeTaskState(({ id, state }) => {
-                if (id === params.id) {
-                    switch (state) {
-                        case CodyTaskState.applied:
-                            return resolve()
-                        case CodyTaskState.error:
-                        case CodyTaskState.finished:
-                            return reject(
-                                new Error(
-                                    `Task reached terminal state before being applied ${{ id, state }}`
-                                )
-                            )
-                    }
-                }
-            })
-        }).finally(() => disposable.dispose())
-    }
-
-    public codeLenses = new Map<string, ProtocolCodeLens[]>()
-    public newTaskState = new vscode.EventEmitter<EditTask>()
-    public onDidChangeTaskState = this.newTaskState.event
-    public webviewMessages: WebviewPostMessageParams[] = []
-    public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
-
-    /**
-     * Returns a promise of the first `type: 'transcript'` message where
-     * `isMessageInProgress: false` and messages is non-empty. This is a helper
-     * function you may need to re-implement if you are writing a Cody client to
-     * write tests. The tricky bit is that we don't have full control over when
-     * the server starts streaming messages to the client, it may start before
-     * chat/new or commands/* requests respond with the ID of the chat session.
-     * Therefore, the only way to correctly identify the first reply in the chat session
-     * is by 1) recording all `webview/postMessage` for unknown IDs and 2)
-     * implement a similar helper that deals with both cases where the first message
-     * has already been sent and when it hasn't been sent.
-     */
-    public firstNonEmptyTranscript(id: string): Promise<ExtensionTranscriptMessage> {
-        const disposables: vscode.Disposable[] = []
-        return new Promise<ExtensionTranscriptMessage>((resolve, reject) => {
-            const onMessage = (message: WebviewPostMessageParams): void => {
-                if (message.id !== id) {
-                    return
-                }
-                if (
-                    message.message.type === 'transcript' &&
-                    message.message.messages.length > 0 &&
-                    !message.message.isMessageInProgress
-                ) {
-                    resolve(message.message)
-                } else if (message.message.type === 'errors') {
-                    reject(new Error(`expected transcript, obtained ${JSON.stringify(message.message)}`))
-                }
-            }
-
-            for (const message of this.webviewMessages) {
-                onMessage(message)
-            }
-            disposables.push(this.webviewMessagesEmitter.event(params => onMessage(params)))
-        }).finally(() => vscode.Disposable.from(...disposables).dispose())
-    }
-
-    public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.agentProcess = this.spawnAgentProcess()
-
-        this.connectProcess(this.agentProcess, error => {
-            console.error(error)
-        })
-        this.registerNotification('editTaskState/didChange', params => {
-            this.newTaskState.fire(params)
-        })
-
-        this.registerNotification('webview/postMessage', params => {
-            this.webviewMessages.push(params)
-            this.webviewMessagesEmitter.fire(params)
-        })
-
-        try {
-            const serverInfo = await this.handshake(this.info, additionalConfig)
-            assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-            return serverInfo
-        } catch (error) {
-            if (error === undefined) {
-                throw new Error('Agent failed to initialize, error is undefined')
-            }
-            if (error instanceof Error) {
-                throw error
-            }
-            throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, {
-                cause: error,
-            })
-        }
-    }
-
-    public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', {
-            id,
-            message: { command: 'chatModel', model },
-        })
-    }
-
-    public async reset(id: string): Promise<void> {
-        await this.request('webview/receiveMessage', {
-            id,
-            message: { command: 'reset' },
-        })
-    }
-
-    public async editMessage(
-        id: string,
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
-    ): Promise<ChatMessage | undefined> {
-        const reply = asTranscriptMessage(
-            await this.request('chat/editMessage', {
-                id,
-                message: {
-                    command: 'edit',
-                    text,
-                    index: params?.index,
-                    contextFiles: params?.contextFiles ?? [],
-                    addEnhancedContext: params?.addEnhancedContext ?? false,
-                },
-            })
-        )
-        return reply.messages.at(-1)
-    }
-
-    public async sendMessage(
-        id: string,
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
-            ?.lastMessage
-    }
-
-    public async sendSingleMessageToNewChat(
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
-    ): Promise<ChatMessage | undefined> {
-        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
-    }
-
-    public async sendSingleMessageToNewChatWithFullTranscript(
-        text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
-    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
-        const id = params?.id ?? (await this.request('chat/new', null))
-        const reply = asTranscriptMessage(
-            await this.request('chat/submitMessage', {
-                id,
-                message: {
-                    command: 'submit',
-                    text,
-                    submitType: 'user',
-                    addEnhancedContext: params?.addEnhancedContext ?? false,
-                    contextFiles: params?.contextFiles,
-                },
-            })
-        )
-        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
-    }
-
-    public async shutdownAndExit() {
-        if (this.isAlive()) {
-            await this.request('shutdown', null)
-            this.notify('exit', null)
-        } else {
-            console.log('Agent has already exited')
-        }
-    }
-
-    public getAgentDir(): string {
-        const cwd = process.cwd()
-        return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
-    }
-
-    private async handshake(
-        clientInfo: ClientInfo,
-        additionalConfig?: Partial<ExtensionConfiguration>
-    ): Promise<ServerInfo> {
-        return new Promise((resolve, reject) => {
-            setTimeout(
-                () =>
-                    reject(
-                        new Error(
-                            "Agent didn't initialize within 10 seconds, something is most likely wrong." +
-                                " If you think it's normal for the agent to use more than 10 seconds to initialize," +
-                                ' increase this timeout.'
-                        )
-                    ),
-                10_000
-            )
-            this.request('initialize', {
-                ...clientInfo,
-                extensionConfiguration: {
-                    serverEndpoint: 'https://invalid',
-                    accessToken: 'invalid',
-                    customHeaders: {},
-                    ...clientInfo.extensionConfiguration,
-                    ...additionalConfig,
-                },
-            }).then(
-                info => {
-                    this.notify('initialized', null)
-                    resolve(info)
-                },
-                error => reject(error)
-            )
-        })
-    }
-
-    private spawnAgentProcess() {
-        const agentDir = this.getAgentDir()
-        const recordingDirectory = path.join(agentDir, 'recordings')
-        const agentScript = path.join(agentDir, 'dist', 'index.js')
-
-        return spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
-            stdio: 'pipe',
-            cwd: agentDir,
-            env: {
-                CODY_SHIM_TESTING: 'true',
-                CODY_TEMPERATURE_ZERO: 'true',
-                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
-                CODY_RECORDING_DIRECTORY: recordingDirectory,
-                CODY_RECORDING_NAME: this.name,
-                SRC_ACCESS_TOKEN: this.accessToken,
-                ...process.env,
-            },
-        })
-    }
-
-    private getClientInfo(): ClientInfo {
-        const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
-
-        return {
-            name: this.name,
-            version: 'v1',
-            workspaceRootUri: workspaceRootUri.toString(),
-            workspaceRootPath: workspaceRootUri.fsPath,
-            capabilities: {
-                progressBars: 'enabled',
-                edit: 'enabled',
-                codeLenses: 'enabled',
-            },
-            extensionConfiguration: {
-                anonymousUserID: `${this.name}abcde1234`,
-                accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: this.serverEndpoint,
-                customHeaders: {},
-                autocompleteAdvancedProvider: 'anthropic',
-                customConfiguration: {
-                    'cody.autocomplete.experimental.graphContext': null,
-                },
-                debug: false,
-                verboseDebug: false,
-                codebase: 'github.com/sourcegraph/cody',
-            },
-        }
-    }
-}
+import { TestClient, asTranscriptMessage } from './TestClient'
 
 const explainPollyError = `
 
@@ -517,15 +58,16 @@ describe('Agent', () => {
         return
     }
 
-    const client = new TestClient(
-        'defaultClient',
+    const client = new TestClient({
+        name: 'defaultClient',
         // The redacted ID below is copy-pasted from the recording file and
         // needs to be updated whenever we change the underlying access token.
         // We can't return a random string here because then Polly won't be able
         // to associate the HTTP requests between record mode and replay mode.
-        process.env.SRC_ACCESS_TOKEN ??
-            'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3'
-    )
+        accessToken:
+            process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3',
+    })
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     //
@@ -965,57 +507,57 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
+                      " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
 
-                  Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
+                      Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
 
-                  \`\`\`ts
-                  import {describe, expect, it} from 'vitest'
-                  import {Animal} from './animal'
+                      \`\`\`ts
+                      import {describe, expect, it} from 'vitest'
+                      import {Animal} from './animal'
 
-                  describe('Animal', () => {
+                      describe('Animal', () => {
 
-                    it('has a name property', () => {
-                      const animal: Animal = {
-                        name: 'Leo',
-                        makeAnimalSound() {
-                          return 'Roar'
-                        },
-                        isMammal: true
-                      }
+                        it('has a name property', () => {
+                          const animal: Animal = {
+                            name: 'Leo',
+                            makeAnimalSound() {
+                              return 'Roar'
+                            },
+                            isMammal: true
+                          }
 
-                      expect(animal.name).toBe('Leo')
-                    })
+                          expect(animal.name).toBe('Leo')
+                        })
 
-                    it('has a makeAnimalSound method', () => {
-                      const animal: Animal = {
-                        name: 'Whale',
-                        makeAnimalSound() {
-                          return 'Whistle'
-                        },
-                        isMammal: true
-                      }
+                        it('has a makeAnimalSound method', () => {
+                          const animal: Animal = {
+                            name: 'Whale',
+                            makeAnimalSound() {
+                              return 'Whistle'
+                            },
+                            isMammal: true
+                          }
 
-                      expect(animal.makeAnimalSound()).toBe('Whistle')
-                   }
+                          expect(animal.makeAnimalSound()).toBe('Whistle')
+                        })
 
-                    it('has an isMammal property', () => {
-                      const animal: Animal = {
-                        name: 'Snake',
-                        makeAnimalSound() {
-                          return 'Hiss'
-                        },
-                        isMammal: false
-                      }
+                        it('has an isMammal property', () => {
+                          const animal: Animal = {
+                            name: 'Snake',
+                            makeAnimalSound() {
+                              return 'Hiss'
+                            },
+                            isMammal: false
+                          }
 
-                      expect(animal.isMammal).toBe(false)
-                    })
+                          expect(animal.isMammal).toBe(false)
+                        })
 
-                  })
-                  \`\`\`
+                      })
+                      \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
-                `,
+                      This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
+                    `,
                     explainPollyError
                 )
             },
@@ -1291,12 +833,13 @@ describe('Agent', () => {
     })
 
     describe('RateLimitedAgent', () => {
-        const rateLimitedClient = new TestClient(
-            'rateLimitedClient',
-            process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
+        const rateLimitedClient = new TestClient({
+            name: 'rateLimitedClient',
+            accessToken:
+                process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
                 // See comment above `const client =` about how this value is derived.
-                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5'
-        )
+                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5',
+        })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
             const serverInfo = await rateLimitedClient.initialize()
@@ -1319,13 +862,16 @@ describe('Agent', () => {
     })
 
     describe('Enterprise', () => {
-        const enterpriseClient = new TestClient(
-            'enterpriseClient',
-            process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
+        const enterpriseClient = new TestClient({
+            name: 'enterpriseClient',
+            accessToken:
+                process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
                 // See comment above `const client =` about how this value is derived.
                 'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
-            'https://demo.sourcegraph.com'
-        )
+            serverEndpoint: 'https://demo.sourcegraph.com',
+            telemetryExporter: 'graphql',
+            logEventMode: 'connected-instance-only',
+        })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
             const serverInfo = await enterpriseClient.initialize()
@@ -1339,7 +885,59 @@ describe('Agent', () => {
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
+        // NOTE(olafurpg) disabled on Windows because the multi-repo keyword
+        // query is not replaying on Windows due to some platform-dependency on
+        // how the HTTP request is constructed. I manually tested multi-repo on
+        // a Windows computer to confirm that it does work as expected.
+        it.skipIf(isWindows())(
+            'chat/submitMessage (addEnhancedContext: true, multi-repo test)',
+            async () => {
+                const id = await enterpriseClient.request('chat/new', null)
+                const { repos } = await enterpriseClient.request('graphql/getRepoIds', {
+                    names: ['github.com/sourcegraph/sourcegraph'],
+                    first: 1,
+                })
+                await enterpriseClient.request('webview/receiveMessage', {
+                    id,
+                    message: { command: 'context/choose-remote-search-repo', explicitRepos: repos },
+                })
+                const { lastMessage, transcript } =
+                    await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
+                        'What is Squirrel?',
+                        {
+                            id,
+                            addEnhancedContext: true,
+                        }
+                    )
+
+                expect(lastMessage?.text ?? '').includes('code intelligence')
+                expect(lastMessage?.text ?? '').includes('tree-sitter')
+
+                const contextUris: URI[] = []
+                for (const message of transcript.messages) {
+                    for (const file of message.contextFiles ?? []) {
+                        if (file.type === 'file') {
+                            file.uri = URI.from(file.uri)
+                            contextUris.push(file.uri)
+                        }
+                    }
+                }
+                const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
+
+                expect(paths).includes('cmd/symbols/squirrel/README.md')
+
+                const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
+                expect(remoteRepos).toStrictEqual(repos)
+            },
+            30_000
+        )
+
         afterAll(async () => {
+            const { requests } = await enterpriseClient.request('testing/networkRequests', null)
+            const nonServerInstanceRequests = requests
+                .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
+                .map(({ url }) => url)
+            expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
@@ -1363,11 +961,4 @@ function trimEndOfLine(text: string | undefined): string {
         .split('\n')
         .map(line => line.trimEnd())
         .join('\n')
-}
-
-function asTranscriptMessage(reply: ExtensionMessage): ExtensionTranscriptMessage {
-    if (reply.type === 'transcript') {
-        return reply
-    }
-    throw new Error(`expected transcript, got: ${JSON.stringify(reply)}`)
 }

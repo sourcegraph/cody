@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import {
     isCodyIgnoredFile,
-    isError,
     isFileURI,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -17,11 +16,9 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-
 import { viewRangeToRange } from './chat-helpers'
-import type { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextItem } from './SimpleChatModel'
+import type { RemoteSearch } from '../../context/remote-search'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -30,10 +27,9 @@ export interface GetEnhancedContextOptions {
     editor: VSCodeEditor
     text: string
     providers: {
-        codebaseStatusProvider: CodebaseStatusProvider
-        embeddingsClient: CachedRemoteEmbeddingsClient
         localEmbeddings: LocalEmbeddingsController | null
         symf: SymfRunner | null
+        remoteSearch: RemoteSearch | null
     }
     featureFlags: {
         internalUnstable: boolean
@@ -75,11 +71,6 @@ export async function getEnhancedContext({
     if (strategy !== 'keyword') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
-        const remoteEmbeddingsResults = searchEmbeddingsRemote(
-            providers.embeddingsClient,
-            providers.codebaseStatusProvider,
-            text
-        )
         try {
             const r = await localEmbeddingsResults
             hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
@@ -87,25 +78,28 @@ export async function getEnhancedContext({
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
         }
-        try {
-            const r = await remoteEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
-        }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
     }
 
-    // Fallback to symf if embeddings provided no results or if useContext is set to 'keyword' specifically
-    if (!hasEmbeddingsContext && providers.symf) {
+    if (strategy !== 'embeddings') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
-        try {
-            searchContext.push(...(await searchSymf(providers.symf, editor, text)))
-        } catch (error) {
-            // TODO(beyang): handle this error better
-            logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+        if (providers.remoteSearch) {
+            try {
+                searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
+            } catch (error) {
+                // TODO: Error reporting
+                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
+            }
         }
+        if (providers.symf) {
+            try {
+                searchContext.push(...(await searchSymf(providers.symf, editor, text)))
+            } catch (error) {
+                // TODO(beyang): handle this error better
+                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+            }
+        }
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
     }
 
     const priorityContext = await getPriorityContext(text, editor, searchContext)
@@ -126,26 +120,60 @@ async function getEnhancedContextFused({
     }
 
     // Get embeddings context if useContext Config is not set to 'keyword' only
-    const keywordContextItemsPromise =
+    const embeddingsContextItemsPromise =
         strategy !== 'keyword'
             ? retrieveContextGracefully(
                   searchEmbeddingsLocal(providers.localEmbeddings, text),
                   'local-embeddings'
               )
             : []
-    const searchContextItemsPromise = providers.symf
-        ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
-        : []
 
-    const [keywordContextItems, searchContextItems] = await Promise.all([
+    // Get search (symf or remote search) context if config is not set to 'embeddings' only
+    const localSearchContextItemsPromise =
+        providers.symf && strategy !== 'embeddings'
+            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+            : []
+    const remoteSearchContextItemsPromise =
+        providers.remoteSearch && strategy !== 'embeddings'
+            ? await retrieveContextGracefully(
+                  searchRemote(providers.remoteSearch, text),
+                  'remote-search'
+              )
+            : []
+    const keywordContextItemsPromise = (async () => [
+        ...(await localSearchContextItemsPromise),
+        ...(await remoteSearchContextItemsPromise),
+    ])()
+
+    const [embeddingsContextItems, keywordContextItems] = await Promise.all([
+        embeddingsContextItemsPromise,
         keywordContextItemsPromise,
-        searchContextItemsPromise,
     ])
 
-    const fusedContext = fuseContext(keywordContextItems, searchContextItems, hints.maxChars)
+    const fusedContext = fuseContext(keywordContextItems, embeddingsContextItems, hints.maxChars)
 
     const priorityContext = await getPriorityContext(text, editor, fusedContext)
     return priorityContext.concat(fusedContext)
+}
+
+async function searchRemote(
+    remoteSearch: RemoteSearch | null,
+    userText: string
+): Promise<ContextItem[]> {
+    if (!remoteSearch) {
+        return []
+    }
+    return (await remoteSearch.query(userText)).map(result => {
+        return {
+            text: result.content,
+            range: new vscode.Range(result.startLine, 0, result.endLine, 0),
+            uri: result.uri,
+            source: 'unified',
+            repoName: result.repoName,
+            title: result.path,
+            revision: result.commit,
+        }
+    })
 }
 
 /**
@@ -254,77 +282,6 @@ async function searchEmbeddingsLocal(
             })
         }
     }
-    return contextItems
-}
-
-// Note: does not throw error if remote embeddings are not available, just returns empty array
-async function searchEmbeddingsRemote(
-    embeddingsClient: CachedRemoteEmbeddingsClient | null,
-    codebaseStatusProvider: CodebaseStatusProvider,
-    text: string
-): Promise<ContextItem[]> {
-    if (!embeddingsClient) {
-        return []
-    }
-    const codebase = await codebaseStatusProvider?.currentCodebase()
-    if (!codebase?.remote) {
-        return []
-    }
-    const repoId = await embeddingsClient.getRepoIdIfEmbeddingExists(codebase.remote)
-    if (isError(repoId)) {
-        throw new Error(`Error retrieving repo ID: ${repoId}`)
-    }
-    if (!repoId) {
-        return []
-    }
-
-    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-    if (!workspaceFolder) {
-        return []
-    }
-
-    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
-    const contextItems: ContextItem[] = []
-    const embeddings = await embeddingsClient.search(
-        workspaceFolder.uri,
-        [repoId],
-        text,
-        NUM_CODE_RESULTS,
-        NUM_TEXT_RESULTS
-    )
-    if (isError(embeddings)) {
-        throw new Error(`Error retrieving embeddings: ${embeddings}`)
-    }
-    for (const codeResult of embeddings.codeResults) {
-        const range = new vscode.Range(
-            new vscode.Position(codeResult.startLine, 0),
-            new vscode.Position(codeResult.endLine, 0)
-        )
-        if (!isCodyIgnoredFile(codeResult.uri)) {
-            contextItems.push({
-                uri: codeResult.uri,
-                range,
-                text: codeResult.content,
-                source: 'embeddings',
-            })
-        }
-    }
-
-    for (const textResult of embeddings.textResults) {
-        const range = new vscode.Range(
-            new vscode.Position(textResult.startLine, 0),
-            new vscode.Position(textResult.endLine, 0)
-        )
-        if (!isCodyIgnoredFile(textResult.uri)) {
-            contextItems.push({
-                uri: textResult.uri,
-                range,
-                text: textResult.content,
-                source: 'embeddings',
-            })
-        }
-    }
-
     return contextItems
 }
 

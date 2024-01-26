@@ -98,6 +98,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
          * if setLegacyEventsStateOnce determines we need to do so.
          */
         if (this.exportMode === 'legacy') {
+            console.log({ legacyBackcompatLogEventMode: this.legacyBackcompatLogEventMode })
             const resultOrError = await Promise.all(
                 events.map(event =>
                     this.client.logEvent(

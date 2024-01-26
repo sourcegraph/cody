@@ -7,12 +7,7 @@ import type { ChatMessage } from './transcript/messages'
 
 type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    | 'serverEndpoint'
-    | 'codebase'
-    | 'useContext'
-    | 'accessToken'
-    | 'customHeaders'
-    | 'experimentalLocalSymbols'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
 >
 
 interface ClientInit {

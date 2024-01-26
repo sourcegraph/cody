@@ -5,14 +5,12 @@ import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever
 import type { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
-import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import {
     createLocalEmbeddingsController,
     type LocalEmbeddingsConfig,
     type LocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
-import { getRgPath } from './rg'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
 import { CommandsProvider } from './commands/services/provider'
@@ -31,14 +29,12 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         .get<boolean>('cody.advanced.agent.running', false)
 
     return activateCommon(context, {
-        getRgPath,
-        createCommandsProvider: () => new CommandsProvider(),
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
             : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
                   createLocalEmbeddingsController(context, config),
-        createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
+        createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: (...args) => new SymfRunner(...args),
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),

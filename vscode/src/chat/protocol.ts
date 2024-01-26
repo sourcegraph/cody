@@ -17,6 +17,7 @@ import type {
 import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
+import type { Repo } from '../context/repo-fetcher'
 
 /**
  * A message sent from the webview to the extension host.
@@ -58,6 +59,9 @@ export type WebviewMessage =
           }
       }
     | ({ command: 'edit' } & WebviewEditMessage)
+    | { command: 'context/get-remote-search-repos' }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
@@ -85,7 +89,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'reload-state' | 'web-sign-in-token'
+          type: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
@@ -138,6 +142,7 @@ export type ExtensionMessage =
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'webview-state'; isActive: boolean }
+    | { type: 'context/remote-repos'; repos: Repo[] }
     | {
           type: 'setConfigFeatures'
           configFeatures: {

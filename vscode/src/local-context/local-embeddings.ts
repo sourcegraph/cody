@@ -297,7 +297,6 @@ export class LocalEmbeddingsController
                     providers: [
                         {
                             kind: 'embeddings',
-                            type: 'local',
                             state: 'indeterminate',
                         },
                     ],
@@ -309,7 +308,7 @@ export class LocalEmbeddingsController
                 {
                     dir,
                     displayName: uriBasename(dir),
-                    providers: [{ kind: 'embeddings', type: 'local', state: 'indexing' }],
+                    providers: [{ kind: 'embeddings', state: 'indexing' }],
                 },
             ]
         }
@@ -321,7 +320,6 @@ export class LocalEmbeddingsController
                     providers: [
                         {
                             kind: 'embeddings',
-                            type: 'local',
                             state: 'ready',
                         },
                     ],
@@ -349,7 +347,6 @@ export class LocalEmbeddingsController
                 providers: [
                     {
                         kind: 'embeddings',
-                        type: 'local',
                         ...stateAndErrors,
                     },
                 ],
