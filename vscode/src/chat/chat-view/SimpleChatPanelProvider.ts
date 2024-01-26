@@ -805,9 +805,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * except within this method.
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
-        logDebug('SimpleChatPanelProvider', 'postMessage', JSON.stringify(message))
-        const json = JSON.stringify(message)
-        console.log(message.type, 'hasRepoName?', json.includes('"repoName":'))
         return this.initDoer.do(() => this.webview?.postMessage(message))
     }
 
@@ -1021,14 +1018,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
-        logDebug(
-            'SimpleChatPanelProvider.restoreSession',
-            'Restoring session from history',
-            JSON.stringify(oldTranscript)
-        )
-        if (JSON.stringify(oldTranscript).indexOf('"repoName"') === -1) {
-            throw new Error('repo names gone restoring session')
-        }
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1047,11 +1036,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async saveSession(humanInput?: string): Promise<void> {
-        const transcriptJson = this.chatModel.toTranscriptJSON()
-        console.log('saving session', 'has title?', JSON.stringify(transcriptJson).includes('"title":'))
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
-            transcriptJson,
+            this.chatModel.toTranscriptJSON(),
             humanInput
         )
         if (allHistory) {

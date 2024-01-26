@@ -183,8 +183,6 @@ export class SimpleChatModel {
      * Serializes to the legacy transcript JSON format
      */
     public toTranscriptJSON(): TranscriptJSON {
-        const hadRepoNames = JSON.stringify(this.messagesWithContext).indexOf('"repoName":') !== -1
-
         const interactions: InteractionJSON[] = []
         for (let i = 0; i < this.messagesWithContext.length; i += 2) {
             const humanMessage = this.messagesWithContext[i]
@@ -203,13 +201,6 @@ export class SimpleChatModel {
                 selectedRepos: this.selectedRepos.map(r => ({ ...r })),
             }
         }
-
-        const hasRepoNames = JSON.stringify(result).indexOf('"repoName":') !== -1
-        console.log('toTranscriptJSON', 'hadRepoNames', hadRepoNames, 'hasRepoNames', hasRepoNames)
-        if (hadRepoNames && !hasRepoNames) {
-            throw new Error('stripped the repo names')
-        }
-
         return result
     }
 }
