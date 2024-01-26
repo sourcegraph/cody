@@ -53,7 +53,7 @@ class CommandsController implements vscode.Disposable {
             args.userContextFiles = contextFile
         }
 
-        return await new CommandRunner(command, args).start()
+        return new CommandRunner(command, args).start()
     }
 
     public dispose(): void {

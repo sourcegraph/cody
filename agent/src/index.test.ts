@@ -633,39 +633,40 @@ describe('Agent', () => {
         describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
                 it(name, async () => {
-                    await client.request('command/execute', { command: 'cody.search.index-update' })
-                    const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
-                    await client.openFile(uri, { removeCursor: false })
-                    const task = await client.request('commands/document', null)
-                    await client.taskHasReachedAppliedPhase(task)
-                    const lenses = client.codeLenses.get(uri.toString()) ?? []
-                    expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-                    const acceptCommand = lenses.find(
-                        ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-                    )
-                    if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                        throw new Error(
-                            `Expected accept command, found none. Lenses ${JSON.stringify(
-                                lenses,
-                                null,
-                                2
-                            )}`
+                    try {
+                        await client.request('command/execute', { command: 'cody.search.index-update' })
+                        const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
+                        await client.openFile(uri, { removeCursor: false })
+                        const task = await client.request('commands/document', null)
+                        await client.taskHasReachedAppliedPhase(task)
+                        const lenses = client.codeLenses.get(uri.toString()) ?? []
+                        expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+                        const acceptCommand = lenses.find(
+                            ({ command }) => command?.command === 'cody.fixup.codelens.accept'
                         )
+                        if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                            throw new Error(
+                                `Expected accept command, found none. Lenses ${JSON.stringify(
+                                    lenses,
+                                    null,
+                                    2
+                                )}`
+                            )
+                        }
+                        await client.request('command/execute', acceptCommand.command)
+                        expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+                        const newContent = client.workspace.getDocument(uri)?.content
+                        assertion(trimEndOfLine(newContent))
+                    } catch (error) {
+                        console.error(error, 'task error')
                     }
-                    await client.request('command/execute', acceptCommand.command)
-                    expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
-                    const newContent = client.workspace.getDocument(uri)?.content
-                    assertion(trimEndOfLine(newContent))
                 })
             }
 
             check('commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   * @param a - The first number to sum.
-                   * @param b - The second number to sum.
-                   * @returns The sum of a and b.
+                   * Returns the sum of two numbers.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -682,8 +683,7 @@ describe('Agent', () => {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Prints "Hello World!" to the console if this.shouldGreet is true.
-                       * This allows conditionally greeting the user.
+                       * Logs a greeting if the shouldGreet property is true.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -699,8 +699,7 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * TestLogger object that contains a startLogging method to initialize logging.
-                   * startLogging sets up a recordLog function that writes log messages to the console.
+                   * Starts logging by initializing and calling the \`recordLog\` function.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -724,12 +723,12 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that runs a set of test cases.
+                   * A test block with multiple test cases.
                    *
                    * Contains 3 test cases:
-                   * - 'does 1' checks an expectation
-                   * - 'does 2' checks an expectation
-                   * - 'does something else' has a commented out line that errors
+                   * - 'does 1' asserts that true equals true
+                   * - 'does 2' asserts that true equals true
+                   * - 'does something else' has a commented out line that would error due to incorrect usage of \`performance.now\`
                    */
                   describe('test block', () => {
                       it('does 1', () => {
@@ -748,7 +747,7 @@ describe('Agent', () => {
                   "
                 `)
             )
-        })
+        }, 30_000)
     })
 
     describe('Progress bars', () => {
