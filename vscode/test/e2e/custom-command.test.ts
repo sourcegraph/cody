@@ -36,17 +36,22 @@ test('add a new user command via the custom commands menu', async ({ page, sideb
     await page.keyboard.type('New Custom Command...')
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     // Enter command name
+    await expect(page.getByText('New Custom Cody Command: Slash Name')).toBeVisible()
     await page.keyboard.type(commandName)
     await page.keyboard.press('Enter')
     // Enter description
+    await expect(page.getByText('New Custom Cody Command: Description')).toBeVisible()
     await page.keyboard.type(description)
     await page.keyboard.press('Enter')
     // Enter prompt
+    await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()
     await page.keyboard.type(prompt)
     await page.keyboard.press('Enter')
     // Use default context
+    await expect(page.getByText('New Custom Cody Command: Context Options')).toBeVisible()
     await page.keyboard.press('Enter')
     // Save it to workspace settings
+    await expect(page.getByText('New Custom Cody Command: Save To…')).toBeVisible()
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
@@ -83,7 +88,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
-    await page.getByLabel('/currentDir').locator('a').click()
+    await page.getByPlaceholder('Search command to run...').press('Enter')
 
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
