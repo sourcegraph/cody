@@ -24,6 +24,11 @@
     background-color: transparent;
 }
 
+.status {
+    font-size: 12px;
+    line-height: 1;
+}
+
 .attribution-container {
     all: unset;
     display: flex;
