@@ -5,10 +5,10 @@ import * as path from 'path'
 import parseGitDiff, { type AddedLine } from 'parse-git-diff'
 import * as vscode from 'vscode'
 
-import { type MessageHandler } from '../../jsonrpc-alias'
+import type { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { type EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { SnapshotWriter } from './SnapshotWriter'
@@ -47,7 +47,13 @@ export async function evaluateGitLogStrategy(
                 for (const file of parsedDiff.files) {
                     const filePath: string = file.type === 'RenamedFile' ? file.pathAfter : file.path
 
-                    if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], filePath)) {
+                    if (
+                        !matchesGlobPatterns(
+                            options.includeFilepath ?? [],
+                            options.excludeFilepath ?? [],
+                            filePath
+                        )
+                    ) {
                         continue
                     }
 
@@ -78,10 +84,12 @@ export async function evaluateGitLogStrategy(
 
                     if (isLastFile) {
                         const lastAddedLine = file.chunks
-                            .flatMap(chunks => (chunks.type === 'BinaryFilesChunk' ? [] : chunks.changes))
-                            .findLast(line => line.type === 'AddedLine' && line.content.trim().length >= 4) as
-                            | AddedLine
-                            | undefined
+                            .flatMap(chunks =>
+                                chunks.type === 'BinaryFilesChunk' ? [] : chunks.changes
+                            )
+                            .findLast(
+                                line => line.type === 'AddedLine' && line.content.trim().length >= 4
+                            ) as AddedLine | undefined
 
                         if (!lastAddedLine) {
                             continue
@@ -108,10 +116,14 @@ export async function evaluateGitLogStrategy(
                         const lines = document.text.split('\n')
                         const currentLine = lines[range.start.line]
 
-                        const removedContent = currentLine.slice(range.start.character, range.end.character + 1)
+                        const removedContent = currentLine.slice(
+                            range.start.character,
+                            range.end.character + 1
+                        )
                         const modifiedContent = [
                             ...lines.slice(0, range.start.line),
-                            currentLine.slice(0, range.start.character) + currentLine.slice(range.end.character),
+                            currentLine.slice(0, range.start.character) +
+                                currentLine.slice(range.end.character),
                             ...lines.slice(range.end.line + 1),
                         ].join('\n')
                         const position = range.start

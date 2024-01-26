@@ -2,16 +2,16 @@ import * as vscode from 'vscode'
 
 import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
-import { type View } from '../../../webviews/NavBar'
+import type { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
-import { type AuthProvider } from '../../services/AuthProvider'
+import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { openExternalLinks } from '../../services/utils/workspace-action'
-import { type ContextProvider } from '../ContextProvider'
-import { type MessageErrorType, type MessageProviderOptions } from '../MessageProvider'
-import { type ExtensionMessage, type WebviewMessage } from '../protocol'
+import type { ContextProvider } from '../ContextProvider'
+import type { MessageErrorType, MessageProviderOptions } from '../MessageProvider'
+import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -64,7 +64,9 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, {
+                    hasV2Event: true,
+                })
                 telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
                 break
             case 'event':
@@ -79,17 +81,19 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     break
                 }
                 if (message.type === 'web-sign-in-token') {
-                    void vscode.window.showInputBox({ prompt: 'Enter web sign-in token' }).then(async token => {
-                        if (!token) {
-                            return
-                        }
-                        const authStatus = await this.authProvider.auth(DOTCOM_URL.href, token)
-                        if (!authStatus?.isLoggedIn) {
-                            void vscode.window.showErrorMessage(
-                                'Authentication failed. Please check your token and try again.'
-                            )
-                        }
-                    })
+                    void vscode.window
+                        .showInputBox({ prompt: 'Enter web sign-in token' })
+                        .then(async token => {
+                            if (!token) {
+                                return
+                            }
+                            const authStatus = await this.authProvider.auth(DOTCOM_URL.href, token)
+                            if (!authStatus?.isLoggedIn) {
+                                void vscode.window.showErrorMessage(
+                                    'Authentication failed. Please check your token and try again.'
+                                )
+                            }
+                        })
                     break
                 }
                 break
@@ -150,6 +154,8 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
         await addWebviewViewHTML(this.extensionUri, webviewView)
 
         // Register to receive messages from webview
-        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.disposables.push(
+            webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
+        )
     }
 }

@@ -1,8 +1,6 @@
-import { basename, extname } from 'path'
-
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import { Utils, type URI } from 'vscode-uri'
 
 import {
     getContextMessageWithResponse,
@@ -10,10 +8,12 @@ import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     truncateText,
+    uriBasename,
+    uriExtname,
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
-import { isValidTestFileName } from '../commands/prompt/utils'
+import { isValidTestFile } from '../commands/prompt/utils'
 
 /**
  * Checks if a file URI is part of the current workspace.
@@ -67,8 +67,8 @@ export const getFilesFromDir = async (
                 return !isDirectory && !isHiddenFile
             }
 
-            const isFileNameIncludesTest = isValidTestFileName(fileName)
-            return !isDirectory && !isHiddenFile && isFileNameIncludesTest
+            const isTestFile = isValidTestFile(Utils.joinPath(dirUri, fileName))
+            return !isDirectory && !isHiddenFile && isTestFile
         })
     } catch (error) {
         console.error(error)
@@ -83,7 +83,11 @@ export const getFilesFromDir = async (
  * @param maxResults - The maximum number of results to return.
  * @returns A Promise resolving to an array of URI objects for the matching files, up to maxResults.
  */
-export async function findVSCodeFiles(globalPattern: string, excludePattern?: string, maxResults = 3): Promise<URI[]> {
+export async function findVSCodeFiles(
+    globalPattern: string,
+    excludePattern?: string,
+    maxResults = 3
+): Promise<URI[]> {
     try {
         // const defaultExcludePatterns = ['.*','node_modules','snap*']
         const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
@@ -250,7 +254,10 @@ export async function getCurrentDirFilteredContext(
  * Then it searches the codebase for additional test files matching the given
  * file name, preferring unit tests if isUnitTestRequest is true.
  */
-export async function getEditorTestContext(file: vscode.Uri, isUnitTestRequest = false): Promise<ContextMessage[]> {
+export async function getEditorTestContext(
+    file: vscode.Uri,
+    isUnitTestRequest = false
+): Promise<ContextMessage[]> {
     try {
         const currentTestFile = await getCurrentTestFileContext(file, isUnitTestRequest)
         if (currentTestFile.length) {
@@ -319,14 +326,17 @@ export async function getDirContextMessages(
  * If none found, searches for test files matching the fileName.
  * Gets the content of the found test files and returns ContextMessages.
  */
-async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCurrentTestFileContext(
+    file: vscode.Uri,
+    isUnitTest: boolean
+): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
     // pattern to search for test files with same name
-    const searchPattern = createVSCodeTestSearchPattern(file.fsPath)
+    const searchPattern = createVSCodeTestSearchPattern(file)
     const foundFiles = await findVSCodeFiles(searchPattern, excludePattern, 5)
-    const testFile = foundFiles.find(file => isValidTestFileName(file.fsPath))
+    const testFile = foundFiles.find(uri => isValidTestFile(uri))
     if (testFile) {
         const context = await getFilePathContext(testFile)
         return createFileContextResponseMessage(context, testFile)
@@ -344,24 +354,27 @@ async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean):
  * test directories if getting unit tests. Returns context messages for up to 5
  * matching test files.
  */
-async function getCodebaseTestFilesContext(file: vscode.Uri, isUnitTest: boolean): Promise<ContextMessage[]> {
+async function getCodebaseTestFilesContext(
+    file: vscode.Uri,
+    isUnitTest: boolean
+): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
-    const testFilesPattern = createVSCodeTestSearchPattern(file.fsPath, true)
+    const testFilesPattern = createVSCodeTestSearchPattern(file, true)
     const testFilesMatches = await findVSCodeFiles(testFilesPattern, excludePattern, 5)
-    const filteredTestFiles = testFilesMatches.filter(file => isValidTestFileName(file.fsPath))
+    const filteredTestFiles = testFilesMatches.filter(uri => isValidTestFile(uri))
 
     return getContextMessageFromFiles(filteredTestFiles)
 }
 
-function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
-    const fileExtension = extname(fsPath)
-    const fileName = basename(fsPath, fileExtension)
+function createVSCodeTestSearchPattern(file: vscode.Uri, allTestFiles?: boolean): string {
+    const fileExtension = uriExtname(file)
+    const basenameWithoutExt = uriBasename(file, fileExtension)
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test,spec_${fileName},${fileName}_spec,spec.${fileName},${fileName}.spec,${fileName}Spec}${fileExtension}`
+    const currentTestFilePattern = `/*{test_${basenameWithoutExt},${basenameWithoutExt}_test,test.${basenameWithoutExt},${basenameWithoutExt}.test,${basenameWithoutExt}Test,spec_${basenameWithoutExt},${basenameWithoutExt}_spec,spec.${basenameWithoutExt},${basenameWithoutExt}.spec,${basenameWithoutExt}Spec}${fileExtension}`
 
     if (allTestFiles) {
         return `${root}${defaultTestFilePattern}`

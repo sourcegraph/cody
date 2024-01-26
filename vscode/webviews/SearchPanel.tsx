@@ -2,13 +2,12 @@
  * Disabling the following rule is necessary to be consistent with the behavior of the VS Code search
  * panel, which does not support tabbing through list items and requires using the arrow keys.
  */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useEffect, useMemo, useRef } from 'react'
 
 import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
 
-import { type SearchPanelFile } from '@sourcegraph/cody-shared'
+import { displayPathBasename, displayPathDirname, type SearchPanelFile } from '@sourcegraph/cody-shared'
 
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -66,7 +65,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     const [searching, setSearching] = React.useState(false)
     const [results, setResults] = React.useState<SearchPanelFile[]>([])
     const [selectedResult, setSelectedResult] = React.useState<[number, number]>([-1, -1])
-    const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>({})
+    const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>(
+        {}
+    )
     const outerContainerRef = useRef<HTMLDivElement>(null)
     const queryInputRef = useRef<HTMLTextAreaElement>(null)
     const resultsCache = useMemo(() => new ResultsCache(), [])
@@ -174,7 +175,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             }
             if (e.key === 'ArrowDown') {
                 snippetIndex++
-                const numSnippets = collapsedFileResults[fileIndex] ? 0 : results[fileIndex].snippets.length
+                const numSnippets = collapsedFileResults[fileIndex]
+                    ? 0
+                    : results[fileIndex].snippets.length
                 if (snippetIndex >= numSnippets) {
                     fileIndex++
                     if (fileIndex >= results.length) {
@@ -190,7 +193,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     if (fileIndex < 0) {
                         return
                     }
-                    const numSnippets = collapsedFileResults[fileIndex] ? 0 : results[fileIndex].snippets.length
+                    const numSnippets = collapsedFileResults[fileIndex]
+                        ? 0
+                        : results[fileIndex].snippets.length
                     snippetIndex = numSnippets - 1
                 }
                 if (fileIndex < 0) {
@@ -250,8 +255,8 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             </form>
             {!searching && query.trim().length === 0 && (
                 <p className={styles.instructions}>
-                    Search for code using a natural language query, such as “password hashing”, "connection retries", a
-                    symbol name, or a topic.
+                    Search for code using a natural language query, such as “password hashing”,
+                    "connection retries", a symbol name, or a topic.
                 </p>
             )}
             {!searching && results.length === 0 && query.trim().length !== 0 && (
@@ -300,14 +305,16 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         <span className={styles.filematchIcon}>
                                             <i className="codicon codicon-file-code" />
                                         </span>
-                                        <span className={styles.filematchTitle} title={result.basename}>
-                                            {result.basename}
+                                        <span
+                                            className={styles.filematchTitle}
+                                            title={displayPathBasename(result.uri)}
+                                        >
+                                            {displayPathBasename(result.uri)}
                                         </span>
                                         <span className={styles.filematchDescription}>
-                                            {result.wsname && (
-                                                <span title={result.wsname}>{result.wsname}&nbsp;&middot;&nbsp;</span>
-                                            )}
-                                            <span title={result.dirname}>{result.dirname}</span>
+                                            <span title={displayPathDirname(result.uri)}>
+                                                {displayPathDirname(result.uri)}
+                                            </span>
                                         </span>
                                     </div>
                                 </div>
@@ -322,7 +329,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         snippet.range.start.character
                                     }-${snippet.range.end.line}:${snippet.range.end.character}`}
                                     onClick={() => setSelectedResult([fileIndex, snippetIndex])}
-                                    onKeyDown={e => e.key === 'Enter' && setSelectedResult([fileIndex, snippetIndex])}
+                                    onKeyDown={e =>
+                                        e.key === 'Enter' && setSelectedResult([fileIndex, snippetIndex])
+                                    }
                                 >
                                     <div
                                         className={`${styles.searchResultRowInner} ${

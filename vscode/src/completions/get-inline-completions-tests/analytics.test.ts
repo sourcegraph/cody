@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
-import { type CompletionBookkeepingEvent } from '../logger'
+import type { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
@@ -106,6 +106,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "testFile": false,
                   "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
@@ -114,7 +115,10 @@ describe('[getInlineCompletions] completion event', () => {
         })
 
         it('for singleline completions', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"'
+            )
 
             expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
               {
@@ -159,6 +163,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "testFile": false,
                   "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
@@ -167,15 +172,22 @@ describe('[getInlineCompletions] completion event', () => {
         })
 
         it('logs `insertText` only for DotCom users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"'
+            )
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(false)
         })
 
         it('does not log `insertText` for enterprise users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
-                isDotComUser: true,
-            })
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"',
+                {
+                    isDotComUser: true,
+                }
+            )
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
         })

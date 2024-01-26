@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration } from '@sourcegraph/cody-shared'
+import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -35,8 +35,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true }
-                    case 'cody.experimental.chatPredictions':
-                        return true
                     case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
@@ -114,7 +112,6 @@ describe('getConfiguration', () => {
             autocompleteLanguages: {
                 '*': true,
             },
-            experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSymfContext: true,

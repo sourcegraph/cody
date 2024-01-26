@@ -2,18 +2,18 @@ import * as vscode from 'vscode'
 
 import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
 
-import { type ContextProvider } from '../chat/ContextProvider'
-import { type GhostHintDecorator } from '../commands/GhostHintDecorator'
+import type { ContextProvider } from '../chat/ContextProvider'
+import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
-import { type VSCodeEditor } from '../editor/vscode-editor'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
-import { type FixupTask } from '../non-stop/FixupTask'
+import type { FixupTask } from '../non-stop/FixupTask'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { type ExecuteEditArguments } from './execute'
+import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { type EditIntent, type EditMode } from './types'
+import type { EditIntent, EditMode } from './types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -47,10 +47,15 @@ export class EditManager implements vscode.Disposable {
         )
     }
 
-    public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
+    public async executeEdit(
+        args: ExecuteEditArguments = {},
+        source: ChatEventSource = 'editor'
+    ): Promise<FixupTask | undefined> {
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
-            void vscode.window.showErrorMessage('This feature has been disabled by your Sourcegraph site admin.')
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Sourcegraph site admin.'
+            )
             return
         }
         const commandEventName = source === 'doc' ? 'doc' : 'edit'
@@ -59,7 +64,9 @@ export class EditManager implements vscode.Disposable {
             { source },
             { hasV2Event: true }
         )
-        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', { privateMetadata: { source } })
+        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', {
+            privateMetadata: { source },
+        })
 
         const editor = getEditor()
         if (editor.ignored) {
@@ -100,7 +107,8 @@ export class EditManager implements vscode.Disposable {
         }
 
         const provider = this.getProviderForTask(task)
-        return provider.startEdit()
+        await provider.startEdit()
+        return task
     }
 
     public getProviderForTask(task: FixupTask): EditProvider {

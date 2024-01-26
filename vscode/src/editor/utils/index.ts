@@ -26,7 +26,9 @@ export async function getSmartSelection(
     target: number
 ): Promise<vscode.Selection | undefined> {
     const document =
-        documentOrUri instanceof vscode.Uri ? await vscode.workspace.openTextDocument(documentOrUri) : documentOrUri
+        documentOrUri instanceof vscode.Uri
+            ? await vscode.workspace.openTextDocument(documentOrUri)
+            : documentOrUri
     return getSelectionAroundLine(document, target)
 }
 
@@ -49,7 +51,9 @@ export function getOpenTabsUris(): vscode.Uri[] {
     const uris = []
     // Get open tabs
     const tabGroups = vscode.window.tabGroups.all
-    const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+    const openTabs = tabGroups.flatMap(group =>
+        group.tabs.map(tab => tab.input)
+    ) as vscode.TabInputText[]
 
     for (const tab of openTabs) {
         // Skip non-file URIs

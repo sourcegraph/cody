@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-/* eslint-disable import/no-duplicates */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'fs/promises'
 
@@ -12,7 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider, type Configuration } from '@sourcegraph/cody-shared'
+import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Disposable } from './Disposable'
@@ -20,8 +17,8 @@ import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export { Disposable } from './Disposable'
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { Disposable } from './Disposable'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -30,7 +27,9 @@ export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
  */
 
 export enum InlineCompletionTriggerKind {
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
 }
 
@@ -95,6 +94,13 @@ export class ThemeIcon {
     ) {}
 }
 
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3,
+    HighContrastLight = 4,
+}
+
 export class MarkdownString implements vscode_types.MarkdownString {
     constructor(public readonly value: string) {}
     isTrusted?: boolean | { readonly enabledCommands: readonly string[] } | undefined
@@ -110,6 +116,13 @@ export class MarkdownString implements vscode_types.MarkdownString {
     appendCodeblock(): vscode_types.MarkdownString {
         throw new Error('Method not implemented.')
     }
+}
+
+export enum TextEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3,
 }
 
 export enum CommentMode {
@@ -202,10 +215,11 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+// biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = {
+        iconPath: Uri.parse('file://foobar'),
+    }
 }
 
 export class TreeItem {
@@ -222,7 +236,6 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
@@ -251,7 +264,10 @@ export class Position implements VSCodePosition {
     public isEqual(other: Position): boolean {
         return this.line === other.line && this.character === other.character
     }
-    public translate(change: { lineDelta?: number; characterDelta?: number }): VSCodePosition
+    public translate(change: {
+        lineDelta?: number
+        characterDelta?: number
+    }): VSCodePosition
     public translate(lineDelta?: number, characterDelta?: number): VSCodePosition
     public translate(
         arg?: number | { lineDelta?: number; characterDelta?: number },
@@ -264,7 +280,10 @@ export class Position implements VSCodePosition {
 
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
-    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
+    public with(
+        arg?: number | { line?: number; character?: number },
+        character?: number
+    ): VSCodePosition {
         const newLine = typeof arg === 'number' ? arg : arg?.line
         const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
         return new Position(newLine ?? this.line, newCharacter ?? this.character)
@@ -317,7 +336,10 @@ export class Range implements VSCodeRange {
     }
 
     public with(start?: VSCodePosition, end?: VSCodePosition): VSCodeRange
-    public with(change: { start?: VSCodePosition; end?: VSCodePosition }): VSCodeRange
+    public with(change: {
+        start?: VSCodePosition
+        end?: VSCodePosition
+    }): VSCodeRange
     public with(
         arg?: VSCodePosition | { start?: VSCodePosition; end?: VSCodePosition },
         end?: VSCodePosition
@@ -368,11 +390,28 @@ export class Range implements VSCodeRange {
 }
 
 export class Selection extends Range {
+    public readonly anchor: Position
+    public readonly active: Position
     constructor(
-        public readonly anchor: Position,
-        public readonly active: Position
+        anchorLine: number | Position,
+        anchorCharacter: number | Position,
+        activeLine?: number,
+        activeCharacter?: number
     ) {
-        super(anchor, active)
+        if (
+            typeof anchorLine === 'number' &&
+            typeof anchorCharacter === 'number' &&
+            typeof activeLine === 'number' &&
+            typeof activeCharacter === 'number'
+        ) {
+            super(anchorLine, anchorCharacter, activeLine, activeCharacter)
+        } else if (typeof anchorLine === 'object' && typeof anchorCharacter === 'object') {
+            super(anchorLine, anchorCharacter)
+        } else {
+            throw new TypeError('this version of the constructor is not implemented')
+        }
+        this.anchor = this.start
+        this.active = this.end
     }
 
     /**
@@ -466,10 +505,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         const type = stat.isFile()
             ? FileType.File
             : stat.isDirectory()
-            ? FileType.Directory
-            : stat.isSymbolicLink()
-            ? FileType.SymbolicLink
-            : FileType.Unknown
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                  ? FileType.SymbolicLink
+                  : FileType.Unknown
 
         return {
             type,
@@ -479,16 +518,18 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         }
     },
     readDirectory: async uri => {
-        const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+        const entries = await fspromises.readdir(uri.fsPath, {
+            withFileTypes: true,
+        })
 
         return entries.map(entry => {
             const type = entry.isFile()
                 ? FileType.File
                 : entry.isDirectory()
-                ? FileType.Directory
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                      ? FileType.SymbolicLink
+                      : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -504,7 +545,9 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         await fspromises.writeFile(uri.fsPath, content)
     },
     delete: async (uri, options) => {
-        await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+        await fspromises.rm(uri.fsPath, {
+            recursive: options?.recursive ?? false,
+        })
     },
     rename: async (source, target, options) => {
         if (options?.overwrite ?? false) {
@@ -663,9 +706,15 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        activeTextEditor: {
+            document: { uri: { scheme: 'not-cody' } },
+            options: { tabSize: 4 },
+        },
         onDidChangeActiveTextEditor() {},
-        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+        createTextEditorDecorationType: () => ({
+            key: 'foo',
+            dispose: () => {},
+        }),
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -741,7 +790,6 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
 
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,
@@ -755,7 +803,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
-    experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,

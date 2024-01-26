@@ -113,7 +113,8 @@ export class BotResponseMultiplexer {
      */
     public publish(response: string): Promise<void> {
         // If an existing publication hasn't finished, convoy behind that one.
-        return (this.publishInProgress_ = this.publishInProgress_.then(() => this.publishStep(response)))
+        this.publishInProgress_ = this.publishInProgress_.then(() => this.publishStep(response))
+        return this.publishInProgress_
     }
 
     // This is basically a loose parser of an XML-like language which forwards
@@ -121,7 +122,7 @@ export class BotResponseMultiplexer {
     // is forgiving if tags are not closed in the right order.
     private async publishStep(response: string): Promise<void> {
         this.buffer_ += response
-        let last
+        let last: number | undefined
         while (this.buffer_) {
             if (last !== undefined && last === this.buffer_.length) {
                 throw new Error(`did not make progress parsing: ${this.buffer_}`)

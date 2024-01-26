@@ -7,7 +7,7 @@ export function messagesToText(messages: Message[]): string {
         .map(
             message =>
                 `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
-                    message.text === undefined ? '' : ' ' + message.text
+                    message.text === undefined ? '' : ` ${message.text}`
                 }`
         )
         .join('')
@@ -68,6 +68,24 @@ export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncG
     }
 }
 
+export async function* generatorWithErrorObserver<T>(
+    generator: AsyncGenerator<T>,
+    errorObserver: (error: unknown) => void
+): AsyncGenerator<T> {
+    while (true) {
+        try {
+            const res = await generator.next()
+            if (res.done) {
+                return
+            }
+            yield res.value
+        } catch (error: unknown) {
+            errorObserver(error)
+            throw error
+        }
+    }
+}
+
 export async function* generatorWithTimeout<T>(
     generator: AsyncGenerator<T>,
     timeoutMs: number,
@@ -95,5 +113,7 @@ export async function* generatorWithTimeout<T>(
 }
 
 function createTimeout(timeoutMs: number): Promise<never> {
-    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
+    return new Promise((_, reject) =>
+        setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs)
+    )
 }

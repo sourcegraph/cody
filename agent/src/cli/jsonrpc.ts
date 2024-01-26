@@ -1,4 +1,4 @@
-import { type EXPIRY_STRATEGY, type MODE, type Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
@@ -116,6 +116,12 @@ export const jsonrpcCommand = new Command('jsonrpc')
             // Automatically pass through requests to GitHub because we
             // don't want to record huge binary downloads.
             polly.server.get('https://github.com/*path').passthrough()
+            // Uncomment below if you want to intercept network requests to, for
+            // example, fail github.com downloads. This can be helpful to reproduce
+            // situations where users are running Cody on airgapped computers.
+            // polly.server.get('https://github.com/*path').intercept((_req, res) => {
+            //     res.sendStatus(400)
+            // })
             polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')

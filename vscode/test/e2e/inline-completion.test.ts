@@ -10,7 +10,10 @@ test.beforeEach(() => {
 })
 
 // TODO Fix flaky test
-test.skip('shows chat sidebar completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
+test.skip('shows chat sidebar completion onboarding notice on first completion accept', async ({
+    page,
+    sidebar,
+}) => {
     const expectedEvents = [
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
@@ -60,7 +63,10 @@ test.skip('shows chat sidebar completion onboarding notice on first completion a
     await assertEvents(loggedEvents, expectedEvents)
 })
 
-test.skip('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
+test.skip('inline completion onboarding notice on first completion accept', async ({
+    page,
+    sidebar,
+}) => {
     const expectedEvents = [
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
@@ -121,7 +127,11 @@ test.skip('inline completion onboarding notice on first completion accept', asyn
     await assertEvents(loggedEvents, expectedEvents)
 })
 
-async function triggerInlineCompletionAfter(page: Page, afterElement: Locator, prefix: string): Promise<void> {
+async function triggerInlineCompletionAfter(
+    page: Page,
+    afterElement: Locator,
+    prefix: string
+): Promise<void> {
     await afterElement.click()
     await page.keyboard.press('End')
     await page.keyboard.press('Enter')

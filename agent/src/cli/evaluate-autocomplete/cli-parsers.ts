@@ -6,7 +6,7 @@ export function booleanOption(value: string): boolean {
 
 export function intOption(value: string): number {
     const parsedValue = Number.parseInt(value, 10)
-    if (isNaN(parsedValue)) {
+    if (Number.isNaN(parsedValue)) {
         throw new commander.InvalidArgumentError('Not a number.')
     }
     return parsedValue

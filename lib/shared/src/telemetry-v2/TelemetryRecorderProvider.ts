@@ -5,15 +5,20 @@ import {
     TimestampTelemetryProcessor,
     type TelemetryEventInput,
     type TelemetryProcessor,
+    TestTelemetryExporter,
 } from '@sourcegraph/telemetry'
 
-import { CONTEXT_SELECTION_ID, type Configuration, type ConfigurationWithAccessToken } from '../configuration'
+import {
+    CONTEXT_SELECTION_ID,
+    type Configuration,
+    type ConfigurationWithAccessToken,
+} from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import { type LogEventMode } from '../sourcegraph-api/graphql/client'
+import type { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
-import { type BillingCategory, type BillingProduct } from '.'
+import type { BillingCategory, BillingProduct } from '.'
 
 interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -29,7 +34,10 @@ interface ExtensionDetails {
  *
  * This is NOT meant for use if connecting to an Agent.
  */
-export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
+export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
+    BillingProduct,
+    BillingCategory
+> {
     constructor(
         extensionDetails: ExtensionDetails,
         config: ConfigurationWithAccessToken,
@@ -44,7 +52,9 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
                 }`,
                 clientVersion: extensionDetails.version,
             },
-            new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
+            process.env.CODY_SHIM_TESTING === 'true'
+                ? new TestTelemetryExporter()
+                : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config),
                 // Generate timestamps when recording events, instead of serverside
@@ -67,7 +77,10 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
  */
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
-export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
+export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
+    BillingProduct,
+    BillingCategory
+> {
     constructor(processors?: TelemetryProcessor[]) {
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
@@ -83,7 +96,11 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     BillingProduct,
     BillingCategory
 > {
-    constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken, anonymousUserID: string) {
+    constructor(
+        extensionDetails: ExtensionDetails,
+        config: ConfigurationWithAccessToken,
+        anonymousUserID: string
+    ) {
         super(
             {
                 client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
@@ -110,10 +127,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             {
                 key: 'contextSelection',
                 value: CONTEXT_SELECTION_ID[this.config.useContext],
-            },
-            {
-                key: 'chatPredictions',
-                value: this.config.experimentalChatPredictions ? 1 : 0,
             },
             {
                 key: 'guardrails',

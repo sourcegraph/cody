@@ -1,11 +1,11 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
-import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import { type EditIntent, type EditMode } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 
-import { type Diff } from './diff'
-import { type FixupFile } from './FixupFile'
+import type { Diff } from './diff'
+import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string
@@ -13,6 +13,8 @@ export type taskID = string
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
+    private stateChanges = new vscode.EventEmitter<CodyTaskState>()
+    public onDidStateChange = this.stateChanges.event
     /**
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
@@ -52,7 +54,7 @@ export class FixupTask {
         public readonly instruction: string,
         public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: EditIntent = 'edit',
+        public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public mode: EditMode = 'edit',
@@ -72,8 +74,14 @@ export class FixupTask {
      */
     public set state(state: CodyTaskState) {
         this.state_ = state
+        this.stateChanges.fire(state)
     }
 
+    /**
+     * Gets the state of the fixup task.
+     *
+     * @returns The current state of the fixup task.
+     */
     public get state(): CodyTaskState {
         return this.state_
     }

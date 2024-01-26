@@ -1,12 +1,16 @@
 import { Position, Range, type TextDocument } from 'vscode'
-import { type default as Parser, type Point, type Tree } from 'web-tree-sitter'
+import type { default as Parser, Point, Tree } from 'web-tree-sitter'
 
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { type DocumentContext } from '../get-current-doc-context'
-import { type InlineCompletionItem } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { InlineCompletionItem } from '../types'
 
-import { getMatchingSuffixLength, type InlineCompletionItemWithAnalytics } from './process-inline-completions'
-import { getLastLine, lines } from './utils'
+import {
+    getMatchingSuffixLength,
+    type InlineCompletionItemWithAnalytics,
+} from './process-inline-completions'
+import { getLastLine, getPositionAfterTextDeletion, lines } from './utils'
 
 interface CompletionContext {
     completion: InlineCompletionItem
@@ -41,7 +45,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    // Do nothig if the syntactic post-processing is not enabled.
+    // Do nothing if the syntactic post-processing is not enabled.
     if (!parseTreeCache) {
         return completion
     }
@@ -80,7 +84,11 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
     // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
-    const captures = query.captures(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
+    const captures = query.captures(
+        treeWithCompletion.rootNode,
+        points?.trigger || points.start,
+        points.end
+    )
 
     return {
         ...completion,
@@ -105,31 +113,38 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         document,
         tree,
         parser,
-        docContext: { position, currentLineSuffix },
+        docContext: { position, currentLineSuffix, injectedCompletionText = '' },
         completionEndPosition,
     } = params
 
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
+    const actualPosition = getPositionAfterTextDeletion(position, injectedCompletionText)
 
     // Adjust suffix and prefix based on completion insert range.
-    const prefix = document.getText(new Range(new Position(0, 0), position))
-    const suffix = document.getText(new Range(position, document.positionAt(document.getText().length)))
+    const prefix =
+        document.getText(new Range(new Position(0, 0), actualPosition)) + injectedCompletionText
+    const suffix = document.getText(
+        new Range(actualPosition, document.positionAt(document.getText().length))
+    )
 
-    const offset = document.offsetAt(position)
+    const offset = document.offsetAt(actualPosition)
 
     // Remove the characters that are being replaced by the completion to avoid having
     // them in the parse tree. It breaks the multiline truncation logic which looks for
     // the increased number of children in the tree.
     const textWithCompletion = prefix + insertText + suffix.slice(matchingSuffixLength)
+    addAutocompleteDebugEvent('paste-completion', {
+        text: textWithCompletion,
+    })
 
     const treeCopy = tree.copy()
 
     treeCopy.edit({
         startIndex: offset,
         oldEndIndex: offset,
-        newEndIndex: offset + insertText.length,
-        startPosition: asPoint(position),
-        oldEndPosition: asPoint(position),
+        newEndIndex: offset + injectedCompletionText.length + insertText.length,
+        startPosition: asPoint(actualPosition),
+        oldEndPosition: asPoint(actualPosition),
         newEndPosition: asPoint(completionEndPosition),
     })
 

@@ -1,18 +1,16 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
-import {
-    type ApiPostMessage,
-    type ChatButtonProps,
-    type ChatUISubmitButtonProps,
-    type ChatUITextAreaProps,
-    type CodeBlockActionsProps,
-    type EditButtonProps,
-    type FeedbackButtonsProps,
-    type UserAccountInfo,
+import type {
+    ApiPostMessage,
+    ChatButtonProps,
+    CodeBlockActionsProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
@@ -33,7 +31,6 @@ export interface TranscriptItemClassNames {
     codeBlocksCopyButtonClassName?: string
     codeBlocksInsertButtonClassName?: string
     transcriptActionClassName?: string
-    chatInputClassName?: string
 }
 
 /**
@@ -41,23 +38,23 @@ export interface TranscriptItemClassNames {
  */
 export const TranscriptItem: React.FunctionComponent<
     {
+        index: number
         message: ChatMessage
         inProgress: boolean
-        beingEdited: boolean
-        setBeingEdited: (input: boolean) => void
+        beingEdited: number | undefined
+        setBeingEdited: (index?: number) => void
+        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+        showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
-        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        editButtonOnSubmit?: (text: string) => void
-        showEditButton: boolean
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
-        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        abortMessageInProgressComponent?: React.FunctionComponent<{
+            onAbortMessageInProgress: () => void
+        }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo: UserAccountInfo
@@ -65,6 +62,7 @@ export const TranscriptItem: React.FunctionComponent<
         guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
+    index,
     message,
     inProgress,
     beingEdited,
@@ -77,78 +75,60 @@ export const TranscriptItem: React.FunctionComponent<
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
     transcriptActionClassName,
-    textAreaComponent: TextArea,
     EditButtonContainer,
-    editButtonOnSubmit,
     showEditButton,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    submitButtonComponent: SubmitButton,
-    chatInputClassName,
     ChatButtonComponent,
     userInfo,
     postMessage,
     guardrails,
 }) {
-    const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const EditTextArea =
-        TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
-            <div className={styles.textAreaContainer}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={5}
-                    value={formInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={event => setFormInput((event.target as HTMLInputElement).value)}
-                    onKeyDown={event => {
-                        if (event.key === 'Escape') {
-                            setBeingEdited(false)
-                        }
-
-                        if (
-                            event.key === 'Enter' &&
-                            !event.shiftKey &&
-                            !event.nativeEvent.isComposing &&
-                            formInput.trim()
-                        ) {
-                            event.preventDefault()
-                            setBeingEdited(false)
-                            editButtonOnSubmit(formInput)
-                        }
-                    }}
-                    chatEnabled={true}
-                />
-                <SubmitButton
-                    className={styles.submitButton}
-                    onClick={() => {
-                        setBeingEdited(false)
-                        editButtonOnSubmit(formInput)
-                    }}
-                    disabled={formInput.length === 0}
-                />
-            </div>
-        ) : null
+    // A boolean indicating whether the message was sent by a human speaker.
+    const isHumanMessage = message.speaker === 'human'
+    // A boolean that determines if any message is currently being edited.
+    const isInEditingMode = beingEdited !== undefined
+    // A boolean indicating whether the current transcript item is the one being edited.
+    const isItemBeingEdited = beingEdited === index
+    // A boolean indicating whether the current message is a command input.
+    const isCommandInput = message?.displayText?.startsWith('/')
 
     return (
         <div
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
+                isHumanMessage ? humanTranscriptItemClassName : styles.assistantRow,
+                // When editing a message, all other messages (both human and assistant messages) are blurred (unfocused)
+                // except for the current message (transcript item) that is being edited (focused)
+                isInEditingMode && (!isHumanMessage || !isItemBeingEdited) && styles.unfocused,
+                isItemBeingEdited && styles.focused
             )}
         >
-            {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
-                <div className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}>
-                    <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
-                        {beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
+            {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
+            {showEditButton && EditButtonContainer && (
+                <div
+                    className={classNames(
+                        styles.editingButtonContainer,
+                        isInEditingMode && styles.editingButtonContainerIsEditingMode
+                    )}
+                    tabIndex={isInEditingMode ? -1 : undefined}
+                    aria-hidden={isInEditingMode}
+                >
+                    <header
+                        className={classNames(
+                            styles.transcriptItemHeader,
+                            transcriptItemParticipantClassName
+                        )}
+                    >
                         <EditButtonContainer
-                            className={styles.FeedbackEditButtonsContainer}
-                            messageBeingEdited={beingEdited}
+                            className={styles.feedbackEditButtonsContainer}
+                            messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
+                            disabled={isCommandInput || isInEditingMode}
                         />
                     </header>
                 </div>
@@ -174,21 +154,17 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 )
             ) : null}
-            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+            <div className={classNames(styles.contentPadding, styles.content)}>
                 {message.displayText ? (
-                    EditTextArea ? (
-                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
-                    ) : (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            guardrails={guardrails}
-                        />
-                    )
+                    <CodeBlocks
+                        displayText={message.displayText}
+                        copyButtonClassName={codeBlocksCopyButtonClassName}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonClassName={codeBlocksInsertButtonClassName}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        metadata={message.metadata}
+                        guardrails={guardrails}
+                    />
                 ) : (
                     inProgress && <BlinkingCursor />
                 )}
@@ -196,7 +172,8 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {message.speaker === 'human' && (
+            {/* Enhanced Context list shows up on human message only */}
+            {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext
@@ -209,14 +186,21 @@ export const TranscriptItem: React.FunctionComponent<
                     )}
                 </div>
             )}
-            {showFeedbackButtons &&
+            {/* Display feedback buttons on assistant messages only */}
+            {!isHumanMessage &&
+                showFeedbackButtons &&
                 FeedbackButtonsContainer &&
-                feedbackButtonsOnSubmit &&
-                message.speaker === 'assistant' && (
-                    <footer className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}>
+                feedbackButtonsOnSubmit && (
+                    <footer
+                        className={classNames(
+                            styles.footerContainer,
+                            transcriptItemParticipantClassName
+                        )}
+                    >
                         {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                        {/* Hide the feedback buttons during editing mode */}
                         <FeedbackButtonsContainer
-                            className={styles.FeedbackEditButtonsContainer}
+                            className={styles.feedbackEditButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         />
                     </footer>

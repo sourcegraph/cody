@@ -1,19 +1,23 @@
-import { type GetFieldType } from 'lodash'
+import type { GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     isDotCom,
+    isFileURI,
+    uriBasename,
     type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
     type EmbeddingsSearchResult,
+    type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
 } from '@sourcegraph/cody-shared'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
-import { type IndexHealthResultFound, type IndexRequest, type QueryResultSet } from '../jsonrpc/embeddings-protocol'
-import { type MessageHandler } from '../jsonrpc/jsonrpc'
+import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
+import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 
@@ -24,26 +28,23 @@ export function createLocalEmbeddingsController(
     return new LocalEmbeddingsController(context, config)
 }
 
-export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'> & {
+export type LocalEmbeddingsConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken'
+> & {
     testingLocalEmbeddingsModel: string | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
 
-function getIndexLibraryPath(): { indexPath: string } {
+function getIndexLibraryPath(): FileURI {
     switch (process.platform) {
         case 'darwin':
-            return {
-                indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
-            }
+            return URI.file(`${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`)
         case 'linux':
-            return {
-                indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
-            }
+            return URI.file(`${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`)
         case 'win32':
-            return {
-                indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
-            }
+            return URI.file(`${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`)
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
     }
@@ -55,13 +56,15 @@ interface RepoState {
     errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
-export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable {
+export class LocalEmbeddingsController
+    implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
+{
     private disposables: vscode.Disposable[] = []
 
     // These properties are constants, but may be overridden for testing.
     private readonly model: string
     private readonly endpoint: string
-    private readonly indexLibraryPath: string | undefined
+    private readonly indexLibraryPath: FileURI | undefined
 
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
@@ -72,15 +75,15 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // Whether the account is a consumer account.
     private endpointIsDotcom = false
     // The last index we loaded, or attempted to load, if any.
-    private lastRepo: { path: string; repoName: string | false } | undefined
+    private lastRepo: { dir: FileURI; repoName: string | false } | undefined
     // The last health report, if any.
     private lastHealth: IndexHealthResultFound | undefined
     // The last error from indexing, if any.
     private lastError: string | undefined
     // Map of cached states for loaded indexes.
-    private repoState: Map<string, RepoState> = new Map()
+    private repoState: Map<string /* uri.toString() */, RepoState> = new Map()
     // If indexing is in progress, the path of the repo being indexed.
-    private pathBeingIndexed: string | undefined
+    private dirBeingIndexed: FileURI | undefined
 
     // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
@@ -98,7 +101,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
         this.disposables.push(
-            vscode.commands.registerCommand('cody.embeddings.resolveIssue', () => this.resolveIssueCommand())
+            vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
+                this.resolveIssueCommand()
+            )
         )
 
         // Pick up the initial access token, and whether the account is dotcom.
@@ -106,8 +111,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
         this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
-        this.endpoint = config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
+        this.endpoint =
+            config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
         this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
+            ? URI.file(config.testingLocalEmbeddingsIndexLibraryPath)
+            : undefined
     }
 
     public dispose(): void {
@@ -126,14 +134,18 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'start')
         await this.getService()
         const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
-        if (repoUri) {
-            await this.eagerlyLoad(repoUri.fsPath)
+        if (repoUri && isFileURI(repoUri)) {
+            await this.eagerlyLoad(repoUri)
         }
     }
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
         const endpointIsDotcom = isDotCom(serverEndpoint)
-        logDebug('LocalEmbeddingsController', 'setAccessToken', endpointIsDotcom ? 'is dotcom' : 'not dotcom')
+        logDebug(
+            'LocalEmbeddingsController',
+            'setAccessToken',
+            endpointIsDotcom ? 'is dotcom' : 'not dotcom'
+        )
         if (endpointIsDotcom !== this.endpointIsDotcom) {
             // We will show, or hide, status depending on whether we are using
             // dotcom. We do not offer local embeddings to Enterprise.
@@ -201,7 +213,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        const paths = getIndexLibraryPath()
+        let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
             logDebug(
@@ -210,11 +222,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 'overriding index library path',
                 this.indexLibraryPath
             )
-            paths.indexPath = this.indexLibraryPath
+            indexPath = this.indexLibraryPath
         }
         const initResult = await service.request('embeddings/initialize', {
             codyGatewayEndpoint: this.endpoint,
-            ...paths,
+            indexPath: indexPath.fsPath,
         })
         logDebug(
             'LocalEmbeddingsController',
@@ -237,8 +249,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // After indexing succeeds or fails, try to load the index. Update state
     // indicating we are no longer loading the index.
     private loadAfterIndexing(): void {
-        if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
-            const path = this.pathBeingIndexed
+        if (
+            this.dirBeingIndexed &&
+            (!this.lastRepo || this.lastRepo.dir.toString() === this.dirBeingIndexed.toString())
+        ) {
+            const path = this.dirBeingIndexed
             void (async () => {
                 const loadedOk = await this.eagerlyLoad(path)
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
@@ -254,7 +269,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.statusBar = undefined
         }
 
-        this.pathBeingIndexed = undefined
+        this.dirBeingIndexed = undefined
         this.statusEmitter.fire(this)
     }
 
@@ -273,12 +288,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return []
         }
         // TODO: Summarize the path with ~, etc.
-        const path =
-            this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || '(No workspace loaded)'
-        if (!this.lastRepo) {
+        const dir = this.lastRepo?.dir ?? vscode.workspace.workspaceFolders?.[0]?.uri
+        if (!dir || !this.lastRepo) {
             return [
                 {
-                    name: path,
+                    dir,
+                    displayName: dir ? uriBasename(dir) : '(No workspace loaded)',
                     providers: [
                         {
                             kind: 'embeddings',
@@ -289,10 +304,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        if (this.pathBeingIndexed === path) {
+        if (this.dirBeingIndexed?.toString() === dir.toString()) {
             return [
                 {
-                    name: path,
+                    dir,
+                    displayName: uriBasename(dir),
                     providers: [{ kind: 'embeddings', type: 'local', state: 'indexing' }],
                 },
             ]
@@ -300,7 +316,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         if (this.lastRepo.repoName) {
             return [
                 {
-                    name: path,
+                    dir,
+                    displayName: uriBasename(dir),
                     providers: [
                         {
                             kind: 'embeddings',
@@ -311,7 +328,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        const repoState = this.repoState.get(path)
+        const repoState = this.repoState.get(dir.toString())
         let stateAndErrors: {
             state: 'unconsented' | 'no-match'
             errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
@@ -327,7 +344,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
         return [
             {
-                name: path,
+                dir,
+                displayName: uriBasename(dir),
                 providers: [
                     {
                         kind: 'embeddings',
@@ -342,30 +360,33 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // Interactions with cody-engine
 
     public async index(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.repoName)) {
+        if (!(this.endpointIsDotcom && this.lastRepo?.dir && !this.lastRepo?.repoName)) {
             // TODO: Support index updates.
             logDebug('LocalEmbeddingsController', 'index', 'no repository to index/already indexed')
             return
         }
-        const repoPath = this.lastRepo.path
+        const repoPath = this.lastRepo.dir
         logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
-        await this.indexRequest({ repoPath, mode: { type: 'new', model: this.model, dimension: 1536 } })
+        await this.indexRequest({
+            repoPath: repoPath.fsPath,
+            mode: { type: 'new', model: this.model, dimension: 1536 },
+        })
     }
 
     public async indexRetry(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.path)) {
+        if (!(this.endpointIsDotcom && this.lastRepo?.dir)) {
             logDebug('LocalEmbeddingsController', 'indexRetry', 'no repository to retry')
             return
         }
-        const repoPath = this.lastRepo.path
+        const repoPath = this.lastRepo.dir
         logDebug('LocalEmbeddingsController', 'indexRetry', 'continuing to index repository', repoPath)
-        await this.indexRequest({ repoPath, mode: { type: 'continue' } })
+        await this.indexRequest({ repoPath: repoPath.fsPath, mode: { type: 'continue' } })
     }
 
     private async indexRequest(options: IndexRequest): Promise<void> {
         try {
             await (await this.getService()).request('embeddings/index', options)
-            this.pathBeingIndexed = options.repoPath
+            this.dirBeingIndexed = URI.file(options.repoPath)
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
                 'cody-local-embeddings',
@@ -375,22 +396,24 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
     }
 
-    public async load(repoUri: vscode.Uri | undefined): Promise<boolean> {
+    public async load(repoDir: vscode.Uri | undefined): Promise<boolean> {
         if (!this.endpointIsDotcom) {
             // Local embeddings only supported for dotcom
             return false
         }
-        const repoPath = repoUri?.fsPath
-        if (!repoPath) {
+        if (!repoDir) {
             // There's no path to search
             return false
         }
-        const cachedState = this.repoState.get(repoPath)
+        if (!isFileURI(repoDir)) {
+            // Local embeddings currently only supports the file system.
+            return false
+        }
+        const cachedState = this.repoState.get(repoDir.toString())
         if (cachedState && !cachedState.repoName) {
             // We already failed to loading this, so use that result
             return false
@@ -402,12 +425,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 try {
                     await this.getService()
                 } catch (error) {
-                    logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+                    logDebug(
+                        'LocalEmbeddingsController',
+                        'load',
+                        captureException(error),
+                        JSON.stringify(error)
+                    )
                 }
             })()
             return false
         }
-        return this.eagerlyLoad(repoPath)
+        return this.eagerlyLoad(repoDir)
     }
 
     // Tries to load an index for the repo at the specified path, skipping any
@@ -416,27 +444,32 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // - When indexing finishes, to try to load the updated index.
     // - To implement the final step of `load`, if we did not hit any cached
     //   results.
-    private async eagerlyLoad(repoPath: string): Promise<boolean> {
+    private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
         try {
-            const { repoName } = await (await this.getService()).request('embeddings/load', repoPath)
-            this.repoState.set(repoPath, {
+            const { repoName } = await (await this.getService()).request(
+                'embeddings/load',
+                repoDir.fsPath
+            )
+            this.repoState.set(repoDir.toString(), {
                 repoName,
                 indexable: true,
                 errorReason: undefined,
             })
             this.lastRepo = {
-                path: repoPath,
+                dir: repoDir,
                 repoName,
             }
             // Start a health check on the index.
             void (async () => {
                 try {
-                    const health = await (await this.getService()).request('embeddings/index-health', { repoName })
+                    const health = await (await this.getService()).request('embeddings/index-health', {
+                        repoName,
+                    })
                     logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
                     if (health.type !== 'found') {
                         return
                     }
-                    await this.onHealthReport(repoPath, health)
+                    await this.onHealthReport(repoDir, health)
                 } catch (error) {
                     logDebug(
                         'LocalEmbeddingsController',
@@ -449,12 +482,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
 
-            const noRemoteErrorMessage = "repository does not have a default fetch URL, so can't be named for an index"
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const noRemoteErrorMessage =
+                "repository does not have a default fetch URL, so can't be named for an index"
             const noRemote = error.message === noRemoteErrorMessage
 
             const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const notGit = notAGitRepositoryErrorMessage.test(error.message)
 
             let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
@@ -466,7 +498,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 errorReason = undefined
             }
 
-            this.repoState.set(repoPath, {
+            this.repoState.set(repoDir.toString(), {
                 repoName: false,
                 indexable: !(notGit || noRemote),
                 errorReason,
@@ -475,7 +507,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // TODO: Log telemetry error messages to prioritize supporting
             // repos without remotes, other SCCS, etc.
 
-            this.lastRepo = { path: repoPath, repoName: false }
+            this.lastRepo = { dir: repoDir, repoName: false }
         }
         this.statusEmitter.fire(this)
         return !!this.lastRepo?.repoName
@@ -483,8 +515,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     // After loading a repo, we asynchronously check whether the repository
     // still needs embeddings.
-    private async onHealthReport(repoPath: string, health: IndexHealthResultFound): Promise<void> {
-        if (repoPath !== this.lastRepo?.path) {
+    private async onHealthReport(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
+        if (repoDir.toString() !== this.lastRepo?.dir.toString()) {
             // We've loaded a different repo since this health report; ignore it.
             return
         }
@@ -501,18 +533,26 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return ''
         }
         const percentDone = Math.floor(
-            (100 * (this.lastHealth.numItems - this.lastHealth.numItemsNeedEmbedding)) / this.lastHealth.numItems
+            (100 * (this.lastHealth.numItems - this.lastHealth.numItemsNeedEmbedding)) /
+                this.lastHealth.numItems
         )
         return `${options?.prefix || ''}Cody Embeddings index for ${
-            this.lastRepo?.path || 'this repository'
+            this.lastRepo?.dir || 'this repository'
         } is only ${percentDone.toFixed(0)}% complete.${options?.suffix || ''}`
     }
 
     private updateIssueStatusBar(): void {
         this.statusBar?.dispose()
-        this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
+        this.statusBar = vscode.window.createStatusBarItem(
+            'cody-local-embeddings',
+            vscode.StatusBarAlignment.Right,
+            0
+        )
         this.statusBar.text = 'Embeddings Incomplete'
-        const needsEmbeddingMessage = this.getNeedsEmbeddingText({ prefix: '\n\n', suffix: ' Click to resolve.' })
+        const needsEmbeddingMessage = this.getNeedsEmbeddingText({
+            prefix: '\n\n',
+            suffix: ' Click to resolve.',
+        })
         const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
         this.statusBar.tooltip = new vscode.MarkdownString(
             `#### Cody Embeddings Incomplete\n\n${needsEmbeddingMessage}${errorMessage}`
@@ -551,7 +591,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                         JSON.stringify(error)
                     )
                     await vscode.window.showErrorMessage(
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         `Cody Embeddings — Error resolving embeddings issue: ${error?.message}`
                     )
                 }
@@ -559,33 +598,26 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
     }
 
-    public async query(query: string): Promise<QueryResultSet> {
+    /** {@link LocalEmbeddingsFetcher.getContext} */
+    public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
-            return { results: [] }
+            return []
         }
-        const repoName = this.lastRepo?.repoName
-        if (!repoName) {
-            return { results: [] }
+        const lastRepo = this.lastRepo
+        if (!lastRepo || !lastRepo.repoName) {
+            return []
         }
         try {
-            return await (
-                await this.getService()
-            ).request('embeddings/query', {
-                repoName,
+            const service = await this.getService()
+            const resp = await service.request('embeddings/query', {
+                repoName: lastRepo.repoName,
                 query,
             })
-        } catch (error: any) {
-            logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
-            return { results: [] }
-        }
-    }
-
-    // LocalEmbeddingsFetcher
-    public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
-        try {
-            const results = (await this.query(query)).results
-            logDebug('LocalEmbeddingsController', 'query', `returning ${results.length} results`)
-            return results
+            logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
+            return resp.results.map(result => ({
+                ...result,
+                uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+            }))
         } catch (error) {
             logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
             return []

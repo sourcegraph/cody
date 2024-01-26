@@ -1,7 +1,7 @@
 import { basename } from 'path'
 
-import { mergeConfig, UserConfig } from 'vite'
-import { defineProject, type UserWorkspaceConfig } from 'vitest/config'
+import { mergeConfig, type UserConfig } from 'vite'
+import { configDefaults, defineProject, type UserWorkspaceConfig } from 'vitest/config'
 
 /**
  * Default configuration for a project in a workspace.
@@ -18,6 +18,11 @@ const defaultProjectConfig: UserWorkspaceConfig = {
         ],
     },
     css: { modules: { localsConvention: 'camelCaseOnly' } },
+    test: {
+        fakeTimers: {
+            toFake: [...configDefaults.fakeTimers.toFake, 'performance'],
+        },
+    },
 }
 
 /**
@@ -25,7 +30,10 @@ const defaultProjectConfig: UserWorkspaceConfig = {
  */
 const defaultUserConfig: UserConfig = { logLevel: 'warn' }
 
-export function defineProjectWithDefaults(dir: string, config: UserWorkspaceConfig): UserWorkspaceConfig {
+export function defineProjectWithDefaults(
+    dir: string,
+    config: UserWorkspaceConfig
+): UserWorkspaceConfig {
     const name = basename(dir)
     if (!config.test) {
         config.test = {}

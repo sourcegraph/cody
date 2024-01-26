@@ -1,24 +1,22 @@
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import {
-    type ActiveTextEditorSelectionRange,
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type CodyLLMSiteConfiguration,
-    type ConfigurationWithAccessToken,
-    type ContextFile,
-    type ContextFileType,
-    type CustomCommandType,
-    type EnhancedContextContextT,
-    type SearchPanelFile,
-    type TelemetryEventProperties,
-    type UserLocalHistory,
+import type {
+    ActiveTextEditorSelectionRange,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    CodyLLMSiteConfiguration,
+    ConfigurationWithAccessToken,
+    ContextFile,
+    ContextFileType,
+    EnhancedContextContextT,
+    SearchPanelFile,
+    TelemetryEventProperties,
+    UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
-import { type View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/NavBar'
 
 /**
  * A message sent from the webview to the extension host.
@@ -52,14 +50,24 @@ export type WebviewMessage =
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends ot munge the type in a weird way (nested fields become array indices).
-          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+          range?: {
+              startLine: number
+              startCharacter: number
+              endLine: number
+              endCharacter: number
+          }
       }
-    | { command: 'edit'; text: string }
+    | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
+    | {
+          command: 'copy'
+          eventType: 'Button' | 'Keydown'
+          text: string
+          metadata?: CodeBlockMeta
+      }
     | {
           command: 'auth'
           type:
@@ -74,7 +82,6 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
@@ -85,7 +92,10 @@ export type WebviewMessage =
     | {
           command: 'show-search-result'
           uri: URI
-          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+          range: {
+              start: { line: number; character: number }
+              end: { line: number; character: number }
+          }
       }
     | {
           command: 'reset'
@@ -109,17 +119,32 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
+    | {
+          type: 'userContextFiles'
+          context: ContextFile[] | null
+          kind?: ContextFileType
+      }
     | { type: 'chatModels'; models: ChatModelProvider[] }
-    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | {
+          type: 'update-search-results'
+          results: SearchPanelFile[]
+          query: string
+      }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
+    | { type: 'webview-state'; isActive: boolean }
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
@@ -130,9 +155,19 @@ interface ExtensionAttributionMessage {
     error?: string
 }
 
-interface WebviewSubmitMessage {
+export type ChatSubmitType = 'user' | 'user-newchat'
+
+interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
+}
+
+interface WebviewEditMessage extends WebviewContextMessage {
+    text: string
+    index?: number
+}
+
+interface WebviewContextMessage {
     addEnhancedContext?: boolean
     contextFiles?: ContextFile[]
 }
@@ -147,7 +182,10 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -263,7 +301,10 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false
     }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return (
+        authStatus.authenticated &&
+        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

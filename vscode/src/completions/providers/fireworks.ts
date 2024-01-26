@@ -1,15 +1,23 @@
 import * as vscode from 'vscode'
 
-import { tokensToChars, type AutocompleteTimeouts } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    tokensToChars,
+    type AutocompleteTimeouts,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+} from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { type ContextSnippet } from '../types'
+import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { type FetchCompletionResult } from './fetch-and-process-completions'
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import type { FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './get-completion-params'
 import {
     Provider,
     standardContextSizeHints,
@@ -76,7 +84,7 @@ function getMaxContextTokens(model: FireworksModel): number {
 const MAX_RESPONSE_TOKENS = 256
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopRequences: ['\n'],
+    singlelineStopSequences: ['\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
@@ -86,7 +94,10 @@ class FireworksProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private timeouts?: AutocompleteTimeouts
 
-    constructor(options: ProviderOptions, { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>
+    ) {
         super(options)
         this.timeouts = timeouts
         this.model = model
@@ -111,18 +122,23 @@ class FireworksProvider extends Provider {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
                 if ('symbol' in snippet && snippet.symbol !== '') {
-                    intro.push(`Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`)
+                    intro.push(
+                        `Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`
+                    )
                 } else {
-                    intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                    intro.push(
+                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${
+                            snippet.content
+                        }`
+                    )
                 }
             }
 
-            const introString =
-                intro
-                    .join('\n\n')
-                    .split('\n')
-                    .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                    .join('\n') + '\n'
+            const introString = `${intro
+                .join('\n\n')
+                .split('\n')
+                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
+                .join('\n')}\n`
 
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
@@ -148,11 +164,13 @@ class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
-            providerOptions: this.options,
-            timeouts: this.timeouts,
-            lineNumberDependentCompletionParams,
-        })
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
+            {
+                providerOptions: this.options,
+                timeouts: this.timeouts,
+                lineNumberDependentCompletionParams,
+            }
+        )
 
         const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
@@ -203,7 +221,12 @@ class FireworksProvider extends Provider {
         return zipGenerators(completionsGenerators)
     }
 
-    private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {
+    private createInfillingPrompt(
+        filename: string,
+        intro: string,
+        prefix: string,
+        suffix: string
+    ): string {
         if (isStarCoderFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
@@ -251,10 +274,10 @@ export function createProviderConfig({
         model === null || model === ''
             ? 'starcoder-hybrid'
             : model === 'starcoder-hybrid'
-            ? 'starcoder-hybrid'
-            : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-            ? (model as keyof typeof MODEL_MAP)
-            : null
+              ? 'starcoder-hybrid'
+              : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
+                  ? (model as keyof typeof MODEL_MAP)
+                  : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

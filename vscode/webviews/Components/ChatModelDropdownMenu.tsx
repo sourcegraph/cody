@@ -1,9 +1,10 @@
-import React, { useCallback, useRef, useState, type ComponentProps } from 'react'
+import type React from 'react'
+import { useCallback, useRef, useState, type ComponentProps } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { type ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
+import type { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
 import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -28,10 +29,12 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const handleChange = useCallback(
         (event: any): void => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const selectedModel = models[event.target?.selectedIndex]
             if (showCodyProBadge && selectedModel.codyProOnly) {
-                getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: 'https://sourcegraph.com/cody/subscription',
+                })
                 getVSCodeAPI().postMessage({
                     command: 'event',
                     eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
@@ -62,7 +65,6 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
         onClickCapture: () => {
             // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (!dropdownRef.current?.open) {
                 getVSCodeAPI().postMessage({
                     command: 'event',
@@ -100,12 +102,18 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                 styles.titleContainer,
                                 isModelDisabled(option.codyProOnly) && styles.disabled
                             )}
-                            title={isEnterpriseUser ? 'Chat model set by your Sourcegraph Enterprise admin' : undefined}
+                            title={
+                                isEnterpriseUser
+                                    ? 'Chat model set by your Sourcegraph Enterprise admin'
+                                    : undefined
+                            }
                         >
                             <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${option.provider}`}</span>
                         </span>
-                        {isModelDisabled(option.codyProOnly) && <span className={styles.badge}>Pro</span>}
+                        {isModelDisabled(option.codyProOnly) && (
+                            <span className={styles.badge}>Pro</span>
+                        )}
                     </VSCodeOption>
                 ))}
 

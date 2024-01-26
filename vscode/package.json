@@ -35,7 +35,8 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
   "categories": [
     "Programming Languages",
@@ -404,7 +405,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "New Chat",
+        "title": "New Chat Panel",
         "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -449,6 +450,14 @@
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
+        "command": "cody.chat.history.panel",
+        "category": "Cody",
+        "title": "Chat History",
+        "group": "Cody",
+        "icon": "$(list-unordered)",
+        "when": "cody.activated && cody.hasChatHistory"
+    },
+      {
         "command": "cody.search.index-update",
         "category": "Cody",
         "group": "Cody",
@@ -465,9 +474,9 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.restart",
+        "command": "cody.chat.panel.reset",
         "category": "Cody",
-        "title": "Restart Chat Session...",
+        "title": "New Chat Session",
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory"
@@ -692,31 +701,31 @@
         {
           "command": "cody.chat.panel.new",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation",
+          "group": "navigation@1",
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.restart",
+          "command": "cody.chat.history.panel",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@0",
+          "group": "navigation@2",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@1",
+          "group": "navigation@3",
           "visibility": "visible"
         }
       ],
       "view/item/context": [
         {
           "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@1"
         },
         {
           "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
         }
       ]
@@ -795,12 +804,6 @@
           "type": "boolean",
           "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
           "default": true
-        },
-        "cody.experimental.chatPredictions": {
-          "order": 8,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.commandCodeLenses": {
           "order": 8,
@@ -933,6 +936,19 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
+        },
+        "cody.experimental.foldingRanges": {
+          "type": "string",
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
+          "enumDescriptions": [
+            "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
+            "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
+          ],
+          "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
+          "default": "all"
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",
@@ -1087,7 +1103,7 @@
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/yaml": "^1.9.7",
-    "@vscode/test-electron": "^2.3.2",
+    "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
     "blueimp-md5": "^2.19.0",

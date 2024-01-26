@@ -1,15 +1,14 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
-import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
 import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
 import { VSCodeDocumentHistory, type DocumentHistory } from './history'
+import { lastNLines } from '../../../text-processing'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -28,7 +27,11 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
     public identifier = 'jaccard-similarity'
     private history = new VSCodeDocumentHistory()
 
-    public async retrieve({ document, docContext, abortSignal }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+    public async retrieve({
+        document,
+        docContext,
+        abortSignal,
+    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
         const targetText = lastNLines(docContext.prefix, SNIPPET_WINDOW_SIZE)
         const files = await getRelevantFiles(document, this.history)
 
@@ -39,13 +42,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                 continue
             }
 
-            matches.push({
-                // Use relative path to remove redundant information from the prompts and
-                // keep in sync with embeddings search results which use relative to repo root paths
-                fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
-                ...match,
-                uri,
-            })
+            matches.push({ ...match, uri })
         }
 
         matches.sort((a, b) => b.score - a.score)
@@ -63,7 +60,6 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
 }
 
 interface JaccardMatchWithFilename extends JaccardMatch {
-    fileName: string
     uri: URI
 }
 
@@ -130,7 +126,6 @@ async function getRelevantFiles(
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
     const allUris: vscode.Uri[] = vscode.window.tabGroups.all
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 
@@ -194,9 +189,4 @@ async function getRelevantFiles(
         })
     )
     return files
-}
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }

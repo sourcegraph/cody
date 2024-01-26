@@ -1,11 +1,11 @@
-import { type TextDocument } from 'vscode'
-import { type SyntaxNode } from 'web-tree-sitter'
+import type { TextDocument } from 'vscode'
+import type { SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { type DocumentContext } from '../get-current-doc-context'
+import type { DocumentContext } from '../get-current-doc-context'
 
 import { parseCompletion, type ParsedCompletion } from './parse-completion'
-import { type InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
 import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { getFirstLine } from './utils'
@@ -13,7 +13,7 @@ import { getFirstLine } from './utils'
 interface ParseAndTruncateParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion?: boolean
+    isDynamicMultilineCompletion: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -28,7 +28,9 @@ export function parseAndTruncateCompletion(
     } = params
 
     const multiline = Boolean(multilineTrigger)
-    const insertTextBeforeTruncation = (multiline ? normalizeStartLine(completion, prefix) : completion).trimEnd()
+    const insertTextBeforeTruncation = (
+        multiline ? normalizeStartLine(completion, prefix) : completion
+    ).trimEnd()
 
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },
@@ -117,7 +119,9 @@ const NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE = new Set(['class_declaration'])
  * at the root of the document.
  */
 function isDynamicMultilineCompletionToStopStreaming(node?: SyntaxNode): boolean {
-    return Boolean(node && isRootNode(node.parent) && NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE.has(node.type))
+    return Boolean(
+        node && isRootNode(node.parent) && NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE.has(node.type)
+    )
 }
 
 function isRootNode(node: SyntaxNode | null): boolean {

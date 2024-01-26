@@ -1,15 +1,18 @@
 import * as vscode from 'vscode'
 
-import {
-    type CompletionLogger,
-    type CompletionParameters,
-    type CompletionResponse,
-    type Event,
+import type {
+    CompletionLogger,
+    CompletionParameters,
+    CompletionResponse,
+    Event,
 } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 
-export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
+export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel(
+    'Cody by Sourcegraph',
+    'json'
+)
 
 /**
  * Logs a debug message to the "Cody by Sourcegraph" output channel.
@@ -90,7 +93,7 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
 }
 
 export const logger: CompletionLogger = {
-    startCompletion(params: CompletionParameters | {}, endpoint: string) {
+    startCompletion(params: CompletionParameters | Record<string, never>, endpoint: string) {
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
@@ -99,7 +102,12 @@ export const logger: CompletionLogger = {
         }
 
         const start = Date.now()
-        const type = 'prompt' in params ? 'code-completion' : 'messages' in params ? 'completion' : 'code-completion'
+        const type =
+            'prompt' in params
+                ? 'code-completion'
+                : 'messages' in params
+                  ? 'completion'
+                  : 'code-completion'
         let hasFinished = false
         let lastCompletion = ''
 
@@ -126,7 +134,9 @@ export const logger: CompletionLogger = {
             )
         }
 
-        function onComplete(result: string | CompletionResponse | string[] | CompletionResponse[]): void {
+        function onComplete(
+            result: string | CompletionResponse | string[] | CompletionResponse[]
+        ): void {
             if (hasFinished) {
                 return
             }

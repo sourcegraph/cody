@@ -4,11 +4,11 @@ import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
-import { type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
-        private prefix: string[] = [],
+        private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
         private dictionary: Record<string, any> = {}
@@ -93,6 +93,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
                 return this.clientNameToIDE(this.clientInfo()?.name ?? '')
+            case 'editor.insertSpaces':
+                return true // TODO: override from IDE clients
             default:
                 // VS Code picks up default value in package.json, and only uses
                 // the `defaultValue` parameter if package.json provides no

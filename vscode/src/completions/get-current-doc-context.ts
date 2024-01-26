@@ -3,12 +3,32 @@ import * as vscode from 'vscode'
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import { detectMultiline } from './detect-multiline'
-import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
+import {
+    getFirstLine,
+    getLastLine,
+    getNextNonEmptyLine,
+    getPositionAfterTextInsertion,
+    getPrevNonEmptyLine,
+    lines,
+} from './text-processing'
+import { getMatchingSuffixLength } from './text-processing/process-inline-completions'
 
 export interface DocumentContext extends DocumentDependentContext, LinesContext {
     position: vscode.Position
     multilineTrigger: string | null
     multilineTriggerPosition: vscode.Position | null
+    /**
+     * A temporary workaround for the fact that we cannot modify `TextDocument` text.
+     * Having these fields set on a `DocumentContext` means we can still get the full
+     * document text in the `parse-completion` function with the "virtually" inserted
+     * completion text.
+     *
+     * TODO(valery): we need a better abstraction that would allow us to mutate
+     * the `TextDocument` text in memory without actually pasting it into the `TextDocument`
+     * and that would not require copy-pasting and modifying the whole document text
+     * on every completion update or new virtual completion creation.
+     */
+    injectedCompletionText?: string
 }
 
 export interface DocumentDependentContext {
@@ -36,13 +56,22 @@ interface GetCurrentDocContextParams {
  * Get the current document context based on the cursor position in the current document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, context, dynamicMultilineCompletions } = params
+    const {
+        document,
+        position,
+        maxPrefixLength,
+        maxSuffixLength,
+        context,
+        dynamicMultilineCompletions,
+    } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
     // instead?
     const completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
-    const completeSuffix = document.getText(new vscode.Range(position, document.positionAt(document.getText().length)))
+    const completeSuffix = document.getText(
+        new vscode.Range(position, document.positionAt(document.getText().length))
+    )
 
     // Patch the document to contain the selected completion from the popup dialog already
     let completePrefixWithContextCompletion = completePrefix
@@ -56,7 +85,8 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         if (range.end.character === position.character && range.end.line === position.line) {
             const lastLine = lines(completePrefix).at(-1)!
             const beforeLastLine = completePrefix.slice(0, -lastLine.length)
-            completePrefixWithContextCompletion = beforeLastLine + lastLine.slice(0, range.start.character) + text
+            completePrefixWithContextCompletion =
+                beforeLastLine + lastLine.slice(0, range.start.character) + text
             injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
             if (injectedPrefix === '') {
                 injectedPrefix = null
@@ -157,20 +187,28 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
  *
  *       When inserting `2` into: `f(1, █);`, the document context will look like this `f(1, 2);█`
  */
-export function insertIntoDocContext(
-    docContext: DocumentContext,
-    insertText: string,
-    languageId: string,
-    dynamicMultilineCompletions: boolean = false
-): DocumentContext {
-    const { position, prefix, currentLinePrefix, currentLineSuffix, suffix } = docContext
+interface InsertIntoDocContextParams {
+    docContext: DocumentContext
+    insertText: string
+    languageId: string
+    dynamicMultilineCompletions: boolean
+}
 
-    const insertedLines = lines(insertText)
+export function insertIntoDocContext(params: InsertIntoDocContextParams): DocumentContext {
+    const {
+        insertText,
+        languageId,
+        dynamicMultilineCompletions,
+        docContext,
+        docContext: { position, prefix, suffix, currentLineSuffix },
+    } = params
 
-    const updatedPosition =
-        insertedLines.length <= 1
-            ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
-            : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+    const updatedPosition = getPositionAfterTextInsertion(position, insertText)
+
+    addAutocompleteDebugEvent('getDerivedDocContext', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: insertText,
+    })
 
     return getDerivedDocContext({
         languageId,
@@ -178,7 +216,9 @@ export function insertIntoDocContext(
         dynamicMultilineCompletions,
         documentDependentContext: {
             prefix: prefix + insertText,
-            suffix: suffix.slice(currentLineSuffix.length),
+            // Remove the characters that are being replaced by the completion
+            // to reduce the chances of breaking the parse tree with redundant symbols.
+            suffix: suffix.slice(getMatchingSuffixLength(insertText, currentLineSuffix)),
             injectedPrefix: null,
         },
     })

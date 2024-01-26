@@ -2,7 +2,7 @@ import { URI } from 'vscode-uri'
 
 import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 
-import { type ExtensionMessage, type WebviewMessage } from '../../src/chat/protocol'
+import type { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
 
 declare const acquireVsCodeApi: () => VSCodeApi
 

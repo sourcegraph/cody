@@ -1,24 +1,16 @@
-import os from 'os'
 import path from 'path'
 
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { isNode16 } from '../../isNode16'
 import { getLanguageForFileName } from '../../language'
 
 import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
-
-function isWindows(): boolean {
-    return os.platform().startsWith('win')
-}
-
-function isNode16(): boolean {
-    const [major] = process.versions.node.split('.')
-    return Number.parseInt(major, 10) <= 16
-}
+import { isWindows } from './isWindows'
 
 describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
     const queriesDirectory = path.join(__dirname, 'queries')
@@ -40,7 +32,11 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             const matches = await matcher.matches(text)
             const result: string[] = []
             for (const match of matches || []) {
-                const document = new EvaluationDocument(matcher.params, match.newText, vscode.Uri.file(filename))
+                const document = new EvaluationDocument(
+                    matcher.params,
+                    match.newText,
+                    vscode.Uri.file(filename)
+                )
                 document.pushItem({
                     range: new vscode.Range(
                         match.requestPosition,
@@ -52,7 +48,7 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             const resultString = result
                 .join('\n')
                 .split('\n')
-                // Trim trailing whitespace because prettier removes it from the assertions
+                // Trim trailing whitespace because the formatter may remove it from the assertions
                 // while it's normal for the transformation to preserve them.
                 .map(line => line.trimEnd())
                 .join('\n')
@@ -61,7 +57,7 @@ describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
             // vertically aligned. Without this newline, the caret appears one
             // character too early because the inline snapshot start with an
             // opening double quote "
-            assertion('\n' + resultString)
+            assertion(`\n${resultString}`)
         })
     }
 

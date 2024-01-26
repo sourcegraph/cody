@@ -7,20 +7,20 @@
     display: flex;
     flex-direction: column;
     padding: var(--spacing);
+    transition: opacity 150ms ease-in-out,
+                box-shadow 150ms ease-in-out;
 }
 
-.row:before {
+.row::before {
     position: absolute;
     top: 0;
     left: 0;
-
     width: 0.1rem;
     height: 100%;
-
     content: '';
 }
 
-.assistant-row:before {
+.assistant-row::before {
     background-image: linear-gradient(to bottom, #00cbec, #b200f8, #ff5543);
 }
 
@@ -102,7 +102,6 @@
     position: absolute;
     right: var(--spacing);
     top: calc(var(--spacing) / 4);
-
     visibility: hidden;
 }
 
@@ -110,44 +109,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-
     margin-bottom: 0.2em;
-}
-
-.editing-container {
-    visibility: visible;
 }
 
 .editing-button-container {
     visibility: visible;
     position: absolute;
-
     top: 1rem;
     right: 1rem;
     display: flex;
-
     align-self: center;
+    transition: opacity 150ms ease-in-out;
 }
 
-.editing-label {
-    margin: 0;
-    padding-top: 0.1rem;
-    padding-bottom: 0.5rem;
-    opacity: 0.5;
+.editing-button-container-is-editing-mode {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .footer-container {
     padding-top: calc(var(--spacing) / 2);
-}
-
-.feedback-edit-buttons-container {
-    display: flex;
-    gap: 0.25rem;
-
-    margin: 0;
-    padding: 0 var(--spacing) var(--spacing) var(--spacing);
-
-    font-size: 0.8rem;
 }
 
 .feedback-edit-buttons {
@@ -157,6 +138,10 @@
 
 .text-area-container {
     position: relative;
+    display: flex;
+    width: 100%;
+    align-items: flex-end;
+    gap: 0.5rem;
 }
 
 .chat-input {
@@ -165,18 +150,21 @@
     resize: none;
 }
 
+.cancel-edit-button,
 .submit-button {
-    position: absolute;
-    right: 0;
-    bottom: 0.125rem;
     fill: currentColor;
     opacity: 0.8;
-    margin: 0.25rem !important;
+    justify-content: center;
     background: none;
     border: none;
     cursor: pointer;
     height: 2rem;
     width: 2rem;
+    border-radius: 50%;
+}
+
+.active-submit-button {
+    background: var(--vscode-textLink-foreground) !important;
 }
 
 .submit-button:hover {
@@ -187,4 +175,19 @@
     display: flex;
     flex-direction: column;
     padding: 0;
+}
+
+.unfocused {
+    opacity: 0.5;
+}
+
+.unfocused .feedback-edit-buttons-container {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.focused {
+    box-shadow: 0 -1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 0 2rem var(--vscode-widget-shadow);
 }

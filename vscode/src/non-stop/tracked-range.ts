@@ -48,7 +48,11 @@ export function updateRangeMultipleChanges(
 // Given a range and an edit, updates the range for the edit. Edits at the
 // start or end of the range shrink the range. If the range is deleted, return a
 // zero-width range at the start of the edit.
-export function updateRange(range: vscode.Range, change: TextChange, options: UpdateRangeOptions = {}): vscode.Range {
+export function updateRange(
+    range: vscode.Range,
+    change: TextChange,
+    options: UpdateRangeOptions = {}
+): vscode.Range {
     const lines = change.text.split(/\r\n|\r|\n/m)
     const insertedLastLine = lines.at(-1)?.length
     if (insertedLastLine === undefined) {
@@ -58,7 +62,11 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
 
     // Handle edits
     // support combining non-whitespace appended changes with the original range
-    if (options.supportRangeAffix && change.range.start.isEqual(range.end) && change.text.trim().length > 0) {
+    if (
+        options.supportRangeAffix &&
+        change.range.start.isEqual(range.end) &&
+        change.text.trim().length > 0
+    ) {
         return new vscode.Range(
             range.start,
             change.range.end.translate(
@@ -70,7 +78,11 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
         )
     }
     // support combining non-whitespace prepended changes with the original range
-    if (options.supportRangeAffix && change.range.end.isEqual(range.start) && change.text.trim().length > 0) {
+    if (
+        options.supportRangeAffix &&
+        change.range.end.isEqual(range.start) &&
+        change.text.trim().length > 0
+    ) {
         return new vscode.Range(
             change.range.start,
             range.end.translate(
@@ -110,11 +122,17 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
         )
     }
     // ...around
-    else if (change.range.start.isBeforeOrEqual(range.start) && change.range.end.isAfterOrEqual(range.end)) {
+    else if (
+        change.range.start.isBeforeOrEqual(range.start) &&
+        change.range.end.isAfterOrEqual(range.end)
+    ) {
         return new vscode.Range(change.range.start, change.range.start)
     }
     // ...within
-    else if (change.range.start.isAfterOrEqual(range.start) && change.range.end.isBeforeOrEqual(range.end)) {
+    else if (
+        change.range.start.isAfterOrEqual(range.start) &&
+        change.range.end.isBeforeOrEqual(range.end)
+    ) {
         range = range.with(
             range.start,
             range.end.translate(

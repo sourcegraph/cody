@@ -14,17 +14,17 @@ describe('insertAllMissingBrackets', () => {
 
     it('inserts missing single type of bracket', () => {
         const text = 'function missingCurly() { return [1, 2, 3;'
-        expect(insertMissingBrackets(text)).toEqual(text + ']}')
+        expect(insertMissingBrackets(text)).toEqual(`${text}]}`)
     })
 
     it('correctly handles nested brackets', () => {
         const text = 'function nested() { if (true) { return [1, 2, 3; '
-        expect(insertMissingBrackets(text)).toEqual(text + ']}}')
+        expect(insertMissingBrackets(text)).toEqual(`${text}]}}`)
     })
 
     it('handles mixed types of brackets', () => {
         const text = 'function mixed() { return [1, 2, 3;'
-        expect(insertMissingBrackets(text)).toEqual(text + ']}')
+        expect(insertMissingBrackets(text)).toEqual(`${text}]}`)
     })
 
     it('returns original string if no brackets are present', () => {
@@ -34,6 +34,6 @@ describe('insertAllMissingBrackets', () => {
 
     it('does not correct incorrectly ordered brackets', () => {
         const text = 'function wrongOrder() } return [1, 2, 3; {'
-        expect(insertMissingBrackets(text)).toEqual(text + '}]')
+        expect(insertMissingBrackets(text)).toEqual(`${text}}]`)
     })
 })

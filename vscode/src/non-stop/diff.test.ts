@@ -26,10 +26,15 @@ describe('computeDiff', () => {
         ])
     })
     it('should merge non-overlapping human and Cody insertions', () => {
-        const diff = computeDiff('hello, world!', 'hello, worldly humans of earth!', 'hello, salutations world!', {
-            line: 42,
-            character: 7,
-        })
+        const diff = computeDiff(
+            'hello, world!',
+            'hello, worldly humans of earth!',
+            'hello, salutations world!',
+            {
+                line: 42,
+                character: 7,
+            }
+        )
         expect(diff.clean).toBe(true)
         expect(diff.conflicts).toStrictEqual([])
         expect(diff.edits).toStrictEqual([
@@ -53,7 +58,10 @@ describe('computeDiff', () => {
         expect(diff.edits).toStrictEqual([])
     })
     it('should report conflicts', () => {
-        const diff = computeDiff('hello, world!', 'hello, WORLD!', 'hello, earth!', { line: 42, character: 7 })
+        const diff = computeDiff('hello, world!', 'hello, WORLD!', 'hello, earth!', {
+            line: 42,
+            character: 7,
+        })
         expect(diff.clean).toBe(false)
     })
 })
@@ -73,8 +81,8 @@ describe('longestCommonSubsequence', () => {
     })
     it('prefixes should use the prefix', () => {
         const prefix = 'hello, '
-        const a = prefix + 'world!'
-        const b = prefix + 'peeps...'
+        const a = `${prefix}world!`
+        const b = `${prefix}peeps...`
         const lcs = longestCommonSubsequence(a, b)
         for (let v = 0; v < b.length; v++) {
             for (let u = 0; u < a.length; u++) {

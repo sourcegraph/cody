@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
-import { completion, initTreeSitterParser } from '../test-helpers'
+import { initTreeSitterParser } from '../test-helpers'
 
-import { getInlineCompletions, params } from './helpers'
+import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] dynamic multiline', () => {
     beforeAll(async () => {
@@ -15,46 +15,21 @@ describe('[getInlineCompletions] dynamic multiline', () => {
     })
 
     it('continues generating a multiline completion if a multiline trigger is found on the first line', async () => {
-        const requestParams = params(
-            'function █',
-            [
-                completion`├myFunction() {
-                        console.log(1)
-                        console.log(2)
-                        console.log(3)
-                        console.log(4)
-                    }
-                    console.log(5)┤
-                `,
-            ],
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `function █myFunction() {
+                console.log(1)
+                █console.log(2)
+                console.log(3)
+                console█.log(4)
+            }
+            console.log(5)█`,
             {
-                onNetworkRequest(_params, onPartialResponse) {
-                    onPartialResponse?.(completion`
-                        ├myFunction() {
-                        console.log(1)
-                    ┤`)
-                    onPartialResponse?.(completion`
-                        ├myFunction() {
-                        console.log(1)
-                        console.log(2)
-                        console.log(3)
-                        console.┤
-                    ┴┴┴┴`)
-                    onPartialResponse?.(completion`
-                        ├myFunction() {
-                        console.log(1)
-                        console.log(2)
-                        console.log(3)
-                        console.log(4)
-                    }
-                    console.log(5)┤`)
-                },
+                delayBetweenChunks: 50,
                 dynamicMultilineCompletions: true,
             }
         )
 
-        const completions = await getInlineCompletions(requestParams)
-        expect(completions?.items[0]?.insertText).toMatchInlineSnapshot(`
+        expect(items[0].insertText).toMatchInlineSnapshot(`
             "myFunction() {
                 console.log(1)
                 console.log(2)
@@ -64,49 +39,94 @@ describe('[getInlineCompletions] dynamic multiline', () => {
         `)
     })
 
-    it('does not use dynamic multiline for certain black listed cases', async () => {
-        const requestParams = params(
-            'class █',
-            [
-                completion`├Test {
-                        constructor() {
-                            console.log(1)
-                            console.log(2)
-                            console.log(3)
-                            console.log(4)
-                        }
-                    }
-                    console.log(5)┤
-                `,
-            ],
+    it('switches to multiline completions for nested blocks', async () => {
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `function myFunction(value) {
+                if █(value) {
+                    console.log('got it!')
+                }
+
+                return value█
+            }`,
             {
-                onNetworkRequest(_params, onPartialResponse) {
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                        ┤`)
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                                console.log(2)
-                                console.log(3)
-                                console.┤
-                        `)
-                    onPartialResponse?.(completion`├Test {
-                            constructor() {
-                                console.log(1)
-                                console.log(2)
-                                console.log(3)
-                                console.log(4)
-                            }
-                        }
-                        console.log(5)┤`)
-                },
                 dynamicMultilineCompletions: true,
             }
         )
 
-        const completions = await getInlineCompletions(requestParams)
-        expect(completions?.items[0]?.insertText).toMatchInlineSnapshot('"Test {"')
+        expect(items[0].insertText).toMatchInlineSnapshot(`
+          "(value) {
+                  console.log('got it!')
+              }"
+        `)
+    })
+
+    it('switches to multiline completions for multiline function calls', async () => {
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `const result = █myFunction(
+                document,
+                docContext█,
+                isFinalRequest
+            )
+
+            const compeltion = new InlineCompletion(result)█
+            console.log(completion)`,
+            {
+                dynamicMultilineCompletions: true,
+            }
+        )
+
+        expect(items[0].insertText).toMatchInlineSnapshot(`
+          "myFunction(
+              document,
+              docContext,
+              isFinalRequest
+          )"
+        `)
+    })
+
+    it('switches to multiline completions for multiline arrays', async () => {
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `const oddNumbers█ = [
+                1,
+                3,
+                5,
+                7,
+                9,
+            ]█
+
+            console.log(oddNumbers)`,
+            {
+                dynamicMultilineCompletions: true,
+            }
+        )
+
+        expect(items[0].insertText).toMatchInlineSnapshot(`
+          " = [
+              1,
+              3,
+              5,
+              7,
+              9,
+          ]"
+        `)
+    })
+
+    it('does not use dynamic multiline for certain black listed cases', async () => {
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `class █Test {
+                constructor() {
+                    console.log(1)
+                █   console.log(2)
+                    console.log(3)
+                    console.█log(4)
+                }
+            }
+            console.log(5)█`,
+            {
+                dynamicMultilineCompletions: true,
+            }
+        )
+
+        expect(items[0]?.insertText).toMatchInlineSnapshot('"Test {"')
     })
 })

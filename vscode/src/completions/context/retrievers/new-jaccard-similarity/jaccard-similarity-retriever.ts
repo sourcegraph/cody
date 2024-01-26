@@ -1,16 +1,15 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getContextRange } from '../../../doc-context-getters'
-import { type ContextRetriever, type ContextRetrieverOptions } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
 import { VSCodeDocumentHistory, type DocumentHistory } from '../jaccard-similarity/history'
 
 import { bestJaccardMatches, type JaccardMatch } from './bestJaccardMatch'
+import { lastNLines } from '../../../text-processing'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -58,11 +57,12 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                 continue
             }
             const lines = contents.split('\n')
-            const fileMatches = bestJaccardMatches(targetText, contents, this.snippetWindowSize, this.maxMatchesPerFile)
-
-            // Use relative path to remove redundant information from the prompts and
-            // keep in sync with embeddings search results which use relative to repo root paths
-            const readableFileName = path.normalize(vscode.workspace.asRelativePath(uri.fsPath))
+            const fileMatches = bestJaccardMatches(
+                targetText,
+                contents,
+                this.snippetWindowSize,
+                this.maxMatchesPerFile
+            )
 
             // Ignore matches with 0 overlap to our source file
             const relatedMatches = fileMatches.filter(match => match.score > 0)
@@ -87,11 +87,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                     continue
                 }
 
-                matches.push({
-                    fileName: readableFileName,
-                    ...match,
-                    uri,
-                })
+                matches.push({ ...match, uri })
             }
         }
 
@@ -110,7 +106,6 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
 }
 
 interface JaccardMatchWithFilename extends JaccardMatch {
-    fileName: string
     uri: URI
 }
 
@@ -172,7 +167,6 @@ async function getRelevantFiles(
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
     const allUris: vscode.Uri[] = vscode.window.tabGroups.all
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 
@@ -238,11 +232,6 @@ async function getRelevantFiles(
     return files
 }
 
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
-}
-
 /**
  * @returns true if range A overlaps range B
  */
@@ -261,7 +250,11 @@ function startOrEndOverlapsLineRange(
     )
 }
 
-function mergeOverlappingMatches(uri: vscode.Uri, lines: string[], matches: JaccardMatch[]): JaccardMatch[] {
+function mergeOverlappingMatches(
+    uri: vscode.Uri,
+    lines: string[],
+    matches: JaccardMatch[]
+): JaccardMatch[] {
     if (matches.length <= 1) {
         return matches
     }

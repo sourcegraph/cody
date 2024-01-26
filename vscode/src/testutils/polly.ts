@@ -51,7 +51,10 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
                 // Step 1: get the authorization token as a plain string
                 let token = ''
                 const { authorization } = headers
-                if (authorization !== undefined && typeof authorization[Symbol.iterator] === 'function') {
+                if (
+                    authorization !== undefined &&
+                    typeof authorization[Symbol.iterator] === 'function'
+                ) {
                     token = [...authorization].at(0) ?? ''
                 } else if (typeof authorization === 'string') {
                     // token = authorization
@@ -70,7 +73,9 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
     })
 }
 
-function defaultPollyOptions(options: Pick<PollyOptions, 'recordingName' | 'recordingDirectory'>): PollyOptions {
+function defaultPollyOptions(
+    options: Pick<PollyOptions, 'recordingName' | 'recordingDirectory'>
+): PollyOptions {
     let recordingMode: MODE = 'replay'
     switch (process.env.CODY_RECORDING_MODE) {
         case 'record':
@@ -87,7 +92,9 @@ function defaultPollyOptions(options: Pick<PollyOptions, 'recordingName' | 'reco
             }
     }
     const recordingDirectory = (): string => {
-        const rootDirectory = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim()
+        const rootDirectory = execSync('git rev-parse --show-toplevel', {
+            encoding: 'utf-8',
+        }).trim()
         return path.join(rootDirectory, 'recordings')
     }
     return {

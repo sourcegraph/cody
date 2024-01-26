@@ -2,16 +2,19 @@ import * as vscode from 'vscode'
 
 import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
-import { type AuthMethod } from '../chat/protocol'
+import type { AuthMethod } from '../chat/protocol'
 
-import { type AuthProvider } from './AuthProvider'
+import type { AuthProvider } from './AuthProvider'
 
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works
 // for dotcom, and doesn't work on VScode web. See LoginSimplified.
 
 export class AuthProviderSimplified {
-    public async openExternalAuthUrl(classicAuthProvider: AuthProvider, method: AuthMethod): Promise<void> {
+    public async openExternalAuthUrl(
+        classicAuthProvider: AuthProvider,
+        method: AuthMethod
+    ): Promise<void> {
         if (!(await openExternalAuthUrl(method))) {
             return
         }
@@ -37,7 +40,7 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     const gitLabLoginUrl = `${site}.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3Ab45ecb474e92c069567822400cf73db6e39917635bf682f062c57aca68a1e41c&redirect=${postSignUpSurveyUrl}`
     const googleLoginUrl = `${site}.auth/openidconnect/login?pc=google&redirect=${postSignUpSurveyUrl}`
 
-    let uriSpec
+    let uriSpec: string
     switch (provider) {
         case 'github':
             uriSpec = gitHubLoginUrl
@@ -48,7 +51,6 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
         case 'google':
             uriSpec = googleLoginUrl
             break
-        case 'dotcom':
         default:
             // This login form has links to other login methods, it is the best
             // catch-all

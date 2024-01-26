@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
-import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import { type EditIntent, type EditMode } from './types'
+import type { EditIntent, EditMode } from './types'
+import type { FixupTask } from '../non-stop/FixupTask'
 
 export interface ExecuteEditArguments {
     document?: vscode.TextDocument
@@ -17,6 +18,9 @@ export interface ExecuteEditArguments {
 /**
  * Wrapper around the `edit-code` command that can be used anywhere but with better type-safety.
  */
-export const executeEdit = async (args: ExecuteEditArguments, source: ChatEventSource): Promise<void> => {
-    await vscode.commands.executeCommand('cody.command.edit-code', args, source)
+export const executeEdit = async (
+    args: ExecuteEditArguments,
+    source: ChatEventSource
+): Promise<FixupTask | undefined> => {
+    return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args, source)
 }

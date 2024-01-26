@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { type Polly } from '@pollyjs/core'
+import type { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -13,31 +13,37 @@ import {
     graphqlClient,
     isError,
     isRateLimitError,
+    logError,
     NoOpTelemetryRecorderProvider,
     setUserAgent,
     SourcegraphGuardrailsClient,
     type BillingCategory,
     type BillingProduct,
+    logDebug,
 } from '@sourcegraph/cody-shared'
-import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
-import { type ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
-import { type AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
-import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentGlobalState } from './AgentGlobalState'
-import { newTextEditor } from './AgentTextEditor'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
-import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
+import type { AutocompleteItem, ClientInfo, ExtensionConfiguration, TextEdit } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
+import type { CommandResult } from '../../vscode/src/main'
+import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
+import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import { AgentCodeLenses } from './AgentCodeLenses'
 
 const inMemorySecretStorageMap = new Map<string, string>()
+const globalState = new AgentGlobalState()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -60,7 +66,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // types but don't have to point to a meaningful path/URI.
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
-        globalState: new AgentGlobalState(),
+        globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
@@ -88,14 +94,18 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     await activate(context)
 }
 
-export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: string }): Promise<MessageHandler> {
+export async function newAgentClient(
+    clientInfo: ClientInfo & { codyAgentPath?: string }
+): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const serverHandler = new MessageHandler()
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
-        const child = spawn(arg0, args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        const child = spawn(arg0, args, {
+            env: { ENABLE_SENTRY: 'false', ...process.env },
+        })
         serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
@@ -128,8 +138,54 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
 }
 
 export class Agent extends MessageHandler {
-    public workspace = new AgentWorkspaceDocuments()
+    public codeLenses = new AgentCodeLenses()
+    public workspace = new AgentWorkspaceDocuments({
+        edit: (uri, callback, options) => {
+            if (this.clientInfo?.capabilities?.edit !== 'enabled') {
+                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                return Promise.resolve(false)
+            }
+            const edits: TextEdit[] = []
+            callback({
+                delete(location) {
+                    edits.push({
+                        type: 'delete',
+                        range: location,
+                    })
+                },
+                insert(location, value) {
+                    edits.push({
+                        type: 'insert',
+                        position: location,
+                        value,
+                    })
+                },
+                replace(location, value) {
+                    edits.push({
+                        type: 'replace',
+                        range:
+                            location instanceof vscode.Position
+                                ? new vscode.Range(location, location)
+                                : location,
+                        value,
+                    })
+                },
+                setEndOfLine(): void {
+                    throw new Error('Not implemented')
+                },
+            })
+            return this.request('textDocument/edit', { uri: uri.toString(), edits, options })
+        },
+    })
+
     public webPanels = new AgentWebviewPanels()
+
+    // A map that mirrors `FixupController.tasks`. There's no clean API to
+    // access `FixupController` so we mirror it here instead. It would be nice
+    // to clean this up in the future so we have only a single source of truth
+    // for ongoing fixup tasks.
+    public tasks = new Map<string, FixupTask>()
+
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
     private clientInfo: ClientInfo | null = null
@@ -143,21 +199,38 @@ export class Agent extends MessageHandler {
      * vscode/src/...) will continue to use the shared recorder initialized and
      * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
      */
-    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider = new NoOpTelemetryRecorderProvider([
-        {
-            processEvent: event =>
-                process.stderr.write(
-                    `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
-                ),
-        },
-    ])
+    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider =
+        new NoOpTelemetryRecorderProvider([
+            {
+                processEvent: event =>
+                    process.stderr.write(
+                        `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
+                    ),
+            },
+        ])
 
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
+            vscode.languages.registerFoldingRangeProvider(
+                '*',
+                new IndentationBasedFoldingRangeProvider()
+            )
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.capabilities?.codeLenses === 'enabled') {
+                vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
+                    this.codeLenses.add(
+                        codeLensProvider,
+                        codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
+                    )
+                    this.updateCodeLenses()
+                })
+                vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
+                    this.codeLenses.remove(codeLensProvider)
+                )
+            }
             if (process.env.CODY_DEBUG === 'true') {
                 process.stderr.write(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
@@ -177,13 +250,19 @@ export class Agent extends MessageHandler {
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(this.clientInfo, {
-                getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-            })
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
+                this.clientInfo,
+                {
+                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
+                }
+            )
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+                : vscode.Uri.from({
+                      scheme: 'file',
+                      path: clientInfo.workspaceRootPath,
+                  })
             try {
                 await initializeVscodeExtension(this.workspace.workspaceRootUri)
                 this.registerWebviewHandlers()
@@ -224,35 +303,52 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('textDocument/didFocus', document => {
             this.workspace.setActiveTextEditor(
-                newTextEditor(this.workspace.addDocument(TextDocumentWithUri.fromDocument(document)))
+                this.workspace.newTextEditor(
+                    this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(document))
+                )
             )
         })
 
         this.registerNotification('textDocument/didOpen', document => {
-            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+            this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
         this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
-            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+            const textEditor = this.workspace.newTextEditor(textDocument)
+            this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
                 reason: undefined,
             })
+
+            if (document.selection) {
+                vscode_shim.onDidChangeTextEditorSelection.fire({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            }
         })
 
         this.registerNotification('textDocument/didClose', document => {
-            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const oldDocument = this.workspace.getDocument(documentWithUri.uri)
             if (oldDocument) {
                 this.workspace.deleteDocument(documentWithUri.uri)
                 vscode_shim.onDidCloseTextDocument.fire(oldDocument)
             }
+        })
+
+        this.registerNotification('textDocument/didSave', async params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const document = await vscode.workspace.openTextDocument(uri)
+            vscode_shim.onDidSaveTextDocument.fire(document)
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
@@ -281,7 +377,11 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
-                { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
+                {
+                    title: 'testing/progress',
+                    location: vscode.ProgressLocation.Notification,
+                    cancellable: true,
+                },
                 progress => {
                     progress.report({ message: 'message1' })
                     progress.report({ increment: 50 })
@@ -302,9 +402,13 @@ export class Agent extends MessageHandler {
                 (progress, token) => {
                     return new Promise<string>((resolve, reject) => {
                         token.onCancellationRequested(() => {
-                            progress.report({ message: 'before resolution' })
+                            progress.report({
+                                message: 'before resolution',
+                            })
                             resolve(`request with title '${title}' cancelled`)
-                            progress.report({ message: 'after resolution' })
+                            progress.report({
+                                message: 'after resolution',
+                            })
                         })
                         setTimeout(
                             () =>
@@ -323,6 +427,12 @@ export class Agent extends MessageHandler {
             return { result: message }
         })
 
+        this.registerAuthenticatedRequest('testing/reset', async () => {
+            await this.workspace.reset()
+            globalState.reset()
+            return null
+        })
+
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
@@ -330,17 +440,19 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
-                console.log('Completion provider is not initialized')
+                logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
                 return { items: [] }
             }
             const uri =
                 typeof params.uri === 'string'
                     ? vscode.Uri.parse(params.uri)
                     : params?.filePath
-                    ? vscode.Uri.file(params.filePath)
-                    : undefined
+                      ? vscode.Uri.file(params.filePath)
+                      : undefined
             if (!uri) {
-                console.log(
+                logError(
+                    'Agent',
+                    'autocomplete/execute',
                     `No uri provided for autocomplete request ${JSON.stringify(
                         params
                     )}. To fix this problem, set the 'uri' property.`
@@ -349,7 +461,13 @@ export class Agent extends MessageHandler {
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
+                logError(
+                    'Agent',
+                    'autocomplete/execute',
+                    'No document found for file path',
+                    params.uri,
+                    [...this.workspace.allUris()]
+                )
                 return { items: [] }
             }
 
@@ -362,7 +480,8 @@ export class Agent extends MessageHandler {
                     document,
                     new vscode.Position(params.position.line, params.position.character),
                     {
-                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                        triggerKind:
+                            vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
                         selectedCompletionInfo:
                             params.selectedCompletionInfo?.text === undefined ||
                             params.selectedCompletionInfo?.text === null
@@ -382,7 +501,9 @@ export class Agent extends MessageHandler {
 
                 const items: AutocompleteItem[] =
                     result?.items.flatMap(({ insertText, range, id }) =>
-                        typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
+                        typeof insertText === 'string' && range !== undefined
+                            ? [{ id, insertText, range }]
+                            : []
                     ) ?? []
 
                 return { items, completionEvent: result?.completionEvent }
@@ -436,7 +557,11 @@ export class Agent extends MessageHandler {
                 // it. DO NOT do this elsewhere!
                 event.feature as 'feature',
                 event.action as 'action',
-                event.parameters as TelemetryEventParameters<{ key: number }, BillingProduct, BillingCategory>
+                event.parameters as TelemetryEventParameters<
+                    { key: number },
+                    BillingProduct,
+                    BillingCategory
+                >
             )
             return Promise.resolve(null)
         })
@@ -498,23 +623,58 @@ export class Agent extends MessageHandler {
         const commandArgs = [{ runInChatMode: true, source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.explain-code', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
+            )
         })
 
         this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.generate-tests', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
+            )
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.command.smell-code', commandArgs))
+            return this.createChatPanel(
+                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
+            )
         })
 
-        this.registerAuthenticatedRequest('chat/new', () => {
-            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.new'))
+        this.registerAuthenticatedRequest('commands/document', async () => {
+            const result = await vscode.commands.executeCommand<CommandResult | undefined>(
+                'cody.command.document-code'
+            )
+            if (result?.type !== 'edit' || result.task === undefined) {
+                throw new TypeError(
+                    `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+                )
+            }
+            this.tasks.set(result.task.id, result.task)
+            const { id } = result.task
+            const disposable = result.task.onDidStateChange(newState => {
+                this.notify('editTaskState/didChange', { id, state: newState })
+                switch (newState) {
+                    // TODO: confirm these are the only "terminal" states.
+                    case CodyTaskState.finished:
+                    case CodyTaskState.error:
+                        disposable.dispose()
+                        break
+                }
+            })
+            return { id, state: result.task?.state }
+        })
+
+        this.registerAuthenticatedRequest('chat/new', async () => {
+            return this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                })
+            )
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const chatModel = new SimpleChatModel(modelID, [], chatID, undefined)
+            const chatModel = new SimpleChatModel(modelID, [], chatID)
             for (const message of messages) {
                 if (message.error) {
                     chatModel.addErrorAsBotMessage(message.error)
@@ -526,7 +686,12 @@ export class Agent extends MessageHandler {
             }
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
-            return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]))
+            return this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]),
+                })
+            )
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
@@ -534,7 +699,9 @@ export class Agent extends MessageHandler {
             if (panel.models) {
                 return { models: panel.models }
             }
-            await this.receiveWebviewMessage(id, { command: 'get-chat-models' })
+            await this.receiveWebviewMessage(id, {
+                command: 'get-chat-models',
+            })
             return { models: panel.models ?? [] }
         })
 
@@ -556,7 +723,11 @@ export class Agent extends MessageHandler {
                         if (message.type === 'transcript' && !message.isMessageInProgress) {
                             resolve(message)
                         } else if (message.type !== 'transcript') {
-                            reject(new Error(`expected transcript message, received ${JSON.stringify(message)}`))
+                            reject(
+                                new Error(
+                                    `expected transcript message, received ${JSON.stringify(message)}`
+                                )
+                            )
                         }
                     })
                 )
@@ -566,7 +737,9 @@ export class Agent extends MessageHandler {
                 )
                 disposables.push(
                     token.onCancellationRequested(() => {
-                        this.receiveWebviewMessage(id, { command: 'abort' }).then(
+                        this.receiveWebviewMessage(id, {
+                            command: 'abort',
+                        }).then(
                             () => {},
                             error => reject(error)
                         )
@@ -589,7 +762,9 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
+            return featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag[flagName as keyof typeof FeatureFlag]
+            )
         })
 
         this.registerAuthenticatedRequest('attribution/search', async ({ snippets }) => {
@@ -615,6 +790,37 @@ export class Agent extends MessageHandler {
             )
             return { results: all }
         })
+    }
+
+    private codeLensToken = new vscode.CancellationTokenSource()
+    private async updateCodeLenses(): Promise<void> {
+        const uri = this.workspace.activeDocumentFilePath
+        if (!uri) {
+            return
+        }
+        const document = this.workspace.getDocument(uri)
+        if (!document) {
+            return
+        }
+        this.codeLensToken.cancel()
+        this.codeLensToken = new vscode.CancellationTokenSource()
+        const promises: Promise<vscode.CodeLens[]>[] = []
+        for (const provider of this.codeLenses.providers()) {
+            promises.push(this.provideCodeLenses(provider, document))
+        }
+        const lenses = (await Promise.all(promises)).flat()
+
+        this.notify('codeLenses/display', {
+            uri: uri.toString(),
+            codeLenses: lenses,
+        })
+    }
+    private async provideCodeLenses(
+        provider: vscode.CodeLensProvider,
+        document: vscode.TextDocument
+    ): Promise<vscode.CodeLens[]> {
+        const result = await provider.provideCodeLenses(document, this.codeLensToken.token)
+        return result ?? []
     }
 
     private async handleConfigChanges(
@@ -672,7 +878,9 @@ export class Agent extends MessageHandler {
                             // JetBrains plugin from updating to the new chat
                             // UI. If changing this, at least manually confirm that
                             // it works OK to get rate limit errors in JetBrains.
-                            chatMessage.error.retryAfterDateString = JSON.stringify(chatMessage.error.retryAfterDate)
+                            chatMessage.error.retryAfterDateString = JSON.stringify(
+                                chatMessage.error.retryAfterDate
+                            )
                             chatMessage.error.retryAfterDate = undefined
                         }
                     }
@@ -705,8 +913,13 @@ export class Agent extends MessageHandler {
         await panel.receiveMessage.cody_fireAsync(message)
     }
 
-    private async createChatPanel(commandResult: Thenable<ChatSession | undefined>): Promise<string> {
-        const { sessionID, webviewPanel } = (await commandResult) ?? {}
+    private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        if (result?.type !== 'chat') {
+            throw new TypeError(`Expected chat command result, got ${result.type}`)
+        }
+
+        const { sessionID, webviewPanel } = result.session ?? {}
         if (sessionID === undefined || webviewPanel === undefined) {
             throw new Error('chatID is undefined')
         }
@@ -728,7 +941,10 @@ export class Agent extends MessageHandler {
 
     // Alternative to `registerRequest` that awaits on authentication changes to
     // propagate before calling the method handler.
-    public registerAuthenticatedRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
+    public registerAuthenticatedRequest<M extends RequestMethodName>(
+        method: M,
+        callback: RequestCallback<M>
+    ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
             return callback(params, token)

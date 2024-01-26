@@ -15,7 +15,7 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Cody"]')
+    await page.click('.badge[aria-label="Cody"]')
 
     await page.getByText('Explain code').hover()
     await page.getByText('Explain code').click()
@@ -34,4 +34,9 @@ test('submit command from command palette', async ({ page, sidebar }) => {
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
+
+    // Edit button should shows up as disabled for command messages
+    const editButtons = chatPanelFrame.locator('.codicon-edit')
+    await expect(editButtons).toHaveCount(1)
+    await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
 })

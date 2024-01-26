@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
-import { type TextDocument } from 'vscode'
-import { type default as Parser, type Tree } from 'web-tree-sitter'
+import type { TextDocument } from 'vscode'
+import type { default as Parser, Tree } from 'web-tree-sitter'
 
 import { getParseLanguage, type SupportedLanguage } from './grammars'
 import { createParser, getParser } from './parser'

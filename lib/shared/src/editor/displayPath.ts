@@ -1,11 +1,11 @@
 import { URI } from 'vscode-uri'
 
-import { basename } from '../common'
+import { pathFunctionsForURI, posixAndURIPaths } from '../common/path'
 
 /**
- * Convert an absolute URI or file path to a (possibly shorter) path to display to the user. The
- * display path is always a path (not a full URI string) and is typically is relative to the nearest
- * workspace root. The path uses OS-native path separators ('/' on macOS/Linux, '\' on Windows).
+ * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
+ * always a path (not a full URI string) and is typically is relative to the nearest workspace root.
+ * The path uses OS-native path separators ('/' on macOS/Linux, '\' on Windows).
  *
  * The returned path string MUST ONLY be used for display purposes. It MUST NOT be used to identify
  * or locate files.
@@ -20,34 +20,93 @@ import { basename } from '../common'
  * - `vscode.workspace.asRelativePath`: because it's not available in webviews, and it does not
  *   handle custom URI schemes (such as if we want to represent remote files that exist on the
  *   Sourcegraph instance).
- * @param location The absolute URI or file path to convert to a display path.
+ * @param location The absolute URI to convert to a display path.
  */
-export function displayPath(location: URI | string): string {
+export function displayPath(location: URI): string {
+    const result = _displayPath(location, checkEnvInfo())
+    return typeof result === 'string' ? result : result.toString()
+}
+
+/**
+ * Dirname of the location's display path, to display to the user. Similar to
+ * `dirname(displayPath(location))`, but it uses the right path separators in `dirname` ('\' for
+ * file URIs on Windows, '/' otherwise).
+ *
+ * The returned path string MUST ONLY be used for display purposes. It MUST NOT be used to identify
+ * or locate files.
+ *
+ * Use this instead of other seemingly simpler techniques to avoid a few subtle
+ * bugs/inconsistencies:
+ *
+ * - On Windows, Node's `dirname(uri.fsPath)` breaks on a non-`file` URI on Windows because
+ *   `dirname` would use '\' path separators but the URI would have '/' path separators.
+ * - In a single-root workspace, Node's `dirname(uri.fsPath)` would return the root directory name,
+ *   which is usually superfluous for display purposes. For example, if VS Code is open to a
+ *   directory named `myproject` and there is a list of 2 search results, one `file1.txt` (at the
+ *   root) and `dir/file2.txt`, then the VS Code-idiomatic way to present the results is as
+ *   `file1.txt` and `file2.txt <dir>` (try it in the search sidebar to see).
+ */
+export function displayPathDirname(location: URI): string {
+    const envInfo = checkEnvInfo()
+    const result = _displayPath(location, envInfo)
+
+    const dirname = pathFunctionsForURI(location, envInfo.isWindows).dirname
+    if (typeof result === 'string') {
+        return dirname(result)
+    }
+    return result.with({ path: dirname(result.path) }).toString()
+}
+
+/**
+ * Similar to `basename(displayPath(location))`, but it uses the right path separators in `basename`
+ * ('\' for file URIs on Windows, '/' otherwise).
+ */
+export function displayPathBasename(location: URI): string {
+    const envInfo = checkEnvInfo()
+    const displayPath = _displayPath(location, envInfo)
+    return pathFunctionsForURI(location, envInfo.isWindows).basename(
+        typeof displayPath === 'string' ? displayPath : displayPath.path
+    )
+}
+
+/**
+ * Like {@link displayPath}, but does not show `<WORKSPACE-FOLDER-BASENAME>/` as a prefix if the
+ * location is in a workspace folder and there are 2 or more workspace folders.
+ */
+export function displayPathWithoutWorkspaceFolderPrefix(location: URI): string {
+    const result = _displayPath(location, checkEnvInfo(), false)
+    return typeof result === 'string' ? result : result.toString()
+}
+
+function checkEnvInfo(): DisplayPathEnvInfo {
     if (!envInfo) {
         throw new Error(
             'no environment info for displayPath function (call setDisplayPathEnvInfo; see displayPath docstring for more info)'
         )
     }
-    return _displayPath(location, envInfo)
+    return envInfo
 }
 
-function _displayPath(location: URI | string, { workspaceFolders, isWindows }: DisplayPathEnvInfo): string {
+function _displayPath(
+    location: URI,
+    { workspaceFolders, isWindows }: DisplayPathEnvInfo,
+    includeWorkspaceFolderWhenMultiple = true
+): string | URI {
     const uri = typeof location === 'string' ? URI.parse(location) : URI.from(location)
 
-    // URIs always use forward slashes, but the "display path" should be an OS-native path, which
-    // means backslashes for Windows file paths.
-    const filePathSep = isWindows ? '\\' : '/'
-
-    // Non-file URIs use '/' in paths on all platforms (even Windows).
-    const pathSep = uri.scheme === 'file' ? filePathSep : '/'
-
     // Mimic the behavior of vscode.workspace.asRelativePath.
-    const includeWorkspaceFolder = workspaceFolders.length >= 2
+    const includeWorkspaceFolder = includeWorkspaceFolderWhenMultiple && workspaceFolders.length >= 2
     for (const folder of workspaceFolders) {
         if (uriHasPrefix(uri, folder, isWindows)) {
-            const folderPath = folder.path.endsWith('/') ? folder.path.slice(0, -1) : folder.path
-            const workspaceFolderPrefix = includeWorkspaceFolder ? basename(folderPath) + pathSep : ''
-            return fixPathSep(workspaceFolderPrefix + uri.path.slice(folderPath.length + 1), isWindows, uri.scheme)
+            const workspacePrefix = folder.path.endsWith('/') ? folder.path.slice(0, -1) : folder.path
+            const workspaceDisplayPrefix = includeWorkspaceFolder
+                ? posixAndURIPaths.basename(folder.path) + pathFunctionsForURI(folder).separator
+                : ''
+            return fixPathSep(
+                workspaceDisplayPrefix + uri.path.slice(workspacePrefix.length + 1),
+                isWindows,
+                uri.scheme
+            )
         }
     }
 
@@ -57,7 +116,7 @@ function _displayPath(location: URI | string, { workspaceFolders, isWindows }: D
     }
 
     // Show the full URI for anything else.
-    return uri.toString()
+    return uri
 }
 
 /**
@@ -73,16 +132,18 @@ export function uriHasPrefix(uri: URI, prefix: URI, isWindows: boolean): boolean
     // to lowercase, but many other tools use uppercase and we don't know where the context file came
     // from).
     const uriPath =
-        isWindows && uri.scheme === 'file' ? uri.path.slice(0, 2).toUpperCase() + uri.path.slice(2) : uri.path
+        isWindows && uri.scheme === 'file'
+            ? uri.path.slice(0, 2).toUpperCase() + uri.path.slice(2)
+            : uri.path
     const prefixPath =
         isWindows && prefix.scheme === 'file'
             ? prefix.path.slice(0, 2).toUpperCase() + prefix.path.slice(2)
             : prefix.path
     return (
         uri.scheme === prefix.scheme &&
-        (uri.authority || '') === (prefix.authority || '') && // different URI impls treat empty different
+        (uri.authority ?? '') === (prefix.authority ?? '') && // different URI impls treat empty different
         (uriPath === prefixPath ||
-            uriPath.startsWith(prefixPath.endsWith('/') ? prefixPath : prefixPath + '/') ||
+            uriPath.startsWith(prefixPath.endsWith('/') ? prefixPath : `${prefixPath}/`) ||
             (prefixPath.endsWith('/') && uriPath === prefixPath.slice(0, -1)))
     )
 }

@@ -3,7 +3,13 @@ import { isDotCom } from '../sourcegraph-api/environments'
 // The allowed chat models for dotcom
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 const defaultDotComChatModels: ChatModelProvider[] = [
-    { title: 'Claude 2.0', model: 'anthropic/claude-2.0', provider: 'Anthropic', default: true, codyProOnly: false },
+    {
+        title: 'Claude 2.0',
+        model: 'anthropic/claude-2.0',
+        provider: 'Anthropic',
+        default: true,
+        codyProOnly: false,
+    },
     {
         title: 'Claude 2.1 Preview',
         model: 'anthropic/claude-2.1',
@@ -74,10 +80,10 @@ export class ChatModelProvider {
      */
     public static add(provider: ChatModelProvider): void {
         // private instances can only support 1 provider atm
-        if (this.privateProviders.size) {
-            this.privateProviders.clear()
+        if (ChatModelProvider.privateProviders.size) {
+            ChatModelProvider.privateProviders.clear()
         }
-        this.privateProviders.set(provider.model.trim(), provider)
+        ChatModelProvider.privateProviders.set(provider.model.trim(), provider)
     }
 
     /**
@@ -88,10 +94,12 @@ export class ChatModelProvider {
      */
     public static get(endpoint?: string | null, currentModel?: string): ChatModelProvider[] {
         const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
-        const models = isDotComUser ? this.dotComProviders : Array.from(this.privateProviders.values())
+        const models = isDotComUser
+            ? ChatModelProvider.dotComProviders
+            : Array.from(ChatModelProvider.privateProviders.values())
 
         if (!isDotComUser) {
-            return Array.from(this.privateProviders.values())
+            return Array.from(ChatModelProvider.privateProviders.values())
         }
 
         // Set the current model as default
