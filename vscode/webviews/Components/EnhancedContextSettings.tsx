@@ -124,8 +124,8 @@ const CompactGroupsComponent: React.FunctionComponent<{
                     />
                 ))
             )}
-            <VSCodeButton onClick={() => handleAdd()} className={styles.addRepositoriesButton}>
-                Add Repositories&hellip;
+            <VSCodeButton onClick={() => handleAdd()} className={styles.chooseRepositoriesButton}>
+                Choose Repositories&hellip;
             </VSCodeButton>
         </div>
     )
