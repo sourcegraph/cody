@@ -122,7 +122,6 @@ export class CustomCommandsBuilderMenu {
         for (const context of promptContext) {
             switch (context.id) {
                 case 'selection':
-                case 'codebase':
                 case 'currentDir':
                 case 'openTabs':
                 case 'none':
