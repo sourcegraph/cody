@@ -8,7 +8,7 @@ import type {
     CompletionBookkeepingEvent,
     CompletionItemInfo,
 } from '../../../../vscode/src/completions/logger'
-import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
@@ -29,7 +29,9 @@ export class EvaluationDocument {
         public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
-        this.textDocument = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: text }))
+        this.textDocument = new AgentTextDocument(
+            ProtocolTextDocumentWithUri.from(uri, { content: text })
+        )
     }
 
     public pushItem(

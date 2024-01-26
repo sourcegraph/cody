@@ -22,7 +22,8 @@
             },
             "style": {
                 "noNonNullAssertion": "off",
-                "noParameterAssign": "off"
+                "noParameterAssign": "off",
+                "useTemplate": "off"
             }
         },
         "ignore": [

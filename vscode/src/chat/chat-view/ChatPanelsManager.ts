@@ -15,9 +15,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
-import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { AuthStatus, ExtensionMessage } from '../protocol'
 
@@ -25,6 +23,7 @@ import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 
 type ChatID = string
 
@@ -65,14 +64,19 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
-        private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
+        private readonly enterpriseContext: EnterpriseContextFactory | null,
         private readonly guardrails: Guardrails,
         private readonly commandsController?: CommandsController
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
-        this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
+        this.options = {
+            treeView: this.treeViewProvider,
+            extensionUri,
+            featureFlagProvider,
+            ...options,
+        }
 
         // Create treeview
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
@@ -161,6 +165,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         const provider = this.createProvider()
         if (chatID) {
             await provider.restoreSession(chatID)
+        } else {
+            await provider.newSession()
         }
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
@@ -202,14 +208,15 @@ export class ChatPanelsManager implements vscode.Disposable {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
         const models = ChatModelProvider.get(authStatus.endpoint)
+        const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({
             ...this.options,
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
-            embeddingsClient: this.embeddingsClient,
-            localEmbeddings: this.localEmbeddings,
-            symf: this.symf,
+            localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            symf: isConsumer ? this.symf : null,
+            enterpriseContext: isConsumer ? null : this.enterpriseContext,
             models,
             commandsController: this.commandsController,
             guardrails: this.guardrails,
@@ -231,9 +238,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(
-            createCodyChatTreeItems(this.options.authProvider.getAuthStatus())
-        )
+        await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {

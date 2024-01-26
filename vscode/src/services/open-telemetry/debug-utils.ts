@@ -5,7 +5,7 @@ import { trace, type Attributes, type Span } from '@opentelemetry/api'
  * Does nothing in production environments.
  *
  * If `currentLinePrefix` and `text` attributes are present,
- * merges them into one formatted attrbiute (useful for autcomplete events logging).
+ * merges them into one formatted attribute (useful for autocomplete events logging).
  */
 export const addAutocompleteDebugEvent = (
     name: string,

@@ -12,7 +12,6 @@ import type {
 import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
-import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -118,6 +117,13 @@ export class MarkdownString implements vscode_types.MarkdownString {
     }
 }
 
+export enum TextEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3,
+}
+
 export enum CommentMode {
     Editing = 0,
     Preview = 1,
@@ -210,7 +216,9 @@ export class CodeActionKind {
 }
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = {
+        iconPath: Uri.parse('file://foobar'),
+    }
 }
 
 export class TreeItem {
@@ -255,7 +263,10 @@ export class Position implements VSCodePosition {
     public isEqual(other: Position): boolean {
         return this.line === other.line && this.character === other.character
     }
-    public translate(change: { lineDelta?: number; characterDelta?: number }): VSCodePosition
+    public translate(change: {
+        lineDelta?: number
+        characterDelta?: number
+    }): VSCodePosition
     public translate(lineDelta?: number, characterDelta?: number): VSCodePosition
     public translate(
         arg?: number | { lineDelta?: number; characterDelta?: number },
@@ -324,7 +335,10 @@ export class Range implements VSCodeRange {
     }
 
     public with(start?: VSCodePosition, end?: VSCodePosition): VSCodeRange
-    public with(change: { start?: VSCodePosition; end?: VSCodePosition }): VSCodeRange
+    public with(change: {
+        start?: VSCodePosition
+        end?: VSCodePosition
+    }): VSCodeRange
     public with(
         arg?: VSCodePosition | { start?: VSCodePosition; end?: VSCodePosition },
         end?: VSCodePosition
@@ -447,8 +461,6 @@ export class WorkspaceEdit {
     }
 }
 
-export const emptyDisposable = new Disposable(() => {})
-
 export enum EndOfLine {
     LF = 1,
     CRLF = 2,
@@ -503,7 +515,9 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         }
     },
     readDirectory: async uri => {
-        const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+        const entries = await fspromises.readdir(uri.fsPath, {
+            withFileTypes: true,
+        })
 
         return entries.map(entry => {
             const type = entry.isFile()
@@ -528,7 +542,9 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         await fspromises.writeFile(uri.fsPath, content)
     },
     delete: async (uri, options) => {
-        await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+        await fspromises.rm(uri.fsPath, {
+            recursive: options?.recursive ?? false,
+        })
     },
     rename: async (source, target, options) => {
         if (options?.overwrite ?? false) {
@@ -687,9 +703,15 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        activeTextEditor: {
+            document: { uri: { scheme: 'not-cody' } },
+            options: { tabSize: 4 },
+        },
         onDidChangeActiveTextEditor() {},
-        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+        createTextEditorDecorationType: () => ({
+            key: 'foo',
+            dispose: () => {},
+        }),
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -741,10 +763,6 @@ export const vsCodeMocks = {
     ViewColumn,
 } as const
 
-export function emptyEvent<T>(): vscode_types.Event<T> {
-    return () => emptyDisposable
-}
-
 export enum ProgressLocation {
     SourceControl = 1,
     Window = 10,
@@ -779,7 +797,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
     experimentalSymfContext: true,
     experimentalTracing: false,

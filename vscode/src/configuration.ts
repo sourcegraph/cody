@@ -112,7 +112,6 @@ export function getConfiguration(
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
-        experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(

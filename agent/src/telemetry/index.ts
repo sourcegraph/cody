@@ -10,6 +10,7 @@ import {
     TelemetryRecorderProvider,
     TimestampTelemetryProcessor,
     type MarketingTrackingProvider,
+    TestTelemetryExporter,
 } from '@sourcegraph/telemetry'
 
 import type { ClientInfo } from '../protocol-alias'
@@ -28,11 +29,13 @@ export class AgentHandlerTelemetryRecorderProvider extends TelemetryRecorderProv
                 client: clientInfo.name,
                 clientVersion: clientInfo.version,
             },
-            new GraphQLTelemetryExporter(
-                graphqlClient,
-                clientInfo.extensionConfiguration?.anonymousUserID || '',
-                'all'
-            ),
+            process.env.CODY_TELEMETRY_EXPORTER === 'testing'
+                ? new TestTelemetryExporter()
+                : new GraphQLTelemetryExporter(
+                      graphqlClient,
+                      clientInfo.extensionConfiguration?.anonymousUserID || '',
+                      'all'
+                  ),
             [
                 new MarketingTrackingTelemetryProcessor(marketingTrackingProvider),
                 // Generate timestamps when recording events, instead of serverside

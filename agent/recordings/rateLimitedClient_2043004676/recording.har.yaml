@@ -141,7 +141,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -257,7 +257,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -365,7 +364,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -488,7 +487,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -594,7 +593,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -719,7 +718,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -826,7 +825,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -925,7 +924,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1024,7 +1023,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1123,7 +1122,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1222,7 +1221,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1321,7 +1320,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1419,7 +1418,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -1534,7 +1533,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -1672,7 +1671,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -1788,7 +1787,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -1908,7 +1907,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2027,7 +2026,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -2132,7 +2131,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -2242,7 +2241,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -2348,7 +2347,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -2466,7 +2465,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -2584,7 +2583,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
