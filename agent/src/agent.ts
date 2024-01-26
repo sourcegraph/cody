@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import type { Polly } from '@pollyjs/core'
+import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -209,7 +209,7 @@ export class Agent extends MessageHandler {
             },
         ])
 
-    constructor(private readonly params?: { polly?: Polly | undefined }) {
+    constructor(private readonly params?: { polly?: Polly | undefined; networkRequests: Request[] }) {
         super()
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
@@ -369,6 +369,10 @@ export class Agent extends MessageHandler {
             }
         })
 
+        this.registerAuthenticatedRequest('testing/networkRequests', async () => {
+            const requests = this.params?.networkRequests ?? []
+            return { requests: requests.map(req => ({ url: req.url })) }
+        })
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
                 {
@@ -577,7 +581,7 @@ export class Agent extends MessageHandler {
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            await graphqlClient.logEvent(event, 'all')
+            await graphqlClient.logEvent(event, 'connected-instance-only')
             return null
         })
 

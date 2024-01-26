@@ -29,7 +29,7 @@ export class AgentHandlerTelemetryRecorderProvider extends TelemetryRecorderProv
                 client: clientInfo.name,
                 clientVersion: clientInfo.version,
             },
-            process.env.CODY_SHIM_TESTING === 'true'
+            process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? new TestTelemetryExporter()
                 : new GraphQLTelemetryExporter(
                       graphqlClient,
