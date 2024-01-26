@@ -29,6 +29,11 @@
     background-color: transparent;
 }
 
+.attribution-container {
+    all: unset;
+    display: flex;
+}
+
 .copy-button,
 .insert-button {
     cursor: pointer;

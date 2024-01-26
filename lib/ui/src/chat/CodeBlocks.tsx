@@ -259,7 +259,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         const flexFiller = document.createElement('div')
                         flexFiller.classList.add(styles.flexFiller)
                         buttons.append(flexFiller)
-                        const g = new GuardrailsStatusController(buttons)
+                        const container = document.createElement("div");
+                        container.classList.add(styles.attributionContainer);
+                        buttons.append(container);
+
+                        const g = new GuardrailsStatusController(container);
                         g.setPending()
 
                         guardrails
