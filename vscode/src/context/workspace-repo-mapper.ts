@@ -1,9 +1,4 @@
-import {
-    type GraphQLAPIClientConfig,
-    SourcegraphGraphQLAPIClient,
-    isError,
-    logDebug,
-} from '@sourcegraph/cody-shared'
+import { isError, logDebug, graphqlClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/repositoryHelpers'
 import { RemoteSearch } from './remote-search'
@@ -19,23 +14,17 @@ const GIT_REFRESH_DELAY = 2000
 // IDs. This depends on the vscode.git extension for mapping git repositories
 // to their remotes.
 export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMapper {
-    private readonly client: SourcegraphGraphQLAPIClient
     private changeEmitter = new vscode.EventEmitter<{ name: string; id: string }[]>()
     private disposables: vscode.Disposable[] = [this.changeEmitter]
     private repos: { name: string; id: string }[] = []
     private started: Promise<void> | undefined
-
-    constructor(config: GraphQLAPIClientConfig) {
-        this.client = new SourcegraphGraphQLAPIClient(config)
-    }
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
     }
 
-    public updateConfiguration(config: GraphQLAPIClientConfig): void {
-        this.client.onConfigurationChange(config)
+    public clientConfigurationDidChange(): void {
         if (this.started) {
             this.started.then(() => this.updateRepos())
         }
@@ -54,7 +43,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 name: item.name,
             }
         }
-        const result = await this.client.getRepoId(repoName)
+        const result = await graphqlClient.getRepoId(repoName)
         if (isError(result)) {
             throw result
         }
@@ -146,7 +135,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
             // Otherwise we fetch the first 10 repos from the Sourcegraph instance
             return []
         }
-        const ids = await this.client.getRepoIds([...repoNames.values()], RemoteSearch.MAX_REPO_COUNT)
+        const ids = await graphqlClient.getRepoIds([...repoNames.values()], RemoteSearch.MAX_REPO_COUNT)
         if (isError(ids)) {
             throw ids
         }

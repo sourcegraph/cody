@@ -1,8 +1,4 @@
-import {
-    type GraphQLAPIClientConfig,
-    SourcegraphGraphQLAPIClient,
-    logDebug,
-} from '@sourcegraph/cody-shared'
+import { logDebug, graphqlClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 export interface Repo {
@@ -30,12 +26,11 @@ export class RepoFetcher implements vscode.Disposable {
     public readonly onRepoListChanged = this.repoListChangedEmitter.event
 
     private error_: Error | undefined
+    private configurationEpoch = 0
 
     // The cursor at the end of the last fetched repositories.
     private after: string | undefined
     private repos: Repo[] = []
-
-    constructor(private client: SourcegraphGraphQLAPIClient) {}
 
     public dispose(): void {
         this.repoListChangedEmitter.dispose()
@@ -46,11 +41,11 @@ export class RepoFetcher implements vscode.Disposable {
         return this.error_
     }
 
-    public updateConfiguration(config: GraphQLAPIClientConfig): void {
-        this.client = new SourcegraphGraphQLAPIClient(config)
+    public clientConfigurationDidChange(): void {
         this.repos = []
         this.after = undefined
         this.state = RepoFetcherState.Paused
+        this.configurationEpoch++
     }
 
     public pause(): void {
@@ -82,13 +77,13 @@ export class RepoFetcher implements vscode.Disposable {
 
     private async fetch(): Promise<void> {
         const numResultsPerQuery = 10_000
-        const client = this.client
+        const configurationEpoch = this.configurationEpoch
         if (this.state === RepoFetcherState.Paused) {
             return
         }
         do {
-            const result = await client.getRepoList(numResultsPerQuery, this.after)
-            if (this.client !== client) {
+            const result = await graphqlClient.getRepoList(numResultsPerQuery, this.after)
+            if (this.configurationEpoch !== configurationEpoch) {
                 // The configuration changed during this fetch, so stop.
                 return
             }

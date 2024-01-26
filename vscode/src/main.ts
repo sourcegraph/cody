@@ -167,7 +167,7 @@ const register = async (
         disposables.push(symfRunner)
     }
 
-    const enterpriseContextFactory = new EnterpriseContextFactory(initialConfig)
+    const enterpriseContextFactory = new EnterpriseContextFactory()
     disposables.push(enterpriseContextFactory)
 
     const contextProvider = new ContextProvider(
@@ -234,7 +234,7 @@ const register = async (
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-        enterpriseContextFactory.updateConfiguration(newConfig)
+        enterpriseContextFactory.clientConfigurationDidChange()
         promises.push(
             localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ??
                 Promise.resolve()

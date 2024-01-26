@@ -1,5 +1,4 @@
 import type * as vscode from 'vscode'
-import { SourcegraphGraphQLAPIClient, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
 import { RemoteRepoPicker } from './repo-picker'
 import { RemoteSearch } from './remote-search'
 import { WorkspaceRepoMapper } from './workspace-repo-mapper'
@@ -11,13 +10,10 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     public readonly repoPicker: RemoteRepoPicker
     private readonly fetcher: RepoFetcher
     private readonly workspaceRepoMapper: WorkspaceRepoMapper
-    private config: GraphQLAPIClientConfig
 
-    constructor(config: GraphQLAPIClientConfig) {
-        this.config = config
-        this.workspaceRepoMapper = new WorkspaceRepoMapper(config)
-        this.fetcher = new RepoFetcher(new SourcegraphGraphQLAPIClient(config))
-        this.workspaceRepoMapper = new WorkspaceRepoMapper(config)
+    constructor() {
+        this.fetcher = new RepoFetcher()
+        this.workspaceRepoMapper = new WorkspaceRepoMapper()
         this.repoPicker = new RemoteRepoPicker(this.fetcher, this.workspaceRepoMapper)
     }
 
@@ -27,10 +23,9 @@ export class EnterpriseContextFactory implements vscode.Disposable {
         this.workspaceRepoMapper.dispose()
     }
 
-    public updateConfiguration(config: GraphQLAPIClientConfig): void {
-        this.config = config
-        this.fetcher.updateConfiguration(config)
-        this.workspaceRepoMapper.updateConfiguration(config)
+    public clientConfigurationDidChange(): void {
+        this.fetcher.clientConfigurationDidChange()
+        this.workspaceRepoMapper.clientConfigurationDidChange()
     }
 
     // Creates a new RemoteSearch proxy. The RemoteSearch is stateful because
@@ -39,7 +34,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     // configuration updates; this is fine for the SimpleChatPanelProvider
     // client because chats are restarted if the configuration changes.
     public createRemoteSearch(): RemoteSearch {
-        return new RemoteSearch(new SourcegraphGraphQLAPIClient(this.config))
+        return new RemoteSearch()
     }
 
     // Gets an object that can map codebase repo names into repository IDs on

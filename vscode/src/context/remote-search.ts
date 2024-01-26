@@ -6,10 +6,9 @@ import {
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
-    type GraphQLAPIClientConfig,
     type IRemoteSearch,
-    type SourcegraphGraphQLAPIClient,
     type ContextFileFile,
+    graphqlClient,
 } from '@sourcegraph/cody-shared'
 
 import type * as repofetcher from './repo-fetcher'
@@ -35,8 +34,6 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
 
     // Repositories the user has added manually.
     private reposManual: Map<string, DisplayRepo> = new Map()
-
-    constructor(private readonly client: SourcegraphGraphQLAPIClient) {}
 
     public dispose(): void {
         this.statusChangedEmitter.dispose()
@@ -69,12 +66,6 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     }
 
     // #endregion
-
-    public updateConfiguration(newConfig: GraphQLAPIClientConfig): void {
-        // On account changes chat reopens so we do not re-fetch repositories
-        // here.
-        this.client.onConfigurationChange(newConfig)
-    }
 
     // Removes a manually included repository.
     public removeRepo(repoId: string): void {
@@ -116,7 +107,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     }
 
     public async query(query: string): Promise<ContextSearchResult[]> {
-        const result = await this.client.contextSearch(this.getRepoIdSet(), query)
+        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query)
         if (result instanceof Error) {
             throw result
         }
@@ -131,7 +122,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
             this.setRepos([], RepoInclusion.Automatic)
             return
         }
-        const repos = await this.client.getRepoIds([codebase], 10)
+        const repos = await graphqlClient.getRepoIds([codebase], 10)
         if (isError(repos)) {
             throw repos
         }
