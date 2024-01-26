@@ -124,7 +124,9 @@ const CompactGroupsComponent: React.FunctionComponent<{
                     />
                 ))
             )}
-            <VSCodeButton onClick={() => handleAdd()}>Add Repositories&hellip;</VSCodeButton>
+            <VSCodeButton onClick={() => handleAdd()} className={styles.addRepositoriesButton}>
+                Add Repositories&hellip;
+            </VSCodeButton>
         </div>
     )
 }
@@ -137,21 +139,23 @@ const CompactProviderComponent: React.FunctionComponent<{
 }> = ({ id, name, inclusion, handleRemove }): React.ReactNode => {
     return (
         <div className={styles.enterpriseRepoListItem}>
-            <i className="codicon codicon-repo-forked" />
+            <i className="codicon codicon-repo-forked" title={name} />
             <span className={styles.repoName} title={name}>
                 {briefName(name)}
             </span>
             {inclusion === 'auto' ? (
-                <i
-                    className={classNames('codicon', 'codicon-info', styles.infoClose)}
-                    title="Included automatically based on your workspace"
-                />
+                <span className={styles.infoClose}>
+                    <i
+                        className="codicon codicon-info"
+                        title="Included automatically based on your workspace"
+                    />
+                </span>
             ) : (
                 <button
                     className={styles.infoClose}
                     onClick={() => handleRemove(id)}
                     type="button"
-                    title="Remove"
+                    title={`Remove ${briefName(name)}`}
                 >
                     <i className="codicon codicon-close" />
                 </button>

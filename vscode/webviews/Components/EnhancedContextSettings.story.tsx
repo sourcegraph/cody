@@ -178,6 +178,33 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
     },
 }
 
+export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> = {
+    render: function Render() {
+        const [isOpen, setIsOpen] = useState<boolean>(true)
+        return (
+            <EnhancedContextContext.Provider
+                value={{
+                    groups: [],
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 20,
+                        right: 20,
+                    }}
+                >
+                    <EnhancedContextSettings
+                        presentationMode={EnhancedContextPresentationMode.Enterprise}
+                        isOpen={isOpen}
+                        setOpen={() => setIsOpen(!isOpen)}
+                    />
+                </div>
+            </EnhancedContextContext.Provider>
+        )
+    },
+}
+
 export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSettings> = {
     render: function Render() {
         const [isOpen, setIsOpen] = useState<boolean>(true)
