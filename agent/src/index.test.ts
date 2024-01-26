@@ -955,6 +955,49 @@ describe('Agent', () => {
         }, 30_000)
     })
 
+    // Enterprise tests are run at demo instance, which is at a recent release version.
+    // Use this section if you need to run against S2 which is released continuously.
+    describe('Enterprise - close main branch', () => {
+        const enterpriseClient = new TestClient({
+            name: 'enterpriseClient',
+            accessToken:
+                process.env.SRC_S2_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0asd',
+            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+            telemetryExporter: 'graphql',
+            logEventMode: 'connected-instance-only',
+        })
+
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }, 10_000)
+
+        it('attribution/found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new URL',
+            })
+            expect(repoNames).not.empty
+            expect(error).null
+        }, 20_000)
+
+        it('attribution/not found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new LRU',
+            })
+            expect(repoNames).empty
+            expect(error).null
+        }, 20_000)
+    })
+
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, {
             recursive: true,
