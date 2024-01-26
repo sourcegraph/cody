@@ -74,6 +74,7 @@ export const test = base
             )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
+            await buildCodyJson(workspaceDirectory)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
@@ -228,6 +229,46 @@ async function buildWorkSpaceSettings(
     })
     await new Promise<void>((resolve, reject) => {
         writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+}
+
+// Build a cody.json file for testing custom commands and context fetching
+async function buildCodyJson(workspaceDirectory: string): Promise<void> {
+    const codyJson = {
+        currentDir: {
+            description:
+                "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
+            prompt: 'Add four context files from the current directory.',
+            context: {
+                selection: false,
+                currentDir: true,
+            },
+        },
+        filePath: {
+            prompt: 'Add lib/batches/env/var.go as context.',
+            context: {
+                filePath: 'lib/batches/env/var.go',
+            },
+        },
+        directoryPath: {
+            description: 'Get files from directory.',
+            prompt: 'Directory has one context file.',
+            context: {
+                directoryPath: 'lib/batches/env',
+            },
+        },
+    }
+
+    // add file to the .vscode directory created in the buildWorkSpaceSettings step
+    const codyJsonPath = path.join(workspaceDirectory, '.vscode', 'cody.json')
+    await new Promise<void>((resolve, reject) => {
+        writeFile(codyJsonPath, JSON.stringify(codyJson), error => {
             if (error) {
                 reject(error)
             } else {

@@ -9,7 +9,7 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 
-test('add a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -66,9 +66,7 @@ test('add a new user command via the custom commands menu', async ({ page, sideb
     await expect(chatPanel.getByText(prompt)).toBeVisible()
 })
 
-// TODO: (bee) need fixing - this test fails when running in CI
-// need to confirm if the cody.json file in the test workspace is actually available in the test environment
-test.skip('execute a custom command defined in workspace cody.json', async ({ page, sidebar }) => {
+test('execute a custom command defined in workspace cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -129,4 +127,37 @@ test.skip('execute a custom command defined in workspace cody.json', async ({ pa
     // Click on the file link should open the file in the editor
     await chatPanel.getByRole('button', { name: '@lib/batches/env/var.go:1-1' }).click()
     await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
+})
+
+test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the File Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+    // Check if cody.json exists in the workspace
+    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'cody.json' }).hover()
+
+    await page.click('.badge[aria-label="Cody"]')
+
+    // Check button click to open the cody.json file in the editor
+    await page.getByLabel('Custom Custom commands').locator('a').click()
+    await page.getByLabel('Configure Custom Commands...', { exact: true }).click()
+    await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
+    await expect(page.getByRole('button', { name: 'Open or Create Settings File' })).toBeVisible()
+    await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+    await page.getByRole('tab', { name: 'cody.json' }).hover()
+    await expect(page.getByRole('tab', { name: 'cody.json' })).toBeVisible()
+
+    // Check button click to delete the cody.json file from the workspace tree view
+    await page.getByText('Custom commands', { exact: true }).click()
+    await page
+        .getByLabel('Configure Custom Commands..., Manage your custom reusable commands, settings')
+        .locator('a')
+        .click()
+    await page.getByRole('button', { name: 'Delete Settings File' }).click()
+    await sidebarExplorer(page).click()
+    await expect(page.getByRole('treeitem', { name: 'cody.json' }).locator('a')).toBeVisible()
 })
