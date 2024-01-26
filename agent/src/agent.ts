@@ -237,14 +237,6 @@ export class Agent extends MessageHandler {
                 )
             }
 
-            const anonymousDotcomUser: ExtensionConfiguration = {
-                ...clientInfo.extensionConfiguration,
-                serverEndpoint: '',
-                accessToken: '',
-                customHeaders: {},
-            }
-            const extensionConfiguration = clientInfo.extensionConfiguration ?? anonymousDotcomUser
-            clientInfo.extensionConfiguration = anonymousDotcomUser
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
@@ -267,9 +259,11 @@ export class Agent extends MessageHandler {
                 await initializeVscodeExtension(this.workspace.workspaceRootUri)
                 this.registerWebviewHandlers()
 
-                this.authenticationPromise = this.handleConfigChanges(extensionConfiguration, {
-                    forceAuthentication: true,
-                })
+                this.authenticationPromise = clientInfo.extensionConfiguration
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication: true,
+                      })
+                    : this.authStatus()
                 const authStatus = await this.authenticationPromise
 
                 return {
@@ -841,8 +835,15 @@ export class Agent extends MessageHandler {
                 console.log('Authentication failed', error)
             }
         }
+        return this.authStatus()
+    }
 
-        return vscode_shim.commands.executeCommand<AuthStatus>('cody.auth.status')
+    private async authStatus(): Promise<AuthStatus | undefined> {
+        // Do explicit `await` because `executeCommand()` returns `Thenable`.
+        const result = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
+            'cody.auth.status'
+        )
+        return result
     }
 
     private registerWebviewHandlers(): void {
