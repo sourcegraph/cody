@@ -105,6 +105,7 @@ export function processCompletion(
     if (multilineTrigger) {
         insertText = removeTrailingWhitespace(insertText)
     } else {
+        // TODO: move to parse-and-truncate to have one place where truncation happens
         // Only keep a single line in single-line completions mode
         const newLineIndex = insertText.indexOf('\n')
         if (newLineIndex !== -1) {

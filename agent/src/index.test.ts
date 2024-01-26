@@ -1088,9 +1088,9 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        describe.only('Document code', () => {
+        describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
-                it.only(name, async () => {
+                it(name, async () => {
                     await client.request('command/execute', { command: 'cody.search.index-update' })
                     const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
                     await client.openFile(uri, { removeCursor: false })

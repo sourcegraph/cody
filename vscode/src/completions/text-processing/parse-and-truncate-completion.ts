@@ -13,7 +13,7 @@ import { getFirstLine } from './utils'
 interface ParseAndTruncateParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion?: boolean
+    isDynamicMultilineCompletion: boolean
 }
 
 export function parseAndTruncateCompletion(

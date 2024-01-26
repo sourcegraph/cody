@@ -252,7 +252,6 @@ log:
           params: []
           textJSON:
             query: |-
-
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -2280,7 +2279,6 @@ log:
           params: []
           textJSON:
             query: |2
-
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }

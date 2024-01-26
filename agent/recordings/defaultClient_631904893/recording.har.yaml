@@ -77,7 +77,7 @@ log:
                 text: "<CODE5711>export function sum(a: number, b: number): number {"
             stopSequences:
               - |-
-                
+
 
                 Human:
               - </CODE5711>
@@ -253,7 +253,6 @@ log:
                 text: "<CODE5711>export function sum(a: number, b: number): number {"
             stopSequences:
               - |-
-                
 
                 Human:
               - </CODE5711>
@@ -31357,7 +31356,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -31581,7 +31580,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -31816,7 +31815,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -32072,7 +32071,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -32576,7 +32575,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -32817,7 +32816,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -33095,7 +33094,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -33351,7 +33350,7 @@ log:
                 text: >-
                   (Reply as Cody, a coding assistant developed by Sourcegraph.
                   If context is available: never make any assumptions nor
-                  provide any misleading or hypothetical examples.) 
+                  provide any misleading or hypothetical examples.)
 
                   - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
@@ -33586,7 +33585,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -33693,7 +33692,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -33807,7 +33805,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -33923,7 +33920,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34028,7 +34025,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34128,7 +34125,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34233,7 +34230,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34333,7 +34330,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34454,7 +34451,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34563,7 +34560,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34684,7 +34680,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34788,7 +34783,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -34893,7 +34888,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -34998,7 +34993,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -35109,7 +35104,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CurrentUser {
                   currentUser {
                       id
@@ -35230,7 +35224,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -35328,7 +35322,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -35426,7 +35420,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -35528,7 +35522,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query CurrentUserCodyProEnabled {
                   currentUser {
                       codyProEnabled
@@ -35630,7 +35623,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -35727,7 +35720,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -35824,7 +35817,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -35921,7 +35914,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36018,7 +36011,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36115,7 +36108,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36212,7 +36205,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36308,7 +36301,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36407,7 +36400,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36506,7 +36499,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36603,7 +36595,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36700,7 +36691,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36797,7 +36787,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36894,7 +36883,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -36991,7 +36979,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -37088,7 +37075,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -37187,7 +37174,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -37286,7 +37273,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -37435,7 +37422,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -37552,7 +37539,6 @@ log:
           params: []
           textJSON:
             query: |2
-              
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -37704,7 +37690,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -37818,7 +37804,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -37929,7 +37915,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38043,7 +38029,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -38154,7 +38140,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38268,7 +38254,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38384,7 +38370,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38500,7 +38486,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38614,7 +38600,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -38725,7 +38711,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38839,7 +38825,6 @@ log:
           params: []
           textJSON:
             query: >-
-              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -38953,7 +38938,6 @@ log:
           params: []
           textJSON:
             query: >-
-              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -39067,7 +39051,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39176,7 +39160,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39285,7 +39269,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39403,7 +39387,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39516,7 +39500,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39631,7 +39615,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39751,7 +39735,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39866,7 +39850,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -39986,7 +39970,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40101,7 +40085,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40216,7 +40200,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40336,7 +40320,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40445,7 +40428,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40558,7 +40541,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40671,7 +40653,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40784,7 +40765,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -40897,7 +40877,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -41015,7 +40994,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -41128,7 +41106,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -41246,7 +41223,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -41359,7 +41335,6 @@ log:
           params: []
           textJSON:
             query: |
-              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -41476,7 +41451,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -41581,7 +41556,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -41686,7 +41661,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -41796,7 +41771,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query Repository($name: String!) {
               	repository(name: $name) {
                               id
@@ -41906,7 +41880,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -42009,7 +41983,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -42112,7 +42086,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -42224,7 +42198,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -42335,7 +42309,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query SiteIdentification {
               	site {
               		siteID
@@ -42444,7 +42417,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -42542,7 +42515,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -42640,7 +42613,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -42746,7 +42719,6 @@ log:
           params: []
           textJSON:
             query: |-
-              
               query SiteProductVersion {
                   site {
                       productVersion

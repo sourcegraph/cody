@@ -43,3 +43,10 @@ export function getEditorTabSize(uri: vscode.Uri): number {
 
     return tabSize
 }
+
+export function getEditorIndentString(uri: vscode.Uri): string {
+    const insertSpaces = getEditorInsertSpaces(uri)
+    const tabSize = getEditorTabSize(uri)
+
+    return insertSpaces ? ' '.repeat(tabSize) : '\t'
+}
