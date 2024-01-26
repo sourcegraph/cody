@@ -21,6 +21,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Commands: Fixed an issue where Cody failed to register additional instructions followed by the command key when submitted from the command menu. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
 - Chat: The title for the chat panel is now reset correctly on "Restart Chat Session"/"New Chat Session" button click. [pull/2786](https://github.com/sourcegraph/cody/pull/2786)
 - Chat: Fixed an issue where Ctrl+Enter on Windows would not work (did not send a follow-on chat). [pull/2823](https://github.com/sourcegraph/cody/pull/2823)
+- Fixes an issue where the codebase URL was not properly inferred for a git repo when the repo name contains dots. [pull/2901](https://github.com/sourcegraph/cody/pull/2901)
 - Chat: Fixed an issue where the user authentication view appeared in the chat panel. [pull/2904](https://github.com/sourcegraph/cody/pull/2904)
 
 ### Changed
