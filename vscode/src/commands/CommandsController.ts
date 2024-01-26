@@ -5,7 +5,7 @@ import { logDebug } from '../log'
 import type { CodyCommandArgs } from './types'
 import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
-import type { ChatSession } from '../chat/chat-view/SimpleChatPanelProvider'
+import type { CommandResult } from '../main'
 
 /**
  * Handles commands execution with commands from CommandsProvider
@@ -29,13 +29,14 @@ class CommandsController implements vscode.Disposable {
      *
      * Handles prompt building and context fetching for commands.
      */
-    public async execute(text: string, args: CodyCommandArgs): Promise<ChatSession | undefined> {
+    public async execute(text: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
         const command = this.provider?.get(commandKey)
         if (!command) {
-            return
+            logDebug('CommandsController:execute', 'command not found', { verbose: { commandKey } })
+            return undefined
         }
 
         // Additional instruction that will be added to end of prompt in the custom command prompt

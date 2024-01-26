@@ -6,6 +6,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat: Add a history quick in the editor panel for chats grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
 - Commands: Custom edit commands are now executable from the Chat panel. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
 - [Internal] Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
 - [Internal] Edit/Chat: Added Cmd/Ctrl+K and Cmd/Ctrl+L commands to trigger Edit and Chat [pull/2611](https://github.com/sourcegraph/cody/pull/2611)
@@ -30,11 +31,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - New chats are now the default when the user submits a new quesetion. Previously, follow-up questions were the default, but this frequently led to exceeding the LLM context window, which users interpreted as an error state. Follow-up questions are still accessible via ⌘-Enter or Ctrl-Enter. [pull/2768](https://github.com/sourcegraph/cody/pull/2768)
 - We now allocate no more than 60% of the overall LLM context window for enhanced context. This preserves more room for follow-up questions and context. [pull/2768](https://github.com/sourcegraph/cody/pull/2768)
 - Chat: Renamed the "Restart Chat Session" button to "New Chat Session". [pull/2786](https://github.com/sourcegraph/cody/pull/2786)
-- Removed `cody.experimental.chatPredictions`.
-- Codebase-wide context for custom commands has been disabled.
+- Removed the `cody.experimental.chatPredictions` setting. [pull/2848](https://github.com/sourcegraph/cody/pull/2848)
+- Removed support for the `context.codebase` custom command property. [pull/2848](https://github.com/sourcegraph/cody/pull/2848)
 - Autocomplete: Better cancellation of requests that are no longer relevant. [pull/2855](https://github.com/sourcegraph/cody/pull/2855)
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 - Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
+- Moved the Context Limit errors in chat into the deboug log output. [pull/2891](https://github.com/sourcegraph/cody/pull/2891)
 
 ## [1.1.3]
 
@@ -88,6 +90,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Chat: Display chats in the treeview provider grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
+- Autocomplete: Accepting a full line completion will not immedialty start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
 - Folders named 'bin/' are no longer filtered out from chat `@`-mentions but instead ranked lower. [pull/2472](https://github.com/sourcegraph/cody/pull/2472)
 - Files ignored in `.cody/ignore` (if the internal experiment is enabled) will no longer show up in chat `@`-mentions. [pull/2472](https://github.com/sourcegraph/cody/pull/2472)
 - Adds a new experiment to test a higher parameter StarCoder model for single-line completions. [pull/2632](https://github.com/sourcegraph/cody/pull/2632)

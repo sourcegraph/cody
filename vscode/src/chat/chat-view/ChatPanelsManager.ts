@@ -14,7 +14,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import type { MessageProviderOptions } from '../MessageProvider'
@@ -228,9 +227,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(
-            createCodyChatTreeItems(this.options.authProvider.getAuthStatus())
-        )
+        await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {

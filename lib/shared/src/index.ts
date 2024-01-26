@@ -48,6 +48,7 @@ export type {
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands/types'
+export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -147,7 +148,6 @@ export type {
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
-    ContextWindowLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,

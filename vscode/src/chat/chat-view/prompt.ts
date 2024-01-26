@@ -21,27 +21,23 @@ import {
     type SimpleChatModel,
 } from './SimpleChatModel'
 
-export interface IContextProvider {
-    // Relevant context pulled from the editor state and broader repository
-    getEnhancedContext(query: string): Promise<ContextItem[]>
-}
-
 interface PromptInfo {
     prompt: Message[]
-    contextLimitWarnings: string[]
     newContextUsed: ContextItem[]
 }
 
 export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, byteLimit: number): Promise<PromptInfo>
+    makePrompt(chat: SimpleChatModel, charLimit: number): Promise<PromptInfo>
 }
 
+const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% of the context window
+
 export class CommandPrompter implements IPrompter {
-    constructor(private getContextItems: () => Promise<ContextItem[]>) {}
-    public async makePrompt(chat: SimpleChatModel, byteLimit: number): Promise<PromptInfo> {
-        const promptBuilder = new PromptBuilder(byteLimit)
+    constructor(private getContextItems: (maxChars: number) => Promise<ContextItem[]>) {}
+    public async makePrompt(chat: SimpleChatModel, charLimit: number): Promise<PromptInfo> {
+        const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
+        const promptBuilder = new PromptBuilder(charLimit)
         const newContextUsed: ContextItem[] = []
-        const warnings: string[] = []
         const preInstruction: string | undefined = vscode.workspace
             .getConfiguration('cody.chat')
             .get('preInstruction')
@@ -49,7 +45,7 @@ export class CommandPrompter implements IPrompter {
         const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
         if (!preambleSucceeded) {
-            throw new Error(`Preamble length exceeded context window size ${byteLimit}`)
+            throw new Error(`Preamble length exceeded context window size ${charLimit}`)
         }
 
         // Add existing transcript messages
@@ -58,21 +54,21 @@ export class CommandPrompter implements IPrompter {
             const messageWithContext = reverseTranscript[i]
             const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
-                warnings.push(
+                logDebug(
+                    'CommandPrompter.makePrompt',
                     `Ignored ${reverseTranscript.length - i} transcript messages due to context limit`
                 )
                 return {
                     prompt: promptBuilder.build(),
-                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
         }
 
-        const contextItems = await this.getContextItems()
+        const contextItems = await this.getContextItems(enhancedContextCharLimit)
         const { limitReached, used, ignored } = promptBuilder.tryAddContext(
             contextItems,
-            Math.floor(byteLimit * 0.6) // Allocate no more than 60% of context window to enhanced context
+            enhancedContextCharLimit
         )
         newContextUsed.push(...used)
         if (limitReached) {
@@ -87,7 +83,6 @@ export class CommandPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }
@@ -96,24 +91,23 @@ export class CommandPrompter implements IPrompter {
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItem[],
-        private getEnhancedContext?: (query: string) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
     //
-    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
-    // the new context that was used in the prompt for the current message.
+    // Returns the reverse prompt and the new context that was used in the
+    // prompt for the current message.
     public async makePrompt(
         chat: SimpleChatModel,
-        byteLimit: number
+        charLimit: number
     ): Promise<{
         prompt: Message[]
-        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }> {
-        const promptBuilder = new PromptBuilder(byteLimit)
+        const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
+        const promptBuilder = new PromptBuilder(charLimit)
         const newContextUsed: ContextItem[] = []
-        const warnings: string[] = []
         const preInstruction: string | undefined = vscode.workspace
             .getConfiguration('cody.chat')
             .get('preInstruction')
@@ -121,7 +115,7 @@ export class DefaultPrompter implements IPrompter {
         const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
         if (!preambleSucceeded) {
-            throw new Error(`Preamble length exceeded context window size ${byteLimit}`)
+            throw new Error(`Preamble length exceeded context window size ${charLimit}`)
         }
 
         // Add existing transcript messages
@@ -130,12 +124,12 @@ export class DefaultPrompter implements IPrompter {
             const messageWithContext = reverseTranscript[i]
             const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
-                warnings.push(
+                logDebug(
+                    'DefaultPrompter.makePrompt',
                     `Ignored ${reverseTranscript.length - i} transcript messages due to context limit`
                 )
                 return {
                     prompt: promptBuilder.build(),
-                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
@@ -146,8 +140,11 @@ export class DefaultPrompter implements IPrompter {
             const { limitReached, used } = promptBuilder.tryAddContext(this.explicitContext)
             newContextUsed.push(...used)
             if (limitReached) {
-                warnings.push('Ignored current user-specified context items due to context limit')
-                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    'Ignored current user-specified context items due to context limit'
+                )
+                return { prompt: promptBuilder.build(), newContextUsed }
             }
         }
 
@@ -159,8 +156,11 @@ export class DefaultPrompter implements IPrompter {
                 reverseTranscript.flatMap((message: MessageWithContext) => message.newContextUsed || [])
             )
             if (limitReached) {
-                warnings.push('Ignored prior context items due to context limit')
-                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    'Ignored prior context items due to context limit'
+                )
+                return { prompt: promptBuilder.build(), newContextUsed }
             }
         }
 
@@ -173,10 +173,13 @@ export class DefaultPrompter implements IPrompter {
         }
         if (this.getEnhancedContext) {
             // Add additional context from current editor or broader search
-            const additionalContextItems = await this.getEnhancedContext(lastMessage.message.text)
+            const additionalContextItems = await this.getEnhancedContext(
+                lastMessage.message.text,
+                enhancedContextCharLimit
+            )
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,
-                Math.floor(byteLimit * 0.6) // Allocate no more than 60% of context window to enhanced context
+                enhancedContextCharLimit
             )
             newContextUsed.push(...used)
             if (limitReached) {
@@ -189,7 +192,6 @@ export class DefaultPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }
@@ -222,7 +224,7 @@ function renderContextItem(contextItem: ContextItem): Message[] {
 }
 
 /**
- * PromptBuilder constructs a full prompt given a byteLimit constraint.
+ * PromptBuilder constructs a full prompt given a charLimit constraint.
  * The final prompt is constructed by concatenating the following fields:
  * - prefixMessages
  * - the reverse of reverseMessages
@@ -230,24 +232,24 @@ function renderContextItem(contextItem: ContextItem): Message[] {
 class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private bytesUsed = 0
+    private charsUsed = 0
     private seenContext = new Set<string>()
-    constructor(private readonly byteLimit: number) {}
+    constructor(private readonly charLimit: number) {}
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        let numBytes = 0
+        let numChars = 0
         for (const message of messages) {
-            numBytes += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
+            numChars += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
         }
-        if (numBytes + this.bytesUsed > this.byteLimit) {
+        if (numChars + this.charsUsed > this.charLimit) {
             return false
         }
         this.prefixMessages.push(...messages)
-        this.bytesUsed += numBytes
+        this.charsUsed += numChars
         return true
     }
 
@@ -258,28 +260,28 @@ class PromptBuilder {
         }
 
         const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        if (this.bytesUsed + msgLen > this.byteLimit) {
+        if (this.charsUsed + msgLen > this.charLimit) {
             return false
         }
         this.reverseMessages.push(message)
-        this.bytesUsed += msgLen
+        this.charsUsed += msgLen
         return true
     }
 
     /**
-     * Tries to add context items to the prompt, tracking bytes used.
+     * Tries to add context items to the prompt, tracking characters used.
      * Returns info about which items were used vs. ignored.
      */
     public tryAddContext(
         contextItems: ContextItem[],
-        byteLimit?: number
+        charLimit?: number
     ): {
         limitReached: boolean
         used: ContextItem[]
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
-        const effectiveByteLimit = byteLimit ? this.bytesUsed + byteLimit : this.byteLimit
+        const effectiveCharLimit = charLimit ? this.charsUsed + charLimit : this.charLimit
         let limitReached = false
         const used: ContextItem[] = []
         const ignored: ContextItem[] = []
@@ -299,14 +301,14 @@ class PromptBuilder {
                 (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
                 0
             )
-            if (this.bytesUsed + contextLen > effectiveByteLimit) {
+            if (this.charsUsed + contextLen > effectiveCharLimit) {
                 ignored.push(contextItem)
                 limitReached = true
                 continue
             }
             this.seenContext.add(id)
             this.reverseMessages.push(...contextMessages)
-            this.bytesUsed += contextLen
+            this.charsUsed += contextLen
             used.push(contextItem)
         }
         return {

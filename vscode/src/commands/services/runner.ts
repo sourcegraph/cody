@@ -9,15 +9,15 @@ import {
 
 import { executeEdit, type ExecuteEditArguments } from '../../edit/execute'
 import type { EditIntent, EditMode } from '../../edit/types'
-import { getEditor } from '../../editor/active-editor'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
 import type { CodyCommandArgs } from '../types'
 import { getCommandContextFiles } from '../context'
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import { executeChat } from '../default/ask'
+import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * NOTE: Used by Command Controller only.
@@ -46,7 +46,7 @@ export class CommandRunner implements vscode.Disposable {
     /**
      * Starts executing the Cody command.
      */
-    public async start(): Promise<ChatSession | undefined> {
+    public async start(): Promise<CommandResult | undefined> {
         // all user and workspace custom command should be logged under 'custom'
         const name =
             this.command.type === 'default' ? this.command.slashCommand.replace('/', '') : 'custom'
@@ -95,8 +95,7 @@ export class CommandRunner implements vscode.Disposable {
         // Execute the command based on the mode
         // Run as edit command if mode is not 'ask'
         if (this.command.mode !== 'ask') {
-            void this.handleEditRequest()
-            return undefined
+            return this.handleEditRequest()
         }
 
         return this.handleChatRequest()
@@ -106,8 +105,8 @@ export class CommandRunner implements vscode.Disposable {
      * Handles a Cody chat command.
      * Executes the chat request with the prompt and context files
      */
-    private async handleChatRequest(): Promise<ChatSession | undefined> {
-        logDebug('CommandRunner:handleChatRequest', 'handling chat request')
+    private async handleChatRequest(): Promise<ChatCommandResult | undefined> {
+        logDebug('CommandRunner:handleChatRequest', 'chat request detecte')
 
         const prompt = this.command.prompt
 
@@ -115,21 +114,24 @@ export class CommandRunner implements vscode.Disposable {
         const contextFiles = await this.getContextFiles()
 
         // NOTE: (bee) codebase context is not supported for custom commands
-        return executeChat({
-            text: prompt,
-            submitType: 'user',
-            contextFiles,
-            addEnhancedContext: this.command.context?.codebase ?? false,
-            source: this.args.source,
-        })
+        return {
+            type: 'chat',
+            session: await executeChat({
+                text: prompt,
+                submitType: 'user',
+                contextFiles,
+                addEnhancedContext: this.command.context?.codebase ?? false,
+                source: this.args.source,
+            }),
+        }
     }
 
     /**
      * handleFixupRequest method handles executing fixup based on editor selection.
      * Creates range and instruction, calls fixup command.
      */
-    private async handleEditRequest(): Promise<void> {
-        logDebug('CommandRunner:handleEditRequest', 'handling fixup request detected')
+    private async handleEditRequest(): Promise<EditCommandResult | undefined> {
+        logDebug('CommandRunner:handleEditRequest', 'fixup request detected')
 
         // Conditions for categorizing an edit command
         const commandKey = this.command.slashCommand.replace(/^\//, '')
@@ -145,15 +147,18 @@ export class CommandRunner implements vscode.Disposable {
         // Fetch context for the command
         const userContextFiles = await this.getContextFiles()
 
-        await executeEdit(
-            {
-                instruction,
-                intent,
-                mode: this.command.mode as EditMode,
-                userContextFiles,
-            } satisfies ExecuteEditArguments,
-            source as ChatEventSource
-        )
+        return {
+            type: 'edit',
+            task: await executeEdit(
+                {
+                    instruction,
+                    intent,
+                    mode: this.command.mode as EditMode,
+                    userContextFiles,
+                } satisfies ExecuteEditArguments,
+                source as ChatEventSource
+            ),
+        }
     }
 
     /**

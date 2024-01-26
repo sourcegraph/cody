@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
-    ContextWindowLimitError,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -28,7 +27,6 @@ import {
 import type { View } from '../../../webviews/NavBar'
 import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
-import { executeEdit } from '../../edit/execute'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -44,7 +42,6 @@ import { getProcessInfo } from '../../services/LocalAppDetector'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import type { TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -79,7 +76,6 @@ import {
     type ContextItem,
     type MessageWithContext,
 } from './SimpleChatModel'
-import { newCodyCommandArgs } from '../../commands/utils/get-commands'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -100,7 +96,6 @@ export interface ChatSession {
     webviewPanel?: vscode.WebviewPanel
     sessionID: string
 }
-
 /**
  * SimpleChatPanelProvider is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -347,24 +342,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
-        // DEPRECATED (remove after slash commands are removed)
-        // If this is a slash command, run it with custom command instead
-        if (inputText.startsWith('/')) {
-            if (inputText.match(/^\/r(eset)?$/)) {
-                return this.clearAndRestartSession()
-            }
-            if (inputText.match(/^\/edit(\s)?/)) {
-                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
-            }
-            if (inputText === '/commands-settings') {
-                // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.menu.commands-settings')
-            }
-            const commandArgs = newCodyCommandArgs({
-                source: 'chat',
-                requestID,
-            })
-            return vscode.commands.executeCommand('cody.action.command', inputText, commandArgs)
+        if (inputText.match(/^\/reset$/)) {
+            return this.clearAndRestartSession()
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -388,16 +367,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const prompter = new DefaultPrompter(
             userContextItems,
             addEnhancedContext
-                ? query =>
-                      getEnhancedContext(
-                          this.config.useContext,
-                          this.editor,
-                          this.embeddingsClient,
-                          this.localEmbeddings,
-                          this.config.experimentalSymfContext ? this.symf : null,
-                          this.codebaseStatusProvider,
-                          query
-                      )
+                ? (text, maxChars) =>
+                      getEnhancedContext({
+                          strategy: this.config.useContext,
+                          editor: this.editor,
+                          text,
+                          providers: {
+                              embeddingsClient: this.embeddingsClient,
+                              localEmbeddings: this.localEmbeddings,
+                              symf: this.config.experimentalSymfContext ? this.symf : null,
+                              codebaseStatusProvider: this.codebaseStatusProvider,
+                          },
+                          featureFlags: this.config,
+                          hints: { maxChars },
+                      })
                 : undefined
         )
         const sendTelemetry = (contextSummary: any): void => {
@@ -450,8 +433,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Removes any existing messages from the provided index,
      * before submitting the replacement text as a new question.
      * When no index is provided, default to the last human message.
-     *
-     * TODO (bee) set index as required once confirmed this change doesn't affect other clients
      */
     private async handleEdit(
         requestID: string,
@@ -692,25 +673,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
-            this.chatModel,
-            getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
+        const maxChars = getContextWindowForModel(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.modelID
         )
+        const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction
         this.chatModel.setNewContextUsed(newContextUsed)
-        if (contextLimitWarnings.length > 0) {
-            const warningMsg = contextLimitWarnings
-                .map(w => {
-                    w = w.trim()
-                    if (!w.endsWith('.')) {
-                        w += '.'
-                    }
-                    return w
-                })
-                .join(' ')
-            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
-        }
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -906,7 +876,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
+        await this.treeView.updateTree(this.authProvider.getAuthStatus())
     }
 
     public async clearAndRestartSession(): Promise<void> {

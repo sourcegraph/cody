@@ -25,19 +25,46 @@ import type { ContextItem } from './SimpleChatModel'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
-export async function getEnhancedContext(
-    useContextConfig: ConfigurationUseContext,
-    editor: VSCodeEditor,
-    embeddingsClient: CachedRemoteEmbeddingsClient,
-    localEmbeddings: LocalEmbeddingsController | null,
-    symf: SymfRunner | null,
-    codebaseStatusProvider: CodebaseStatusProvider,
+export interface GetEnhancedContextOptions {
+    strategy: ConfigurationUseContext
+    editor: VSCodeEditor
     text: string
-): Promise<ContextItem[]> {
+    providers: {
+        codebaseStatusProvider: CodebaseStatusProvider
+        embeddingsClient: CachedRemoteEmbeddingsClient
+        localEmbeddings: LocalEmbeddingsController | null
+        symf: SymfRunner | null
+    }
+    featureFlags: {
+        internalUnstable: boolean
+    }
+    hints: {
+        maxChars: number
+    }
+    // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
+}
+export async function getEnhancedContext({
+    strategy,
+    editor,
+    text,
+    providers,
+    featureFlags,
+    hints,
+}: GetEnhancedContextOptions): Promise<ContextItem[]> {
+    if (featureFlags.internalUnstable) {
+        return getEnhancedContextFused({
+            strategy,
+            editor,
+            text,
+            providers,
+            featureFlags,
+            hints,
+        })
+    }
     const searchContext: ContextItem[] = []
 
     // use user attention context only if config is set to none
-    if (useContextConfig === 'none') {
+    if (strategy === 'none') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
         searchContext.push(...getVisibleEditorContext(editor))
         return searchContext
@@ -45,12 +72,12 @@ export async function getEnhancedContext(
 
     let hasEmbeddingsContext = false
     // Get embeddings context if useContext Config is not set to 'keyword' only
-    if (useContextConfig !== 'keyword') {
+    if (strategy !== 'keyword') {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const localEmbeddingsResults = searchEmbeddingsLocal(localEmbeddings, text)
+        const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
         const remoteEmbeddingsResults = searchEmbeddingsRemote(
-            embeddingsClient,
-            codebaseStatusProvider,
+            providers.embeddingsClient,
+            providers.codebaseStatusProvider,
             text
         )
         try {
@@ -71,42 +98,54 @@ export async function getEnhancedContext(
     }
 
     // Fallback to symf if embeddings provided no results or if useContext is set to 'keyword' specifically
-    if (!hasEmbeddingsContext && symf) {
+    if (!hasEmbeddingsContext && providers.symf) {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
         try {
-            searchContext.push(...(await searchSymf(symf, editor, text)))
+            searchContext.push(...(await searchSymf(providers.symf, editor, text)))
         } catch (error) {
             // TODO(beyang): handle this error better
             logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
         }
     }
 
-    const priorityContext: ContextItem[] = []
-    const selectionContext = getCurrentSelectionContext(editor)
-    if (selectionContext.length > 0) {
-        priorityContext.push(...selectionContext)
-    } else if (needsUserAttentionContext(text)) {
-        // Query refers to current editor
-        priorityContext.push(...getVisibleEditorContext(editor))
-    } else if (needsReadmeContext(editor, text)) {
-        // Query refers to project, so include the README
-        let containsREADME = false
-        for (const contextItem of searchContext) {
-            const basename = uriBasename(contextItem.uri)
-            if (
-                basename.toLocaleLowerCase() === 'readme' ||
-                basename.toLocaleLowerCase().startsWith('readme.')
-            ) {
-                containsREADME = true
-                break
-            }
-        }
-        if (!containsREADME) {
-            priorityContext.push(...(await getReadmeContext()))
-        }
+    const priorityContext = await getPriorityContext(text, editor, searchContext)
+    return priorityContext.concat(searchContext)
+}
+
+async function getEnhancedContextFused({
+    strategy,
+    editor,
+    text,
+    providers,
+    hints,
+}: GetEnhancedContextOptions): Promise<ContextItem[]> {
+    // use user attention context only if config is set to none
+    if (strategy === 'none') {
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+        return getVisibleEditorContext(editor)
     }
 
-    return priorityContext.concat(searchContext)
+    // Get embeddings context if useContext Config is not set to 'keyword' only
+    const keywordContextItemsPromise =
+        strategy !== 'keyword'
+            ? retrieveContextGracefully(
+                  searchEmbeddingsLocal(providers.localEmbeddings, text),
+                  'local-embeddings'
+              )
+            : []
+    const searchContextItemsPromise = providers.symf
+        ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+        : []
+
+    const [keywordContextItems, searchContextItems] = await Promise.all([
+        keywordContextItemsPromise,
+        searchContextItemsPromise,
+    ])
+
+    const fusedContext = fuseContext(keywordContextItems, searchContextItems, hints.maxChars)
+
+    const priorityContext = await getPriorityContext(text, editor, fusedContext)
+    return priorityContext.concat(fusedContext)
 }
 
 /**
@@ -339,6 +378,38 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     ]
 }
 
+async function getPriorityContext(
+    text: string,
+    editor: VSCodeEditor,
+    retrievedContext: ContextItem[]
+): Promise<ContextItem[]> {
+    const priorityContext: ContextItem[] = []
+    const selectionContext = getCurrentSelectionContext(editor)
+    if (selectionContext.length > 0) {
+        priorityContext.push(...selectionContext)
+    } else if (needsUserAttentionContext(text)) {
+        // Query refers to current editor
+        priorityContext.push(...getVisibleEditorContext(editor))
+    } else if (needsReadmeContext(editor, text)) {
+        // Query refers to project, so include the README
+        let containsREADME = false
+        for (const contextItem of retrievedContext) {
+            const basename = uriBasename(contextItem.uri)
+            if (
+                basename.toLocaleLowerCase() === 'readme' ||
+                basename.toLocaleLowerCase().startsWith('readme.')
+            ) {
+                containsREADME = true
+                break
+            }
+        }
+        if (!containsREADME) {
+            priorityContext.push(...(await getReadmeContext()))
+        }
+    }
+    return priorityContext
+}
+
 function needsUserAttentionContext(input: string): boolean {
     const inputLowerCase = input.toLowerCase()
     // If the input matches any of the `editorRegexps` we assume that we have to include
@@ -436,4 +507,48 @@ function extractQuestion(input: string): string | undefined {
         return input
     }
     return undefined
+}
+
+async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: string): Promise<T[]> {
+    try {
+        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (start)`)
+        return await promise
+    } catch (error) {
+        logError('SimpleChatPanelProvider', `getEnhancedContext > ${strategy}' (error)`, error)
+        return []
+    } finally {
+        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
+    }
+}
+
+// A simple context fusion engine that picks the top most keyword results to fill up 80% of the
+// context window and picks the top ranking embeddings items for the remainder.
+export function fuseContext(
+    keywordItems: ContextItem[],
+    embeddingsItems: ContextItem[],
+    maxChars: number
+): ContextItem[] {
+    let charsUsed = 0
+    const fused = []
+    const maxKeywordChars = embeddingsItems.length > 0 ? maxChars * 0.8 : maxChars
+
+    for (const item of keywordItems) {
+        const len = item.text.length
+
+        if (charsUsed + len <= maxKeywordChars) {
+            charsUsed += len
+            fused.push(item)
+        }
+    }
+
+    for (const item of embeddingsItems) {
+        const len = item.text.length
+
+        if (charsUsed + len <= maxChars) {
+            charsUsed += len
+            fused.push(item)
+        }
+    }
+
+    return fused
 }

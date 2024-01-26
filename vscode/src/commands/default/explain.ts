@@ -1,10 +1,12 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFileFromCurrentFile } from '../context/current-file'
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import { type ExecuteChatArguments, executeChat } from './ask'
 import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
+import type { ChatCommandResult } from '../../main'
+import type { CodyCommandArgs } from '../types'
+
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
  *
@@ -35,6 +37,12 @@ export async function explainCommand(): Promise<ExecuteChatArguments> {
 /**
  * Executes the explain command as a chat command via 'cody.action.chat'
  */
-export async function executeExplainCommand(): Promise<ChatSession | undefined> {
-    return executeChat(await explainCommand())
+export async function executeExplainCommand(
+    args?: Partial<CodyCommandArgs>
+): Promise<ChatCommandResult | undefined> {
+    logDebug('executeDocCommand', 'executing', { args })
+    return {
+        type: 'chat',
+        session: await executeChat(await explainCommand()),
+    }
 }

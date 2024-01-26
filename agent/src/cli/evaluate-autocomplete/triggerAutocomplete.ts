@@ -2,7 +2,7 @@ import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 import type { default as Parser, Tree } from 'web-tree-sitter'
 
-import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import type { AutocompleteResult } from '../../protocol-alias'
@@ -65,7 +65,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
     }
 
     const textDocument = new AgentTextDocument(
-        TextDocumentWithUri.from(document.uri, { content: modifiedContent })
+        ProtocolTextDocumentWithUri.from(document.uri, { content: modifiedContent })
     )
     for (const [index, item] of result.items.entries()) {
         const info = result.completionEvent?.items?.[index]
@@ -80,7 +80,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         const start = new vscode.Position(item.range.start.line, item.range.start.character)
         const end = new vscode.Position(item.range.end.line, item.range.end.character)
         const modifiedDocument = new AgentTextDocument(
-            TextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
+            ProtocolTextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
         )
         const newText = [
             modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),

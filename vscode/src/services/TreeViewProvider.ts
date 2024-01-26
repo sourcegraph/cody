@@ -5,7 +5,46 @@ import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 import type { AuthStatus } from '../chat/protocol'
 import { getFullConfig } from '../configuration'
 
+import { groupCodyChats } from './HistoryChat'
 import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
+
+export class ChatTreeItem extends vscode.TreeItem {
+    public children: ChatTreeItem[] | undefined
+
+    constructor(
+        public readonly id: string,
+        title: string,
+        icon?: string,
+        command?: {
+            command: string
+            args?: string[] | { [key: string]: string }[]
+        },
+        contextValue?: string,
+        collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
+        children?: ChatTreeItem[]
+    ) {
+        super(title, collapsibleState)
+        this.id = id
+        if (icon) {
+            this.iconPath = new vscode.ThemeIcon(icon)
+        }
+        if (command) {
+            this.command = {
+                command: command.command,
+                title,
+                arguments: command.args,
+            }
+        }
+        if (contextValue) {
+            this.contextValue = contextValue
+        }
+        this.children = children
+    }
+    public async loadChildNodes(): Promise<ChatTreeItem[] | undefined> {
+        await Promise.resolve()
+        return this.children
+    }
+}
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []
@@ -14,6 +53,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
     private treeItems: CodySidebarTreeItem[]
+
+    public revivedChatItems: string[] = []
 
     constructor(
         private type: CodyTreeItemType,
@@ -41,8 +82,11 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Updates the tree view with the provided tree items, filtering out any
      * that do not meet the required criteria to show.
      */
-    public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
-        this.treeItems = treeItems
+    public async updateTree(authStatus: AuthStatus, treeItems?: CodySidebarTreeItem[]): Promise<void> {
+        if (treeItems) {
+            this.treeItems = treeItems
+        }
+        this.authStatus = authStatus
         return this.refresh()
     }
 
@@ -95,6 +139,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         }
 
         if (this.type === 'chat') {
+            await this.initializeGroupedChats()
             void vscode.commands.executeCommand(
                 'setContext',
                 'cody.hasChatHistory',
@@ -102,6 +147,58 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             )
         }
         this._onDidChangeTreeData.fire(undefined)
+    }
+
+    /**
+     * Method to initialize the grouped chats for the History items
+     */
+    private async initializeGroupedChats(): Promise<void> {
+        const groupedChats = groupCodyChats(this.authStatus)
+        if (!groupedChats) {
+            return
+        }
+
+        this.treeNodes = []
+
+        let firstGroup = true
+
+        // Create a ChatTreeItem for each group and add to treeNodes
+        for (const [groupLabel, chats] of Object.entries(groupedChats)) {
+            // only display the group in the treeview for which chat exists
+
+            if (chats.length) {
+                const collapsibleState =
+                    firstGroup || chats.some(chat => this.revivedChatItems.includes(chat.id as string))
+                        ? vscode.TreeItemCollapsibleState.Expanded
+                        : vscode.TreeItemCollapsibleState.Collapsed
+
+                const groupItem = new ChatTreeItem(
+                    groupLabel,
+                    groupLabel,
+                    undefined,
+                    undefined,
+                    undefined,
+                    collapsibleState,
+                    chats.map(
+                        chat =>
+                            new ChatTreeItem(
+                                chat.id as string,
+                                chat.title,
+                                chat.icon,
+                                chat.command,
+                                'cody.chats'
+                            )
+                    )
+                )
+                if (collapsibleState === vscode.TreeItemCollapsibleState.Expanded) {
+                    this._onDidChangeTreeData.fire(groupItem)
+                }
+
+                this.treeNodes.push(groupItem)
+                firstGroup = false
+            }
+        }
+        await Promise.resolve()
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
@@ -113,8 +210,15 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Get parents items first
      * Then returns children items for each parent item
      */
-    public getChildren(): vscode.TreeItem[] {
-        return [...this.treeNodes.values()]
+    public async getChildren(element?: ChatTreeItem): Promise<ChatTreeItem[]> {
+        if (element) {
+            // Load children if not already loaded
+            if (!element.children) {
+                await element.loadChildNodes()
+            }
+            return element.children || []
+        }
+        return this.treeNodes as ChatTreeItem[]
     }
 
     /**

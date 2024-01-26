@@ -1,17 +1,17 @@
-import { logError, type ContextFile } from '@sourcegraph/cody-shared'
+import { logError, type ContextFile, logDebug } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFilesForTests } from '../context/test-files'
-
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 import { defaultCommands } from '.'
+import type { ChatCommandResult } from '../../main'
 /**
  * Generates the prompt and context files with arguments for the 'test' command.
  *
  * Context: Test files, current selection, and current file
  */
-export async function testCommand(): Promise<ExecuteChatArguments> {
+async function testCommand(): Promise<ExecuteChatArguments> {
     const prompt = defaultCommands.test.prompt
 
     const editor = getEditor()?.active
@@ -41,6 +41,12 @@ export async function testCommand(): Promise<ExecuteChatArguments> {
 /**
  * Executes the text command as a chat command via 'cody.action.chat'
  */
-export async function executeTestCommand(): Promise<ChatSession | undefined> {
-    return executeChat(await testCommand())
+export async function executeTestCommand(
+    args?: Partial<CodyCommandArgs>
+): Promise<ChatCommandResult | undefined> {
+    logDebug('executeTestCommand', 'executing', { args })
+    return {
+        type: 'chat',
+        session: await executeChat(await testCommand()),
+    }
 }

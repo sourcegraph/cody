@@ -1,9 +1,11 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
+import type { EditCommandResult } from '../../main'
+import type { CodyCommandArgs } from '../types'
 
 /**
  * The command that generates a new docstring for the selected code.
@@ -11,7 +13,10 @@ import { defaultCommands } from '.'
  *
  * Context: Current selection
  */
-export async function executeDocCommand(): Promise<undefined> {
+export async function executeDocCommand(
+    args?: Partial<CodyCommandArgs>
+): Promise<EditCommandResult | undefined> {
+    logDebug('executeDocCommand', 'executing', { args })
     const prompt = defaultCommands.doc.prompt
 
     const contextFiles: ContextFile[] = []
@@ -26,7 +31,7 @@ export async function executeDocCommand(): Promise<undefined> {
         return undefined
     }
 
-    await executeEdit(
+    const task = await executeEdit(
         {
             instruction: prompt,
             document,
@@ -36,4 +41,13 @@ export async function executeDocCommand(): Promise<undefined> {
         } satisfies ExecuteEditArguments,
         DefaultEditCommands.Doc
     )
+
+    if (!task?.id) {
+        return undefined
+    }
+
+    return {
+        type: 'edit',
+        task,
+    }
 }

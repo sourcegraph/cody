@@ -1,8 +1,13 @@
-import { explainCommand } from './explain'
-import { smellCommand } from './smell'
-import { testCommand } from './test'
-import type { ExecuteChatArguments } from './ask'
-import { DefaultChatCommands, DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import {
+    DefaultChatCommands,
+    type DefaultCodyCommands,
+    DefaultEditCommands,
+} from '@sourcegraph/cody-shared/src/commands/types'
+import { executeSmellCommand } from './smell'
+import { executeExplainCommand } from './explain'
+import { executeTestCommand } from './test'
+import { executeDocCommand } from './doc'
+import type { CommandResult } from '../../main'
 
 export { commands as defaultCommands } from './cody.json'
 
@@ -25,19 +30,26 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
 }
 
 /**
- * Gets the default command prompt and context with arguments for the given default command.
+ * Executes the default command based on the given arguments.
+ * Handles mapping chat commands and edit commands to their respective handler functions.
+ * Returns the command result if a matched command is found, otherwise returns undefined.
  */
-export async function getDefaultChatCommandPrompts(
-    id: DefaultChatCommands
-): Promise<ExecuteChatArguments | undefined> {
+export async function executeDefaultCommand(
+    id: DefaultCodyCommands | string
+): Promise<CommandResult | undefined> {
     switch (id) {
         case DefaultChatCommands.Explain:
-            return await explainCommand()
+            return executeExplainCommand()
         case DefaultChatCommands.Smell:
-            return await smellCommand()
+            return executeSmellCommand()
         case DefaultChatCommands.Test:
-            return await testCommand()
+            return executeTestCommand()
+        case DefaultEditCommands.Unit:
+            return executeTestCommand()
+        case DefaultEditCommands.Doc:
+            return executeDocCommand()
         default:
+            console.log('not a default command')
             return undefined
     }
 }
