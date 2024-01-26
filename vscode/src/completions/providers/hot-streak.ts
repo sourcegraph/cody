@@ -92,6 +92,10 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 updatedDocContext.injectedCompletionText?.length || 0
             )
 
+            addAutocompleteDebugEvent('extract start', {
+                text: unprocessedCompletion,
+            })
+
             if (unprocessedCompletion.length === 0) {
                 return undefined
             }
@@ -115,7 +119,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 isDynamicMultilineCompletion: Boolean(dynamicMultilineCompletions),
             })
 
-            addAutocompleteDebugEvent('extracted completion', {
+            addAutocompleteDebugEvent('attempted to extract completion', {
                 previousNonEmptyLine: docContext.prevNonEmptyLine,
                 currentLinePrefix: docContext.currentLinePrefix,
                 multilineTrigger: maybeDynamicMultilineDocContext.multilineTrigger,
