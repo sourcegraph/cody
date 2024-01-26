@@ -25,6 +25,13 @@ test('open the Custom Commands in sidebar and add new user command', async ({ pa
     // Open the new chat panel
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
+
+    // Click the Custom Commands button in the Command view
     await page.getByText('Custom commands').click()
 
     // Create Command via UI
@@ -33,4 +40,9 @@ test('open the Custom Commands in sidebar and add new user command', async ({ pa
     const commandName = 'ATestCommand'
     await page.keyboard.type(commandName)
     await page.keyboard.press('Enter')
+
+    // Bring the sidebar items back to view
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 })
