@@ -1,1 +1,1 @@
-export type View = 'chat' | 'login' | 'history'
+export type View = 'chat' | 'login'

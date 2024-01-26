@@ -21,6 +21,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Commands: Fixed an issue where Cody failed to register additional instructions followed by the command key when submitted from the command menu. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
 - Chat: The title for the chat panel is now reset correctly on "Restart Chat Session"/"New Chat Session" button click. [pull/2786](https://github.com/sourcegraph/cody/pull/2786)
 - Chat: Fixed an issue where Ctrl+Enter on Windows would not work (did not send a follow-on chat). [pull/2823](https://github.com/sourcegraph/cody/pull/2823)
+- Chat: Fixed an issue where the user authentication view appeared in the chat panel. [pull/2904](https://github.com/sourcegraph/cody/pull/2904)
 
 ### Changed
 
@@ -37,6 +38,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 - Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
 - Moved the Context Limit errors in chat into the deboug log output. [pull/2891](https://github.com/sourcegraph/cody/pull/2891)
+- Cleaned up chat editor title buttons & history separators. [pull/2895](https://github.com/sourcegraph/cody/pull/2895)
 
 ## [1.1.3]
 

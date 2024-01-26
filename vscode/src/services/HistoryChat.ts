@@ -124,7 +124,7 @@ export async function displayHistoryQuickPick(authStatus: AuthStatus): Promise<v
 
     for (const [groupName, chats] of Object.entries(groupedChats)) {
         if (chats.length > 0) {
-            addGroupSeparator(groupName)
+            addGroupSeparator(groupName.toLowerCase())
 
             for (const chat of chats) {
                 quickPickItems.push({
