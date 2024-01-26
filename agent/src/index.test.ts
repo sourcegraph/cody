@@ -180,12 +180,12 @@ describe('Agent', () => {
             null
         )
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
-            {
-              "status": "PENDING",
-              "plan": "PRO",
-              "currentPeriodStartAt": "Jan 4, 2024, 1:00:00 AM",
-              "currentPeriodEndAt": "Feb 4, 2024, 12:59:59 AM"
-            }
+          {
+            "currentPeriodEndAt": "2024-02-13T23:59:59Z",
+            "currentPeriodStartAt": "2024-01-14T00:00:00Z",
+            "plan": "FREE",
+            "status": "PENDING",
+          }
         `)
     }, 10_000)
 

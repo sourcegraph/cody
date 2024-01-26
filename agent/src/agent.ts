@@ -549,7 +549,7 @@ export class Agent extends MessageHandler {
             return res.codyProEnabled
         })
 
-        this.registerRequest('graphql/getCurrentUserCodySubscription', async () => {
+        this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
             const res = await graphqlClient.getCurrentUserCodySubscription()
             if (res instanceof Error) {
                 throw res
