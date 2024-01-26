@@ -124,18 +124,12 @@ export type Requests = {
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
 
-    // Returns the result of an attribution search for given snippets.
-    // The result ordering DOES NOT MATCH the request ordering.
-    // However each result contains the verbatim snippet from the request.
     'attribution/search': [
-        { snippets: string[] },
+        { id: string; snippet: string },
         {
-            results: {
-                snippet: string
-                error: string | null
-                repoNames: string[]
-                limitHit: boolean
-            }[]
+            error: string | null
+            repoNames: string[]
+            limitHit: boolean
         },
     ]
 

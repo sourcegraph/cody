@@ -767,28 +767,18 @@ export class Agent extends MessageHandler {
             )
         })
 
-        this.registerAuthenticatedRequest('attribution/search', async ({ snippets }) => {
-            const client = new SourcegraphGuardrailsClient(graphqlClient)
-            const all = await Promise.all(
-                snippets.map(async (oneSnippet: string) => {
-                    const response = await client.searchAttribution(oneSnippet)
-                    if (isError(response)) {
-                        return {
-                            snippet: oneSnippet,
-                            error: response.message,
-                            repoNames: [],
-                            limitHit: false,
-                        }
-                    }
-                    return {
-                        snippet: oneSnippet,
-                        error: null,
-                        repoNames: response.repositories.map(r => r.name),
-                        limitHit: response.limitHit,
-                    }
-                })
-            )
-            return { results: all }
+        this.registerAuthenticatedRequest('attribution/search', async ({ id, snippet }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, {
+                command: 'attribution-search',
+                snippet,
+            })
+            const result = panel.popAttribution(snippet)
+            return {
+                error: result.error || null,
+                repoNames: result?.attribution?.repositoryNames || [],
+                limitHit: result?.attribution?.limitHit || false,
+            }
         })
     }
 
@@ -892,6 +882,8 @@ export class Agent extends MessageHandler {
                     panel.models = message.models
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
+                } else if (message.type === 'attribution') {
+                    panel.pushAttribution(message)
                 }
 
                 this.notify('webview/postMessage', {
