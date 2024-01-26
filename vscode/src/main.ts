@@ -51,6 +51,7 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -537,7 +538,14 @@ const register = async (
                 authStatus.userCanUpgrade = !res.codyProEnabled
                 void chatManager.syncAuthStatus(authStatus)
             }
-        })
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
+        )
     )
 
     /**
