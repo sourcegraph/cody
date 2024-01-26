@@ -88,6 +88,13 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
+    await await expect(
+        page
+            .getByLabel(
+                "/currentDir, Should have 4 context files from the current directory. Files start with '.' are skipped by default."
+            )
+            .locator('a')
+    ).toBeVisible()
     await page.keyboard.press('Enter')
 
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
