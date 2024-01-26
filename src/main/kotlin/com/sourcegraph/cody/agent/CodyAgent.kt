@@ -100,6 +100,10 @@ private constructor(
         processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
       }
 
+      if (java.lang.Boolean.getBoolean("cody.log-events-to-connected-instance-only")) {
+        processBuilder.environment()["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
+      }
+
       val process =
           processBuilder
               .redirectErrorStream(false)
