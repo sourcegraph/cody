@@ -1109,6 +1109,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async setWebviewView(view: View): Promise<void> {
+        if (view !== 'chat') {
+            // Only chat view is supported in the webview panel.
+            // When a different view is requested,
+            // Set context to notifiy the webview panel to close.
+            // This should close the webview panel and open the login view in the sidebar.
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
+            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+            return
+        }
         if (!this.webviewPanel) {
             await this.createWebviewPanel()
         }
