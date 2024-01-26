@@ -561,7 +561,8 @@ const register = async (
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
-                    void chatManager.setWebviewView('chat')
+                    // Bring up the sidebar view
+                    void vscode.commands.executeCommand('cody.focus')
                 },
             })
         }
