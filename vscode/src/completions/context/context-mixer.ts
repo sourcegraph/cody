@@ -103,6 +103,12 @@ export class ContextMixer implements vscode.Disposable {
         const fusedResults = fuseResults(
             results.map(r => r.snippets),
             result => {
+                // Ensure that context retrieved via BFG works where we do not have a startLine and
+                // endLine yet.
+                if (typeof result.startLine === 'undefined' || typeof result.endLine === 'undefined') {
+                    return [result.uri.toString()]
+                }
+
                 const lineIds = []
                 for (let i = result.startLine; i <= result.endLine; i++) {
                     lineIds.push(`${result.uri.toString()}:${i}`)
@@ -140,6 +146,7 @@ export class ContextMixer implements vscode.Disposable {
                     }
                 }
                 retrieverStats[retrieverId].suggestedItems++
+                // Only log the position for the first 32 results to avoid overflowing the bitmap
                 if (position < 32) {
                     retrieverStats[retrieverId].positionBitmap |= 1 << position
                 }
