@@ -86,8 +86,8 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
         const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
-            onAddRemoteSearchRepo(): void {
-                alert('Add a repository')
+            onChooseRemoteSearchRepo(): void {
+                alert('Choose some repositories...')
             },
             onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
                 updateArgs({ state: 'indexing' })

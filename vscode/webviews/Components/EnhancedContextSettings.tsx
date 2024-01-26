@@ -44,7 +44,7 @@ export const EnhancedContextContext: React.Context<EnhancedContextContextT> = Re
 
 export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHandlersT> =
     React.createContext({
-        onAddRemoteSearchRepo: (): void => {},
+        onChooseRemoteSearchRepo: (): void => {},
         onConsentToEmbeddings: (_): void => {},
         onEnabledChange: (_): void => {},
         onRemoveRemoteSearchRepo: (_): void => {},
@@ -52,7 +52,7 @@ export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHan
     })
 
 export interface EnhancedContextEventHandlersT {
-    onAddRemoteSearchRepo: () => void
+    onChooseRemoteSearchRepo: () => void
     onConsentToEmbeddings: (provider: LocalEmbeddingsProvider) => void
     onEnabledChange: (enabled: boolean) => void
     onRemoveRemoteSearchRepo: (id: string) => void
@@ -74,9 +74,9 @@ function briefName(name: string): string {
 
 const CompactGroupsComponent: React.FunctionComponent<{
     groups: readonly ContextGroup[]
-    handleAdd: () => void
+    handleChoose: () => void
     handleRemove: (id: string) => void
-}> = ({ groups, handleAdd, handleRemove }): React.ReactNode => {
+}> = ({ groups, handleChoose, handleRemove }): React.ReactNode => {
     // The compact groups component is only used for enterprise context, which
     // uses homogeneous remote search providers. Lift the providers out of the
     // groups.
@@ -124,7 +124,7 @@ const CompactGroupsComponent: React.FunctionComponent<{
                     />
                 ))
             )}
-            <VSCodeButton onClick={() => handleAdd()} className={styles.chooseRepositoriesButton}>
+            <VSCodeButton onClick={() => handleChoose()} className={styles.chooseRepositoriesButton}>
                 Choose Repositories&hellip;
             </VSCodeButton>
         </div>
@@ -366,7 +366,10 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         },
         [events]
     )
-    const handleAddRemoteSearchRepo = React.useCallback(() => events.onAddRemoteSearchRepo(), [events])
+    const handleChooseRemoteSearchRepo = React.useCallback(
+        () => events.onChooseRemoteSearchRepo(),
+        [events]
+    )
 
     const hasOpenedBeforeKey = 'enhanced-context-settings.has-opened-before'
     const hasOpenedBefore = localStorage.getItem(hasOpenedBeforeKey) === 'true'
@@ -430,7 +433,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                         ) : (
                             <CompactGroupsComponent
                                 groups={context.groups}
-                                handleAdd={handleAddRemoteSearchRepo}
+                                handleChoose={handleChooseRemoteSearchRepo}
                                 handleRemove={handleRemoveRemoteSearchRepo}
                             />
                         )}

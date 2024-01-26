@@ -307,8 +307,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
                 break
             }
-            case 'context/add-remote-search-repo': {
-                await this.handleAddRemoteSearchRepo(message.explicitRepos)
+            case 'context/choose-remote-search-repo': {
+                await this.handleChooseRemoteSearchRepo(message.explicitRepos)
                 break
             }
             case 'context/remove-remote-search-repo':
@@ -681,7 +681,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleAddRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
+    private async handleChooseRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
         if (!this.remoteSearch) {
             return
         }

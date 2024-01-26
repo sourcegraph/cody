@@ -70,8 +70,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
-    const onAddRemoteSearchRepo = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'context/add-remote-search-repo' })
+    const onChooseRemoteSearchRepo = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
     }, [vscodeAPI])
     const onRemoveRemoteSearchRepo = useCallback(
         (id: string): void => {
@@ -290,7 +290,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
-                                onAddRemoteSearchRepo,
+                                onChooseRemoteSearchRepo,
                                 onConsentToEmbeddings,
                                 onEnabledChange: (enabled): void => {
                                     if (enabled !== enhancedContextEnabled) {

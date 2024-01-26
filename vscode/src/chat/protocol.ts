@@ -60,7 +60,7 @@ export type WebviewMessage =
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
-    | { command: 'context/add-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }

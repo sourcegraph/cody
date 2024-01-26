@@ -1359,7 +1359,7 @@ describe('Agent', () => {
             })
             await enterpriseClient.request('webview/receiveMessage', {
                 id,
-                message: { command: 'context/add-remote-search-repo', explicitRepos: repos },
+                message: { command: 'context/choose-remote-search-repo', explicitRepos: repos },
             })
             const { lastMessage, transcript } =
                 await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
