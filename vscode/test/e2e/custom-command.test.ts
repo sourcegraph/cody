@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, withPlatformSlashes } from './helpers'
 
 test.beforeEach(() => {
     resetLoggedEvents()
@@ -84,7 +84,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     // Search for the command defined in cody.json and execute it
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 
-    // Test: context.currentDir
+    // Test: context.currentDir with /currentDir command
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
@@ -102,7 +102,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-15' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-11' })).toBeVisible()
 
-    // Test: context.filePath
+    // Test: context.filePath with /filePath command
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
@@ -112,7 +112,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     // Should show 2 files with current file added as context
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
 
-    // Test: context.directory
+    // Test: context.directory with /directory command
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
@@ -122,10 +122,12 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(chatPanel.getByText('✨ Context: 15 lines from 2 file')).toBeVisible()
     await chatPanel.getByText('✨ Context: 15 lines from 2 file').click()
     await expect(
-        chatPanel.locator('span').filter({ hasText: '@lib/batches/env/var.go:1-1' })
+        chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1-1') })
     ).toBeVisible()
     // Click on the file link should open the file in the editor
-    await chatPanel.getByRole('button', { name: '@lib/batches/env/var.go:1-1' }).click()
+    await chatPanel
+        .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-1') })
+        .click()
     await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
 })
 

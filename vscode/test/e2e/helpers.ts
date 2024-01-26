@@ -336,3 +336,7 @@ export async function newChat(page: Page): Promise<FrameLocator> {
     await page.getByRole('button', { name: 'New Chat' }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
+
+export function withPlatformSlashes(input: string) {
+    return input.replaceAll(path.posix.sep, path.sep)
+}
