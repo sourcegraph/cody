@@ -452,11 +452,11 @@
       {
         "command": "cody.chat.history.panel",
         "category": "Cody",
-        "title": "Show History",
+        "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
         "when": "cody.activated && cody.hasChatHistory"
-      },
+    },
       {
         "command": "cody.search.index-update",
         "category": "Cody",
@@ -701,25 +701,19 @@
         {
           "command": "cody.chat.panel.new",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation",
-          "visibility": "visible"
-        },
-        {
-          "command": "cody.chat.panel.reset",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@0",
-          "visibility": "visible"
-        },
-        {
-          "command": "cody.settings.extension.chat",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.history.panel",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation",
+          "group": "navigation@2",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.settings.extension.chat",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@3",
           "visibility": "visible"
         }
       ],
@@ -770,8 +764,8 @@
             "blended",
             "none"
           ],
-          "default": "embeddings",
-          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword-based context. Selecting 'none' will limit Cody to using only the currently open file."
+          "default": "blended",
+          "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
         "cody.customHeaders": {
           "order": 4,

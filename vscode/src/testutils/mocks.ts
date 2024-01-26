@@ -12,7 +12,6 @@ import type {
 import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
-import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -462,8 +461,6 @@ export class WorkspaceEdit {
     }
 }
 
-export const emptyDisposable = new Disposable(() => {})
-
 export enum EndOfLine {
     LF = 1,
     CRLF = 2,
@@ -766,10 +763,6 @@ export const vsCodeMocks = {
     ViewColumn,
 } as const
 
-export function emptyEvent<T>(): vscode_types.Event<T> {
-    return () => emptyDisposable
-}
-
 export enum ProgressLocation {
     SourceControl = 1,
     Window = 10,
@@ -804,7 +797,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
     experimentalSymfContext: true,
     experimentalTracing: false,

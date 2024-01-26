@@ -40,7 +40,6 @@ export interface Configuration {
      * Experimental
      */
     experimentalGuardrails: boolean
-    experimentalLocalSymbols: boolean
     experimentalSymfContext: boolean
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean

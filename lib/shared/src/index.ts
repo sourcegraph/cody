@@ -33,6 +33,8 @@ export type {
     Disposable,
     EnhancedContextContextT,
     LocalEmbeddingsProvider,
+    LocalSearchProvider,
+    RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
 export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
@@ -96,8 +98,6 @@ export {
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
-export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
-export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 export {
     FeatureFlag,
     FeatureFlagProvider,
@@ -120,6 +120,7 @@ export type {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
+    IRemoteSearch,
     Result,
     SearchPanelFile,
     SearchPanelSnippet,
@@ -150,7 +151,6 @@ export type {
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
-    ContextWindowLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
@@ -160,11 +160,7 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export {
-    SourcegraphGraphQLAPIClient,
-    graphqlClient,
-    type EmbeddingsSearchResults,
-} from './sourcegraph-api/graphql'
+export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
@@ -177,6 +173,7 @@ export {
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
+    ContextSearchResult,
     EmbeddingsSearchResult,
     event,
 } from './sourcegraph-api/graphql/client'

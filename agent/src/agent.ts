@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import type { Polly } from '@pollyjs/core'
+import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -18,6 +18,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     logDebug,
+    isError,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -39,6 +40,7 @@ import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import { AgentCodeLenses } from './AgentCodeLenses'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -68,7 +70,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
         secrets: {
-            onDidChange: vscode_shim.emptyEvent(),
+            onDidChange: emptyEvent(),
             get(key) {
                 return Promise.resolve(inMemorySecretStorageMap.get(key))
             },
@@ -207,7 +209,7 @@ export class Agent extends MessageHandler {
             },
         ])
 
-    constructor(private readonly params?: { polly?: Polly | undefined }) {
+    constructor(private readonly params?: { polly?: Polly | undefined; networkRequests: Request[] }) {
         super()
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
@@ -235,14 +237,6 @@ export class Agent extends MessageHandler {
                 )
             }
 
-            const anonymousDotcomUser: ExtensionConfiguration = {
-                ...clientInfo.extensionConfiguration,
-                serverEndpoint: '',
-                accessToken: '',
-                customHeaders: {},
-            }
-            const extensionConfiguration = clientInfo.extensionConfiguration ?? anonymousDotcomUser
-            clientInfo.extensionConfiguration = anonymousDotcomUser
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
@@ -265,9 +259,11 @@ export class Agent extends MessageHandler {
                 await initializeVscodeExtension(this.workspace.workspaceRootUri)
                 this.registerWebviewHandlers()
 
-                this.authenticationPromise = this.handleConfigChanges(extensionConfiguration, {
-                    forceAuthentication: true,
-                })
+                this.authenticationPromise = clientInfo.extensionConfiguration
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication: true,
+                      })
+                    : this.authStatus()
                 const authStatus = await this.authenticationPromise
 
                 return {
@@ -373,6 +369,10 @@ export class Agent extends MessageHandler {
             }
         })
 
+        this.registerAuthenticatedRequest('testing/networkRequests', async () => {
+            const requests = this.params?.networkRequests ?? []
+            return { requests: requests.map(req => ({ url: req.url })) }
+        })
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
                 {
@@ -524,6 +524,13 @@ export class Agent extends MessageHandler {
             provider.unstable_handleDidShowCompletionItem(completionID)
         })
 
+        this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
+            const repos = await graphqlClient.getRepoIds(names, first)
+            if (isError(repos)) {
+                throw repos
+            }
+            return { repos }
+        })
         this.registerAuthenticatedRequest('graphql/currentUserId', async () => {
             const id = await graphqlClient.getCurrentUserId()
             if (typeof id === 'string') {
@@ -574,16 +581,12 @@ export class Agent extends MessageHandler {
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            await graphqlClient.logEvent(event, 'all')
+            await graphqlClient.logEvent(event, 'connected-instance-only')
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
-            const result = await graphqlClient.getRepoIdIfEmbeddingExists(repoName)
-            if (result instanceof Error) {
-                console.error('getRepoIdIfEmbeddingExists', result)
-            }
-            return typeof result === 'string' ? result : null
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', () => {
+            return Promise.resolve(null)
         })
 
         this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
@@ -695,12 +698,18 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
             if (panel.models) {
-                return { models: panel.models }
+                return { models: panel.models, remoteRepos: panel.remoteRepos }
             }
             await this.receiveWebviewMessage(id, {
                 command: 'get-chat-models',
             })
             return { models: panel.models ?? [] }
+        })
+
+        this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, { command: 'context/get-remote-search-repos' })
+            return { remoteRepos: panel.remoteRepos }
         })
 
         const submitOrEditHandler = async (
@@ -830,8 +839,15 @@ export class Agent extends MessageHandler {
                 console.log('Authentication failed', error)
             }
         }
+        return this.authStatus()
+    }
 
-        return vscode_shim.commands.executeCommand<AuthStatus>('cody.auth.status')
+    private async authStatus(): Promise<AuthStatus | undefined> {
+        // Do explicit `await` because `executeCommand()` returns `Thenable`.
+        const result = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
+            'cody.auth.status'
+        )
+        return result
     }
 
     private registerWebviewHandlers(): void {
@@ -864,6 +880,8 @@ export class Agent extends MessageHandler {
                     }
                 } else if (message.type === 'chatModels') {
                     panel.models = message.models
+                } else if (message.type === 'context/remote-repos') {
+                    panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 }

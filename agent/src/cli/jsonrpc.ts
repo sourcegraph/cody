@@ -1,4 +1,4 @@
-import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
@@ -98,6 +98,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             .default(false)
     )
     .action((options: JsonrpcCommandOptions) => {
+        const networkRequests: Request[] = []
         let polly: Polly | undefined
         if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {
@@ -113,9 +114,18 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 recordIfMissing: options.recordIfMissing,
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
+            polly.server.any().on('request', req => {
+                networkRequests.push(req)
+            })
             // Automatically pass through requests to GitHub because we
             // don't want to record huge binary downloads.
             polly.server.get('https://github.com/*path').passthrough()
+            // Uncomment below if you want to intercept network requests to, for
+            // example, fail github.com downloads. This can be helpful to reproduce
+            // situations where users are running Cody on airgapped computers.
+            // polly.server.get('https://github.com/*path').intercept((_req, res) => {
+            //     res.sendStatus(400)
+            // })
             polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
@@ -126,7 +136,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             process.stderr.write('Starting Cody Agent...\n')
         }
 
-        const agent = new Agent({ polly })
+        const agent = new Agent({ polly, networkRequests })
 
         // Force the agent process to exit when stdin/stdout close as an attempt to
         // prevent zombie agent processes. We experienced this problem when we

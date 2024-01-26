@@ -14,47 +14,31 @@ export interface ContextStatusProvider {
 // Plain data types for describing context status. These are shared between
 // the VScode webviews, the VScode extension, and cody-shared.
 
-export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider
+export type ContextProvider = LocalEmbeddingsProvider | SearchProvider
 
-type EmbeddingsProvider =
-    | IndeterminateEmbeddingsProvider
-    | LocalEmbeddingsProvider
-    | RemoteEmbeddingsProvider
-
-interface IndeterminateEmbeddingsProvider {
-    kind: 'embeddings'
-    type: 'indeterminate'
-    state: 'indeterminate'
-}
-
-interface RemoteEmbeddingsProvider {
-    kind: 'embeddings'
+export interface RemoteSearchProvider {
+    kind: 'search'
     type: 'remote'
     state: 'ready' | 'no-match'
-    // The host name of the provider. This is displayed to the user *and*
-    // used to construct a URL to the settings page.
-    origin: string
-    // The name of the repository in the remote provider. For example the
-    // context group may be "~/projects/frobbler" but the remote name is
-    // "host.example/universal/frobbler".
-    remoteName: string
+    id: string
+    // If 'manual' the user picked this context source manually. If 'auto' the
+    // context source was included because the IDE detected the repo and
+    // included it.
+    inclusion: 'auto' | 'manual'
 }
 
 export interface LocalEmbeddingsProvider {
     kind: 'embeddings'
-    type: 'local'
     state: 'indeterminate' | 'no-match' | 'unconsented' | 'indexing' | 'ready'
     errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
 }
 
-export interface SearchProvider {
-    kind: 'search'
-    state: 'unindexed' | 'indexing' | 'ready' | 'failed'
-}
+export type SearchProvider = LocalSearchProvider | RemoteSearchProvider
 
-interface GraphProvider {
-    kind: 'graph'
-    state: 'indeterminate' | 'indexing' | 'ready'
+export interface LocalSearchProvider {
+    kind: 'search'
+    type: 'local'
+    state: 'unindexed' | 'indexing' | 'ready' | 'failed'
 }
 
 export interface ContextGroup {

@@ -14,7 +14,10 @@ export interface Guardrails {
     searchAttribution(snippet: string): Promise<Attribution | Error>
 }
 
-const timeout = 2000
+// 10s timeout is enough to serve most attribution requests.
+// It's a better user experience for chat attribution to wait
+// a few seconds more and get attribution result.
+const timeout = 10000
 
 // GuardrailsPost implements Guardrails interface by synchronizing on message
 // passing between webview and extension process.
