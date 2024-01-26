@@ -57,8 +57,8 @@ vscode-button::part(control) {
     --vscode-input-background: #313131;
     --vscode-input-foreground: #cccccc;
     --vscode-inputOption-activeBorder: #2488db;
-    --vscode-inputOption-hoverBackground: rgba(90, 93, 94, 0.5);
-    --vscode-inputOption-activeBackground: rgba(36, 137, 219, 0.51);
+    --vscode-inputOption-hoverBackground: rgb(90 93 94 / 50%);
+    --vscode-inputOption-activeBackground: rgb(36 137 219 / 51%);
     --vscode-inputOption-activeForeground: #ffffff;
     --vscode-inputValidation-errorBackground: #ff000033;
     --vscode-inputValidation-errorBorder: #ff0000;
@@ -85,7 +85,7 @@ vscode-button::part(control) {
 }
 
 @font-face {
-    font-family: 'codicon';
+    font-family: codicon;
     font-display: block;
     src: url('./codicon.ttf') format('truetype');
 }
@@ -123,63 +123,87 @@ vscode-button::part(control) {
 :global .codicon-check::before {
     content: '\eab2';
 }
+
 :global .codicon-circle-outline::before {
     content: '\eabc';
 }
+
 :global .codicon-circle-slash::before {
     content: '\eabd';
 }
+
 :global .codicon-close::before {
     content: '\ea76';
 }
+
 :global .codicon-folder::before {
     content: '\ea83';
 }
+
 :global .codicon-gear::before {
     content: '\eaf8';
 }
+
 :global .codicon-link::before {
     content: '\eb15';
 }
+
 :global .codicon-loading::before {
     content: '\eb19';
 }
+
+:global .codicon-repo-forked::before {
+    content: '\ea63';
+}
+
 :global .codicon-rocket::before {
     content: '\eb44';
 }
+
 :global .codicon-settings::before {
     content: '\eb52';
 }
+
 :global .codicon-stop-circle::before {
     content: '\eba5';
 }
+
 :global .codicon-symbol-folder::before {
     content: '\ea83';
 }
+
 :global .codicon-terminal::before {
     content: '\ea85';
 }
+
 :global .codicon-thumbsdown::before {
     content: '\eb6b';
 }
+
 :global .codicon-thumbsup::before {
     content: '\eb6c';
 }
+
 :global .codicon-trash::before {
     content: '\ea81';
 }
+
 :global .codicon-info::before {
     content: '\ea74';
 }
+
 :global .codicon-database::before {
     content: '\eace';
 }
+
 :global .codicon-sparkle::before {
     content: '\ec10';
 }
+
 :global .codicon-symbol-structure::before {
     content: '\ea91';
 }
+
 :global .codicon-symbol-method::before {
     content: '\ea8c';
 }
