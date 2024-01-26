@@ -36,6 +36,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Better cancellation of requests that are no longer relevant. [pull/2855](https://github.com/sourcegraph/cody/pull/2855)
 - Updated Enhanced Context popover copy and added a link to the docs. [pull/2864](https://github.com/sourcegraph/cody/pull/2864)
 - Include meta information about unit test files in Autocomplete analytics. [pull/2868](https://github.com/sourcegraph/cody/pull/2868)
+- Moved the Context Limit errors in chat into the deboug log output. [pull/2891](https://github.com/sourcegraph/cody/pull/2891)
 - Cleaned up chat editor title buttons & history separators. [pull/2895](https://github.com/sourcegraph/cody/pull/2895)
 
 ## [1.1.3]

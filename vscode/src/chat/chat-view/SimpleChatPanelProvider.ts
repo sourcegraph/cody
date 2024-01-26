@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import {
     ChatModelProvider,
     ConfigFeaturesSingleton,
-    ContextWindowLimitError,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -106,7 +105,6 @@ export interface ChatSession {
     webviewPanel?: vscode.WebviewPanel
     sessionID: string
 }
-
 /**
  * SimpleChatPanelProvider is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -405,16 +403,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const prompter = new DefaultPrompter(
             userContextItems,
             addEnhancedContext
-                ? query =>
-                      getEnhancedContext(
-                          this.config.useContext,
-                          this.editor,
-                          this.embeddingsClient,
-                          this.localEmbeddings,
-                          this.config.experimentalSymfContext ? this.symf : null,
-                          this.codebaseStatusProvider,
-                          query
-                      )
+                ? (text, maxChars) =>
+                      getEnhancedContext({
+                          strategy: this.config.useContext,
+                          editor: this.editor,
+                          text,
+                          providers: {
+                              embeddingsClient: this.embeddingsClient,
+                              localEmbeddings: this.localEmbeddings,
+                              symf: this.config.experimentalSymfContext ? this.symf : null,
+                              codebaseStatusProvider: this.codebaseStatusProvider,
+                          },
+                          featureFlags: this.config,
+                          hints: { maxChars },
+                      })
                 : undefined
         )
         const sendTelemetry = (contextSummary: any): void => {
@@ -766,25 +768,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
-            this.chatModel,
-            getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
+        const maxChars = getContextWindowForModel(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.modelID
         )
+        const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction
         this.chatModel.setNewContextUsed(newContextUsed)
-        if (contextLimitWarnings.length > 0) {
-            const warningMsg = contextLimitWarnings
-                .map(w => {
-                    w = w.trim()
-                    if (!w.endsWith('.')) {
-                        w += '.'
-                    }
-                    return w
-                })
-                .join(' ')
-            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
-        }
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
