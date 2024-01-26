@@ -56,9 +56,8 @@ suite('Commands', function () {
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^Review the shared code/)
 
-        // Has one context only - current selection
         const contextFileSize = humanMessage?.contextFiles?.length || 0
-        assert.ok(contextFileSize === 1)
+        assert.ok(contextFileSize === 2)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })

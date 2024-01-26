@@ -88,7 +88,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
-    await page.getByPlaceholder('Search command to run...').press('Enter')
+    await page.keyboard.press('Enter')
 
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
@@ -107,7 +107,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
     await page.getByPlaceholder('Search command to run...').fill('/filePath')
-    await page.getByPlaceholder('Search command to run...').press('Enter')
+    await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
@@ -117,7 +117,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
     await page.getByPlaceholder('Search command to run...').fill('/directory')
-    await page.getByPlaceholder('Search command to run...').press('Enter')
+    await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
     await expect(chatPanel.getByText('✨ Context: 15 lines from 2 file')).toBeVisible()
     await chatPanel.getByText('✨ Context: 15 lines from 2 file').click()
