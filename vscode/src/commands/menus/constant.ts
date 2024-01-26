@@ -12,25 +12,32 @@ export const EDIT_COMMAND = {
     slashCommand: '/edit',
 }
 
-const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
 const chatOption: QuickPickItemWithSlashCommand = {
     label: ASK_QUESTION_COMMAND.slashCommand,
     description: ASK_QUESTION_COMMAND.description,
     slashCommand: ASK_QUESTION_COMMAND.slashCommand,
     alwaysShow: true,
 }
+
 const fixOption: QuickPickItemWithSlashCommand = {
     label: EDIT_COMMAND.slashCommand,
     description: EDIT_COMMAND.description,
     slashCommand: EDIT_COMMAND.slashCommand,
     alwaysShow: true,
 }
+
 // Seperators
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customSeparator: QuickPickItem = { kind: -1, label: 'custom commands (beta)' }
-const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'Custom Commands (Beta)' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const lastUsedSeparator: QuickPickItem = { kind: -1, label: 'last used' }
+export const menu_separators = {
+    commands: commandsSeparator,
+    customBeta: customSeparator,
+    settings: settingsSeparator,
+    lastUsed: lastUsedSeparator,
+}
+
 // Common options
 const configOption: QuickPickItem = {
     label: 'Configure Custom Commands...',
@@ -40,15 +47,6 @@ const addOption: QuickPickItem = {
     label: 'New Custom Command...',
     alwaysShow: true,
     description: 'Create a new reusable command',
-}
-
-export const menu_separators = {
-    inline: inlineSeparator,
-    commands: commandsSeparator,
-    customCommands: customCommandsSeparator,
-    customBeta: customSeparator,
-    settings: settingsSeparator,
-    lastUsed: lastUsedSeparator,
 }
 
 export const menu_options = {

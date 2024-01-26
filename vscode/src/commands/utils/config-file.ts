@@ -38,23 +38,7 @@ export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<voi
     }
 }
 
-export const outputWrapper = `
-Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
-<OUTPUT0412>
-{output}
-</OUTPUT0412>`
-
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
     await vscode.env.openExternal(vscode.Uri.parse(uri))
-}
-
-export function constructFileUri(fileName: string, basePath?: string): vscode.Uri | undefined {
-    if (!basePath) {
-        return undefined
-    }
-    const fileNamePaths = fileName.split('/')
-    const rootDirUri = vscode.Uri.file(basePath)
-    const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, ...fileNamePaths)
-    return codyJsonFilePath
 }

@@ -2,11 +2,9 @@ import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cod
 
 /**
  * The name of the file for configuring Custom Commands.
- * TODO (bee) migrate to .cody/commands.json
  */
 export enum ConfigFiles {
     VSCODE = '.vscode/cody.json',
-    CUSTOM = '.cody/commands.json',
 }
 
 /**

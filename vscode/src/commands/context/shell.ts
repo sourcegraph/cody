@@ -6,7 +6,6 @@ import * as vscode from 'vscode'
 
 import { logError } from '../../log'
 
-import { outputWrapper } from '../utils/config-file'
 import { MAX_CURRENT_FILE_TOKENS, type ContextFile, truncateText } from '@sourcegraph/cody-shared'
 import path from 'node:path/posix'
 
@@ -61,3 +60,9 @@ export async function getContextFileFromShell(command: string): Promise<ContextF
         return []
     }
 }
+
+const outputWrapper = `
+Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
+<OUTPUT0412>
+{output}
+</OUTPUT0412>`
