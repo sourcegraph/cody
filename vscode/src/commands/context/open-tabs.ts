@@ -1,4 +1,4 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import { logError, type ContextFile } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 
@@ -29,13 +29,11 @@ export async function getContextFileFromTabs(): Promise<ContextFile[]> {
             }
 
             // Create context message
-            const contextFile = await getContextFileFromUri(tab?.uri)
-            if (contextFile) {
-                contextFiles.push(contextFile)
-            }
+            contextFiles.push(...(await getContextFileFromUri(tab?.uri)))
         }
     } catch (error) {
-        console.log(error)
+        logError('getContextFileFromTabs', 'failed', { verbose: error })
     }
+    // Returns what we have so far
     return contextFiles
 }

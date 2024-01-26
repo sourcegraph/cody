@@ -1,4 +1,9 @@
-import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
+import {
+    type ContextFile,
+    MAX_CURRENT_FILE_TOKENS,
+    truncateText,
+    logError,
+} from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 import * as vscode from 'vscode'
@@ -9,33 +14,40 @@ import * as vscode from 'vscode'
  * When no selection is made, try getting the smart selection based on the cursor position.
  * If no smart selection is found, use the visible range of the editor instead.
  */
-export async function getContextFileFromCursor(): Promise<ContextFile | undefined> {
-    const editor = getEditor()
-    const document = editor?.active?.document
+export async function getContextFileFromCursor(): Promise<ContextFile[]> {
+    try {
+        const editor = getEditor()
+        const document = editor?.active?.document
 
-    if (!editor?.active || !document) {
-        return undefined
+        if (!editor?.active || !document) {
+            throw new Error('No active editor')
+        }
+
+        const cursor = editor.active.selection
+        const smartSelection = await getSmartSelection(document?.uri, cursor?.start.line)
+
+        const selection = smartSelection
+            ? new vscode.Selection(
+                  smartSelection?.start.line + 1,
+                  smartSelection?.start.character,
+                  smartSelection?.end.line + 1,
+                  smartSelection?.end.character
+              )
+            : editor.active.visibleRanges[0]
+
+        const content = document.getText(selection)
+
+        return [
+            {
+                type: 'file',
+                uri: document.uri,
+                content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
+                source: 'selection',
+                range: selection,
+            } as ContextFile,
+        ]
+    } catch (error) {
+        logError('getContextFileFromCursor', 'failed', { verbose: error })
+        return []
     }
-
-    const cursor = editor.active.selection
-    const smartSelection = await getSmartSelection(document?.uri, cursor?.start.line)
-
-    const selection = smartSelection
-        ? new vscode.Selection(
-              smartSelection?.start.line + 1,
-              smartSelection?.start.character,
-              smartSelection?.end.line + 1,
-              smartSelection?.end.character
-          )
-        : editor.active.visibleRanges[0]
-
-    const content = document.getText(selection)
-
-    return {
-        type: 'file',
-        uri: document.uri,
-        content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
-        source: 'selection',
-        range: selection,
-    } as ContextFile
 }

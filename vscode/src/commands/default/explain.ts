@@ -18,14 +18,10 @@ export async function explainCommand(): Promise<ExecuteChatArguments> {
     const contextFiles: ContextFile[] = []
 
     const currentSelection = await getContextFileFromCursor()
-    if (currentSelection) {
-        contextFiles.push(currentSelection)
-    }
+    contextFiles.push(...currentSelection)
 
     const currentFile = await getContextFileFromCurrentFile()
-    if (currentFile) {
-        contextFiles.push(currentFile)
-    }
+    contextFiles.push(...currentFile)
 
     return {
         text: prompt,

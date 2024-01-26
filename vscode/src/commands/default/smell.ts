@@ -15,9 +15,7 @@ export async function smellCommand(): Promise<ExecuteChatArguments> {
 
     const contextFiles: ContextFile[] = []
     const currentSelection = await getContextFileFromCursor()
-    if (currentSelection) {
-        contextFiles.push(currentSelection)
-    }
+    contextFiles.push(...currentSelection)
 
     return {
         text: prompt,

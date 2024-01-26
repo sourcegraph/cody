@@ -1,4 +1,9 @@
-import { truncateText, type ContextFile, MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared'
+import {
+    truncateText,
+    type ContextFile,
+    MAX_CURRENT_FILE_TOKENS,
+    logError,
+} from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
@@ -62,7 +67,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             contextFiles.push(contextFile)
         }
     } catch (error) {
-        console.error(error)
+        logError('getContextFileFromDirectory', 'failed', { verbose: error })
     }
 
     return contextFiles

@@ -16,9 +16,8 @@ export async function executeDocCommand(): Promise<undefined> {
 
     const contextFiles: ContextFile[] = []
     const currentSelection = await getContextFileFromCursor()
-    if (currentSelection) {
-        contextFiles.push(currentSelection)
-    }
+
+    contextFiles.push(...currentSelection)
 
     const editor = getEditor()?.active
     const document = editor?.document

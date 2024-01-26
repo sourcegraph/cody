@@ -1,4 +1,4 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import { logError, type ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFilesForTests } from '../context/test-files'
@@ -21,13 +21,11 @@ export async function testCommand(): Promise<ExecuteChatArguments> {
     if (document) {
         try {
             const cursorContext = await getContextFileFromCursor()
-            if (cursorContext) {
-                contextFiles.push(cursorContext)
-            }
+            contextFiles.push(...cursorContext)
 
             contextFiles.push(...(await getContextFilesForTests(document.uri)))
         } catch (error) {
-            console.error(error)
+            logError('testCommand', 'failed to fetch context', { verbose: error })
         }
     }
 

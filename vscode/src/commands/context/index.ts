@@ -25,38 +25,29 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
         const contextFiles: ContextFile[] = []
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri
 
+        // Return immediately if context.none is true
         if (config.none) {
             return []
         }
 
         if (config.selection !== false) {
-            const cursor = await getContextFileFromCursor()
-            if (cursor) {
-                contextFiles.push(cursor)
-            }
+            contextFiles.push(...(await getContextFileFromCursor()))
         }
 
         if (config.currentFile) {
-            const curFile = await getContextFileFromCurrentFile()
-            if (curFile) {
-                contextFiles.push(curFile)
-            }
+            contextFiles.push(...(await getContextFileFromCurrentFile()))
         }
 
         if (config.filePath && workspaceRoot?.path) {
             // Create an workspace uri with the given relative file path
             const file = Utils.joinPath(workspaceRoot, config.filePath)
-            const filePath = await getContextFileFromUri(file)
-            if (filePath) {
-                contextFiles.push(filePath)
-            }
+            contextFiles.push(...(await getContextFileFromUri(file)))
         }
 
         if (config.directoryPath && workspaceRoot?.path) {
             // Create an workspace uri with the given relative directory path
             const dir = Utils.joinPath(workspaceRoot, config.directoryPath)
-            const dirContext = await getContextFileFromDirectory(dir)
-            contextFiles.push(...dirContext)
+            contextFiles.push(...(await getContextFileFromDirectory(dir)))
         }
 
         if (config.currentDir) {
@@ -71,7 +62,6 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
         return contextFiles.filter(file => !isCodyIgnoredFile(file.uri))
     } catch (error) {
         logDebug('getCommandContextFiles', 'Error getting command context files', error)
-
         return []
     }
 }
