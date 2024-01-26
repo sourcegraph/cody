@@ -470,7 +470,7 @@ export class SourcegraphGraphQLAPIClient {
                     path: item.blob.path,
                     uri: URI.parse(
                         `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
-                            item.startLine
+                            item.startLine + 1
                         }-${item.endLine}`
                     ),
                     startLine: item.startLine,
