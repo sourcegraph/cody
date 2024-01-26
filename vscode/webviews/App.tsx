@@ -110,6 +110,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        const gut = JSON.stringify(message)
+                        console.log(
+                            'transcript',
+                            'has repo name?',
+                            gut.includes('"repoName":'),
+                            'has title?',
+                            gut.includes('"title":')
+                                ? gut.slice(gut.indexOf('"title":'), gut.indexOf('"title":') + 20)
+                                : 'false'
+                        )
                         setChatIDHistory([...chatIDHistory, message.chatID])
                         vscodeAPI.setState(message.chatID)
                         break

@@ -87,8 +87,9 @@ const CompactGroupsComponent: React.FunctionComponent<{
                 provider.kind === 'search' && provider.type === 'remote'
         )
         console.assert(
-            providers.length !== group.providers.length,
-            'enterprise context should only use remote search providers'
+            providers.length === group.providers.length,
+            'enterprise context should only use remote search providers',
+            JSON.stringify(group.providers)
         )
         if (providers.length) {
             liftedProviders.push([group.displayName, providers[0]])

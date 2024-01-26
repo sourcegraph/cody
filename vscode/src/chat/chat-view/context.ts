@@ -166,12 +166,14 @@ async function searchRemote(
         return []
     }
     return (await remoteSearch.query(userText)).map(result => {
-        // TODO: Pass a better display name here, using result.repoName and result.path
         return {
             text: result.content,
             range: new vscode.Range(result.startLine, 0, result.endLine, 0),
             uri: result.uri,
             source: 'unified',
+            repoName: result.repoName,
+            title: result.path,
+            revision: result.commit,
         }
     })
 }

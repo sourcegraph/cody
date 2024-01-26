@@ -53,6 +53,9 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
                 range.end.line,
                 range.end.character
             ),
+        repoName: contextMessage.file.repoName,
+        revision: contextMessage.file.revision,
+        title: contextMessage.file.title,
     }
 }
 
@@ -89,12 +92,21 @@ export function stripContextWrapper(text: string): string | undefined {
 export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
     const contextFiles: ContextFile[] = []
     for (const item of items) {
+        if (item.source === 'unified' && !item.repoName) {
+            console.log(JSON.stringify(item))
+            const error = new Error('repo name missing from unified item result')
+            console.log('Unified item missing repoName', error.stack)
+            throw error
+        }
         contextFiles.push({
             type: 'file', // TODO(sqs): some of these are symbols; preserve that `type`
             uri: item.uri,
             source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
+            repoName: item.repoName,
+            revision: item.revision,
+            title: item.title,
         })
     }
     return contextFiles
