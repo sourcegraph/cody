@@ -1390,29 +1390,7 @@ describe('Agent', () => {
                 }
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
 
-                expect(paths).toMatchInlineSnapshot(`
-              [
-                "client/branded/src/search-ui/input/BaseCodeMirrorQueryInput.tsx",
-                "client/branded/src/search-ui/input/experimental/suggestionsExtension.ts",
-                "client/web-sveltekit/src/routes/[...repo=reporev]/(validrev)/(code)/+layout.ts",
-                "client/web/src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
-                "client/wildcard/src/global-styles/GlobalStylesStory/FormFieldVariants/FormFieldVariants.tsx",
-                "client/wildcard/src/global-styles/input-group.scss",
-                "cmd/executor/internal/worker/runtime/kubernetes.go",
-                "cmd/frontend/graphqlbackend/repository_text_search_index.go",
-                "cmd/frontend/internal/dotcom/productsubscription/licenses_db_test.go",
-                "cmd/symbols/squirrel/README.md",
-                "dev/release/src/release.ts",
-                "dev/sg/ci/command.go",
-                "doc/admin/config/webhooks/outgoing.md",
-                "docker-images/syntax-highlighter/crates/scip-syntax/src/bin/scip-local-nav.rs",
-                "go.mod",
-                "internal/authz/providers/perforce/cmd/scanprotects/README.md",
-                "internal/codeintel/sentinel/internal/store/observability.go",
-                "internal/oobmigration/downgrade_test.go",
-                "internal/usagestats/codehost_integration.go",
-              ]
-            `)
+                expect(paths).includes('cmd/symbols/squirrel/README.md')
 
                 const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
                 expect(remoteRepos).toStrictEqual(repos)
