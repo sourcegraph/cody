@@ -6,6 +6,7 @@ import type { ChatModelProvider } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
+import type { Repo } from '../../vscode/src/context/repo-fetcher'
 
 /** Utility class to manage a list of `AgentWebPanel` instances. */
 export class AgentWebviewPanels {
@@ -31,6 +32,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
     public chatID: string | undefined // also known as `sessionID` in some parts of the Cody codebase
     public models: ChatModelProvider[] | undefined
+    public remoteRepos: Repo[] | undefined
     public isInitialized = false
     public isMessageInProgress: undefined | boolean
     // Event that fires whenever the `isMessageInProgress` value changes from the `type: 'transcript'` message.

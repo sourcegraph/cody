@@ -20,6 +20,7 @@ import {
     type MessageWithContext,
     type SimpleChatModel,
 } from './SimpleChatModel'
+import { URI } from 'vscode-uri'
 
 interface PromptInfo {
     prompt: Message[]
@@ -203,19 +204,20 @@ function renderContextItem(contextItem: ContextItem): Message[] {
         return []
     }
     let messageText: string
+    const uri = contextItem.source === 'unified' ? URI.parse(contextItem.title || '') : contextItem.uri
     if (contextItem.source === 'selection') {
-        messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri)
+        messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, uri)
     } else if (contextItem.source === 'editor') {
         // This template text works well with prompts in our commands
         // Using populateCodeContextTemplate here will cause confusion to Cody
         const templateText = 'Codebase context from file path {fileName}: '
-        messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri)
+        messageText = populateContextTemplateFromText(templateText, contextItem.text, uri)
     } else if (contextItem.source === 'terminal') {
         messageText = contextItem.text
-    } else if (languageFromFilename(contextItem.uri) === ProgrammingLanguage.Markdown) {
-        messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri)
+    } else if (languageFromFilename(uri) === ProgrammingLanguage.Markdown) {
+        messageText = populateMarkdownContextTemplate(contextItem.text, uri, contextItem.repoName)
     } else {
-        messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri)
+        messageText = populateCodeContextTemplate(contextItem.text, uri, contextItem.repoName)
     }
     return [
         { speaker: 'human', text: messageText },
