@@ -29,6 +29,7 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
      * on every completion update or new virtual completion creation.
      */
     injectedCompletionText?: string
+    positionWithoutInjectedCompletionText?: vscode.Position
 }
 
 export interface DocumentDependentContext {
