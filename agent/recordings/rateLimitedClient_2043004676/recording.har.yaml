@@ -257,7 +257,6 @@ log:
           params: []
           textJSON:
             query: |-
-
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {

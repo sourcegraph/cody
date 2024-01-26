@@ -4,6 +4,8 @@ import type * as vscode from 'vscode'
 
 import { isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
+import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
+
 import type { DocumentContext } from './get-current-doc-context'
 import {
     InlineCompletionsResultSource,
@@ -74,6 +76,11 @@ export class RequestManager {
         const { requestParams, provider, context, isCacheEnabled, tracer } = params
 
         const cachedCompletions = this.cache.get(requestParams)
+        addAutocompleteDebugEvent('RequestManager.request', {
+            cachedCompletions,
+            isCacheEnabled,
+        })
+
         if (isCacheEnabled && cachedCompletions) {
             return cachedCompletions
         }
@@ -97,6 +104,11 @@ export class RequestManager {
                         fetchCompletionResults.filter(isDefined),
                         result => result.completion.stopReason === STOP_REASON_HOT_STREAK
                     )
+
+                    addAutocompleteDebugEvent('RequestManager.request.yield', {
+                        hotStreakCompletions: hotStreakCompletions.map(c => c.completion.insertText),
+                        currentCompletions: currentCompletions.map(c => c.completion.insertText),
+                    })
 
                     if (currentCompletions.length > 0) {
                         // Process regular completions that will shown to the user.
@@ -274,6 +286,7 @@ class RequestCache {
     private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {
         return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
+
     public get(key: RequestParams): RequestCacheItem | undefined {
         return this.cache.get(this.toCacheKey(key))
     }
