@@ -13,11 +13,6 @@
     display: flex;
 }
 
-.flex-filler {
-    display: flex;
-    flex-grow: 1;
-}
-
 .copy-button,
 .insert-button,
 .attribution-icon,
@@ -32,6 +27,7 @@
 .attribution-container {
     all: unset;
     display: flex;
+    margin-left: auto;
 }
 
 .copy-button,

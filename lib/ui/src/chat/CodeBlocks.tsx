@@ -256,34 +256,35 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                         eventMetadata
                     )
                     if (guardrails) {
-                        const flexFiller = document.createElement('div')
-                        flexFiller.classList.add(styles.flexFiller)
-                        buttons.append(flexFiller)
                         const container = document.createElement("div");
                         container.classList.add(styles.attributionContainer);
                         buttons.append(container);
 
                         const g = new GuardrailsStatusController(container);
-                        g.setPending()
+                        g.setPending();
 
                         guardrails
                             .searchAttribution(preText)
-                            .then(attribution => {
+                            .then((attribution) => {
                                 if (isError(attribution)) {
-                                    g.setUnavailable()
-                                } else if (attribution.repositories.length === 0) {
-                                    g.setSuccess()
+                                    g.setUnavailable();
+                                } else if (
+                                    attribution.repositories.length === 0
+                                ) {
+                                    g.setSuccess();
                                 } else {
                                     g.setFailure(
-                                        attribution.repositories.map(r => r.name),
+                                        attribution.repositories.map(
+                                            (r) => r.name
+                                        ),
                                         attribution.limitHit
-                                    )
+                                    );
                                 }
                             })
                             .catch(() => {
-                                g.setUnavailable()
-                                return
-                            })
+                                g.setUnavailable();
+                                return;
+                            });
                     }
 
                     // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
