@@ -317,7 +317,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // files).
     function getContextFileDisplayText(contextFile: ContextFile): string {
         const isFileType = contextFile.type === 'file'
-        const range = contextFile.range ? `:${contextFile.range?.start.line}-${contextFile.range?.end.line}` : ''
+        const range = contextFile.range
+            ? `:${contextFile.range?.start.line}-${contextFile.range?.end.line}`
+            : ''
         const symbolName = isFileType ? '' : `#${contextFile.symbolName}`
         return `@${displayPath(contextFile.uri)}${range}${symbolName}`
     }
@@ -649,7 +651,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // history with the cursor keys.
             const previousHistoryInput = inputHistory[historyIndex]
             const previousHistoryText: string =
-                typeof previousHistoryInput === 'string' ? previousHistoryInput : previousHistoryInput?.inputText
+                typeof previousHistoryInput === 'string'
+                    ? previousHistoryInput
+                    : previousHistoryInput?.inputText
             if (formInput === previousHistoryText || !formInput) {
                 let newIndex: number | undefined
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
@@ -671,9 +675,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         setFormInput(newHistoryInput.inputText)
                         // chatContextFiles uses a map but history only stores a simple array.
                         const contextFilesMap = new Map<string, ContextFile>()
-                        newHistoryInput.inputContextFiles.forEach(file =>
+                        for (const file of newHistoryInput.inputContextFiles) {
                             contextFilesMap.set(getContextFileDisplayText(file), file)
-                        )
+                        }
                         setChatContextFiles(contextFilesMap)
                     }
                 }

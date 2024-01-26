@@ -4,14 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import {
-    type ChatInputHistory,
-    type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
-    type ContextFile,
-    type Guardrails,
-    type TelemetryService,
+import type {
+    ChatInputHistory,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    ContextFile,
+    Guardrails,
+    TelemetryService,
 } from '@sourcegraph/cody-shared'
 import {
     Chat as ChatUI,

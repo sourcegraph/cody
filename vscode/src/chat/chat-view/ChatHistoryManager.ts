@@ -1,4 +1,4 @@
-import { type ChatInputHistory, type TranscriptJSON, type UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { ChatInputHistory, TranscriptJSON, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../../services/LocalStorageProvider'
 import type { AuthStatus } from '../protocol'

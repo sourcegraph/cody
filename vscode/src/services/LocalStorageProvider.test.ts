@@ -3,7 +3,7 @@ import assert from 'assert'
 import { beforeEach, describe, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '../chat/protocol'
 
 import { localStorage } from './LocalStorageProvider'
 
