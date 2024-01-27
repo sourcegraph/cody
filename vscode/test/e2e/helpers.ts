@@ -45,8 +45,6 @@ export const test = base
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
             'cody.experimental.symfContext': false,
-            // NOTE: Keep this enable to test unstable features.
-            'cody.internal.unstable': true,
         },
     })
     // By default, treat https://sourcegraph.com as "dotcom".
