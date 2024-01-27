@@ -107,7 +107,7 @@ export class IgnoreHelper {
 
         this.ensureFileUri('uri', uri)
         this.ensureAbsolute('uri', uri)
-        const workspaceRoot = this.findWorkspaceRoot(uri)
+        let workspaceRoot = this.findWorkspaceRoot(uri)
 
         // Not in workspace so just use default rules against the filename.
         // This ensures we'll never send something like `.env` but it won't handle
@@ -117,6 +117,13 @@ export class IgnoreHelper {
             return this.getDefaultIgnores().ignores(uriBasename(uri))
         }
 
+        // HACK(dantup): It's possible we got here with two URIs that have a Windows drive letter cased
+        // differently. This will cause relative() to produce an incorrect path. As a workaround,
+        // re-create the URIs from fsPath which VS Code normalizes.
+        if (isWindows()) {
+            workspaceRoot = URI.file(workspaceRoot.fsPath)
+            uri = URI.file(uri.fsPath)
+        }
         const relativePath = posixAndURIPaths.relative(workspaceRoot.path, uri.path)
         const rules = this.workspaceIgnores.get(workspaceRoot.toString()) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
