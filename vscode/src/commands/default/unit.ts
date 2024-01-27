@@ -1,7 +1,6 @@
 import { logError, type ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getContextFileFromCursor } from '../context/selection'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { EditCommandResult } from '../../main'
@@ -30,9 +29,8 @@ export async function executeNewTestCommand(
     const contextFiles: ContextFile[] = []
 
     try {
-        const cursorContext = await getContextFileFromCursor()
-        contextFiles.push(...cursorContext)
-
+        // Selection will be added by the edit command
+        // Only add context from available test files
         const files = await getContextFilesForUnitTestCommand(document.uri)
         contextFiles.push(...files)
     } catch (error) {

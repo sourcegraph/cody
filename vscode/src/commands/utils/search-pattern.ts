@@ -1,5 +1,6 @@
-import type * as vscode from 'vscode'
-import path from 'path'
+import { workspace } from 'vscode'
+import { posix } from 'path'
+import { Utils, type URI } from 'vscode-uri'
 
 /**
  * Returns a glob pattern to search for test files.
@@ -11,35 +12,32 @@ import path from 'path'
  */
 export function getSearchPatternForTestFiles(
     // Current file
-    file: vscode.Uri,
+    file: URI,
     // Files in the current directory only
     currentDirectoryOnly?: boolean,
     // Files with the same name as the current file
     fileNameMatchesOnly?: boolean
 ): string {
-    const osSep = path.posix.sep
-    const fileExtension = path.posix.parse(file.path).ext
-    const basenameWithoutExt = path.posix.parse(file.path).name
+    const root = '**'
+    const osSep = posix.sep
+    const fileExtension = Utils.extname(file)
+    const fileWithoutExt = posix.parse(file.path).name
 
     const testPattern = `*{test,spec}*${fileExtension}`
-    const nameMatchPattern = `*{test_${basenameWithoutExt},${basenameWithoutExt}_test,test.${basenameWithoutExt},${basenameWithoutExt}.test,${basenameWithoutExt}Test,spec_${basenameWithoutExt},${basenameWithoutExt}_spec,spec.${basenameWithoutExt},${basenameWithoutExt}.spec,${basenameWithoutExt}Spec}${fileExtension}`
-
-    // Pattern to search for test files in the current directory
-    if (currentDirectoryOnly) {
-        // Create a relative path using path package
-        // and use regex to remove the leading separator from the path
-        const dir = path.posix.parse(file.path).dir
-        const osSep = path.sep
-        const regex = new RegExp(`^${osSep}`)
-
-        return dir.replace(regex, '') + osSep + testPattern
-    }
-
-    const root = '**'
+    const nameMatchPattern = `*{test_${fileWithoutExt},${fileWithoutExt}_test,test.${fileWithoutExt},${fileWithoutExt}.test,${fileWithoutExt}Test,spec_${fileWithoutExt},${fileWithoutExt}_spec,spec.${fileWithoutExt},${fileWithoutExt}.spec,${fileWithoutExt}Spec}${fileExtension}`
 
     // pattern to search for test files with the same name as current file
     if (fileNameMatchesOnly) {
         return root + osSep + nameMatchPattern
+    }
+
+    // Pattern to search for test files in the current directory
+    if (currentDirectoryOnly) {
+        // Create a relative path of the current directory
+        const root = posix.dirname(file.path)
+        const relative = workspace.asRelativePath(root)
+
+        return relative + osSep + testPattern
     }
 
     return root + osSep + testPattern

@@ -3,11 +3,11 @@ import { URI } from 'vscode-uri'
 import { getSearchPatternForTestFiles } from './search-pattern'
 import path from 'path/posix'
 
-describe.only('getSearchPatternForTestFiles', () => {
+describe('getSearchPatternForTestFiles', () => {
     it('returns pattern searching current directory for test files with same extension', () => {
         const file = URI.file('/path/to/file.js')
         const pattern = getSearchPatternForTestFiles(file, true)
-        expect(pattern).toEqual(osPath('path/to/*{test,spec}*.js'))
+        expect(pattern).toEqual(osPath('/path/to/*{test,spec}*.js'))
     })
 
     it('returns pattern searching workspace for test files matching file name', () => {
@@ -33,7 +33,5 @@ describe.only('getSearchPatternForTestFiles', () => {
     })
 })
 
-// regex used for removing the leading separator from the path
-const systemSep = path.sep
-const regex = new RegExp(`^${systemSep}`)
-const osPath = (pattern: string): string => URI.file(pattern).path.replace(regex, '')
+// Hack: update pattern to use OS path separator
+const osPath = (pattern: string): string => pattern.replace('/', path.sep)
