@@ -1,3 +1,4 @@
+
 import { promises as fsPromises } from 'fs'
 import * as path from 'path'
 import type { ExtensionMessage } from '../../../../vscode/src/chat/protocol'
@@ -5,7 +6,10 @@ import { type MessageHandler } from '../../jsonrpc-alias'
 import { type EvaluateAutocompleteOptions, SimpleChatEvalConfig, EvaluationFixture } from './evaluate-autocomplete'
 import { exit } from 'process'
 import { Semaphore } from 'async-mutex';
-
+import { Uri } from 'vscode'
+import { type NotificationMethodName } from '../../jsonrpc-alias'
+import fspromises from 'fs/promises'
+import { AgentTextDocument } from '../../AgentTextDocument'
 
 interface ChatReply {
     repo_path: string
@@ -121,11 +125,66 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     console.log('--------- --------- --------- --------- --------- --------- ---------')
 }
 
+
+
+async function textDocumentEvent(
+    client: MessageHandler,
+    uri: Uri,
+    method: NotificationMethodName,
+    params?: { selectionName?: string }
+): Promise<void> {
+    const selectionName = params?.selectionName ?? 'SELECTION'
+    let content = await fspromises.readFile(uri.fsPath, 'utf8')
+    const selectionStartMarker = `/* ${selectionName}_START */`
+    const selectionStart = content.indexOf(selectionStartMarker)
+    const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
+    const cursor = content.indexOf('/* CURSOR */')
+    if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
+        throw new Error(`No selection found for name ${params.selectionName}`)
+    }
+    content = content.replace('/* CURSOR */', '')
+
+    const document = AgentTextDocument.from(uri, content)
+    const start =
+        cursor >= 0
+            ? document.positionAt(cursor)
+            : selectionStart >= 0
+              ? document.positionAt(selectionStart + selectionStartMarker.length)
+              : undefined
+    const end =
+        cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
+    client.notify(method, {
+        uri: uri.toString(),
+        content,
+        selection: start && end ? { start, end } : undefined,
+    })
+}
+
+function openFile(client: MessageHandler, uri: Uri, params?: { selectionName?: string }): Promise<void> {
+    return textDocumentEvent(client, uri, 'textDocument/didOpen', params)
+}
+
+function getUriPathFromRelativePath(
+    workspacePath: string,
+    filePath: string
+): Uri {
+    const absFilePath = path.join(workspacePath, filePath)
+    return Uri.file(absFilePath)
+}
+
 async function simulateChatInRepo(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions,
     chatEvalConfig: SimpleChatEvalConfig
 ): Promise<ChatReply> {
+    // open files mentioned in the open files path
+    if(chatEvalConfig.open_files) {
+        for (const file of chatEvalConfig.open_files) {
+            const uri  = getUriPathFromRelativePath(options.workspace, file)
+            openFile(client, uri)
+        }
+    }
+    
     const id = await client.request('chat/new', null)
     const reply = await client.request('chat/submitMessage', {
             id,
@@ -133,7 +192,7 @@ async function simulateChatInRepo(
                 command: 'submit',
                 text: chatEvalConfig.question,
                 submitType: 'user',
-                addEnhancedContext: true,
+                addEnhancedContext: options.fixture?.webViewConfiguration?.useEnhancedContext ?? false,
             },
         })
     

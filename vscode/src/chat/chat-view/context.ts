@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
 
 import {
     type ConfigurationUseContext,
@@ -39,6 +40,58 @@ interface GetEnhancedContextOptions {
     contextRanking: ContextRankingController | null
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
+
+export async function logAllEnhancedContextItems({
+        strategy,
+        editor,
+        text,
+        providers,
+        featureFlags,
+        hints,
+}: GetEnhancedContextOptions): Promise<void> {
+    const searchContext: ContextItem[] = []
+
+    let hasEmbeddingsContext = false
+    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+    const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
+    try {
+        const r = await localEmbeddingsResults
+        hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+        searchContext.push(...r)
+    } catch (error) {
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+    }
+    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+
+    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
+    if (providers.remoteSearch) {
+        try {
+            searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
+        } catch (error) {
+            // TODO: Error reporting
+            logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
+        }
+    }
+    if (providers.symf) {
+        try {
+            searchContext.push(...(await searchSymf(providers.symf, editor, text)))
+        } catch (error) {
+            // TODO(beyang): handle this error better
+            logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+        }
+    }
+    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
+    const priorityContext = await getAllPriorityContext(text, editor, searchContext)
+    
+    const allContext = priorityContext.concat(searchContext)
+    const logObj = {
+        logUnixTimestamp: new Date().valueOf(),
+        question: text,
+        contextCandidates: allContext,
+    }
+    logDebug('EnhancedContextAllContext', JSON.stringify(logObj))
+}
+
 export async function getEnhancedContext({
     strategy,
     editor,
@@ -418,6 +471,36 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     })
 }
 
+async function getAllPriorityContext(
+    text: string,
+    editor: VSCodeEditor,
+    retrievedContext: ContextItem[]
+): Promise<ContextItem[]> {
+    const priorityContext: ContextItem[] = []
+    const selectionContext = getCurrentSelectionContext(editor)
+    if (selectionContext.length > 0) {
+        priorityContext.push(...selectionContext)
+    }
+    priorityContext.push(...getVisibleEditorContext(editor))
+    let containsREADME = false
+    for (const contextItem of retrievedContext) {
+        const basename = uriBasename(contextItem.uri)
+        if (
+            basename.toLocaleLowerCase() === 'readme' ||
+            basename.toLocaleLowerCase().startsWith('readme.')
+        ) {
+            containsREADME = true
+            break
+        }
+    }
+    if (!containsREADME) {
+        priorityContext.push(...(await getAllReadmeContext()))
+    }
+    return priorityContext
+}
+
+
+
 async function getPriorityContext(
     text: string,
     editor: VSCodeEditor,
@@ -512,6 +595,36 @@ function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
 
     return containsQuestionIndicator && containsProjectSignifier
 }
+
+async function getAllReadmeContext(): Promise<ContextItem[]> {
+    // global pattern for readme file
+    const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
+    const allReadmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1000))
+    const results: ContextItem[] = []
+    
+    for(const readmeUri of allReadmeUri) {
+        if (!readmeUri?.path) {
+            return []
+        }
+        const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
+        const readmeText = readmeDoc.getText()
+        const { truncated: truncatedReadmeText, range } = truncateTextNearestLine(
+            readmeText,
+            MAX_BYTES_PER_FILE
+        )
+        if (truncatedReadmeText.length === 0) {
+            return []
+        }
+        results.push({
+            uri: readmeUri,
+            text: truncatedReadmeText,
+            range: viewRangeToRange(range),
+            source: 'editor',
+        })
+    }
+    return results
+}
+
 async function getReadmeContext(): Promise<ContextItem[]> {
     // global pattern for readme file
     const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
