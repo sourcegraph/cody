@@ -989,7 +989,7 @@ describe('Agent', () => {
             const serverInfo = await enterpriseClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('chwarwick')
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
         it('attribution/found', async () => {
