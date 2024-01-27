@@ -20,23 +20,24 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await page.getByRole('treeitem', { name: 'ignoredByCody.css' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'ignoredByCody.css' }).hover()
 
-    // Open Cody sidebar
+    // Open Cody sidebar to start a new chat
     await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     /* TEST: Chat Context - Ignored file do not show up with context */
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
-    // Submit a chat question
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    await chatInput.hover()
-    await chatInput.fill('Ignore me!')
-    await page.keyboard.press('Enter')
-    // Assistant should response to your chat question, but current file (ignore.css)
-    // should not show up in the context list
+    await chatInput.focus()
+    await chatInput.fill('Ignore me')
+    await chatInput.press('Enter')
+    // Assistant should response to your chat question,
+    // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
+    await chatInput.focus()
+    await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
     await expect(chatPanel.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
     await chatInput.clear()
