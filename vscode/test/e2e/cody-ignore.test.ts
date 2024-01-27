@@ -1,17 +1,8 @@
 import { expect } from '@playwright/test'
-import * as mockServer from '../fixtures/mock-server'
 
+import { test } from './helpers'
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test as baseTest, type DotcomUrlOverride, type ExtraWorkspaceSettings } from './helpers'
-import { isWindows } from '@sourcegraph/cody-shared'
 
-const test = baseTest
-    .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-    .extend<ExtraWorkspaceSettings>({
-        extraWorkspaceSettings: {
-            'cody.internal.unstable': true,
-        },
-    })
 /**
  * NOTE: .cody/ignore current supports behind 'cody.internal.unstable' flag
  *
@@ -41,9 +32,7 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await chatInput.press('Enter')
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
-    if (!isWindows()) {
-        await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    }
+    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
