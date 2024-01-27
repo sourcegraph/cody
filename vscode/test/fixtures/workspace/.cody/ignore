@@ -1,1 +1,3 @@
+# NOTE: USED FOR AUTOMATED TEST CODY IGNORE
+# All .css files will be excluded from Cody context
 *.css
