@@ -181,9 +181,10 @@ describe('Agent', () => {
         )
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
           {
-            "currentPeriodEndAt": "2024-02-13T23:59:59Z",
-            "currentPeriodStartAt": "2024-01-14T00:00:00Z",
-            "plan": "FREE",
+            "applyProRateLimits": true,
+            "currentPeriodEndAt": "2024-02-10T23:59:59Z",
+            "currentPeriodStartAt": "2024-01-11T00:00:00Z",
+            "plan": "PRO",
             "status": "PENDING",
           }
         `)

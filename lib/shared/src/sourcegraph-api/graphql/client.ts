@@ -101,7 +101,7 @@ interface CurrentUserCodySubscriptionResponse {
         codySubscription: {
             status: string
             plan: string
-            applyProRateLimits: string
+            applyProRateLimits: boolean
             currentPeriodStartAt: Date
             currentPeriodEndAt: Date
         }
@@ -200,7 +200,7 @@ export interface CodyLLMSiteConfiguration {
 export interface CurrentUserCodySubscription {
     status: string
     plan: string
-    applyProRateLimits: string
+    applyProRateLimits: boolean
     currentPeriodStartAt: Date
     currentPeriodEndAt: Date
 }

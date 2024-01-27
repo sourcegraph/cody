@@ -18,6 +18,7 @@ query CurrentUserCodySubscription {
         codySubscription {
             status
             plan
+            applyProRateLimits
             currentPeriodStartAt
             currentPeriodEndAt
         }
