@@ -3,6 +3,7 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -164,17 +165,15 @@ class CodyAutocompleteManager {
       return
     }
 
-    val autocompleteRequest =
-        triggerAutocompleteAsync(
-            project,
-            editor,
-            offset,
-            textDocument,
-            triggerKind,
-            cancellationToken,
-            lookupString,
-            originalText)
-    cancellationToken.onCancellationRequested { autocompleteRequest.cancel(true) }
+    triggerAutocompleteAsync(
+        project,
+        editor,
+        offset,
+        textDocument,
+        triggerKind,
+        cancellationToken,
+        lookupString,
+        originalText)
   }
 
   /** Asynchronously triggers auto-complete for the given editor and offset. */
@@ -256,13 +255,13 @@ class CodyAutocompleteManager {
               null
             }
             .completeOnTimeout(null, 3, TimeUnit.SECONDS)
-            .get()
-
-        resetApplication(project)
-        resultOuter.complete(null)
+            .thenRun {
+              resetApplication(project)
+              resultOuter.complete(null)
+            }
       }
     }
-
+    cancellationToken.onCancellationRequested { resultOuter.cancel(true) }
     return resultOuter
   }
 
@@ -308,7 +307,11 @@ class CodyAutocompleteManager {
       cancellationToken.dispose()
       clearAutocompleteSuggestions(editor)
 
-      displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
+      // https://github.com/sourcegraph/jetbrains/issues/350
+      // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
+      WriteCommandAction.runWriteCommandAction(editor.project) {
+        displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
+      }
     }
   }
 
@@ -369,7 +372,7 @@ class CodyAutocompleteManager {
     }
 
     // Insert one inlay hint per delta in the first line.
-    for (delta in patch.getDeltas()) {
+    for (delta in patch.deltas) {
       val text = delta.revised.lines.joinToString("")
       inlayModel.addInlineElement(
           range.startOffset + delta.original.position,
@@ -414,7 +417,7 @@ class CodyAutocompleteManager {
   companion object {
     @JvmStatic
     val instance: CodyAutocompleteManager
-      get() = service<CodyAutocompleteManager>()
+      get() = service()
 
     @JvmStatic
     fun diff(a: String, b: String): Patch<String> =
