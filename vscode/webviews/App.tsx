@@ -16,7 +16,7 @@ import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
-import { trailingNonAlphaNumericRegex } from '../src/commands/utils/commands'
+import { trailingNonAlphaNumericRegex } from '../src/commands/utils/test-commands'
 
 import { Chat } from './Chat'
 import {

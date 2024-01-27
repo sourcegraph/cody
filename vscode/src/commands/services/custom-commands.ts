@@ -7,12 +7,12 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { logDebug, logError } from '../../log'
 
 import { ConfigFiles, type CodyCommandsFile } from '../types'
-import { fromSlashCommand } from '../utils/commands'
 import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
 import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { fromSlashCommand } from '../utils/common'
 
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files

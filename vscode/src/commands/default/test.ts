@@ -1,11 +1,11 @@
 import { logError, type ContextFile, logDebug } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
-import { getContextFilesForTests } from '../context/test-files'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
+import { getContextFilesForTestCommand } from '../context/test-command'
 /**
  * Generates the prompt and context files with arguments for the 'test' command.
  *
@@ -23,7 +23,7 @@ async function testCommand(): Promise<ExecuteChatArguments> {
             const cursorContext = await getContextFileFromCursor()
             contextFiles.push(...cursorContext)
 
-            contextFiles.push(...(await getContextFilesForTests(document.uri)))
+            contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
         } catch (error) {
             logError('testCommand', 'failed to fetch context', { verbose: error })
         }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { displayPath, type ActiveTextEditorSelection, type ContextFile } from '@sourcegraph/cody-shared'
 
-import { trailingNonAlphaNumericRegex } from './commands'
+import { trailingNonAlphaNumericRegex } from './test-commands'
 
 /**
  * Creates display text for the given context files by replacing file names with markdown links.

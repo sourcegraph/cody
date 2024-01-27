@@ -2,11 +2,12 @@ import { logError, type ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getContextFileFromCursor } from '../context/selection'
-import { getContextFilesForTests } from '../context/test-files'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
+import { getContextFilesForUnitTestCommand } from '../context/unit-test-command'
+
 /**
  * NOTE (bee) this will replace the existing test command once it's ready
  *
@@ -32,7 +33,7 @@ export async function executeNewTestCommand(
         const cursorContext = await getContextFileFromCursor()
         contextFiles.push(...cursorContext)
 
-        const files = await getContextFilesForTests(document.uri)
+        const files = await getContextFilesForUnitTestCommand(document.uri)
         contextFiles.push(...files)
     } catch (error) {
         logError('executeNewTestCommand', 'failed to fetch context', { verbose: error })

@@ -27,6 +27,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
     }
 
     try {
+        // Use current directory if no directory uri is provided
         const dirUri = directory ?? Utils.joinPath(document.uri, '..')
         // Get the files in the directory
         const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
@@ -65,6 +66,12 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             } as ContextFile
 
             contextFiles.push(contextFile)
+
+            // Limit the number of files to 10
+            const maxResults = 10
+            if (contextFiles.length >= maxResults) {
+                return contextFiles
+            }
         }
     } catch (error) {
         logError('getContextFileFromDirectory', 'failed', { verbose: error })

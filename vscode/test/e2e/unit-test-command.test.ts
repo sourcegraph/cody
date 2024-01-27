@@ -31,7 +31,7 @@ test('unit test commands with context fetching', async ({ page, sidebar }) => {
     // Confirm the unit test command is using the relevant test file as context
     await chatPanelFrame.getByText('✨ Context: 29 lines from 2 files').click()
 
-    await expect(chatPanelFrame.locator('span').filter({ hasText: '@buzz.ts:2-14' })).toBeVisible()
+    await expect(chatPanelFrame.locator('span').filter({ hasText: '@buzz.ts:1-13' })).toBeVisible()
     await expect(chatPanelFrame.locator('span').filter({ hasText: '@buzz.test.ts:1-12' })).toBeVisible()
 
     // Check if assistant responsed
