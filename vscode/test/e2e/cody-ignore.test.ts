@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
-
-import { test } from './helpers'
+import path from 'path'
 import { sidebarExplorer, sidebarSignin } from './common'
+import { test } from './helpers'
 
 /**
  * NOTE: .cody/ignore current supports behind 'cody.internal.unstable' flag
@@ -42,7 +42,9 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await expect(chatPanel.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
-    await expect(chatPanel.getByRole('button', { name: '.cody/ignore' })).toBeVisible()
+    await expect(
+        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore') })
+    ).toBeVisible()
     await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Cannot be executed on ignored file */
@@ -51,3 +53,7 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     // A system message shows up to notify users that the file is ignored
     await expect(page.getByText(/^Current file is ignored/)).toBeVisible()
 })
+
+function withPlatformSlashes(input: string) {
+    return input.replaceAll(path.posix.sep, path.sep)
+}

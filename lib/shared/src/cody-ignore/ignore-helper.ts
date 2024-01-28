@@ -45,6 +45,18 @@ export class IgnoreHelper {
     }
 
     /**
+     * Computes the relative path `from` to `to`.
+     */
+    private relativePath(from: URI, to: URI) {
+        // HACK(dantup): It's possible we got here with two URIs that have a Windows drive letter cased
+        // differently. This will cause relative() to produce an incorrect path. As a workaround,
+        // re-create the URIs from fsPath which VS Code normalizes.
+        return isWindows()
+            ? posixAndURIPaths.relative(URI.file(from.fsPath).path, URI.file(to.fsPath).path)
+            : posixAndURIPaths.relative(from.path, to.path)
+    }
+
+    /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
      * @param workspaceRoot The workspace root.
      * @param ignoreFiles The URIs and content of all ignore files within the root.
@@ -59,10 +71,7 @@ export class IgnoreHelper {
             // Compute the relative path from the workspace root to the folder this ignore
             // file applies to.
             const effectiveDir = ignoreFileEffectiveDirectory(ignoreFile.uri)
-            const relativeFolderUriPath = posixAndURIPaths.relative(
-                workspaceRoot.path,
-                effectiveDir.path
-            )
+            const relativeFolderUriPath = this.relativePath(workspaceRoot, effectiveDir)
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
@@ -107,7 +116,7 @@ export class IgnoreHelper {
 
         this.ensureFileUri('uri', uri)
         this.ensureAbsolute('uri', uri)
-        let workspaceRoot = this.findWorkspaceRoot(uri)
+        const workspaceRoot = this.findWorkspaceRoot(uri)
 
         // Not in workspace so just use default rules against the filename.
         // This ensures we'll never send something like `.env` but it won't handle
@@ -117,14 +126,7 @@ export class IgnoreHelper {
             return this.getDefaultIgnores().ignores(uriBasename(uri))
         }
 
-        // HACK(dantup): It's possible we got here with two URIs that have a Windows drive letter cased
-        // differently. This will cause relative() to produce an incorrect path. As a workaround,
-        // re-create the URIs from fsPath which VS Code normalizes.
-        if (isWindows()) {
-            workspaceRoot = URI.file(workspaceRoot.fsPath)
-            uri = URI.file(uri.fsPath)
-        }
-        const relativePath = posixAndURIPaths.relative(workspaceRoot.path, uri.path)
+        const relativePath = this.relativePath(workspaceRoot, uri)
         const rules = this.workspaceIgnores.get(workspaceRoot.toString()) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }
