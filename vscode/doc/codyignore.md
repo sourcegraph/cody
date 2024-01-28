@@ -1,4 +1,4 @@
-## Cody Ignore (Experimental feature)
+## Cody Ignore (Internal Experimental)
 
 Cody Ignore is an experimental feature that functions similarly to `.gitignore`, but it's specifically designed for the context consumed by Cody, the code assistant.
 
