@@ -20,4 +20,4 @@ src/
 7. Check the file context in Cody's response. You should not see any files from the ignored directory being used as context.
 8. Note that autocomplete features will also not work on files specified in the `.cody/ignore` file.
 
-Remember, this is an experimental feature, so use it with caution and report any issues you encounter to help improve the functionality.
+Remember, this is an experimental feature for internal testing only, so use it with caution and report any issues you encounter to help improve the functionality.
