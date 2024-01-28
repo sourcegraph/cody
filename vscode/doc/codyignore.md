@@ -1,6 +1,6 @@
 ## Cody Ignore (Internal Experimental)
 
-Cody Ignore is an experimental feature that functions similarly to `.gitignore`, but it's specifically designed for the context consumed by Cody, the code assistant.
+Cody Ignore is an experimental feature currently available for internal testing. It functions similarly to `.gitignore`, but is specifically designed for the context consumed by Cody, the code assistant. It enables users to specify files they don't want to send to a third party LLM providers.
 
 ### How does this help me?
 
