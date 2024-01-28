@@ -1,16 +1,17 @@
-import { promises as fspromises } from 'fs'
+import * as fs from 'fs'
+import fspromises from 'fs/promises'
 import * as os from 'os'
 import * as path from 'path'
 
 import axios from 'axios'
-import * as unzip from 'unzipper'
+import * as unzipper from 'unzipper'
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
-const symfVersion = 'v0.0.2'
+const symfVersion = 'v0.0.5'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.
@@ -27,7 +28,9 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     const { platform, arch } = getOSArch()
     if (!platform || !arch) {
         // show vs code error message
-        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
+        void vscode.window.showErrorMessage(
+            `No symf binary available for ${os.platform()}/${os.machine()}`
+        )
         return null
     }
 
@@ -41,7 +44,8 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
 
     // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
     // identifier (linux-musl, windows-gnu, macos).
-    const zigPlatform = platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
+    const zigPlatform =
+        platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
 
     const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${zigPlatform}.zip`
     logDebug('symf', `downloading symf from ${symfURL}`)
@@ -55,17 +59,19 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
                 cancellable: false,
             },
             async progress => {
+                const symfTmpDir = `${symfPath}.tmp`
                 progress.report({ message: 'Downloading symf and extracting symf' })
 
-                const symfTmpDir = symfPath + '.tmp'
-
-                await downloadFile(symfURL, symfTmpDir)
+                await fspromises.mkdir(symfTmpDir, { recursive: true })
+                const symfZipFile = path.join(symfTmpDir, `${symfFilename}.zip`)
+                await downloadFile(symfURL, symfZipFile)
+                await unzipSymf(symfZipFile, symfTmpDir)
                 logDebug('symf', `downloaded symf to ${symfTmpDir}`)
 
                 const tmpFile = path.join(symfTmpDir, `symf-${arch}-${zigPlatform}`)
                 await fspromises.chmod(tmpFile, 0o755)
                 await fspromises.rename(tmpFile, symfPath)
-                await fspromises.rmdir(symfTmpDir, { recursive: true })
+                await fspromises.rm(symfTmpDir, { recursive: true })
 
                 logDebug('symf', `extracted symf to ${symfPath}`)
             }
@@ -90,6 +96,7 @@ export async function fileExists(path: string): Promise<boolean> {
 }
 
 async function downloadFile(url: string, outputPath: string): Promise<void> {
+    logDebug('Symf', `downloading from URL ${url}`)
     const response = await axios({
         url,
         method: 'GET',
@@ -97,13 +104,23 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
         maxRedirects: 10,
     })
 
-    const uz = unzip.Extract({ path: outputPath })
-    response.data.pipe(uz)
+    const stream = fs.createWriteStream(outputPath)
+    response.data.pipe(stream)
 
     await new Promise((resolve, reject) => {
-        uz.on('finish', resolve)
-        uz.on('error', reject)
+        stream.on('finish', resolve)
+        stream.on('error', reject)
     })
+}
+
+async function unzipSymf(zipFile: string, destinationDir: string): Promise<void> {
+    const zip = fs.createReadStream(zipFile).pipe(unzipper.Parse({ forceStream: true }))
+    for await (const entry of zip) {
+        if (entry.path.endsWith('/')) {
+            continue
+        }
+        entry.pipe(fs.createWriteStream(path.join(destinationDir, entry.path)))
+    }
 }
 
 async function removeOldSymfBinaries(containingDir: string, currentSymfPath: string): Promise<void> {

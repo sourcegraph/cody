@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import type * as protocol from './protocol-alias'
 
 import { getLanguageForFileName } from './language'
 import { DocumentOffsets } from './offsets'
@@ -14,29 +15,34 @@ import * as vscode_shim from './vscode-shim'
 // all references have a consistent view on a document. Use AgentWorkspaceDocuments
 // to get a reference to a new or existing instance.
 export class AgentTextDocument implements vscode.TextDocument {
-    constructor(public readonly textDocument: TextDocumentWithUri) {
-        this.content = textDocument.content ?? ''
-        this.uri = textDocument.uri
-        this.fileName = textDocument.uri.fsPath
-        this.isUntitled = false
+    constructor(public protocolDocument: ProtocolTextDocumentWithUri) {
         this.languageId = getLanguageForFileName(this.fileName)
-        this.offsets = new DocumentOffsets(textDocument.underlying)
+        this.offsets = new DocumentOffsets(protocolDocument.underlying)
         this.lineCount = this.offsets.lineCount()
-        this.underlying = textDocument
     }
 
-    public underlying: TextDocumentWithUri
-    private content: string
+    public get content(): string {
+        return this.protocolDocument.underlying.content ?? ''
+    }
     private offsets: DocumentOffsets
-    public uri: vscode.Uri
-    public fileName: string
+    public get uri(): vscode.Uri {
+        return this.protocolDocument.uri
+    }
+    public get fileName(): string {
+        return this.protocolDocument.uri.fsPath
+    }
     public lineCount: number
-    public isUntitled: boolean
+    public get isUntitled(): boolean {
+        return false
+    }
     public languageId: string
 
     public version = 0
     public readonly isDirty: boolean = false
     public readonly isClosed: boolean = false
+    public static from(uri: vscode.Uri, content: string): AgentTextDocument {
+        return new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content }))
+    }
 
     public save(): Thenable<boolean> {
         throw new Error('Method not implemented.')
@@ -45,15 +51,18 @@ export class AgentTextDocument implements vscode.TextDocument {
     // updates the content of an AgentTextDocument so that all references to this instance held throughout
     // agent see a consistent view on a text document, rather than different instances of this class per
     // document with different views.
-    public update(textDocument: TextDocumentWithUri): void {
-        this.content = textDocument.content ?? ''
-        this.uri = textDocument.uri
-        this.fileName = textDocument.uri.fsPath
-        this.isUntitled = false
-        this.languageId = getLanguageForFileName(this.fileName)
-        this.offsets = new DocumentOffsets(textDocument.underlying)
-        this.lineCount = this.offsets.lineCount()
-        this.underlying = textDocument
+    public update(textDocument: ProtocolTextDocumentWithUri): void {
+        if (textDocument.underlying.uri !== this.protocolDocument.underlying.uri) {
+            throw new Error(
+                `AgentTextDocument invariant violated: ${textDocument.underlying.uri} (new URI) !== ${this.protocolDocument.underlying.uri} (this URI)`
+            )
+        }
+        const isContentChange = textDocument.content !== this.protocolDocument.content
+        this.protocolDocument = textDocument
+        if (isContentChange) {
+            this.offsets = new DocumentOffsets(textDocument.underlying)
+            this.lineCount = this.offsets.lineCount()
+        }
         this.version++
     }
 
@@ -67,7 +76,10 @@ export class AgentTextDocument implements vscode.TextDocument {
             )
         )
         let firstNonWhitespaceCharacterIndex = 0
-        while (firstNonWhitespaceCharacterIndex < text.length && /\s/.test(text[firstNonWhitespaceCharacterIndex])) {
+        while (
+            firstNonWhitespaceCharacterIndex < text.length &&
+            /\s/.test(text[firstNonWhitespaceCharacterIndex])
+        ) {
             firstNonWhitespaceCharacterIndex++
         }
         return {
@@ -86,7 +98,11 @@ export class AgentTextDocument implements vscode.TextDocument {
         }
     }
 
-    public offsetAt(position: vscode.Position): number {
+    public offsetAt(position: vscode.Position | protocol.Position): number {
+        return this.offsets.offset(position)
+    }
+
+    public protocolOffsetAt(position: protocol.Position): number {
         return this.offsets.offset(position)
     }
 
@@ -105,7 +121,10 @@ export class AgentTextDocument implements vscode.TextDocument {
         return text
     }
 
-    public getWordRangeAtPosition(position: vscode.Position, regex?: RegExp | undefined): vscode.Range | undefined {
+    public getWordRangeAtPosition(
+        position: vscode.Position,
+        regex?: RegExp | undefined
+    ): vscode.Range | undefined {
         throw new Error('Method not implemented.')
     }
 

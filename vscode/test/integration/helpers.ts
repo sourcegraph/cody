@@ -2,10 +2,9 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 
-import { ExtensionApi } from '../../src/extension-api'
-import { FixupTask } from '../../src/non-stop/FixupTask'
+import type { ExtensionApi } from '../../src/extension-api'
 import * as mockServer from '../fixtures/mock-server'
 
 /**
@@ -16,11 +15,9 @@ export async function beforeIntegrationTest(): Promise<void> {
     const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
     assert.ok(api, 'extension not found')
 
-    // TODO(sqs): ensure this doesn't run the activate func multiple times
     await api?.activate()
 
     // Wait for Cody to become activated.
-    // TODO(sqs)
     await new Promise(resolve => setTimeout(resolve, 200))
 
     // Configure extension.
@@ -35,7 +32,7 @@ export async function afterIntegrationTest(): Promise<void> {
 }
 
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export async function ensureExecuteCommand<T>(command: string, ...args: any[]): Promise<T> {
     await waitUntil(async () => (await vscode.commands.getCommands(true)).includes(command))
     const result = await vscode.commands.executeCommand<T>(command, ...args)
@@ -68,27 +65,60 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
         if (!api.isActive || !api.exports.testing) {
             return false
         }
-        transcript = await getExtensionAPI().exports.testing?.chatTranscript()
+        transcript = await getExtensionAPI().exports.testing?.chatMessages()
         return transcript !== undefined && transcript.length > index && Boolean(transcript[index].text)
     })
     assert.ok(transcript)
     return transcript[index]
 }
 
-export async function getFixupTasks(): Promise<FixupTask[]> {
-    const api = getExtensionAPI()
-    const testSupport = api.exports.testing
-    assert.ok(testSupport)
+export async function getTextEditorWithSelection(): Promise<void> {
+    // Open Main.java
+    assert.ok(vscode.workspace.workspaceFolders)
+    const mainJavaUri = vscode.Uri.parse(
+        `${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`
+    )
+    const textEditor = await vscode.window.showTextDocument(mainJavaUri)
 
-    let fixups: FixupTask[] | undefined
+    // Select the "main" method
+    textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+}
 
-    await waitUntil(async () => {
-        if (!api.isActive || !api.exports.testing) {
-            return false
+/**
+ * For testing only. Return a platform-native absolute path for a filename. Tests should almost
+ * always use this instead of {@link URI.file}. Only use {@link URI.file} directly if the test is
+ * platform-specific.
+ *
+ * For macOS/Linux, it returns `/file`. For Windows, it returns `C:\file`.
+ * @param relativePath The name/relative path of the file (with forward slashes).
+ *
+ * NOTE: Copied from @sourcegraph/cody-shared because the test module can't require it (because it's
+ * ESM).
+ */
+export function testFileUri(relativePath: string): vscode.Uri {
+    return vscode.Uri.file(
+        isWindows() ? `C:\\${relativePath.replaceAll('/', '\\')}` : `/${relativePath}`
+    )
+}
+
+/**
+ * Report whether the current OS is Windows.
+ *
+ * NOTE: Copied from @sourcegraph/cody-shared because the test module can't require it (because it's
+ * ESM).
+ */
+function isWindows(): boolean {
+    // For Node environments (such as VS Code Desktop).
+    if (typeof process !== 'undefined') {
+        if (process.platform) {
+            return process.platform.startsWith('win')
         }
-        fixups = await getExtensionAPI().exports.testing?.fixupTasks()
-        return true
-    })
-    assert.ok(fixups)
-    return fixups || []
+    }
+
+    // For web environments (such as webviews and VS Code Web).
+    if (typeof navigator === 'object') {
+        return navigator.userAgent.toLowerCase().includes('windows')
+    }
+
+    return false // default
 }

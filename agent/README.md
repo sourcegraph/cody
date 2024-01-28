@@ -6,8 +6,7 @@ non-ECMAScript clients such as the JetBrains and NeoVim plugins.
 
 ## Protocol
 
-The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The
-TypeScript code is the single source of truth of what JSON-RPC methods are
+The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The TypeScript code is the single source of truth of what JSON-RPC methods are
 supported in the protocol.
 
 ## Updating the protocol
@@ -38,6 +37,16 @@ The following commands assume you are in the `agent` directory:
 | `pnpm run test`                                                          | Run all agent-related tests                                                                                                                  |
 | (optional) `src login`                                                   | Make sure you are logged into your Sourcegraph instance, which is required to run the e2e test in `index.test.ts`                            |
 | `pnpm run test src/index.test.ts`                                        | Run e2e test, requires `src login` to work.                                                                                                  |
+
+The following commands assume you are in the root directory of this repository:
+
+| Command                                                                                                              | What                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test agent/src/index.test.ts`                                                                                  | Run agent tests in replay mode                                                                                                                                |
+| `source agent/scripts/export-cody-http-recording-tokens.sh`                                                          | Export access tokens to enable recording mode                                                                                                                 |
+| `pnpm update-agent-tests`                                                                                            | Update HTTP recordings for all tests. Run this before opening a PR                                                                                            |
+| `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts`                 | Run this when iterating on a feature and you only want to run an individual test via `it.only`. Remember to run `pnpm update-agent-tests` before sending a PR |
+| `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
 
 ## Debugging the agent
 
@@ -104,17 +113,34 @@ recordings.
 To fix this problem, update the HTTP recordings with the following command:
 
 ```sh
-export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN # redacted in the recordings
+# tokens are redacted in the recordings
+export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=sgp_YOUR_ACCESS_TOKEN_WITH_RATE_LIMIT
+export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN
 export SRC_ENDPOINT=https://sourcegraph.com   # tests run against dotcom
 src login                                     # confirm you are authenticated to sourcegraph.com
-CODY_RECORDING_MODE=record pnpm run test      # run tests to update recordings
-pnpm run test                                 # confirm that tests are passing when replaying HTTP traffic
+pnpm update-agent-recordings                  # run tests to update recordings
+# If test fails, press `u` to update the vitest snapshot assertion.
+pnpm run test agent/src/index.test.ts         # validate that tests are passing successfully in replay mode
 ```
 
 Please post in #wg-cody-agent if you have problems getting the agent tests to
 pass after recording. Worst case, feel free to disable the agent tests by
 uncommenting the block of code in `index.test.ts`. See comment in the code for
 more details about how to disable agent tests.
+
+## Iterating on agent tests
+
+For a fast edit/test/debug feedback loop when iterating on agent tests, use the `CODY_RECORD_IF_MISSING=true` mode.
+
+```sh
+CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts
+```
+
+The benefit of this workflow is that the agent replays from the HTTP recording
+for tests that haven't changed, and only sends HTTP requests for new tests.
+
+When you are happy with the result, make sure to run `pnpm
+update-agent-recordings` to clean unused recordings.
 
 ## Miscellaneous notes
 
@@ -124,3 +150,5 @@ more details about how to disable agent tests.
   example, the `extensionConfiguration/didChange` notification is sent from the
   client to the server to notify that subsequent requests should use the new
   connection configuration.
+- Run the command `git diff -- ':!*.har.yaml'` to review local changes without the noisy
+  diff in `agent/recordings`.

@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
 import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
-import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
+import type { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
-import { Repository } from '../../../../repository/builtinGitExtension'
+import type { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
-import { inferGitRepository, SimpleRepository } from './simple-git'
+import { inferGitRepository, type SimpleRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
@@ -130,7 +130,10 @@ export class BfgRetriever implements ContextRetriever {
         }
     }
 
-    private async indexEntry(params: { repository?: SimpleRepository; workspace?: vscode.Uri }): Promise<void> {
+    private async indexEntry(params: {
+        repository?: SimpleRepository
+        workspace?: vscode.Uri
+    }): Promise<void> {
         const { repository, workspace } = params
         if (!repository && !workspace) {
             return
@@ -140,7 +143,9 @@ export class BfgRetriever implements ContextRetriever {
         // TODO: include commit?
         try {
             if (repository) {
-                await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.uri.toString() })
+                await bfg.request('bfg/gitRevision/didChange', {
+                    gitDirectoryUri: repository.uri.toString(),
+                })
             }
             if (workspace) {
                 await bfg.request('bfg/workspace/didChange', { workspaceUri: workspace.toString() })
@@ -149,8 +154,8 @@ export class BfgRetriever implements ContextRetriever {
             const label = repository
                 ? `${repository.uri.fsPath}:${repository.commit}`
                 : workspace
-                ? workspace.fsPath
-                : ''
+                  ? workspace.fsPath
+                  : ''
             if (label) {
                 logDebug('CodyEngine', `gitRevision/didChange ${label} indexing time ${elapsed}ms`)
             }

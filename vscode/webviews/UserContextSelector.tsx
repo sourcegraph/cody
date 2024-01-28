@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { displayPath } from '@sourcegraph/cody-shared'
+import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
 
@@ -11,6 +12,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
 > = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
     useEffect(() => {
         const container = selectionRef.current
         if (container) {
@@ -32,15 +34,19 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     // TODO(toolmantim): Would be nicer to have a Search data type to use
     // instead of recreating string regex logic
 
-    let headingTitle
+    let headingTitle: string | undefined
     if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols..'
+        headingTitle = 'Search for a file to include, or type # to search symbols...'
     } else if (formInput.endsWith('@#')) {
         headingTitle = 'Search for a symbol to include...'
     } else if (formInput.match(/@[^ #]+$/)) {
-        headingTitle = contextSelection?.length ? 'Search for a file to include...' : 'No matching files found'
+        headingTitle = contextSelection?.length
+            ? 'Search for a file to include...'
+            : 'No matching files found'
     } else if (formInput.match(/@#[^ ]+$/)) {
-        headingTitle = contextSelection?.length ? 'Search for a symbol to include...' : 'No matching symbols found'
+        headingTitle = contextSelection?.length
+            ? 'Search for a symbol to include...'
+            : 'No matching symbols found'
     }
 
     return (
@@ -57,8 +63,8 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                 them some help to debug the situation themselves */}
             {formInput.match(/@#.{1,2}$/) && !contextSelection?.length ? (
                 <p className={styles.emptySymbolSearchTip}>
-                    <i className="codicon codicon-info" /> VS Code may require you to open files and install language
-                    extensions for accurate results
+                    <i className="codicon codicon-info" /> VS Code may require you to open files and
+                    install language extensions for accurate results
                 </p>
             ) : null}
 
@@ -66,27 +72,42 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                 <div className={classNames(styles.selectionsContainer)}>
                     {contextSelection?.map((match, i) => {
                         const icon =
-                            match.type === 'file' ? null : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-                        const title = match.type === 'file' ? match.path?.relative : match.fileName
-                        const range = match.range ? `:${match.range.start.line + 1}-${match.range.end.line + 1}` : ''
-                        const description = match.type === 'file' ? undefined : match.path?.relative + range
+                            match.type === 'file'
+                                ? null
+                                : match.kind === 'class'
+                                  ? 'symbol-structure'
+                                  : 'symbol-method'
+                        const title = match.type === 'file' ? displayPath(match.uri) : match.symbolName
+                        const range = match.range
+                            ? `:${match.range.start.line + 1}-${match.range.end.line + 1}`
+                            : ''
+                        const description =
+                            match.type === 'file' ? undefined : displayPath(match.uri) + range
                         return (
                             <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
                                     ref={selected === i ? selectionRef : null}
-                                    className={classNames(styles.selectionItem, selected === i && styles.selected)}
+                                    className={classNames(
+                                        styles.selectionItem,
+                                        selected === i && styles.selected
+                                    )}
                                     onClick={() => onSelected(match, formInput)}
                                     type="button"
                                 >
-                                    {icon && (
+                                    {match.type === 'symbol' && icon && (
                                         <>
-                                            <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
+                                            <i
+                                                className={`codicon codicon-${icon}`}
+                                                title={match.kind}
+                                            />{' '}
                                         </>
                                     )}
                                     <span className={styles.titleAndDescriptionContainer}>
                                         <span className={styles.selectionTitle}>{title}</span>
                                         {description && (
-                                            <span className={styles.selectionDescription}>{description}</span>
+                                            <span className={styles.selectionDescription}>
+                                                {description}
+                                            </span>
                                         )}
                                     </span>
                                 </button>

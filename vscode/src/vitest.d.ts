@@ -1,5 +1,8 @@
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { Assertion, AsymmetricMatchersContaining } from 'vitest'
+
+// TODO(sqs): necessary to avoid tsc complaining that vitest types do not exist
+type __1 = Assertion
+type __2 = AsymmetricMatchersContaining
 
 interface CustomMatchers<R = unknown> {
     /**

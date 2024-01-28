@@ -4,9 +4,9 @@ import * as vscode from 'vscode'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import {
-    CompletionAnalyticsID,
     logCompletionPersistencePresentEvent,
     logCompletionPersistenceRemovedEvent,
+    type CompletionAnalyticsID,
 } from './logger'
 import { lines } from './text-processing'
 
@@ -69,7 +69,10 @@ export class PersistenceTracker implements vscode.Disposable {
             insertRange.start.line,
             insertRange.start.character,
             insertRange.end.line + textLines.length - 1,
-            textLines.length > 1 ? textLines.at(-1)!.length : insertRange.end.character + textLines[0].length
+
+            textLines.length > 1
+                ? textLines.at(-1)!.length
+                : insertRange.end.character + textLines[0].length
         )
 
         const trackedCompletion = {
@@ -107,7 +110,9 @@ export class PersistenceTracker implements vscode.Disposable {
         // The index in the MEASURE_TIMEOUTS array
         measureTimeoutsIndex: number
     ): void {
-        const isStillTracked = this.trackedCompletions.get(trackedCompletion.uri.toString())?.has(trackedCompletion)
+        const isStillTracked = this.trackedCompletions
+            .get(trackedCompletion.uri.toString())
+            ?.has(trackedCompletion)
         if (!isStillTracked) {
             return
         }
@@ -127,7 +132,10 @@ export class PersistenceTracker implements vscode.Disposable {
                 id: trackedCompletion.id,
                 afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
                 difference,
-                lineCount: trackedCompletion.latestRange.end.line - trackedCompletion.latestRange.start.line + 1,
+                lineCount:
+                    trackedCompletion.latestRange.end.line -
+                    trackedCompletion.latestRange.start.line +
+                    1,
                 charCount: latestText.length,
             })
 
@@ -162,7 +170,10 @@ export class PersistenceTracker implements vscode.Disposable {
         }))
 
         for (const trackedCompletion of documentCompletions) {
-            trackedCompletion.latestRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges)
+            trackedCompletion.latestRange = updateRangeMultipleChanges(
+                trackedCompletion.latestRange,
+                mutableChanges
+            )
         }
     }
 

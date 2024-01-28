@@ -1,15 +1,16 @@
 import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import type { default as Parser, Tree } from 'web-tree-sitter'
 
-import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
-import { MessageHandler } from '../../jsonrpc-alias'
-import { AutocompleteResult } from '../../protocol-alias'
+import type { MessageHandler } from '../../jsonrpc-alias'
+import type { AutocompleteResult } from '../../protocol-alias'
 
-import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { EvaluationDocument } from './EvaluationDocument'
-import { TestParameters } from './TestParameters'
+import type { AutocompleteMatchKind } from './AutocompleteMatcher'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluationDocument } from './EvaluationDocument'
+import type { TestParameters } from './TestParameters'
 import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 
@@ -23,19 +24,25 @@ export interface AutocompleteParameters {
     options: EvaluateAutocompleteOptions
 
     range: vscode.Range
+    autocompleteKind?: AutocompleteMatchKind
     modifiedContent: string
     removedContent: string
     position: vscode.Position
-    emptyMatchContent: string
 }
 
 export async function triggerAutocomplete(parameters: AutocompleteParameters): Promise<void> {
-    const { range, client, document, modifiedContent, removedContent, position, emptyMatchContent } = parameters
-    client.notify('textDocument/didChange', { uri: document.uri.toString(), content: modifiedContent })
+    const { range, client, document, modifiedContent, autocompleteKind, removedContent, position } =
+        parameters
+    client.notify('textDocument/didChange', {
+        uri: document.uri.toString(),
+        filePath: document.uri.fsPath,
+        content: modifiedContent,
+    })
     let result: AutocompleteResult
     try {
         result = await client.request('autocomplete/execute', {
             uri: document.uri.toString(),
+            filePath: document.uri.fsPath,
             position,
             // We don't use the "automatic" trigger to avoid certain code paths like
             // synthetic latency when acceptance rate is low.
@@ -44,6 +51,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
     } catch (error) {
         const resultError = error instanceof Error ? error.message : String(error)
         document.pushItem({
+            autocompleteKind,
             range,
             resultError,
         })
@@ -56,7 +64,9 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         return
     }
 
-    const textDocument = new AgentTextDocument(TextDocumentWithUri.from(document.uri, { content: modifiedContent }))
+    const textDocument = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(document.uri, { content: modifiedContent })
+    )
     for (const [index, item] of result.items.entries()) {
         const info = result.completionEvent?.items?.[index]
         const original = textDocument.getText(
@@ -70,12 +80,14 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         const start = new vscode.Position(item.range.start.line, item.range.start.character)
         const end = new vscode.Position(item.range.end.line, item.range.end.character)
         const modifiedDocument = new AgentTextDocument(
-            TextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
+            ProtocolTextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
         )
         const newText = [
             modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),
             item.insertText,
-            modifiedDocument.getText(new vscode.Range(end, new vscode.Position(modifiedDocument.lineCount, 0))),
+            modifiedDocument.getText(
+                new vscode.Range(end, new vscode.Position(modifiedDocument.lineCount, 0))
+            ),
         ].join('')
         const testParameters: TestParameters = { ...parameters, item, newText }
         let resultParses: boolean | undefined
@@ -96,6 +108,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         if (hasNonInsertPatch) {
             document.pushItem({
                 resultText: item.insertText,
+                autocompleteKind,
                 range,
                 resultTypechecks,
                 resultParses,
@@ -107,6 +120,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             const text = patches.join('')
             if (text === removedContent) {
                 document.pushItem({
+                    autocompleteKind,
                     info,
                     range,
                     resultExact: true,
@@ -116,6 +130,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                 })
             } else {
                 document.pushItem({
+                    autocompleteKind,
                     info,
                     range,
                     resultText: text,
@@ -126,6 +141,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             }
         } else {
             document.pushItem({
+                autocompleteKind,
                 info,
                 range,
                 resultEmpty: true,
@@ -135,8 +151,9 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         }
     }
     if (result.items.length === 0) {
-        const expectedEmptyMatch = removedContent === emptyMatchContent
+        const expectedEmptyMatch = removedContent === ''
         document.pushItem({
+            autocompleteKind,
             range,
             resultExact: expectedEmptyMatch,
             resultEmpty: !expectedEmptyMatch,

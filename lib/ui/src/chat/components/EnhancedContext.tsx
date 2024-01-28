@@ -1,15 +1,24 @@
 import React from 'react'
 
-import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
+
+import type { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
+export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
+
+export function useEnhancedContextEnabled(): boolean {
+    return React.useContext(EnhancedContextEnabled)
+}
+
 export interface FileLinkProps {
-    path: string
+    uri: URI
     repoName?: string
     revision?: string
     source?: string
     range?: ActiveTextEditorSelectionRange
+    title?: string
 }
 
 export const EnhancedContext: React.FunctionComponent<{
@@ -21,17 +30,13 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const uniqueFiles = new Set<string>()
+    const uniqueFiles = new Set<string /* uri.toString() */>()
 
     const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.fileName)) {
+        if (uniqueFiles.has(file.uri.toString())) {
             return false
         }
-        // Skip files added by user. e.g. @-files
-        if (file.source === 'user') {
-            return false
-        }
-        uniqueFiles.add(file.fileName)
+        uniqueFiles.add(file.uri.toString())
         return true
     })
 
@@ -47,8 +52,8 @@ export const EnhancedContext: React.FunctionComponent<{
         0
     )
     const fileCount = filteredFiles.length
-    const lines = `${lineCount} line` + (lineCount > 1 ? 's' : '')
-    const files = `${fileCount} file` + (fileCount > 1 ? 's' : '')
+    const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
+    const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     const title = lineCount ? `${lines} from ${files}` : `${files}`
 
     return (
@@ -62,11 +67,12 @@ export const EnhancedContext: React.FunctionComponent<{
                 verb: '',
                 object: (
                     <FileLink
-                        path={file.fileName}
+                        uri={file.uri}
                         repoName={file.repoName}
                         revision={file.revision}
                         source={file.source}
                         range={file.range}
+                        title={file.title}
                     />
                 ),
             }))}

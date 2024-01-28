@@ -1,17 +1,17 @@
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import os from 'os'
-import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
-import { getActiveEditor } from '../../editor/active-editor'
+import { getEditor } from '../../editor/active-editor'
 import { logDebug, logError } from '../../log'
 
-import { UserWorkspaceInfo } from '.'
+import type { UserWorkspaceInfo } from '.'
 import { outputWrapper } from './helpers'
 
 const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
-const currentFilePath: () => string | undefined = () => getActiveEditor()?.document.uri.fsPath
+const currentFilePath: () => string | undefined = () => getEditor().active?.document.uri.fsPath
 const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
 /**
@@ -22,7 +22,7 @@ export class ToolsProvider {
     private user: UserWorkspaceInfo
     private shell = vscode.env.shell
 
-    constructor(public context: vscode.ExtensionContext) {
+    constructor() {
         this.user = this.getUserInfo()
     }
 
@@ -50,13 +50,6 @@ export class ToolsProvider {
     }
 
     /**
-     * Open a folder in the file explorer
-     */
-    public async openFolder(): Promise<void> {
-        await vscode.commands.executeCommand('vscode.openFolder', rootPath())
-    }
-
-    /**
      * Execute a command in the terminal
      */
     public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {
@@ -65,7 +58,7 @@ export class ToolsProvider {
             return
         }
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
-        const homeDir = this.user.homeDir + '/' || ''
+        const homeDir = `${this.user.homeDir}/` || ''
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}`)
         try {
             const { stdout, stderr } = await _exec(filteredCommand, {

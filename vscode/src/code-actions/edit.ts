@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ExecuteEditArguments } from '../edit/execute'
+import type { ExecuteEditArguments } from '../edit/execute'
 
 export class EditCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
@@ -12,7 +12,10 @@ export class EditCodeAction implements vscode.CodeActionProvider {
             return []
         }
 
-        if (editor.selection.isEmpty && !document.lineAt(editor.selection.start.line).isEmptyOrWhitespace) {
+        if (
+            editor.selection.isEmpty &&
+            !document.lineAt(editor.selection.start.line).isEmptyOrWhitespace
+        ) {
             // Empty selection but a non-empty line, show nothing as the user likely won't want to generate here.
             return []
         }
@@ -26,7 +29,10 @@ export class EditCodeAction implements vscode.CodeActionProvider {
         return [this.createEditCommandCodeAction(document, editor.selection)]
     }
 
-    private createGenerateCodeAction(document: vscode.TextDocument, selection: vscode.Selection): vscode.CodeAction {
+    private createGenerateCodeAction(
+        document: vscode.TextDocument,
+        selection: vscode.Selection
+    ): vscode.CodeAction {
         const displayText = 'Ask Cody to Generate'
         const source = 'code-action:generate'
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
@@ -37,7 +43,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
                     range: new vscode.Range(selection.start, selection.end),
                     intent: 'add',
                     document,
-                    insertMode: true,
+                    mode: 'insert',
                 } satisfies ExecuteEditArguments,
                 source,
             ],
@@ -46,7 +52,10 @@ export class EditCodeAction implements vscode.CodeActionProvider {
         return action
     }
 
-    private createEditCommandCodeAction(document: vscode.TextDocument, selection: vscode.Selection): vscode.CodeAction {
+    private createEditCommandCodeAction(
+        document: vscode.TextDocument,
+        selection: vscode.Selection
+    ): vscode.CodeAction {
         const displayText = 'Ask Cody to Edit'
         const source = 'code-action:edit'
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)

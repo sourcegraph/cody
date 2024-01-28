@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { execSync } from 'child_process'
-import * as fspromises from 'fs/promises'
 import path from 'path'
 
+import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { logDebug } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -23,64 +22,79 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
+import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import {
+    CancellationTokenSource,
+    ColorThemeKind,
+    CommentThreadCollapsibleState,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
-    emptyDisposable,
-    emptyEvent,
-    EventEmitter,
+    ExtensionKind,
     FileType,
+    LogLevel,
+    ProgressLocation,
+    Range,
+    StatusBarAlignment,
     UIKind,
     Uri,
+    ViewColumn,
+    workspaceFs,
 } from '../../vscode/src/testutils/mocks'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+
+import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
+import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
+import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import { AgentQuickPick } from './AgentQuickPick'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
 const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
+export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
+
 export {
-    emptyEvent,
-    emptyDisposable,
-    Range,
-    Location,
-    Selection,
-    Position,
-    Disposable,
     CancellationTokenSource,
-    EndOfLine,
-    EventEmitter,
-    InlineCompletionItem,
-    InlineCompletionTriggerKind,
-    WorkspaceEdit,
-    QuickPickItemKind,
-    ConfigurationTarget,
-    StatusBarAlignment,
-    RelativePattern,
-    MarkdownString,
-    ProgressLocation,
-    CommentMode,
-    CommentThreadCollapsibleState,
-    OverviewRulerLane,
-    CodeLens,
     CodeAction,
     CodeActionKind,
+    CodeLens,
+    CommentMode,
+    CommentThreadCollapsibleState,
+    ConfigurationTarget,
+    TextEditorRevealType,
+    DiagnosticSeverity,
+    FoldingRange,
+    Disposable,
+    EndOfLine,
+    ExtensionMode,
     FileType,
+    InlineCompletionItem,
+    InlineCompletionTriggerKind,
+    Location,
+    MarkdownString,
+    OverviewRulerLane,
+    Position,
+    ProgressLocation,
+    QuickInputButtons,
+    QuickPickItemKind,
+    Range,
+    RelativePattern,
+    Selection,
+    StatusBarAlignment,
+    SymbolKind,
     ThemeColor,
     ThemeIcon,
-    TreeItemCollapsibleState,
     TreeItem,
-    ExtensionMode,
-    DiagnosticSeverity,
-    SymbolKind,
-    ViewColumn,
-    QuickInputButtons,
+    TreeItemCollapsibleState,
     UIKind,
     Uri,
+    ViewColumn,
+    WorkspaceEdit,
 } from '../../vscode/src/testutils/mocks'
 
 const emptyFileWatcher: vscode.FileSystemWatcher = {
@@ -96,95 +110,37 @@ export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
     if (newClientInfo.extensionConfiguration) {
-        setConnectionConfig(newClientInfo.extensionConfiguration)
+        setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
 }
 
-export let connectionConfig: ExtensionConfiguration | undefined
-export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
-    connectionConfig = newConfig
+export let extensionConfiguration: ExtensionConfiguration | undefined
+export function setExtensionConfiguration(newConfig: ExtensionConfiguration): void {
+    extensionConfiguration = newConfig
 }
-export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
-export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
-    if (!connectionConfig) {
+    if (!extensionConfiguration) {
         return true
+    }
+
+    if (!newConfig.accessToken || !newConfig.serverEndpoint) {
+        return false
     }
 
     return (
-        connectionConfig.accessToken !== newConfig.accessToken ||
-        connectionConfig.serverEndpoint !== newConfig.serverEndpoint
+        extensionConfiguration.accessToken !== newConfig.accessToken ||
+        extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint
     )
 }
 
-const configuration: vscode.WorkspaceConfiguration = {
-    has(section) {
-        return true
-    },
-    get: (section, defaultValue?: any) => {
-        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
-            return (
-                {
-                    vscode: 'VSCode',
-                    jetbrains: 'JetBrains',
-                    emacs: 'Emacs',
-                    neovim: 'Neovim',
-                } as const
-            )[value.toLowerCase()]
-        }
+const configuration = new AgentWorkspaceConfiguration(
+    [],
+    () => clientInfo,
+    () => extensionConfiguration
+)
 
-        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
-        if (fromCustomConfiguration !== undefined) {
-            return fromCustomConfiguration
-        }
-        switch (section) {
-            case 'cody.serverEndpoint':
-                return connectionConfig?.serverEndpoint
-            case 'cody.proxy':
-                return connectionConfig?.proxy ?? null
-            case 'cody.customHeaders':
-                return connectionConfig?.customHeaders
-            case 'cody.telemetry.level':
-                // Use the dedicated `telemetry/recordEvent` to send telemetry from
-                // agent clients.  The reason we disable telemetry via config is
-                // that we don't want to submit vscode-specific events when
-                // running inside the agent.
-                return 'agent'
-            case 'cody.autocomplete.enabled':
-                return true
-            case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.serverEndpoint':
-                return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
-            case 'cody.autocomplete.advanced.model':
-                return connectionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.autocomplete.advanced.accessToken':
-                return connectionConfig?.autocompleteAdvancedAccessToken ?? null
-            case 'cody.advanced.agent.running':
-                return true
-            case 'cody.debug.enable':
-                return connectionConfig?.debug ?? false
-            case 'cody.debug.verbose':
-                return connectionConfig?.verboseDebug ?? false
-            case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                // False because we don't embed WASM with the agent yet.
-                return false
-            case 'cody.codebase':
-                return connectionConfig?.codebase
-            case 'cody.advanced.agent.ide':
-                return clientNameToIDE(clientInfo?.name ?? '')
-            default:
-                return defaultValue
-        }
-    },
-    update(section, value, configurationTarget, overrideInLanguage) {
-        return Promise.resolve()
-    },
-    inspect(section) {
-        return undefined
-    },
-}
-
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
@@ -202,14 +158,96 @@ let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({ name: 'Workspace Root', uri: newWorkspaceDocuments.workspaceRootUri, index: 0 })
+        workspaceFolders.push({
+            name: 'Workspace Root',
+            uri: newWorkspaceDocuments.workspaceRootUri,
+            index: 0,
+        })
     }
 }
 
-const workspaceFolders: vscode.WorkspaceFolder[] = []
+export const workspaceFolders: vscode.WorkspaceFolder[] = []
 
 // vscode.workspace.onDidChangeConfiguration
-const _workspace: Partial<typeof vscode.workspace> = {
+const _workspace: typeof vscode.workspace = {
+    rootPath: undefined,
+    onDidChangeNotebookDocument: emptyEvent(),
+    onDidCloseNotebookDocument: emptyEvent(),
+    onDidCreateFiles: emptyEvent(),
+    onDidGrantWorkspaceTrust: emptyEvent(),
+    onDidOpenNotebookDocument: emptyEvent(),
+    onDidSaveNotebookDocument: emptyEvent(),
+    onWillCreateFiles: emptyEvent(),
+    onWillDeleteFiles: emptyEvent(),
+    onWillRenameFiles: emptyEvent(),
+    onWillSaveNotebookDocument: emptyEvent(),
+    onWillSaveTextDocument: emptyEvent(),
+    applyEdit: () => Promise.resolve(false), // TODO: this API is used by Cody
+    isTrusted: false,
+    name: undefined,
+    notebookDocuments: [],
+    openNotebookDocument: (() => {}) as any,
+    registerFileSystemProvider: () => emptyDisposable,
+    registerNotebookSerializer: () => emptyDisposable,
+    saveAll: () => Promise.resolve(false),
+    textDocuments: [], // Cody uses `vscode.window.tabGroups.all` instead of this API
+    updateWorkspaceFolders: () => false,
+    workspaceFile: undefined,
+    registerTaskProvider: () => emptyDisposable,
+    async findFiles(include, exclude, maxResults, token) {
+        if (typeof include !== 'string') {
+            throw new TypeError('workspaces.findFiles: include must be a string')
+        }
+        if (exclude !== undefined && typeof exclude !== 'string') {
+            throw new TypeError('workspaces.findFiles: exclude must be a string')
+        }
+
+        const result: vscode.Uri[] = []
+        const loop = async (workspaceRoot: vscode.Uri, dir: vscode.Uri): Promise<void> => {
+            if (token?.isCancellationRequested) {
+                return
+            }
+            const files = await workspaceFs.readDirectory(dir)
+            for (const [name, fileType] of files) {
+                const uri = Uri.file(path.join(dir.fsPath, name))
+                const relativePath = path.relative(workspaceRoot.fsPath, uri.fsPath)
+                if (fileType.valueOf() === FileType.Directory.valueOf()) {
+                    await loop(workspaceRoot, uri)
+                } else if (fileType.valueOf() === FileType.File.valueOf()) {
+                    if (
+                        !matchesGlobPatterns(
+                            include ? [include] : [],
+                            exclude ? [exclude] : [],
+                            relativePath
+                        )
+                    ) {
+                        continue
+                    }
+                    result.push(uri)
+                    if (maxResults !== undefined && result.length >= maxResults) {
+                        return
+                    }
+                }
+            }
+        }
+
+        await Promise.all(
+            workspaceFolders.map(async folder => {
+                try {
+                    const stat = await workspaceFs.stat(folder.uri)
+                    if (stat.type.valueOf() === FileType.Directory.valueOf()) {
+                        await loop(folder.uri, folder.uri)
+                    }
+                } catch (error) {
+                    console.error(
+                        `workspace.workspace.findFiles: failed to stat workspace folder ${folder.uri}. Error ${error}`,
+                        new Error().stack
+                    )
+                }
+            })
+        )
+        return result
+    },
     openTextDocument: uriOrString => {
         if (!workspaceDocuments) {
             return Promise.reject(new Error('workspaceDocuments is uninitialized'))
@@ -226,6 +264,7 @@ const _workspace: Partial<typeof vscode.workspace> = {
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
+        // TODO: support multiple workspace roots
         if (workspaceDocuments?.workspaceRootUri === undefined) {
             throw new Error(
                 'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
@@ -237,18 +276,22 @@ const _workspace: Partial<typeof vscode.workspace> = {
             name: workspaceDocuments.workspaceRootUri?.path,
         }
     },
-    onDidChangeWorkspaceFolders: (() => ({})) as any,
+    onDidChangeWorkspaceFolders: emptyEvent(),
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
     onDidCloseTextDocument: onDidCloseTextDocument.event,
-    onDidSaveTextDocument: onDidSaveTextDocument.event,
-    onDidRenameFiles: onDidRenameFiles.event,
-    onDidDeleteFiles: onDidDeleteFiles.event,
-    registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
+    onDidSaveTextDocument: onDidSaveTextDocument.event, // TODO: used by fixup controller to hide code lenses
+    onDidRenameFiles: onDidRenameFiles.event, // TODO: used by persistence tracker
+    onDidDeleteFiles: onDidDeleteFiles.event, // TODO: used by persistence tracker
+    registerTextDocumentContentProvider: () => emptyDisposable, // TODO: used by fixup controller
+    asRelativePath: (pathOrUri: string | vscode.Uri): string => {
         const uri: vscode.Uri | undefined =
-            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+            typeof pathOrUri === 'string'
+                ? Uri.file(pathOrUri)
+                : pathOrUri instanceof Uri
+                  ? pathOrUri
+                  : undefined
         if (uri === undefined) {
             // Not sure what to do about non-string/non-uri arguments.
             return `${pathOrUri}`
@@ -264,80 +307,41 @@ const _workspace: Partial<typeof vscode.workspace> = {
         }
         return relativePath
     },
-    createFileSystemWatcher: () => emptyFileWatcher,
-    getConfiguration: (() => configuration) as any,
-    fs: {
-        stat: async uri => {
-            const stat = await fspromises.stat(uri.fsPath)
-            const type = stat.isFile()
-                ? FileType.File
-                : stat.isDirectory()
-                ? FileType.Directory
-                : stat.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
-
-            return {
-                type,
-                ctime: stat.ctimeMs,
-                mtime: stat.mtimeMs,
-                size: stat.size,
+    createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
+    getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
+        if (section !== undefined) {
+            if (scope === undefined) {
+                return configuration.withPrefix(section)
             }
-        },
-        readDirectory: async uri => {
-            const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
 
-            return entries.map(entry => {
-                const type = entry.isFile()
-                    ? FileType.File
-                    : entry.isDirectory()
-                    ? FileType.Directory
-                    : entry.isSymbolicLink()
-                    ? FileType.SymbolicLink
-                    : FileType.Unknown
-
-                return [entry.name, type]
-            })
-        },
-        createDirectory: async uri => {
-            await fspromises.mkdir(uri.fsPath, { recursive: true })
-        },
-        readFile: async uri => {
-            const content = await fspromises.readFile(uri.fsPath)
-            return new Uint8Array(content.buffer)
-        },
-        writeFile: async (uri, content) => {
-            await fspromises.writeFile(uri.fsPath, content)
-        },
-        delete: async (uri, options) => {
-            await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
-        },
-        rename: async (source, target, options) => {
-            if (options?.overwrite ?? false) {
-                await fspromises.unlink(target.fsPath)
+            // Ignore language-scoped configuration sections like
+            // '[jsonc].editor.insertSpaces', fallback to global scope instead.
+            if (section.startsWith('[')) {
+                return configuration
             }
-            await fspromises.link(source.fsPath, target.fsPath)
-            await fspromises.unlink(source.fsPath)
-        },
-        copy: async (source, target, options) => {
-            const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
-            await fspromises.copyFile(source.fsPath, target.fsPath, mode)
-        },
-        isWritableFileSystem: scheme => {
-            if (scheme === 'file') {
-                return true
-            }
-            return false
-        },
+        }
+        return configuration
     },
+    fs: workspaceFs,
 }
 
-export const workspace = _workspace as typeof vscode.workspace
+export const workspace = _workspace
 
-const statusBarItem: Partial<vscode.StatusBarItem> = {
+const statusBarItem: vscode.StatusBarItem = {
     show: () => {},
+    dispose: () => {},
+    alignment: StatusBarAlignment.Left,
+    hide: () => {},
+    text: '',
+    id: 'id',
+    priority: undefined,
+    tooltip: undefined,
+    accessibilityInformation: undefined,
+    backgroundColor: undefined,
+    color: undefined,
+    command: undefined,
+    name: undefined,
 }
-
 export const visibleTextEditors: vscode.TextEditor[] = []
 
 export const tabGroups = new AgentTabGroups()
@@ -346,32 +350,118 @@ export function setAgent(newAgent: Agent): void {
     agent = newAgent
 }
 
-const webviewPanel: vscode.WebviewPanel = {
-    active: false,
-    dispose: () => {},
-    onDidChangeViewState: emptyEvent(),
-    onDidDispose: emptyEvent(),
-    options: { enableFindWidget: false, retainContextWhenHidden: false },
-    reveal: () => {},
-    title: 'title',
-    viewColumn: undefined,
-    viewType: 'markdown.preview',
-    visible: false,
-    webview: {
-        asWebviewUri(localResource) {
-            return localResource
+export function defaultWebviewPanel(params: {
+    viewType: string
+    title: string
+    showOptions:
+        | vscode.ViewColumn
+        | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+    options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
+    onDidReceiveMessage: vscode.EventEmitter<any>
+    onDidPostMessage: EventEmitter<any>
+}): vscode.WebviewPanel {
+    return {
+        active: false,
+        dispose: () => {},
+        onDidChangeViewState: emptyEvent(),
+        onDidDispose: emptyEvent(),
+        options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
+        reveal: () => {},
+        title: params.title,
+        viewColumn:
+            typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
+        viewType: params.viewType,
+        visible: false,
+        webview: {
+            asWebviewUri(localResource) {
+                return localResource
+            },
+            cspSource: 'cspSource',
+            html: '<p>html</p>',
+            onDidReceiveMessage: params.onDidReceiveMessage.event,
+            options: {},
+            postMessage: async message => {
+                await params.onDidPostMessage.cody_fireAsync(message)
+                return true
+            },
         },
-        cspSource: 'cspSource',
-        html: '<p>html</p>',
-        onDidReceiveMessage: emptyEvent(),
-        options: {},
-        postMessage: () => Promise.resolve(true),
-    },
+    }
 }
-const _window: Partial<typeof vscode.window> = {
-    createTreeView: () => ({ visible: false }) as any,
+const defaultTreeView: vscode.TreeView<any> = {
+    dispose: () => {},
+    onDidChangeCheckboxState: emptyEvent(),
+    onDidChangeSelection: emptyEvent(),
+    onDidChangeVisibility: emptyEvent(),
+    onDidCollapseElement: emptyEvent(),
+    onDidExpandElement: emptyEvent(),
+    reveal: () => Promise.resolve(),
+    selection: [],
+    visible: false,
+    badge: undefined,
+    description: undefined,
+    message: undefined,
+    title: undefined,
+}
+
+function outputChannel(name: string): vscode.LogOutputChannel {
+    return {
+        name,
+        append: message => {
+            if (agent) {
+                agent.notify('debug/message', { channel: name, message })
+            }
+        },
+        appendLine: message => {
+            if (agent) {
+                agent.notify('debug/message', { channel: name, message })
+            }
+        },
+        replace: message => {
+            if (agent) {
+                agent.notify('debug/message', { channel: name, message })
+            }
+        },
+        clear: () => {},
+        show: () => {},
+        hide: () => {},
+        dispose: () => {},
+        trace: () => {},
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        logLevel: LogLevel.Trace,
+        onDidChangeLogLevel: emptyEvent(),
+    }
+}
+
+const webviewPanel: vscode.WebviewPanel = defaultWebviewPanel({
+    viewType: 'agent',
+    title: 'Agent',
+    showOptions: ViewColumn.One,
+    options: undefined,
+    onDidReceiveMessage: new EventEmitter<any>(),
+    onDidPostMessage: new EventEmitter<any>(),
+})
+
+let shimmedCreateWebviewPanel: typeof vscode.window.createWebviewPanel = () => {
+    return webviewPanel
+}
+
+export function setCreateWebviewPanel(
+    newCreateWebviewPanel: typeof vscode.window.createWebviewPanel
+): void {
+    shimmedCreateWebviewPanel = newCreateWebviewPanel
+}
+
+export const progressBars = new Map<string, CancellationTokenSource>()
+
+const _window: typeof vscode.window = {
+    createTreeView: () => defaultTreeView,
     tabGroups,
-    createWebviewPanel: () => webviewPanel,
+    createWebviewPanel: (...params) => {
+        return shimmedCreateWebviewPanel(...params)
+    },
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
     registerTerminalLinkProvider: () => emptyDisposable,
@@ -393,9 +483,54 @@ const _window: Partial<typeof vscode.window> = {
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: () => emptyDisposable,
     registerWebviewViewProvider: () => emptyDisposable,
-    createStatusBarItem: (() => statusBarItem) as any,
+    createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
-    withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
+    withProgress: async (options, handler) => {
+        const progressClient = clientInfo?.capabilities?.progressBars === 'enabled' ? agent : undefined
+        const id = uuid.v4()
+        const tokenSource = new CancellationTokenSource()
+        const token = tokenSource.token
+        progressBars.set(id, tokenSource)
+        token.onCancellationRequested(() => progressBars.delete(id))
+
+        if (progressClient) {
+            const location =
+                typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
+            const locationViewId =
+                typeof options.location === 'object' ? options.location.viewId : undefined
+            progressClient.notify('progress/start', {
+                id,
+                options: {
+                    title: options.title,
+                    cancellable: options.cancellable,
+                    location,
+                    locationViewId,
+                },
+            })
+        }
+        try {
+            const result = await handler(
+                {
+                    report: ({ message, increment }) => {
+                        if (progressClient && !token.isCancellationRequested) {
+                            progressClient.notify('progress/report', { id, message, increment })
+                        }
+                    },
+                },
+                token
+            )
+            return result
+        } catch (error) {
+            console.error('window.withProgress: uncaught error', error)
+            throw error
+        } finally {
+            tokenSource.dispose()
+            progressBars.delete(id)
+            if (progressClient) {
+                progressClient.notify('progress/end', { id })
+            }
+        }
+    },
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
@@ -417,39 +552,90 @@ const _window: Partial<typeof vscode.window> = {
         }
         return Promise.resolve(undefined)
     },
-    createOutputChannel: ((name: string) =>
-        ({
-            name,
-            append: message => {
-                if (agent) {
-                    agent.notify('debug/message', { channel: name, message })
-                }
-            },
-            appendLine: message => {
-                if (agent) {
-                    agent.notify('debug/message', { channel: name, message })
-                }
-            },
-            replace: message => {
-                if (agent) {
-                    agent.notify('debug/message', { channel: name, message })
-                }
-            },
-            clear: () => {},
-            show: () => {},
-            hide: () => {},
-            dispose: () => {},
-        }) as vscode.OutputChannel) as any,
+    createOutputChannel: (name: string) => outputChannel(name),
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+    showTextDocument: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showTextDocument')
+    },
+    showNotebookDocument: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showNotebookDocument')
+    },
+    showQuickPick: () => {
+        console.log(new Error().stack)
+        // TODO: this API is used a lot. We may need to return undefined
+        // to not break functionality.
+        throw new Error('Not implemented: vscode.window.showQuickPick')
+    },
+    showWorkspaceFolderPick: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showWorkspaceFolderPick')
+    },
+    showOpenDialog: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showOpenDialog')
+    },
+    showSaveDialog: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showSaveDialog')
+    },
+    showInputBox: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.showInputBox')
+    },
+    createQuickPick: <T extends vscode.QuickPickItem>() => {
+        return new AgentQuickPick<T>()
+    },
+    createInputBox: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.createInputBox')
+    },
+    setStatusBarMessage: () => emptyDisposable,
+    withScmProgress: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.withScmProgress')
+    },
+    createTerminal: () => {
+        console.log(new Error().stack)
+        throw new Error('Not implemented: vscode.window.createTerminal')
+    },
+    activeTextEditor: undefined, // Updated by AgentWorkspaceDocuments
+    visibleNotebookEditors: [],
+    activeNotebookEditor: undefined,
+    terminals: [],
+    activeTerminal: undefined,
+    state: { focused: true },
+    activeColorTheme: { kind: ColorThemeKind.Light },
 }
 
-export const window = _window as typeof vscode.window
+export const window = _window
 const gitRepositories: Repository[] = []
 
 export function gitRepository(uri: vscode.Uri, headCommit: string): Repository {
     const repo: Partial<Repository> = {
         rootUri: uri,
-        ui: {} as any,
+        ui: { selected: false, onDidChange: emptyEvent() },
+        add: () => Promise.resolve(),
+        addRemote: () => Promise.resolve(),
+        apply: () => Promise.resolve(),
+        checkout: () => Promise.resolve(),
+        clean: () => Promise.resolve(),
+        commit: () => Promise.resolve(),
+        createBranch: () => Promise.resolve(),
+        deleteBranch: () => Promise.resolve(),
+        deleteTag: () => Promise.resolve(),
+        pull: () => Promise.resolve(),
+        push: () => Promise.resolve(),
+        diffBlobs: () => Promise.resolve(''),
+        detectObjectType: () => Promise.resolve({ mimetype: 'mimetype' }),
+        diffIndexWith: () => Promise.resolve([]) as any,
+        diff: () => Promise.resolve(''),
+        diffBetween: () => Promise.resolve('') as any,
+        blame: () => Promise.resolve(''),
+        // buffer: () => Promise.resolve(Buffer.apply('', 'utf-8')),
+        buffer: () => Promise.resolve(Buffer.alloc(0)),
+        diffIndexWithHEAD: () => Promise.resolve('') as any,
         state: {
             refs: [],
             indexChanges: [],
@@ -471,53 +657,69 @@ export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
     gitRepositories.push(gitRepository(uri, headCommit))
 }
 
-const gitExtension: Partial<vscode.Extension<GitExtension>> = {
-    isActive: true,
-    exports: {
-        enabled: true,
-        onDidChangeEnablement: emptyEvent(),
-        getAPI(version) {
-            const api: Partial<API> = {
-                repositories: gitRepositories,
-                onDidChangeState: emptyEvent(),
-                onDidCloseRepository: emptyEvent(),
-                onDidOpenRepository: emptyEvent(),
-                onDidPublish: emptyEvent(),
-                getRepository(uri) {
-                    try {
-                        const cwd = uri.fsPath
-                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                        if (toplevel !== uri.fsPath) {
-                            return null
-                        }
-                        const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
-                        return gitRepository(Uri.file(toplevel), commit)
-                    } catch {
+const gitExports: GitExtension = {
+    enabled: true,
+    onDidChangeEnablement: emptyEvent(),
+    getAPI(version) {
+        const api: Partial<API> = {
+            repositories: gitRepositories,
+            onDidChangeState: emptyEvent(),
+            onDidCloseRepository: emptyEvent(),
+            onDidOpenRepository: emptyEvent(),
+            onDidPublish: emptyEvent(),
+            getRepository(uri) {
+                try {
+                    const cwd = uri.fsPath
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
+                    if (toplevel !== uri.fsPath) {
                         return null
                     }
-                },
-            }
-            return api as API
-        },
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' })
+                        .toString()
+                        .trim()
+                    return gitRepository(Uri.file(toplevel), commit)
+                } catch {
+                    return null
+                }
+            },
+        }
+        return api as API
     },
 }
+const gitExtension: vscode.Extension<GitExtension> = {
+    activate: () => Promise.resolve(gitExports),
+    extensionKind: ExtensionKind.Workspace,
+    extensionPath: 'extensionPath.doNotReadFromHere',
+    extensionUri: Uri.file('extensionPath.doNotReadFromHere'),
+    id: 'vscode.git',
+    packageJSON: {},
+    isActive: true,
+    exports: gitExports,
+}
 
-const _extensions: Partial<typeof vscode.extensions> = {
+const _extensions: typeof vscode.extensions = {
+    all: [gitExtension],
+    onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension = clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
+        const shouldActivateGitExtension =
+            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
         if (shouldActivateGitExtension && extensionId === 'vscode.git') {
-            return gitExtension as any
+            const extension: vscode.Extension<any> = gitExtension
+            return extension
         }
         return undefined
     },
 }
-export const extensions = _extensions as typeof vscode.extensions
+export const extensions = _extensions
 
 interface RegisteredCommand {
     command: string
     callback: (...args: any[]) => any
     thisArg?: any
 }
+const context = new Map<string, any>()
 const registeredCommands = new Map<string, RegisteredCommand>()
 
 const _commands: Partial<typeof vscode.commands> = {
@@ -536,7 +738,10 @@ const _commands: Partial<typeof vscode.commands> = {
         if (registered) {
             try {
                 if (args) {
-                    return promisify(registered.callback(...args))
+                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args))
+                    }
+                    return promisify(registered.callback(args))
                 }
                 return promisify(registered.callback())
             } catch (error) {
@@ -544,9 +749,46 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         }
 
+        // We only log a debug warning when unknown commands are invoked because
+        // the extension triggers quite a few commands that are not getting activated
+        // inside the agent yet.
+        logDebug('vscode.commands.executeCommand', 'not found', command)
+
         return Promise.resolve(undefined)
     },
 }
+
+_commands?.registerCommand?.('setContext', (key, value) => {
+    if (typeof key !== 'string') {
+        throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
+    }
+    context.set(key, value)
+})
+_commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
+    const promises: vscode.FoldingRange[] = []
+    const document = await _workspace.openTextDocument(uri)
+    const token = new CancellationTokenSource().token
+    for (const provider of foldingRangeProviders) {
+        const result = await provider.provideFoldingRanges(document, {}, token)
+        if (result) {
+            promises.push(...result)
+        }
+    }
+    return promises
+})
+_commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
+    // NOTE(olafurpg): unclear yet how important document symbols are. I asked
+    // in #wg-cody-vscode for test cases where symbols could influence the
+    // behavior of "Document code" and added those test cases to the test suite.
+    // Currently, we can reproduce the behavior of Cody in VSC without document
+    // symbols. However, the test cases show that we may want to incorporate
+    // document symbol data to improve the quality of the inferred selection
+    // location.
+    return Promise.resolve([])
+})
+_commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
+    return Promise.resolve([])
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
@@ -566,6 +808,11 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
+const codeLensProviders = new Set<vscode.CodeLensProvider>()
+const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
+const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
+export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
+export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
 let latestCompletionProvider: InlineCompletionItemProvider | undefined
 let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
 const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
@@ -578,10 +825,18 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
     return firstCompletionProvider
 }
 
+const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
+    registerFoldingRangeProvider: (_scope, provider) => {
+        foldingRangeProviders.add(provider)
+        return { dispose: () => foldingRangeProviders.delete(provider) }
+    },
     registerCodeActionsProvider: () => emptyDisposable,
-    registerCodeLensProvider: () => emptyDisposable,
+    registerCodeLensProvider: (_selector, provider) => {
+        newCodeLensProvider.fire(provider)
+        return { dispose: () => codeLensProviders.delete(provider) }
+    },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any
         resolveFirstCompletionProvider(provider as any)
@@ -592,7 +847,15 @@ export const languages = _languages as typeof vscode.languages
 
 const commentController: vscode.CommentController = {
     createCommentThread(uri, range, comments) {
-        return 'createCommentThread' as any
+        const thread: vscode.CommentThread = {
+            canReply: false,
+            collapsibleState: CommentThreadCollapsibleState.Expanded,
+            comments: [],
+            dispose: () => {},
+            range: new Range(0, 0, 0, 0),
+            uri: Uri.file('commentController.neverReadFromHere'),
+        }
+        return thread
     },
     id: 'commentController.id',
     label: 'commentController.label',

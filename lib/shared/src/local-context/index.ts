@@ -1,16 +1,12 @@
-import { ContextFile } from '../codebase-context/messages'
-import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import type { URI } from 'vscode-uri'
 
-export interface ContextResult extends ContextFile {
+import type { ContextFile, ContextFileFile } from '../codebase-context/messages'
+import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+
+export type ContextResult = ContextFile & {
     repoName?: string
     revision?: string
-    fileName: string
     content: string
-}
-
-export interface KeywordContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
-    getSearchContext(query: string, numResults: number): Promise<ContextResult[]>
 }
 
 export interface FilenameContextFetcher {
@@ -21,12 +17,18 @@ export interface LocalEmbeddingsFetcher {
     getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
-export interface Point {
+// Minimal interface so inline edit can use remote search for context.
+export interface IRemoteSearch {
+    setWorkspaceUri(uri: URI): Promise<void>
+    search(query: string): Promise<ContextFileFile[]>
+}
+
+interface Point {
     row: number
     col: number
 }
 
-export interface Range {
+interface Range {
     startByte: number
     endByte: number
     startPoint: Point
@@ -40,24 +42,20 @@ export interface Result {
     doc: string
     exported: boolean
     lang: string
-    file: string
+    file: URI
     range: Range
     summary: string
 }
 
 export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+    getResults(query: string, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
 }
 
 /**
  * File result that renders in the search panel webview
  */
 export interface SearchPanelFile {
-    uriString: string
-    uriJSON: unknown
-    basename: string
-    dirname: string
-    wsname?: string
+    uri: URI
     snippets: SearchPanelSnippet[]
 }
 

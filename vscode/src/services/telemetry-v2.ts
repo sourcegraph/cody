@@ -1,12 +1,12 @@
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
-    TelemetryRecorder,
     TelemetryRecorderProvider,
-} from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
+    type ConfigurationWithAccessToken,
+    type LogEventMode,
+    type TelemetryRecorder,
+} from '@sourcegraph/cody-shared'
+import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
@@ -60,6 +60,7 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
                     event.action
                 }: ${JSON.stringify({
                     parameters: event.parameters,
+                    timestamp: event.timestamp,
                 })}`
             )
         }),
@@ -81,8 +82,15 @@ export async function createOrUpdateTelemetryRecorderProvider(
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
-        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
+    // Add timestamp processor for realistic data in output for dev or no-op scenarios
+    const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
+
+    if (
+        config.telemetryLevel === 'off' ||
+        !extensionDetails.ide ||
+        extensionDetails.ideExtensionType !== 'Cody'
+    ) {
+        updateGlobalInstances(defaultNoOpProvider)
         return
     }
 
@@ -94,13 +102,20 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        updateGlobalInstances(
+            new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
+        )
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
+        updateGlobalInstances(defaultNoOpProvider)
     } else {
         updateGlobalInstances(
-            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+            new TelemetryRecorderProvider(
+                extensionDetails,
+                config,
+                anonymousUserID,
+                legacyBackcompatLogEventMode
+            )
         )
     }
 
@@ -168,13 +183,14 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
                 break
             case 'object': {
                 const { metadata } = splitSafeMetadata(value)
-                Object.entries(metadata).forEach(([nestedKey, value]) => {
+                for (const [nestedKey, value] of Object.entries(metadata)) {
                     // We know splitSafeMetadata returns only an object with
                     // numbers as values. Unit tests ensures this property holds.
                     safe[`${key}.${nestedKey}`] = value as number
-                })
+                }
                 // Preserve the entire original value in unsafe
                 unsafe[key] = value
+                break
             }
 
             // By default, treat as potentially unsafe.

@@ -3,21 +3,37 @@ import assert from 'assert'
 import { describe, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { testFileUri } from '@sourcegraph/cody-shared'
+
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 
 describe('AgentTextDocument', () => {
-    const uri = vscode.Uri.file('foo')
-    const basic = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
-    const basicCrlf = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' }))
-    const emptyLine = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\n\n' }))
-    const noEndOfFileNewline = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'a\nb' }))
-    const emptyFirstLine = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\nb' }))
-    const emptyFirstLineCrlf = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\r\nb' }))
-    const noIndentation = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: 'sss\n' }))
-    const indentation = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '  a\n' }))
-    const indentationTab = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: '\t\tab\n' }))
+    const uri = testFileUri('foo')
+    const basic = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
+    const basicCrlf = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' })
+    )
+    const emptyLine = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\n\n' }))
+    const noEndOfFileNewline = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb' })
+    )
+    const emptyFirstLine = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\nb' })
+    )
+    const emptyFirstLineCrlf = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\r\nb' })
+    )
+    const noIndentation = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'sss\n' })
+    )
+    const indentation = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '  a\n' })
+    )
+    const indentationTab = new AgentTextDocument(
+        ProtocolTextDocumentWithUri.from(uri, { content: '\t\tab\n' })
+    )
 
     it('getText(Range)', () => {
         assert.equal(basic.getText(new vscode.Range(0, 0, 0, 1)), 'a')
@@ -56,7 +72,10 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyLine.getText(emptyLine.lineAt(1).rangeIncludingLineBreak), '\n')
 
         assert.equal(noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).range), 'b')
-        assert.equal(noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).rangeIncludingLineBreak), 'b')
+        assert.equal(
+            noEndOfFileNewline.getText(noEndOfFileNewline.lineAt(1).rangeIncludingLineBreak),
+            'b'
+        )
 
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(0).range), '')
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(0).rangeIncludingLineBreak), '\n')
@@ -64,9 +83,15 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyFirstLine.getText(emptyFirstLine.lineAt(1).rangeIncludingLineBreak), 'b')
 
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).range), '')
-        assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).rangeIncludingLineBreak), '\r\n')
+        assert.equal(
+            emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).rangeIncludingLineBreak),
+            '\r\n'
+        )
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).range), 'b')
-        assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).rangeIncludingLineBreak), 'b')
+        assert.equal(
+            emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).rangeIncludingLineBreak),
+            'b'
+        )
     })
 
     it('lineAt().firstNonWhitespaceCharacterIndex', () => {

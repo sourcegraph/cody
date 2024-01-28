@@ -1,11 +1,12 @@
-import { Position, TextDocument } from 'vscode'
+import type { Position, TextDocument } from 'vscode'
 
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { tokensToChars, type CompletionParameters } from '@sourcegraph/cody-shared'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import type { ContextSnippet } from '../types'
+
+import type { FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
     /**
@@ -33,9 +34,9 @@ export interface ProviderConfig {
     model: string
 }
 
-export interface ProviderContextSizeHints {
-    /** Total max length of all file context (prefix + suffix + snippets). */
-    totalFileContextChars: number
+interface ProviderContextSizeHints {
+    /** Total max length of all context (prefix + suffix + snippets). */
+    totalChars: number
 
     /** Max length of the document prefix (text before the cursor). */
     prefixChars: number
@@ -46,22 +47,30 @@ export interface ProviderContextSizeHints {
 
 export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
     return {
-        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        totalChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
         prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
         suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
     }
 }
 
 export interface ProviderOptions {
-    // A unique and descriptive identifier for the provider.
+    /**
+     * A unique and descriptive identifier for the provider.
+     */
     id: string
 
     position: Position
     document: TextDocument
     docContext: DocumentContext
     multiline: boolean
-    // Number of parallel LLM requests per completion.
+    /**
+     * Number of parallel LLM requests per completion.
+     */
     n: number
+    /**
+     *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
+     */
+    firstCompletionTimeout: number
 
     // feature flags
     dynamicMultilineCompletions?: boolean
@@ -74,13 +83,8 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completions: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void>
+    ): AsyncGenerator<FetchCompletionResult[]>
 }
 
 /**
@@ -97,4 +101,7 @@ export interface CompletionProviderTracer {
 export interface CompletionProviderTracerResultData {
     /** The post-processed completions that are returned by the provider. */
     completions: InlineCompletionItemWithAnalytics[]
+
+    /** Free-form text with debugging or timing information. */
+    debugMessage?: string
 }

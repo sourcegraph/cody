@@ -1,19 +1,19 @@
 import path from 'path'
 
-import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
-
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
+import type { default as Parser, QueryCapture, QueryMatch } from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { createParser } from './parser'
-import { DocumentQuerySDK, getDocumentQuerySDK } from './query-sdk'
+import { getDocumentQuerySDK, type DocumentQuerySDK } from './query-sdk'
 
-export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
+const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
 
 /**
  * Should be used in tests only.
  */
-export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
+export function initTreeSitterParser(
+    language = SupportedLanguage.TypeScript
+): Promise<Parser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
@@ -23,7 +23,9 @@ export function initTreeSitterParser(language = SupportedLanguage.TypeScript): P
 /**
  * Should be used in tests only.
  */
-export async function initTreeSitterSDK(language = SupportedLanguage.TypeScript): Promise<DocumentQuerySDK> {
+export async function initTreeSitterSDK(
+    language = SupportedLanguage.TypeScript
+): Promise<DocumentQuerySDK> {
     await initTreeSitterParser(language)
     const sdk = getDocumentQuerySDK(language)
 
@@ -51,7 +53,7 @@ interface FormattedCapture {
     text: string
 }
 
-export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
+function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
     return captures.map(capture => ({
         name: capture.name,
         text: capture.node.text,

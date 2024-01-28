@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { testFileUri, uriBasename } from '@sourcegraph/cody-shared'
+
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import { ContextRetriever, ContextSnippet } from '../types'
+import type { ContextRetriever, ContextSnippet } from '../types'
 
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
@@ -51,8 +53,13 @@ describe('ContextMixer', () => {
             const mixer = new ContextMixer(createMockStrategy([]))
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
-            expect(context).toEqual([])
-            expect(logSummary).toEqual({ duration: 0, retrieverStats: {}, strategy: 'none', totalChars: 0 })
+            expect(normalize(context)).toEqual([])
+            expect(logSummary).toEqual({
+                duration: 0,
+                retrieverStats: {},
+                strategy: 'none',
+                totalChars: 0,
+            })
         })
     })
 
@@ -62,11 +69,11 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
-                            fileName: 'foo.ts',
+                            uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
                         },
                         {
-                            fileName: 'bar.ts',
+                            uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
                         },
                     ],
@@ -74,7 +81,7 @@ describe('ContextMixer', () => {
             )
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
-            expect(context).toEqual([
+            expect(normalize(context)).toEqual([
                 {
                     fileName: 'foo.ts',
                     content: 'function foo() {}',
@@ -95,7 +102,7 @@ describe('ContextMixer', () => {
                     },
                 },
                 strategy: 'jaccard-similarity',
-                totalChars: 34,
+                totalChars: 42,
             })
         })
     })
@@ -106,26 +113,26 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
-                            fileName: 'foo.ts',
+                            uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
                         },
                         {
-                            fileName: 'bar.ts',
+                            uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
                         },
                     ],
 
                     [
                         {
-                            fileName: 'baz.ts',
+                            uri: testFileUri('baz.ts'),
                             content: 'function baz2() {}',
                         },
                         {
-                            fileName: 'baz.ts',
+                            uri: testFileUri('baz.ts'),
                             content: 'function baz2.2() {}',
                         },
                         {
-                            fileName: 'bar.ts',
+                            uri: testFileUri('bar.ts'),
                             content: 'function bar2() {}',
                         },
                     ],
@@ -133,7 +140,7 @@ describe('ContextMixer', () => {
             )
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
-            expect(context).toMatchInlineSnapshot(`
+            expect(normalize(context)).toMatchInlineSnapshot(`
               [
                 {
                   "content": "function bar1() {}",
@@ -174,8 +181,12 @@ describe('ContextMixer', () => {
                     },
                 },
                 strategy: 'jaccard-similarity',
-                totalChars: 92,
+                totalChars: 100,
             })
         })
     })
 })
+
+function normalize(context: ContextSnippet[]): (Omit<ContextSnippet, 'uri'> & { fileName: string })[] {
+    return context.map(({ uri, ...rest }) => ({ ...rest, fileName: uriBasename(uri) }))
+}

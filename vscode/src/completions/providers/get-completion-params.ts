@@ -1,13 +1,10 @@
-import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
-
-import { CodeCompletionsParams } from '../client'
+import type { AutocompleteTimeouts, CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import {
     fetchAndProcessCompletions,
-    FetchAndProcessCompletionsParams,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { ProviderOptions } from './provider'
+import type { ProviderOptions } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
 
@@ -23,12 +20,14 @@ interface LineNumberDependentCompletionParamsByType {
 }
 
 interface Params {
-    singlelineStopRequences: string[]
+    singlelineStopSequences: string[]
     multilineStopSequences: string[]
 }
 
-export function getLineNumberDependentCompletionParams(params: Params): LineNumberDependentCompletionParamsByType {
-    const { singlelineStopRequences, multilineStopSequences } = params
+export function getLineNumberDependentCompletionParams(
+    params: Params
+): LineNumberDependentCompletionParamsByType {
+    const { singlelineStopSequences, multilineStopSequences } = params
 
     return {
         singlelineParams: {
@@ -36,7 +35,7 @@ export function getLineNumberDependentCompletionParams(params: Params): LineNumb
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             maxTokensToSample: 30,
-            stopSequences: singlelineStopRequences,
+            stopSequences: singlelineStopSequences,
         },
         multilineParams: {
             timeoutMs: 15_000,
@@ -68,7 +67,7 @@ interface GetCompletionParamsAndFetchImplParams {
 
 interface GetRequestParamsAndFetchImplResult {
     partialRequestParams: Omit<CodeCompletionsParams, 'messages'>
-    fetchAndProcessCompletionsImpl: (params: FetchAndProcessCompletionsParams) => Promise<void>
+    fetchAndProcessCompletionsImpl: typeof fetchAndProcessCompletions
 }
 
 export function getCompletionParamsAndFetchImpl(
@@ -77,7 +76,11 @@ export function getCompletionParamsAndFetchImpl(
     const {
         timeouts,
         providerOptions: { multiline: isMutiline, dynamicMultilineCompletions, hotStreak },
-        lineNumberDependentCompletionParams: { singlelineParams, multilineParams, dynamicMultilineParams },
+        lineNumberDependentCompletionParams: {
+            singlelineParams,
+            multilineParams,
+            dynamicMultilineParams,
+        },
     } = params
 
     const useExtendedGeneration = isMutiline || dynamicMultilineCompletions || hotStreak
@@ -85,6 +88,7 @@ export function getCompletionParamsAndFetchImpl(
     const partialRequestParams: Omit<CodeCompletionsParams, 'messages'> = {
         ...(useExtendedGeneration ? multilineParams : singlelineParams),
         temperature: 0.2,
+        topK: 0,
     }
 
     // Apply custom multiline timeouts if they are defined.

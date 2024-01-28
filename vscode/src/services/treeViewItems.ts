@@ -1,11 +1,8 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
-import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 import { releaseNotesURL, releaseType } from '../release'
 import { version } from '../version'
-
-import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -18,10 +15,12 @@ export interface CodySidebarTreeItem {
         command: string
         args?: string[] | { [key: string]: string }[]
     }
-    isNestedItem?: string
+    isNestedItem?: boolean
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    // If item requires the `config.internalUnstable` configuration to be displayed
+    isUnstable?: boolean
 }
 
 /**
@@ -38,32 +37,6 @@ export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] 
     }
 }
 
-// functon to create chat tree items from user chat history
-export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
-    const userHistory = localStorage.getChatHistory()?.chat
-    if (!userHistory) {
-        return []
-    }
-    const chatTreeItems: CodySidebarTreeItem[] = []
-    const chatHistoryEntries = [...Object.entries(userHistory)]
-    chatHistoryEntries.forEach(([id, entry]) => {
-        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-            chatTreeItems.push({
-                id,
-                title: entry.chatTitle || getChatPanelTitle(lastDisplayText, false),
-                icon: 'comment-discussion',
-                command: {
-                    command: 'cody.chat.panel.restore',
-                    args: [id, entry.chatTitle || getChatPanelTitle(lastDisplayText)],
-                },
-            })
-        }
-    })
-    return chatTreeItems.reverse()
-}
-
 const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Upgrade',
@@ -72,14 +45,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.show-page', args: ['upgrade'] },
         requireDotCom: true,
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
-        requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Settings',
@@ -89,7 +60,10 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
+        command: {
+            command: 'workbench.action.openGlobalKeybindings',
+            args: ['@ext:sourcegraph.cody-ai'],
+        },
     },
     {
         title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
@@ -158,6 +132,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File (Experimental)',
+        icon: 'beaker',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Generate unit test file',
+        isUnstable: true,
     },
     {
         title: 'Custom',

@@ -1,4 +1,8 @@
 import * as vscode from 'vscode'
+import { IndentationBasedFoldingRangeProvider } from '../../lsp/foldingRanges'
+const isIndentationBasedFoldingRanges =
+    vscode.workspace.getConfiguration().get<string>('cody.experimental.foldingRanges', 'lsp') ===
+    'indentation-based'
 
 export async function getDocumentSections(
     doc: vscode.TextDocument,
@@ -50,7 +54,6 @@ export async function getSelectionAroundLine(
  * Finds the folding range containing the given target position.
  *
  * NOTE: exported for testing purposes only
- *
  * @param ranges - The array of folding ranges to search.
  * @param targetLine - The position to find the containing range for.
  * @returns The folding range containing the target position, or undefined if not found.
@@ -142,11 +145,13 @@ async function removeOutermostFoldingRanges(
  * additional nested folding ranges (e.g. for inner code blocks).
  *
  * By removing the nested ranges, you are left with only the top-level outermost folding ranges.
- *
  * @param ranges - Array of folding ranges
  * @returns Array containing only folding ranges that do not contain any nested child ranges
  */
-function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = false): vscode.FoldingRange[] {
+function removeNestedFoldingRanges(
+    ranges: vscode.FoldingRange[],
+    isTextBased = false
+): vscode.FoldingRange[] {
     const filtered = isTextBased ? combineNeighborFoldingRanges(ranges) : ranges
 
     return filtered.filter(
@@ -159,7 +164,6 @@ function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = 
  *
  * This will iterate through the input ranges, and combine any ranges that are adjacent (end line of previous connects to start line of next)
  * into a single combined range.
- *
  * @param ranges - Array of folding ranges to combine
  * @returns Array of combined folding ranges
  */
@@ -215,7 +219,7 @@ function foldingRangeToRange(doc: vscode.TextDocument, range: vscode.FoldingRang
     // Get the text of the last line so we can count the chars until the end
     const endLine = doc.getText(new vscode.Range(end, 0, end + 1, 0))
 
-    return new vscode.Range(start, 0, end, endLine.length - 1)
+    return new vscode.Range(start, 0, end, Math.max(0, endLine.length - 1))
 }
 
 function rangeLines(range: vscode.Range): number {
@@ -232,7 +236,27 @@ async function defaultGetSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformat
 }
 
 async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingRange[]> {
+    // NOTE(olafurpg): to support folding ranges in the agent (and JetBrains
+    // plugin), Cody has a custom implementation of
+    // `vscode.FoldingRangeProvider` that uses a simple algorithm that follows
+    // indentation.  which is an approximation of folding ranges in VS Code.
+    // This implementation does not aim for 100% parity with folding ranges in
+    // VS Code because it's unrealistic to achieve that.  However, we can reach
+    // 100% parity between Cody in VSC and other clients if VSC switches to the
+    // same indentation-based folding range solution.  To do this, add the
+    // setting `"cody.experimental.foldingRanges": "indentation-based"` and
+    // reload VS Code. Beyond feature parity between all clients, this implementation
+    // can be used to write test cases without mocking, which is a nice benefit.
+    if (isIndentationBasedFoldingRanges) {
+        const provider = new IndentationBasedFoldingRangeProvider()
+        const document = await vscode.workspace.openTextDocument(uri)
+        return provider.provideFoldingRanges(document, {}, new vscode.CancellationTokenSource().token)
+    }
+
     return (
-        (await vscode.commands.executeCommand<vscode.FoldingRange[]>('vscode.executeFoldingRangeProvider', uri)) || []
+        (await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+            'vscode.executeFoldingRangeProvider',
+            uri
+        )) || []
     )
 }

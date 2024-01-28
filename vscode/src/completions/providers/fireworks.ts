@@ -1,26 +1,29 @@
 import * as vscode from 'vscode'
 
-import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
-import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import {
+    displayPath,
+    tokensToChars,
+    type AutocompleteTimeouts,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+} from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import type { ContextSnippet } from '../types'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
+import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    generateCompletions,
     getCompletionParamsAndFetchImpl,
     getLineNumberDependentCompletionParams,
-} from './generate-completions'
+} from './get-completion-params'
 import {
-    CompletionProviderTracer,
     Provider,
-    ProviderConfig,
-    ProviderOptions,
     standardContextSizeHints,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
 } from './provider'
 
 export interface FireworksOptions {
@@ -38,13 +41,12 @@ const EOT_LLAMA_CODE = ' <EOT>'
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    // Models in production
+    // Virtual model strings. Cody Gateway will map to an actual model
+    starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
 
-    // Models in evaluation
-    'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
-    'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    // Fireworks model identifiers
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
@@ -58,11 +60,10 @@ type FireworksModel =
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
+        case 'starcoder':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
-        case 'starcoder-7b':
-        case 'starcoder-3b':
-        case 'starcoder-1b': {
+        case 'starcoder-7b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
             // other providers.
             return 2048
@@ -83,17 +84,20 @@ function getMaxContextTokens(model: FireworksModel): number {
 const MAX_RESPONSE_TOKENS = 256
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopRequences: ['\n'],
+    singlelineStopSequences: ['\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
-export class FireworksProvider extends Provider {
+class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
     private timeouts?: AutocompleteTimeouts
 
-    constructor(options: ProviderOptions, { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>
+    ) {
         super(options)
         this.timeouts = timeouts
         this.model = model
@@ -118,18 +122,23 @@ export class FireworksProvider extends Provider {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
                 if ('symbol' in snippet && snippet.symbol !== '') {
-                    intro.push(`Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`)
+                    intro.push(
+                        `Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`
+                    )
                 } else {
-                    intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                    intro.push(
+                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${
+                            snippet.content
+                        }`
+                    )
                 }
             }
 
-            const introString =
-                intro
-                    .join('\n\n')
-                    .split('\n')
-                    .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                    .join('\n') + '\n'
+            const introString = `${intro
+                .join('\n\n')
+                .split('\n')
+                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
+                .join('\n')}\n`
 
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
@@ -150,21 +159,18 @@ export class FireworksProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
-        onHotStreakCompletionReady: (
-            docContext: DocumentContext,
-            completion: InlineCompletionItemWithAnalytics
-        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
-            providerOptions: this.options,
-            timeouts: this.timeouts,
-            lineNumberDependentCompletionParams,
-        })
+    ): AsyncGenerator<FetchCompletionResult[]> {
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
+            {
+                providerOptions: this.options,
+                timeouts: this.timeouts,
+                lineNumberDependentCompletionParams,
+            }
+        )
 
         const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
@@ -178,20 +184,49 @@ export class FireworksProvider extends Provider {
                     : MODEL_MAP[this.model],
         }
 
-        await generateCompletions({
-            client: this.client,
-            requestParams,
-            abortSignal,
-            providerSpecificPostProcess: this.postProcess,
-            providerOptions: this.options,
-            tracer,
-            fetchAndProcessCompletionsImpl,
-            onCompletionReady,
-            onHotStreakCompletionReady,
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+            const abortController = forkSignal(abortSignal)
+
+            const completionResponseGenerator = generatorWithTimeout(
+                this.client.complete(requestParams, abortController),
+                requestParams.timeoutMs,
+                abortController
+            )
+
+            return fetchAndProcessCompletionsImpl({
+                completionResponseGenerator,
+                abortController,
+                providerSpecificPostProcess: this.postProcess,
+                providerOptions: this.options,
+            })
         })
+
+        /**
+         * This implementation waits for all generators to yield values
+         * before passing them to the consumer (request-manager). While this may appear
+         * as a performance bottleneck, it's necessary for the current design.
+         *
+         * The consumer operates on promises, allowing only a single resolve call
+         * from `requestManager.request`. Therefore, we must wait for the initial
+         * batch of completions before returning them collectively, ensuring all
+         * are included as suggested completions.
+         *
+         * To circumvent this performance issue, a method for adding completions to
+         * the existing suggestion list is needed. Presently, this feature is not
+         * available, and the switch to async generators maintains the same behavior
+         * as with promises.
+         */
+        return zipGenerators(completionsGenerators)
     }
 
-    private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {
+    private createInfillingPrompt(
+        filename: string,
+        intro: string,
+        prefix: string,
+        suffix: string
+    ): string {
         if (isStarCoderFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
@@ -239,10 +274,10 @@ export function createProviderConfig({
         model === null || model === ''
             ? 'starcoder-hybrid'
             : model === 'starcoder-hybrid'
-            ? 'starcoder-hybrid'
-            : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-            ? (model as keyof typeof MODEL_MAP)
-            : null
+              ? 'starcoder-hybrid'
+              : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
+                  ? (model as keyof typeof MODEL_MAP)
+                  : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

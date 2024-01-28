@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react'
 
-import { ChatError, ContextWindowLimitError, RateLimitError } from '@sourcegraph/cody-shared'
+import { RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
 
-import { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
+import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 
@@ -12,24 +12,15 @@ import styles from './ErrorItem.module.css'
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
                 error={error as RateLimitError}
                 ChatButtonComponent={ChatButtonComponent}
-                postMessage={postMessage}
-            />
-        )
-    }
-
-    if (typeof error !== 'string' && error.name === ContextWindowLimitError.errorName && postMessage) {
-        return (
-            <ContextWindowLimitErrorItem
-                error={error as ContextWindowLimitError}
-                ChatButtonComponent={ChatButtonComponent}
+                userInfo={userInfo}
                 postMessage={postMessage}
             />
         )
@@ -45,38 +36,9 @@ export const RequestErrorItem: React.FunctionComponent<{
     error: string
 }> = React.memo(function ErrorItemContent({ error }) {
     return (
-        <div className="cody-chat-error">
-            <span>Request failed: </span>
+        <div className={styles.requestError}>
+            <span className={styles.requestErrorTitle}>Request Failed: </span>
             {error}
-        </div>
-    )
-})
-
-export const ContextWindowLimitErrorItem: React.FunctionComponent<{
-    error: ContextWindowLimitError
-    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    postMessage: ApiPostMessage
-}> = React.memo(function ContextWindowLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
-    const onClick = useCallback(() => {
-        postMessage({ command: 'reset' })
-    }, [postMessage])
-
-    return (
-        <div className={styles.errorItem}>
-            <div className={styles.icon}>
-                <span className="codicon codicon-warning" />
-            </div>
-            <div className={styles.body}>
-                <header>
-                    <h1>Context Limit Reached</h1>
-                    <p>{error.message}</p>
-                </header>
-                {ChatButtonComponent && (
-                    <div className={styles.actions}>
-                        <ChatButtonComponent label="Start New Chat" action="" appearance="primary" onClick={onClick} />
-                    </div>
-                )}
-            </div>
         </div>
     )
 })
@@ -84,19 +46,25 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
 /**
  * An error message shown in the chat.
  */
-export const RateLimitErrorItem: React.FunctionComponent<{
+const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage: ApiPostMessage
-}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+}> = React.memo(function RateLimitErrorItemContent({
+    error,
+    ChatButtonComponent,
+    userInfo,
+    postMessage,
+}) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-    const isEnterpriseUser = userInfo?.isDotComUser !== true
+    const isEnterpriseUser = userInfo.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 
     // Only log once on mount
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
     React.useEffect(() => {
         // Log as abuseUsageLimit if pro user run into rate limit
         postMessage({
@@ -106,8 +74,6 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                 : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const onButtonClick = useCallback(

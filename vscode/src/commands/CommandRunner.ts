@@ -1,15 +1,23 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import {
+    ConfigFeaturesSingleton,
+    type ChatEventSource,
+    type CodyCommand,
+} from '@sourcegraph/cody-shared'
 
-import { executeEdit, ExecuteEditArguments } from '../edit/execute'
-import { getActiveEditor } from '../editor/active-editor'
+import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
+import type { EditIntent, EditMode } from '../edit/types'
+import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+
+import type { CodyCommandArgs } from '.'
+import { getContextForCommand } from './utils/get-context'
+import type { FixupTask } from '../non-stop/FixupTask'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -17,7 +25,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
  *
  * Has id, editor, contextOutput, and disposables properties.
  *
- * Constructor takes command CodyPrompt, instruction string,
+ * Constructor takes command CodyCommand, instruction string,
  * and isFixupRequest boolean. Sets up editor and calls runFixup if needed.
  *
  * TODO bee add status
@@ -28,46 +36,49 @@ export class CommandRunner implements vscode.Disposable {
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
     private kind: string
+    public isFixupRequest = false
+    public fixupTask?: Promise<FixupTask | undefined>
 
     constructor(
-        private command: CodyPrompt,
-        public instruction?: string,
-        private isFixupRequest?: boolean
+        private readonly vscodeEditor: VSCodeEditor,
+        public readonly command: CodyCommand,
+        private readonly args: CodyCommandArgs
     ) {
+        logDebug('CommandRunner:constructor', command.slashCommand, { verbose: { command, args } })
         // use commandKey to identify default command in telemetry
-        // all user and workspace command type should be logged under 'custom'
         const commandKey = command.slashCommand
+        // all user and workspace custom command should be logged under 'custom'
         this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
 
-        if (instruction?.startsWith('/edit ')) {
-            command.mode = 'edit'
+        // remove '/ask' command key from the prompt, if any
+        if (commandKey === '/ask') {
+            command.prompt = command.prompt.replace('/ask', '')
+        }
+        // Set commmand mode - default mode to 'ask' if not specified
+        if (args.runInChatMode) {
+            command.mode = 'ask'
         } else {
-            command.mode = command.mode || 'ask'
+            const isEditPrompt = promptStatsWithEdit(command.prompt)
+            command.mode = isEditPrompt ? 'edit' : command.mode || 'ask'
         }
 
-        // Log commands usage
-        telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
-            mode: command.mode,
-            useCodebaseContex: !!command.context?.codebase,
-            useShellCommand: !!command.context?.command,
-            requestID: command.requestID,
-        })
-        telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
-            metadata: {
-                useCodebaseContex: command.context?.codebase ? 1 : 0,
-                useShellCommand: command.context?.command ? 1 : 0,
-            },
-            interactionID: command.requestID,
-            privateMetadata: {
-                mode: command.mode,
-                requestID: command.requestID,
-            },
-        })
+        // update prompt with additional input added at the end
+        command.prompt = [this.command.prompt, this.command.additionalInput].join(' ')?.trim()
+        this.isFixupRequest = command.mode !== 'ask'
+        this.command = command
 
-        logDebug('CommandRunner:init', this.kind)
+        this.logRequest()
 
         // Commands only work in active editor / workspace unless context specifies otherwise
-        this.editor = getActiveEditor()
+        const editor = getEditor()
+        if (editor.ignored && !editor.active) {
+            const errorMsg = 'Failed to create command: file was ignored by Cody.'
+            logDebug('CommandRunner:int:fail', errorMsg)
+            void vscode.window.showErrorMessage(errorMsg)
+            return
+        }
+
+        this.editor = editor.active
         if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
@@ -75,35 +86,35 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        if (command.mode === 'inline') {
-            void this.handleInlineRequest()
-            return
-        }
-
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert'
-        const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
-        this.isFixupRequest = isFixupRequest || fixupMode || insertMode
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(insertMode)
-            return
+            this.fixupTask = this.handleFixupRequest(command.mode === 'insert')
         }
     }
 
-    /**
-     * codyCommand getter returns command CodyPrompt if not a fixup request,
-     * otherwise returns null. Updates context output if needed.
-     */
-    public get codyCommand(): CodyPrompt | null {
-        if (this.isFixupRequest) {
-            return null
+    private logRequest(): void {
+        // Log non-edit commands usage
+        if (this.command.mode === 'ask') {
+            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
+                mode: this.command.mode,
+                useCodebaseContex: !!this.command.context?.codebase,
+                useShellCommand: !!this.command.context?.command,
+                requestID: this.args.requestID,
+                source: this.args.source,
+            })
+            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+                metadata: {
+                    useCodebaseContex: this.command.context?.codebase ? 1 : 0,
+                    useShellCommand: this.command.context?.command ? 1 : 0,
+                },
+                interactionID: this.args.requestID,
+                privateMetadata: {
+                    mode: this.command.mode,
+                    requestID: this.args.requestID,
+                    source: this.args.source,
+                },
+            })
         }
-        const context = this.command.context
-        if (context) {
-            context.output = this.contextOutput
-            this.command.context = context
-        }
-        return this.command
     }
 
     /**
@@ -126,8 +137,15 @@ export class CommandRunner implements vscode.Disposable {
      * handleFixupRequest method handles executing fixup based on editor selection.
      * Creates range and instruction, calls fixup command.
      */
-    private async handleFixupRequest(insertMode = false): Promise<void> {
+    private async handleFixupRequest(insertMode = false): Promise<FixupTask | undefined> {
         logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
+        if (!configFeatures.commands) {
+            const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
+            void vscode.window.showErrorMessage(disabledMsg)
+            return
+        }
 
         let selection = this.editor?.selection
         const doc = this.editor?.document
@@ -153,49 +171,27 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
-        const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
-        const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        const source = this.kind as ChatEventSource
-        await executeEdit(
+        const range =
+            this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
+        const intent: EditIntent =
+            this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
+        const instruction = insertMode
+            ? addSelectionToPrompt(this.command.prompt, code)
+            : this.command.prompt
+        const source = this.kind === 'custom' ? 'custom-commands' : this.kind
+
+        const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
+        return executeEdit(
             {
                 range,
                 instruction,
                 document: doc,
                 intent,
-                insertMode,
+                mode: this.command.mode as EditMode,
+                contextMessages,
             } satisfies ExecuteEditArguments,
-            source
+            source as ChatEventSource
         )
-    }
-
-    /**
-     * handleInlineRequest method handles executing inline request based on editor selection.
-     *
-     * Gets the current editor selection range and document.
-     * Returns early if no range or document.
-     * Gets the folding range if selection start equals end.
-     *
-     * Calls the vscode.commands.executeCommand with the 'cody.inline.add' command,
-     * passing the instruction prompt and range.
-     *
-     * This executes the inline request using the current selection range in the editor.
-     */
-    private async handleInlineRequest(): Promise<void> {
-        logDebug('CommandRunner:handleFixupRequest', 'inline chat request detected')
-
-        let range = this.editor?.selection
-        const doc = this.editor?.document
-        if (!range || !doc) {
-            return
-        }
-        // Get folding range if no selection is found
-        if (range?.start.isEqual(range.end)) {
-            range = await getSmartSelection(doc.uri, range.start.line)
-        }
-
-        const instruction = this.command.prompt
-        await vscode.commands.executeCommand('cody.inline.add', instruction, range)
     }
 
     /**
@@ -215,8 +211,8 @@ export class CommandRunner implements vscode.Disposable {
  * @param code - The code snippet to include in the prompt
  * @returns The updated prompt string with the code snippet added
  */
-export function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
+function addSelectionToPrompt(prompt: string, code: string): string {
+    return `${prompt}\nHere is the code: \n<code>${code}</code>`
 }
 
 /**
@@ -244,4 +240,8 @@ function getDocCommandRange(
     }
 
     return new vscode.Selection(adjustedStartPosition, selection.end)
+}
+
+function promptStatsWithEdit(prompt: string): boolean {
+    return prompt.startsWith('/edit ')
 }

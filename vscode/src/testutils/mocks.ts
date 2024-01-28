@@ -1,40 +1,23 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-/* eslint-disable import/no-duplicates */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import fs from 'fs/promises'
+import fspromises from 'fs/promises'
 
+import type * as vscode_types from 'vscode'
 import type {
-    Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
     Location as VSCodeLocation,
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
-import type * as vscode_types from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
+import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
 
-export class Disposable implements VSCodeDisposable {
-    public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
-        return new Disposable(() => {
-            for (const disposable of disposableLikes) {
-                disposable.dispose()
-            }
-        })
-    }
-    constructor(private readonly callOnDispose: () => any) {}
-    public dispose(): void {
-        this.callOnDispose()
-    }
-}
+export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { Disposable } from './Disposable'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -43,7 +26,9 @@ export class Disposable implements VSCodeDisposable {
  */
 
 export enum InlineCompletionTriggerKind {
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    // biome-ignore lint/style/useLiteralEnumMembers: want satisfies typecheck
     Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
 }
 
@@ -61,6 +46,19 @@ export enum ConfigurationTarget {
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2,
+}
+
+export enum LogLevel {
+    Off = 0,
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warning = 4,
+    Error = 5,
+}
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2,
 }
 
 export enum CommentThreadCollapsibleState {
@@ -95,6 +93,13 @@ export class ThemeIcon {
     ) {}
 }
 
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3,
+    HighContrastLight = 4,
+}
+
 export class MarkdownString implements vscode_types.MarkdownString {
     constructor(public readonly value: string) {}
     isTrusted?: boolean | { readonly enabledCommands: readonly string[] } | undefined
@@ -110,6 +115,13 @@ export class MarkdownString implements vscode_types.MarkdownString {
     appendCodeblock(): vscode_types.MarkdownString {
         throw new Error('Method not implemented.')
     }
+}
+
+export enum TextEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3,
 }
 
 export enum CommentMode {
@@ -202,10 +214,11 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+// biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = {
+        iconPath: Uri.parse('file://foobar'),
+    }
 }
 
 export class TreeItem {
@@ -222,7 +235,6 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
@@ -251,7 +263,10 @@ export class Position implements VSCodePosition {
     public isEqual(other: Position): boolean {
         return this.line === other.line && this.character === other.character
     }
-    public translate(change: { lineDelta?: number; characterDelta?: number }): VSCodePosition
+    public translate(change: {
+        lineDelta?: number
+        characterDelta?: number
+    }): VSCodePosition
     public translate(lineDelta?: number, characterDelta?: number): VSCodePosition
     public translate(
         arg?: number | { lineDelta?: number; characterDelta?: number },
@@ -264,10 +279,13 @@ export class Position implements VSCodePosition {
 
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
-    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
-        const line = typeof arg === 'number' ? arg : arg?.line
-        character = arg && typeof arg !== 'number' ? arg.character : character
-        return new Position(this.line + (line || 0), this.character + (character || 0))
+    public with(
+        arg?: number | { line?: number; character?: number },
+        character?: number
+    ): VSCodePosition {
+        const newLine = typeof arg === 'number' ? arg : arg?.line
+        const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
+        return new Position(newLine ?? this.line, newCharacter ?? this.character)
     }
 
     public compareTo(other: VSCodePosition): number {
@@ -317,7 +335,10 @@ export class Range implements VSCodeRange {
     }
 
     public with(start?: VSCodePosition, end?: VSCodePosition): VSCodeRange
-    public with(change: { start?: VSCodePosition; end?: VSCodePosition }): VSCodeRange
+    public with(change: {
+        start?: VSCodePosition
+        end?: VSCodePosition
+    }): VSCodeRange
     public with(
         arg?: VSCodePosition | { start?: VSCodePosition; end?: VSCodePosition },
         end?: VSCodePosition
@@ -368,11 +389,28 @@ export class Range implements VSCodeRange {
 }
 
 export class Selection extends Range {
+    public readonly anchor: Position
+    public readonly active: Position
     constructor(
-        public readonly anchor: Position,
-        public readonly active: Position
+        anchorLine: number | Position,
+        anchorCharacter: number | Position,
+        activeLine?: number,
+        activeCharacter?: number
     ) {
-        super(anchor, active)
+        if (
+            typeof anchorLine === 'number' &&
+            typeof anchorCharacter === 'number' &&
+            typeof activeLine === 'number' &&
+            typeof activeCharacter === 'number'
+        ) {
+            super(anchorLine, anchorCharacter, activeLine, activeCharacter)
+        } else if (typeof anchorLine === 'object' && typeof anchorCharacter === 'object') {
+            super(anchorLine, anchorCharacter)
+        } else {
+            throw new TypeError('this version of the constructor is not implemented')
+        }
+        this.anchor = this.start
+        this.active = this.end
     }
 
     /**
@@ -423,41 +461,6 @@ export class WorkspaceEdit {
     }
 }
 
-interface Callback {
-    handler: (arg?: any) => any
-    thisArg?: any
-}
-function invokeCallback(callback: Callback, arg?: any): any {
-    return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
-}
-export const emptyDisposable = new Disposable(() => {})
-
-export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
-    public on = (): undefined => undefined
-
-    constructor() {
-        this.on = () => undefined
-    }
-
-    private readonly listeners = new Set<Callback>()
-    event: vscode_types.Event<T> = (listener, thisArgs) => {
-        const value: Callback = { handler: listener, thisArg: thisArgs }
-        this.listeners.add(value)
-        return new Disposable(() => {
-            this.listeners.delete(value)
-        })
-    }
-
-    fire(data: T): void {
-        for (const listener of this.listeners) {
-            invokeCallback(listener, data)
-        }
-    }
-    dispose(): void {
-        this.listeners.clear()
-    }
-}
-
 export enum EndOfLine {
     LF = 1,
     CRLF = 2,
@@ -480,6 +483,7 @@ export class CancellationToken implements vscode_types.CancellationToken {
     }
     onCancellationRequested = this.emitter.event
 }
+// @cody refactor
 export class CancellationTokenSource implements vscode_types.CancellationTokenSource {
     public token = new CancellationToken()
     cancel(): void {
@@ -492,34 +496,72 @@ export class CancellationTokenSource implements vscode_types.CancellationTokenSo
     }
 }
 
-const workspaceFs: Partial<vscode_types.FileSystem> = {
-    async stat(uri) {
-        const stat = await fs.stat(uri.fsPath)
+export const workspaceFs: typeof vscode_types.workspace.fs = {
+    stat: async uri => {
+        const stat = await fspromises.stat(uri.fsPath)
+        const type = stat.isFile()
+            ? FileType.File
+            : stat.isDirectory()
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                  ? FileType.SymbolicLink
+                  : FileType.Unknown
 
         return {
-            ...stat,
-            type: FileType.File,
-            ctime: stat.ctime.getTime(),
-            mtime: stat.mtime.getTime(),
-        } as vscode_types.FileStat
+            type,
+            ctime: stat.ctimeMs,
+            mtime: stat.mtimeMs,
+            size: stat.size,
+        }
     },
-    async readDirectory(uri) {
-        const entries = await fs.readdir(uri.fsPath, { withFileTypes: true })
+    readDirectory: async uri => {
+        const entries = await fspromises.readdir(uri.fsPath, {
+            withFileTypes: true,
+        })
 
         return entries.map(entry => {
             const type = entry.isFile()
                 ? FileType.File
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
                 : entry.isDirectory()
-                ? FileType.Directory
-                : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                      ? FileType.SymbolicLink
+                      : FileType.Unknown
 
             return [entry.name, type]
         })
     },
-    readFile(uri) {
-        return fs.readFile(uri.fsPath)
+    createDirectory: async uri => {
+        await fspromises.mkdir(uri.fsPath, { recursive: true })
+    },
+    readFile: async uri => {
+        const content = await fspromises.readFile(uri.fsPath)
+        return new Uint8Array(content.buffer)
+    },
+    writeFile: async (uri, content) => {
+        await fspromises.writeFile(uri.fsPath, content)
+    },
+    delete: async (uri, options) => {
+        await fspromises.rm(uri.fsPath, {
+            recursive: options?.recursive ?? false,
+        })
+    },
+    rename: async (source, target, options) => {
+        if (options?.overwrite ?? false) {
+            await fspromises.unlink(target.fsPath)
+        }
+        await fspromises.link(source.fsPath, target.fsPath)
+        await fspromises.unlink(source.fsPath)
+    },
+    copy: async (source, target, options) => {
+        const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
+        await fspromises.copyFile(source.fsPath, target.fsPath, mode)
+    },
+    isWritableFileSystem: scheme => {
+        if (scheme === 'file') {
+            return true
+        }
+        return false
     },
 }
 
@@ -632,6 +674,7 @@ export enum UIKind {
 }
 
 export const vsCodeMocks = {
+    FileType,
     Range,
     Position,
     InlineCompletionItem,
@@ -643,8 +686,12 @@ export const vsCodeMocks = {
     TreeItem,
     WorkspaceEdit,
     UIKind,
+    QuickInputButtons,
     Uri,
     languages,
+    env: {
+        uiKind: 1 satisfies vscode_types.UIKind.Desktop,
+    },
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -656,9 +703,17 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        activeTextEditor: {
+            document: { uri: { scheme: 'not-cody' } },
+            options: { tabSize: 4 },
+        },
         onDidChangeActiveTextEditor() {},
-        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+        createTextEditorDecorationType: () => ({
+            key: 'foo',
+            dispose: () => {},
+        }),
+        visibleTextEditors: [],
+        tabGroups: { all: [] },
     },
     commands: {
         registerCommand: () => ({ dispose: () => {} }),
@@ -705,11 +760,8 @@ export const vsCodeMocks = {
     FoldingRangeKind,
     CodeActionKind,
     DiagnosticSeverity,
+    ViewColumn,
 } as const
-
-export function emptyEvent<T>(): vscode_types.Event<T> {
-    return () => emptyDisposable
-}
 
 export enum ProgressLocation {
     SourceControl = 1,
@@ -725,10 +777,54 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
-    public syncAuthStatus(): void {
-        return
+    public syncAuthStatus(): Promise<void> {
+        return Promise.resolve()
     }
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
+
+export const DEFAULT_VSCODE_SETTINGS = {
+    proxy: null,
+    codebase: '',
+    customHeaders: {},
+    chatPreInstruction: '',
+    useContext: 'embeddings',
+    autocomplete: true,
+    autocompleteLanguages: {
+        '*': true,
+    },
+    commandCodeLenses: false,
+    editorTitleCommandIcon: true,
+    experimentalGuardrails: false,
+    experimentalCommitMessage: false,
+    experimentalSimpleChatContext: true,
+    experimentalSymfContext: true,
+    experimentalTracing: false,
+    codeActions: true,
+    isRunningInsideAgent: false,
+    agentIDE: undefined,
+    debugEnable: false,
+    debugVerbose: false,
+    debugFilter: null,
+    telemetryLevel: 'all',
+    internalUnstable: false,
+    autocompleteAdvancedProvider: null,
+    autocompleteAdvancedModel: null,
+    autocompleteCompleteSuggestWidgetSelection: true,
+    autocompleteFormatOnAccept: true,
+    autocompleteExperimentalDynamicMultilineCompletions: false,
+    autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalGraphContext: null,
+    autocompleteExperimentalOllamaOptions: {
+        model: 'codellama:7b-code',
+        url: 'http://localhost:11434',
+    },
+    autocompleteTimeouts: {
+        multiline: undefined,
+        singleline: undefined,
+    },
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
+} satisfies Configuration

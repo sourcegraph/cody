@@ -1,13 +1,28 @@
 import * as uuid from 'uuid'
-import { Memento } from 'vscode'
+import type { Memento } from 'vscode'
 
-import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
 
-export class LocalStorage {
+import type { AuthStatus } from '../chat/protocol'
+
+type ChatHistoryKey = `${string}-${string}`
+type AccountKeyedChatHistory = {
+    [key: ChatHistoryKey]: UserLocalHistory
+} & {
+    // For backward compatibility, we do not want to delete the `chat` and `input` keys.
+    // As otherwise, downgrading to a prior version would completely block the startup
+    // as the client would throw.
+    //
+    // TODO: This can be removed in a future version
+    chat: ChatHistory
+    input: []
+}
+
+class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    protected readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    protected readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
@@ -67,34 +82,81 @@ export class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    public getChatHistory(): UserLocalHistory {
-        const history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
-        return history || { chat: {}, input: [] }
+    public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
+        let history = this.storage.get<AccountKeyedChatHistory | UserLocalHistory | null>(
+            this.KEY_LOCAL_HISTORY,
+            null
+        )
+        if (!history) {
+            return { chat: {}, input: [] }
+        }
+
+        const key = getKeyForAuthStatus(authStatus)
+
+        // For backwards compatibility, we upgrade the local storage key from the old layout that is
+        // not scoped to individual user accounts to be scoped instead.
+        if (history && !isMigratedChatHistory2261(history)) {
+            // HACK: We spread both parts here as TS would otherwise have issues validating the type
+            //       of AccountKeyedChatHistory. This is only three fields though.
+            history = {
+                ...{ [key]: history },
+                ...{
+                    chat: {},
+                    input: [],
+                },
+            } satisfies AccountKeyedChatHistory
+            // We use a raw write here to ensure we do not _append_ a key but actually replace
+            // existing `chat` and `input` keys.
+            // The result is not awaited to avoid changing this API to be async.
+            this.storage.update(this.KEY_LOCAL_HISTORY, history).then(() => {}, console.error)
+        }
+
+        if (!Object.hasOwn(history, key)) {
+            return { chat: {}, input: [] }
+        }
+        return (history as any)[key]
     }
 
-    public async setChatHistory(history: UserLocalHistory): Promise<void> {
+    public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
-            await this.storage.update(this.KEY_LOCAL_HISTORY, history)
+            const key = getKeyForAuthStatus(authStatus)
+            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
+                this.KEY_LOCAL_HISTORY,
+                null
+            )
+
+            if (fullHistory) {
+                fullHistory[key] = history
+            } else {
+                fullHistory = {
+                    [key]: history,
+                }
+            }
+
+            await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
+
+            // MIGRATION: Delete old/orphaned storage data from a previous migration.
+            this.migrateChatHistory2665(fullHistory as AccountKeyedChatHistory)
         } catch (error) {
             console.error(error)
         }
     }
 
-    public async deleteChatHistory(chatID: string): Promise<void> {
-        const userHistory = this.getChatHistory()
+    public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {
+        const userHistory = this.getChatHistory(authStatus)
         if (userHistory) {
             try {
                 delete userHistory.chat[chatID]
-                await this.storage.update(this.KEY_LOCAL_HISTORY, { ...userHistory })
+                await this.setChatHistory(authStatus, userHistory)
             } catch (error) {
                 console.error(error)
             }
         }
     }
 
-    public async removeChatHistory(): Promise<void> {
+    public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
-            await this.storage.update(this.KEY_LOCAL_HISTORY, null)
+            await this.setChatHistory(authStatus, { chat: {}, input: [] })
         } catch (error) {
             console.error(error)
         }
@@ -119,12 +181,12 @@ export class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async setLastUsedCommands(recipes: string[]): Promise<void> {
-        if (recipes.length === 0) {
+    public async setLastUsedCommands(commands: string[]): Promise<void> {
+        if (commands.length === 0) {
             return
         }
         try {
-            await this.storage.update(this.KEY_LAST_USED_RECIPES, recipes)
+            await this.storage.update(this.KEY_LAST_USED_RECIPES, commands)
         } catch (error) {
             console.error(error)
         }
@@ -149,6 +211,22 @@ export class LocalStorage {
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
     }
+
+    /**
+     * In https://github.com/sourcegraph/cody/pull/2665 we migrated the chat history key to use the
+     * user's username instead of their email address. This means that the storage would retain the chat
+     * history under the old key indefinitely. Large storage data slows down extension host activation
+     * and each `Memento#update` call, so we don't want it to linger.
+     */
+    private migrateChatHistory2665(history: AccountKeyedChatHistory): void {
+        const needsMigration = Object.keys(history).some(key => key.includes('@'))
+        if (needsMigration) {
+            const cleanedHistory = Object.fromEntries(
+                Object.entries(history).filter(([key]) => !key.includes('@'))
+            )
+            this.storage.update(this.KEY_LOCAL_HISTORY, cleanedHistory).then(() => {}, console.error)
+        }
+    }
 }
 
 /**
@@ -156,3 +234,18 @@ export class LocalStorage {
  * The underlying storage is set on extension activation via `localStorage.setStorage(context.globalState)`.
  */
 export const localStorage = new LocalStorage()
+
+function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
+    return `${authStatus.endpoint}-${authStatus.username}`
+}
+
+/**
+ * As part of #2261, we migrated the storage format of the chat history to be keyed by the current
+ * user account. This checks if the new format is used by checking if any key contains a hyphen (the
+ * separator between endpoint and email in the new format).
+ */
+function isMigratedChatHistory2261(
+    history: AccountKeyedChatHistory | UserLocalHistory
+): history is AccountKeyedChatHistory {
+    return !!Object.keys(history).find(k => k.includes('-'))
+}

@@ -1,13 +1,11 @@
-import fs, { copyFileSync, existsSync, mkdirSync, readdirSync, WriteStream } from 'fs'
+import fs, { copyFileSync, existsSync, mkdirSync, readdirSync, type WriteStream } from 'fs'
 import http from 'https'
 import path from 'path'
 
 import ProgressBar from 'progress'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
-
-const DIST_DIRECTORY = path.join(ROOT_PATH, 'vscode/dist')
-const WASM_DIRECTORY = path.join(ROOT_PATH, 'vscode/resources/wasm')
+const DIST_DIRECTORY = path.join(__dirname, '../dist')
+const WASM_DIRECTORY = path.join(__dirname, '../resources/wasm')
 
 // We have to manually copy this because it's resolved by tree-sitter package
 // relative to the current `__dirname` which works fine if we do not bundle `node_modules`
@@ -51,6 +49,11 @@ export async function main(): Promise<void> {
 
     try {
         await Promise.all(filesToDownload.map(downloadFile))
+
+        // HACK(sqs): Wait for files to be written. Otherwise sometimes the files are copied before
+        // they are complete, which causes failures in AutocompleteMatcher.test.ts.
+        await new Promise(resolve => setTimeout(resolve, 500))
+
         copyFilesToDistDir()
         console.log('All files were successful downloaded, check resources/wasm directory')
     } catch (error) {

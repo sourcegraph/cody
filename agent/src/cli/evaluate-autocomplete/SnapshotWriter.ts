@@ -1,15 +1,17 @@
 import * as fspromises from 'fs/promises'
 
 import { createObjectCsvWriter } from 'csv-writer'
-import { CsvWriter } from 'csv-writer/src/lib/csv-writer'
+import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
-import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { autocompleteItemHeaders, EvaluationDocument } from './EvaluationDocument'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { autocompleteItemHeaders, type EvaluationDocument } from './EvaluationDocument'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined
-    constructor(public readonly options: Pick<EvaluateAutocompleteOptions, 'snapshotDirectory' | 'csvPath'>) {}
+    constructor(
+        public readonly options: Pick<EvaluateAutocompleteOptions, 'snapshotDirectory' | 'csvPath'>
+    ) {}
     public async writeHeader(): Promise<void> {
         if (this.options.snapshotDirectory) {
             await rimraf(this.options.snapshotDirectory)

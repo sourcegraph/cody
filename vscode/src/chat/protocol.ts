@@ -1,18 +1,23 @@
-import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
-import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { URI } from 'vscode-uri'
 
-import { View } from '../../webviews/NavBar'
+import type {
+    ActiveTextEditorSelectionRange,
+    ChatMessage,
+    ChatModelProvider,
+    CodyCommand,
+    CodyLLMSiteConfiguration,
+    ConfigurationWithAccessToken,
+    ContextFile,
+    ContextFileType,
+    EnhancedContextContextT,
+    SearchPanelFile,
+    TelemetryEventProperties,
+    UserLocalHistory,
+} from '@sourcegraph/cody-shared'
+import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+
+import type { View } from '../../webviews/NavBar'
+import type { Repo } from '../context/repo-fetcher'
 
 /**
  * A message sent from the webview to the extension host.
@@ -25,14 +30,7 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | {
-          command: 'submit'
-          text: string
-          submitType: ChatSubmitType
-          addEnhancedContext?: boolean
-          contextFiles?: ContextFile[]
-      }
-    | { command: 'executeRecipe'; recipe: RecipeID }
+    | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
@@ -45,7 +43,7 @@ export type WebviewMessage =
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
-          filePath: string
+          uri: URI
           range?: ActiveTextEditorSelectionRange
       }
     | {
@@ -53,14 +51,27 @@ export type WebviewMessage =
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends ot munge the type in a weird way (nested fields become array indices).
-          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+          range?: {
+              startLine: number
+              startCharacter: number
+              endLine: number
+              endCharacter: number
+          }
       }
-    | { command: 'edit'; text: string }
+    | ({ command: 'edit' } & WebviewEditMessage)
+    | { command: 'context/get-remote-search-repos' }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
+    | {
+          command: 'copy'
+          eventType: 'Button' | 'Keydown'
+          text: string
+          metadata?: CodeBlockMeta
+      }
     | {
           command: 'auth'
           type:
@@ -75,53 +86,115 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'reload-state' | 'web-sign-in-token'
+          type: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
-          uriJSON: unknown
-          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+          uri: URI
+          range: {
+              start: { line: number; character: number }
+              end: { line: number; character: number }
+          }
       }
     | {
           command: 'reset'
+      }
+    | {
+          command: 'attribution-search'
+          snippet: string
       }
 
 /**
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
+    | {
+          type: 'config'
+          config: ConfigurationSubsetForWebview & LocalEnv
+          authStatus: AuthStatus
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
-    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
-    | { type: 'contextStatus'; contextStatus: ChatContextStatus }
+    | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
-    | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
+    | {
+          type: 'userContextFiles'
+          context: ContextFile[] | null
+          kind?: ContextFileType
+      }
     | { type: 'chatModels'; models: ChatModelProvider[] }
-    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | {
+          type: 'update-search-results'
+          results: SearchPanelFile[]
+          query: string
+      }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | ({ type: 'attribution' } & ExtensionAttributionMessage)
+    | { type: 'setChatEnabledConfigFeature'; data: boolean }
+    | { type: 'webview-state'; isActive: boolean }
+    | { type: 'context/remote-repos'; repos: Repo[] }
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
+
+interface ExtensionAttributionMessage {
+    snippet: string
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
+export type ChatSubmitType = 'user' | 'user-newchat'
+
+interface WebviewSubmitMessage extends WebviewContextMessage {
+    text: string
+    submitType: ChatSubmitType
+}
+
+interface WebviewEditMessage extends WebviewContextMessage {
+    text: string
+    index?: number
+}
+
+interface WebviewContextMessage {
+    addEnhancedContext?: boolean
+    contextFiles?: ContextFile[]
+}
+
+export interface ExtensionTranscriptMessage {
+    messages: ChatMessage[]
+    isMessageInProgress: boolean
+    chatID: string
+}
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support
@@ -139,8 +212,9 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
-    username?: string
+    username: string
     endpoint: string | null
+    isDotCom: boolean
     isLoggedIn: boolean
     showInvalidAccessTokenError: boolean
     authenticated: boolean
@@ -151,7 +225,7 @@ export interface AuthStatus {
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string
-    displayName: string
+    displayName?: string
     avatarURL: string
     /**
      * Whether the users account can be upgraded.
@@ -166,6 +240,7 @@ export interface AuthStatus {
 
 export const defaultAuthStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -174,13 +249,15 @@ export const defaultAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const unauthenticatedStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,
@@ -189,12 +266,14 @@ export const unauthenticatedStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
+    isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
     isLoggedIn: false,
@@ -204,10 +283,11 @@ export const networkErrorAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
@@ -226,7 +306,10 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false
     }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return (
+        authStatus.authenticated &&
+        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

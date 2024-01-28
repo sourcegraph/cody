@@ -6,31 +6,19 @@ query CurrentUser {
 }`
 
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
-query CurrentUser {
+query CurrentUserCodyProEnabled {
     currentUser {
         codyProEnabled
     }
 }`
 
-export const DOT_COM_CURRENT_USER_INFO_QUERY = `
+export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
         id
         hasVerifiedEmail
         displayName
-        avatarURL
-        codyProEnabled
-        primaryEmail {
-            email
-        }
-    }
-}`
-
-export const ENTERPRISE_CURRENT_USER_INFO_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        displayName
+        username
         avatarURL
         primaryEmail {
             email
@@ -70,6 +58,18 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_CONFIG_FEATURES = `
+query CodyConfigFeaturesResponse {
+    site {
+        codyConfigFeatures {
+            chat
+            autoComplete
+            commands
+            attribution
+        }
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
 query CurrentSiteCodyLlmConfiguration {
     site {
@@ -84,6 +84,21 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const REPOSITORY_LIST_QUERY = `
+query Repositories($first: Int!, $after: String) {
+    repositories(first: $first, after: $after) {
+        nodes {
+            id
+            name
+            url
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
@@ -93,93 +108,35 @@ query Repository($name: String!) {
 
 export const REPOSITORY_IDS_QUERY = `
 query Repositories($names: [String!]!, $first: Int!) {
-	repositories(names: $names, first: $first) {
-                nodes {
-		        id
-                        name
-                }
-	}
-}`
+    repositories(names: $names, first: $first) {
+      nodes {
+        name
+        id
+      }
+    }
+  }
+`
 
-export const REPOSITORY_NAMES_QUERY = `
-query Repositories($first: Int!) {
-	repositories(first: $first) {
-                nodes {
-		        id
-                        name
-                }
-	}
-}`
-
-export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
-query Repository($name: String!) {
-	repository(name: $name) {
-                id
-                embeddingExists
-	}
-}`
-
-export const GET_CODY_CONTEXT_QUERY = `
+export const CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-                __typename
-		... on FileChunkContext {
-                        blob {
-                                path
-                                repository {
-                                        id
-                                        name
-                                }
-                                commit {
-                                        id
-                                        oid
-                                }
-                        }
-			startLine
-			endLine
-                        chunkContent
-		}
-	}
-}`
-
-export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-                        repoName
-                        revision
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
-}`
-
-export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
-query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
-		codeResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-		textResults {
-			fileName
-			startLine
-			endLine
-			content
-		}
-	}
+        ...on FileChunkContext {
+            blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+        }
+    }
 }`
 
 export const SEARCH_ATTRIBUTION_QUERY = `
@@ -190,11 +147,6 @@ query SnippetAttribution($snippet: String!) {
             repositoryName
         }
     }
-}`
-
-export const IS_CONTEXT_REQUIRED_QUERY = `
-query IsContextRequiredForChatQuery($query: String!) {
-	isContextRequiredForChatQuery(query: $query)
 }`
 
 /**

@@ -12,7 +12,7 @@ import * as vscode from 'vscode'
 import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { TextDocumentWithUri } from '../../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { ProtocolTextDocumentWithUri } from '../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -77,7 +77,7 @@ describe('BfgRetriever', async () => {
     it('returns non-empty context', async () => {
         if (bfgCratePath) {
             const bfgBinary = path.join(bfgCratePath, '..', '..', 'target', 'debug', 'bfg')
-            vscode_shim.setConnectionConfig({
+            vscode_shim.setExtensionConfiguration({
                 accessToken: '',
                 serverEndpoint: '',
                 customHeaders: {},
@@ -96,7 +96,7 @@ describe('BfgRetriever', async () => {
 
         const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext)
 
-        const document = agent.workspace.getDocument(new TextDocumentWithUri(uri).uri)!
+        const document = agent.workspace.getDocument(new ProtocolTextDocumentWithUri(uri).uri)!
         assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)

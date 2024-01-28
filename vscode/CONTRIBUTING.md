@@ -43,10 +43,11 @@ We also have some build-in UI to help during the development of autocomplete req
 To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
 
 1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
-1. Commit the version increment.
-1. `git tag vscode-v$(jq -r .version package.json)`
-1. `git push --tags`
-1. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+2. Commit the version increment, e.g. `VS Code: Release 1.1.0`.
+3. `git tag vscode-v$(jq -r .version package.json)`
+4. `git push --tags`
+5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+6. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
 
 ### Insiders builds
 
@@ -79,7 +80,7 @@ It can be helpful to build and run the packaged extension locally to replicate a
 To do this:
 
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
-1. Run `pnpm vscode:prepublish`
+1. Run `pnpm release:dry-run`
 1. Uninstall any existing Cody extension from VS Code.
 1. Run `code --install-extension dist/cody.vsix`
 

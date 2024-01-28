@@ -15,35 +15,6 @@ export interface BotResponseSubscriber {
 }
 
 /**
- * A bot response subscriber that provides the entire bot response in one shot without
- * surfacing incremental updates.
- */
-export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
-    private buffer_: string[] = []
-
-    /**
-     * Creates a BufferedBotResponseSubscriber. `callback` is called once per
-     * turn with the bot's entire output provided in one shot. If the topic
-     * was not mentioned, `callback` is called with `undefined` signifying the
-     * end of a turn.
-     * @param callback the callback to handle content from the bot, if any.
-     */
-    constructor(private callback: (content: string | undefined) => Promise<void>) {}
-
-    // BotResponseSubscriber implementation
-
-    public onResponse(content: string): Promise<void> {
-        this.buffer_.push(content)
-        return Promise.resolve()
-    }
-
-    public async onTurnComplete(): Promise<void> {
-        await this.callback(this.buffer_.length ? this.buffer_.join('') : undefined)
-        this.buffer_ = []
-    }
-}
-
-/**
  * Splits a string in one or two places.
  *
  * For example, `splitAt('banana!', 2) => ['ba', 'nana!']`
@@ -142,7 +113,8 @@ export class BotResponseMultiplexer {
      */
     public publish(response: string): Promise<void> {
         // If an existing publication hasn't finished, convoy behind that one.
-        return (this.publishInProgress_ = this.publishInProgress_.then(() => this.publishStep(response)))
+        this.publishInProgress_ = this.publishInProgress_.then(() => this.publishStep(response))
+        return this.publishInProgress_
     }
 
     // This is basically a loose parser of an XML-like language which forwards
@@ -150,7 +122,7 @@ export class BotResponseMultiplexer {
     // is forgiving if tags are not closed in the right order.
     private async publishStep(response: string): Promise<void> {
         this.buffer_ += response
-        let last
+        let last: number | undefined
         while (this.buffer_) {
             if (last !== undefined && last === this.buffer_.length) {
                 throw new Error(`did not make progress parsing: ${this.buffer_}`)
@@ -221,12 +193,5 @@ export class BotResponseMultiplexer {
             return
         }
         return sub.onResponse(content)
-    }
-
-    /** Produces a prompt to describe the response format to the bot. */
-    public prompt(): string {
-        return `Enclose each part of the response in one of the relevant tags: ${[...this.subs_.keys()]
-            .map(topic => `<${topic}>`)
-            .join(', ')}:\n\n`
     }
 }

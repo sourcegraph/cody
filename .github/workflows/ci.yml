@@ -74,8 +74,11 @@ jobs:
         if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows' || matrix.runner == 'macos')
 
   test-e2e:
-    runs-on: ubuntu-latest
-    name: 'test-e2e (ubuntu)' # required to match the GitHub PR status check requirement
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu, windows]
+    runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -88,6 +91,8 @@ jobs:
       - uses: pnpm/action-setup@v2
       - id: auth
         uses: google-github-actions/auth@v0
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
@@ -103,6 +108,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
+        if: matrix.runner == 'ubuntu'
+      - run: pnpm -C vscode run test:e2e
+        if: matrix.runner != 'ubuntu'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
@@ -131,6 +139,8 @@ jobs:
       - uses: pnpm/action-setup@v2
       - id: auth
         uses: google-github-actions/auth@v0
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
@@ -171,27 +181,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+      - run: pnpm exec biome ci --error-on-warnings .
       - run: pnpm run build
       - run: pnpm -C vscode run build
-
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm run lint
-      - run: pnpm run format:check
+      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run

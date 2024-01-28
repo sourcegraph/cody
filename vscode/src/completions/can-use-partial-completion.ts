@@ -1,13 +1,14 @@
-import { TextDocument } from 'vscode'
+import type { TextDocument } from 'vscode'
 
-import { DocumentContext } from './get-current-doc-context'
+import type { DocumentContext } from './get-current-doc-context'
+import { hasCompleteFirstLine } from './text-processing'
 import { parseAndTruncateCompletion } from './text-processing/parse-and-truncate-completion'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
-export interface CanUsePartialCompletionParams {
+interface CanUsePartialCompletionParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion?: boolean
+    isDynamicMultilineCompletion: boolean
 }
 
 /**
@@ -26,10 +27,8 @@ export function canUsePartialCompletion(
     params: CanUsePartialCompletionParams
 ): InlineCompletionItemWithAnalytics | null {
     const { docContext } = params
-    const lastNewlineIndex = partialResponse.lastIndexOf('\n')
 
-    // If there is no `\n` in the completion, we have not received a single full line yet
-    if (lastNewlineIndex === -1) {
+    if (!hasCompleteFirstLine(partialResponse)) {
         return null
     }
 

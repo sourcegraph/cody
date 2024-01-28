@@ -1,28 +1,33 @@
 import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     isAbortError,
     isAuthError,
+    isDotCom,
     isRateLimitError,
     NetworkError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
 
 export * from '@sentry/core'
-export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
+const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
 
 export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof browserInit>[0]>
 
 export abstract class SentryService {
-    constructor(protected config: Pick<Configuration, 'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'>) {
+    constructor(
+        protected config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'
+        >
+    ) {
         this.prepareReconfigure()
     }
 
-    public onConfigurationChange(newConfig: Pick<Configuration, 'serverEndpoint'>): void {
+    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>): void {
         this.config = newConfig
         this.prepareReconfigure()
     }
@@ -43,8 +48,8 @@ export abstract class SentryService {
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'
-                    ? 'vscode-web'
-                    : 'vscode-node',
+                      ? 'vscode-web'
+                      : 'vscode-node',
 
                 // In dev mode, have Sentry log extended debug information to the console.
                 debug: !isProd,

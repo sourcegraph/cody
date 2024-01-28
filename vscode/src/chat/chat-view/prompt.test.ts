@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-
-import { DefaultPrompter } from './prompt'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SimpleChatModel } from './SimpleChatModel'
+import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
     afterEach(() => {
@@ -13,19 +12,9 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const {
-            prompt,
-            contextLimitWarnings: warnings,
-            newContextUsed,
-        } = await new DefaultPrompter().makePrompt(
-            chat,
-            {
-                getExplicitContext: () => [],
-                getEnhancedContext: () => Promise.resolve([]),
-            },
-            true,
-            100000
-        )
+        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
+            Promise.resolve([])
+        ).makePrompt(chat, 100000)
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -43,7 +32,6 @@ describe('DefaultPrompter', () => {
             },
           ]
         `)
-        expect(warnings).toMatchInlineSnapshot('[]')
         expect(newContextUsed).toMatchInlineSnapshot('[]')
     })
 
@@ -59,19 +47,9 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const {
-            prompt,
-            contextLimitWarnings: warnings,
-            newContextUsed,
-        } = await new DefaultPrompter().makePrompt(
-            chat,
-            {
-                getExplicitContext: () => [],
-                getEnhancedContext: () => Promise.resolve([]),
-            },
-            true,
-            100000
-        )
+        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
+            Promise.resolve([])
+        ).makePrompt(chat, 100000)
 
         expect(prompt).toMatchInlineSnapshot(`
           [
@@ -89,7 +67,6 @@ describe('DefaultPrompter', () => {
             },
           ]
         `)
-        expect(warnings).toMatchInlineSnapshot('[]')
         expect(newContextUsed).toMatchInlineSnapshot('[]')
     })
 })

@@ -8,11 +8,8 @@ const config: StorybookConfig = {
         name: '@storybook/react-vite',
         options: {},
     },
-    docs: {
-        autodocs: 'tag',
-    },
-    async viteFinal(config) {
-        return mergeConfig(config, { css: { modules: { localsConvention: 'camelCaseOnly' } } })
+    viteFinal: async config => {
+        return mergeConfig(config, { define: { 'process.env': {} } })
     },
 }
 export default config

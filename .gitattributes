@@ -2,3 +2,4 @@
 # code and snapshots assume this.
 * text=auto eol=lf
 CHANGELOG.md merge=union
+agent/recordings/*/recording.har.yaml merge=ours linguist-generated=true

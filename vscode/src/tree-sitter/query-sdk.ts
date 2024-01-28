@@ -1,11 +1,18 @@
 import { findLast } from 'lodash'
-import { Position, TextDocument } from 'vscode'
-import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
+import type { Position, TextDocument } from 'vscode'
+import type {
+    Language,
+    default as Parser,
+    Point,
+    Query,
+    QueryCapture,
+    SyntaxNode,
+} from 'web-tree-sitter'
 
-import { getParseLanguage, SupportedLanguage } from './grammars'
+import { getParseLanguage, type SupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { getParser } from './parser'
-import { CompletionIntent, intentPriority, languages, QueryName } from './queries'
+import { intentPriority, languages, type CompletionIntent, type QueryName } from './queries'
 
 interface ParsedQuery {
     compiled: Query
@@ -80,7 +87,7 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     }
 }
 
-export interface QueryWrappers {
+interface QueryWrappers {
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -95,7 +102,11 @@ export interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' }]
+    ) =>
+        | []
+        | readonly [
+              { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
+          ]
 }
 
 /**
@@ -189,8 +200,10 @@ function getIntentFromCaptures(
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
     const atomicCapture = findLast(captures, capture => {
         const enclosesCursor =
-            (capture.node.startPosition.column <= cursor.column || capture.node.startPosition.row < cursor.row) &&
-            (cursor.column <= capture.node.endPosition.column || cursor.row < capture.node.endPosition.row)
+            (capture.node.startPosition.column <= cursor.column ||
+                capture.node.startPosition.row < cursor.row) &&
+            (cursor.column <= capture.node.endPosition.column ||
+                cursor.row < capture.node.endPosition.row)
 
         return capture.name.endsWith('!') && enclosesCursor
     })
@@ -310,7 +323,7 @@ interface QueryPoints {
     endPoint: Point
 }
 
-export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
     const startPoint = {
         row: position.line,
         column: position.character,
@@ -336,12 +349,14 @@ export function execQueryWrapper<T extends keyof QueryWrappers>(
     const { startPoint, endPoint } = positionToQueryPoints(position)
 
     if (documentQuerySDK && parseTreeCache) {
-        return documentQuerySDK.queries[queryWrapper](parseTreeCache.tree.rootNode, startPoint, endPoint) as ReturnType<
-            QueryWrappers[T]
-        >
+        return documentQuerySDK.queries[queryWrapper](
+            parseTreeCache.tree.rootNode,
+            startPoint,
+            endPoint
+        ) as ReturnType<QueryWrappers[T]>
     }
 
     return []
 }
 
-export { CompletionIntent }
+export type { CompletionIntent }

@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import path from 'path'
 import process from 'process'
 
 import { build } from 'esbuild'
-
 ;(async () => {
     const minify = process.argv.includes('--minify')
 
@@ -17,6 +15,13 @@ import { build } from 'esbuild'
         logLevel: 'error',
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),
+
+            // Build from TypeScript sources so we don't need to run `tsc -b` in the background
+            // during dev.
+            '@sourcegraph/cody-shared': '@sourcegraph/cody-shared/src/index',
+            '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
+            '@sourcegraph/cody-ui': '@sourcegraph/cody-ui/src/index',
+            '@sourcegraph/cody-ui/src': '@sourcegraph/cody-ui/src',
         },
     }
     const res = await build(esbuildOptions)

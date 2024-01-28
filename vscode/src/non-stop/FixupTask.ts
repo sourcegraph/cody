@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import { Diff } from './diff'
-import { FixupFile } from './FixupFile'
+import type { EditIntent, EditMode } from '../edit/types'
+
+import type { Diff } from './diff'
+import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string
@@ -12,6 +13,8 @@ export type taskID = string
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
+    private stateChanges = new vscode.EventEmitter<CodyTaskState>()
+    public onDidStateChange = this.stateChanges.event
     /**
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
@@ -42,15 +45,22 @@ export class FixupTask {
     public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
-        public readonly fixupFile: FixupFile,
+        /**
+         * The file that will be updated by Cody with the replacement text at the end of stream
+         * This is set by the FixupController when creating the task,
+         * and will be updated by the FixupController for tasks using the 'new' mode
+         */
+        public fixupFile: FixupFile,
         public readonly instruction: string,
+        public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: FixupIntent = 'edit',
+        public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
-        /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
-        public insertMode?: boolean,
+        /* The mode indicates how code should be inserted */
+        public mode: EditMode = 'edit',
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
-        public source?: ChatEventSource
+        public source?: ChatEventSource,
+        public readonly contextMessages?: ContextMessage[]
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
@@ -64,8 +74,14 @@ export class FixupTask {
      */
     public set state(state: CodyTaskState) {
         this.state_ = state
+        this.stateChanges.fire(state)
     }
 
+    /**
+     * Gets the state of the fixup task.
+     *
+     * @returns The current state of the fixup task.
+     */
     public get state(): CodyTaskState {
         return this.state_
     }

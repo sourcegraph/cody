@@ -1,13 +1,18 @@
 import * as vscode from 'vscode'
 
-import type {
-    Configuration,
-    ConfigurationUseContext,
-    ConfigurationWithAccessToken,
-} from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import {
+    DOTCOM_URL,
+    type Configuration,
+    type ConfigurationUseContext,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
-import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
+import {
+    CONFIG_KEY,
+    getConfigEnumValues,
+    type ConfigKeys,
+    type ConfigurationKeysMap,
+} from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -18,7 +23,9 @@ interface ConfigGetter {
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
+export function getConfiguration(
+    config: ConfigGetter = vscode.workspace.getConfiguration()
+): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
@@ -30,14 +37,17 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         const debugPattern: string | null = config.get<string | null>(CONFIG_KEY.debugFilter, null)
         if (debugPattern) {
             if (debugPattern === '*') {
-                debugRegex = new RegExp('.*')
+                debugRegex = /.*/
             } else {
                 debugRegex = new RegExp(debugPattern)
             }
         }
     } catch (error: any) {
-        void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
-        debugRegex = new RegExp('.*')
+        void vscode.window.showErrorMessage(
+            "Error parsing cody.debug.filter regex - using default '*'",
+            error
+        )
+        debugRegex = /.*/
     }
 
     let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
@@ -50,7 +60,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     }
 
     // check if the configured enum values are valid
-    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+    const configKeys = [
+        'autocompleteAdvancedProvider',
+        'autocompleteAdvancedModel',
+    ] as (keyof ConfigurationKeysMap)[]
 
     for (const configVal of configKeys) {
         const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
@@ -58,19 +71,12 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         checkValidEnumValues(key, value)
     }
 
-    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
+    const autocompleteExperimentalGraphContext: 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
     )
-    // Handle the old `true` option
-    if (autocompleteExperimentalGraphContext === true) {
-        autocompleteExperimentalGraphContext = 'lsp-light'
-    }
 
     return {
-        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
-        // to use as fallback for users who do not have access to local storage
-        serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -87,43 +93,44 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
-        autocompleteAdvancedServerEndpoint: config.get<string | null>(
-            CONFIG_KEY.autocompleteAdvancedServerEndpoint,
-            null
-        ),
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
-        autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
-
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
          * Hidden settings for internal use only.
          */
 
+        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+
         autocompleteExperimentalGraphContext,
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', false),
-        experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', false),
+        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
-        experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
+        experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
-            'autocomplete.experimental.syntacticPostProcessing',
-            true
-        ),
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
         ),
 
-        autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
+        autocompleteExperimentalHotStreak: getHiddenSetting(
+            'autocomplete.experimental.hotStreak',
+            false
+        ),
+        autocompleteExperimentalOllamaOptions: getHiddenSetting(
+            'autocomplete.experimental.ollamaOptions',
+            {
+                url: 'http://localhost:11434',
+                model: 'codellama:7b-code',
+            }
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
@@ -132,8 +139,14 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
         autocompleteTimeouts: {
-            multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
-            singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
+            multiline: getHiddenSetting<number | undefined>(
+                'autocomplete.advanced.timeout.multiline',
+                undefined
+            ),
+            singleline: getHiddenSetting<number | undefined>(
+                'autocomplete.advanced.timeout.singleline',
+                undefined
+            ),
         },
 
         testingLocalEmbeddingsModel: isTesting
@@ -157,35 +170,23 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-function sanitizeServerEndpoint(serverEndpoint: string): string {
-    if (!serverEndpoint) {
-        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
-        // tests.
-        const isTesting = process.env.CODY_TESTING === 'true'
-        if (isTesting) {
-            return 'http://localhost:49300/'
-        }
-
-        return DOTCOM_URL.href
-    }
-    const trailingSlashRegexp = /\/$/
-    return serverEndpoint.trim().replace(trailingSlashRegexp, '')
-}
-
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
-    // Migrate endpoints to local storage
-    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    const isTesting = process.env.CODY_TESTING === 'true'
+    const serverEndpoint =
+        localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
     const accessToken = (await getAccessToken()) || null
-    return { ...config, accessToken }
+    return { ...config, accessToken, serverEndpoint }
 }
 
 function checkValidEnumValues(configName: string, value: string | null): void {
-    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    const validEnumValues = getConfigEnumValues(`cody.${configName}`)
     if (value) {
         if (!validEnumValues.includes(value)) {
             void vscode.window.showErrorMessage(
-                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(
+                    ', '
+                )}`
             )
         }
     }

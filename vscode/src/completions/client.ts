@@ -1,70 +1,42 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import type {
-    CompletionLogger,
-    CompletionsClientConfig,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import type {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import {
-    isAbortError,
-    isRateLimitError,
+    FeatureFlag,
     NetworkError,
     RateLimitError,
-    TimeoutError,
+    STOP_REASON_STREAMING_CHUNK,
     TracedError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
+    addTraceparent,
+    featureFlagProvider,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    isNodeResponse,
+    isRateLimitError,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type CompletionLogger,
+    type CompletionResponse,
+    type CompletionResponseGenerator,
+    type CompletionsClientConfig,
+} from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-
-import { forkSignal } from './utils'
-
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
-
-export interface CodeCompletionsClient {
-    complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse>
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
-}
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
-export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
-    function getCodeCompletionsEndpoint(): string {
-        return new URL('/.api/completions/code', config.serverEndpoint).href
-    }
-
-    function completeWithTimeout(
+export function createClient(
+    config: CompletionsClientConfig,
+    logger?: CompletionLogger
+): CodeCompletionsClient {
+    async function* complete(
         params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const abortController = signal ? forkSignal(signal) : new AbortController()
-        return Promise.race([
-            complete(params, onPartialResponse, abortController.signal),
-            createTimeout(params.timeoutMs).finally(() => {
-                // We abort the network request in the next run loop so that the race promise can be
-                // rejected with the timeout error before that.
-                setTimeout(() => abortController.abort(), 0)
-            }),
-        ])
-    }
-
-    async function complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
-        signal?: AbortSignal
-    ): Promise<CompletionResponse> {
-        const url = getCodeCompletionsEndpoint()
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
 
-        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+        const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteTracing
+        )
 
         const headers = new Headers(config.customHeaders)
         // Force HTTP connection reuse to reduce latency.
@@ -94,14 +66,14 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Accept-Encoding', 'gzip;q=0')
         }
 
-        const response: Response = await fetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({
                 ...params,
                 stream: enableStreaming,
             }),
             headers,
-            signal,
+            signal: abortController.signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
@@ -112,7 +84,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             // is no upgrade available.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
-                typeof response.headers.get('x-is-cody-pro-user') !== undefined
+                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
@@ -136,30 +108,32 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-        if (isStreamingResponse) {
+        if (isStreamingResponse && isNodeResponse(response)) {
             let lastResponse: CompletionResponse | undefined
             try {
-                // The any cast is necessary because `node-fetch` (The polyfill for fetch we use via
-                // `isomorphic-fetch`) does not implement a proper ReadableStream interface but
-                // instead exposes a Node Stream.
-                //
-                // Since we directly require from `isomporphic-fetch` and gate this branch out from
-                // non Node environments, the response.body will always be a Node Stream instead
-                const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
+                const iterator = createSSEIterator(response.body)
+                let chunkIndex = 0
 
-                for await (const chunk of iterator) {
-                    if (chunk.event === 'error') {
-                        throw new Error(chunk.data)
+                for await (const { event, data } of iterator) {
+                    if (event === 'error') {
+                        throw new Error(data)
                     }
 
-                    if (chunk.event === 'completion') {
-                        if (signal?.aborted) {
+                    if (event === 'completion') {
+                        if (abortController.signal.aborted) {
                             break // Stop processing the already received chunks.
                         }
 
-                        lastResponse = JSON.parse(chunk.data) as CompletionResponse
-                        onPartialResponse?.(lastResponse)
+                        lastResponse = JSON.parse(data) as CompletionResponse
+
+                        if (!lastResponse.stopReason) {
+                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
+                        }
+
+                        yield lastResponse
                     }
+
+                    chunkIndex += 1
                 }
 
                 if (lastResponse === undefined) {
@@ -189,10 +163,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     const message = `response does not satisfy CodeCompletionResponse: ${result}`
                     log?.onError(message)
                     throw new TracedError(message, traceId)
-                } else {
-                    log?.onComplete(response)
-                    return response
                 }
+                log?.onComplete(response)
+                return response
             } catch (error) {
                 const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
                 log?.onError(message, error)
@@ -202,7 +175,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
     }
 
     return {
-        complete: completeWithTimeout,
+        complete,
         onConfigurationChange(newConfig) {
             config = newConfig
         },
@@ -215,15 +188,15 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(iterator: NodeJS.ReadableStream): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
 
-        const data = new TextDecoder().decode(event)
-        buffer += data
+        buffer += event.toString()
 
         let index: number
+        // biome-ignore lint/suspicious/noAssignInExpressions: useful
         while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
             const message = buffer.slice(0, index)
             buffer = buffer.slice(index + SSE_TERMINATOR.length)
@@ -269,8 +242,4 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
-}
-
-function createTimeout(timeoutMs: number): Promise<never> {
-    return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

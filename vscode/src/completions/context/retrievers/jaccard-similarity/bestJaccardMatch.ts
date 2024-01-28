@@ -9,13 +9,15 @@ export interface JaccardMatch {
  * Finds the window from matchText with the lowest Jaccard distance from targetText.
  * The Jaccard distance is the ratio of intersection over union, using a bag-of-words-with-count as
  * the representation for text snippet.
- *
  * @param targetText is the text that serves as the target we are trying to find a match for
  * @param matchText is the text we are sliding our window through to find the best match
  * @param windowSize is the size of the match window in number of lines
- * @returns
  */
-export function bestJaccardMatch(targetText: string, matchText: string, windowSize: number): JaccardMatch | null {
+export function bestJaccardMatch(
+    targetText: string,
+    matchText: string,
+    windowSize: number
+): JaccardMatch | null {
     const wordCount = (words: Map<string, number>): number => {
         let count = 0
         for (const v of words.values()) {
@@ -120,7 +122,7 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
     }
 }
 
-export function jaccardDistance(left: number, right: number, intersection: number): number {
+function jaccardDistance(left: number, right: number, intersection: number): number {
     const union = left + right - intersection
     if (union < 0) {
         throw new Error("intersection can't be greater than the sum of left and right")

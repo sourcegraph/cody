@@ -11,7 +11,7 @@ const cases = [true, false]
 
 // Run truncation tests for both strategies: indentation-based and tree-sitter-based.
 // We cannot use `describe.each` here because `toMatchInlineSnapshot` is not supported with it.
-cases.forEach(isTreeSitterEnabled => {
+for (const isTreeSitterEnabled of cases) {
     const label = isTreeSitterEnabled ? 'enabled' : 'disabled'
 
     describe(`[getInlineCompletions] multiline truncation with tree-sitter ${label}`, () => {
@@ -681,7 +681,74 @@ cases.forEach(isTreeSitterEnabled => {
                       }"
                 `)
                 })
+
+                it('handles missing brackets gracefully to truncate the completion correctly', async () => {
+                    const requestParams = params('console.log(1); const █', [completion``], {
+                        *completionResponseGenerator() {
+                            yield completion`
+                                ├MyCoolObject = {
+                                constructor() {`
+
+                            yield completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false`
+
+                            yield completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false) {
+                                        console.log(2)
+                                    }
+
+                                    const result = {
+                                        value:`
+
+                            yield completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false) {
+                                        console.log(2)
+                                    }
+
+                                    const result = {
+                                        value: true
+                                    }
+
+                                    return result
+                                }
+                            }
+                            console.log(5)┤`
+                        },
+                        dynamicMultilineCompletions: true,
+                    })
+
+                    const [insertText] = await getInlineCompletionsInsertText(requestParams)
+                    expect(insertText).toMatchInlineSnapshot(`
+                      "MyCoolObject = {
+                          constructor() {
+                              console.log(1)
+
+                              if (false) {
+                                  console.log(2)
+                              }
+
+                              const result = {
+                                  value: true
+                              }
+
+                              return result
+                          }
+                      }"
+                    `)
+                })
             }
         })
     })
-})
+}

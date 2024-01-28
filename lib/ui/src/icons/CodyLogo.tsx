@@ -1,7 +1,15 @@
 import React from 'react'
 
 export const CodyLogo = React.memo(() => (
-    <svg width="30" height="25" viewBox="0 0 35 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+        width="30"
+        height="25"
+        viewBox="0 0 35 18"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label="Cody logo"
+    >
         <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -22,3 +30,4 @@ export const CodyLogo = React.memo(() => (
         />
     </svg>
 ))
+CodyLogo.displayName = 'CodyLogo'

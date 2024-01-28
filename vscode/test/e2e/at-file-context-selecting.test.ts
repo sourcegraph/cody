@@ -2,6 +2,8 @@ import path from 'path'
 
 import { expect } from '@playwright/test'
 
+import { isWindows } from '@sourcegraph/cody-shared'
+
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
@@ -17,7 +19,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('@')
     await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols..' })
+        chatPanelFrame.getByRole('heading', {
+            name: 'Search for a file to include, or type # to search symbols...',
+        })
     ).toBeVisible()
 
     // No results
@@ -42,7 +46,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
 
     // Symbol empty state
     await chatInput.fill('@#')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })).toBeVisible()
+    await expect(
+        chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })
+    ).toBeVisible()
 
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
@@ -51,7 +57,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     ).toBeVisible()
 
     // Backslashes
-    if (path.sep === path.win32.sep) {
+    if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
             chatPanelFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
@@ -77,7 +83,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('ArrowDown') // second item again
     await chatInput.press('Enter')
     await expect(chatInput).toHaveValue(
-        withPlatformSlashes('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go ')
+        withPlatformSlashes(
+            'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '
+        )
     )
 
     // Send the message and check it was included
@@ -85,9 +93,14 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await expect(chatInput).toBeEmpty()
     await expect(
         chatPanelFrame.getByText(
-            withPlatformSlashes('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go')
+            withPlatformSlashes(
+                'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go'
+            )
         )
     ).toBeVisible()
+
+    // Ensure explicitly @-included context shows up as enhanced context
+    expect(await chatPanelFrame.getByText(/^✨ Context:/).count()).toEqual(2)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -96,6 +109,13 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('@Main.java', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java ')
+
+    // Check pressing tab after typing a partial filename but where that complete
+    // filename already exists earlier in the input.
+    // https://github.com/sourcegraph/cody/issues/2243
+    await chatInput.type('and @Main.ja', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
 
 function withPlatformSlashes(input: string) {

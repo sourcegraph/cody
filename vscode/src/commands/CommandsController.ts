@@ -1,19 +1,36 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import type { CodyCommand, CustomCommandType, VsCodeCommandsController } from '@sourcegraph/cody-shared'
 
+import { getFullConfig } from '../configuration'
 import { executeEdit } from '../edit/execute'
+import { getEditor } from '../editor/active-editor'
+import type { VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
+import type { CodyCommandArgs } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
-import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
+import {
+    showCommandConfigMenu,
+    showCommandMenu,
+    showCustomCommandMenu,
+    showNewCustomCommandMenu,
+} from './menus'
 import { PromptsProvider } from './PromptsProvider'
-import { constructFileUri, createFileWatchers, createQuickPickItem, openCustomCommandDocsLink } from './utils/helpers'
-import { menu_options, menu_separators, showAskQuestionQuickPick, showRemoveConfirmationInput } from './utils/menu'
+import {
+    constructFileUri,
+    createFileWatchers,
+    createQuickPickItem,
+    openCustomCommandDocsLink,
+} from './utils/helpers'
+import {
+    menu_options,
+    menu_separators,
+    showAskQuestionQuickPick,
+    showRemoveConfirmationInput,
+} from './utils/menu'
 import { ToolsProvider } from './utils/ToolsProvider'
 
 /**
@@ -27,9 +44,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     private tools: ToolsProvider
     private custom: CustomPromptsStore
-    public default = new PromptsProvider()
-
-    private myPromptsMap = new Map<string, CodyPrompt>()
+    // Provide the default Cody Commands
+    public default
+    // Provide the custom commands from user file system or codebase
+    private userCustomCommandsMap = new Map<string, CodyCommand>()
 
     private lastUsedCommands = new Set<string>()
 
@@ -37,138 +55,83 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
-    public commandRunners = new Map<string, CommandRunner>()
+    public enableExperimentalCommands = false
 
-    constructor(context: vscode.ExtensionContext) {
-        this.tools = new ToolsProvider(context)
+    constructor(private readonly editor: VSCodeEditor) {
+        this.default = new PromptsProvider()
+        this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
-        this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(this.isEnabled, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
+
+        this.disposables.push(
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    const config = await getFullConfig()
+                    this.setEnableExperimentalCommands(config.internalUnstable)
+                    await this.refresh()
+                }
+            })
+        )
     }
 
-    /**
-     * Gets a CodyPrompt object for the given command runner ID.
-     * @param commandRunnerId - The ID of the command runner to get the prompt for.
-     * @returns The CodyPrompt object for the command runner, or null if not found.
-     *
-     * Looks up the command runner instance in the commandRunners map by the given ID.
-     * If found, returns the CodyPrompt associated with that runner. Otherwise returns null.
-     */
-    public getCommand(commandRunnerId: string): CodyPrompt | null {
-        const commandRunner = this.commandRunners.get(commandRunnerId)
-        if (!commandRunner) {
+    public setEnableExperimentalCommands(enable: boolean): void {
+        this.enableExperimentalCommands = enable
+    }
+
+    public async startCommand(text: string, args: CodyCommandArgs): Promise<CommandRunner | null> {
+        const editor = getEditor()
+        if (!editor.active || editor.ignored) {
+            const message = editor.ignored
+                ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
+                : 'No editor is active. Please open a file and try again.'
+            void vscode.window.showErrorMessage(message)
             return null
         }
-        this.commandRunners.delete(commandRunnerId)
-        return commandRunner?.codyCommand
-    }
 
-    public isCommand(text: string): boolean {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
-
-        return !!this.default.get(commandKey)
-    }
-
-    /**
-     * Adds a new command to the commands map.
-     *
-     * Looks up the command prompt using the given key in the default prompts map.
-     * If found, creates a new Cody command runner instance for that prompt and input.
-     * Returns the ID of the created runner, or 'invalid' if not found.
-     */
-    public async addCommand(
-        text: string,
-        requestID?: string,
-        contextFiles?: ContextFile[],
-        addEnhancedContext?: boolean
-    ): Promise<string> {
-        const commandSplit = text.split(' ')
-        // The unique key for the command. e.g. /test
-        const commandKey = commandSplit.shift() || text
-        // Additional instruction that will be added to end of prompt in the custom-prompt recipe
-        const commandInput = commandKey === text ? '' : commandSplit.join(' ')
+        // Additional instruction that will be added to end of prompt in the custom command prompt
+        const additionalInput = commandKey === text ? '' : commandSplit.join(' ')
 
         const command = this.default.get(commandKey)
         if (!command) {
-            return 'invalid'
+            return null
         }
-
-        if (command.slashCommand === '/ask') {
-            command.prompt = text
-        }
-
-        if (!command.context && addEnhancedContext) {
-            command.context = { codebase: addEnhancedContext }
-        }
-
-        command.additionalInput = commandInput
-        command.requestID = requestID
-        command.contextFiles = contextFiles
-        return this.createCodyCommandRunner(command, commandInput)
-    }
-
-    /**
-     * Creates a new Cody command runner instance and returns the ID.
-     *
-     * This creates a new CommandRunner instance with the given CodyPrompt, input text,
-     * and fixup request flag. It adds the runner to the commandRunners map, sets it
-     * as the current prompt in progress, and logs the command usage.
-     *
-     * If the prompt has a shell command in its context, it will execute that command.
-     *
-     * Finally, it returns the unique ID for the created CommandRunner instance.
-     */
-    private async createCodyCommandRunner(command: CodyPrompt, input = ''): Promise<string> {
-        const commandKey = command.slashCommand
-        const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
-        const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
-
-        logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
-
-        // Start the command runner
-        const codyCommand = new CommandRunner(command, input, isFixupRequest)
-        this.commandRunners.set(codyCommand.id, codyCommand)
+        command.additionalInput = additionalInput
 
         // Save command to command history
-        this.lastUsedCommands.add(command.slashCommand)
+        this.lastUsedCommands.add(commandKey)
 
-        // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (isFixupRequest || command.mode !== 'ask') {
-            return ''
+        // Start the command runner
+        const runner = new CommandRunner(this.editor, command, args)
+        if (!runner) {
+            return null
         }
 
+        // TODO bee runs tools in runner instead
         // Run shell command if any
         const shellCommand = command.context?.command
         if (shellCommand) {
-            await codyCommand.runShell(this.tools.exeCommand(shellCommand))
+            await runner.runShell(this.tools.exeCommand(shellCommand))
         }
 
-        return codyCommand.id
+        return runner
     }
 
     /**
      * Get the list of command names and prompts to send to the webview for display.
      * @returns An array of tuples containing the command name and prompt object.
      */
-    public async getAllCommands(keepSperator = false): Promise<[string, CodyPrompt][]> {
+    public async getAllCommands(keepSperator = false): Promise<[string, CodyCommand][]> {
         await this.refresh()
         return this.default.getGroupedCommands(keepSperator)
-    }
-
-    /**
-     * Gets the custom prompt configuration by refreshing the store.
-     * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
-     */
-    public async getCustomConfig(): Promise<MyPrompts> {
-        const myPromptsConfig = await this.custom.refresh()
-        return myPromptsConfig
     }
 
     /**
@@ -198,8 +161,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async refresh(): Promise<void> {
         await this.saveLastUsedCommands()
         const { commands } = await this.custom.refresh()
-        this.myPromptsMap = commands
-        this.default.groupCommands(commands)
+        this.userCustomCommandsMap = commands
+        this.default.groupCommands(commands, this.enableExperimentalCommands)
     }
 
     /**
@@ -248,19 +211,27 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
-                        return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
+                        await vscode.commands.executeCommand(
+                            'cody.action.commands.exec',
+                            `${selectedCommandID} input`
+                        )
+                        return
                     }
                     input = await showAskQuestionQuickPick()
-                    await vscode.commands.executeCommand('cody.chat.panel.new')
-                    return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
+                    return await vscode.commands.executeCommand(
+                        'cody.action.commands.exec',
+                        `${selectedCommandID} ${input}`
+                    )
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     const source = 'menu'
-                    return await executeEdit({ instruction: userPrompt.trim() }, source)
+                    await executeEdit({ instruction: userPrompt.trim() }, source)
+                    return
                 }
             }
 
-            await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
+            const inputText = [selectedCommandID, userPrompt].join(' ')
+            await vscode.commands.executeCommand('cody.action.commands.exec', inputText)
         } catch (error) {
             logError('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }
@@ -341,7 +312,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async configFileAction(action: string, fileType?: CustomCommandType, filePath?: string): Promise<void> {
+    public async configFileAction(
+        action: string,
+        fileType?: CustomCommandType,
+        filePath?: string
+    ): Promise<void> {
         switch (action) {
             case 'add': {
                 await this.addNewUserCommandQuick()
@@ -377,7 +352,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Allows user to enter the prompt name and prompt description in the input box
      */
     private async addNewUserCommandQuick(): Promise<void> {
-        const newCommand = await showNewCustomCommandMenu(this.myPromptsMap)
+        const newCommand = await showNewCustomCommandMenu(this.userCustomCommandsMap)
         if (!newCommand) {
             return
         }
@@ -397,7 +372,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
             })
 
-        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
+        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', {
+            verbose: newCommand,
+        })
     }
 
     /**
@@ -418,15 +395,17 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Get the list of recently used commands from the local storage
      */
-    private getLastUsedCommands(): [string, CodyPrompt][] {
-        return [...this.lastUsedCommands]?.map(id => [id, this.default.get(id) as CodyPrompt]) || []
+    private getLastUsedCommands(): [string, CodyCommand][] {
+        return [...this.lastUsedCommands]?.map(id => [id, this.default.get(id) as CodyCommand]) || []
     }
 
     /**
      * Save the last used commands to local storage
      */
     private async saveLastUsedCommands(): Promise<void> {
-        const commands = [...this.lastUsedCommands].filter(key => this.default.get(key)?.slashCommand.length)
+        const commands = [...this.lastUsedCommands].filter(
+            key => this.default.get(key)?.slashCommand.length
+        )
 
         if (commands.length > 0) {
             // store the last 5 used commands
@@ -493,21 +472,17 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
-        for (const runner of this.commandRunners) {
-            runner[1].dispose()
-        }
         for (const disposable of this.fileWatcherDisposables) {
             disposable.dispose()
         }
         this.fileWatcherDisposables = []
         this.disposables = []
-        this.myPromptsMap = new Map<string, CodyPrompt>()
-        this.commandRunners = new Map()
+        this.userCustomCommandsMap = new Map<string, CodyCommand>()
         logDebug('CommandsController:dispose', 'disposed')
     }
 }
 
-function getCustomMenuQuickPickItems(commands: [string, CodyPrompt][]): vscode.QuickPickItem[] {
+function getCustomMenuQuickPickItems(commands: [string, CodyCommand][]): vscode.QuickPickItem[] {
     return commands
         ?.filter(command => command !== null && command?.[1]?.type !== 'default')
         .map(commandItem => {

@@ -1,21 +1,16 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { TimeoutError, type Message } from '@sourcegraph/cody-shared'
 
 export function messagesToText(messages: Message[]): string {
     return messages
         .map(
             message =>
                 `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
-                    message.text === undefined ? '' : ' ' + message.text
+                    message.text === undefined ? '' : ` ${message.text}`
                 }`
         )
         .join('')
-}
-
-export function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
 /**
@@ -59,4 +54,66 @@ export function createSubscriber<T>(): Subscriber<T> {
         subscribe,
         notify,
     }
+}
+
+export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncGenerator<T[]> {
+    while (true) {
+        const res = await Promise.all(generators.map(generator => generator.next()))
+
+        if (res.every(r => r.done)) {
+            return
+        }
+
+        yield res.map(r => r.value)
+    }
+}
+
+export async function* generatorWithErrorObserver<T>(
+    generator: AsyncGenerator<T>,
+    errorObserver: (error: unknown) => void
+): AsyncGenerator<T> {
+    while (true) {
+        try {
+            const res = await generator.next()
+            if (res.done) {
+                return
+            }
+            yield res.value
+        } catch (error: unknown) {
+            errorObserver(error)
+            throw error
+        }
+    }
+}
+
+export async function* generatorWithTimeout<T>(
+    generator: AsyncGenerator<T>,
+    timeoutMs: number,
+    abortController: AbortController
+): AsyncGenerator<T> {
+    if (timeoutMs === 0) {
+        return
+    }
+
+    const timeoutPromise = createTimeout(timeoutMs).finally(() => {
+        abortController.abort()
+    })
+
+    while (true) {
+        const { value, done } = await Promise.race([generator.next(), timeoutPromise])
+
+        if (value) {
+            yield value
+        }
+
+        if (done) {
+            break
+        }
+    }
+}
+
+function createTimeout(timeoutMs: number): Promise<never> {
+    return new Promise((_, reject) =>
+        setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs)
+    )
 }

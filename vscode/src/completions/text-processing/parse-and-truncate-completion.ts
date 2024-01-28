@@ -1,19 +1,19 @@
-import { TextDocument } from 'vscode'
-import { SyntaxNode } from 'web-tree-sitter'
+import type { TextDocument } from 'vscode'
+import type { SyntaxNode } from 'web-tree-sitter'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
+import type { DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, ParsedCompletion } from './parse-completion'
-import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import type { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
 import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { getFirstLine } from './utils'
 
-export interface ParseAndTruncateParams {
+interface ParseAndTruncateParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion?: boolean
+    isDynamicMultilineCompletion: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -23,12 +23,14 @@ export function parseAndTruncateCompletion(
     const {
         document,
         docContext,
-        docContext: { multilineTrigger, completionPostProcessId, prefix },
+        docContext: { multilineTrigger, prefix },
         isDynamicMultilineCompletion,
     } = params
 
     const multiline = Boolean(multilineTrigger)
-    const insertTextBeforeTruncation = (multiline ? normalizeStartLine(completion, prefix) : completion).trimEnd()
+    const insertTextBeforeTruncation = (
+        multiline ? normalizeStartLine(completion, prefix) : completion
+    ).trimEnd()
 
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },
@@ -36,7 +38,10 @@ export function parseAndTruncateCompletion(
         docContext,
     })
 
-    completionPostProcessLogger.info({ completionPostProcessId, stage: 'parsed', text: parsed.insertText })
+    addAutocompleteDebugEvent('parsed', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: parsed.insertText,
+    })
 
     if (parsed.insertText === '') {
         return parsed
@@ -61,10 +66,8 @@ export function parseAndTruncateCompletion(
         const truncatedLineCount = truncationResult.insertText.split('\n').length
 
         parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
-        completionPostProcessLogger.info({
-            completionPostProcessId,
-            stage: 'lineTruncatedCount',
-            text: String(parsed.lineTruncatedCount),
+        addAutocompleteDebugEvent('lineTruncatedCount', {
+            lineTruncatedCount: parsed.lineTruncatedCount,
         })
 
         parsed.insertText = truncationResult.insertText
@@ -86,7 +89,7 @@ interface TruncateMultilineBlockResult {
     nodeToInsert?: SyntaxNode
 }
 
-export function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
+function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
     const { parsed, docContext, document } = params
 
     if (parsed.tree) {
@@ -116,7 +119,9 @@ const NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE = new Set(['class_declaration'])
  * at the root of the document.
  */
 function isDynamicMultilineCompletionToStopStreaming(node?: SyntaxNode): boolean {
-    return Boolean(node && isRootNode(node.parent) && NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE.has(node.type))
+    return Boolean(
+        node && isRootNode(node.parent) && NODE_TYPES_TO_STOP_STREAMING_AT_ROOT_NODE.has(node.type)
+    )
 }
 
 function isRootNode(node: SyntaxNode | null): boolean {

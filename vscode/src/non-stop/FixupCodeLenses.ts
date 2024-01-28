@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
 import { getLensesForTask } from './codelenses'
-import { FixupTask } from './FixupTask'
-import { FixupFileCollection } from './roles'
+import type { FixupTask } from './FixupTask'
+import type { FixupFileCollection } from './roles'
 import { CodyTaskState } from './utils'
 
 export class FixupCodeLenses implements vscode.CodeLensProvider {

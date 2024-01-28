@@ -1,6 +1,6 @@
 import { isError } from '../../utils'
 
-import { Event } from './types'
+import type { Event } from './types'
 
 const EVENT_LINE_PREFIX = 'event: '
 const DATA_LINE_PREFIX = 'data: '
@@ -41,7 +41,7 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
             if (isError(data)) {
                 return data
             }
-            if (typeof data.completion === undefined) {
+            if (typeof data.completion === 'undefined') {
                 return new Error('invalid completion event')
             }
             return { type: eventType, completion: data.completion, stopReason: data.stopReason }
@@ -51,7 +51,7 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
             if (isError(data)) {
                 return data
             }
-            if (typeof data.error === undefined) {
+            if (typeof data.error === 'undefined') {
                 return new Error('invalid error event')
             }
             return { type: eventType, error: data.error }

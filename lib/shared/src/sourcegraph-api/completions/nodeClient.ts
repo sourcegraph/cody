@@ -1,6 +1,8 @@
 import http from 'http'
 import https from 'https'
 
+import { onAbort } from '../../common/abortController'
+import { logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
@@ -8,19 +10,39 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionCallbacks, CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters } from './types'
+
+const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
-        const log = this.logger?.startCompletion(params, this.completionsEndpoint)
+    protected _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void {
+        if (isTemperatureZero) {
+            params = {
+                ...params,
+                temperature: 0,
+            }
+        }
 
-        const abortController = new AbortController()
-        const abortSignal = abortController.signal
+        const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
 
         // Keep track if we have send any message to the completion callbacks
         let didSendMessage = false
+        let didSendError = false
+
+        // Call the error callback only once per request.
+        const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
+            if (!didSendError) {
+                cb.onError(error, statusCode)
+                didSendMessage = true
+                didSendError = true
+            }
+        }
 
         const request = requestFn(
             this.completionsEndpoint,
@@ -31,12 +53,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // Disable gzip compression since the sg instance will start to batch
                     // responses afterwards.
                     'Accept-Encoding': 'gzip;q=0',
-                    ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...(this.config.accessToken
+                        ? { Authorization: `token ${this.config.accessToken}` }
+                        : null),
                     ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                rejectUnauthorized:
+                    process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
             },
             (res: http.IncomingMessage) => {
                 if (res.statusCode === undefined) {
@@ -54,7 +79,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // Check for explicit false, because if the header is not set, there
                         // is no upgrade available.
                         const upgradeIsAvailable =
-                            typeof res.headers['x-is-cody-pro-user'] !== undefined &&
+                            typeof res.headers['x-is-cody-pro-user'] !== 'undefined' &&
                             res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
 
@@ -69,11 +94,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             limit ? parseInt(limit, 10) : undefined,
                             retryAfter
                         )
-                        cb.onError(error, res.statusCode)
-                        didSendMessage = true
+                        onErrorOnce(error, res.statusCode)
                     } else {
-                        cb.onError(e, res.statusCode)
-                        didSendMessage = true
+                        onErrorOnce(e, res.statusCode)
                     }
                 }
 
@@ -117,7 +140,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
-                        console.error(parseResult)
+                        logError(
+                            'SourcegraphNodeCompletionsClient',
+                            'isError(parseEvents(bufferText))',
+                            parseResult
+                        )
                         return
                     }
 
@@ -138,9 +165,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     'Could not connect to Cody. Please ensure that you are connected to the Sourcegraph server.'
                 )
             }
-            didSendMessage = true
             log?.onError(error.message, e)
-            cb.onError(error)
+            onErrorOnce(error)
         })
 
         // If the connection is closed and we did neither:
@@ -151,18 +177,14 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         // We still want to close the request.
         request.on('close', () => {
             if (!didSendMessage) {
-                cb.onError(new Error('Connection unexpectedly closed'))
+                onErrorOnce(new Error('Connection unexpectedly closed'))
             }
         })
 
         request.write(JSON.stringify(params))
         request.end()
 
-        abortSignal.addEventListener('abort', () => {
-            request.destroy()
-        })
-
-        return () => request.destroy()
+        onAbort(signal, () => request.destroy())
     }
 }
 

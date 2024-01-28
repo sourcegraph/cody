@@ -1,17 +1,21 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
-
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import {
+import type {
+    BillingCategory,
+    BillingProduct,
+    ChatMessage,
+    ChatModelProvider,
+    event,
+} from '@sourcegraph/cody-shared'
+import type {
     KnownKeys,
     KnownString,
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CodyTaskState } from '../non-stop/utils'
+import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -30,20 +34,48 @@ export type Requests = {
     // The 'shutdown' request must be sent before terminating the agent process.
     shutdown: [null, null]
 
-    // Client requests the agent server to lists all recipes that are supported
-    // by the agent.
-    'recipes/list': [null, RecipeInfo[]]
-    // Client requests the agent server to execute an individual recipe.
-    // The response is null because the AI/Assistant messages are streamed through
-    // the chat/updateMessageInProgress notification. The flow to trigger a recipe
-    // is like this:
-    // client --- recipes/execute --> server
-    // client <-- chat/updateMessageInProgress --- server
-    //             ....
-    // client <-- chat/updateMessageInProgress --- server
-    'recipes/execute': [ExecuteRecipeParams, null]
+    // Start a new chat session and returns a UUID that can be used to reference
+    // this session in other requests like chat/submitMessage or
+    // webview/didDispose.
+    'chat/new': [null, string]
+
+    // Similar to `chat/new` except it starts a new chat session from an
+    // existing transcript. The chatID matches the `chatID` property of the
+    // `type: 'transcript'` ExtensionMessage that is sent via
+    // `webview/postMessage`. Returns a new *panel* ID, which can be used to
+    // send a chat message via `chat/submitMessage`.
+    'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
+
+    'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
+
+    // High-level wrapper around webview/receiveMessage and webview/postMessage
+    // to submit a chat message. The ID is the return value of chat/id, and the
+    // message is forwarded verbatim via webview/receiveMessage. This helper
+    // abstracts over the low-level webview notifications so that you can await
+    // on the request.  Subscribe to webview/postMessage to stream the reply
+    // while awaiting on this response.
+    'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
+    'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
+
+    // Trigger chat-based commands (explain, test, smell), which are effectively
+    // shortcuts to start a new chat with a templated question. The return value
+    // of these commands is the same as `chat/new`, an ID to reference to the
+    // webview panel where the reply from this command appears.
+    'commands/explain': [null, string]
+    'commands/test': [null, string]
+    'commands/smell': [null, string]
+
+    // Trigger commands that edit the code.
+    'commands/document': [null, EditTask]
+
+    // Low-level API to trigger a VS Code command with any argument list. Avoid
+    // using this API in favor of high-level wrappers like 'chat/new'.
+    'command/execute': [ExecuteCommandParams, any]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
+    'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
 
     'graphql/currentUserId': [null, string]
 
@@ -65,9 +97,49 @@ export type Requests = {
 
     'git/codebaseName': [{ url: string }, string | null]
 
+    // High-level API to allow the agent to clean up resources related to a
+    // webview ID (from chat/new).
+    'webview/didDispose': [{ id: string }, null]
+
+    // Low-level API to send a raw WebviewMessage from a specific webview (chat
+    // session).  Refrain from using this API in favor of high-level APIs like
+    // `chat/submitMessage`.
+    'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
+
+    // Only used for testing purposes. If you want to write an integration test
+    // for dealing with progress bars then you can send a request to this
+    // endpoint to emulate the scenario where the server creates a progress bar.
+    'testing/progress': [{ title: string }, { result: string }]
+    'testing/networkRequests': [null, { requests: NetworkRequest[] }]
+
+    // Only used for testing purposes. This operation runs indefinitely unless
+    // the client sends progress/cancel.
+    'testing/progressCancelation': [{ title: string }, { result: string }]
+
+    // Only used for testing purposes. Does a best-effort to reset the state
+    // if the agent server. For example, closes all open documents.
+    'testing/reset': [null, null]
+
+    // Updates the extension configuration and returns the new
+    // authentication status, which indicates whether the provided credentials are
+    // valid or not. The agent can't support autocomplete or chat if the credentials
+    // are invalid.
+    'extensionConfiguration/change': [ExtensionConfiguration, AuthStatus | null]
+
+    // Returns the current authentication status without making changes to it.
+    'extensionConfiguration/status': [null, AuthStatus | null]
+
     // ================
     // Server -> Client
     // ================
+
+    'textDocument/edit': [TextDocumentEditParams, boolean]
+
+    // Low-level API to handle requests from the VS Code extension to create a
+    // webview.  This endpoint should not be needed as long as you use
+    // high-level APIs like chat/new instead. This API only exists to faithfully
+    // expose the VS Code webview API.
+    'webview/create': [{ id: string; data: any }, null]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -83,6 +155,10 @@ export type Notifications = {
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
 
+    // Deprecated: use the `extensionConfiguration/change` request instead so
+    // that you can handle authentication errors in case the credentials are
+    // invalid. The `extensionConfiguration/didChange` method does not support
+    // error handling because it's a notification.
     // The server should use the provided connection configuration for all
     // subsequent requests/notifications. The previous extension configuration
     // should no longer be used.
@@ -90,18 +166,19 @@ export type Notifications = {
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
-    'textDocument/didOpen': [TextDocument]
+    'textDocument/didOpen': [ProtocolTextDocument]
     // The 'textDocument/didChange' notification should be sent on almost every
     // keystroke, whether the text contents changed or the cursor/selection
     // changed.  Leave the `content` property undefined when the document's
     // content is unchanged.
-    'textDocument/didChange': [TextDocument]
+    'textDocument/didChange': [ProtocolTextDocument]
     // The user focused on a document without changing the document's content.
-    // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didFocus': [TextDocument]
+    'textDocument/didFocus': [{ uri: string }]
+    // The user saved the file to disk.
+    'textDocument/didSave': [{ uri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didClose': [TextDocument]
+    'textDocument/didClose': [ProtocolTextDocument]
 
     '$/cancelRequest': [CancelParams]
     // The user no longer wishes to consider the last autocomplete candidate
@@ -113,31 +190,44 @@ export type Notifications = {
     // The completion was accepted by the user, and will be logged for telemetry
     // purposes.
     'autocomplete/completionAccepted': [CompletionItemParams]
-    // Resets the chat transcript and clears any in-progress interactions.
-    // This notification should be sent when the user starts a new conversation.
-    // The chat transcript grows indefinitely if this notification is never sent.
-    'transcript/reset': [null]
+
+    // User requested to cancel this progress bar. Only supported for progress
+    // bars with `cancelable: true`.
+    'progress/cancel': [{ id: string }]
 
     // ================
     // Server -> Client
     // ================
-    // The server received new messages for the ongoing 'chat/executeRecipe'
-    // request. The server should never send this notification outside of a
-    // 'chat/executeRecipe' request.
-    'chat/updateMessageInProgress': [ChatMessage | null]
 
     'debug/message': [DebugMessage]
+
+    'editTaskState/didChange': [EditTask]
+    'codeLenses/display': [DisplayCodeLensParams]
+
+    // Low-level webview notification for the given chat session ID (created via
+    // chat/new). Subscribe to these messages to get access to streaming updates
+    // on the chat reply.
+    'webview/postMessage': [WebviewPostMessageParams]
+
+    'progress/start': [ProgressStartParams]
+
+    // Update about an ongoing progress bar from progress/create. This
+    // notification can only be sent from the server while the progress/create
+    // request has not finished responding.
+    'progress/report': [ProgressReportParams]
+
+    'progress/end': [{ id: string }]
 }
 
-export interface CancelParams {
+interface CancelParams {
     id: string | number
 }
 
-export interface CompletionItemParams {
+interface CompletionItemParams {
     completionID: CompletionItemID
 }
 
-export interface AutocompleteParams {
+interface AutocompleteParams {
     uri: string
     filePath?: string
     position: Position
@@ -147,7 +237,7 @@ export interface AutocompleteParams {
     selectedCompletionInfo?: SelectedCompletionInfo
 }
 
-export interface SelectedCompletionInfo {
+interface SelectedCompletionInfo {
     readonly range: Range
     readonly text: string
 }
@@ -182,21 +272,27 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
-export interface ClientCapabilities {
+interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
     git?: 'none' | 'disabled'
+    // If 'enabled', the client must implement the progress/start,
+    // progress/report, and progress/end notification endpoints.
+    progressBars?: 'none' | 'enabled'
+    edit?: 'none' | 'enabled'
+    codeLenses?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {
     name: string
-    authenticated: boolean
-    codyEnabled: boolean
-    codyVersion: string | null
+    authenticated?: boolean
+    codyEnabled?: boolean
+    codyVersion?: string | null
     capabilities?: ServerCapabilities
+    authStatus?: AuthStatus
 }
-export interface ServerCapabilities {}
+type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -212,9 +308,7 @@ export interface ExtensionConfiguration {
     anonymousUserID?: string
 
     autocompleteAdvancedProvider?: string
-    autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
-    autocompleteAdvancedAccessToken?: string | null
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
@@ -244,7 +338,7 @@ export interface ExtensionConfiguration {
  * 'success', in the context of feature.
  * @param parameters should be as described in {@link TelemetryEventParameters}.
  */
-export interface TelemetryEvent {
+interface TelemetryEvent {
     feature: string
     action: string
     parameters?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
@@ -254,7 +348,11 @@ export interface TelemetryEvent {
  * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
  * type constraints as '(TelemetryEventRecorder).recordEvent()'.
  */
-export function newTelemetryEvent<Feature extends string, Action extends string, MetadataKey extends string>(
+export function newTelemetryEvent<
+    Feature extends string,
+    Action extends string,
+    MetadataKey extends string,
+>(
     feature: KnownString<Feature>,
     action: KnownString<Action>,
     parameters?: TelemetryEventParameters<
@@ -269,7 +367,7 @@ export function newTelemetryEvent<Feature extends string, Action extends string,
 /**
  * @deprecated EventProperties are no longer referenced.
  */
-export interface EventProperties {
+interface EventProperties {
     /**
      * @deprecated Use (ExtensionConfiguration).anonymousUserID instead
      */
@@ -297,7 +395,7 @@ export interface Range {
     end: Position
 }
 
-export interface TextDocument {
+export interface ProtocolTextDocument {
     // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
     uri: string
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
@@ -306,18 +404,110 @@ export interface TextDocument {
     selection?: Range
 }
 
-export interface RecipeInfo {
-    id: RecipeID
-    title: string // Title Case
+interface ExecuteCommandParams {
+    command: string
+    arguments?: any[]
 }
 
-export interface ExecuteRecipeParams {
-    id: RecipeID
-    humanChatInput: string
-    data?: any
-}
-
-export interface DebugMessage {
+interface DebugMessage {
     channel: string
     message: string
+}
+
+export interface ProgressStartParams {
+    /** Unique ID for this operation. */
+    id: string
+    options: ProgressOptions
+}
+export interface ProgressReportParams {
+    /** Unique ID for this operation. */
+    id: string
+    /** (optional) Text message to display in the progress bar */
+    message?: string
+    /**
+     * (optional) increment to indicate how much percentage of the total
+     * operation has been completed since the last report. The total % of the
+     * job that is complete is the sum of all published increments. An increment
+     * of 10 indicates '10%' of the progress has completed since the last
+     * report. Can never be negative, and total can never exceed 100.
+     */
+    increment?: number
+}
+interface ProgressOptions {
+    /**
+     * A human-readable string which will be used to describe the
+     * operation.
+     */
+    title?: string
+    /**
+     * The location at which progress should show.
+     * Either `location` or `locationViewId` must be set
+     */
+    location?: string // one of: 'SourceControl' | 'Window' | 'Notification'
+    /**
+     * The location at which progress should show.
+     * Either `location` or `locationViewId` must be set
+     */
+    locationViewId?: string
+
+    /**
+     * Controls if a cancel button should show to allow the user to
+     * cancel the long running operation.  Note that currently only
+     * `ProgressLocation.Notification` is supporting to show a cancel
+     * button.
+     */
+    cancellable?: boolean
+}
+
+export interface WebviewPostMessageParams {
+    id: string
+    message: ExtensionMessage
+}
+
+export interface TextDocumentEditParams {
+    uri: string
+    edits: TextEdit[]
+    options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+}
+export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
+export interface ReplaceTextEdit {
+    type: 'replace'
+    range: Range
+    value: string
+}
+export interface InsertTextEdit {
+    type: 'insert'
+    position: Position
+    value: string
+}
+export interface DeleteTextEdit {
+    type: 'delete'
+    range: Range
+}
+
+export interface EditTask {
+    id: string
+    state: CodyTaskState
+}
+
+export interface DisplayCodeLensParams {
+    uri: string
+    codeLenses: ProtocolCodeLens[]
+}
+
+export interface ProtocolCodeLens {
+    range: Range
+    command?: ProtocolCommand
+    isResolved: boolean
+}
+
+export interface ProtocolCommand {
+    title: string
+    command: string
+    tooltip?: string
+    arguments?: any[]
+}
+
+export interface NetworkRequest {
+    url: string
 }

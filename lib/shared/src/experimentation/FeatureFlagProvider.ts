@@ -1,5 +1,4 @@
-/* eslint-disable no-void */
-import { graphqlClient, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -7,24 +6,31 @@ export enum FeatureFlag {
     // product code
     TestFlagDoNotUse = 'test-flag-do-not-use',
 
+    // Enable both-client side and server-side tracing
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
-    CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
-    CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
+    // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
+    // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
-    CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
-    CodyAutocompleteContextLspLight = 'cody-autocomplete-context-lsp-light',
-    CodyAutocompleteContextBfg = 'cody-autocomplete-context-bfg',
+    // Force all StarCoder traffic (controlled by the above flag) to point to the 16b model.
+    CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
+    // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
+    // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
-    CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
-    CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
+    // Enables the new-jaccard-similarity context strategy that can find more than one match per
+    // open file and includes matches from the same file.
+    CodyAutocompleteContextNewJaccardSimilarity = 'cody-autocomplete-new-jaccard-similarity',
+    // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
+    // Dynamically decide wether to show a single line or multiple lines for completions.
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
+    // Continue generations after a single-line completion and use the response to see the next line
+    // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
 
-    CodyPro = 'cody-pro',
+    // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
+
+    // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
 }
 
@@ -67,9 +73,9 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint][flagName]
     }
 
-    public syncAuthStatus(): void {
+    public async syncAuthStatus(): Promise<void> {
         this.featureFlags = {}
-        void this.refreshFeatureFlags()
+        await this.refreshFeatureFlags()
     }
 
     private async refreshFeatureFlags(): Promise<void> {

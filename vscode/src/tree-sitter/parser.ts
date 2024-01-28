@@ -1,11 +1,10 @@
 import path from 'path'
 
-import Parser from 'web-tree-sitter'
+import * as vscode from 'vscode'
+import type Parser from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports,@typescript-eslint/no-var-requires
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
 /*
@@ -36,7 +35,16 @@ export function resetParsersCache(): void {
     }
 }
 
-export async function createParser(settings: ParserSettings): Promise<Parser> {
+async function isRegularFile(uri: vscode.Uri): Promise<boolean> {
+    try {
+        const stat = await vscode.workspace.fs.stat(uri)
+        return stat.type === vscode.FileType.File
+    } catch {
+        return false
+    }
+}
+
+export async function createParser(settings: ParserSettings): Promise<Parser | undefined> {
     const { language, grammarDirectory = __dirname } = settings
 
     const cachedParser = PARSERS_LOCAL_CACHE[language]
@@ -45,10 +53,14 @@ export async function createParser(settings: ParserSettings): Promise<Parser> {
         return cachedParser
     }
 
-    await ParserImpl.init()
+    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
+    if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
+        return undefined
+    }
+
+    await ParserImpl.init({ grammarDirectory })
     const parser = new ParserImpl()
 
-    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { ConfigFileName } from '..'
 
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
@@ -13,7 +13,7 @@ export function constructFileUri(fileName: string, rootDirPath?: string): vscode
 }
 
 // Create a .vscode/cody.json file in the root directory of the workspace or user's home directory using the sample files
-export async function createJSONFile(extensionPath: string, configFileUri: vscode.Uri): Promise<void> {
+export async function createJSONFile(configFileUri: vscode.Uri): Promise<void> {
     await saveJSONFile({ commands: [] }, configFileUri)
 }
 
@@ -56,16 +56,11 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export function getFileNameFromPath(path: string): string | undefined {
-    return path.split('/').pop()
-}
-
-export async function getFileToRemove(keys: string[]): Promise<string | undefined> {
-    return vscode.window.showQuickPick(Array.from(keys))
-}
-
-export const createQuickPickSeparator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
-export const createQuickPickItem = (label = '', description = '', alwaysShow = false): vscode.QuickPickItem => ({
+export const createQuickPickItem = (
+    label = '',
+    description = '',
+    alwaysShow = false
+): vscode.QuickPickItem => ({
     label,
     description,
     alwaysShow,
@@ -86,21 +81,6 @@ Here is the output of \`{command}\` command from my terminal inside <output> tag
 <output>
 {output}
 </output>`
-
-export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolean> => {
-    if (isEnabled) {
-        return isEnabled
-    }
-    const enableResponse = await vscode.window.showInformationMessage(
-        'Please first enable `Custom Commands` before trying again.',
-        'Enable Custom Commands',
-        'Cancel'
-    )
-    if (enableResponse === 'Enable Custom Commands') {
-        await vscode.commands.executeCommand('cody.status-bar.interacted')
-    }
-    return isEnabled
-}
 
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'

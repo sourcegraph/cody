@@ -1,18 +1,22 @@
-import { QuickPickItem, window } from 'vscode'
+import { window, type QuickPickItem } from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CustomCommandType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
+import {
+    defaultCodyCommandContext,
+    type CodyCommand,
+    type CustomCommandType,
+} from '@sourcegraph/cody-shared'
 
+import { toSlashCommand } from '../prompt/utils'
 import { customPromptsContextOptions } from '../utils/menu'
 
-export interface CodyCommand {
+export interface CustomCommandsBuilder {
     slashCommand: string
-    prompt: CodyPrompt
+    prompt: CodyCommand
     type: CustomCommandType
 }
+
 export class CustomCommandsBuilderMenu {
-    public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
+    public async start(commands: Map<string, CodyCommand>): Promise<CustomCommandsBuilder | null> {
         const slashCommand = await this.makeSlashCommand(commands)
         if (!slashCommand) {
             return null
@@ -36,7 +40,7 @@ export class CustomCommandsBuilderMenu {
         return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
     }
 
-    private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
+    private async makeSlashCommand(commands: Map<string, CodyCommand>): Promise<string | undefined> {
         let value = await window.showInputBox({
             title: 'New Custom Cody Command: Slash Name',
             prompt: 'Enter the slash name of the custom command',
@@ -77,7 +81,7 @@ export class CustomCommandsBuilderMenu {
         return description
     }
 
-    private async makePrompt(): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
+    private async makePrompt(): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
@@ -97,13 +101,13 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async addContext(
-        newPrompt?: Omit<CodyPrompt, 'slashCommand'>
-    ): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
+        newPrompt?: Omit<CodyCommand, 'slashCommand'>
+    ): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
         if (!newPrompt) {
             return null
         }
 
-        newPrompt.context = { ...defaultCodyPromptContext }
+        newPrompt.context = { ...defaultCodyCommandContext }
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'New Custom Cody Command: Context Options',
             placeHolder: 'For accurate responses, choose only the necessary options.',
@@ -165,7 +169,7 @@ export class CustomCommandsBuilderMenu {
     }
 }
 
-async function showPromptCreationInputBox(): Promise<string | void> {
+async function showPromptCreationInputBox(): Promise<string | undefined> {
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',

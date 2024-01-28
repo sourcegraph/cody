@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { taskID } from './FixupTask'
+import type { taskID } from './FixupTask'
 
 type fileName = string
 type fileContent = string
@@ -21,7 +21,9 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
         // TODO: Handle applying fixups to files which are opened and closed.
         // This is tricky because we need to re-sync the range we are tracking
         // when the file is opened.
-        this._disposables = vscode.workspace.onDidCloseTextDocument(doc => this.deleteByFilePath(doc.uri.fsPath))
+        this._disposables = vscode.workspace.onDidCloseTextDocument(doc =>
+            this.deleteByFilePath(doc.uri.fsPath)
+        )
     }
     // Get content from the content store
     public provideTextDocumentContent(uri: vscode.Uri): string | null {
@@ -51,7 +53,7 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     }
 
     // Remove by file path
-    public deleteByFilePath(fileName: string): void {
+    private deleteByFilePath(fileName: string): void {
         const files = this.tasksByFilePath.get(fileName)
         if (!files) {
             return

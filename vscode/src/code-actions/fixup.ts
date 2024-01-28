@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { ExecuteEditArguments } from '../edit/execute'
+import type { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
-export const FIX_PROMPT_TOPICS = {
+const FIX_PROMPT_TOPICS = {
     SOURCE: 'PROBLEMCODE4179',
     RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
 }
@@ -37,7 +37,9 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         // Expand range by getting the folding range contains the target (error) area
         const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
 
-        const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
+        const newRange = targetAreaRange
+            ? new vscode.Range(targetAreaRange.start, targetAreaRange.end)
+            : expandedRange
         const codeAction = await this.createCommandCodeAction(document, diagnostics, newRange)
         return [codeAction]
     }
@@ -52,7 +54,10 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments, source],
+            arguments: [
+                { instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments,
+                source,
+            ],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
@@ -60,7 +65,10 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     }
 
     // Public for testing
-    public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
+    public async getCodeActionInstruction(
+        code: string,
+        diagnostics: vscode.Diagnostic[]
+    ): Promise<string> {
         const prompt: string[] = [`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`]
 
         for (let i = 0; i < diagnostics.length; i++) {

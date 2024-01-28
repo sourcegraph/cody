@@ -1,9 +1,9 @@
 import * as child_process from 'child_process'
-import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
+import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile, type PathLike, type RmOptions } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
-import { test as base, expect, Frame, FrameLocator, Page } from '@playwright/test'
+import { test as base, expect, type Frame, type FrameLocator, type Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -16,7 +16,7 @@ export interface WorkspaceDirectory {
     workspaceDirectory: string
 }
 
-export interface WorkspaceSettings {
+interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
@@ -34,8 +34,7 @@ export interface DotcomUrlOverride {
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
-        // Playwright needs empty pattern to specify "no dependencies".
-        // eslint-disable-next-line no-empty-pattern
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
             const vscodeRoot = path.resolve(__dirname, '..', '..')
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
@@ -52,8 +51,12 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
-    .extend<{}>({
-        page: async ({ page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl }, use, testInfo) => {
+    .extend({
+        page: async (
+            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl },
+            use,
+            testInfo
+        ) => {
             void _page
 
             const vscodeRoot = path.resolve(__dirname, '..', '..')
@@ -63,7 +66,12 @@ export const test = base
 
             const userDataDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
-            const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
+            const videoDirectory = path.join(
+                vscodeRoot,
+                '..',
+                'playwright',
+                escapeToPath(testInfo.title)
+            )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
 
@@ -90,7 +98,7 @@ export const test = base
                     '--skip-welcome',
                     '--skip-release-notes',
                     '--disable-workspace-trust',
-                    '--extensionDevelopmentPath=' + extensionDevelopmentPath,
+                    `--extensionDevelopmentPath=${extensionDevelopmentPath}`,
                     `--user-data-dir=${userDataDirectory}`,
                     `--extensions-dir=${extensionsDirectory}`,
                     workspaceDirectory,
@@ -127,11 +135,11 @@ export const test = base
 
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
-                rmSync(videoDirectory, { recursive: true })
+                await rmSyncWithRetries(videoDirectory, { recursive: true })
             }
 
-            rmSync(userDataDirectory, { recursive: true })
-            rmSync(extensionsDirectory, { recursive: true })
+            await rmSyncWithRetries(userDataDirectory, { recursive: true })
+            await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
     })
     .extend<{ sidebar: Frame }>({
@@ -141,7 +149,32 @@ export const test = base
         },
     })
 
-export async function getCodySidebar(page: Page): Promise<Frame> {
+/**
+ * Calls rmSync(path, options) and retries a few times if it fails before throwing.
+ *
+ * This reduces the chance of errors caused by timing of other processes that may have files locked, such as
+ *
+ *    Error: EBUSY: resource busy or locked,
+ *      unlink '\\?\C:\Users\RUNNER~1\AppData\Local\Temp\cody-vsced30WGT\Crashpad\metadata'
+ */
+async function rmSyncWithRetries(path: PathLike, options?: RmOptions): Promise<void> {
+    const maxAttempts = 5
+    let attempts = maxAttempts
+    while (attempts-- >= 0) {
+        try {
+            rmSync(path, options)
+            break
+        } catch (error) {
+            if (attempts === 1) {
+                throw new Error(`Failed to rmSync ${path} after ${maxAttempts} attempts: ${error}`)
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100))
+        }
+    }
+}
+
+async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
         for (const frame of page.frames()) {
             try {
@@ -162,7 +195,7 @@ export async function getCodySidebar(page: Page): Promise<Frame> {
     return (await findCodySidebarFrame()) || page.mainFrame()
 }
 
-export async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
+async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
     let delay = 10
     while (!(await predicate())) {
         await new Promise(resolve => setTimeout(resolve, delay))
@@ -175,7 +208,7 @@ function escapeToPath(text: string): string {
 }
 
 // Build a workspace settings file that enables the experimental inline mode
-export async function buildWorkSpaceSettings(
+async function buildWorkSpaceSettings(
     workspaceDirectory: string,
     extraSettings: WorkspaceSettings
 ): Promise<void> {
@@ -189,7 +222,9 @@ export async function buildWorkSpaceSettings(
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
     const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
     await new Promise((resolve, reject) => {
-        mkdir(workspaceSettingsDirectory, { recursive: true }, err => (err ? reject(err) : resolve(undefined)))
+        mkdir(workspaceSettingsDirectory, { recursive: true }, err =>
+            err ? reject(err) : resolve(undefined)
+        )
     })
     await new Promise<void>((resolve, reject) => {
         writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {

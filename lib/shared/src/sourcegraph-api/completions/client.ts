@@ -1,16 +1,24 @@
-import { ConfigurationWithAccessToken } from '../../configuration'
+import type { ConfigurationWithAccessToken } from '../../configuration'
 
-import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+import type {
+    CompletionCallbacks,
+    CompletionGeneratorValue,
+    CompletionParameters,
+    CompletionResponse,
+    Event,
+} from './types'
 
 export interface CompletionLogger {
     startCompletion(
-        params: CompletionParameters | {},
+        params: CompletionParameters | unknown,
         endpoint: string
     ):
         | undefined
         | {
               onError: (error: string, rawError?: unknown) => void
-              onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
+              onComplete: (
+                  response: string | CompletionResponse | string[] | CompletionResponse[]
+              ) => void
               onEvents: (events: Event[]) => void
           }
 }
@@ -60,30 +68,56 @@ export abstract class SourcegraphCompletionsClient {
         }
     }
 
-    public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
-}
+    protected abstract _streamWithCallbacks(
+        params: CompletionParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): void
 
-/**
- * A helper function that calls the streaming API but will buffer the result
- * until the stream has completed.
- */
-export function bufferStream(
-    client: Pick<SourcegraphCompletionsClient, 'stream'>,
-    params: CompletionParameters
-): Promise<string> {
-    return new Promise((resolve, reject) => {
-        let buffer = ''
+    public stream(
+        params: CompletionParameters,
+        signal?: AbortSignal
+    ): AsyncGenerator<CompletionGeneratorValue> {
+        // This is a technique to convert a function that takes callbacks to an async generator.
+
+        const values: Promise<CompletionGeneratorValue>[] = []
+        let resolve: ((value: CompletionGeneratorValue) => void) | undefined
+        values.push(
+            new Promise(r => {
+                resolve = r
+            })
+        )
+
+        const send = (value: CompletionGeneratorValue): void => {
+            resolve!(value)
+            values.push(
+                new Promise(r => {
+                    resolve = r
+                })
+            )
+        }
         const callbacks: CompletionCallbacks = {
-            onChange(text: string) {
-                buffer = text
+            onChange(text) {
+                send({ type: 'change', text })
             },
             onComplete() {
-                resolve(buffer)
+                send({ type: 'complete' })
             },
-            onError(error: Error, code?: number) {
-                reject(code ? new Error(`${error} (code ${code})`) : error)
+            onError(error, statusCode) {
+                send({ type: 'error', error, statusCode })
             },
         }
-        client.stream(params, callbacks)
-    })
+        this._streamWithCallbacks(params, callbacks, signal)
+
+        return (async function* () {
+            for (let i = 0; ; i++) {
+                const val = await values[i]
+                delete values[i]
+                yield val
+                if (val.type === 'complete' || val.type === 'error') {
+                    break
+                }
+            }
+        })()
+    }
 }

@@ -1,9 +1,9 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
-import { TextDocument } from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import type { TextDocument } from 'vscode'
+import type { default as Parser, Tree } from 'web-tree-sitter'
 
-import { getParseLanguage, SupportedLanguage } from './grammars'
+import { getParseLanguage, type SupportedLanguage } from './grammars'
 import { createParser, getParser } from './parser'
 
 const parseTreesPerFile = new LRUCache<string, Tree>({
@@ -34,7 +34,7 @@ export function getCachedParseTreeForDocument(document: TextDocument): ParseTree
     return { tree, parser, cacheKey }
 }
 
-export async function parseDocument(document: TextDocument): Promise<void> {
+async function parseDocument(document: TextDocument): Promise<void> {
     const parseLanguage = getLanguageIfTreeSitterEnabled(document)
 
     if (!parseLanguage) {
@@ -42,6 +42,10 @@ export async function parseDocument(document: TextDocument): Promise<void> {
     }
 
     const parser = await createParser({ language: parseLanguage })
+    if (!parser) {
+        return
+    }
+
     updateParseTreeCache(document, parser)
 }
 

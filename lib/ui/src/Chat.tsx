@@ -1,44 +1,46 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import type React from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
 import {
-    ChatButton,
-    ChatContextStatus,
-    ChatMessage,
-    ChatModelProvider,
-    CodyPrompt,
-    ContextFile,
+    displayPath,
     isDefined,
+    type ChatButton,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type ContextFile,
+    type Guardrails,
 } from '@sourcegraph/cody-shared'
 
-import { CodeBlockMeta } from './chat/CodeBlocks'
-import { FileLinkProps } from './chat/components/ContextFiles'
-import { ChatInputContext } from './chat/inputContext/ChatInputContext'
-import { SymbolLinkProps } from './chat/PreciseContext'
+import type { CodeBlockMeta } from './chat/CodeBlocks'
+import type { FileLinkProps } from './chat/components/EnhancedContext'
+import type { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
-import { TranscriptItemClassNames } from './chat/TranscriptItem'
+import type { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
+import { ChatActions } from './chat/components/ChatActions'
 
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
-    messageBeingEdited: boolean
-    setMessageBeingEdited: (input: boolean) => void
-    contextStatus?: ChatContextStatus | null
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
-    contextStatusComponent?: React.FunctionComponent<any>
-    contextStatusComponentProps?: any
+    onSubmit: (
+        text: string,
+        submitType: WebviewChatSubmitType,
+        userContextFiles?: Map<string, ContextFile>
+    ) => void
     gettingStartedComponent?: React.FunctionComponent<any>
     gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
-    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
     helpMarkdown?: string
@@ -46,32 +48,42 @@ interface ChatProps extends ChatClassNames {
     gettingStartedButtons?: ChatButton[]
     className?: string
     EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-    editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-    suggestions?: string[]
-    setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
     codyNotEnabledNotice?: React.FunctionComponent
-    abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+    abortMessageInProgressComponent?: React.FunctionComponent<{
+        onAbortMessageInProgress: () => void
+    }>
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
+    chatEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    chatCommands?: [string, CodyPrompt][] | null
-    filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][] | null
+    filterChatCommands?: (
+        chatCommands: [string, CodyCommand][],
+        input: string
+    ) => [string, CodyCommand][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelProvider[]
-    EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
+    EnhancedContextSettings?: React.FunctionComponent<{
+        isOpen: boolean
+        setOpen: (open: boolean) => void
+        presentationMode: 'consumer' | 'enterprise'
+    }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
+    guardrails?: Guardrails
+    chatIDHistory: string[]
+    isWebviewActive: boolean
 }
 
 export interface UserAccountInfo {
@@ -83,7 +95,6 @@ export type ApiPostMessage = (message: any) => void
 
 interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
-    chatInputContextClassName?: string
     chatInputClassName?: string
 }
 
@@ -97,34 +108,34 @@ export interface ChatButtonProps {
 export interface ChatUITextAreaProps {
     className: string
     rows: number
-    autoFocus: boolean
+    isFocusd: boolean
+    isNewChat: boolean
     value: string
     required: boolean
+    chatEnabled: boolean
     disabled?: boolean
-    onInput: React.FormEventHandler<HTMLElement>
+    onInput: React.FormEventHandler<HTMLTextAreaElement>
     setValue?: (value: string) => void
-    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
-    onFocus?: (event: React.FocusEvent<HTMLElement>) => void
+    onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onKeyUp?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
     chatModels?: ChatModelProvider[]
+    messageBeingEdited: number | undefined
 }
 
 export interface ChatUISubmitButtonProps {
+    type: 'user' | 'user-newchat' | 'edit'
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
     onAbortMessageInProgress?: () => void
 }
 
-export interface ChatUISuggestionButtonProps {
-    suggestion: string
-    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
-}
-
 export interface EditButtonProps {
     className: string
     disabled?: boolean
-    messageBeingEdited: boolean
-    setMessageBeingEdited: (input: boolean) => void
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
 }
 
 export interface FeedbackButtonsProps {
@@ -141,9 +152,9 @@ export interface CodeBlockActionsProps {
 export interface ChatCommandsProps {
     setFormInput: (input: string) => void
     setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyPrompt][] | null
+    chatCommands?: [string, CodyCommand][] | null
     selectedChatCommand?: number
-    onSubmit: (input: string, inputType: ChatSubmitType) => void
+    onSubmit: (input: string, inputType: WebviewChatSubmitType) => void
 }
 
 export interface UserContextSelectorProps {
@@ -155,7 +166,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export type ChatSubmitType = 'user' | 'suggestion' | 'example'
+export type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'
 
 export interface ChatModelDropdownMenuProps {
     models: ChatModelProvider[]
@@ -172,7 +183,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -180,7 +190,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
-    suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
     symbolLinkComponent,
     helpMarkdown,
@@ -194,21 +203,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     transcriptItemParticipantClassName,
     transcriptActionClassName,
     inputRowClassName,
-    chatInputContextClassName,
     chatInputClassName,
     EditButtonContainer,
-    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    suggestions,
-    setSuggestions,
     needsEmailVerification = false,
     codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
-    contextStatusComponent: ContextStatusComponent,
-    contextStatusComponentProps = {},
     gettingStartedComponent: GettingStartedComponent,
     gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
@@ -224,20 +227,88 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
+    chatEnabled,
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    guardrails,
+    chatIDHistory,
+    isWebviewActive,
 }) => {
+    const isMac = isMacOS()
+    const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker)
     const [inputRows, setInputRows] = useState(1)
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
-        chatCommands || null
-    )
+    const [displayCommands, setDisplayCommands] = useState<
+        [string, CodyCommand & { instruction?: string }][] | null
+    >(chatCommands || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
+
+    // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
+    // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
+    const [enableNewChatMode, setEnableNewChatMode] = useState(false)
+
+    const [isLastItemCommand, setIsLastItemCommand] = useState(false)
+
+    const lastHumanMessageIndex = useMemo<number | undefined>(() => {
+        if (!transcript?.length) {
+            return undefined
+        }
+        const index = transcript.findLastIndex(msg => msg.speaker === 'human')
+        const isCommand = transcript[index]?.displayText?.startsWith('/') ?? false
+        setIsLastItemCommand(isCommand)
+        return index
+    }, [transcript])
+
+    /**
+     * Sets the state to edit a message at the given index in the transcript.
+     * Checks that the index is valid, then gets the display text  to set as the
+     * form input.
+     *
+     * An undefined index number means there is no message being edited.
+     */
+    const setEditMessageState = useCallback(
+        (index?: number): void => {
+            // When a message is no longer being edited
+            // we will reset the form input fill to empty state
+            if (index === undefined && index !== messageBeingEdited) {
+                setFormInput('')
+                setInputFocus(true)
+            }
+            setMessageBeingEdited(index)
+            if (index === undefined || index > transcript.length) {
+                return
+            }
+
+            // Only returns command name if it is the first word in the message
+            // Attempts to remove markdown links
+            const messageAtIndex = transcript[index]
+            const displayText = messageAtIndex?.displayText
+            const inputText = displayText?.startsWith('/')
+                ? displayText.replaceAll(/\[_@.*\)/g, '') || displayText?.split(' ')?.[0]
+                : messageAtIndex?.text
+            if (inputText) {
+                setFormInput(inputText)
+            }
+            setInputFocus(true)
+        },
+        [messageBeingEdited, setFormInput, setMessageBeingEdited, transcript]
+    )
+
+    /**
+     * Reset current chat view with a new empty chat session.
+     *
+     * Calls setEditMessageState() to reset any in-progress edit state.
+     * Sends a 'reset' command to postMessage to reset the chat on the server.
+     */
+    const onChatResetClick = useCallback(() => {
+        setEditMessageState()
+        postMessage?.({ command: 'reset' })
+    }, [postMessage, setEditMessageState])
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -256,15 +327,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputPrefix = input.slice(0, lastAtIndex)
-                const isFileType = selected.type === 'file'
-                const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
-                const symbolName = isFileType ? '' : `#${selected.fileName}`
-                // Add empty space at the end to end the file matching process
-                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
-                const inputSuffix = input.includes(fileDisplayText)
-                    ? input.slice(input.lastIndexOf(fileDisplayText) + fileDisplayText.length, -1)
+                const range = selected.range
+                    ? `:${selected.range?.start.line}-${selected.range?.end.line}`
                     : ''
-                const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
+                const symbolName = selected.type === 'file' ? '' : `#${selected.symbolName}`
+                const fileDisplayText = `@${displayPath(selected.uri)}${range}${symbolName}`
+                // Add empty space at the end to end the file matching process
+                const newInput = `${inputPrefix}${fileDisplayText} `
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
                 setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
@@ -325,20 +394,29 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: ChatSubmitType): void => {
-            if (messageInProgress) {
+        (input: string, submitType: WebviewChatSubmitType): void => {
+            if (messageInProgress && submitType !== 'edit') {
                 return
             }
             onSubmit(input, submitType, chatContextFiles)
-            setSuggestions?.(undefined)
             setChatContextFiles(new Map())
             setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
+            setFormInput('')
+            setEditMessageState()
         },
-        [messageInProgress, onSubmit, chatContextFiles, setSuggestions, inputHistory, setInputHistory]
+        [
+            messageInProgress,
+            onSubmit,
+            chatContextFiles,
+            inputHistory,
+            setInputHistory,
+            setEditMessageState,
+            setFormInput,
+        ]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -349,26 +427,74 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const onChatSubmit = useCallback((): void => {
-        // Submit chat only when input is not empty and not in progress
-        if (formInput.trim() && !messageInProgress) {
-            setInputRows(1)
-            submitInput(formInput, 'user')
-            setFormInput('')
+        // Submit edits when there is one being edited
+        if (messageBeingEdited !== undefined) {
+            onAbortMessageInProgress()
+            submitInput(formInput, 'edit')
+            return
         }
-    }, [formInput, messageInProgress, setFormInput, submitInput])
+
+        // Submit chat only when input is not empty and not in progress
+        if (formInput.trim() && !messageInProgress?.speaker) {
+            const submitType = enableNewChatMode ? 'user-newchat' : 'user'
+            submitInput(formInput, submitType)
+        }
+    }, [
+        formInput,
+        messageBeingEdited,
+        messageInProgress?.speaker,
+        enableNewChatMode,
+        submitInput,
+        onAbortMessageInProgress,
+    ])
+
+    const onChatKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+            // Captures Escape button clicks
+            if (event.key === 'Escape') {
+                // Exits editing mode if a message is being edited
+                if (messageBeingEdited !== undefined) {
+                    event.preventDefault()
+                    setEditMessageState()
+                    return
+                }
+
+                // Aborts a message in progress if one exists
+                if (messageInProgress?.speaker) {
+                    event.preventDefault()
+                    onAbortMessageInProgress()
+                    return
+                }
+            }
+        },
+        [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress]
+    )
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
+        (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null): void => {
+            // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
+            const isModifierDown = isMac ? event.metaKey : event.ctrlKey
+            if (isModifierDown) {
+                // Ctrl/Cmd + / - Clears the chat and starts a new session
+                if (event.key === '/') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onChatResetClick()
+                    return
+                }
+                // Ctrl/Cmd + K - When not already editing, edits the last human message
+                if (messageBeingEdited === undefined && event.key === 'k') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setEditMessageState(lastHumanMessageIndex)
+                    return
+                }
+            }
+
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
             if (event.altKey && event.key === 'c') {
                 event.preventDefault()
                 event.stopPropagation()
-                return
-            }
-
-            // Clear & reset session on CMD+K
-            if (event.metaKey && event.key === 'k') {
-                onSubmit('/r', 'user', chatContextFiles)
                 return
             }
 
@@ -383,8 +509,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Handles keyboard shortcuts with Ctrl key.
             // Checks if the Ctrl key is pressed with a key not in the allow list
             // to avoid triggering default browser shortcuts and bubbling the event.
-            const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
-            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+            const ctrlKeysAllowList = new Set([
+                'a',
+                'c',
+                'v',
+                'x',
+                'y',
+                'z',
+                'Enter',
+                'Shift' /* follow-up */,
+            ])
+            if (event.ctrlKey && !ctrlKeysAllowList.has(event.key)) {
                 event.preventDefault()
                 return
             }
@@ -401,8 +536,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     const commandsLength = displayCommands?.length
-                    const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex > commandsLength - 1 ? 0 : curIndex
+                    const curIndex =
+                        event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newIndex =
+                        curIndex < 0 ? commandsLength - 1 : curIndex > commandsLength - 1 ? 0 : curIndex
                     setSelectedChatCommand(newIndex)
                     const newInput = displayCommands?.[newIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
@@ -420,8 +557,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     const selectedCommand = displayCommands?.[selectedChatCommand]?.[1]
                     if (formInput.startsWith(selectedCommand?.slashCommand)) {
-                        // submit message if the input has slash command already completed
-                        setMessageBeingEdited(false)
                         onChatSubmit()
                     } else {
                         const newInput = selectedCommand?.slashCommand
@@ -438,8 +573,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     const selectionLength = contextSelection?.length - 1
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
-                    const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
+                    const newIndex =
+                        event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
+                    const newMatchIndex =
+                        newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
                     setSelectedChatContext(newMatchIndex)
                     return
                 }
@@ -465,10 +602,24 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput?.trim()
+            ) {
                 event.preventDefault()
-                setMessageBeingEdited(false)
                 onChatSubmit()
+                return
+            }
+
+            // TODO (bee) - Update to use Option key instead
+            // TODO (bee) - remove once updated to use Option key
+            // Toggles between new chat mode and regular chat mode
+            if (event.altKey && event.shiftKey && isModifierDown) {
+                // use as a temporary block for this key combination
+                event.preventDefault()
+                setEnableNewChatMode(!enableNewChatMode)
                 return
             }
 
@@ -492,19 +643,22 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
         },
         [
+            isMac,
+            messageBeingEdited,
             displayCommands,
             formInput,
             contextSelection,
             inputHistory,
             historyIndex,
-            onSubmit,
-            chatContextFiles,
+            onChatResetClick,
+            setEditMessageState,
+            lastHumanMessageIndex,
             selectedChatCommand,
             setFormInput,
-            setMessageBeingEdited,
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
+            enableNewChatMode,
         ]
     )
 
@@ -521,7 +675,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
-    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
+    const isGettingStartedComponentVisible =
+        transcript.length === 0 && GettingStartedComponent !== undefined
 
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
@@ -540,7 +695,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     transcript={transcriptWithWelcome}
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
-                    setMessageBeingEdited={setMessageBeingEdited}
+                    setMessageBeingEdited={setEditMessageState}
                     fileLinkComponent={fileLinkComponent}
                     symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -550,15 +705,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     className={isGettingStartedComponentVisible ? undefined : styles.transcriptContainer}
-                    textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
-                    submitButtonComponent={SubmitButton}
-                    chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
                     chatModels={chatModels}
@@ -566,36 +717,45 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    guardrails={guardrails}
                 />
             )}
-
             {isGettingStartedComponentVisible && (
                 <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
-
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {!displayCommands &&
-                !contextSelection &&
-                suggestions !== undefined &&
-                suggestions.length !== 0 &&
-                SuggestionButton ? (
-                    <div className={styles.suggestions}>
-                        {suggestions.map((suggestion: string) =>
-                            suggestion.trim().length > 0 ? (
-                                <SuggestionButton
-                                    key={suggestion}
-                                    suggestion={suggestion}
-                                    onClick={() => submitInput(suggestion, 'suggestion')}
-                                />
-                            ) : null
-                        )}
-                    </div>
-                ) : null}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
-                        <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                        <AbortMessageInProgressButton
+                            onAbortMessageInProgress={onAbortMessageInProgress}
+                        />
                     </div>
                 )}
+                {/* Don't show chat action buttons on empty chat session unless it's a new cha*/}
+
+                <ChatActions
+                    setInputFocus={setInputFocus}
+                    isWebviewActive={isWebviewActive}
+                    isEmptyChat={transcript.length < 1}
+                    isMessageInProgress={!!messageInProgress?.speaker}
+                    isEditing={transcript.length > 1 && messageBeingEdited !== undefined}
+                    disableEditLastMessage={isLastItemCommand}
+                    onChatResetClick={onChatResetClick}
+                    onCancelEditClick={() => setEditMessageState()}
+                    onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
+                    onRestoreLastChatClick={
+                        // Display the restore button if there is a previous chat id in current window
+                        // And the current chat window is new
+                        chatIDHistory.length > 1
+                            ? () =>
+                                  postMessage?.({
+                                      command: 'restoreHistory',
+                                      chatID: chatIDHistory.at(-2),
+                                  })
+                            : undefined
+                    }
+                />
+
                 <div className={styles.textAreaContainer}>
                     {displayCommands && ChatCommandsComponent && formInput.startsWith('/') && (
                         <ChatCommandsComponent
@@ -621,42 +781,58 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             className={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            autoFocus={true}
+                            isFocusd={inputFocus}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
+                            onKeyUp={onChatKeyUp}
                             setValue={inputHandler}
+                            chatEnabled={chatEnabled}
                             chatModels={chatModels}
+                            messageBeingEdited={messageBeingEdited}
+                            isNewChat={!transcript.length}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>
                                 <EnhancedContextSettings
                                     isOpen={isEnhancedContextOpen}
                                     setOpen={setIsEnhancedContextOpen}
+                                    presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                                 />
                             </div>
                         )}
                     </div>
                     <SubmitButton
+                        type={
+                            messageBeingEdited === undefined
+                                ? enableNewChatMode
+                                    ? 'user-newchat'
+                                    : 'user'
+                                : 'edit'
+                        }
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
+                        disabled={
+                            needsEmailVerification ||
+                            !isCodyEnabled ||
+                            (!formInput.length && !messageInProgress)
+                        }
                         onAbortMessageInProgress={
-                            !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
+                            !AbortMessageInProgressButton && messageInProgress
+                                ? onAbortMessageInProgress
+                                : undefined
                         }
                     />
                 </div>
-                {!EnhancedContextSettings && ContextStatusComponent && (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                )}
-                {!EnhancedContextSettings && !ContextStatusComponent && contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                )}
             </form>
         </div>
     )
+}
+
+export function isMacOS(): boolean {
+    return window.navigator.userAgent?.includes('Mac')
 }
 
 interface WelcomeTextOptions {

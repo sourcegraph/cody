@@ -81,7 +81,7 @@ Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://s
 
 ### Codying at work
 
-You can use your free individual account when Codying on your work code. If that doesn't meet your needs (because you need higher rate limits, a dedicated/single-tenant instance, scalable embeddings, audit logs, etc.), [fill out the "Cody at work" form](https://forms.gle/SBPfmihdyEvUPEc86) and we'll help.
+You can use Cody Free or Cody Pro when Codying on your work code. If that doesn't meet your needs (because you need higher rate limits, a dedicated/single-tenant instance, scalable embeddings, audit logs, etc.), upgrade to [Cody Enterprise](https://sourcegraph.com/pricing).
 
 ### Existing Sourcegraph customers
 

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared'
 
-export interface LoginMenuItem {
+interface LoginMenuItem {
     id: string
     label: string
     description: string
@@ -10,12 +10,7 @@ export interface LoginMenuItem {
     uri: string
 }
 
-export interface LoginInput {
-    endpoint: string | null | undefined
-    token: string | null | undefined
-}
-
-export type AuthMenuType = 'signin' | 'switch'
+type AuthMenuType = 'signin' | 'switch'
 
 function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
@@ -25,7 +20,10 @@ function getItemLabel(uri: string, current: boolean): string {
     return `${icon}${uri}`
 }
 
-export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
+export const AuthMenu = async (
+    type: AuthMenuType,
+    historyItems: string[]
+): Promise<LoginMenuItem | null> => {
     // Create option items
 
     // Exclude App from the history list.
@@ -45,7 +43,10 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
             : []
     const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
     const optionItems = [...LoginMenuOptionItems, ...separator, ...history]
-    const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
+    const option = (await vscode.window.showQuickPick(
+        optionItems,
+        AuthMenuOptions[type]
+    )) as LoginMenuItem
     return option
 }
 
@@ -85,10 +86,10 @@ export async function showAccessTokenInputBox(endpoint: string): Promise<string 
     return result
 }
 
-export const AuthMenuOptions = {
+const AuthMenuOptions = {
     signin: {
-        title: 'Other Sign in Options',
-        placeholder: 'Choose a sign in option',
+        title: 'Other Sign-in Options',
+        placeholder: 'Choose a sign-in option',
     },
     switch: {
         title: 'Switch Account',
@@ -96,23 +97,23 @@ export const AuthMenuOptions = {
     },
 }
 
-export const LoginMenuOptionItems = [
+const LoginMenuOptionItems = [
     {
         id: 'enterprise',
-        label: 'Sign in to Sourcegraph Enterprise instance',
+        label: 'Sign In to Sourcegraph Enterprise Instance',
         description: 'v5.1 and above',
         totalSteps: 1,
         picked: true,
     },
     {
         id: 'token',
-        label: 'Sign in to Sourcegraph Enterprise instance via Access Token',
+        label: 'Sign In to Sourcegraph Enterprise Instance with Access Token',
         description: 'v5.0 and above',
         totalSteps: 2,
     },
     {
         id: 'token',
-        label: 'Sign in with URL and Access Token',
+        label: 'Sign In with URL and Access Token',
         totalSteps: 2,
     },
 ]

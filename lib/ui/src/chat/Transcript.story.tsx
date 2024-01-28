@@ -1,6 +1,6 @@
-import { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
-import { FileLinkProps } from './components/ContextFiles'
+import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 import { Transcript } from './Transcript'
 
@@ -23,18 +23,22 @@ const meta: Meta<typeof Transcript> = {
     },
 
     decorators: [
-        story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>{story()}</div>,
+        story => (
+            <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>
+                {story()}
+            </div>
+        ),
     ],
 }
 
 export default meta
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri }) => <>{uri.toString()}</>
 
 export const Simple: StoryObj<typeof meta> = {
     args: {
         messageInProgress: null,
-        messageBeingEdited: false,
+        messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
         fileLinkComponent: FileLink,
         transcriptItemClassName: styles.transcriptItem,

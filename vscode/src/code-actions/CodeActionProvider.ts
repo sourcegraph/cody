@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { Config, ContextProvider } from '../chat/ContextProvider'
+import type { Config, ContextProvider } from '../chat/ContextProvider'
 
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
@@ -23,7 +23,7 @@ export class CodeActionProvider implements vscode.Disposable {
     }
 
     private registerCodeActions(config: Omit<Config, 'codebase'>): void {
-        this.actionProviders.forEach(provider => provider.dispose())
+        vscode.Disposable.from(...this.actionProviders).dispose()
         this.actionProviders = []
 
         if (!config.codeActions) {
@@ -48,6 +48,6 @@ export class CodeActionProvider implements vscode.Disposable {
 
     public dispose(): void {
         this.configurationChangeListener.dispose()
-        this.actionProviders.forEach(provider => provider.dispose())
+        vscode.Disposable.from(...this.actionProviders).dispose()
     }
 }

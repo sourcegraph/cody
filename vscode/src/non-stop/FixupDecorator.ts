@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { Diff } from './diff'
-import { FixupFile } from './FixupFile'
-import { FixupTask } from './FixupTask'
+import type { Diff } from './diff'
+import type { FixupFile } from './FixupFile'
+import type { FixupTask } from './FixupTask'
 
 interface TaskDecorations {
     edits: vscode.Range[]
@@ -107,14 +107,19 @@ export class FixupDecorator implements vscode.Disposable {
 
     private didChangeFileDecorations(file: FixupFile): void {
         // TODO: Cache the changed files and update the decorations together.
-        const editors = vscode.window.visibleTextEditors.filter(editor => editor.document.uri === file.uri)
+        const editors = vscode.window.visibleTextEditors.filter(
+            editor => editor.document.uri === file.uri
+        )
         if (!editors.length) {
             return
         }
         this.applyDecorations(editors, this.decorations_.get(file)?.values() || [].values())
     }
 
-    private applyDecorations(editors: vscode.TextEditor[], decorations: IterableIterator<TaskDecorations>): void {
+    private applyDecorations(
+        editors: vscode.TextEditor[],
+        decorations: IterableIterator<TaskDecorations>
+    ): void {
         const incoming: vscode.Range[] = []
         const conflicted: vscode.Range[] = []
         const conflicts: vscode.Range[] = []

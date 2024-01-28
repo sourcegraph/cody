@@ -1,21 +1,21 @@
 import { platform } from 'os'
 
 import { debounce } from 'lodash'
-import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
+import { commands, window, type QuickPickItem, type QuickPickOptions } from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
+import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import { CustomCommandsItem } from '../utils'
+import type { CustomCommandsItem } from '../utils'
 import {
     ASK_QUESTION_COMMAND,
     CustomCommandConfigMenuItems,
     EDIT_COMMAND,
     menu_buttons,
     menu_options,
-    QuickPickItemWithSlashCommand,
+    type QuickPickItemWithSlashCommand,
 } from '../utils/menu'
 
-import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
+import { CustomCommandsBuilderMenu, type CustomCommandsBuilder } from './CustomCommandBuilderMenu'
 
 interface CommandMenuResponse {
     selectedItem: QuickPickItem | QuickPickItemWithSlashCommand
@@ -79,11 +79,16 @@ export async function showCommandMenu(
             if (isSlashCommand(normalizedValue)) {
                 const [slashCommand] = normalizedValue.split(' ')
                 const matchingCommands = defaultItems.filter(
-                    item => 'slashCommand' in item && item.slashCommand?.toLowerCase().startsWith(slashCommand)
+                    item =>
+                        'slashCommand' in item &&
+                        item.slashCommand?.toLowerCase().startsWith(slashCommand)
                 )
                 if (matchingCommands.length > 0) {
                     // show only item for a matching slash command (ignore other label or description matches)
-                    quickPick.items = matchingCommands.map(command => ({ ...command, alwaysShow: true }))
+                    quickPick.items = matchingCommands.map(command => ({
+                        ...command,
+                        alwaysShow: true,
+                    }))
                     return
                 }
 
@@ -94,8 +99,8 @@ export async function showCommandMenu(
 
             const hasMatch = items.some(item =>
                 // label may include placeholder which we don't want to match against - use slash command instead
-                ['slashCommand' in item ? item.slashCommand : item.label, item.description].some(
-                    str => str?.toLowerCase().includes(normalizedValue)
+                ['slashCommand' in item ? item.slashCommand : item.label, item.description].some(str =>
+                    str?.toLowerCase().includes(normalizedValue)
                 )
             )
             if (!normalizedValue || hasMatch) {
@@ -202,7 +207,9 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
 /**
  * Show Menu for creating a new prompt via UI using the input box and quick pick without having to manually edit the cody.json file
  */
-export async function showNewCustomCommandMenu(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
+export async function showNewCustomCommandMenu(
+    commands: Map<string, CodyCommand>
+): Promise<CustomCommandsBuilder | null> {
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared'
+import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { splitSafeMetadata } from './telemetry-v2'
 

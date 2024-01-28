@@ -1,6 +1,0 @@
-out/
-dist/
-build/
-**/test-data/
-vscode/src/testutils/vscode/
-agent/src/bfg/__tests__/

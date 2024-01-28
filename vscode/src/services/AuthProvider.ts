@@ -1,19 +1,22 @@
 import * as vscode from 'vscode'
 
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import {
+    DOTCOM_URL,
+    LOCAL_APP_URL,
+    SourcegraphGraphQLAPIClient,
+    isDotCom,
+    isError,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
-    AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
     networkErrorAuthStatus,
     unauthenticatedStatus,
+    type AuthStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -26,7 +29,7 @@ import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
-type Unsubscribe = () => {}
+type Unsubscribe = () => void
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -38,7 +41,10 @@ export class AuthProvider {
     private listeners: Set<Listener> = new Set()
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        private config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders'
+        >
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -139,7 +145,7 @@ export class AuthProvider {
     public async signoutMenu(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:logout:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
-        const { endpoint } = this.authStatus
+        const { endpoint } = this.getAuthStatus()
 
         if (endpoint) {
             await this.signout(endpoint)
@@ -153,8 +159,9 @@ export class AuthProvider {
         }
 
         if (!isDotCom(this.authStatus.endpoint)) {
+            const username = this.authStatus.username || this.authStatus.displayName
             const option = await vscode.window.showInformationMessage(
-                `Signed in as ${this.authStatus.primaryEmail}`,
+                `Signed in as @${username}`,
                 {
                     modal: true,
                     detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
@@ -173,17 +180,12 @@ export class AuthProvider {
             return
         }
 
-        const codyProEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        const detail = codyProEnabled ? `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : undefined
-        const options = codyProEnabled
-            ? ['Manage Account', 'Switch Account...', 'Sign Out']
-            : ['Switch Account...', 'Sign Out']
+        const detail = `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
+        const options = ['Manage Account', 'Switch Account...', 'Sign Out']
+        const displayName = this.authStatus.displayName || this.authStatus.username
+        const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(
-            `Signed in as ${
-                this.authStatus.displayName
-                    ? `${this.authStatus.displayName} (${this.authStatus.primaryEmail})`
-                    : this.authStatus.primaryEmail
-            }`,
+            `Signed in as ${displayName} (${email})}`,
             { modal: true, detail },
             ...options
         )
@@ -233,9 +235,9 @@ export class AuthProvider {
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
+        const userInfo = await this.client.getCurrentUserInfo()
 
         if (!isDotCom) {
-            const userInfo = await this.client.getEnterpriseCurrentUserInfo()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
@@ -255,14 +257,15 @@ export class AuthProvider {
                 /* userCanUpgrade: */ false,
                 version,
                 userInfo.avatarURL,
-                userInfo.primaryEmail.email,
+                userInfo.username,
                 userInfo.displayName,
+                userInfo.primaryEmail?.email,
                 configOverwrites
             )
         }
 
-        const userInfo = await this.client.getDotComCurrentUserInfo()
         const isCodyEnabled = true
+        const proStatus = await this.client.getCurrentUserCodyProEnabled()
 
         // check first if it's a network error
         if (isError(userInfo)) {
@@ -271,12 +274,11 @@ export class AuthProvider {
             }
             return { ...unauthenticatedStatus, endpoint }
         }
-
         const userCanUpgrade =
             isDotCom &&
-            'codyProEnabled' in userInfo &&
-            typeof userInfo.codyProEnabled === 'boolean' &&
-            !userInfo.codyProEnabled
+            'codyProEnabled' in proStatus &&
+            typeof proStatus.codyProEnabled === 'boolean' &&
+            !proStatus.codyProEnabled
 
         return newAuthStatus(
             endpoint,
@@ -287,8 +289,9 @@ export class AuthProvider {
             userCanUpgrade,
             version,
             userInfo.avatarURL,
-            userInfo.primaryEmail.email,
+            userInfo.username,
             userInfo.displayName,
+            userInfo.primaryEmail?.email,
             configOverwrites
         )
     }
@@ -301,8 +304,8 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders?: {} | null
-    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
+        customHeaders?: Record<string, string> | null
+    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const endpoint = formatURL(uri) || ''
         const config = {
             serverEndpoint: endpoint,
@@ -345,7 +348,10 @@ export class AuthProvider {
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token
     // sending back from sourcegraph.com
-    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<void> {
+    public async tokenCallbackHandler(
+        uri: vscode.Uri,
+        customHeaders: Record<string, string>
+    ): Promise<void> {
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
         const endpoint = this.authStatus.endpoint
@@ -403,7 +409,10 @@ export class AuthProvider {
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
-    private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
+    private async storeAuthInfo(
+        endpoint: string | null | undefined,
+        token: string | null | undefined
+    ): Promise<void> {
         if (!endpoint) {
             return
         }
@@ -455,7 +464,10 @@ function formatURL(uri: string): string | null {
     return null
 }
 
-async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
+async function showAuthResultMessage(
+    endpoint: string,
+    authStatus: AuthStatus | undefined
+): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)

@@ -1,13 +1,13 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { ContextSnippet } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { ContextSnippet } from '../types'
 
-import { ContextStrategy, ContextStrategyFactory } from './context-strategy'
+import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
-export interface GetContextOptions {
+interface GetContextOptions {
     document: vscode.TextDocument
     position: vscode.Position
     docContext: DocumentContext
@@ -84,14 +84,16 @@ export class ContextMixer implements vscode.Disposable {
         const results = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
-                const snippets = await startAsyncSpan(`autocomplete.retrieve.${retriever.identifier}`, () =>
-                    retriever.retrieve({
-                        ...options,
-                        hints: {
-                            maxChars: options.maxChars,
-                            maxMs: 150,
-                        },
-                    })
+                const snippets = await wrapInActiveSpan(
+                    `autocomplete.retrieve.${retriever.identifier}`,
+                    () =>
+                        retriever.retrieve({
+                            ...options,
+                            hints: {
+                                maxChars: options.maxChars,
+                                maxMs: 150,
+                            },
+                        })
                 )
 
                 return {
@@ -106,7 +108,7 @@ export class ContextMixer implements vscode.Disposable {
         const resultsByDocument = new Map<string, { [identifier: string]: ContextSnippet[] }>()
         for (const { identifier, snippets } of results) {
             for (const snippet of snippets) {
-                const documentId = snippet.fileName
+                const documentId = snippet.uri.toString()
 
                 let document = resultsByDocument.get(documentId)
                 if (!document) {
@@ -128,13 +130,14 @@ export class ContextMixer implements vscode.Disposable {
         const fusedDocumentScores: Map<string, number> = new Map()
         for (const { identifier, snippets } of results) {
             snippets.forEach((snippet, rank) => {
-                const documentId = snippet.fileName
+                const documentId = snippet.uri.toString()
 
                 // Since every retriever can return many snippets for a given document, we need to
                 // only consider the best rank for each document.
                 // We can use the previous map by document to find the highest ranked snippet for a
                 // retriever
-                const isBestRankForRetriever = resultsByDocument.get(documentId)?.[identifier][0] === snippet
+                const isBestRankForRetriever =
+                    resultsByDocument.get(documentId)?.[identifier][0] === snippet
                 if (!isBestRankForRetriever) {
                     return
                 }
@@ -150,11 +153,16 @@ export class ContextMixer implements vscode.Disposable {
             })
         }
 
-        const fusedDocuments = [...fusedDocumentScores.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])
+        const fusedDocuments = [...fusedDocumentScores.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(e => e[0])
+
+        // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
+        // total chars with the prefix and suffix sizes.
+        let totalChars = options.docContext.prefix.length + options.docContext.suffix.length
 
         const mixedContext: ContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
-        let totalChars = 0
         let position = 0
         // Now that we have a sorted list of documents (with the first document being the highest
         // ranked one), we use top-k to combine snippets from each retriever into a result set.
@@ -190,7 +198,8 @@ export class ContextMixer implements vscode.Disposable {
                         retrieverStats[identifier] = {
                             suggestedItems: 0,
                             positionBitmap: 0,
-                            retrievedItems: results.find(r => r.identifier === identifier)?.snippets.length ?? 0,
+                            retrievedItems:
+                                results.find(r => r.identifier === identifier)?.snippets.length ?? 0,
                             duration: results.find(r => r.identifier === identifier)?.duration ?? 0,
                         }
                     }

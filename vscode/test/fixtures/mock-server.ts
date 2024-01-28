@@ -1,10 +1,10 @@
-import { Socket } from 'node:net'
+import type { Socket } from 'node:net'
 
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 // create interface for the request
 interface MockRequest {
@@ -25,6 +25,19 @@ export const VALID_TOKEN = 'sgp_1234567890123456789012345678901234567890'
 
 const responses = {
     chat: 'hello from the assistant',
+    chatWithSnippet: [
+        'Hello! Here is a code snippet:',
+        '',
+        '```',
+        'def fib(n):',
+        '  if n < 0:',
+        '    return n',
+        '  else:',
+        '    return fib(n-1) + fib(n-2)',
+        '```',
+        '',
+        'Hope this helps!',
+    ].join('\n'),
     fixup: '<CODE5711><title>Goodbye Cody</title></CODE5711>',
     code: {
         template: { completion: '', stopReason: 'stop_sequence' },
@@ -45,7 +58,10 @@ const publishOptions = {
     },
 }
 
-const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', publishOptions)
+const topicPublisher = pubSubClient.topic(
+    'projects/sourcegraph-telligent-testing/topics/e2e-testing',
+    publishOptions
+)
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
@@ -59,11 +75,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.status(200)
     })
 
-    // matches @sourcegraph/cody-shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter
-    // importing const doesn't work, so hardcode it here.
+    // matches @sourcegraph/cody-shared't work, so hardcode it here.
     app.post('/.api/mockEventRecording', (req, res) => {
         const events = req.body as TelemetryEventInput[]
-        events.forEach(event => {
+        for (const event of events) {
             void logTestingData('new', JSON.stringify(event))
             if (
                 ![
@@ -72,7 +87,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             ) {
                 loggedV2Events.push(`${event.feature}/${event.action}`)
             }
-        })
+        }
         res.status(200)
     })
 
@@ -97,12 +112,21 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         // or have a method on the server to send a set response the next time it sees a trigger word in the request.
         const request = req as MockRequest
         const lastHumanMessageIndex = request.body.messages.length - 2
-        const response =
+        let response = responses.chat
+        if (
             request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
             request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
-                ? responses.fixup
-                : responses.chat
-        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+        ) {
+            response = responses.fixup
+        }
+        if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
+            response = responses.chatWithSnippet
+        }
+        res.send(
+            `event: completion\ndata: {"completion": ${JSON.stringify(
+                response
+            )}}\n\nevent: done\ndata: {}\n\n`
+        )
     })
     app.post('/.test/completions/triggerRateLimit', (req, res) => {
         chatRateLimited = true
@@ -132,7 +156,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         // Extract the code from the last message.
         let completionPrefix = request.body.messages.at(-1)?.text
         if (!completionPrefix?.startsWith(OPENING_CODE_TAG)) {
-            throw new Error(`Last completion message did not contain code starting with ${OPENING_CODE_TAG}`)
+            throw new Error(
+                `Last completion message did not contain code starting with ${OPENING_CODE_TAG}`
+            )
         }
         completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
 
@@ -157,6 +183,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.send(JSON.stringify(response))
     })
 
+    let attribution = false
     app.post('/.api/graphql', (req, res) => {
         if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
             res.sendStatus(401)
@@ -172,8 +199,8 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                             currentUser: {
                                 id: 'u',
                                 hasVerifiedEmail: true,
-                                codyProEnabled: false,
                                 displayName: 'Person',
+                                username: 'person',
                                 avatarURL: '',
                                 primaryEmail: {
                                     email: 'person@company.comp',
@@ -183,8 +210,23 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                     })
                 )
                 break
+            case 'CurrentUserCodyProEnabled':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            currentUser: {
+                                codyProEnabled: false,
+                            },
+                        },
+                    })
+                )
+                break
             case 'IsContextRequiredForChatQuery':
-                res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
+                res.send(
+                    JSON.stringify({
+                        data: { isContextRequiredForChatQuery: false },
+                    })
+                )
                 break
             case 'SiteIdentification':
                 res.send(
@@ -192,17 +234,31 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                         data: {
                             site: {
                                 siteID: 'test-site-id',
-                                productSubscription: { license: { hashedKey: 'mmm,hashedkey' } },
+                                productSubscription: {
+                                    license: { hashedKey: 'mmm,hashedkey' },
+                                },
                             },
                         },
                     })
                 )
                 break
             case 'SiteProductVersion':
-                res.send(JSON.stringify({ data: { site: { productVersion: 'dev' } } }))
+                res.send(
+                    JSON.stringify({
+                        data: { site: { productVersion: 'dev' } },
+                    })
+                )
                 break
             case 'SiteGraphQLFields':
-                res.send(JSON.stringify({ data: { __type: { fields: [{ name: 'id' }, { name: 'isCodyEnabled' }] } } }))
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            __type: {
+                                fields: [{ name: 'id' }, { name: 'isCodyEnabled' }],
+                            },
+                        },
+                    })
+                )
                 break
             case 'SiteHasCodyEnabled':
                 res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
@@ -212,7 +268,27 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                     JSON.stringify({
                         data: {
                             site: {
-                                codyLLMConfiguration: { chatModel: 'test-chat-default-model', provider: 'sourcegraph' },
+                                codyLLMConfiguration: {
+                                    chatModel: 'test-chat-default-model',
+                                    provider: 'sourcegraph',
+                                },
+                            },
+                        },
+                    })
+                )
+                break
+            }
+            case 'CodyConfigFeaturesResponse': {
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            site: {
+                                codyConfigFeatures: {
+                                    chat: true,
+                                    autoComplete: true,
+                                    commands: true,
+                                    attribution,
+                                },
                             },
                         },
                     })
@@ -223,6 +299,15 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 res.sendStatus(400)
                 break
         }
+    })
+
+    app.post('/.test/attribution/enable', (req, res) => {
+        attribution = true
+        res.sendStatus(200)
+    })
+    app.post('/.test/attribution/disable', (req, res) => {
+        attribution = false
+        res.sendStatus(200)
     })
 
     const server = app.listen(SERVER_PORT)
@@ -249,7 +334,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
+async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
     }
@@ -288,29 +373,17 @@ export let loggedEvents: string[] = []
 // Events recorded using the new event recorders
 // Needs to be recorded separately from the legacy events to ensure ordering
 // is stable.
-export let loggedV2Events: string[] = []
+let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
     loggedEvents = []
     loggedV2Events = []
 }
-export function storeLoggedEvents(event: string): void {
+function storeLoggedEvents(event: string): void {
     interface ParsedEvent {
         event: string
     }
     const parsedEvent = JSON.parse(JSON.stringify(event)) as ParsedEvent
     const name = parsedEvent.event
-    if (
-        ![
-            'CodyInstalled',
-            'CodyVSCodeExtension:Auth:failed',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-        ].includes(name)
-    ) {
-        loggedEvents.push(name)
-    }
+    loggedEvents.push(name)
 }

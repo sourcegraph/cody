@@ -2,25 +2,23 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
+import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
-import { CompletionIntent } from '../tree-sitter/query-sdk'
+import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextSummary } from './context/context-mixer'
-import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import type { ContextSummary } from './context/context-mixer'
+import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
-import { RequestParams } from './request-manager'
+import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { InlineCompletionItem } from './types'
+import type { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -72,6 +70,9 @@ interface SharedEventPayload extends InteractionIDPayload {
 
     /** Language of the document being completed. */
     languageId: string
+
+    /** If we're inside a test file */
+    testFile: boolean
 
     /**
      * Information about the context retrieval process that lead to this autocomplete request. Refer
@@ -193,7 +194,7 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -206,7 +207,7 @@ export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void
         params
     )
 }
-export function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
+function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -219,7 +220,7 @@ export function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
         params
     )
 }
-export function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPayload): void {
+function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -258,12 +259,12 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
         params
     )
 }
-export function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
+function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('noResponse', { version: 0, metadata, privateMetadata }, params)
 }
-export function logCompletionErrorEvent(params: ErrorEventPayload): void {
+function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
@@ -326,7 +327,10 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
 
 export interface CompletionBookkeepingEvent {
     id: CompletionLogID
-    params: Omit<SharedEventPayload, 'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'>
+    params: Omit<
+        SharedEventPayload,
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
+    >
     // The timestamp when the completion request started
     startedAt: number
     // The timestamp when the completion fired off an eventual network request
@@ -390,7 +394,7 @@ export interface CompletionItemInfo extends ItemPostProcessingInfo {
     stopReason?: string
 }
 
-export const READ_TIMEOUT_MS = 750
+const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion requests
 const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkeepingEvent>({
@@ -454,7 +458,10 @@ export function start(id: CompletionLogID): void {
     }
 }
 
-export function networkRequestStarted(id: CompletionLogID, contextSummary: ContextSummary | undefined): void {
+export function networkRequestStarted(
+    id: CompletionLogID,
+    contextSummary: ContextSummary | undefined
+): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.networkRequestStartedAt) {
         event.networkRequestStartedAt = performance.now()
@@ -466,7 +473,8 @@ export function loaded(
     id: CompletionLogID,
     params: RequestParams,
     items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource
+    source: InlineCompletionsResultSource,
+    isDotComUser: boolean
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
@@ -477,7 +485,8 @@ export function loaded(
 
     // Check if we already have a completion id for the loaded completion item
     const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionAnalyticsID = recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
+    const completionId: CompletionAnalyticsID =
+        recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
     recentCompletions.set(key, completionId)
     event.params.id = completionId
 
@@ -486,7 +495,6 @@ export function loaded(
     }
 
     if (event.items.length === 0) {
-        const isDotComUser = isDotComServer()
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 }
@@ -497,7 +505,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, completion: InlineCompletionItemWithAnalytics): void {
+export function suggested(id: CompletionLogID): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -535,7 +543,8 @@ export function accepted(
     id: CompletionLogID,
     document: vscode.TextDocument,
     completion: InlineCompletionItemWithAnalytics,
-    trackedRange: vscode.Range | undefined
+    trackedRange: vscode.Range | undefined,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
@@ -590,7 +599,7 @@ export function accepted(
     logSuggestionEvents()
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
     statistics.logAccepted()
 
@@ -612,7 +621,8 @@ export function accepted(
 export function partiallyAccept(
     id: CompletionLogID,
     completion: InlineCompletionItemWithAnalytics,
-    acceptedLength: number
+    acceptedLength: number,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     // Only log partial acceptances if the completion was not yet fully accepted
@@ -632,7 +642,7 @@ export function partiallyAccept(
 
     logCompletionPartiallyAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
         acceptedLength,
         acceptedLengthDelta,
     })
@@ -661,6 +671,7 @@ export function flushActiveSuggestionRequests(): void {
 
 function logSuggestionEvents(): void {
     const now = performance.now()
+    // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
         const {
             params,
@@ -719,7 +730,10 @@ export function reset_testOnly(): void {
     completionsStartedSinceLastSuggestion = 0
 }
 
-function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {
+function lineAndCharCount({ insertText }: InlineCompletionItem): {
+    lineCount: number
+    charCount: number
+} {
     const lineCount = lines(insertText).length
     const charCount = insertText.length
     return { lineCount, charCount }
@@ -773,7 +787,10 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
     }
 }
 
-function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser = false): CompletionItemInfo {
+function completionItemToItemInfo(
+    item: InlineCompletionItemWithAnalytics,
+    isDotComUser: boolean
+): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
     const completionItemInfo: CompletionItemInfo = {
@@ -821,10 +838,4 @@ function getOtherCompletionProvider(): string[] {
 function isRunningInsideAgent(): boolean {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     return !!config.isRunningInsideAgent
-}
-
-// 🚨 SECURITY: this helper ensures we log additional data only for DotCom users.
-function isDotComServer(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return isDotCom(config.serverEndpoint)
 }

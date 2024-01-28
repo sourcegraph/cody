@@ -1,5 +1,4 @@
 node_modules/
-.eslintcache
 .stylelintcache
 dist/
 *.tsbuildinfo
@@ -7,3 +6,5 @@ dist/
 .env
 .idea/
 playwright/**/*.webm
+**/*.iml
+**/*.vsix

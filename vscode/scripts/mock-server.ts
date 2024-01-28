@@ -36,7 +36,6 @@ http.createServer((req, res) => {
         console.log()
         console.log('>', req.url)
         console.log(payload)
-
         const mockedResponse = (endpoints as any)[req.url as any]
         if (mockedResponse) {
             console.log('<', mockedResponse)

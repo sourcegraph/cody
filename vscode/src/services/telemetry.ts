@@ -1,8 +1,13 @@
 import * as vscode from 'vscode'
 
-import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
-import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import {
+    EventLogger,
+    type Configuration,
+    type ConfigurationWithAccessToken,
+    type ExtensionDetails,
+    type TelemetryEventProperties,
+    type TelemetryService,
+} from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
@@ -11,7 +16,7 @@ import { version } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
-export let eventLogger: EventLogger | null = null
+let eventLogger: EventLogger | null = null
 let telemetryLevel: 'all' | 'off' | 'agent' = 'off'
 let globalAnonymousUserID: string
 
@@ -96,7 +101,9 @@ function logEvent(
     }
 
     logDebug(
-        `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
+        `logEvent${
+            eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''
+        }`,
         eventName,
         getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
         JSON.stringify({ properties, opts })

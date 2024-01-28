@@ -5,7 +5,6 @@ import {
     collapseDuplicativeWhitespace,
     extractFromCodeBlock,
     OPENING_CODE_TAG,
-    trimEndOnLastLineIfWhitespaceOnly,
     trimLeadingWhitespaceUntilNewline,
 } from './text-processing'
 
@@ -22,7 +21,9 @@ describe('extractFromCodeBlock', () => {
 
     it('returns the whole string if the closing tag is not found', () => {
         expect(extractFromCodeBlock('hello world')).toBe('hello world')
-        expect(extractFromCodeBlock('<randomTag>hello world</randomTag>')).toBe('<randomTag>hello world</randomTag>')
+        expect(extractFromCodeBlock('<randomTag>hello world</randomTag>')).toBe(
+            '<randomTag>hello world</randomTag>'
+        )
         expect(extractFromCodeBlock('const isEnabled = true // something else')).toBe(
             'const isEnabled = true // something else'
         )
@@ -37,7 +38,8 @@ describe('extractFromCodeBlock', () => {
 
 describe('trimLeadingWhitespaceUntilNewline', () => {
     test('trims spaces', () => expect(trimLeadingWhitespaceUntilNewline('  \n  a')).toBe('\n  a'))
-    test('preserves carriage returns', () => expect(trimLeadingWhitespaceUntilNewline('\t\r\n  a')).toBe('\r\n  a'))
+    test('preserves carriage returns', () =>
+        expect(trimLeadingWhitespaceUntilNewline('\t\r\n  a')).toBe('\r\n  a'))
 })
 
 describe('collapseDuplicativeWhitespace', () => {
@@ -53,9 +55,4 @@ describe('collapseDuplicativeWhitespace', () => {
     test('does not trim newlines', () => {
         expect(collapseDuplicativeWhitespace('x = ', '\n7')).toBe('\n7')
     })
-})
-
-describe('trimEndOnLastLineIfWhitespaceOnly', () => {
-    test('trims end', () => expect(trimEndOnLastLineIfWhitespaceOnly('a\n  ')).toBe('a\n'))
-    test('does not trim end', () => expect(trimEndOnLastLineIfWhitespaceOnly('a\nb  ')).toBe('a\nb  '))
 })

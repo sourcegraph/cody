@@ -11,9 +11,11 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
+    // Wait for index.html to fully open
+    await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Cody"]')
+    await page.click('.badge[aria-label="Cody"]')
 
     await page.getByText('Explain code').hover()
     await page.getByText('Explain code').click()
@@ -22,7 +24,7 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     // Check if the command shows up with the current file name
-    await chatPanelFrame.getByText('✨ Context: 1 file').click()
+    await chatPanelFrame.getByText('✨ Context: 13 lines from 1 file').click()
 
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
@@ -32,4 +34,9 @@ test('submit command from command palette', async ({ page, sidebar }) => {
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
+
+    // Edit button should shows up as disabled for command messages
+    const editButtons = chatPanelFrame.locator('.codicon-edit')
+    await expect(editButtons).toHaveCount(1)
+    await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
 })
