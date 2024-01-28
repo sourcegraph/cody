@@ -5,11 +5,11 @@ import { promisify } from 'node:util'
 
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import type { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -92,35 +92,34 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         multiplexer.publish(preamble)
 
         try {
-            await new Promise<void>((resolve, reject) => {
-                const abort = this.options.chatClient.chat(
-                    [
-                        { speaker: 'human', text: prompt },
-                        {
-                            speaker: 'assistant',
-                            text: preamble,
-                        },
-                    ],
+            const abortController = new AbortController()
+            const stream = this.options.chatClient.chat(
+                [
+                    { speaker: 'human', text: prompt },
                     {
-                        onChange: text => {
-                            void multiplexer.publish(text)
-                        },
-                        onComplete: () => {
-                            void multiplexer.notifyTurnComplete()
-                            resolve()
-                        },
-                        onError: error => {
-                            reject(error)
-                        },
+                        speaker: 'assistant',
+                        text: preamble,
                     },
-                    {
-                        fast: true,
-                        stopSequences: [`</${COMMIT_MESSAGE_TOPIC}>`],
-                    }
-                )
-
-                cancellationToken?.onCancellationRequested(abort)
-            })
+                ],
+                {
+                    fast: true,
+                    stopSequences: [`</${COMMIT_MESSAGE_TOPIC}>`],
+                },
+                abortController.signal
+            )
+            cancellationToken?.onCancellationRequested(abortController.abort)
+            for await (const message of stream) {
+                switch(message.type) {
+                    case 'change':
+                        void multiplexer.publish(message.text)
+                        break
+                    case 'error':
+                        throw message.error
+                    case 'complete':
+                        void multiplexer.notifyTurnComplete()
+                        break
+                }
+            }
         } catch (error) {
             if (isRateLimitError(error)) {
                 vscode.commands.executeCommand(
@@ -198,7 +197,9 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
     }
 
     public dispose(): void {
-        this.disposables.forEach(d => d.dispose())
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
     }
 }
 
