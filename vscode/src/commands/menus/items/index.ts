@@ -71,12 +71,6 @@ export const customPromptsContextOptions: ContextOption[] = [
         picked: true,
     },
     {
-        id: 'codebase',
-        label: 'Codebase',
-        detail: 'Code snippets retrieved from the available source for codebase context (embeddings or local keyword search).',
-        picked: false,
-    },
-    {
         id: 'currentDir',
         label: 'Current Directory',
         detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
