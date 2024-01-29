@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Custom Command: Remove the codebase as context option from the custom command menu. [pull/2932](https://github.com/sourcegraph/cody/pull/2932)
+
 ### Changed
 
 ## [1.2.0]
