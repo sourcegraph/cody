@@ -73,6 +73,10 @@ test('create a new user command via the custom commands menu', async ({ page, si
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
 test('execute a custom command defined in workspace cody.json', async ({ page, sidebar }) => {
@@ -138,6 +142,10 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
         .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-1') })
         .click()
     await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
 test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
