@@ -142,7 +142,7 @@ export class Agent extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
-                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
                 return Promise.resolve(false)
             }
             const edits: TextEdit[] = []

@@ -105,7 +105,7 @@ type MessageHandlerCallback = (err: Error | null, msg: Message | null) => void
 
 /**
  * Absolute path to a file where the agent can write low-level debugging logs to
- * trace all incoming/outgoin JSON messages.
+ * trace all incoming/outgoing JSON messages.
  */
 const tracePath = process.env.CODY_AGENT_TRACE_PATH ?? ''
 
