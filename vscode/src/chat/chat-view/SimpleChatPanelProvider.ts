@@ -311,7 +311,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                void this.handleAttributionSearch(message.snippet)
+                await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)

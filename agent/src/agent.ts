@@ -773,6 +773,20 @@ export class Agent extends MessageHandler {
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
+
+        this.registerAuthenticatedRequest('attribution/search', async ({ id, snippet }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, {
+                command: 'attribution-search',
+                snippet,
+            })
+            const result = panel.popAttribution(snippet)
+            return {
+                error: result.error || null,
+                repoNames: result?.attribution?.repositoryNames || [],
+                limitHit: result?.attribution?.limitHit || false,
+            }
+        })
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
@@ -884,6 +898,8 @@ export class Agent extends MessageHandler {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
+                } else if (message.type === 'attribution') {
+                    panel.pushAttribution(message)
                 }
 
                 this.notify('webview/postMessage', {
