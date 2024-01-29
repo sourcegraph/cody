@@ -81,6 +81,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
+                    case 'cody.autocomplete.experimental.fastPath':
+                        return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',

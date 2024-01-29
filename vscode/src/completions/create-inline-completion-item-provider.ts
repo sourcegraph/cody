@@ -77,12 +77,14 @@ export async function createInlineCompletionItemProvider({
         newJaccardSimilarityContextFlag,
         dynamicMultilineCompletionsFlag,
         hotStreakFlag,
+        fastPathFlag,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFastPath),
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
@@ -105,6 +107,7 @@ export async function createInlineCompletionItemProvider({
         const dynamicMultilineCompletions =
             config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
         const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
+        const fastPath = config.autocompleteExperimentalFastPath || fastPathFlag
 
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
@@ -119,6 +122,7 @@ export async function createInlineCompletionItemProvider({
             createBfgRetriever,
             dynamicMultilineCompletions,
             hotStreak,
+            fastPath,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

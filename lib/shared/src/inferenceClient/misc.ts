@@ -13,6 +13,10 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
+    complete(
+        params: T,
+        abortController: AbortController,
+        featureFlags?: { fastPath?: boolean }
+    ): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }

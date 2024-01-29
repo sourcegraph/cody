@@ -1,7 +1,12 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    getActiveTraceAndSpanId,
+    isAbortError,
+    logDebug,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -55,6 +60,7 @@ export interface InlineCompletionsParams {
     completeSuggestWidgetSelection?: boolean
     dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
+    fastPath?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -190,6 +196,7 @@ async function doGetInlineCompletions(
         completionIntent,
         dynamicMultilineCompletions,
         hotStreak,
+        fastPath,
         lastAcceptedCompletionItem,
         isDotComUser,
     } = params
@@ -321,6 +328,7 @@ async function doGetInlineCompletions(
         docContext,
         dynamicMultilineCompletions,
         hotStreak,
+        fastPath,
     })
 
     tracer?.({
@@ -369,6 +377,7 @@ interface GetCompletionProvidersParams
         | 'providerConfig'
         | 'dynamicMultilineCompletions'
         | 'hotStreak'
+        | 'fastPath'
     > {
     docContext: DocumentContext
 }
@@ -382,6 +391,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         docContext,
         dynamicMultilineCompletions,
         hotStreak,
+        fastPath,
     } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
@@ -390,6 +400,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         dynamicMultilineCompletions,
         hotStreak,
+        fastPath,
         // For the now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1900,
     }

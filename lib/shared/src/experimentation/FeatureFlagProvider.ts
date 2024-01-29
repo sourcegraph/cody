@@ -26,6 +26,8 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
+    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',

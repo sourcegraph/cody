@@ -190,7 +190,9 @@ class FireworksProvider extends Provider {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
+                this.client.complete(requestParams, abortController, {
+                    fastPath: this.options.fastPath,
+                }),
                 requestParams.timeoutMs,
                 abortController
             )

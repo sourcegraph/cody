@@ -72,6 +72,7 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
+    fastPath?: boolean
 }
 
 interface CompletionRequest {
@@ -116,6 +117,7 @@ export class InlineCompletionItemProvider
         formatOnAccept = true,
         dynamicMultilineCompletions = false,
         hotStreak = false,
+        fastPath = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -126,6 +128,7 @@ export class InlineCompletionItemProvider
             formatOnAccept,
             dynamicMultilineCompletions,
             hotStreak,
+            fastPath,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
@@ -317,8 +320,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: 75,
-                        multiLine: 125,
+                        singleLine: 25,
+                        multiLine: 50,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
@@ -331,6 +334,7 @@ export class InlineCompletionItemProvider
                     completionIntent,
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                     hotStreak: this.config.hotStreak,
+                    fastPath: this.config.fastPath,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
                 })

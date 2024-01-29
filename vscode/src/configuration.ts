@@ -118,11 +118,11 @@ export function getConfiguration(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
         ),
-
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
         ),
+        autocompleteExperimentalFastPath: getHiddenSetting('autocomplete.experimental.fastPath', false),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
