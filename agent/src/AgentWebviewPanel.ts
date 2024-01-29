@@ -23,6 +23,14 @@ export class AgentWebviewPanels {
     }
 }
 
+interface AttributionResult {
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
 /**
  * Custom implementation of vscode.WebviewPanel that makes it possible to
  * delegate the implementation to the remote JSON-RPC client via the custom
@@ -42,6 +50,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public receiveMessage = new EventEmitter<WebviewMessage>()
     public postMessage = new EventEmitter<ExtensionMessage>()
     public onDidPostMessage = this.postMessage.event
+    private attributionResults = new Map<string, AttributionResult>()
     constructor(
         viewType: string,
         title: string,
@@ -87,6 +96,15 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     }
     public set iconPath(value) {
         this.panel.iconPath = value
+    }
+
+    public popAttribution(snippet: string): AttributionResult {
+        const attribution = this.attributionResults.get(snippet)
+        this.attributionResults.delete(snippet)
+        return attribution !== undefined ? attribution : { error: 'Attribution result lost' }
+    }
+    public pushAttribution(result: { snippet: string } & AttributionResult) {
+        this.attributionResults.set(result.snippet, result)
     }
 
     public get visible(): boolean {

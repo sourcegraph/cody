@@ -49,8 +49,8 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export { defaultCodyCommandContext, isFixupCommand } from './commands'
-export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
+export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -84,10 +84,8 @@ export type {
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    VsCodeCommandsController,
 } from './editor'
 export {
     displayPath,

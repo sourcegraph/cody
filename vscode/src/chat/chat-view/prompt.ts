@@ -208,7 +208,7 @@ function renderContextItem(contextItem: ContextItem): Message[] {
     if (contextItem.source === 'selection') {
         messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, uri)
     } else if (contextItem.source === 'editor') {
-        // This template text works well with prompts in our commands
+        // This template text works best with prompts in our commands
         // Using populateCodeContextTemplate here will cause confusion to Cody
         const templateText = 'Codebase context from file path {fileName}: '
         messageText = populateContextTemplateFromText(templateText, contextItem.text, uri)

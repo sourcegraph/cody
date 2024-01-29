@@ -2,18 +2,10 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import {
-    ChatModelProvider,
-    type ChatClient,
-    type ChatEventSource,
-    type CodyCommand,
-    type Guardrails,
-} from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import type { CodyCommandArgs } from '../../commands'
-import type { CommandsController } from '../../commands/CommandsController'
-import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/prompt/display-text'
+import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -26,6 +18,7 @@ import type { AuthStatus } from '../protocol'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import type { ExecuteChatArguments } from '../../commands/default/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
@@ -50,8 +43,7 @@ export class ChatManager implements vscode.Disposable {
         private enterpriseContext: EnterpriseContextFactory | null,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
-        private guardrails: Guardrails,
-        private commandsController?: CommandsController
+        private guardrails: Guardrails
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -68,15 +60,12 @@ export class ChatManager implements vscode.Disposable {
             this.localEmbeddings,
             this.symf,
             this.enterpriseContext,
-            this.guardrails,
-            this.commandsController
+            this.guardrails
         )
 
         // Register Commands
         this.disposables.push(
-            vscode.commands.registerCommand('cody.action.chat', (input, args) =>
-                this.executeChat(input, args)
-            ),
+            vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
@@ -119,40 +108,25 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    // Execute a chat request in a new chat panel
-    public async executeChat(question: string, args?: { source?: ChatEventSource }): Promise<void> {
+    /**
+     * Execute a chat request in a new chat panel
+     */
+    public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const requestID = uuid.v4()
         telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
             requestID,
-            ...args,
+            source: args?.source,
         })
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.handleUserMessageSubmission(requestID, question, 'user-newchat', [], true)
-    }
 
-    // Execute a command request in a new chat panel
-    public async executeCommand(
-        command: CodyCommand,
-        args: CodyCommandArgs,
-        enabled = true
-    ): Promise<ChatSession | undefined> {
-        if (!enabled) {
-            void vscode.window.showErrorMessage(
-                'This feature has been disabled by your Sourcegraph site admin.'
-            )
-            return
-        }
-
-        logDebug('ChatManager:executeCommand:called', command.slashCommand)
-        if (!vscode.window.visibleTextEditors.length) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
-            return
-        }
-
-        // Else, open a new chanel panel and run the command in the new panel
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.handleCommand(command, args)
-        return chatProvider
+        const provider = await this.getChatProvider()
+        await provider?.handleUserMessageSubmission(
+            requestID,
+            args.text,
+            args?.submitType,
+            args?.contextFiles ?? [],
+            args?.addEnhancedContext ?? true
+        )
+        return provider
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

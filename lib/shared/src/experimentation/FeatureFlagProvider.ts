@@ -30,6 +30,13 @@ export enum FeatureFlag {
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
 
+    // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
+    UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
+
+    // cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
+    // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
+    CodyProTrialEnded = 'cody-pro-trial-ended',
+
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
 }

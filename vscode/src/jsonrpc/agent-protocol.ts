@@ -15,6 +15,7 @@ import type {
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
+import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
 import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -83,6 +84,7 @@ export type Requests = {
 
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
+    'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
@@ -128,6 +130,22 @@ export type Requests = {
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
+
+    // Run attribution search for a code snippet displayed in chat.
+    // Attribution is an enterprise feature which allows to look for code generated
+    // by Cody in an open source code corpus. User is notified if any such attribution
+    // is found.
+    // For more details, please see:
+    // *   PRD: https://docs.google.com/document/d/1c3CLC7ICDaG63NOWjO6zWm-UElwuXkFrKbCKTw-7H6Q/edit
+    // *   RFC: https://docs.google.com/document/d/1zSxFDQPxZcn5b6yKx40etpJayoibVzj_Gnugzln1weI/edit
+    'attribution/search': [
+        { id: string; snippet: string },
+        {
+            error: string | null
+            repoNames: string[]
+            limitHit: boolean
+        },
+    ]
 
     // ================
     // Server -> Client
