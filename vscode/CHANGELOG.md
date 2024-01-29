@@ -8,7 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-Update Chat input tips as commands are no longer executable from chat. [pull/2934](https://github.com/sourcegraph/cody/pull/2934)
+- Chat: Updated Chat input tips as commands are no longer executable from chat. [pull/2934](https://github.com/sourcegraph/cody/pull/2934)
+- Custom Command: Removed codebase as context option from the custom command menu. [pull/2932](https://github.com/sourcegraph/cody/pull/2932)
 
 ### Changed
 
