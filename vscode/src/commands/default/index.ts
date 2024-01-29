@@ -8,8 +8,15 @@ import { executeExplainCommand } from './explain'
 import { executeTestCommand } from './test'
 import { executeDocCommand } from './doc'
 import type { CommandResult } from '../../main'
+import { executeUnitTestCommand } from './unit'
 
 export { commands as defaultCommands } from './cody.json'
+
+export { executeSmellCommand } from './smell'
+export { executeExplainCommand } from './explain'
+export { executeTestCommand } from './test'
+export { executeDocCommand } from './doc'
+export { executeUnitTestCommand } from './unit'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any
@@ -37,7 +44,8 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
 export async function executeDefaultCommand(
     id: DefaultCodyCommands | string
 ): Promise<CommandResult | undefined> {
-    switch (id) {
+    const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
+    switch (key) {
         case DefaultChatCommands.Explain:
             return executeExplainCommand()
         case DefaultChatCommands.Smell:
@@ -45,7 +53,7 @@ export async function executeDefaultCommand(
         case DefaultChatCommands.Test:
             return executeTestCommand()
         case DefaultEditCommands.Unit:
-            return executeTestCommand()
+            return executeUnitTestCommand()
         case DefaultEditCommands.Doc:
             return executeDocCommand()
         default:
