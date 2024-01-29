@@ -61,6 +61,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             'If true, unused recordings are not removed from the recording file'
         )
             .env('CODY_KEEP_UNUSED_RECORDINGS')
+            .argParser(booleanOption)
             .default(false)
     )
     .addOption(
