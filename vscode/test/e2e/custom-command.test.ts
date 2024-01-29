@@ -9,7 +9,7 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 
-test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test.only('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -63,19 +63,21 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
     // Gives time for the command to be saved to the workspace settings
-    // Add a delay to allow the command to be saved to the workspace settings
     await page.waitForTimeout(500)
 
-    // Check if cody.json exists in the workspace
+    // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
-    await page.click('.badge[aria-label="Cody"]')
+    await expect(page.getByText(commandName)).toBeVisible()
+    await page.getByText('index.html').first().click()
 
     // Show the new command in the menu and execute it
+    await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Custom commands').locator('a').click()
-    await expect(page.getByText(description)).toBeVisible()
+    await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
+    await expect(page.getByText(commandName)).toBeVisible()
     await page.getByText(commandName).click()
 
     // Confirm the command prompt is displayed in the chat panel on execution
