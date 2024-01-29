@@ -297,9 +297,8 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 )
         );
         
-        const concurrencyLimit = 100
+        const concurrencyLimit = 1
         const semaphore = new Semaphore(concurrencyLimit);
-
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;
         // for(const workspace of workspacesToRun) {
@@ -312,6 +311,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
             const [_, release] = await semaphore.acquire();
             try {
                 await evaluateWorkspace(workspace);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Sleep for 1 second
             } finally {
                 release();
             }
