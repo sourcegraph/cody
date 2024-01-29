@@ -1,17 +1,15 @@
+package com.sourcegraph.cody.agent
+
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.util.system.CpuArch
-import com.sourcegraph.cody.agent.CodyAgentClient
-import com.sourcegraph.cody.agent.CodyAgentException
-import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.config.ConfigUtil
-import java.io.File
-import java.io.IOException
-import java.io.PrintWriter
+import java.io.*
+import java.net.Socket
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.*
@@ -27,7 +25,7 @@ private constructor(
     val client: CodyAgentClient,
     val server: CodyAgentServer,
     val launcher: Launcher<CodyAgentServer>,
-    private val agentProcess: Process,
+    private val connection: AgentConnection,
     private val listeningToJsonRpc: Future<Void?>
 ) {
 
@@ -36,7 +34,7 @@ private constructor(
       server.exit()
       logger.warn("Cody Agent shut down")
       listeningToJsonRpc.cancel(true)
-      agentProcess.destroyForcibly()
+      connection.close()
     }
   }
 
@@ -44,19 +42,59 @@ private constructor(
     // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
     // because we don't know 100% yet what exactly constitutes a "connected" state. Out of
     // abundance of caution, we check everything we can think of.
-    return agentProcess.isAlive && !listeningToJsonRpc.isDone && !listeningToJsonRpc.isCancelled
+    return connection.isConnected() && !listeningToJsonRpc.isDone && !listeningToJsonRpc.isCancelled
+  }
+
+  /** Abstracts over the Process and Socket types to the extent we need it. */
+  sealed class AgentConnection {
+    abstract fun isConnected(): Boolean
+
+    abstract fun close()
+
+    abstract fun getInputStream(): InputStream
+
+    abstract fun getOutputStream(): OutputStream
+
+    class ProcessConnection(val process: Process) : AgentConnection() {
+      override fun isConnected(): Boolean = process.isAlive
+
+      override fun close() {
+        process.destroy()
+      }
+
+      override fun getInputStream(): InputStream = process.inputStream
+
+      override fun getOutputStream(): OutputStream = process.outputStream
+    }
+
+    class SocketConnection(val socket: Socket) : AgentConnection() {
+      override fun isConnected(): Boolean = socket.isConnected && !socket.isClosed
+
+      override fun close() {
+        socket.close()
+      }
+
+      override fun getInputStream(): InputStream = socket.getInputStream()
+
+      override fun getOutputStream(): OutputStream = socket.getOutputStream()
+    }
   }
 
   companion object {
     private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
+    private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
+
+    private fun shouldConnectToDebugAgent() = System.getenv("CODY_AGENT_DEBUG_REMOTE") == "true"
+
+    private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
 
     fun create(project: Project): CompletableFuture<CodyAgent> {
       try {
-        val agentProcess = startAgentProcess()
+        val conn = startAgentProcess()
         val client = CodyAgentClient()
-        val launcher = startAgentLauncher(agentProcess, client)
+        val launcher = startAgentLauncher(conn, client)
         val server = launcher.remoteProxy
         val listeningToJsonRpc = launcher.startListening()
 
@@ -70,7 +108,7 @@ private constructor(
               .thenApply { info ->
                 logger.info("Connected to Cody agent " + info.name)
                 server.initialized()
-                CodyAgent(client, server, launcher, agentProcess, listeningToJsonRpc)
+                CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }
         } catch (e: Exception) {
           logger.warn("Failed to send 'initialize' JSON-RPC request Cody agent", e)
@@ -82,15 +120,22 @@ private constructor(
       }
     }
 
-    private fun startAgentProcess(): Process {
-      val binary = agentBinary()
-      logger.info("starting Cody agent " + binary.absolutePath)
+    private fun startAgentProcess(): AgentConnection {
+      if (shouldConnectToDebugAgent()) {
+        return connectToDebugAgent()
+      }
       val command: List<String> =
           if (System.getenv("CODY_DIR") != null) {
             val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
             logger.info("using Cody agent script " + script.absolutePath)
-            listOf("node", "--enable-source-maps", script.absolutePath)
+            if (shouldSpawnDebuggableAgent()) {
+              listOf("node", "--inspect", "--enable-source-maps", script.absolutePath)
+            } else {
+              listOf("node", "--enable-source-maps", script.absolutePath)
+            }
           } else {
+            val binary = agentBinary()
+            logger.info("starting Cody agent " + binary.absolutePath)
             listOf(binary.absolutePath)
           }
 
@@ -111,29 +156,26 @@ private constructor(
               .start()
 
       // Redirect agent stderr into idea.log by buffering line by line into `logger.warn()`
-      // statements. Without this logic, the stderr output of the agent process is lost if the
-      // process
-      // fails to start for some reason. We use `logger.warn()` because the agent shouldn't print
-      // much
-      // normally (excluding a few noisy messages during initialization), it's mostly used to report
-      // unexpected errors.
+      // statements. Without this logic, the stderr output of the agent process is lost if
+      // the process fails to start for some reason. We use `logger.warn()` because the
+      // agent shouldn't print much normally (excluding a few noisy messages during
+      // initialization), it's mostly used to report unexpected errors.
       Thread { process.errorStream.bufferedReader().forEachLine { line -> logger.warn(line) } }
           .start()
 
-      return process
+      return AgentConnection.ProcessConnection(process)
     }
 
     @Throws(IOException::class, CodyAgentException::class)
     private fun startAgentLauncher(
-        agentProcess: Process,
+        process: AgentConnection,
         client: CodyAgentClient
     ): Launcher<CodyAgentServer> {
       return Launcher.Builder<CodyAgentServer>()
           .configureGson { gsonBuilder ->
             gsonBuilder
                 // emit `null` instead of leaving fields undefined because Cody
-                // in VSC has
-                // many `=== null` checks that return false for undefined fields.
+                // VSC has many `=== null` checks that return false for undefined fields.
                 .serializeNulls()
                 .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
                 .registerTypeAdapter(ContextFile::class.java, contextFileDeserializer)
@@ -141,8 +183,8 @@ private constructor(
           .setRemoteInterface(CodyAgentServer::class.java)
           .traceMessages(traceWriter())
           .setExecutorService(executorService)
-          .setInput(agentProcess.inputStream)
-          .setOutput(agentProcess.outputStream)
+          .setInput(process.getInputStream())
+          .setOutput(process.getOutputStream())
           .setLocalService(client)
           .create()
     }
@@ -160,6 +202,7 @@ private constructor(
     }
 
     private fun agentDirectory(): Path? {
+      // N.B. this is the default/production setting. CODY_DIR overrides it locally.
       val fromProperty = System.getProperty("cody-agent.directory", "")
       if (fromProperty.isNotEmpty()) {
         return Paths.get(fromProperty)
@@ -208,6 +251,11 @@ private constructor(
         }
       }
       return null
+    }
+
+    private fun connectToDebugAgent(): AgentConnection {
+      val port = System.getenv("CODY_AGENT_DEBUG_PORT")?.toInt() ?: DEFAULT_AGENT_DEBUG_PORT
+      return AgentConnection.SocketConnection(Socket("localhost", port))
     }
   }
 }

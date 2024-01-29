@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.agent
 
-import CodyAgent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service

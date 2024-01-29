@@ -6,6 +6,7 @@
 
 # User local IDEA configuration files
 .idea/
+.run/
 
 # IntelliJ project
 *.iml

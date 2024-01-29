@@ -147,3 +147,173 @@ built into the JetBrains platform. To enable debugging tools for this view, plea
    Sometimes it needs some back and forth to focus the external browser with the JCEF component also focused—you may
    need to move the popup out of the way and click the external browser rather than using <kbd>Alt+Tab</kbd> / <kbd>
    ⌘Tab</kbd>.
+
+# Enabling IntelliJ to debug the Agent
+
+If you have IntelliJ Ultimate Edition, you can debug the Agent in JetBrains.
+This is useful because you can set breakpoints on both sides of the protocol:
+On the agent (TypeScript) side, and also on the plugin (Java/Kotlin) side.
+
+There are two supported configurations for debugging this way:
+
+1. The Cody extension spawns the agent subprocess normally, but adds `--inspect`
+   - JetBrains can connect and debug the agent via port 9229
+2. Or, JetBrains spawns the agent in debug mode
+   - The agent will listen on port 3113
+   - The Cody extension connects via socket to the "remote" agent
+
+Option 1 is the simplest, and probably makes the most sense for you
+to use if you are uncertain which method to use for debugging.
+
+## How to set up Run Configurations
+
+Run configurations are basically IDEA's launcher scripts. You will need to create one
+run configuration in each project window, using Run → Edit Configurations.
+
+For both debugging setups (Cody-spawns and JB-spawned), you will need:
+
+- `github.com/sourcegraph/cody` cloned in the same directory where
+  you cloned `sourcegraph/jetbrains`, so that they are sibling dirs.
+    - likely not strictly necessary, but it seems to be the convention
+- `sourcegraph/cody` (TypeScript) opened in one IDEA project window
+    - this is a Node project _(requires Ultimate Edition)_
+- `sourcegraph/jetbrains` opened in a second IDEA project window
+    - this is a Gradle project
+
+You'll always have at least 2 IntelliJ project windows open: One for
+debugging the Java side, and one for the TS side.
+  - also a 3rd intellij window pops up when you run your plugin,
+    though this is a new instance completely
+
+If you check `Store as project file` and use the default, it will
+remember your configuration between sessions.
+
+For each configuration below, you can use whatever name you like, but
+the other configuration all needs to be there.
+
+### Starting a debug session
+
+With both debug options, you can start the run configurations in either
+order, using either Run or Debug to launch them.
+
+In each project window, decide whether you need breakpoints on this side
+of the protocol to trigger in this run. If so, use Debug; otherwise, use Run.
+
+Typically it makes the most sense to run both of them with Debug.
+You can have breakpoints triggered on both sides of the protocol in
+different windows, which can be handy.
+
+## Option 1: Cody spawns a debuggable Agent
+
+This option requires you to set up two run configurations, one in each
+project window.
+
+### Extension Run Config
+
+Create this configuration in the `sourcegraph/jetbrains` project window.
+Choose Edit Configurations and `+` to add a new one:
+
+- Type: Gradle
+- Name: whatever, e.g. `Cody-spawned debug agent`
+- Run on: local machine _(the default)_
+- Run: `runIde` _(the default)_
+- Modify options → Add Before Launch Task
+    - choose Run External Tool
+    - choose the pnpm builder tool
+- Gradle project: `jetbrains` _(the default)_
+- env vars:
+    - `CODY_DIR`=_absolute path to your cody repo clone_
+        - mine was set to `/Users/stevey/src/sg/cody`
+    - `CODY_AGENT_DEBUG_INSPECT=true`
+        - this tells the plugin to spawn agent with `--inspect`
+
+### Agent Run Config
+
+Create this configuration in the `sourcegraph/cod`y project window.
+Choose Edit Configurations and `+` to add a new one:
+
+- Type: Attach to Node.js/Chrome
+- Name: whatever, e.g. Debug Cody-spawned Agent
+- Host: localhost
+- Port: 9229
+- Attach to: `Chrome or Node.js > 6.3 started with --inspect`
+- Reconnect automatically: yes
+
+## Cody connects to remote Agent
+
+This option has two run configurations, different from two above. Note that
+if you want both debugging options available, you can set up all four run
+configurations.
+
+### Extension Run Config
+
+Create this configuration in the `sourcegraph/jetbrains` project window:
+
+- Type: Gradle
+- Name: whatever, e.g., `Connect to IDEA-spawned Agent`
+- Run on: local machine _(the default)_
+- Run: `runIde` _(the default)_
+- env vars:
+    - `CODY_AGENT_DEBUG_REMOTE=true`
+    - `CODY_AGENT_DEBUG_PORT=3113`
+
+### Agent Run Config
+
+Create this configuration in the `sourcegraph/cody` project window:
+
+- Type: Node
+- Name: Agent on Debug Port
+- Node interpreter: node
+    - Mine defaulted to `~/.asdf/shims/node`
+    - make sure your node is >= the version in https://github.com/sourcegraph/cody/blob/main/package.json
+- Node parameters: `--enable-source-maps`
+- Working directory: `~/src/sg/cody` (or wherever you cloned sourcegraph/cody)
+- JavaScript file: `agent/dist/index.js`
+    - note: this is a relative path, unlike the run configs for Option 2
+- Application Parameters: <leave empty>
+- Environment variables:
+    - `CODY_AGENT_DEBUG_REMOTE=true`
+    - `CODY_AGENT_DEBUG_PORT=3113`
+- before actions: use your pnpm external tool if you want to auto-rebuild the agent
+
+## Auto-rebuilding the Agent
+
+This step is optional but recommended.
+
+With any Agent-side run configurations, you can opt to build the agent
+before running the task as a "Before Task", which speeds up development
+iteration. You can make code changes to the TypeScript and just hit
+Debug or Run, and it will `pnpm build` your repo before spawning the agent.
+
+Note that for Option 1 (Cody spawns Agent), the Before Task is added to the run
+configuration on the java side. For IntelliJ spawning the AGent, the Before Task is
+added to the run configuration on the TypeScript side.
+
+### Setup
+
+To set this up, in the Before launch section of any Run/Debug configuration, do the following:
+
+- click on + to see the Add New Task popup list
+- choose Run External Tool
+    - this will bring up your personal/custom External Tools list
+- choose + in the External Tools dialog to add a new one
+    - this should pop up a Create Tool form dialog
+- Configuration:
+    - Name: whatever you like
+        - example: pnpm build agent
+    - Description: whatever you like
+        - example: run pnpm build in sourcegraph/cody/agent dir
+    - Tool Settings:
+        - Program: pnpm
+        - Arguments: build
+        - Working directory: `/Users/you/path/to/sourcegraph/cody/agent`
+            - e.g. mine was `/Users/stevey/src/sg/cody/agent`
+    - for other settings, the defaults are fine, or you can customize them
+- Finally, go back to your Before Actions in your run configuration
+    - click on + to see the Add New Task popup list again
+        - your new pnpm build task should be in it
+    - click on your new task to add it to the Before Actions
+
+You only need to do most of these steps once, when you create the
+External Tool. Then you can use it in any run config that spawns the
+agent, to rebuild it first.
