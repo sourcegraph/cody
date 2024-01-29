@@ -11,6 +11,21 @@ import fspromises from 'fs/promises'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { StrategySimpleChatLogs } from './strategy-simple-chat-logs'
 
+function getMetaDataInfo(options: EvaluateAutocompleteOptions): [string, StrategySimpleChatLogs] {
+    const { workspace } = options
+    const { chatLogs } = options
+    const repoDisplayName = workspace.split("/").at(-1);
+    if(repoDisplayName===undefined){
+        console.log(`repoDisplay name undefined for the workspace: ${workspace}`)
+        exit(1);
+    }
+    if(chatLogs===undefined){
+        console.log(`chat logs data undefined for the workspace: ${workspace}`)
+        exit(1)
+    }
+    return [repoDisplayName, chatLogs]
+}
+
 export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
@@ -32,77 +47,8 @@ interface EmbeddingFlag {
     isSearchIndexReady: boolean,
 }
 
-function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, chatLogs: StrategySimpleChatLogs): void {
-    // override existing debug message
-    client.registerNotification('debug/message', async param => {
-        await chatLogs.writeLog(`repoName: ${repoDisplayName} ${JSON.stringify(param)}`)
-
-        // Add handler for the index length here
-        if(param.channel==='Cody by Sourcegraph'){
-            const debug_message = param.message
-
-            if (debug_message.startsWith('█ LocalEmbeddingsController: index-health ')) {
-                const jsonString = debug_message.replace('█ LocalEmbeddingsController: index-health ', '')
-                console.log(`Got index-health message for repo: ${repoDisplayName}, message: ${jsonString}`)
-                try {
-                    const indexHealthObj = JSON.parse(jsonString)
-                    if(indexHealthObj.numItemsNeedEmbedding===0){
-                        embeddingDoneFlag.isNumItemNeedIndexZero = true
-                        console.log(`embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
-                    }
-                } catch (error) {
-                    console.log(`Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
-                }
-            }
-            else if(debug_message.includes('Access denied | sourcegraph.com used Cloudflare to restrict access')) {
-                console.log(`SourceGraph restricted access message: ${debug_message}`)
-                console.log('--------- --------- --------- --------- --------- --------- ---------')
-                console.log(`Access denied | sourcegraph.com used Cloudflare to restrict access`)
-                console.log('--------- --------- --------- --------- --------- --------- ---------')
-                exit(1)
-            }
-        }
-    })
-
-    client.registerNotification('webview/postMessage', async (param) => {
-        await chatLogs.writeLog(`repoName: ${repoDisplayName} ${JSON.stringify(param)}`)
-        
-        const messageType = param.message.type
-        switch(messageType) {
-            case "enhanced-context":
-                const repo_context_data = param.message.context.groups.filter(group => group.displayName === repoDisplayName)
-                if (repo_context_data.length <= 0)
-                    break
-
-                const embedding_state = repo_context_data[0].providers.filter(provider => provider.kind === "embeddings")
-                const search_state = repo_context_data[0].providers.filter(provider => provider.kind === "search")
-                
-                if(embedding_state.length > 0 && embedding_state[0].state === "ready") {
-                    embeddingDoneFlag.isEmbeddingReady = true
-                    console.log(`embeddingDoneFlag.isEmbeddingReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
-                }
-                if(search_state.length > 0 && search_state[0].state === "ready") {
-                    embeddingDoneFlag.isSearchIndexReady = true
-                    console.log(`embeddingDoneFlag.isSearchIndexReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
-                }
-                break;
-            default:
-                break;
-        }
-    })
-}
-
 async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
-    const { workspace } = options
-    const { chatLogs } = options
-    const repoDisplayName = workspace.split("/").at(-1);
-    if(repoDisplayName===undefined)
-        return;
-    if(chatLogs===undefined){
-        console.log(`chat logs data undefined`)
-        return
-    }
-
+    const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     let embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
         isNumItemNeedIndexZero: false,
@@ -119,11 +65,77 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
             await waitForVariable(embeddingDoneFlag)
             await client.request('webview/didDispose', {id})
 
-            console.log('--------- --------- --------- --------- --------- --------- ---------')
-            console.log(`embedding creation completed for repo: ${repoDisplayName}`)
-            console.log('--------- --------- --------- --------- --------- --------- ---------')
+            await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+            await chatLogs.writeLog(repoDisplayName, `embedding creation completed for repo: ${repoDisplayName}`)
+            await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
         }
     }
+}
+
+function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, chatLogs: StrategySimpleChatLogs): void {
+    // override existing debug message
+    client.registerNotification('debug/message', async param => {
+        await await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
+
+        // Add handler for the index length here
+        if(param.channel==='Cody by Sourcegraph'){
+            const debug_message = param.message
+
+            if (debug_message.startsWith('█ LocalEmbeddingsController: index-health ')) {
+                const jsonString = debug_message.replace('█ LocalEmbeddingsController: index-health ', '')
+                await chatLogs.writeLog(repoDisplayName, `Got index-health message for repo: ${repoDisplayName}, message: ${jsonString}`)
+                try {
+                    const indexHealthObj = JSON.parse(jsonString)
+                    if(indexHealthObj.numItemsNeedEmbedding===0){
+                        embeddingDoneFlag.isNumItemNeedIndexZero = true
+                        await chatLogs.writeLog(repoDisplayName, `embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
+                    }
+                } catch (error) {
+                    await chatLogs.writeLog(repoDisplayName, `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
+                }
+            }
+            else if(debug_message.includes('Access denied | sourcegraph.com used Cloudflare to restrict access')) {
+                await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                await chatLogs.writeLog(repoDisplayName, `Access denied | sourcegraph.com used Cloudflare to restrict access`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                exit(1)
+            } else if(debug_message.includes('█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden')){
+                await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                await chatLogs.writeLog(repoDisplayName, `█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                exit(1)
+            }
+        }
+    })
+
+    client.registerNotification('webview/postMessage', async (param) => {
+        await await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`)
+        
+        const messageType = param.message.type
+        switch(messageType) {
+            case "enhanced-context":
+                const repo_context_data = param.message.context.groups.filter(group => group.displayName === repoDisplayName)
+                if (repo_context_data.length <= 0)
+                    break
+
+                const embedding_state = repo_context_data[0].providers.filter(provider => provider.kind === "embeddings")
+                const search_state = repo_context_data[0].providers.filter(provider => provider.kind === "search")
+                
+                if(embedding_state.length > 0 && embedding_state[0].state === "ready") {
+                    embeddingDoneFlag.isEmbeddingReady = true
+                    await chatLogs.writeLog(repoDisplayName, `embeddingDoneFlag.isEmbeddingReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
+                }
+                if(search_state.length > 0 && search_state[0].state === "ready") {
+                    embeddingDoneFlag.isSearchIndexReady = true
+                    await chatLogs.writeLog(repoDisplayName, `embeddingDoneFlag.isSearchIndexReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
+                }
+                break;
+            default:
+                break;
+        }
+    })
 }
 
 const waitForVariable = (variable: EmbeddingFlag): Promise<void> => {
@@ -149,7 +161,10 @@ interface ChatReply {
 }
 
 async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
-    client.registerNotification('webview/postMessage', () => {})
+    const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
+    client.registerNotification('debug/message', async param => await await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`))
+    client.registerNotification('webview/postMessage', async param => await await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`))
+
     const all_chat_configs = options.chat_config ?? []
 
     const concurrencyLimit = 5
@@ -167,15 +182,15 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     // const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
     
     if(replies.length<=0) {
-        console.log('--------- --------- --------- --------- --------- --------- ---------')
-        console.log(`length of replies is 0 ${replies}`)
+        await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+        await chatLogs.writeLog(repoDisplayName, `length of replies is 0 ${replies}`)
         exit(1)
     }
 
     await saveListToFile(replies, path.join(options.snapshotDirectory, 'strategy-chat.json'))
-    console.log('--------- --------- --------- --------- --------- --------- ---------')
-    console.log(`Saved results for workspace ${options.workspace}`)
-    console.log('--------- --------- --------- --------- --------- --------- ---------')
+    await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+    await chatLogs.writeLog(repoDisplayName, `Saved results for workspace ${options.workspace}`)
+    await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
 }
 
 
@@ -229,6 +244,7 @@ async function simulateChatInRepo(
     options: EvaluateAutocompleteOptions,
     chatEvalConfig: SimpleChatEvalConfig
 ): Promise<ChatReply> {
+    const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     // open files mentioned in the open files path
     if(chatEvalConfig.open_files) {
         for (const file of chatEvalConfig.open_files) {
@@ -248,7 +264,7 @@ async function simulateChatInRepo(
             },
         })
     
-    checkInvalidReplyAndExit(reply)
+    checkInvalidReplyAndExit(chatLogs, repoDisplayName, reply)
 
     await client.request('webview/didDispose', {id})
     return {
@@ -260,18 +276,18 @@ async function simulateChatInRepo(
     }
 }
 
-function checkInvalidReplyAndExit(reply: ExtensionMessage): void {
+async function checkInvalidReplyAndExit(chatLogs: StrategySimpleChatLogs, repoDisplayName: string, reply: ExtensionMessage): Promise<Promise<Promise<Promise<void>>>> {
     if (reply.type === 'transcript') {
         const llm_reply_message = reply.messages.at(-1)
         if (llm_reply_message == undefined || llm_reply_message.error)  {
-            console.log('--------- --------- --------- --------- --------- --------- ---------')
-            console.log(`Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
+            await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+            await chatLogs.writeLog(repoDisplayName, `Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
             exit(1)
         }
         return
     }
-    console.log('--------- --------- --------- --------- --------- --------- ---------')
-    console.log(`Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
+    await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+    await chatLogs.writeLog(repoDisplayName, `Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
     exit(1)
 }
 
