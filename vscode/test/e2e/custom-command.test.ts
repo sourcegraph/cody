@@ -9,7 +9,7 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 
-test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test.only('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -26,6 +26,13 @@ test('create a new user command via the custom commands menu', async ({ page, si
     // Open the new chat panel
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
+
+    // Click the Custom Commands button in the Command view
     await page.getByText('Custom commands').click()
 
     const commandName = 'ATestCommand'
@@ -55,9 +62,21 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
+    // Gives time for the command to be saved to the workspace settings
+    await page.waitForTimeout(500)
+
+    // Check if cody.json in the workspace has the new command added
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'cody.json' }).hover()
+    await expect(page.getByText(commandName)).toBeVisible()
+    await page.getByText('index.html').first().click()
+
     // Show the new command in the menu and execute it
+    await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Custom commands').locator('a').click()
-    await page.getByPlaceholder('Search command to run...').fill(commandName)
+    await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     await expect(page.getByText(commandName)).toBeVisible()
     await page.getByText(commandName).click()
 
@@ -83,6 +102,12 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     // Open the chat sidebar to click on the Custom Command option
     // Search for the command defined in cody.json and execute it
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
+
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 
     // Test: context.currentDir with /currentDir command
     await page.getByLabel('Custom Custom commands').locator('a').click()
@@ -143,6 +168,12 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await page.getByRole('tab', { name: 'cody.json' }).hover()
 
     await page.click('.badge[aria-label="Cody"]')
+
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 
     // Check button click to open the cody.json file in the editor
     await page.getByLabel('Custom Custom commands').locator('a').click()

@@ -11,11 +11,17 @@ import {
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 import type { Repo } from '../../context/repo-fetcher'
 
+/**
+ * Interface for a chat message with additional context.
+ *
+ * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
+ */
 export interface MessageWithContext {
     message: Message
 
@@ -53,7 +59,7 @@ export class SimpleChatModel {
         if (lastMessage.message.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed
+        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
     public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
