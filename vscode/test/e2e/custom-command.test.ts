@@ -62,10 +62,13 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
+    // Gives time for the command to be saved to the workspace settings
+    await expect(page.getByText('New Custom Cody Command: Save To…')).not.toBeVisible()
+    await page.getByLabel('Custom Custom commands').locator('a').hover()
+
     // Show the new command in the menu and execute it
     await page.getByLabel('Custom Custom commands').locator('a').click()
-    await page.getByPlaceholder('Search command to run...').fill(commandName)
-    await expect(page.getByText(commandName)).toBeVisible()
+    await expect(page.getByText(description)).toBeVisible()
     await page.getByText(commandName).click()
 
     // Confirm the command prompt is displayed in the chat panel on execution
