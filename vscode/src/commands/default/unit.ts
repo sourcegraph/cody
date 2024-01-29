@@ -15,7 +15,7 @@ import { getContextFilesForUnitTestCommand } from '../context/unit-test-command'
  *
  * Context: Test files, current selection, and current file
  */
-export async function executeNewTestCommand(
+export async function executeUnitTestCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
     const prompt = defaultCommands.unit.prompt
