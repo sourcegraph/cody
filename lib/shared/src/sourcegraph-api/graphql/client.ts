@@ -20,6 +20,7 @@ import {
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
+    CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -92,6 +93,18 @@ interface CodyConfigFeaturesResponse {
 interface CurrentUserCodyProEnabledResponse {
     currentUser: {
         codyProEnabled: boolean
+    } | null
+}
+
+interface CurrentUserCodySubscriptionResponse {
+    currentUser: {
+        codySubscription: {
+            status: string
+            plan: string
+            applyProRateLimits: boolean
+            currentPeriodStartAt: Date
+            currentPeriodEndAt: Date
+        }
     } | null
 }
 
@@ -182,6 +195,14 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+}
+
+export interface CurrentUserCodySubscription {
+    status: string
+    plan: string
+    applyProRateLimits: boolean
+    currentPeriodStartAt: Date
+    currentPeriodEndAt: Date
 }
 
 interface CurrentUserInfo {
@@ -362,6 +383,19 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
+            CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser?.codySubscription
+                    ? data.currentUser.codySubscription
+                    : new Error('current user subscription data not found')
             )
         )
     }
