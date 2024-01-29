@@ -694,7 +694,7 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
