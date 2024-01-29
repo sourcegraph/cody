@@ -13,22 +13,24 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
     public static readonly expiredMessageText = `
                 Your Cody Pro trial has ended.
-                Thank you for using Cody Pro, you have been downgraded to Cody Free.
-                Input your payment information [here](${CodyProExpirationNotifications.expiredActionUrl}) to continue using Cody Pro for $9 / month, and cancel anytime.
+
+                Thank you for using Cody Pro, you have been downgraded to Cody Free. 
+                
+                Setup your payment information to continue using Cody Pro for $9 / month, and cancel anytime.
             `
     public static readonly nearlyExpiredActionUrl =
         'https://accounts.sourcegraph.com/cody/subscription?on-trial=true'
 
     public static readonly nearlyExpiredMessageText = `
-                Your Cody Pro trial is ending soon on February 15.
-                Input your payment information [here](${CodyProExpirationNotifications.nearlyExpiredActionUrl}) to continue using Cody Pro.
-                You won't be charged until February 15.
+                Your Cody Pro Trial is ending soon. 
+
+                Setup your payment information to continue using Cody Pro, you won't be charged until February 15.
             `
     public static readonly localStorageSuppressionKey = 'extension.codyPro.suppressExpirationNotices'
 
-    public static readonly actionText = 'Continue using Cody Pro'
+    public static readonly actionText = 'Setup Payment Info'
 
-    public static readonly noThanksText = 'No thanks'
+    public static readonly noThanksText = `Don't show again`
 
     /**
      * Current subscription to auth provider status changes that may trigger a check.
