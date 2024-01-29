@@ -978,7 +978,7 @@ describe('Agent', () => {
             accessToken:
                 process.env.SRC_S2_ACCESS_TOKEN ??
                 // See comment above `const client =` about how this value is derived.
-                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0asd',
+                'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
             serverEndpoint: 'https://sourcegraph.sourcegraph.com',
             telemetryExporter: 'graphql',
             logEventMode: 'connected-instance-only',
