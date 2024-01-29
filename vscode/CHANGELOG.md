@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+Update Chat input tips as commands are no longer executable from chat. [pull/2934](https://github.com/sourcegraph/cody/pull/2934)
+
 ### Changed
 
 ## [1.2.0]
@@ -15,7 +17,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Chat: Add a history quick in the editor panel for chats grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
-- Commands: Custom edit commands are now executable from the Chat panel. [pull/2789](https://github.com/sourcegraph/cody/pull/2789)
 - Added support for the new `fireworks/starcoder` virtual model name when used in combination with an Enterprise instance. [pull/2714](https://github.com/sourcegraph/cody/pull/2714)
 - Chat: Added support for editing any non-command chat messages. [pull/2826](https://github.com/sourcegraph/cody/pull/2826)
 - Chat: New action buttons added above the chat input area for easy keyboard access. [pull/2826](https://github.com/sourcegraph/cody/pull/2826)
@@ -50,6 +51,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Cleaned up chat editor title buttons & history separators. [pull/2895](https://github.com/sourcegraph/cody/pull/2895)
 - Context: Embeddings search by sourcegraph.com have been removed. For the moment, remote embeddings may still affect results for Sourcegraph Enterprise users through the new multi-repo search feature described above. Local embeddings are not affected by this change. [pull/2879](https://github.com/sourcegraph/cody/pull/2879)
 - [Internal] New generate unit test available behind `cody.internal.unstable`. [pull/2646](https://github.com/sourcegraph/cody/pull/2646)
+- Commands: Slash commands are no longer supported in chat panel. [pull/2869](https://github.com/sourcegraph/cody/pull/2869)
+- Commands: The underlying prompt for the default chat commands will be displayed in the chat panel. [pull/2869](https://github.com/sourcegraph/cody/pull/2869)
 
 ## [1.1.3]
 

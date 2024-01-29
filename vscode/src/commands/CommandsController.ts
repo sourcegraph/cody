@@ -6,6 +6,7 @@ import type { CodyCommandArgs } from './types'
 import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
+import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './default'
 
 /**
  * Handles commands execution with commands from CommandsProvider
@@ -34,6 +35,12 @@ class CommandsController implements vscode.Disposable {
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
         const command = this.provider?.get(commandKey)
+
+        // Process default commands
+        if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
+            return executeDefaultCommand(commandKey)
+        }
+
         if (!command) {
             logDebug('CommandsController:execute', 'command not found', { verbose: { commandKey } })
             return undefined
