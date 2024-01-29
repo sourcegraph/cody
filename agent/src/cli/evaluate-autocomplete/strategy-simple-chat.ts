@@ -9,19 +9,19 @@ import { Uri } from 'vscode'
 import { type NotificationMethodName } from '../../jsonrpc-alias'
 import fspromises from 'fs/promises'
 import { AgentTextDocument } from '../../AgentTextDocument'
+import { StrategySimpleChatLogs } from './strategy-simple-chat-logs'
 
 export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
-    await createEmbeddings(client, options)
-    await simulateWorkspaceChat(client, options)
-
-    // if(options.shouldUpdateEmbedding==='true') {
-    //     await createEmbeddings(client, options)
-    // } else {
-    //     await simulateWorkspaceChat(client, options)
-    // }
+    // await createEmbeddings(client, options)
+    // await simulateWorkspaceChat(client, options)
+    if(options.shouldUpdateEmbedding==='true') {
+        await createEmbeddings(client, options)
+    } else {
+        await simulateWorkspaceChat(client, options)
+    }
 }
 
 // ================== Handle embeddings creation =====================
@@ -32,28 +32,41 @@ interface EmbeddingFlag {
     isSearchIndexReady: boolean,
 }
 
-function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag): void {
+function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, chatLogs: StrategySimpleChatLogs): void {
     // override existing debug message
-    client.registerNotification('debug/message', param => {
+    client.registerNotification('debug/message', async param => {
+        await chatLogs.writeLog(`repoName: ${repoDisplayName} ${JSON.stringify(param)}`)
+
         // Add handler for the index length here
         if(param.channel==='Cody by Sourcegraph'){
             const debug_message = param.message
-            const index_health_prefix = '█ LocalEmbeddingsController: index-health '
-            if (debug_message.startsWith(index_health_prefix)) {
-                const jsonString = debug_message.replace(index_health_prefix, '')
+
+            if (debug_message.startsWith('█ LocalEmbeddingsController: index-health ')) {
+                const jsonString = debug_message.replace('█ LocalEmbeddingsController: index-health ', '')
+                console.log(`Got index-health message for repo: ${repoDisplayName}, message: ${jsonString}`)
                 try {
                     const indexHealthObj = JSON.parse(jsonString)
                     if(indexHealthObj.numItemsNeedEmbedding===0){
                         embeddingDoneFlag.isNumItemNeedIndexZero = true
+                        console.log(`embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
                     }
                 } catch (error) {
                     console.log(`Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
                 }
             }
-        }        
+            else if(debug_message.includes('Access denied | sourcegraph.com used Cloudflare to restrict access')) {
+                console.log(`SourceGraph restricted access message: ${debug_message}`)
+                console.log('--------- --------- --------- --------- --------- --------- ---------')
+                console.log(`Access denied | sourcegraph.com used Cloudflare to restrict access`)
+                console.log('--------- --------- --------- --------- --------- --------- ---------')
+                exit(1)
+            }
+        }
     })
 
-    client.registerNotification('webview/postMessage', (param) => {
+    client.registerNotification('webview/postMessage', async (param) => {
+        await chatLogs.writeLog(`repoName: ${repoDisplayName} ${JSON.stringify(param)}`)
+        
         const messageType = param.message.type
         switch(messageType) {
             case "enhanced-context":
@@ -66,9 +79,11 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 
                 if(embedding_state.length > 0 && embedding_state[0].state === "ready") {
                     embeddingDoneFlag.isEmbeddingReady = true
+                    console.log(`embeddingDoneFlag.isEmbeddingReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
                 }
                 if(search_state.length > 0 && search_state[0].state === "ready") {
                     embeddingDoneFlag.isSearchIndexReady = true
+                    console.log(`embeddingDoneFlag.isSearchIndexReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
                 }
                 break;
             default:
@@ -79,22 +94,28 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
 
 async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     const { workspace } = options
+    const { chatLogs } = options
     const repoDisplayName = workspace.split("/").at(-1);
     if(repoDisplayName===undefined)
         return;
+    if(chatLogs===undefined){
+        console.log(`chat logs data undefined`)
+        return
+    }
 
     let embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
         isNumItemNeedIndexZero: false,
         isSearchIndexReady: false,
     }
-    registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag)
+    registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs)
 
     if(options.fixture?.webViewConfiguration?.useEnhancedContext){
         if (options.fixture?.customConfiguration?.["cody.useContext"] == "embeddings") {
             const id = await client.request('chat/new', null)
             await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
             await client.request("command/execute", { command: 'cody.embeddings.resolveIssue' })
+            await client.request('command/execute', { command: 'cody.search.index-update' })
             await waitForVariable(embeddingDoneFlag)
             await client.request('webview/didDispose', {id})
 

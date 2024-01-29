@@ -12,6 +12,7 @@ import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateSimpleChatStrategy } from './strategy-simple-chat'
 import { Semaphore } from 'async-mutex';
+import { StrategySimpleChatLogs } from './strategy-simple-chat-logs'
 
 export interface SimpleChatEvalConfig {
     question: string,
@@ -59,6 +60,7 @@ export interface EvaluateAutocompleteOptions {
     fixture: EvaluationFixture
 
     chat_config?: SimpleChatEvalConfig[]
+    chatLogs?: StrategySimpleChatLogs
 }
 
 interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
@@ -85,11 +87,13 @@ export interface EvaluationFixture {
 }
 
 async function loadEvaluationConfig(
+    chatLogs: StrategySimpleChatLogs,
     options: EvaluateAutocompleteOptions
 ): Promise<EvaluateAutocompleteOptions[]> {
     if (!options?.evaluationConfig) {
         return [options]
     }
+
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
     const result: EvaluateAutocompleteOptions[] = []
@@ -128,6 +132,7 @@ async function loadEvaluationConfig(
                 codyAgentBinary,
                 fixture,
                 csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
+                chatLogs: chatLogs
             })
         }
     }
@@ -281,8 +286,11 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .action(async (options: EvaluateAutocompleteOptions) => {
         // const concurrencyLimit = 10
         // const semaphore = new Semaphore(concurrencyLimit);
+        
+        const chatLogs = new StrategySimpleChatLogs()
+        chatLogs.initialize()
 
-        const testOptions = await loadEvaluationConfig(options);
+        const testOptions = await loadEvaluationConfig(chatLogs, options);
         const workspacesToRun = testOptions.filter(
             testOptions =>
                 matchesGlobPatterns(
@@ -317,6 +325,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
             }
         }));
     })
+
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
     if (!options.queriesDirectory) {
