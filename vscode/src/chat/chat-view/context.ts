@@ -80,6 +80,7 @@ export async function logAllEnhancedContextItems({
             logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
         }
     }
+
     logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
     const priorityContext = await getAllPriorityContext(text, editor, searchContext)
     

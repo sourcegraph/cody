@@ -1,4 +1,3 @@
-
 import { promises as fsPromises } from 'fs'
 import * as path from 'path'
 import type { ExtensionMessage } from '../../../../vscode/src/chat/protocol'
@@ -11,32 +10,49 @@ import { type NotificationMethodName } from '../../jsonrpc-alias'
 import fspromises from 'fs/promises'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
-interface ChatReply {
-    repo_path: string
-    question: string
-    ground_truth_answer: string
-    reply: ExtensionMessage
-    fixture: EvaluationFixture
-}
-
-interface EmbeddingFlag {
-    value: boolean
-}
-
 export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
-    if(options.shouldUpdateEmbedding==='true') {
-        await createEmbeddings(client, options)
-    } else {
-        await simulateWorkspaceChat(client, options)
-    }
+    await createEmbeddings(client, options)
+    await simulateWorkspaceChat(client, options)
+
+    // if(options.shouldUpdateEmbedding==='true') {
+    //     await createEmbeddings(client, options)
+    // } else {
+    //     await simulateWorkspaceChat(client, options)
+    // }
 }
 
 // ================== Handle embeddings creation =====================
 
+interface EmbeddingFlag {
+    isEmbeddingReady: boolean,
+    isNumItemNeedIndexZero: boolean,
+    isSearchIndexReady: boolean,
+}
+
 function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag): void {
+    // override existing debug message
+    client.registerNotification('debug/message', param => {
+        // Add handler for the index length here
+        if(param.channel==='Cody by Sourcegraph'){
+            const debug_message = param.message
+            const index_health_prefix = '█ LocalEmbeddingsController: index-health '
+            if (debug_message.startsWith(index_health_prefix)) {
+                const jsonString = debug_message.replace(index_health_prefix, '')
+                try {
+                    const indexHealthObj = JSON.parse(jsonString)
+                    if(indexHealthObj.numItemsNeedEmbedding===0){
+                        embeddingDoneFlag.isNumItemNeedIndexZero = true
+                    }
+                } catch (error) {
+                    console.log(`Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
+                }
+            }
+        }        
+    })
+
     client.registerNotification('webview/postMessage', (param) => {
         const messageType = param.message.type
         switch(messageType) {
@@ -46,9 +62,13 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                     break
 
                 const embedding_state = repo_context_data[0].providers.filter(provider => provider.kind === "embeddings")
-
+                const search_state = repo_context_data[0].providers.filter(provider => provider.kind === "search")
+                
                 if(embedding_state.length > 0 && embedding_state[0].state === "ready") {
-                    embeddingDoneFlag.value = true
+                    embeddingDoneFlag.isEmbeddingReady = true
+                }
+                if(search_state.length > 0 && search_state[0].state === "ready") {
+                    embeddingDoneFlag.isSearchIndexReady = true
                 }
                 break;
             default:
@@ -64,17 +84,20 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
         return;
 
     let embeddingDoneFlag: EmbeddingFlag = {
-        value: false
+        isEmbeddingReady: false,
+        isNumItemNeedIndexZero: false,
+        isSearchIndexReady: false,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag)
 
     if(options.fixture?.webViewConfiguration?.useEnhancedContext){
-
         if (options.fixture?.customConfiguration?.["cody.useContext"] == "embeddings") {
             const id = await client.request('chat/new', null)
             await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
-            await client.request('webview/didDispose', {id})
+            await client.request("command/execute", { command: 'cody.embeddings.resolveIssue' })
             await waitForVariable(embeddingDoneFlag)
+            await client.request('webview/didDispose', {id})
+
             console.log('--------- --------- --------- --------- --------- --------- ---------')
             console.log(`embedding creation completed for repo: ${repoDisplayName}`)
             console.log('--------- --------- --------- --------- --------- --------- ---------')
@@ -85,7 +108,8 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
 const waitForVariable = (variable: EmbeddingFlag): Promise<void> => {
     return new Promise((resolve) => {
         const interval = setInterval(() => {
-            if (variable.value) {
+            const allValuesTrue = Object.values(variable).every(value => value === true);
+            if (allValuesTrue) {
                 clearInterval(interval);
                 resolve();
             }
@@ -94,6 +118,14 @@ const waitForVariable = (variable: EmbeddingFlag): Promise<void> => {
 }
 
 // ====================================================================
+
+interface ChatReply {
+    repo_path: string
+    question: string
+    ground_truth_answer: string
+    reply: ExtensionMessage
+    fixture: EvaluationFixture
+}
 
 async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     client.registerNotification('webview/postMessage', () => {})
@@ -124,7 +156,6 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     console.log(`Saved results for workspace ${options.workspace}`)
     console.log('--------- --------- --------- --------- --------- --------- ---------')
 }
-
 
 
 async function textDocumentEvent(

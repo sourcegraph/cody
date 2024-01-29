@@ -519,18 +519,20 @@ export class LocalEmbeddingsController
         if (this.lastHealth?.numItemsNeedEmbedding) {
             void (async () => {
                 try {
-                    const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
-                    const choice = await vscode.window.showWarningMessage(
-                        this.getNeedsEmbeddingText() + errorMessage,
-                        'Continue Indexing',
-                        'Cancel'
-                    )
-                    switch (choice) {
-                        case 'Cancel':
-                            return
-                        case 'Continue Indexing':
-                            await this.indexRetry()
-                    }
+                    await this.indexRetry()
+                    // const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
+                    // const choice = await vscode.window.showWarningMessage(
+                    //     this.getNeedsEmbeddingText() + errorMessage,
+                    //     'Continue Indexing',
+                    //     'Cancel'
+                    // )
+                    // const choice =
+                    // switch (choice) {
+                    //     case 'Cancel':
+                    //         return
+                    //     case 'Continue Indexing':
+                    //         await this.indexRetry()
+                    // }
                 } catch (error: any) {
                     logDebug(
                         'LocalEmbeddingsController',
