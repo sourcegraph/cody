@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
@@ -7,7 +5,7 @@ import { isWindows } from '@sourcegraph/cody-shared'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { assertEvents, test, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
@@ -139,7 +137,3 @@ test('@-file empty state', async ({ page, sidebar }) => {
     // Do not remove without consulting data analytics team.
     await assertEvents(loggedEvents, expectedEvents)
 })
-
-function withPlatformSlashes(input: string) {
-    return input.replaceAll(path.posix.sep, path.sep)
-}

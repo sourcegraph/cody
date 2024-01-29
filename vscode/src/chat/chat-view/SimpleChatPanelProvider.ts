@@ -14,7 +14,6 @@ import {
     Typewriter,
     type ChatClient,
     type ChatMessage,
-    type CodyCommand,
     type ContextFile,
     type ContextMessage,
     type Editor,
@@ -23,19 +22,12 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
-    isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
-import type { CommandsController } from '../../commands/CommandsController'
-import {
-    createDisplayTextWithFileLinks,
-    createDisplayTextWithFileSelection,
-} from '../../commands/prompt/display-text'
+import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
-import { executeEdit } from '../../edit/execute'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -75,9 +67,9 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getCommandContext, getEnhancedContext } from './context'
+import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
-import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
+import { DefaultPrompter, type IPrompter } from './prompt'
 import {
     SimpleChatModel,
     toViewMessage,
@@ -101,7 +93,6 @@ interface SimpleChatPanelProviderOptions {
     featureFlagProvider: FeatureFlagProvider
     models: ChatModelProvider[]
     guardrails: Guardrails
-    commandsController?: CommandsController
 }
 
 export interface ChatSession {
@@ -148,7 +139,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly guardrails: Guardrails
-    private readonly commandsController?: CommandsController
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
 
@@ -171,7 +161,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         editor,
         treeView,
         models,
-        commandsController,
         guardrails,
         enterpriseContext,
     }: SimpleChatPanelProviderOptions) {
@@ -183,13 +172,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
-        this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
         this.guardrails = guardrails
-
-        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -325,7 +311,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                void this.handleAttributionSearch(message.snippet)
+                await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
@@ -385,7 +371,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.postChatModels()
         await this.saveSession()
-        await this.postCodyCommands()
         this.initDoer.signalInitialized()
     }
 
@@ -399,29 +384,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
-        // DEPRECATED (remove after slash commands are removed)
-        // If this is a slash command, run it with custom command instead
-        if (inputText.startsWith('/')) {
-            if (inputText.match(/^\/r(eset)?$/)) {
-                return this.clearAndRestartSession()
-            }
-            if (inputText.match(/^\/edit(\s)?/)) {
-                await executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
-                return
-            }
-            if (inputText === '/commands-settings') {
-                // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.settings.commands')
-            }
-            const commandArgs = newCodyCommandArgs({
-                source: 'chat',
-                requestID,
-            })
-            const command = (await this.commandsController?.startCommand(inputText, commandArgs))
-                ?.command
-            if (command) {
-                return this.handleCommand(command, commandArgs)
-            }
+        if (inputText.match(/^\/reset$/)) {
+            return this.clearAndRestartSession()
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -539,44 +503,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
-    }
-
-    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // It's a fixup command, so we can exit early.
-        // This is because startCommand will start the CommandRunner,
-        // which would send all fixup command requests to the FixupController
-        if (isFixupCommand(command)) {
-            return
-        }
-
-        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (
-                command.context?.selection ||
-                command.context?.currentFile ||
-                command.context?.currentDir
-            ) {
-                return this.postError(
-                    new Error('Command failed. Please open a file and try again.'),
-                    'transcript'
-                )
-            }
-        }
-
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
-        const displayText = createDisplayTextWithFileSelection(
-            inputText,
-            this.editor.getActiveTextEditorSelectionOrEntireFile()
-        )
-        const promptText = command.prompt
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
-
-        this.postEmptyMessageInProgress()
-
-        const prompt = await this.buildPrompt(
-            new CommandPrompter(() => getCommandContext(this.editor, command))
-        )
-        this.streamAssistantResponse(args.requestID, prompt)
     }
 
     private handleAbort(): void {
@@ -761,27 +687,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             type: 'chatModels',
             models,
         })
-    }
-
-    // Send a list of commands to webview that can be triggered via chat input box with slash
-    private async postCodyCommands(): Promise<void> {
-        const send = async (): Promise<void> => {
-            await this.commandsController?.refresh()
-            const allCommands = await this.commandsController?.getAllCommands(true)
-            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
-            const prompts =
-                allCommands?.filter(([id, { mode }]) => {
-                    // The /ask command is only useful outside of chat
-                    const isRedundantCommand = id === '/ask'
-                    return !isRedundantCommand
-                }) || []
-            void this.postMessage({
-                type: 'custom-prompts',
-                prompts,
-            })
-        }
-        this.commandsController?.setMessenger(send)
-        await send()
     }
 
     private postContextStatus(): void {

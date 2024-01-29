@@ -8,12 +8,10 @@ import {
     NUM_TEXT_RESULTS,
     truncateTextNearestLine,
     uriBasename,
-    type CodyCommand,
     type ConfigurationUseContext,
     type Result,
 } from '@sourcegraph/cody-shared'
 
-import { getContextForCommand } from '../../commands/utils/get-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -454,31 +452,6 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             source: 'editor',
         },
     ]
-}
-
-export async function getCommandContext(
-    editor: VSCodeEditor,
-    command: CodyCommand
-): Promise<ContextItem[]> {
-    logDebug('SimpleChatPanelProvider.getCommandContext', command.slashCommand)
-
-    const contextItems: ContextItem[] = []
-    const contextMessages = await getContextForCommand(editor, command)
-    // Turn ContextMessages to ContextItems
-    for (const msg of contextMessages) {
-        if (msg.file?.uri && msg.file?.content) {
-            contextItems.push({
-                uri: msg.file?.uri,
-                text: msg.file?.content,
-                range: viewRangeToRange(msg.file?.range),
-                source: msg.file?.source || 'editor',
-            })
-        }
-    }
-
-    // TODO(beyang): add codebase context when command.context.codebase is true
-
-    return contextItems
 }
 
 function extractQuestion(input: string): string | undefined {
