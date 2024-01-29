@@ -83,7 +83,9 @@ describe('Agent', () => {
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, {
+            recursive: true,
+        })
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -276,7 +278,9 @@ describe('Agent', () => {
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(animalUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
                 {
@@ -441,7 +445,9 @@ describe('Agent', () => {
 
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             await client.openFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri, {
@@ -465,7 +471,9 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             await client.openFile(animalUri)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -497,7 +505,9 @@ describe('Agent', () => {
         it.skipIf(isNode16() || isWindows())(
             'commands/test',
             async () => {
-                await client.request('command/execute', { command: 'cody.search.index-update' })
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -645,7 +655,9 @@ describe('Agent', () => {
         describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
                 it(name, async () => {
-                    await client.request('command/execute', { command: 'cody.search.index-update' })
+                    await client.request('command/execute', {
+                        command: 'cody.search.index-update',
+                    })
                     const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
                     await client.openFile(uri, { removeCursor: false })
                     const task = await client.request('commands/document', null)
@@ -911,7 +923,10 @@ describe('Agent', () => {
                 })
                 await enterpriseClient.request('webview/receiveMessage', {
                     id,
-                    message: { command: 'context/choose-remote-search-repo', explicitRepos: repos },
+                    message: {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: repos,
+                    },
                 })
                 const { lastMessage, transcript } =
                     await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
@@ -950,6 +965,54 @@ describe('Agent', () => {
                 .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
             expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
+            await enterpriseClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_000)
+    })
+
+    // Enterprise tests are run at demo instance, which is at a recent release version.
+    // Use this section if you need to run against S2 which is released continuously.
+    describe('Enterprise - close main branch', () => {
+        const enterpriseClient = new TestClient({
+            name: 'enterpriseMainBranchClient',
+            accessToken:
+                process.env.SRC_S2_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
+            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+            telemetryExporter: 'graphql',
+            logEventMode: 'connected-instance-only',
+        })
+
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }, 10_000)
+
+        it('attribution/found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new URL',
+            })
+            expect(repoNames).not.empty
+            expect(error).null
+        }, 20_000)
+
+        it('attribution/not found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new LRU',
+            })
+            expect(repoNames).empty
+            expect(error).null
+        }, 20_000)
+
+        afterAll(async () => {
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
