@@ -36,9 +36,16 @@ export class StrategySimpleChatLogs {
         }
     }
 
-    writeLog = async (log: string): Promise<void> => {
+    writeLog = async (repoDisplayName: string, log: string): Promise<void> => {
+        const logPrefix = `logTime: ${new Date().toISOString()} repoName: ${repoDisplayName}`
+        const newLogMessage = `${logPrefix} ${log}`
+        await this._writeLog(newLogMessage)
+    }
+
+    _writeLog = async (log: string): Promise<void> => {
         try {
             await this.logMutex.runExclusive(async () => {
+                console.log(log)
                 await fspromises.appendFile(this.logFilePath, log + '\n')
                 await fspromises.appendFile(this.logFilePathLatest, log + '\n')
             });
