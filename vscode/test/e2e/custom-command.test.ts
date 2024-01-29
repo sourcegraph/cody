@@ -63,8 +63,15 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
     // Gives time for the command to be saved to the workspace settings
-    await expect(page.getByText('New Custom Cody Command: Save To…')).not.toBeVisible()
-    await page.getByLabel('Custom Custom commands').locator('a').hover()
+    // Add a delay to allow the command to be saved to the workspace settings
+    await page.waitForTimeout(500)
+
+    // Check if cody.json exists in the workspace
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'cody.json' }).hover()
+    await page.click('.badge[aria-label="Cody"]')
 
     // Show the new command in the menu and execute it
     await page.getByLabel('Custom Custom commands').locator('a').click()
