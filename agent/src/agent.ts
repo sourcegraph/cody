@@ -630,7 +630,7 @@ export class Agent extends MessageHandler {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+        const commandArgs = [{ source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
             return this.createChatPanel(
