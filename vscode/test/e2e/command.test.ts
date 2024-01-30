@@ -52,7 +52,8 @@ test('execute command from sidebar', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByTitle('Edit Your Message').locator('i')).toBeVisible()
 
     // You can submit a chat question via command menu using /ask
-    await page.getByRole('button', { name: /Commands .*/ }).click()
+    await page.getByRole('tab', { name: 'index.html' }).click()
+    await page.getByRole('button', { name: /Commands \(.*/ }).click()
     await page.getByPlaceholder('Search for a command or enter your question here...').fill('hello cody')
     await page.getByLabel('/ask, Ask a question').locator('a').click()
     // the question should show up in the chat panel on submit
