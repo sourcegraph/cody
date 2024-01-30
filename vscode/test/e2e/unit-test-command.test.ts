@@ -6,7 +6,7 @@ import { loggedEvents } from '../fixtures/mock-server'
 
 const expectedEvents = ['CodyVSCodeExtension:command:test:executed']
 
-test.only('unit test commands with context fetching', async ({ page, sidebar }) => {
+test('unit test commands with context fetching', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
