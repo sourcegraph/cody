@@ -7,6 +7,8 @@ import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command
 import type { CommandMenuItem } from './types'
 import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
+import { executeChat } from '../default/ask'
+import { executeEdit } from '../../edit/execute'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -113,9 +115,25 @@ export async function showCommandMenu(
                 return openCustomCommandDocsLink()
             }
 
+            if (selected.startsWith('/ask')) {
+                if (!value) {
+                    void showChatInputBox()
+                } else {
+                    void executeChat({ text: value, submitType: 'user-newchat', source: 'menu' })
+                }
+                quickPick.hide()
+                return
+            }
+
+            if (selected.startsWith('/edit')) {
+                void executeEdit({ instruction: value }, 'menu')
+                quickPick.hide()
+                return
+            }
+
             // Else, process the selection as a command
             if (selected.startsWith('/')) {
-                void commands.executeCommand('cody.action.command', selected)
+                void commands.executeCommand('cody.action.command', selected + ' ' + value)
             }
 
             resolve()
@@ -138,4 +156,15 @@ export async function showNewCustomCommandMenu(
 ): Promise<CustomCommandsBuilder | null> {
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
+}
+
+async function showChatInputBox(): Promise<void> {
+    const input = await window.showInputBox({
+        title: '/ask Cody',
+        placeHolder: 'Enter your question for Cody.',
+    })
+    if (!input) {
+        return
+    }
+    void executeChat({ text: input, submitType: 'user-newchat', source: 'menu' })
 }

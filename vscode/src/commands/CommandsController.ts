@@ -38,10 +38,7 @@ class CommandsController implements vscode.Disposable {
 
         // Process default commands
         if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
-            // we want the edit command to pass through as it has additional arguments
-            if (commandKey !== '/edit') {
-                return executeDefaultCommand(commandKey)
-            }
+            return executeDefaultCommand(commandKey)
         }
 
         if (!command) {
