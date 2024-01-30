@@ -59,7 +59,7 @@ import {
     executeSmellCommand,
     executeDocCommand,
     executeUnitTestCommand,
-} from './commands/default'
+} from './commands/execute'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
