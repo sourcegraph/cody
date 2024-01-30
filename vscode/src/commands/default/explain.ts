@@ -46,7 +46,7 @@ export async function explainCommand(args?: Partial<CodyCommandArgs>): Promise<E
 export async function executeExplainCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    logDebug('executeDocCommand', 'executing', { args })
+    logDebug('executeExplainCommand', 'executing', { args })
     telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
         useCodebaseContex: false,
         requestID: args?.requestID,
