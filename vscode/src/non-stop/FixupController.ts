@@ -8,7 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { ExecuteEditArguments } from '../edit/execute'
-import type { EditIntent, EditMode, EditRangeSource } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -162,7 +162,6 @@ export class FixupController
         document: vscode.TextDocument,
         range: vscode.Range,
         expandedRange: vscode.Range | undefined,
-        rangeSource: EditRangeSource,
         mode: EditMode,
         model: EditSupportedModels,
         intent: EditIntent,
@@ -176,7 +175,6 @@ export class FixupController
                 initialRange: range,
                 initialExpandedRange: expandedRange,
                 initialModel: model,
-                initialRangeSource: rangeSource,
             },
             source
         )
@@ -209,7 +207,6 @@ export class FixupController
         userContextFiles: ContextFile[],
         model: EditSupportedModels,
         selectionRange: vscode.Range,
-        rangeSource: EditRangeSource,
         intent: EditIntent,
         mode: EditMode,
         source?: ChatEventSource,
@@ -222,7 +219,6 @@ export class FixupController
             userContextFiles,
             intent,
             selectionRange,
-            rangeSource,
             mode,
             source,
             contextMessages,

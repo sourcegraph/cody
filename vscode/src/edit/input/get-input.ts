@@ -9,7 +9,7 @@ import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/trac
 import { createQuickPick } from './quick-pick'
 import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
-import type { EditIntent, EditRangeSource } from '../types'
+import type { EditIntent } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { MODEL_ITEMS, getModelInputItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
@@ -28,15 +28,12 @@ interface QuickPickInput {
     model: EditSupportedModels
     /** The range that the user has selected */
     range: vscode.Range
-    /** The source of the range selection */
-    rangeSource: EditRangeSource
 }
 
 export interface EditInputInitialValues {
     initialRange: vscode.Range
     initialExpandedRange?: vscode.Range
     initialModel: EditSupportedModels
-    initialRangeSource: EditRangeSource
     initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
 }
@@ -65,7 +62,6 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
     let activeModel: EditSupportedModels = initialValues.initialModel
-    const activeRangeSource: EditRangeSource = initialValues.initialRangeSource
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextFile>()
@@ -369,7 +365,6 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
-                    rangeSource: activeRangeSource,
                 })
             },
         })

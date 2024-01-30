@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
 
-import type { EditIntent, EditMode, EditRangeSource } from '../edit/types'
+import type { EditIntent, EditMode } from '../edit/types'
 
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
@@ -57,7 +57,6 @@ export class FixupTask {
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
-        public rangeSource: EditRangeSource,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */

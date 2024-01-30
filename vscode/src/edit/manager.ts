@@ -13,7 +13,6 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import type { EditRangeSource } from './types'
 import { getEditSmartSelection, isGenerateIntent } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE, DEFAULT_EDIT_MODEL } from './constants'
 
@@ -85,7 +84,6 @@ export class EditManager implements vscode.Disposable {
 
         const isGenerate = isGenerateIntent(document, range)
         let expandedRange: vscode.Range | undefined
-        const rangeSource: EditRangeSource = isGenerate ? 'position' : 'selection'
 
         // Support expanding the selection range for intents where it is useful
         if (!isGenerate) {
@@ -110,7 +108,6 @@ export class EditManager implements vscode.Disposable {
                 args.userContextFiles ?? [],
                 model,
                 range,
-                rangeSource,
                 intent,
                 mode,
                 source,
@@ -121,7 +118,6 @@ export class EditManager implements vscode.Disposable {
                 document,
                 range,
                 expandedRange,
-                rangeSource,
                 mode,
                 model,
                 intent,
