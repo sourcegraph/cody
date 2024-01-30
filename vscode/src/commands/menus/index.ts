@@ -7,6 +7,8 @@ import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command
 import type { CommandMenuItem } from './types'
 import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
+import { executeChat } from '../default/ask'
+import { executeEdit } from '../../edit/execute'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -40,7 +42,12 @@ export async function showCommandMenu(
         }
 
         // Extra options
-        items.push(CommandMenuSeperator.settings, configOption, addOption)
+        items.push(CommandMenuSeperator.settings, configOption)
+
+        // The Create New Command option should show up in custom command menu only
+        if (type === 'custom') {
+            items.push(addOption)
+        }
     }
 
     const options = CommandMenuTitleItem[type]
@@ -52,7 +59,6 @@ export async function showCommandMenu(
         quickPick.placeholder = options.placeHolder
         quickPick.matchOnDescription = true
         quickPick.buttons = CommandMenuTitleItem[type].buttons
-        quickPick.matchOnDescription = true
 
         quickPick.onDidTriggerButton(async item => {
             // On gear icon click
@@ -76,6 +82,16 @@ export async function showCommandMenu(
         })
 
         quickPick.onDidChangeValue(value => {
+            if (value?.startsWith('/')) {
+                const commandKey = value.split(' ')[0]
+                const isCommand = items.find(item => item.label === commandKey)
+                if (commandKey && isCommand) {
+                    isCommand.alwaysShow = true
+                    quickPick.items = [isCommand]
+                    return
+                }
+            }
+
             if (value && !value.startsWith('/')) {
                 quickPick.items = [CommandMenuOption.edit, CommandMenuOption.chat, ...items]
             } else {
@@ -113,9 +129,29 @@ export async function showCommandMenu(
                 return openCustomCommandDocsLink()
             }
 
-            // Else, process the selection as a command
+            // Check if it's an ask command
+            if (selected.startsWith('/ask')) {
+                const inputValue = value.replace(/^\/ask/, '').trim()
+                // show input box if no value
+                if (!inputValue) {
+                    void showChatInputBox()
+                } else {
+                    void executeChat({ text: inputValue, submitType: 'user-newchat', source: 'menu' })
+                }
+                quickPick.hide()
+                return
+            }
+
+            // Check if it's an edit command
+            if (selected.startsWith('/edit')) {
+                void executeEdit({ instruction: value }, 'menu')
+                quickPick.hide()
+                return
+            }
+
+            // Else, process the selection as custom command
             if (selected.startsWith('/')) {
-                void commands.executeCommand('cody.action.command', selected)
+                void commands.executeCommand('cody.action.command', selected + ' ' + value)
             }
 
             resolve()
@@ -138,4 +174,15 @@ export async function showNewCustomCommandMenu(
 ): Promise<CustomCommandsBuilder | null> {
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
+}
+
+async function showChatInputBox(): Promise<void> {
+    const input = await window.showInputBox({
+        title: '/ask Cody',
+        placeHolder: 'Enter your question for Cody.',
+    })
+    if (!input) {
+        return
+    }
+    void executeChat({ text: input, submitType: 'user-newchat', source: 'menu' })
 }

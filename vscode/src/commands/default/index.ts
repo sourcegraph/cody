@@ -42,20 +42,21 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
  * Returns the command result if a matched command is found, otherwise returns undefined.
  */
 export async function executeDefaultCommand(
-    id: DefaultCodyCommands | string
+    id: DefaultCodyCommands | string,
+    additionalInstruction?: string
 ): Promise<CommandResult | undefined> {
     const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
     switch (key) {
         case DefaultChatCommands.Explain:
-            return executeExplainCommand()
+            return executeExplainCommand({ additionalInstruction })
         case DefaultChatCommands.Smell:
-            return executeSmellCommand()
+            return executeSmellCommand({ additionalInstruction })
         case DefaultChatCommands.Test:
-            return executeTestCommand()
+            return executeTestCommand({ additionalInstruction })
         case DefaultEditCommands.Unit:
-            return executeUnitTestCommand()
+            return executeUnitTestCommand({ additionalInstruction })
         case DefaultEditCommands.Doc:
-            return executeDocCommand()
+            return executeDocCommand({ additionalInstruction })
         default:
             console.log('not a default command')
             return undefined

@@ -31,4 +31,5 @@ export interface CodyCommandArgs {
     runInChatMode?: boolean
     // current context to add on top of the command context
     userContextFiles?: ContextFile[]
+    additionalInstruction?: string
 }

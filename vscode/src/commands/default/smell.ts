@@ -11,9 +11,13 @@ import type { CodyCommandArgs } from '../types'
  *
  * Context: Current selection
  */
-export async function smellCommand(): Promise<ExecuteChatArguments> {
+export async function smellCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
-    const prompt = defaultCommands.smell.prompt
+    let prompt = defaultCommands.smell.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const contextFiles: ContextFile[] = []
     const currentSelection = await getContextFileFromCursor()
@@ -37,6 +41,6 @@ export async function executeSmellCommand(
     logDebug('executeDocCommand', 'executing', { args })
     return {
         type: 'chat',
-        session: await executeChat(await smellCommand()),
+        session: await executeChat(await smellCommand(args)),
     }
 }
