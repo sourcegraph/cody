@@ -265,6 +265,14 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
                 directoryPath: 'lib/batches/env',
             },
         },
+        openTabs: {
+            description: 'Get files from open tabs.',
+            prompt: 'Open tabs as context.',
+            context: {
+                selection: false,
+                openTabs: true,
+            },
+        },
     }
 
     // add file to the .vscode directory created in the buildWorkSpaceSettings step

@@ -85,13 +85,12 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await expect(chatPanel.getByText(prompt)).toBeVisible()
 })
 
-test('execute a custom command defined in workspace cody.json', async ({ page, sidebar }) => {
+test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
-    // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
     // Wait for index.html to fully open
     await page.getByRole('tab', { name: 'index.html' }).hover()
@@ -109,7 +108,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
-    // Test: context.currentDir with /currentDir command
+    /* Test: context.currentDir with /currentDir command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
@@ -127,7 +126,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-15' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-11' })).toBeVisible()
 
-    // Test: context.filePath with /filePath command
+    /* Test: context.filePath with /filePath command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
@@ -137,7 +136,7 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     // Should show 2 files with current file added as context
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
 
-    // Test: context.directory with /directory command
+    /* Test: context.directory with /directory command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
@@ -149,11 +148,24 @@ test('execute a custom command defined in workspace cody.json', async ({ page, s
     await expect(
         chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1-1') })
     ).toBeVisible()
-    // Click on the file link should open the file in the editor
+    // Click on the file link should open the 'var.go file in the editor
     await chatPanel
         .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-1') })
         .click()
-    await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
+
+    /* Test: context.openTabs with /openTabs command */
+    await page.getByLabel('Custom Custom commands').locator('a').click()
+    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
+    await page.getByPlaceholder('Search command to run...').click()
+    await page.getByPlaceholder('Search command to run...').fill('/openTabs')
+    await page.keyboard.press('Enter')
+    await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
+    // The files from the open tabs should be added as context
+    await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
+    await chatPanel.getByText('✨ Context: 14 lines from 2 files').click()
+    await expect(chatPanel.getByRole('button', { name: '@index.html:1-10' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: '@lib/batches/env/var.go:1-0' })).toBeVisible()
 })
 
 test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
