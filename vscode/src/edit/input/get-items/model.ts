@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 import type { EditSupportedModels } from '../../prompt'
 import type { GetItemsResult } from '../quick-pick'
+import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 
 export const MODEL_ITEMS: Record<EditSupportedModels, vscode.QuickPickItem> = {
     'anthropic/claude-2.1': {
@@ -16,23 +17,17 @@ export const MODEL_ITEMS: Record<EditSupportedModels, vscode.QuickPickItem> = {
 } as const
 
 export const getModelInputItems = (activeModel: EditSupportedModels): GetItemsResult => {
-    const activeItem = MODEL_ITEMS[activeModel]
-    const remainingItems = Object.entries(MODEL_ITEMS)
-        .filter(([key]) => key !== activeModel)
-        .map(([_, item]) => item)
+    const items = Object.values(MODEL_ITEMS).map(item => {
+        const labelPrefix =
+            item === MODEL_ITEMS[activeModel]
+                ? QUICK_PICK_ITEM_CHECKED_PREFIX
+                : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX
+        return { ...item, label: labelPrefix + item?.label }
+    })
+    const activeItem = items.find(item => item.label.startsWith(QUICK_PICK_ITEM_CHECKED_PREFIX))
 
     return {
-        items: [
-            {
-                label: 'active',
-                kind: vscode.QuickPickItemKind.Separator,
-            },
-            activeItem,
-            {
-                label: 'options',
-                kind: vscode.QuickPickItemKind.Separator,
-            },
-            ...remainingItems,
-        ],
+        items,
+        activeItems: activeItem ? [activeItem] : undefined,
     }
 }

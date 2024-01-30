@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 import type { EditSupportedModels } from '../../prompt'
-import type { EditIntent, EditRangeSource } from '../../types'
 import type { GetItemsResult } from '../quick-pick'
-import { RANGE_ITEMS } from './range'
 import { MODEL_ITEMS } from './model'
+import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 
 export const RANGE_ITEM: vscode.QuickPickItem = {
     label: 'Range',
@@ -16,53 +15,49 @@ export const MODEL_ITEM: vscode.QuickPickItem = {
 }
 
 export const DOCUMENT_ITEM: vscode.QuickPickItem = {
-    label: 'Document',
+    label: 'Document Code...',
     detail: 'Add code documentation',
     alwaysShow: true,
 }
 
 export const TEST_ITEM: vscode.QuickPickItem = {
-    label: 'Test',
+    label: 'Generate Tests...',
     detail: 'Generate unit tests',
     alwaysShow: true,
 }
 
 const SUBMIT_ITEM: vscode.QuickPickItem = {
     label: 'Submit',
-    detail: 'Enter your instructions (@ to include code)',
+    detail: 'Submit edit instruction (or type @ to include code)',
     alwaysShow: true,
 }
 
+const getItemLabel = (item: vscode.QuickPickItem) => {
+    return item.label
+        .replace(QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX, '')
+        .replace(QUICK_PICK_ITEM_CHECKED_PREFIX, '')
+        .trim()
+}
+
 export const getEditInputItems = (
-    intent: EditIntent,
     activeValue: string,
-    activeRangeSource: EditRangeSource,
+    activeRangeItem: vscode.QuickPickItem,
     activeModel: EditSupportedModels
 ): GetItemsResult => {
-    const items: vscode.QuickPickItem[] = []
-
-    if (activeValue.trim().length > 0) {
-        items.push(SUBMIT_ITEM)
-    }
-
-    items.push({
-        label: 'edit options',
-        kind: vscode.QuickPickItemKind.Separator,
-    })
-
-    if (intent === 'edit') {
-        items.push({ ...RANGE_ITEM, detail: RANGE_ITEMS[activeRangeSource].label })
-    }
-
-    // Ever-present items
-    items.push(
-        { ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label },
+    const items = [
+        activeValue.trim().length > 0 ? SUBMIT_ITEM : null,
         {
-            label: 'commands',
+            label: 'edit options',
             kind: vscode.QuickPickItemKind.Separator,
         },
-        DOCUMENT_ITEM
-    )
+        { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
+        { ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label },
+        {
+            label: 'edit commands',
+            kind: vscode.QuickPickItemKind.Separator,
+        },
+        DOCUMENT_ITEM,
+    ].filter(Boolean) as vscode.QuickPickItem[]
 
     const config = vscode.workspace.getConfiguration('cody')
     const unstableTestCommandEnabled = config.get('internal.unstable') as boolean

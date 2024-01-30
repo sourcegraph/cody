@@ -1,71 +1,76 @@
 import * as vscode from 'vscode'
-import type { EditRangeSource } from '../../types'
 import type { GetItemsResult } from '../quick-pick'
 import { symbolIsFunctionLike } from './utils'
+import type { EditRangeItem } from './types'
+import { getEditSmartSelection } from '../../utils/edit-selection'
+import type { EditInputInitialValues } from '../get-input'
+import { EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
 
-export const DEFAULT_TEST_ITEMS: Record<Exclude<EditRangeSource, 'maximum'>, vscode.QuickPickItem> = {
-    selection: {
-        label: '$(code) Selection',
-        alwaysShow: true,
-    },
-    expanded: {
-        label: '$(file-code) Expanded selection',
-        description: 'Expand the selection to the nearest block of code',
-        alwaysShow: true,
-    },
+export const getDefaultTestItems = (
+    document: vscode.TextDocument,
+    initialValues: EditInputInitialValues
+): EditRangeItem[] => {
+    const { initialRange, initialExpandedRange } = initialValues
+
+    if (initialExpandedRange) {
+        // No need to show the selection (it will be the same)
+        return [
+            {
+                ...EXPANDED_RANGE_ITEM,
+                range: initialExpandedRange,
+            },
+        ]
+    }
+
+    return [
+        {
+            ...SELECTION_RANGE_ITEM,
+            range: new vscode.Range(initialRange.start, initialRange.end),
+        },
+        {
+            ...EXPANDED_RANGE_ITEM,
+            range: async () =>
+                getEditSmartSelection(document, initialRange, {
+                    forceExpand: true,
+                }),
+        },
+    ]
 }
-
-/**
- * A mapping of test items to their relevant ranges.
- * This is needed so we can use the correct range to submit the edit when the user selects an item.
- */
-export const TEST_ITEMS_RANGE_MAP = new Map<vscode.QuickPickItem, vscode.Range>()
 
 export const getTestInputItems = async (
     document: vscode.TextDocument,
+    initialValues: EditInputInitialValues,
     activeRange: vscode.Range,
-    initialRangeSource: EditRangeSource
+    symbolsPromise: Thenable<vscode.DocumentSymbol[]>
 ): Promise<GetItemsResult> => {
-    // Clear any cached test items
-    TEST_ITEMS_RANGE_MAP.clear()
+    const defaultItems = getDefaultTestItems(document, initialValues)
 
-    const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-        'vscode.executeDocumentSymbolProvider',
-        document.uri
+    const symbols = await symbolsPromise
+    const symbolItems: EditRangeItem[] = symbols
+        .filter(symbolIsFunctionLike)
+        .map(symbol => ({ label: `$(symbol-method) ${symbol.name}`, range: symbol.range }))
+
+    const wrappingSymbol = symbolItems.find(
+        item => item.range instanceof vscode.Range && item.range.contains(initialValues.initialRange)
     )
 
-    const defaultTestItems = [DEFAULT_TEST_ITEMS.expanded]
-    if (initialRangeSource !== 'expanded') {
-        // Only if the initial range was not already expanded, otherwise there's no point showing this option
-        defaultTestItems.unshift(DEFAULT_TEST_ITEMS.selection)
-    }
+    const activeItem =
+        wrappingSymbol ||
+        defaultItems.find(
+            item => item.range instanceof vscode.Range && item.range.isEqual(initialValues.initialRange)
+        )
 
-    if (!symbols || symbols.length === 0) {
-        return { items: defaultTestItems }
+    if (!symbolItems || symbolItems.length === 0) {
+        return { items: defaultItems, activeItems: activeItem ? [activeItem] : undefined }
     }
-
-    const relevantSymbols = symbols.filter(symbolIsFunctionLike)
-    const wrappingSymbol = relevantSymbols.find(sym => sym.location.range.contains(activeRange.start))
-
-    const items: vscode.QuickPickItem[] = []
-    for (const symbol of relevantSymbols) {
-        const item = { label: `$(symbol-method) ${symbol.name}` }
-        TEST_ITEMS_RANGE_MAP.set(item, symbol.location.range)
-        items.push(item)
-    }
-    const activeItem = wrappingSymbol
-        ? items.find(({ label }) => label === `$(symbol-method) ${wrappingSymbol.name}`)
-        : initialRangeSource === 'expanded'
-          ? DEFAULT_TEST_ITEMS.expanded
-          : DEFAULT_TEST_ITEMS.selection
 
     return {
         items: [
+            { label: 'ranges', kind: vscode.QuickPickItemKind.Separator },
+            ...defaultItems,
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
-            ...items,
-            { label: 'other', kind: vscode.QuickPickItemKind.Separator },
-            ...defaultTestItems,
+            ...symbolItems,
         ],
-        activeItems: activeItem ? [activeItem] : [],
+        activeItems: activeItem ? [activeItem] : undefined,
     }
 }

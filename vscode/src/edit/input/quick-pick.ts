@@ -11,6 +11,7 @@ interface QuickPickConfiguration {
     onDidAccept: () => void
     onDidChangeActive?: (items: readonly vscode.QuickPickItem[]) => void
     onDidChangeValue?: (value: string) => void
+    onDidHide?: () => void
     getItems: () => GetItemsResult | Promise<GetItemsResult>
     value?: string
     buttons?: vscode.QuickInputButton[]
@@ -28,6 +29,7 @@ export const createQuickPick = ({
     onDidAccept,
     onDidChangeActive,
     onDidChangeValue,
+    onDidHide,
     getItems,
     buttons,
     onDidTriggerButton,
@@ -49,6 +51,10 @@ export const createQuickPick = ({
 
     if (onDidChangeValue) {
         quickPick.onDidChangeValue(onDidChangeValue)
+    }
+
+    if (onDidHide) {
+        quickPick.onDidHide(onDidHide)
     }
 
     if (buttons && onDidTriggerButton) {

@@ -4,23 +4,20 @@ import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 import * as defaultCommands from '../../commands/prompt/cody.json'
 import type { EditSupportedModels } from '../prompt'
 import { getEditor } from '../../editor/active-editor'
-import { getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
+import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
-import { getEditMaximumSelection, getEditSmartSelection } from '../utils/edit-selection'
 import { createQuickPick } from './quick-pick'
 import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent, EditRangeSource } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { MODEL_ITEMS, getModelInputItems } from './get-items/model'
-import { RANGE_ITEMS, getRangeInputItems } from './get-items/range'
-import {
-    DEFAULT_DOCUMENT_ITEMS,
-    DOCUMENT_ITEMS_RANGE_MAP,
-    getDocumentInputItems,
-} from './get-items/document'
-import { DEFAULT_TEST_ITEMS, TEST_ITEMS_RANGE_MAP, getTestInputItems } from './get-items/test'
+import { getRangeInputItems } from './get-items/range'
+import { getDocumentInputItems } from './get-items/document'
+import { getTestInputItems } from './get-items/test'
 import { executeEdit } from '../execute'
+import type { EditRangeItem } from './get-items/types'
+import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -37,11 +34,17 @@ interface QuickPickInput {
 
 export interface EditInputInitialValues {
     initialRange: vscode.Range
+    initialExpandedRange?: vscode.Range
     initialModel: EditSupportedModels
     initialRangeSource: EditRangeSource
     initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
 }
+
+const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
+    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
+})
 
 export const getInput = async (
     document: vscode.TextDocument,
@@ -54,9 +57,15 @@ export const getInput = async (
         return null
     }
 
-    let activeRange = initialValues.initialRange
+    let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
+    let activeRangeItem =
+        intent === 'add'
+            ? CURSOR_RANGE_ITEM
+            : initialValues.initialExpandedRange
+              ? EXPANDED_RANGE_ITEM
+              : SELECTION_RANGE_ITEM
     let activeModel: EditSupportedModels = initialValues.initialModel
-    let activeRangeSource: EditRangeSource = initialValues.initialRangeSource
+    const activeRangeSource: EditRangeSource = initialValues.initialRangeSource
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextFile>()
@@ -100,26 +109,37 @@ export const getInput = async (
         })
     }
     let textDocumentListener = registerRangeListener()
-    const updateActiveRange = (newSelection: vscode.Selection, selectionSource: EditRangeSource) => {
+    const updateActiveRange = (range: vscode.Range) => {
+        // Clear any set decorations
+        editor.setDecorations(PREVIEW_RANGE_DECORATION, [])
+
         // Pause listening to range changes to avoid a possible race condition
         textDocumentListener.dispose()
 
-        // Update the current selection and the stored range and source
-        editor.selection = newSelection
-        editor.revealRange(newSelection, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
-        activeRange = newSelection
-        activeRangeSource = selectionSource
+        editor.selection = new vscode.Selection(range.start, range.end)
+        activeRange = range
 
         // Resume listening to range changes
         textDocumentListener = registerRangeListener()
         // Update the title to reflect the new range
         updateActiveTitle(activeRange)
     }
+    const previewActiveRange = (range: vscode.Range) => {
+        editor.setDecorations(PREVIEW_RANGE_DECORATION, [range])
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+    }
+
+    if (initialValues.initialExpandedRange) {
+        previewActiveRange(initialValues.initialExpandedRange)
+    }
+
+    // Start fetching symbols early, so they can be used immediately if an option is selected
+    const symbolsPromise = fetchDocumentSymbols(document)
 
     return new Promise(resolve => {
         const modelInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Change Model',
+            placeHolder: 'Select a model',
             getItems: () => getModelInputItems(activeModel),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
@@ -139,94 +159,56 @@ export const getInput = async (
 
         const rangeInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Change Range',
-            getItems: () => getRangeInputItems(activeRangeSource, initialValues.initialRangeSource),
+            placeHolder: 'Select a range to edit',
+            getItems: () => getRangeInputItems(document, initialValues, activeRange, symbolsPromise),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
-                const item = items[0]
-                if (item.label === RANGE_ITEMS.selection.label) {
-                    updateActiveRange(
-                        new vscode.Selection(
-                            initialValues.initialRange.start,
-                            initialValues.initialRange.end
-                        ),
-                        'selection'
-                    )
-                    return
-                }
-                if (item.label === RANGE_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(
-                        editor.document,
-                        initialValues.initialRange,
-                        {
-                            ignoreSelection: true,
-                        }
-                    )
-                    updateActiveRange(
-                        new vscode.Selection(smartSelection.start, smartSelection.end),
-                        'expanded'
-                    )
-                    return
-                }
-                if (item.label === RANGE_ITEMS.maximum.label) {
-                    const maximumRange = getEditMaximumSelection(
-                        editor.document,
-                        initialValues.initialRange
-                    )
-                    updateActiveRange(
-                        new vscode.Selection(maximumRange.start, maximumRange.end),
-                        'maximum'
-                    )
-                    return
-                }
+                const item = items[0] as EditRangeItem
+                const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                previewActiveRange(range)
             },
-            onDidAccept: () => editInput.render(activeTitle, editInput.input.value),
+            onDidAccept: async () => {
+                const acceptedItem = rangeInput.input.activeItems[0] as EditRangeItem
+                activeRangeItem = acceptedItem
+                const range =
+                    acceptedItem.range instanceof vscode.Range
+                        ? acceptedItem.range
+                        : await acceptedItem.range()
+
+                updateActiveRange(range)
+                editInput.render(activeTitle, editInput.input.value)
+            },
         })
 
         const documentInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Document...',
-            getItems: () =>
-                getDocumentInputItems(editor.document, activeRange, initialValues.initialRangeSource),
+            placeHolder: 'Select a symbol to document',
+            getItems: () => getDocumentInputItems(document, initialValues, activeRange, symbolsPromise),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
-                const item = items[0]
-                if (item.label === DEFAULT_DOCUMENT_ITEMS.selection.label) {
-                    updateActiveRange(
-                        new vscode.Selection(
-                            initialValues.initialRange.start,
-                            initialValues.initialRange.end
-                        ),
-                        'selection'
-                    )
-                    return
-                }
-                if (item.label === DEFAULT_DOCUMENT_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(
-                        editor.document,
-                        initialValues.initialRange,
-                        {
-                            ignoreSelection: true,
-                        }
-                    )
-                    updateActiveRange(
-                        new vscode.Selection(smartSelection.start, smartSelection.end),
-                        'expanded'
-                    )
-                    return
-                }
-                const documentableRange = DOCUMENT_ITEMS_RANGE_MAP.get(item)
-                if (documentableRange) {
-                    updateActiveRange(
-                        new vscode.Selection(documentableRange.start, documentableRange.end),
-                        'selection'
-                    )
-                    return
-                }
+                const item = items[0] as EditRangeItem
+                const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                previewActiveRange(range)
             },
-            onDidAccept: () => {
+            onDidAccept: async () => {
+                // Use the accepted range
+                const acceptedItem = documentInput.input.activeItems[0] as EditRangeItem
+                const range =
+                    acceptedItem.range instanceof vscode.Range
+                        ? acceptedItem.range
+                        : await acceptedItem.range()
+
+                // Expand the range from the node to include the full lines
+                const fullDocumentableRange = new vscode.Range(
+                    document.lineAt(range.start.line).range.start,
+                    document.lineAt(range.end.line).range.end
+                )
+                updateActiveRange(fullDocumentableRange)
+
                 // Hide the input and execute a new edit for 'Document'
                 documentInput.input.hide()
                 return executeEdit(
@@ -246,48 +228,26 @@ export const getInput = async (
 
         const unitTestInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Generate a Unit Test for...',
+            placeHolder: 'Select a symbol to generate tests',
             getItems: () =>
-                getTestInputItems(editor.document, activeRange, initialValues.initialRangeSource),
+                getTestInputItems(editor.document, initialValues, activeRange, symbolsPromise),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
-                const item = items[0]
-                if (item.label === DEFAULT_TEST_ITEMS.selection.label) {
-                    updateActiveRange(
-                        new vscode.Selection(
-                            initialValues.initialRange.start,
-                            initialValues.initialRange.end
-                        ),
-                        'selection'
-                    )
-                    return
-                }
-                if (item.label === DEFAULT_TEST_ITEMS.expanded.label) {
-                    const smartSelection = await getEditSmartSelection(
-                        editor.document,
-                        initialValues.initialRange,
-                        {
-                            ignoreSelection: true,
-                        }
-                    )
-                    updateActiveRange(
-                        new vscode.Selection(smartSelection.start, smartSelection.end),
-                        'expanded'
-                    )
-                    return
-                }
-
-                const testableRange = TEST_ITEMS_RANGE_MAP.get(item)
-                if (testableRange) {
-                    updateActiveRange(
-                        new vscode.Selection(testableRange.start, testableRange.end),
-                        'selection'
-                    )
-                    return
-                }
+                const item = items[0] as EditRangeItem
+                const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                previewActiveRange(range)
             },
-            onDidAccept: () => {
+            onDidAccept: async () => {
+                // Use the accepted range
+                const acceptedItem = unitTestInput.input.activeItems[0] as EditRangeItem
+                const range =
+                    acceptedItem.range instanceof vscode.Range
+                        ? acceptedItem.range
+                        : await acceptedItem.range()
+                updateActiveRange(range)
+
                 // Hide the input and execute a new edit for 'Test'
                 unitTestInput.input.hide()
                 // TODO: This should entirely run through `executeEdit` when
@@ -296,15 +256,11 @@ export const getInput = async (
             },
         })
 
-        unitTestInput.input.onDidHide(() => {
-            console.log('HIDDEEENNN!!')
-        })
-
         const editInput = createQuickPick({
             title: activeTitle,
-            placeHolder: 'Your edit instructions (@ to include code, ⏎ to submit)',
-            getItems: () =>
-                getEditInputItems(intent, editInput.input.value, activeRangeSource, activeModel),
+            placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
+            getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModel),
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
                       buttons: [vscode.QuickInputButtons.Back],
@@ -343,12 +299,7 @@ export const getInput = async (
                 if (matchingContext === null) {
                     // Nothing to match, clear existing items
                     // eslint-disable-next-line no-self-assign
-                    input.items = getEditInputItems(
-                        intent,
-                        input.value,
-                        activeRangeSource,
-                        activeModel
-                    ).items
+                    input.items = getEditInputItems(input.value, activeRangeItem, activeModel).items
                     return
                 }
 
@@ -423,7 +374,6 @@ export const getInput = async (
             },
         })
 
-        // TODO: Restore selection on input?
         editInput.render(activeTitle, initialValues.initialInputValue || '')
         editInput.input.activeItems = []
     })

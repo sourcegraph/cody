@@ -161,6 +161,7 @@ export class FixupController
     public async promptUserForTask(
         document: vscode.TextDocument,
         range: vscode.Range,
+        expandedRange: vscode.Range | undefined,
         rangeSource: EditRangeSource,
         mode: EditMode,
         model: EditSupportedModels,
@@ -171,7 +172,12 @@ export class FixupController
         const input = await getInput(
             document,
             intent,
-            { initialRange: range, initialModel: model, initialRangeSource: rangeSource },
+            {
+                initialRange: range,
+                initialExpandedRange: expandedRange,
+                initialModel: model,
+                initialRangeSource: rangeSource,
+            },
             source
         )
         if (!input) {

@@ -73,26 +73,27 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        let range = args.range || editor.active?.selection
+        const range = args.range || editor.active?.selection
         if (!range) {
             return
         }
-        let rangeSource: EditRangeSource = 'selection'
 
         if (editor.active) {
             // Clear out any active ghost text
             this.options.ghostHintDecorator.clearGhostText(editor.active)
         }
 
-        // Support expanding the selection range for intents where it is useful
-        if (args.intent !== 'add') {
-            range = await getEditSmartSelection(document, range)
-        }
+        const isGenerate = isGenerateIntent(document, range)
+        let expandedRange: vscode.Range | undefined
+        const rangeSource: EditRangeSource = isGenerate ? 'position' : 'selection'
 
-        if (editor.active && !range.isEqual(editor.active.selection)) {
-            // Update the editor selection to show the range that will be edited
-            editor.active.selection = new vscode.Selection(range.start, range.end)
-            rangeSource = 'expanded'
+        // Support expanding the selection range for intents where it is useful
+        if (!isGenerate) {
+            const smartRange = await getEditSmartSelection(document, range)
+
+            if (!smartRange.isEqual(range)) {
+                expandedRange = smartRange
+            }
         }
 
         // Set default edit configuration, if not provided
@@ -119,6 +120,7 @@ export class EditManager implements vscode.Disposable {
             task = await this.controller.promptUserForTask(
                 document,
                 range,
+                expandedRange,
                 rangeSource,
                 mode,
                 model,

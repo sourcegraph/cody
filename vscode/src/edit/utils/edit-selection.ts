@@ -15,7 +15,7 @@ export function isGenerateIntent(
 }
 
 interface SmartSelectionOptions {
-    ignoreSelection?: boolean
+    forceExpand?: boolean
 }
 
 /**
@@ -33,19 +33,15 @@ interface SmartSelectionOptions {
 export async function getEditSmartSelection(
     document: vscode.TextDocument,
     selectionRange: vscode.Range,
-    options: SmartSelectionOptions = {}
+    { forceExpand }: SmartSelectionOptions = {}
 ): Promise<vscode.Range> {
     // Use selectionRange when it's available
-    if (
-        !options.ignoreSelection &&
-        selectionRange &&
-        !selectionRange?.start.isEqual(selectionRange.end)
-    ) {
+    if (!forceExpand && selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
         return selectionRange
     }
 
     // Return original (empty) range if we will resolve to generate new code
-    if (isGenerateIntent(document, selectionRange)) {
+    if (!forceExpand && isGenerateIntent(document, selectionRange)) {
         return selectionRange
     }
 

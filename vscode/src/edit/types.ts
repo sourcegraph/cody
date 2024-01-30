@@ -18,4 +18,4 @@ export type EditMode = 'edit' | 'insert' | 'file'
  * - 'expanded': An expanded selection, derived from the users' selection to the nearest block of code.
  * - 'maximum': The maximum possible selection for the given file that still can be used as context.
  */
-export type EditRangeSource = 'selection' | 'expanded' | 'maximum'
+export type EditRangeSource = 'position' | 'selection' | 'expanded' | 'maximum'

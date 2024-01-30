@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 
 /**
@@ -44,4 +44,23 @@ export function getTitleRange(range: vscode.Range): string {
     }
 
     return `${range.start.line + 1}:${endLine + 1}`
+}
+
+export async function fetchDocumentSymbols(
+    document: vscode.TextDocument
+): Promise<vscode.DocumentSymbol[]> {
+    const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+        'vscode.executeDocumentSymbolProvider',
+        document.uri
+    )
+    if (!symbols) {
+        return []
+    }
+
+    const flattenSymbols = (symbol: vscode.DocumentSymbol): vscode.DocumentSymbol[] => {
+        return [symbol, ...symbol.children.flatMap(flattenSymbols)]
+    }
+
+    // Sort all symbols by their start position in the document
+    return symbols.flatMap(flattenSymbols).sort((a, b) => a.range.start.compareTo(b.range.start))
 }
