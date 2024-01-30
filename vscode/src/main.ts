@@ -599,8 +599,6 @@ const register = async (
 
     promises.push(showSetupNotification(initialConfig))
 
-    await Promise.all(promises)
-
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
         vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
