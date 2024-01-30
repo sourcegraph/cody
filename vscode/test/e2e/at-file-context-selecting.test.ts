@@ -18,7 +18,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.fill('@')
     await expect(
         chatPanelFrame.getByRole('heading', {
-            name: 'Start typing a file to include, or use @# to search for symbols...',
+            name: 'Search for a file to include, or type # to search symbols...',
         })
     ).toBeVisible()
 
