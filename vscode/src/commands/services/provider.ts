@@ -1,13 +1,19 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { EDIT_COMMAND } from '../menus/items'
+import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from '../menus/items'
 import { CustomCommandsManager } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
 import { getDefaultCommandsMap } from '../utils/get-commands'
 
 const editorCommands: CodyCommand[] = [
+    {
+        description: ASK_QUESTION_COMMAND.description,
+        prompt: ASK_QUESTION_COMMAND.slashCommand,
+        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+        mode: 'ask',
+    },
     {
         description: EDIT_COMMAND.description,
         prompt: EDIT_COMMAND.slashCommand,
