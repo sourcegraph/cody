@@ -5,4 +5,8 @@ export const NO_MATCHES_LABEL = 'No matches found'
 export const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0'
 export const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check)'
 
+/**
+ * Edit doesn't currently support changing from the default model.
+ * PR to add support: https://github.com/sourcegraph/cody/pull/2951
+ */
 export const EDIT_CHANGE_MODEL_ENABLED = false
