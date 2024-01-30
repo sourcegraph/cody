@@ -230,6 +230,11 @@ export async function* fetchAndProcessCompletions(
     let hotStreakExtractor: undefined | HotStreakExtractor
 
     for await (const { stopReason, completion } of completionResponseGenerator) {
+        addAutocompleteDebugEvent('fetchAndProcessCompletions', {
+            stopReason,
+            completion,
+        })
+
         const isFullResponse = stopReason !== STOP_REASON_STREAMING_CHUNK
         const rawCompletion = providerSpecificPostProcess(completion)
 

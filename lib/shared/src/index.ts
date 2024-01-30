@@ -5,8 +5,8 @@ export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
-export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
+export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
+export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -49,8 +49,8 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export { defaultCodyCommandContext, isFixupCommand } from './commands'
-export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
+export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -84,10 +84,8 @@ export type {
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    VsCodeCommandsController,
 } from './editor'
 export {
     displayPath,

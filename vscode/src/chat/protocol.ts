@@ -50,7 +50,7 @@ export type WebviewMessage =
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
-          // tends ot munge the type in a weird way (nested fields become array indices).
+          // tends to munge the type in a weird way (nested fields become array indices).
           range?: {
               startLine: number
               startCharacter: number
@@ -162,7 +162,7 @@ interface ExtensionAttributionMessage {
 
 export type ChatSubmitType = 'user' | 'user-newchat'
 
-interface WebviewSubmitMessage extends WebviewContextMessage {
+export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
 }

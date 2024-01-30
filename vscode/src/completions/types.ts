@@ -22,12 +22,12 @@ export interface InlineCompletionItem {
  */
 export interface FileContextSnippet {
     uri: URI
+    startLine: number
+    endLine: number
     content: string
 }
-export interface SymbolContextSnippet {
-    uri: URI
+export interface SymbolContextSnippet extends FileContextSnippet {
     symbol: string
-    content: string
 }
 export type ContextSnippet = FileContextSnippet | SymbolContextSnippet
 

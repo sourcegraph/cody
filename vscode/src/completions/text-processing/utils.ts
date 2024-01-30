@@ -5,7 +5,7 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionBookkeepingEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'
-import { Position } from 'vscode'
+import type { Position } from 'vscode'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -397,21 +397,6 @@ export function lastNLines(text: string, n: number): string {
 export function removeIndentation(text: string): string {
     const lines = text.split('\n')
     return lines.map(line => line.replace(INDENTATION_REGEX, '')).join('\n')
-}
-
-export function getPositionAfterTextDeletion(position: Position, text?: string): Position {
-    if (!text || text.length === 0) {
-        return position
-    }
-
-    const insertedLines = lines(text)
-
-    const updatedPosition =
-        insertedLines.length <= 1
-            ? position.translate(0, Math.min(-insertedLines[0].length, 0))
-            : new Position(position.line - (insertedLines.length - 1), insertedLines.at(-1)!.length)
-
-    return updatedPosition
 }
 
 export function getPositionAfterTextInsertion(position: Position, text?: string): Position {

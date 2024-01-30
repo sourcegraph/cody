@@ -32,6 +32,7 @@ import {
 import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition, sleep } from '../test-helpers'
+import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -245,6 +246,10 @@ export function paramsWithInlinedCompletion(
     })
 }
 
+interface GetInlineCompletionResult extends Omit<ParamsResult & InlineCompletionsResult, 'logId'> {
+    acceptFirstCompletionAndPressEnter(): Promise<GetInlineCompletionResult>
+}
+
 /**
  * A wrapper around `getInlineCompletions` helper with a few differences optimized for the
  * most popular test cases with the aim to reduce the boilerplate code:
@@ -257,7 +262,7 @@ export function paramsWithInlinedCompletion(
 export async function getInlineCompletionsWithInlinedChunks(
     code: string,
     completionParams: ParamsWithInlinedCompletion = {}
-): Promise<Omit<ParamsResult & InlineCompletionsResult, 'logId'>> {
+): Promise<GetInlineCompletionResult> {
     const params = paramsWithInlinedCompletion(code, completionParams)
     const result = await getInlineCompletions(params)
 
@@ -265,7 +270,31 @@ export async function getInlineCompletionsWithInlinedChunks(
         throw new Error('This test helpers should always return a result')
     }
 
-    return { ...params, ...result }
+    const acceptFirstCompletionAndPressEnter = () => {
+        const [{ insertText }] = result.items
+
+        const newLineString = pressEnterAndGetIndentString(
+            insertText,
+            params.docContext.currentLinePrefix,
+            params.document
+        )
+
+        const codeWithCompletionAndCursor =
+            params.docContext.prefix + insertText + newLineString + '█' + params.docContext.suffix
+
+        // Workaround for the internal `dedent` call to save the useful indentation.
+        const codeWithExtraIndent = codeWithCompletionAndCursor
+            .split('\n')
+            .map(line => '  ' + line)
+            .join('\n')
+
+        return getInlineCompletionsWithInlinedChunks(codeWithExtraIndent, {
+            ...completionParams,
+            requestManager: params.requestManager,
+        })
+    }
+
+    return { ...params, ...result, acceptFirstCompletionAndPressEnter }
 }
 
 /**
