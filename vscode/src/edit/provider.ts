@@ -41,7 +41,6 @@ export class EditProvider {
             model,
             task: this.config.task,
             editor: this.config.editor,
-            context: this.config.contextProvider.context,
         })
 
         const multiplexer = new BotResponseMultiplexer()

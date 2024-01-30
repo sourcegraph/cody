@@ -7,7 +7,6 @@ import {
     MAX_CURRENT_FILE_TOKENS,
     Transcript,
     truncateText,
-    type CodebaseContext,
     type CompletionParameters,
     type Message,
 } from '@sourcegraph/cody-shared'
@@ -50,7 +49,6 @@ interface BuildInteractionOptions {
     model: EditSupportedModels
     task: FixupTask
     editor: VSCodeEditor
-    context: CodebaseContext
 }
 
 interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
@@ -63,7 +61,6 @@ export const buildInteraction = async ({
     model,
     task,
     editor,
-    context,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
     const precedingText = document.getText(
@@ -102,7 +99,6 @@ export const buildInteraction = async ({
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
             contextMessages: task.contextMessages,
-            context,
             editor,
             followingText,
             precedingText,
