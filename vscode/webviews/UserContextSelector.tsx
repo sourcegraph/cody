@@ -45,7 +45,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
             : 'No matching files found'
     } else if (formInput.match(/@#[^ ]+$/)) {
         headingTitle = contextSelection?.length
-            ? 'Start typing a symbol to include...'
+            ? 'Search for a symbol to include...'
             : 'No matching symbols found'
     }
 
