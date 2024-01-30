@@ -369,6 +369,9 @@ importers:
       '@types/blueimp-md5':
         specifier: ^2.18.2
         version: 2.18.2
+      '@types/crypto-js':
+        specifier: ^4.2.2
+        version: 4.2.2
       '@types/dedent':
         specifier: ^0.7.0
         version: 0.7.0
@@ -5831,6 +5834,10 @@ packages:
     resolution: {integrity: sha512-4r8qa0quOvh7lGD0pre62CAb1oni1OO6ecJLGCezTmhQ8Fz50Arx9RUszryR8KlgK6avuSXvviL6yWyViQABOg==}
     dependencies:
       '@types/node': 20.4.0
+
+  /@types/crypto-js@4.2.2:
+    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
+    dev: true
 
   /@types/dedent@0.7.0:
     resolution: {integrity: sha512-EGlKlgMhnLt/cM4DbUSafFdrkeJoC9Mvnj0PUCU7tFmTjMjNRT957kXCx0wYm3JuEq4o4ZsS5vG+NlkM2DMd2A==}
