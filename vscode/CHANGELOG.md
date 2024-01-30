@@ -14,6 +14,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Chat: Updated message placeholder to mention you can @# to include symbols. [pull/2866](https://github.com/sourcegraph/cody/pull/2866)
+
 ## [1.2.0]
 
 ### Added
