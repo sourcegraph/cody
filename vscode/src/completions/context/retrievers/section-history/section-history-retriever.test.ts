@@ -235,6 +235,8 @@ describe('GraphSectionObserver', () => {
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
                 uri: document2Uri,
+                endLine: 10,
+                startLine: 0,
             })
         })
 

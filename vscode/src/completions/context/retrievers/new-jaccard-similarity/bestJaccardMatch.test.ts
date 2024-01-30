@@ -139,22 +139,12 @@ describe('bestJaccardMatch', () => {
 
         const matches = bestJaccardMatches('foo\nbar\nbaz', matchText, 3, MAX_MATCHES)
 
-        // Since we slide over the target text line-by-line, we expect matchText.lines - 2 windows
-        // to be returned
-        expect(matches).toHaveLength(matchText.split('\n').length - 2)
+        expect(matches).toHaveLength(4)
         expect(matches.map(match => match.content.split('\n'))).toEqual([
             ['foo', 'bar', 'baz'],
-            ['bar', 'baz', 'qux'],
-            ['baz', 'qux', 'foo'],
             ['qux', 'foo', 'quuz'],
-            ['foo', 'quuz', 'corge'],
-            ['quuz', 'corge', 'grault'],
             ['corge', 'grault', 'garply'],
-            ['grault', 'garply', 'waldo'],
-            ['garply', 'waldo', 'fred'],
             ['waldo', 'fred', 'plugh'],
-            ['fred', 'plugh', 'xyzzy'],
-            ['plugh', 'xyzzy', 'thud'],
         ])
     })
 

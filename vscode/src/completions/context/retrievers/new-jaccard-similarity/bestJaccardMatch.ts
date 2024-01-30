@@ -107,6 +107,11 @@ export function bestJaccardMatches(
         // Compute the jaccard similarity between our target text and window
         const score = jaccardSimilarity(targetWordCounts, windowWordCounts, intersectionWordCounts)
 
+        // TODO(@philipp-spiess): There's a potential optimization here where if the previous window
+        // would overlap lines of this one and it has a higher score, we would not even need to push
+        // the window until we are outside of the previous window's range. This only works in one
+        // direction though so we would still need the later step of cleaning up duplicated lines
+
         const startLine = i
         const endLine = i + windowSize - 1
         windows.push({
@@ -119,7 +124,37 @@ export function bestJaccardMatches(
 
     // Rank and pick the top n results
     windows.sort((a, b) => b.score - a.score)
-    return windows.slice(0, maxMatches)
+
+    // Go through the sorted list and ensure we don't yield overlapping matches
+    //
+    // Note: After this algorithm, we can not guarantee that every line of the target text is
+    // included in the result list. However, this is per design as these gaps have a length that is
+    // smaller to the window size so it's not possible to effectively rank using jaccard similarity
+    // as the word bags will be vastly different if we have different number of input lines.
+    //
+    // In the future we may want to shrink/expand windows to ensure we have a full coverage but in
+    // practice this level of complexity is not needed as we really only care about the top ranked
+    // results across a number of files anyways.
+    const retainedWindows: JaccardMatch[] = []
+    const includedLines: Set<number> = new Set()
+    for (const window of windows) {
+        let hasOverlap = false
+        for (let i = window.startLine; i <= window.endLine; i++) {
+            if (includedLines.has(i)) {
+                hasOverlap = true
+                break
+            }
+        }
+
+        if (!hasOverlap) {
+            for (let i = window.startLine; i <= window.endLine; i++) {
+                includedLines.add(i)
+            }
+            retainedWindows.push(window)
+        }
+    }
+
+    return retainedWindows.slice(0, maxMatches)
 }
 
 function jaccardSimilarity(left: number, right: number, intersection: number): number {
