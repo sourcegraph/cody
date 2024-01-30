@@ -19,6 +19,10 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
+import {
+    STOP_REASON_REQUEST_ABORTED,
+    STOP_REASON_REQUEST_FINISHED,
+} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -33,6 +37,7 @@ export function createClient(
     ): CompletionResponseGenerator {
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
+        const { signal } = abortController
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteTracing
@@ -73,7 +78,7 @@ export function createClient(
                 stream: enableStreaming,
             }),
             headers,
-            signal: abortController.signal,
+            signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
@@ -108,9 +113,10 @@ export function createClient(
         // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-        if (isStreamingResponse && isNodeResponse(response)) {
-            let lastResponse: CompletionResponse | undefined
-            try {
+        let completionResponse: CompletionResponse | undefined = undefined
+
+        try {
+            if (isStreamingResponse && isNodeResponse(response)) {
                 const iterator = createSSEIterator(response.body)
                 let chunkIndex = 0
 
@@ -119,58 +125,67 @@ export function createClient(
                         throw new Error(data)
                     }
 
+                    if (signal.aborted) {
+                        if (completionResponse) {
+                            completionResponse.stopReason = STOP_REASON_REQUEST_ABORTED
+                        }
+
+                        break
+                    }
+
                     if (event === 'completion') {
-                        if (abortController.signal.aborted) {
-                            break // Stop processing the already received chunks.
+                        completionResponse = JSON.parse(data) as CompletionResponse
+
+                        yield {
+                            completion: completionResponse.completion,
+                            stopReason: completionResponse.stopReason || STOP_REASON_STREAMING_CHUNK,
                         }
-
-                        lastResponse = JSON.parse(data) as CompletionResponse
-
-                        if (!lastResponse.stopReason) {
-                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
-                        }
-
-                        yield lastResponse
                     }
 
                     chunkIndex += 1
                 }
 
-                if (lastResponse === undefined) {
+                if (completionResponse === undefined) {
                     throw new TracedError('No completion response received', traceId)
                 }
-                log?.onComplete(lastResponse)
 
-                return lastResponse
-            } catch (error) {
-                if (isRateLimitError(error as Error)) {
-                    throw error
-                }
-                if (isAbortError(error as Error) && lastResponse) {
-                    log?.onComplete(lastResponse)
+                if (!completionResponse.stopReason) {
+                    completionResponse.stopReason = STOP_REASON_REQUEST_FINISHED
                 }
 
-                const message = `error parsing streaming CodeCompletionResponse: ${error}`
-                log?.onError(message, error)
-                throw new TracedError(message, traceId)
+                log?.onComplete(completionResponse)
+
+                return completionResponse
             }
-        } else {
+
+            // Handle non-streaming response
             const result = await response.text()
-            try {
-                const response = JSON.parse(result) as CompletionResponse
+            completionResponse = JSON.parse(result) as CompletionResponse
 
-                if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
-                    const message = `response does not satisfy CodeCompletionResponse: ${result}`
-                    log?.onError(message)
-                    throw new TracedError(message, traceId)
-                }
-                log?.onComplete(response)
-                return response
-            } catch (error) {
-                const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-                log?.onError(message, error)
+            if (
+                typeof completionResponse.completion !== 'string' ||
+                typeof completionResponse.stopReason !== 'string'
+            ) {
+                const message = `response does not satisfy CodeCompletionResponse: ${result}`
+                log?.onError(message)
                 throw new TracedError(message, traceId)
             }
+
+            log?.onComplete(completionResponse)
+            return completionResponse
+        } catch (error) {
+            // Shared error handling for both streaming and non-streaming requests.
+            if (isRateLimitError(error as Error)) {
+                throw error
+            }
+
+            if (isAbortError(error as Error) && completionResponse) {
+                log?.onComplete(completionResponse)
+            }
+
+            const message = `error parsing CodeCompletionResponse: ${error}`
+            log?.onError(message, error)
+            throw new TracedError(message, traceId)
         }
     }
 

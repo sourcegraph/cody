@@ -4,8 +4,11 @@ import {
     STOP_REASON_STREAMING_CHUNK,
     type CodeCompletionsClient,
     type CompletionResponseGenerator,
+    STOP_REASON_REQUEST_ABORTED,
+    STOP_REASON_REQUEST_FINISHED,
 } from '../inferenceClient/misc'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
+import type { CompletionResponse } from '../sourcegraph-api/completions/types'
 import { isAbortError } from '../sourcegraph-api/errors'
 import { isNodeResponse } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
@@ -59,6 +62,7 @@ export function createOllamaClient(
     ): CompletionResponseGenerator {
         const url = new URL('/api/generate', ollamaOptions.url).href
         const log = logger?.startCompletion(params, url)
+        const { signal } = abortController
 
         try {
             const response = await fetch(url, {
@@ -67,7 +71,7 @@ export function createOllamaClient(
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                signal: abortController.signal,
+                signal,
             })
 
             if (!response.ok) {
@@ -83,15 +87,21 @@ export function createOllamaClient(
                 ? response.body
                 : browserResponseToAsyncIterable(response.body)
 
-            let responseText = ''
+            let insertText = ''
+            let stopReason = ''
 
             for await (const chunk of iterableBody) {
+                if (signal.aborted) {
+                    stopReason = STOP_REASON_REQUEST_ABORTED
+                    break
+                }
+
                 for (const chunkString of chunk.toString().split(RESPONSE_SEPARATOR).filter(Boolean)) {
                     const line = JSON.parse(chunkString) as OllamaGenerateResponse
 
                     if (line.response) {
-                        responseText += line.response
-                        yield { completion: responseText, stopReason: STOP_REASON_STREAMING_CHUNK }
+                        insertText += line.response
+                        yield { completion: insertText, stopReason: STOP_REASON_STREAMING_CHUNK }
                     }
 
                     if (line.done && line.total_duration) {
@@ -102,9 +112,14 @@ export function createOllamaClient(
                 }
             }
 
-            log?.onComplete(responseText)
+            const completionResponse: CompletionResponse = {
+                completion: insertText,
+                stopReason: stopReason || STOP_REASON_REQUEST_FINISHED,
+            }
 
-            return { completion: responseText, stopReason: '' }
+            log?.onComplete(completionResponse)
+
+            return completionResponse
         } catch (error) {
             if (!isAbortError(error) && isError(error)) {
                 log?.onError(error.message, error)
