@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-import { SHA256, enc } from 'crypto-js'
+// import { SHA256, enc } from 'crypto-js'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -265,7 +265,7 @@ function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
         throw new Error('Access token not found.')
     }
 
-    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
-    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
-    return 'sgd_' + gatewayTokenBytes
+    // const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
+    // const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
+    return 'sgd_' //+ gatewayTokenBytes
 }
