@@ -11,6 +11,5 @@ export const SELECTION_RANGE_ITEM: vscode.QuickPickItem = {
 }
 
 export const EXPANDED_RANGE_ITEM: vscode.QuickPickItem = {
-    label: '$(file-code) Expanded selection',
-    description: 'Expand the selection to the nearest block of code',
+    label: '$(file-code) Nearest Code Block',
 }
