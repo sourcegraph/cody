@@ -71,13 +71,9 @@ function insertCompletionAndPressEnter(
         dynamicMultilineCompletions,
     })
 
-    updatedDocContext.positionWithoutInjectedCompletionText =
-        updatedDocContext.positionWithoutInjectedCompletionText || docContext.position
-    updatedDocContext.injectedCompletionText =
-        (docContext.injectedCompletionText || '') + insertTextWithPressedEnter
-
     return updatedDocContext
 }
+
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
     const { completedCompletion, providerOptions } = params
     const {

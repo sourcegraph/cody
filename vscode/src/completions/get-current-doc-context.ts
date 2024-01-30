@@ -211,7 +211,7 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         text: insertText,
     })
 
-    return getDerivedDocContext({
+    const updatedDocContext = getDerivedDocContext({
         languageId,
         position: updatedPosition,
         dynamicMultilineCompletions,
@@ -223,6 +223,12 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
             injectedPrefix: null,
         },
     })
+
+    updatedDocContext.positionWithoutInjectedCompletionText =
+        updatedDocContext.positionWithoutInjectedCompletionText || docContext.position
+    updatedDocContext.injectedCompletionText = (docContext.injectedCompletionText || '') + insertText
+
+    return updatedDocContext
 }
 
 export interface LinesContext {
