@@ -42,7 +42,12 @@ export async function showCommandMenu(
         }
 
         // Extra options
-        items.push(CommandMenuSeperator.settings, configOption, addOption)
+        items.push(CommandMenuSeperator.settings, configOption)
+
+        // The Create New Command option should show up in custom command menu only
+        if (type === 'custom') {
+            items.push(addOption)
+        }
     }
 
     const options = CommandMenuTitleItem[type]
