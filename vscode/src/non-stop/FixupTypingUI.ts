@@ -55,8 +55,8 @@ const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 const MATCHING_SYMBOL_REGEX = /@#(\S+)$/
 
 const MAX_FUZZY_RESULTS = 20
- const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols...'
- const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
+const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols...'
+const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
 const NO_MATCHES_LABEL = 'No matches found'
 
 interface FixupMatchingContext {
