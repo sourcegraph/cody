@@ -59,7 +59,6 @@ export async function showCommandMenu(
         quickPick.placeholder = options.placeHolder
         quickPick.matchOnDescription = true
         quickPick.buttons = CommandMenuTitleItem[type].buttons
-        quickPick.matchOnDescription = true
 
         quickPick.onDidTriggerButton(async item => {
             // On gear icon click
@@ -83,6 +82,16 @@ export async function showCommandMenu(
         })
 
         quickPick.onDidChangeValue(value => {
+            if (value?.startsWith('/')) {
+                const commandKey = value.split(' ')[0]
+                const isCommand = items.find(item => item.label === commandKey)
+                if (commandKey && isCommand) {
+                    isCommand.alwaysShow = true
+                    quickPick.items = [isCommand]
+                    return
+                }
+            }
+
             if (value && !value.startsWith('/')) {
                 quickPick.items = [CommandMenuOption.edit, CommandMenuOption.chat, ...items]
             } else {
