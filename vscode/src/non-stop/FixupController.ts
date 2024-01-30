@@ -170,11 +170,11 @@ export class FixupController
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
-            intent,
             {
                 initialRange: range,
                 initialExpandedRange: expandedRange,
                 initialModel: model,
+                initialIntent: intent,
             },
             source
         )
@@ -187,7 +187,7 @@ export class FixupController
             input.instruction,
             input.userContextFiles,
             input.range,
-            intent,
+            input.intent,
             mode,
             input.model,
             source,
@@ -1064,12 +1064,12 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
             document,
-            task.intent,
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,
                 initialSelectedContextFiles: task.userContextFiles,
                 initialModel: task.model,
+                initialIntent: task.intent,
             },
             'code-lens'
         )

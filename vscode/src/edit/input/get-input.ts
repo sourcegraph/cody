@@ -18,6 +18,7 @@ import { getTestInputItems } from './get-items/test'
 import { executeEdit } from '../execute'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
+import { isGenerateIntent } from '../utils/edit-selection'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -28,12 +29,19 @@ interface QuickPickInput {
     model: EditSupportedModels
     /** The range that the user has selected */
     range: vscode.Range
+    /**
+     * The derived intent from the users instructions
+     * This will effectively only change if the user switching from a "selection" to a "cursor"
+     * position, or vice-versa.
+     */
+    intent: EditIntent
 }
 
 export interface EditInputInitialValues {
     initialRange: vscode.Range
     initialExpandedRange?: vscode.Range
     initialModel: EditSupportedModels
+    initialIntent: EditIntent
     initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
 }
@@ -45,7 +53,6 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
-    intent: EditIntent,
     initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
@@ -56,7 +63,7 @@ export const getInput = async (
 
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
     let activeRangeItem =
-        intent === 'add'
+        initialValues.initialIntent === 'add'
             ? CURSOR_RANGE_ITEM
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
@@ -388,6 +395,7 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModelItem.model,
                     range: activeRange,
+                    intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
                 })
             },
         })

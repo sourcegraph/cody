@@ -14,8 +14,3 @@ export const EXPANDED_RANGE_ITEM: vscode.QuickPickItem = {
     label: '$(file-code) Expanded selection',
     description: 'Expand the selection to the nearest block of code',
 }
-
-export const MAXIMUM_RANGE_ITEM: vscode.QuickPickItem = {
-    label: '$(symbol-file) Maximum',
-    description: 'The maximum expanded selection',
-}
