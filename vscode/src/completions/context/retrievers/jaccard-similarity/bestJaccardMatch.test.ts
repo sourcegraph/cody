@@ -107,10 +107,14 @@ describe('bestJaccardMatch', () => {
         expect(bestJaccardMatch('foo\nbar\nbaz', matchText, 3)).toEqual({
             score: 1,
             content: 'foo\nbar\nbaz',
+            startLine: 0,
+            endLine: 2,
         })
         expect(bestJaccardMatch('bar\nquux', matchText, 4)).toEqual({
             score: 0.5,
             content: 'bar\nbaz\nqux\nquux',
+            startLine: 1,
+            endLine: 4,
         })
         expect(
             bestJaccardMatch(
@@ -121,19 +125,23 @@ describe('bestJaccardMatch', () => {
         ).toEqual({
             score: 0.3,
             content: ['corge', 'grault', 'garply', 'waldo', 'fred', 'plugh'].join('\n'),
+            startLine: 6,
+            endLine: 11,
         })
     })
 
     it('works with code snippets', () => {
         expect(bestJaccardMatch(targetSnippet, matchSnippet, 5)).toMatchInlineSnapshot(`
-            {
-              "content": "describe('bestJaccardMatch', () => {
-                it('should return the best match', () => {
-                    const matchText = [
-                        'foo',
-                        'bar',",
-              "score": 0.08695652173913043,
-            }
+          {
+            "content": "describe('bestJaccardMatch', () => {
+              it('should return the best match', () => {
+                  const matchText = [
+                      'foo',
+                      'bar',",
+            "endLine": 5,
+            "score": 0.08695652173913043,
+            "startLine": 1,
+          }
         `)
     })
 })
