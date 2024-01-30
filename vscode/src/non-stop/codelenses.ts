@@ -11,7 +11,8 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     switch (task.state) {
         case CodyTaskState.pending:
         case CodyTaskState.working: {
-            const title = getWorkingLens(codeLensRange)
+            const title =
+                task.mode === 'test' ? getUnitTestLens(codeLensRange) : getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
@@ -182,6 +183,15 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
         title: 'Accept',
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
+    }
+    return lens
+}
+
+function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Cody is generating unit tests...',
+        command: 'cody.focus',
     }
     return lens
 }

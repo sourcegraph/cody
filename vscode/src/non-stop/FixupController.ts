@@ -22,7 +22,7 @@ import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
-import { NewFixupFileMap, type FixupFile } from './FixupFile'
+import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
@@ -186,7 +186,8 @@ export class FixupController
         intent?: EditIntent,
         mode: EditMode = 'edit',
         source?: ChatEventSource,
-        contextMessages?: ContextMessage[]
+        contextMessages?: ContextMessage[],
+        destinationFile?: vscode.Uri
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         // Support expanding the selection range for intents where it is useful
@@ -201,7 +202,8 @@ export class FixupController
             selectionRange,
             mode,
             source,
-            contextMessages
+            contextMessages,
+            destinationFile
         )
         this.tasks.set(task.id, task)
         const state = task.mode === 'test' ? CodyTaskState.pending : CodyTaskState.working
@@ -741,7 +743,6 @@ export class FixupController
     }
 
     private discard(task: FixupTask): void {
-        NewFixupFileMap.delete(task.id)
         this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
         this.contentStore.delete(task.id)
@@ -842,7 +843,7 @@ export class FixupController
      * Update the task's fixup file and selection range with the new info,
      * and then task mode to "insert".
      *
-     * NOTE: Currently used for /test command only.
+     * NOTE: Currently used for /uint and /unit-case command only.
      */
     public async didReceiveNewFileRequest(id: string, newFileUri: vscode.Uri): Promise<void> {
         const task = this.tasks.get(id)
@@ -863,9 +864,10 @@ export class FixupController
             selection: range,
             viewColumn: vscode.ViewColumn.Beside,
         })
+        task.destinationFile = newFileUri
+
         // life the pending state from the task so it can proceed to the next stage
         this.setTaskState(task, CodyTaskState.working)
-        NewFixupFileMap.set(id, newFileUri)
     }
 
     // Handles changes to the source document in the fixup selection, or the
@@ -1081,6 +1083,12 @@ export class FixupController
         }
 
         task.state = state
+
+        // Creates a new file for the task if destinationFile is provided
+        if (task.state === CodyTaskState.pending && task.destinationFile) {
+            void this.didReceiveNewFileRequest(task.id, task.destinationFile)
+            return
+        }
 
         if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++

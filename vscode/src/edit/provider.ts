@@ -11,7 +11,6 @@ import {
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
-import { NewFixupFileMap } from '../non-stop/FixupFile'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
@@ -143,7 +142,7 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        if (this.config.task.mode === 'test' && !NewFixupFileMap.get(this.config.task.id)) {
+        if (this.config.task.mode === 'test' && !this.config.task.destinationFile) {
             if (isMessageInProgress) {
                 return
             }
@@ -233,7 +232,7 @@ export class EditProvider {
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
 
-        if (haveSameExtensions && !NewFixupFileMap.get(task.id)) {
+        if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })

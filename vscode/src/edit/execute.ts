@@ -13,6 +13,8 @@ export interface ExecuteEditArguments {
     intent?: EditIntent
     range?: vscode.Range
     mode?: EditMode
+    // The file to write the edit to. If not provided, the edit will be applied to the current file.
+    destinationFile?: vscode.Uri
 }
 
 /**

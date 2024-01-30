@@ -40,6 +40,7 @@ export class EditManager implements vscode.Disposable {
                         intent?: EditIntent
                         document?: vscode.TextDocument
                         mode?: EditMode
+                        destinationFile?: vscode.Uri
                     },
                     source?: ChatEventSource
                 ) => this.executeEdit(args, source)
@@ -103,7 +104,8 @@ export class EditManager implements vscode.Disposable {
                   args.intent,
                   args.mode,
                   source,
-                  args.contextMessages
+                  args.contextMessages,
+                  args.destinationFile
               )
             : await this.controller.promptUserForTask(args, source)
         if (!task) {
