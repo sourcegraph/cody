@@ -518,8 +518,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.modelID = modelID
-        // Store the selected model in local storage to retrieve later
-        await localStorage.set('model', modelID)
+        await setModel(modelID)
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
@@ -1235,7 +1234,7 @@ function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
 }
 
-function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
+export function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
     // overwrite it locally (for debugging purposes).
     //
@@ -1250,7 +1249,7 @@ function getContextWindowForModel(authStatus: AuthStatus, modelID: string): numb
         }
 
         if (authStatus.configOverwrites?.chatModelMaxTokens) {
-            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
+            return authStatus.configOverwrites.chatModelMaxTokens * 4 // bytes per token
         }
 
         return 28000 // 7000 tokens * 4 bytes per token
@@ -1268,8 +1267,13 @@ function getContextWindowForModel(authStatus: AuthStatus, modelID: string): numb
     return 28000 // assume default to Claude-2-like model
 }
 
+export async function setModel(modelID: string) {
+    // Store the selected model in local storage to retrieve later
+    await localStorage.set('model', modelID)
+}
+
 // Select the chat model to use in Chat
-function selectModel(authProvider: AuthProvider, models: ChatModelProvider[]): string {
+export function selectModel(authProvider: AuthProvider, models: ChatModelProvider[]): string {
     const authStatus = authProvider.getAuthStatus()
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {

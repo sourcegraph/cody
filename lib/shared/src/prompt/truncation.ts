@@ -10,6 +10,10 @@ export function truncateText(text: string, maxTokens: number): string {
     return text.length <= maxLength ? text : text.slice(0, maxLength)
 }
 
+export function truncateTextByLength(text: string, maxLength: number): string {
+    return text.length <= maxLength ? text : text.slice(0, maxLength)
+}
+
 /**
  * If text was truncated, return the truncated text and range to which it was truncated.
  * If the text is shorter than maxBytes, then return the text as-is with an undefined

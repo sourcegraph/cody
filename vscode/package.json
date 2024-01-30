@@ -1039,6 +1039,20 @@
           "fontCharacter": "\\0043"
         }
       },
+      "openai-logo": {
+        "description": "OpenAI logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0044"
+        }
+      },
+      "mistral-logo": {
+        "description": "Mistral logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0045"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {

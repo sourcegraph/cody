@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import type { EditSupportedModels } from '../prompt'
@@ -11,7 +11,7 @@ import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constant
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
-import { DEFAULT_MODEL_ITEM, getModelInputItems } from './get-items/model'
+import { getModelInputItems, getModelOptionItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
 import { getDocumentInputItems } from './get-items/document'
 import { getTestInputItems } from './get-items/test'
@@ -19,6 +19,7 @@ import { executeEdit } from '../execute'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { isGenerateIntent } from '../utils/edit-selection'
+import { setModel } from '../../chat/chat-view/SimpleChatPanelProvider'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -55,6 +56,7 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
+    modelOptions: ChatModelProvider[],
     initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
@@ -71,8 +73,9 @@ export const getInput = async (
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
-    /** TODO: Support changing the default model. E.g. users can set this in settings */
-    let activeModelItem = DEFAULT_MODEL_ITEM
+
+    const modelItems = getModelOptionItems(modelOptions)
+    let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextFile>()
@@ -147,7 +150,7 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(activeModelItem),
+            getItems: () => getModelInputItems(activeModelItem, modelItems),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
@@ -157,6 +160,7 @@ export const getInput = async (
                     return
                 }
 
+                setModel(acceptedItem.model)
                 activeModelItem = acceptedItem
                 editInput.render(activeTitle, editInput.input.value)
             },
@@ -402,7 +406,7 @@ export const getInput = async (
                     userContextFiles: Array.from(selectedContextItems)
                         .filter(([key]) => instruction.includes(`@${key}`))
                         .map(([, value]) => value),
-                    model: activeModelItem.model,
+                    model: activeModelItem?.model || initialValues.initialModel,
                     range: activeRange,
                     intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
                 })

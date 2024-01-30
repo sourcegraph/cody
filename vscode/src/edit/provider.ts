@@ -20,6 +20,7 @@ import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
 import { doesFileExist } from '../commands/utils/workspace-files'
+import { getContextWindowForModel } from '../chat/chat-view/SimpleChatPanelProvider'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -37,8 +38,10 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         const model = this.config.task.model
+        const contextWindow = getContextWindowForModel(this.config.authProvider.getAuthStatus(), model)
         const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
             model,
+            contextWindow,
             task: this.config.task,
             editor: this.config.editor,
         })

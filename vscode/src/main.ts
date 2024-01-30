@@ -223,6 +223,7 @@ const register = async (
             editor,
             contextProvider,
             ghostHintDecorator,
+            authProvider,
         }),
         new CodeActionProvider({ contextProvider })
     )

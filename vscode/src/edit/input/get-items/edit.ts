@@ -33,7 +33,7 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 export const getEditInputItems = (
     activeValue: string,
     activeRangeItem: vscode.QuickPickItem,
-    activeModelItem: vscode.QuickPickItem
+    activeModelItem?: vscode.QuickPickItem
 ): GetItemsResult => {
     const hasActiveValue = activeValue.trim().length > 0
     const submitItems = hasActiveValue ? [SUBMIT_ITEM] : []
@@ -53,7 +53,7 @@ export const getEditInputItems = (
             kind: vscode.QuickPickItemKind.Separator,
         },
         { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
-        { ...MODEL_ITEM, detail: getItemLabel(activeModelItem) },
+        { ...MODEL_ITEM, detail: activeModelItem ? getItemLabel(activeModelItem) : undefined },
     ]
 
     const items = [...submitItems, ...editItems, ...commandItems].filter(

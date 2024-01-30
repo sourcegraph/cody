@@ -4,9 +4,7 @@ import {
     BotResponseMultiplexer,
     getSimplePreamble,
     Interaction,
-    MAX_CURRENT_FILE_TOKENS,
     Transcript,
-    truncateText,
     type CompletionParameters,
     type Message,
 } from '@sourcegraph/cody-shared'
@@ -18,11 +16,10 @@ import type { EditIntent } from '../types'
 import { claude } from './claude'
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
+import { truncateTextByLength } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-export type EditSupportedModels =
-    | 'anthropic/claude-2.0'
-    | 'anthropic/claude-2.1'
-    | 'anthropic/claude-instant-1.2'
+// TODO: Better typing?
+export type EditSupportedModels = string
 
 const INTERACTION_MODELS: Record<EditSupportedModels, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
@@ -37,20 +34,21 @@ const getInteractionArgsFromIntent = (
 ): LLMInteraction => {
     switch (intent) {
         case 'add':
-            return INTERACTION_MODELS[model].getAdd(options)
+            return claude.getAdd(options)
         case 'fix':
-            return INTERACTION_MODELS[model].getFix(options)
+            return claude.getFix(options)
         case 'doc':
-            return INTERACTION_MODELS[model].getDoc(options)
+            return claude.getDoc(options)
         case 'edit':
-            return INTERACTION_MODELS[model].getEdit(options)
+            return claude.getEdit(options)
         case 'new':
-            return INTERACTION_MODELS[model].getNew(options)
+            return claude.getNew(options)
     }
 }
 
 interface BuildInteractionOptions {
     model: EditSupportedModels
+    contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
 }
@@ -63,6 +61,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    contextWindow,
     task,
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
@@ -76,7 +75,7 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
+    if (truncateTextByLength(selectedText, contextWindow) !== selectedText) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText

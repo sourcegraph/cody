@@ -5,6 +5,7 @@ import {
     type ChatEventSource,
     type ContextFile,
     type ContextMessage,
+    type ChatModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -164,12 +165,14 @@ export class FixupController
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
         model: EditSupportedModels,
+        modelOptions: ChatModelProvider[],
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
+            modelOptions,
             {
                 initialRange: range,
                 initialExpandedRange: expandedRange,
@@ -1064,6 +1067,7 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
             document,
+            [], // TODO: How to get ranges?
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,
