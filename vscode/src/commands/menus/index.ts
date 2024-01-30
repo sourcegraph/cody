@@ -129,23 +129,27 @@ export async function showCommandMenu(
                 return openCustomCommandDocsLink()
             }
 
+            // Check if it's an ask command
             if (selected.startsWith('/ask')) {
-                if (!value) {
+                const inputValue = value.replace(/^\/ask/, '').trim()
+                // show input box if no value
+                if (!inputValue) {
                     void showChatInputBox()
                 } else {
-                    void executeChat({ text: value, submitType: 'user-newchat', source: 'menu' })
+                    void executeChat({ text: inputValue, submitType: 'user-newchat', source: 'menu' })
                 }
                 quickPick.hide()
                 return
             }
 
+            // Check if it's an edit command
             if (selected.startsWith('/edit')) {
                 void executeEdit({ instruction: value }, 'menu')
                 quickPick.hide()
                 return
             }
 
-            // Else, process the selection as a command
+            // Else, process the selection as custom command
             if (selected.startsWith('/')) {
                 void commands.executeCommand('cody.action.command', selected + ' ' + value)
             }
