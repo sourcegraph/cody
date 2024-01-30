@@ -38,12 +38,7 @@
         "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
         "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
     },
-    "categories": [
-        "Programming Languages",
-        "Machine Learning",
-        "Snippets",
-        "Education"
-    ],
+    "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
     "keywords": [
         "ai",
         "openai",
@@ -94,11 +89,7 @@
     },
     "main": "./dist/extension.node.js",
     "browser": "./dist/extension.web.js",
-    "activationEvents": [
-        "onLanguage",
-        "onStartupFinished",
-        "onWebviewPanel:cody.chatPanel"
-    ],
+    "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
     "contributes": {
         "walkthroughs": [
             {
@@ -758,12 +749,7 @@
                 "cody.useContext": {
                     "order": 99,
                     "type": "string",
-                    "enum": [
-                        "embeddings",
-                        "keyword",
-                        "blended",
-                        "none"
-                    ],
+                    "enum": ["embeddings", "keyword", "blended", "none"],
                     "default": "blended",
                     "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
                 },
@@ -827,9 +813,7 @@
                     "order": 6,
                     "type": "string",
                     "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
-                    "examples": [
-                        "Answer all my questions in Spanish."
-                    ]
+                    "examples": ["Answer all my questions in Spanish."]
                 },
                 "cody.codeActions.enabled": {
                     "order": 11,
@@ -880,10 +864,7 @@
                 "cody.telemetry.level": {
                     "order": 99,
                     "type": "string",
-                    "enum": [
-                        "all",
-                        "off"
-                    ],
+                    "enum": ["all", "off"],
                     "enumDescriptions": [
                         "Sends usage data and errors.",
                         "Disables all extension telemetry."
@@ -894,13 +875,7 @@
                 "cody.autocomplete.advanced.provider": {
                     "type": "string",
                     "default": null,
-                    "enum": [
-                        null,
-                        "anthropic",
-                        "fireworks",
-                        "unstable-openai",
-                        "unstable-ollama"
-                    ],
+                    "enum": [null, "anthropic", "fireworks", "unstable-openai", "unstable-ollama"],
                     "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
                 },
                 "cody.autocomplete.advanced.serverEndpoint": {
@@ -939,10 +914,7 @@
                 },
                 "cody.experimental.foldingRanges": {
                     "type": "string",
-                    "enum": [
-                        "lsp",
-                        "indentation-based"
-                    ],
+                    "enum": ["lsp", "indentation-based"],
                     "enumDescriptions": [
                         "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
                         "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
@@ -973,11 +945,7 @@
                 "cody.autocomplete.experimental.graphContext": {
                     "type": "string",
                     "default": null,
-                    "enum": [
-                        null,
-                        "bfg",
-                        "bfg-mixed"
-                    ],
+                    "enum": [null, "bfg", "bfg-mixed"],
                     "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
                 },
                 "cody.autocomplete.experimental.ollamaOptions": {
@@ -996,10 +964,7 @@
                         "model": {
                             "type": "string",
                             "default": "codellama:7b-code",
-                            "examples": [
-                                "codellama:7b-code",
-                                "codellama:13b-code"
-                            ]
+                            "examples": ["codellama:7b-code", "codellama:13b-code"]
                         },
                         "parameters": {
                             "type": "object",
