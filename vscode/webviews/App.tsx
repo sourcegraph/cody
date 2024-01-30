@@ -16,7 +16,7 @@ import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
-import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
+import { trailingNonAlphaNumericRegex } from '../src/commands/utils/test-commands'
 
 import { Chat } from './Chat'
 import {
@@ -70,6 +70,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+    const onChooseRemoteSearchRepo = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
+    }, [vscodeAPI])
+    const onRemoveRemoteSearchRepo = useCallback(
+        (id: string): void => {
+            vscodeAPI.postMessage({ command: 'context/remove-remote-search-repo', repoId: id })
+        },
+        [vscodeAPI]
+    )
     const onConsentToEmbeddings = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'embeddings/index' })
     }, [vscodeAPI])
@@ -281,13 +290,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
+                                onChooseRemoteSearchRepo,
                                 onConsentToEmbeddings,
-                                onShouldBuildSymfIndex,
                                 onEnabledChange: (enabled): void => {
                                     if (enabled !== enhancedContextEnabled) {
                                         setEnhancedContextEnabled(enabled)
                                     }
                                 },
+                                onRemoveRemoteSearchRepo,
+                                onShouldBuildSymfIndex,
                             }}
                         >
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
@@ -309,7 +320,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
-                                        enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
@@ -391,7 +401,7 @@ function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [
 function getWelcomeMessageByOS(os: string): string {
     const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
-To run [Cody Commands](command:cody.action.commands.menu) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
+To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
         os === 'darwin' ? '⌥' : 'Alt'
     }</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
 

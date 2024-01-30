@@ -21,7 +21,7 @@ import { reuseLastCandidate } from './reuse-last-candidate'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isValidTestFile } from '../commands/prompt/utils'
+import { isValidTestFile } from '../commands/utils/test-commands'
 
 export interface InlineCompletionsParams {
     // Context
@@ -230,11 +230,12 @@ async function doGetInlineCompletions(
         lastAcceptedCompletionItem.requestParams.document.uri.toString() === document.uri.toString() &&
         lastAcceptedCompletionItem.requestParams.docContext.multilineTrigger === null
     ) {
-        const docContextOfLastAcceptedAndInsertedCompletionItem = insertIntoDocContext(
-            lastAcceptedCompletionItem.requestParams.docContext,
-            lastAcceptedCompletionItem.analyticsItem.insertText,
-            lastAcceptedCompletionItem.requestParams.document.languageId
-        )
+        const docContextOfLastAcceptedAndInsertedCompletionItem = insertIntoDocContext({
+            docContext: lastAcceptedCompletionItem.requestParams.docContext,
+            insertText: lastAcceptedCompletionItem.analyticsItem.insertText,
+            languageId: lastAcceptedCompletionItem.requestParams.document.languageId,
+            dynamicMultilineCompletions: false,
+        })
         if (
             docContext.prefix === docContextOfLastAcceptedAndInsertedCompletionItem.prefix &&
             docContext.suffix === docContextOfLastAcceptedAndInsertedCompletionItem.suffix &&
@@ -389,6 +390,8 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         dynamicMultilineCompletions,
         hotStreak,
+        // For the now the value is static and based on the average multiline completion latency.
+        firstCompletionTimeout: 1900,
     }
 
     if (docContext.multilineTrigger) {

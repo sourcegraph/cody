@@ -15,6 +15,8 @@ import type {
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
+import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
+import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -46,6 +48,7 @@ export type Requests = {
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the
@@ -73,12 +76,15 @@ export type Requests = {
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
+    'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
+
     'graphql/currentUserId': [null, string]
 
     'graphql/currentUserIsPro': [null, boolean]
 
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
+    'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
@@ -106,6 +112,7 @@ export type Requests = {
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
+    'testing/networkRequests': [null, { requests: NetworkRequest[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -123,6 +130,22 @@ export type Requests = {
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
+
+    // Run attribution search for a code snippet displayed in chat.
+    // Attribution is an enterprise feature which allows to look for code generated
+    // by Cody in an open source code corpus. User is notified if any such attribution
+    // is found.
+    // For more details, please see:
+    // *   PRD: https://docs.google.com/document/d/1c3CLC7ICDaG63NOWjO6zWm-UElwuXkFrKbCKTw-7H6Q/edit
+    // *   RFC: https://docs.google.com/document/d/1zSxFDQPxZcn5b6yKx40etpJayoibVzj_Gnugzln1weI/edit
+    'attribution/search': [
+        { id: string; snippet: string },
+        {
+            error: string | null
+            repoNames: string[]
+            limitHit: boolean
+        },
+    ]
 
     // ================
     // Server -> Client
@@ -501,4 +524,8 @@ export interface ProtocolCommand {
     command: string
     tooltip?: string
     arguments?: any[]
+}
+
+export interface NetworkRequest {
+    url: string
 }

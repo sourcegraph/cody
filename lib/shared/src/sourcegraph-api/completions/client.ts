@@ -30,6 +30,9 @@ export type CompletionsClientConfig = Pick<
 
 /**
  * Access the chat based LLM APIs via a Sourcegraph server instance.
+ *
+ * 🚨 SECURITY: It is the caller's responsibility to ensure context from
+ * all cody ignored files are removed before sending requests to the server.
  */
 export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false

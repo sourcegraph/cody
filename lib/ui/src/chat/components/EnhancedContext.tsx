@@ -18,6 +18,7 @@ export interface FileLinkProps {
     revision?: string
     source?: string
     range?: ActiveTextEditorSelectionRange
+    title?: string
 }
 
 export const EnhancedContext: React.FunctionComponent<{
@@ -71,6 +72,7 @@ export const EnhancedContext: React.FunctionComponent<{
                         revision={file.revision}
                         source={file.source}
                         range={file.range}
+                        title={file.title}
                     />
                 ),
             }))}

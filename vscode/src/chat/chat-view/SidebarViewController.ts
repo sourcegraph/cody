@@ -76,10 +76,6 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 void openExternalLinks(message.value)
                 break
             case 'simplified-onboarding':
-                if (message.type === 'reload-state') {
-                    void this.simplifiedOnboardingReloadEmbeddingsState()
-                    break
-                }
                 if (message.type === 'web-sign-in-token') {
                     void vscode.window
                         .showInputBox({ prompt: 'Enter web sign-in token' })

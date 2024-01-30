@@ -11,10 +11,17 @@ import {
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
+import type { Repo } from '../../context/repo-fetcher'
 
+/**
+ * Interface for a chat message with additional context.
+ *
+ * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
+ */
 export interface MessageWithContext {
     message: Message
 
@@ -36,7 +43,8 @@ export class SimpleChatModel {
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
-        private customChatTitle?: string
+        private customChatTitle?: string,
+        private selectedRepos?: Repo[]
     ) {}
 
     public isEmpty(): boolean {
@@ -51,7 +59,7 @@ export class SimpleChatModel {
         if (lastMessage.message.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed
+        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
     public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
@@ -169,6 +177,14 @@ export class SimpleChatModel {
         this.customChatTitle = title
     }
 
+    public getSelectedRepos(): Repo[] | undefined {
+        return this.selectedRepos ? this.selectedRepos.map(r => ({ ...r })) : undefined
+    }
+
+    public setSelectedRepos(repos: Repo[] | undefined): void {
+        this.selectedRepos = repos ? repos.map(r => ({ ...r })) : undefined
+    }
+
     /**
      * Serializes to the legacy transcript JSON format
      */
@@ -179,13 +195,19 @@ export class SimpleChatModel {
             const botMessage = this.messagesWithContext[i + 1]
             interactions.push(messageToInteractionJSON(humanMessage, botMessage))
         }
-        return {
+        const result: TranscriptJSON = {
             id: this.sessionID,
             chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
+        if (this.selectedRepos) {
+            result.enhancedContext = {
+                selectedRepos: this.selectedRepos.map(r => ({ ...r })),
+            }
+        }
+        return result
     }
 }
 
@@ -223,6 +245,9 @@ export interface ContextItem {
     range?: vscode.Range
     text: string
     source?: ContextFileSource
+    repoName?: string
+    revision?: string
+    title?: string
 }
 
 export function contextItemId(contextItem: ContextItem): string {

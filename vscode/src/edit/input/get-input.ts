@@ -254,7 +254,7 @@ export const getInput = async (
                       buttons: [vscode.QuickInputButtons.Back],
                       onDidTriggerButton: target => {
                           if (target === vscode.QuickInputButtons.Back) {
-                              void vscode.commands.executeCommand('cody.action.commands.menu')
+                              void vscode.commands.executeCommand('cody.menu.commands')
                               editInput.input.hide()
                           }
                       },

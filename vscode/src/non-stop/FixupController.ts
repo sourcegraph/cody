@@ -314,7 +314,6 @@ export class FixupController
             { ...codeCount, source },
             { hasV2Event: true }
         )
-        logDebug('FixupController:apply', new Error().stack ?? '')
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata: {
                 lineCount: codeCount.lineCount,
@@ -329,7 +328,6 @@ export class FixupController
     }
 
     private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
-        console.log({ state: CodyTaskState[task.state], fixupURI: task.fixupFile.uri.toString() })
         if (task.state !== CodyTaskState.inserting) {
             return
         }

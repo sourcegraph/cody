@@ -1,16 +1,17 @@
 import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
-import type { URI } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import type { ConfigurationWithAccessToken } from '../../configuration'
-import { logError } from '../../logger'
+import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_PROVIDER,
@@ -19,18 +20,18 @@ import {
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
+    CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_FEATURE_FLAGS_QUERY,
-    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     RECORD_TELEMETRY_EVENTS_MUTATION,
-    REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
+    REPOSITORY_IDS_QUERY,
+    REPOSITORY_LIST_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -95,6 +96,18 @@ interface CurrentUserCodyProEnabledResponse {
     } | null
 }
 
+interface CurrentUserCodySubscriptionResponse {
+    currentUser: {
+        codySubscription: {
+            status: string
+            plan: string
+            applyProRateLimits: boolean
+            currentPeriodStartAt: Date
+            currentPeriodEndAt: Date
+        }
+    } | null
+}
+
 interface CodyLLMSiteConfigurationResponse {
     site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
 }
@@ -103,29 +116,23 @@ interface CodyLLMSiteConfigurationProviderResponse {
     site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
 }
 
+interface RepoListResponse {
+    repositories: {
+        nodes: { name: string; id: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+
 interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
-interface RepositoryEmbeddingExistsResponse {
-    repository: { id: string; embeddingExists: boolean } | null
-}
-
-/**
- * {@link EmbeddingsSearchResults} with `fileName` instead of `uri` fields in the array elements,
- * because that is what GraphQL returns.
- */
-interface EmbeddingsSearchResultsWithoutURIs {
-    codeResults: (Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string })[]
-    textResults: (Omit<EmbeddingsSearchResult, 'uri'> & { fileName: string })[]
-}
-
-interface EmbeddingsSearchResponse {
-    embeddingsSearch: EmbeddingsSearchResultsWithoutURIs
-}
-
-interface EmbeddingsMultiSearchResponse {
-    embeddingsMultiSearch: EmbeddingsSearchResultsWithoutURIs
+interface RepositoryIdsResponse {
+    repositories: {
+        nodes: { name: string; id: string }[]
+    }
 }
 
 interface SearchAttributionResponse {
@@ -137,10 +144,25 @@ interface SearchAttributionResponse {
 
 type LogEventResponse = unknown
 
-/**
- * Values of this type come from the GraphQL API as {@link EmbeddingsSearchResultsWithoutURIs}, but
- * the `fileName` values are resolved to URIs for all other callers.
- */
+interface ContextSearchResponse {
+    getCodyContext: {
+        blob: {
+            commit: {
+                oid: string
+            }
+            path: string
+            repository: {
+                id: string
+                name: string
+            }
+            url: string
+        }
+        startLine: number
+        endLine: number
+        chunkContent: string
+    }[]
+}
+
 export interface EmbeddingsSearchResult {
     repoName?: string
     revision?: string
@@ -150,9 +172,14 @@ export interface EmbeddingsSearchResult {
     content: string
 }
 
-export interface EmbeddingsSearchResults {
-    codeResults: EmbeddingsSearchResult[]
-    textResults: EmbeddingsSearchResult[]
+export interface ContextSearchResult {
+    repoName: string
+    commit: string
+    uri: URI
+    path: string
+    startLine: number
+    endLine: number
+    content: string
 }
 
 interface SearchAttributionResults {
@@ -168,6 +195,14 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+}
+
+export interface CurrentUserCodySubscription {
+    status: string
+    plan: string
+    applyProRateLimits: boolean
+    currentPeriodStartAt: Date
+    currentPeriodEndAt: Date
 }
 
 interface CurrentUserInfo {
@@ -277,8 +312,7 @@ export class SourcegraphGraphQLAPIClient {
         return isDotCom(this.config.serverEndpoint)
     }
 
-    // Gets the server endpoint for this client. The UI uses this to display
-    // which endpoint provides embeddings.
+    // Gets the server endpoint for this client.
     public get endpoint(): string {
         return this.config.serverEndpoint
     }
@@ -353,6 +387,19 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
+            CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser?.codySubscription
+                    ? data.currentUser.codySubscription
+                    : new Error('current user subscription data not found')
+            )
+        )
+    }
+
     public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
             CURRENT_USER_INFO_QUERY,
@@ -409,6 +456,19 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider }
     }
 
+    /**
+     * Gets a subset of the list of repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async getRepoList(first: number, after?: string): Promise<RepoListResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
+            first,
+            after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
@@ -417,15 +477,40 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
-            REPOSITORY_EMBEDDING_EXISTS_QUERY,
-            {
-                name: repoName,
-            }
-        ).then(response =>
+    public async getRepoIds(
+        names: string[],
+        first: number
+    ): Promise<{ name: string; id: string }[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
+            names,
+            first,
+        }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
+    }
+
+    public async contextSearch(
+        repos: Set<string>,
+        query: string
+    ): Promise<ContextSearchResult[] | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
+            repos: [...repos],
+            query,
+            codeResultsCount: 15,
+            textResultsCount: 5,
+        }).then(response =>
             extractDataOrError(response, data =>
-                data.repository?.embeddingExists ? data.repository.id : null
+                (data.getCodyContext || []).map(item => ({
+                    commit: item.blob.commit.oid,
+                    repoName: item.blob.repository.name,
+                    path: item.blob.path,
+                    uri: URI.parse(
+                        `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
+                            item.startLine + 1
+                        }-${item.endLine}`
+                    ),
+                    startLine: item.startLine,
+                    endLine: item.endLine,
+                    content: item.chunkContent,
+                }))
             )
         )
     }
@@ -508,6 +593,26 @@ export class SourcegraphGraphQLAPIClient {
          */
         if (this.isDotCom()) {
             return this.sendEventLogRequestToAPI(event)
+        }
+
+        switch (process.env.CODY_LOG_EVENT_MODE) {
+            case 'connected-instance-only':
+                mode = 'connected-instance-only'
+                break
+            case 'dotcom-only':
+                mode = 'dotcom-only'
+                break
+            case 'all':
+                mode = 'all'
+                break
+            default:
+                if (process.env.CODY_LOG_EVENT_MODE) {
+                    logDebug(
+                        'SourcegraphGraphQLAPIClient.logEvent',
+                        'unknown mode',
+                        process.env.CODY_LOG_EVENT_MODE
+                    )
+                }
         }
 
         switch (mode) {
@@ -614,41 +719,6 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchEmbeddings(
-        repos: string[],
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResultsWithoutURIs | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(
-            SEARCH_EMBEDDINGS_QUERY,
-            {
-                repos,
-                query,
-                codeResultsCount,
-                textResultsCount,
-            }
-        ).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
-    }
-
-    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
-    public async legacySearchEmbeddings(
-        repo: string,
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResultsWithoutURIs | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(
-            LEGACY_SEARCH_EMBEDDINGS_QUERY,
-            {
-                repo,
-                query,
-                codeResultsCount,
-                textResultsCount,
-            }
-        ).then(response => extractDataOrError(response, data => data.embeddingsSearch))
-    }
-
     public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
@@ -706,6 +776,11 @@ export class SourcegraphGraphQLAPIClient {
                 headers,
             })
                 .then(verifyResponseCode)
+                //.then(response => response.text())
+                //.then(text => {
+                //    console.log('fetched:', text)
+                //    return JSON.parse(text) as T
+                //})
                 .then(response => response.json() as T)
                 .catch(error => {
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
