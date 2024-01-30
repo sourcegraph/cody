@@ -87,7 +87,6 @@ export interface EvaluationFixture {
 }
 
 async function loadEvaluationConfig(
-    chatLogs: StrategySimpleChatLogs,
     options: EvaluateAutocompleteOptions
 ): Promise<EvaluateAutocompleteOptions[]> {
     if (!options?.evaluationConfig) {
@@ -131,8 +130,7 @@ async function loadEvaluationConfig(
                 snapshotDirectory,
                 codyAgentBinary,
                 fixture,
-                csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
-                chatLogs: chatLogs
+                csvPath: path.join(snapshotDirectory, 'autocomplete.csv')
             })
         }
     }
@@ -287,10 +285,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         // const concurrencyLimit = 10
         // const semaphore = new Semaphore(concurrencyLimit);
         
-        const chatLogs = new StrategySimpleChatLogs()
-        chatLogs.initialize()
-
-        const testOptions = await loadEvaluationConfig(chatLogs, options);
+        const testOptions = await loadEvaluationConfig(options);
         const workspacesToRun = testOptions.filter(
             testOptions =>
                 matchesGlobPatterns(
@@ -305,7 +300,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 )
         );
         
-        const concurrencyLimit = 1
+        const concurrencyLimit = 5
         const semaphore = new Semaphore(concurrencyLimit);
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;
@@ -328,6 +323,10 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
 
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
+    const base_path = path.join(options.workspace, options.fixture.name)
+    options.chatLogs = new StrategySimpleChatLogs(base_path)
+    options.chatLogs.initialize()
+
     if (!options.queriesDirectory) {
         console.error('missing required options: --queries-directory')
         process.exit(1)
