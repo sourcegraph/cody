@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
+import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
 
 /**
  * Removes the string after the last '@' character in the given string.
@@ -44,6 +45,17 @@ export function getTitleRange(range: vscode.Range): string {
     }
 
     return `${range.start.line + 1}:${endLine + 1}`
+}
+
+/**
+ * Returns the label for the given QuickPickItem, stripping any
+ * prefixes used internally to track state.
+ */
+export function getItemLabel(item: vscode.QuickPickItem) {
+    return item.label
+        .replace(QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX, '')
+        .replace(QUICK_PICK_ITEM_CHECKED_PREFIX, '')
+        .trim()
 }
 
 export async function fetchDocumentSymbols(

@@ -74,12 +74,9 @@ export const getRangeInputItems = async (
         range: symbol.range,
     }))
 
-    console.log('deef', defaultItems)
-
     const activeItem = [...symbolItems, ...defaultItems].find(
         item => item.range instanceof vscode.Range && item.range.isEqual(activeRange)
     )
-    console.log('activ', activeItem)
 
     if (activeItem) {
         // Update the label of the active item

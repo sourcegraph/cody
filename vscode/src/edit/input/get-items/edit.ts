@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
-import type { EditSupportedModels } from '../../prompt'
 import type { GetItemsResult } from '../quick-pick'
-import { MODEL_ITEMS } from './model'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
+import { getItemLabel } from '../utils'
 
 export const RANGE_ITEM: vscode.QuickPickItem = {
     label: 'Range',
@@ -32,17 +30,10 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
-const getItemLabel = (item: vscode.QuickPickItem) => {
-    return item.label
-        .replace(QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX, '')
-        .replace(QUICK_PICK_ITEM_CHECKED_PREFIX, '')
-        .trim()
-}
-
 export const getEditInputItems = (
     activeValue: string,
     activeRangeItem: vscode.QuickPickItem,
-    activeModel: EditSupportedModels
+    activeModelItem: vscode.QuickPickItem
 ): GetItemsResult => {
     const items = [
         activeValue.trim().length > 0 ? SUBMIT_ITEM : null,
@@ -51,7 +42,7 @@ export const getEditInputItems = (
             kind: vscode.QuickPickItemKind.Separator,
         },
         { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
-        { ...MODEL_ITEM, detail: MODEL_ITEMS[activeModel].label },
+        { ...MODEL_ITEM, detail: getItemLabel(activeModelItem) },
         {
             label: 'edit commands',
             kind: vscode.QuickPickItemKind.Separator,

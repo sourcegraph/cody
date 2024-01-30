@@ -11,12 +11,12 @@ import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constant
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
-import { MODEL_ITEMS, getModelInputItems } from './get-items/model'
+import { DEFAULT_MODEL_ITEM, getModelInputItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
 import { getDocumentInputItems } from './get-items/document'
 import { getTestInputItems } from './get-items/test'
 import { executeEdit } from '../execute'
-import type { EditRangeItem } from './get-items/types'
+import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 
 interface QuickPickInput {
@@ -61,7 +61,8 @@ export const getInput = async (
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
-    let activeModel: EditSupportedModels = initialValues.initialModel
+    /** TODO: Support changing the default model. E.g. users can set this in settings */
+    let activeModelItem = DEFAULT_MODEL_ITEM
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextFile>()
@@ -136,21 +137,14 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(activeModel),
+            getItems: () => getModelInputItems(activeModelItem),
             buttons: [vscode.QuickInputButtons.Back],
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidChangeActive: items => {
-                const item = items[0]
-                if (item.label === MODEL_ITEMS['anthropic/claude-2.1'].label) {
-                    activeModel = 'anthropic/claude-2.1'
-                    return
-                }
-                if (item.label === MODEL_ITEMS['anthropic/claude-instant-1.2'].label) {
-                    activeModel = 'anthropic/claude-instant-1.2'
-                    return
-                }
+            onDidAccept: () => {
+                activeModelItem = modelInput.input.activeItems[0] as EditModelItem
+                editInput.render(activeTitle, editInput.input.value)
             },
-            onDidAccept: () => editInput.render(activeTitle, editInput.input.value),
         })
 
         const rangeInput = createQuickPick({
@@ -255,7 +249,7 @@ export const getInput = async (
         const editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
-            getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModel),
+            getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModelItem),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
@@ -295,7 +289,7 @@ export const getInput = async (
                 if (matchingContext === null) {
                     // Nothing to match, clear existing items
                     // eslint-disable-next-line no-self-assign
-                    input.items = getEditInputItems(input.value, activeRangeItem, activeModel).items
+                    input.items = getEditInputItems(input.value, activeRangeItem, activeModelItem).items
                     return
                 }
 
@@ -363,7 +357,7 @@ export const getInput = async (
                     userContextFiles: Array.from(selectedContextItems)
                         .filter(([key]) => instruction.includes(`@${key}`))
                         .map(([, value]) => value),
-                    model: activeModel,
+                    model: activeModelItem.model,
                     range: activeRange,
                 })
             },

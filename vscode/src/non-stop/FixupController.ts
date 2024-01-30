@@ -188,7 +188,6 @@ export class FixupController
             input.userContextFiles,
             input.model,
             input.range,
-            input.rangeSource,
             intent,
             mode,
             source,
@@ -1071,7 +1070,6 @@ export class FixupController
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,
-                initialRangeSource: 'selection',
                 initialSelectedContextFiles: task.userContextFiles,
                 initialModel: task.model,
             },
