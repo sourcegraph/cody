@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import type { GetItemsResult } from '../quick-pick'
 import { symbolIsFunctionLike } from './utils'
 import type { EditRangeItem } from './types'
-import { getEditSmartSelection } from '../../utils/edit-selection'
+import { getEditSmartSelection, isGenerateIntent } from '../../utils/edit-selection'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
 import type { EditInputInitialValues } from '../get-input'
@@ -13,22 +13,34 @@ export const getDefaultRangeItems = (
 ): EditRangeItem[] => {
     const { initialRange, initialExpandedRange } = initialValues
 
-    const everPresentItems = [
-        {
-            ...CURSOR_RANGE_ITEM,
-            alwaysShow: true,
-            range: new vscode.Range(initialRange.end, initialRange.end),
-        },
-    ]
+    const cursorItem = {
+        ...CURSOR_RANGE_ITEM,
+        alwaysShow: true,
+        range: new vscode.Range(initialRange.end, initialRange.end),
+    }
 
     if (initialExpandedRange) {
         // No need to show the selection (it will be the same)
         return [
+            cursorItem,
             {
                 ...EXPANDED_RANGE_ITEM,
                 range: initialExpandedRange,
             },
-            ...everPresentItems,
+        ]
+    }
+
+    if (isGenerateIntent(document, initialRange)) {
+        // No need to show the selection (it will be the same)
+        return [
+            cursorItem,
+            {
+                ...EXPANDED_RANGE_ITEM,
+                range: async () =>
+                    getEditSmartSelection(document, initialRange, {
+                        forceExpand: true,
+                    }),
+            },
         ]
     }
 
@@ -44,7 +56,6 @@ export const getDefaultRangeItems = (
                     forceExpand: true,
                 }),
         },
-        ...everPresentItems,
     ]
 }
 
@@ -64,7 +75,7 @@ export const getRangeInputItems = async (
         range: symbol.range,
     }))
 
-    const activeItem = [...symbolItems, ...defaultItems].find(
+    const activeItem = [...defaultItems, ...symbolItems].find(
         item => item.range instanceof vscode.Range && item.range.isEqual(activeRange)
     )
 

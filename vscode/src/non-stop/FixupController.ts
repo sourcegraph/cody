@@ -7,7 +7,7 @@ import {
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
-import type { ExecuteEditArguments } from '../edit/execute'
+import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -1088,16 +1088,16 @@ export class FixupController
         // Revert and remove the previous task
         await this.undoTask(task)
 
-        void vscode.commands.executeCommand(
-            'cody.command.edit-code',
+        void executeEdit(
             {
                 range: updatedRange,
                 instruction: input.instruction,
                 userContextFiles: input.userContextFiles,
                 document,
-                intent: task.intent,
+                intent: input.intent,
                 mode: task.mode,
-            } satisfies ExecuteEditArguments,
+                model: input.model,
+            },
             'code-lens'
         )
     }

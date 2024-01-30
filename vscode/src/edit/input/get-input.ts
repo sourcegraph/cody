@@ -7,7 +7,12 @@ import { getEditor } from '../../editor/active-editor'
 import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import { createQuickPick } from './quick-pick'
-import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
+import {
+    EDIT_CHANGE_MODEL_ENABLED,
+    FILE_HELP_LABEL,
+    NO_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from './constants'
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
@@ -393,7 +398,9 @@ export const getInput = async (
                     userContextFiles: Array.from(selectedContextItems)
                         .filter(([key]) => instruction.includes(`@${key}`))
                         .map(([, value]) => value),
-                    model: activeModelItem.model,
+                    model: EDIT_CHANGE_MODEL_ENABLED
+                        ? activeModelItem.model
+                        : initialValues.initialModel,
                     range: activeRange,
                     intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
                 })
