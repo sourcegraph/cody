@@ -12,9 +12,13 @@ import type { CodyCommandArgs } from '../types'
  *
  * Context: Current selection and current file
  */
-export async function explainCommand(): Promise<ExecuteChatArguments> {
+export async function explainCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
-    const prompt = defaultCommands.explain.prompt
+    let prompt = defaultCommands.explain.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextFile[] = []
@@ -43,6 +47,6 @@ export async function executeExplainCommand(
     logDebug('executeDocCommand', 'executing', { args })
     return {
         type: 'chat',
-        session: await executeChat(await explainCommand()),
+        session: await executeChat(await explainCommand(args)),
     }
 }

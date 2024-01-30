@@ -36,9 +36,15 @@ class CommandsController implements vscode.Disposable {
         const commandKey = commandSplit?.shift() || text
         const command = this.provider?.get(commandKey)
 
+        // Additional instruction that will be added to end of prompt in the custom command prompt
+        // It's added at execution time to allow dynamic arguments
+        // E.g. if the command is `/edit replace dash with period`,
+        // the additionalInput is `replace dash with period`
+        const additionalInstruction = commandKey === text ? '' : commandSplit.slice(1).join(' ')
+
         // Process default commands
         if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
-            return executeDefaultCommand(commandKey)
+            return executeDefaultCommand(commandKey, additionalInstruction)
         }
 
         if (!command) {
@@ -46,12 +52,7 @@ class CommandsController implements vscode.Disposable {
             return undefined
         }
 
-        // Additional instruction that will be added to end of prompt in the custom command prompt
-        // It's added at execution time to allow dynamic arguments
-        // E.g. if the command is `/edit replace dash with period`,
-        // the additionalInput is `replace dash with period`
-        const additionalArgs = commandKey === text ? '' : commandSplit.slice(1).join(' ')
-        command.prompt = [command.prompt, additionalArgs].join(' ')?.trim()
+        command.prompt = [command.prompt, additionalInstruction].join(' ')?.trim()
 
         // Add shell output as context if any before passing to the runner
         const shell = command.context?.command

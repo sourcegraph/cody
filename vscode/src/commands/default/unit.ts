@@ -18,7 +18,11 @@ import { getContextFilesForUnitTestCommand } from '../context/unit-test-command'
 export async function executeUnitTestCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
-    const prompt = defaultCommands.unit.prompt
+    let prompt = defaultCommands.unit.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const editor = getEditor()?.active
     const document = editor?.document

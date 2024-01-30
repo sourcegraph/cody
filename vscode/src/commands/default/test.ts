@@ -11,8 +11,12 @@ import { getContextFilesForTestCommand } from '../context/test-command'
  *
  * Context: Test files, current selection, and current file
  */
-async function testCommand(): Promise<ExecuteChatArguments> {
-    const prompt = defaultCommands.test.prompt
+async function testCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+    let prompt = defaultCommands.test.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const editor = getEditor()?.active
     const document = editor?.document
@@ -47,6 +51,6 @@ export async function executeTestCommand(
     logDebug('executeTestCommand', 'executing', { args })
     return {
         type: 'chat',
-        session: await executeChat(await testCommand()),
+        session: await executeChat(await testCommand(args)),
     }
 }
