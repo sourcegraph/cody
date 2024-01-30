@@ -77,8 +77,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -603,8 +602,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -668,7 +666,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -690,8 +688,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 219
-          text:
-            "[\"H4sIAAAAAAAAAyzNrQ7CMBSG4Vs5+fSCwlCDGEENhaQTzXa2NOnOgf6IZum9kzDkK568O\
+          text: "[\"H4sIAAAAAAAAAyzNrQ7CMBSG4Vs5+fSCwlCDGEENhaQTzXa2NOnOgf6IZum9kzDkK568O\
             zhGjQnmtWPjlNzKMOidiGb6FI6VFs9hJotJ59qrLH69s8slcrIgFcr1zWTx9A==\",\
             \"mS1OdPMzVS20sZO/GobHAUt02atYXNEh6PSrYx68MMy5w6ShbAJzaWMb2xcAAP//A\
             wDS/lDDoQAAAA==\"]"
@@ -712,8 +709,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -779,7 +775,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -803,8 +799,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 215
-          text:
-            "[\"H4sIAAAAAAAAA4yOwQqDMBBE/2XPitFbc/Vqbv2BJYkamu6KWcEi+feil5YcSk8Dw5vHH\
+          text: "[\"H4sIAAAAAAAAA4yOwQqDMBBE/2XPitFbc/Vqbv2BJYkamu6KWcEi+feil5YcSk8Dw5vHH\
             OBQEPQBKYg/07J7DYPpmcYwbStKYLr6GcWw8xE0IMm88hJsYyNuztcdVB/A4A==\",\
             \"fueHpwS67ZRSFYyYpP+1D5QESeoWCvjLdbtUlp9L9Oepv2QFXuhyzvkNAAD//wMAQ\
             HxMmAIBAAA=\"]"
@@ -825,8 +820,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -892,7 +886,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -911,8 +905,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 128
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
           textDecoded:
             data:
@@ -936,8 +929,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1003,7 +995,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -1027,8 +1019,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 203
-          text:
-            "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
+          text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
             A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GEkC7Ewhs4GXvAZqjiLDpg==\",\
             \"GoJBzazpy5gW3wrnIukOA3pRIR0up3+5qkTS9jvurvf+AQAA//8DAD+3K/CYAAAA\
             \"]"
@@ -1049,8 +1040,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1115,7 +1105,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1211,7 +1201,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1308,7 +1298,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1323,7 +1313,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1341,8 +1331,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1406,7 +1395,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1421,7 +1410,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1439,8 +1428,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1504,7 +1492,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1519,7 +1507,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1537,8 +1525,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1602,7 +1589,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1617,7 +1604,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1635,8 +1622,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1700,7 +1686,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1715,7 +1701,7 @@ log:
         content:
           mimeType: application/json
           size: 37
-          text: '{"data":{"evaluateFeatureFlag":null}}'
+          text: "{\"data\":{\"evaluateFeatureFlag\":null}}"
         cookies: []
         headers:
           - name: date
@@ -1733,8 +1719,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1797,7 +1782,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -1896,7 +1881,7 @@ log:
           params: []
           textJSON:
             query: |2
-
+              
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -1914,8 +1899,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 132
-          text:
-            "[\"H4sIAAAAAAAAAxTLwQmAMBAEwF72rQ1cAWlCfCxk8ZOonBdRQnoX5z8dmUFYh26WxlBOY\
+          text: "[\"H4sIAAAAAAAAAxTLwQmAMBAEwF72rQ1cAWlCfCxk8ZOonBdRQnoX5z8dmUFYh26WxlBOY\
             jRXKtwu2NKxswqGUFFV+DvrOQ8PTPiLYOFNYx3jAwAA//8DAHxh3HJNAAAA\"]"
           textDecoded:
             data:
@@ -1939,8 +1923,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2006,7 +1989,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
               	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
                       ...on FileChunkContext {
@@ -2044,8 +2027,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 2506
-          text:
-            "[\"H4sIAAAAAAAA/+xZ63LbuBV+FQxbzUqqRMjUZW12MrPZWN7NTJxNbGV7CbMyCByRGJMAA\
+          text: "[\"H4sIAAAAAAAA/+xZ63LbuBV+FQxbzUqqRMjUZW12MrPZWN7NTJxNbGV7CbMyCByRGJMAA\
             xxKVrKe6bP00fokHVByTMnyJU37S/0j43oAft/B+Q7gz55gyLzws5cAvtBi\",\"+UI\
             rhCv0wvefvTjTsesqGKZe6PFMgkK6gJhawykoBFMYaYEaKHStfgaFdnaYVGDOdIlgfb\
             RXXsdzA61EbZbOrhRe6L3Lf13E/deF+OloCRP96XTy/JnX8RTLwQu9RGJaxj7XObW6N\
@@ -2102,8 +2084,7 @@ log:
           - name: content-encoding
             value: gzip
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2167,7 +2148,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -2198,7 +2179,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -2216,8 +2197,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2242,7 +2222,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e4ae9b3ce4528acef8067a179ece8244
+    - _id: 131b624d856676be3ae456104fa2d3e4
       _order: 0
       cache: {}
       request:
@@ -2298,7 +2278,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.1.3
+                    clientVersion: 1.2.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2313,7 +2293,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 29 Jan 2024 14:19:14 GMT
+            value: Tue, 30 Jan 2024 21:00:36 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2341,7 +2321,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-01-29T14:19:14.580Z
+      startedDateTime: 2024-01-30T21:00:36.164Z
       time: 0
       timings:
         blocked: -1
@@ -2351,7 +2331,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6b3a541ad7e0f5d4628adb5da3a38c6d
+    - _id: 6c1d3112801b2112b74affa32ca20aba
       _order: 0
       cache: {}
       request:
@@ -2407,7 +2387,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.1.3
+                    clientVersion: 1.2.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2422,7 +2402,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 29 Jan 2024 14:19:14 GMT
+            value: Tue, 30 Jan 2024 21:00:36 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2450,7 +2430,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-01-29T14:19:14.615Z
+      startedDateTime: 2024-01-30T21:00:36.201Z
       time: 0
       timings:
         blocked: -1
@@ -2499,7 +2479,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -2522,8 +2502,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 175
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS/KTC0G8fPyU0CM6GqlvMTcVCUrpfTMk\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS/KTC0G8fPyU0CM6GqlvMTcVCUrpfTMk\
             ozSJL3k/Fz94vzSouTU9KLEggxktpKOUmaKkpVSaG5YeZKxX0GKu2Vlakh+lQ==\",\
             \"b4ijrVJtbG1tLQAAAP//AwCy5jxcbwAAAA==\"]"
         cookies: []
@@ -2543,8 +2522,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2609,7 +2587,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -2708,7 +2686,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -2726,8 +2704,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 112
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
             qv8qjyNfANtbZVqa2sBAAAA//8DACmyIHw5AAAA\"]"
           textDecoded:
             data:
@@ -2750,8 +2727,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2817,7 +2793,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteGraphQLFields {
                   __type(name: "Site") {
                       fields {
@@ -2836,8 +2812,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 607
-          text:
-            "[\"H4sIAAAAAAAAA3yS0W5aMQyG3+Vc7wm4q05hq8SkDUZ3MU2ViX/Aak5yFjvQI8S7T6HtR\
+          text: "[\"H4sIAAAAAAAAA3yS0W5aMQyG3+Vc7wm4q05hq8SkDUZ3MU2ViX/Aak5yFjvQI8S7T6HtR\
             M6gd4n/P4792ceGyaiZHJunJxt6lNNG4Fmbya9jE6hDM2mEm9OnfzcVw8P9\",\"ZcT\
             FsJFtTmQSw6XgyaC2hJmErVZJ3mItqSPGNWm1mFefUFjAR+KlWOXfCw5ILYU77iSIGt\
             KlTM5B9Ud8RqgqoGy7bynuhZEqAS+GFMjfORdzsEpbZ/H8iKSjRvsUOTu7ouSeydDu4\
@@ -2864,8 +2839,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2931,7 +2905,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteHasCodyEnabled {
                   site {
                       isCodyEnabled
@@ -2947,7 +2921,7 @@ log:
         content:
           mimeType: application/json
           size: 40
-          text: '{"data":{"site":{"isCodyEnabled":true}}}'
+          text: "{\"data\":{\"site\":{\"isCodyEnabled\":true}}}"
         cookies: []
         headers:
           - name: date
@@ -2965,8 +2939,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -3026,7 +2999,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -3129,7 +3102,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -3151,8 +3124,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 235
-          text:
-            "[\"H4sIAAAAAAAAAzTMTQrDIBBA4bvMuoK/o2bdTemyJxh1JEJJQjWLEnr3kkLf5u2+AwoNg\
+          text: "[\"H4sIAAAAAAAAAzTMTQrDIBBA4bvMuoK/o2bdTemyJxh1JEJJQjWLEnr3kkLf5u2+AwoNg\
             umA3gb/f7vCBCFEVxxlgR6zsExZpIhWBJcVBk9KVwkX2F5r2fN47KnnV9tGWw==\",\
             \"l5N5tsxL/4kz9ZnLnd8wQXKhVh2d1MZ4E1Vl1MlXtOyUyTZKSxi8UZ64ckIy0jMGb\
             WxRCZND+Jx9AQAA//8DADbnxC62AAAA\"]"
@@ -3173,8 +3145,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -3240,7 +3211,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -3256,7 +3227,7 @@ log:
         content:
           mimeType: application/json
           size: 44
-          text: '{"data":{"site":{"productVersion":"5.2.6"}}}'
+          text: "{\"data\":{\"site\":{\"productVersion\":\"5.2.6\"}}}"
         cookies: []
         headers:
           - name: date
@@ -3274,8 +3245,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff

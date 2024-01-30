@@ -7,13 +7,14 @@ import path from 'path'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
-import { isWindows } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, isWindows } from '@sourcegraph/cody-shared'
 
 import type { ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
+import { ignores } from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
 
 const explainPollyError = `
 
@@ -38,6 +39,9 @@ const explainPollyError = `
 const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
+
+// The config file for .cody/ignore
+const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody', 'ignore'))
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
@@ -102,10 +106,18 @@ describe('Agent', () => {
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
             customHeaders: {},
+            customConfiguration: {
+                // For testing .cody/ignore
+                'cody.internal.unstable': true,
+            },
         })
         expect(valid?.isLoggedIn).toBeTruthy()
-    }, 10_000)
 
+        ignores.setActiveState(true)
+        ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
+            { uri: codyIgnoreConfig, content: '**/*test.ts' },
+        ])
+    }, 10_000)
     beforeEach(async () => {
         await client.request('testing/reset', null)
     })
@@ -391,6 +403,74 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'kramer')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
             }
+        })
+
+        describe('Cody Ignore', () => {
+            const isIgnoredByCody = path.join(workspaceRootPath, 'src', 'example.test.ts')
+            const isIgnored = Uri.file(isIgnoredByCody)
+
+            beforeAll(async () => {
+                expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
+                expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
+            }, 10_000)
+
+            it('chat/submitMessage (addEnhancedContext: true)', async () => {
+                await client.openFile(isIgnored)
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                    'Which file are the ignore and isIgnoredByCody functions defined?',
+                    { addEnhancedContext: true }
+                )
+                expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
+                decodeURIs(transcript)
+                const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+                // Current file which is ignored, should not be included in context files
+                console.log(contextFiles.find(f => f.uri.toString() === isIgnored.toString()))
+                expect(contextFiles.find(f => f.uri.toString() === isIgnored.toString())).toBeUndefined()
+                // Ignored file should not be included in context files
+                expect(contextFiles.filter(f => isCodyIgnoredFile(f.uri))).toHaveLength(0)
+                // Files that are not ignored should be used as context files
+                expect(contextFiles.length).toBeGreaterThan(0)
+            }, 30_000)
+
+            it('chat/submitMessage (addEnhancedContext: false)', async () => {
+                await client.openFile(isIgnored)
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                    'Which file are the ignore and isIgnoredByCody functions defined?',
+                    { addEnhancedContext: false }
+                )
+                decodeURIs(transcript)
+                const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+                // Current file which is ignored, should not be included in context files
+                expect(contextFiles.find(f => f.uri.toString() === isIgnored.toString())).toBeUndefined()
+                // Ignored file should not be included in context files
+                expect(contextFiles.filter(f => isCodyIgnoredFile(f.uri))).toHaveLength(0)
+                // Since no enhanced context is requested, no context files should be included
+                expect(contextFiles.length).toBe(0)
+            }, 30_000)
+
+            it('commands/explain', async () => {
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                await client.openFile(isIgnored)
+                const id = await client.request('commands/explain', null)
+                const lastMessage = await client.firstNonEmptyTranscript(id)
+                // Ignored file should not be used as context files evem if selected
+                expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
+            }, 30_000)
+
+            afterAll(async () => {
+                ignores.setActiveState(false)
+
+                expect(isCodyIgnoredFile(isIgnored)).toBeFalsy()
+                expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
+            }, 10_000)
         })
 
         // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
