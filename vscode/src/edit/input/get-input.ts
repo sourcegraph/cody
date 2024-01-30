@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 
-import * as defaultCommands from '../../commands/prompt/cody.json'
+import { commands as defaultCommands } from '../../commands/default/cody.json'
 import type { EditSupportedModels } from '../prompt'
 import { getEditor } from '../../editor/active-editor'
 import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
@@ -142,7 +142,12 @@ export const getInput = async (
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidAccept: item => {
-                activeModelItem = item as EditModelItem
+                const acceptedItem = item as EditModelItem
+                if (!acceptedItem) {
+                    return
+                }
+
+                activeModelItem = acceptedItem
                 editInput.render(activeTitle, editInput.input.value)
             },
         })
@@ -156,11 +161,17 @@ export const getInput = async (
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
-                const range = item.range instanceof vscode.Range ? item.range : await item.range()
-                previewActiveRange(range)
+                if (item) {
+                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                    previewActiveRange(range)
+                }
             },
             onDidAccept: async item => {
                 const acceptedItem = item as EditRangeItem
+                if (!acceptedItem) {
+                    return
+                }
+
                 activeRangeItem = acceptedItem
                 const range =
                     acceptedItem.range instanceof vscode.Range
@@ -181,11 +192,17 @@ export const getInput = async (
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
-                const range = item.range instanceof vscode.Range ? item.range : await item.range()
-                previewActiveRange(range)
+                if (item) {
+                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                    previewActiveRange(range)
+                }
             },
             onDidAccept: async item => {
                 const acceptedItem = item as EditRangeItem
+                if (!acceptedItem) {
+                    return
+                }
+
                 const range =
                     acceptedItem.range instanceof vscode.Range
                         ? acceptedItem.range
@@ -203,7 +220,7 @@ export const getInput = async (
                 return executeEdit(
                     {
                         document,
-                        instruction: defaultCommands.commands.doc.prompt,
+                        instruction: defaultCommands.doc.prompt,
                         range: activeRange,
                         intent: 'doc',
                         mode: 'insert',
@@ -225,11 +242,17 @@ export const getInput = async (
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
-                const range = item.range instanceof vscode.Range ? item.range : await item.range()
-                previewActiveRange(range)
+                if (item) {
+                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                    previewActiveRange(range)
+                }
             },
             onDidAccept: async item => {
                 const acceptedItem = item as EditRangeItem
+                if (!acceptedItem) {
+                    return
+                }
+
                 const range =
                     acceptedItem.range instanceof vscode.Range
                         ? acceptedItem.range
@@ -238,9 +261,17 @@ export const getInput = async (
 
                 // Hide the input and execute a new edit for 'Test'
                 unitTestInput.input.hide()
-                // TODO: This should entirely run through `executeEdit` when
-                // the unit test command has fully moved over to Edit.
-                return vscode.commands.executeCommand('cody.command.unit-tests')
+
+                const config = vscode.workspace.getConfiguration('cody')
+                const unstableTestCommandEnabled = config.get('internal.unstable') as boolean
+
+                if (unstableTestCommandEnabled) {
+                    // TODO: This should entirely run through `executeEdit` when
+                    // the unit test command has fully moved over to Edit.
+                    return vscode.commands.executeCommand('cody.command.unit-tests')
+                }
+
+                return vscode.commands.executeCommand('cody.command.generate-tests')
             },
         })
 

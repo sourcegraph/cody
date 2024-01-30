@@ -8,7 +8,7 @@ export interface GetItemsResult {
 interface QuickPickConfiguration {
     title: string
     placeHolder: string
-    onDidAccept: (item: vscode.QuickPickItem) => void
+    onDidAccept: (item?: vscode.QuickPickItem) => void
     onDidChangeActive?: (items: readonly vscode.QuickPickItem[]) => void
     onDidChangeValue?: (value: string) => void
     onDidHide?: () => void

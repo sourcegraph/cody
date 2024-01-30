@@ -48,13 +48,8 @@ export const getEditInputItems = (
             kind: vscode.QuickPickItemKind.Separator,
         },
         DOCUMENT_ITEM,
+        TEST_ITEM,
     ].filter(Boolean) as vscode.QuickPickItem[]
-
-    const config = vscode.workspace.getConfiguration('cody')
-    const unstableTestCommandEnabled = config.get('internal.unstable') as boolean
-    if (unstableTestCommandEnabled) {
-        items.push(TEST_ITEM)
-    }
 
     return { items }
 }
