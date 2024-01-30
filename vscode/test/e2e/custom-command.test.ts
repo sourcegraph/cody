@@ -9,7 +9,7 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 
-test.only('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
