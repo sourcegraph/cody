@@ -408,9 +408,11 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
+        const insertText = "console.log('hello')\n    console.log('world')"
+
         const updatedDocContext = insertIntoDocContext({
             docContext,
-            insertText: "console.log('hello')\n    console.log('world')",
+            insertText,
             languageId: document.languageId,
             dynamicMultilineCompletions: false,
         })
@@ -423,12 +425,14 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: "    console.log('world')",
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: "    console.log('hello')",
             nextNonEmptyLine: '}',
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
             position: { character: 24, line: 2 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 
@@ -448,9 +452,10 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
+        const insertText = "'hello', 'world')"
         const updatedDocContext = insertIntoDocContext({
             docContext,
-            insertText: "'hello', 'world')",
+            insertText,
             languageId: document.languageId,
             dynamicMultilineCompletions: false,
         })
@@ -462,6 +467,7 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: "    console.log('hello', 'world')",
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: 'function helloWorld() {',
             nextNonEmptyLine: '}',
             multilineTrigger: null,
@@ -469,6 +475,7 @@ describe('insertCompletionIntoDocContext', () => {
             injectedPrefix: null,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: "    console.log('hello', 'world')".length, line: 1 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 
@@ -488,9 +495,10 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
+        const insertText = '\n        propA: foo,\n        propB: bar,\n    }, 2)'
         const updatedDocContext = insertIntoDocContext({
             docContext,
-            insertText: '\n        propA: foo,\n        propB: bar,\n    }, 2)',
+            insertText,
             languageId: document.languageId,
             dynamicMultilineCompletions: false,
         })
@@ -506,6 +514,7 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: '    }, 2)',
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: '        propB: bar,',
             nextNonEmptyLine: '}',
             multilineTrigger: null,
@@ -513,6 +522,7 @@ describe('insertCompletionIntoDocContext', () => {
             injectedPrefix: null,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: '    }, 2)'.length, line: 4 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 })
