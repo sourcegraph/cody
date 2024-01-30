@@ -8,9 +8,9 @@ export class StrategySimpleChatLogs {
     private logFilePathLatest: string
     private logMutex: Mutex
 
-    constructor() {
-        this.logFilePath = `/home/hiteshsagtani/dev/e2e-chat-evaluation-workspace/run_logs/${new Date().toISOString()}/file.log`;
-        this.logFilePathLatest = `/home/hiteshsagtani/dev/e2e-chat-evaluation-workspace/run_logs/latest/file.log`;
+    constructor(base_path: string) {
+        this.logFilePath = `${base_path}/${new Date().toISOString()}/file.log`;
+        this.logFilePathLatest = `${base_path}/latest/file.log`;
         this.logMutex = new Mutex();
     }
 
@@ -21,6 +21,7 @@ export class StrategySimpleChatLogs {
 
     clearLogFilePathLatest = async (): Promise<void> => {
         try {
+            await fspromises.mkdir(path.dirname(this.logFilePathLatest), { recursive: true });
             await fspromises.writeFile(this.logFilePathLatest, '');
         } catch (error) {
             console.error('Error clearing log file:', error);
@@ -30,7 +31,7 @@ export class StrategySimpleChatLogs {
     createLogFile = async (): Promise<void> => {
         try {
             await fspromises.mkdir(path.dirname(this.logFilePath), { recursive: true });
-            // await fspromises.writeFile(logFilePath, '');
+            await fspromises.writeFile(this.logFilePath, '');
         } catch (error) {
             console.error('Error creating log file:', error);
         }
@@ -54,4 +55,3 @@ export class StrategySimpleChatLogs {
         }
     }
 }
-

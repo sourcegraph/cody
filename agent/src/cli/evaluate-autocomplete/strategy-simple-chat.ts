@@ -1,10 +1,10 @@
-import { promises as fsPromises } from 'fs'
 import * as path from 'path'
+import fs from 'fs';
 import type { ExtensionMessage } from '../../../../vscode/src/chat/protocol'
 import { type MessageHandler } from '../../jsonrpc-alias'
 import { type EvaluateAutocompleteOptions, SimpleChatEvalConfig, EvaluationFixture } from './evaluate-autocomplete'
 import { exit } from 'process'
-import { Semaphore } from 'async-mutex';
+// import { Semaphore } from 'async-mutex';
 import { Uri } from 'vscode'
 import { type NotificationMethodName } from '../../jsonrpc-alias'
 import fspromises from 'fs/promises'
@@ -30,13 +30,13 @@ export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
-    // await createEmbeddings(client, options)
-    // await simulateWorkspaceChat(client, options)
-    if(options.shouldUpdateEmbedding==='true') {
-        await createEmbeddings(client, options)
-    } else {
-        await simulateWorkspaceChat(client, options)
-    }
+    const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
+
+    await createEmbeddings(client, options)
+    chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
+
+    await simulateWorkspaceChat(client, options)
+    chatLogs.writeLog(repoDisplayName, `Simulation chat done for repo: ${repoDisplayName}`)
 }
 
 // ================== Handle embeddings creation =====================
@@ -57,25 +57,24 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs)
 
     if(options.fixture?.webViewConfiguration?.useEnhancedContext){
-        if (options.fixture?.customConfiguration?.["cody.useContext"] == "embeddings") {
-            const id = await client.request('chat/new', null)
-            await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
-            await client.request("command/execute", { command: 'cody.embeddings.resolveIssue' })
-            await client.request('command/execute', { command: 'cody.search.index-update' })
-            await waitForVariable(embeddingDoneFlag)
-            await client.request('webview/didDispose', {id})
+        // todo: remove this behaviour Update embeddings anyways b/c used to fetch the context ranking candidates
+        const id = await client.request('chat/new', null)
+        await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
+        await client.request("command/execute", { command: 'cody.embeddings.resolveIssue' })
+        await client.request('command/execute', { command: 'cody.search.index-update' })
+        await waitForVariable(embeddingDoneFlag)
+        await client.request('webview/didDispose', {id})
 
-            await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
-            await chatLogs.writeLog(repoDisplayName, `embedding creation completed for repo: ${repoDisplayName}`)
-            await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
-        }
+        await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+        await chatLogs.writeLog(repoDisplayName, `embedding creation completed for repo: ${repoDisplayName}`)
+        await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
     }
 }
 
 function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, chatLogs: StrategySimpleChatLogs): void {
     // override existing debug message
     client.registerNotification('debug/message', async param => {
-        await await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
+        await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
 
         // Add handler for the index length here
         if(param.channel==='Cody by Sourcegraph'){
@@ -111,7 +110,7 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
     })
 
     client.registerNotification('webview/postMessage', async (param) => {
-        await await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`)
+        await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`)
         
         const messageType = param.message.type
         switch(messageType) {
@@ -160,24 +159,64 @@ interface ChatReply {
     fixture: EvaluationFixture
 }
 
+async function appendAllContextCandidatesToFile(file_path: string, jsonString: string) {
+    if (!fs.existsSync(file_path)) {
+        await fspromises.mkdir(path.dirname(file_path), { recursive: true })
+        await fspromises.writeFile(file_path, jsonString+'\n');
+    } else {
+        await  fspromises.appendFile(file_path, jsonString+'\n');
+    }
+}
+
 async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-    client.registerNotification('debug/message', async param => await await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`))
-    client.registerNotification('webview/postMessage', async param => await await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`))
+    // client.registerNotification('debug/message', async param => await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`))
+    // client.registerNotification('webview/postMessage', async param => await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`))
+    client.registerNotification('debug/message', async param => {
+        await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
+
+        // Add handler for the index length here
+        if(param.channel==='Cody by Sourcegraph'){
+            const debug_message = param.message
+
+            if (debug_message.startsWith('█ EnhancedContextAllContext: ')) {
+                const jsonString = debug_message.replace('█ EnhancedContextAllContext: ', '')
+                await chatLogs.writeLog(repoDisplayName, `Got all candidates as: ${repoDisplayName}, message: ${jsonString}`)
+                try {
+                    const file_path = path.join(options.snapshotDirectory, 'context-candidates.jsonl')
+                    await appendAllContextCandidatesToFile(file_path, jsonString)
+                } catch (error) {
+                    await chatLogs.writeLog(repoDisplayName, `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
+                }
+            }
+        }
+    })
+    client.registerNotification('webview/postMessage', async param => {})
 
     const all_chat_configs = options.chat_config ?? []
+    const replies: ChatReply[] = []
 
-    const concurrencyLimit = 5
-    const semaphore = new Semaphore(concurrencyLimit);
-    const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
-        const [_, release] = await semaphore.acquire();
-        try {
-            const reply = await simulateChatInRepo(client, options, single_chat_config);
-            return reply
-        } finally {
-            release();
-        }
-    }));
+    let totalQuestions = all_chat_configs.length
+    for(const single_chat_config of all_chat_configs) {
+        const reply = await simulateChatInRepo(client, options, single_chat_config)
+        replies.push(reply)
+        totalQuestions-=1
+        await chatLogs.writeLog(repoDisplayName, `Number of questions remaining: ${totalQuestions}`)
+    }
+
+    // todo: Add support for concurrency 
+    // todo:     - can't add concurrency as of now b/c for the different question, we might get same webview panel id, if the message is not already posted. 
+    // const concurrencyLimit = 5
+    // const semaphore = new Semaphore(concurrencyLimit);
+    // const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
+    //     const [_, release] = await semaphore.acquire();
+    //     try {
+    //         const reply = await simulateChatInRepo(client, options, single_chat_config);
+    //         return reply
+    //     } finally {
+    //         release();
+    //     }
+    // }));
 
     // const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
     
@@ -252,7 +291,6 @@ async function simulateChatInRepo(
             openFile(client, uri)
         }
     }
-    
     const id = await client.request('chat/new', null)
     const reply = await client.request('chat/submitMessage', {
             id,
@@ -293,8 +331,8 @@ async function checkInvalidReplyAndExit(chatLogs: StrategySimpleChatLogs, repoDi
 
 async function saveListToFile(list: any[], filePath: string): Promise<void> {
     const data = JSON.stringify(list)
-    await fsPromises.mkdir(path.dirname(filePath), { recursive: true })
-    await fsPromises.writeFile(filePath, data)
+    await fspromises.mkdir(path.dirname(filePath), { recursive: true })
+    await fspromises.writeFile(filePath, data)
 }
 
 // ====================================================================
