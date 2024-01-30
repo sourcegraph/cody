@@ -320,8 +320,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: 25,
-                        multiLine: 50,
+                        singleLine: 75,
+                        multiLine: 125,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
