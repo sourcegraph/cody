@@ -77,7 +77,7 @@ describe('isValidTestFile', () => {
     })
 })
 
-describe.only('isTestFileForOriginal', () => {
+describe('isTestFileForOriginal', () => {
     it.each([
         ['/path/to/file.java', '/path/to/testFile.java', true],
         ['/path/to/test/file.js', '/path/to/testFile.js', false],
