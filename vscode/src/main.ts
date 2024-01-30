@@ -548,7 +548,7 @@ const register = async (
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = getConfiguration(vscode.workspace.getConfiguration())
+                const config = await getFullConfig()
                 if (!config.autocomplete) {
                     completionsProvider?.dispose()
                     completionsProvider = null

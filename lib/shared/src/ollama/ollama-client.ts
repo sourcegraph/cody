@@ -116,8 +116,6 @@ export function createOllamaClient(
 
     return {
         complete,
-        serverEndpoint: ollamaOptions.url,
-        codyGatewayAccessToken: undefined,
         logger,
         onConfigurationChange: () => undefined,
     }

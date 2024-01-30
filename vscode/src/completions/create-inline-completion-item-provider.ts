@@ -5,7 +5,7 @@ import {
     featureFlagProvider,
     isDotCom,
     type CodeCompletionsClient,
-    type Configuration,
+    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
@@ -19,7 +19,7 @@ import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {
-    config: Configuration
+    config: ConfigurationWithAccessToken
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     authProvider: AuthProvider
@@ -51,7 +51,8 @@ export async function createInlineCompletionItemProvider({
     triggerNotice,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
-    if (!authProvider.getAuthStatus().isLoggedIn) {
+    const authStatus = authProvider.getAuthStatus()
+    if (!authStatus.isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
         if (config.isRunningInsideAgent) {
@@ -79,7 +80,7 @@ export async function createInlineCompletionItemProvider({
         hotStreakFlag,
         fastPathFlag,
     ] = await Promise.all([
-        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+        createProviderConfig(config, client, authStatus),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
@@ -109,9 +110,8 @@ export async function createInlineCompletionItemProvider({
         const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
         const fastPath = config.autocompleteExperimentalFastPath || fastPathFlag
 
-        const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
-            authStatus: authProvider.getAuthStatus(),
+            authStatus,
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,

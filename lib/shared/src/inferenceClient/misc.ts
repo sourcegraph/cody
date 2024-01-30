@@ -13,8 +13,6 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    serverEndpoint: string
-    codyGatewayAccessToken: string | undefined
     logger: CompletionLogger | undefined
     complete(
         params: T,

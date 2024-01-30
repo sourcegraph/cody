@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { fetch } from '../../fetch'
+import { SHA256, enc } from 'crypto-js'
 
 import {
     displayPath,
@@ -8,7 +8,6 @@ import {
     type CodeCompletionsClient,
     type CompletionResponseGenerator,
     type CodeCompletionsParams,
-    isDotCom,
     TracedError,
     type CompletionResponse,
     isRateLimitError,
@@ -19,12 +18,14 @@ import {
     isNodeResponse,
     getActiveTraceAndSpanId,
     addTraceparent,
+    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
+import { fetch } from '../../fetch'
 
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
@@ -39,12 +40,15 @@ import {
     type ProviderOptions,
 } from './provider'
 import { createSSEIterator } from '../client'
+import type { AuthStatus } from '../../chat/protocol'
 
 export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
+    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom'>
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -107,16 +111,22 @@ class FireworksProvider extends Provider {
     private promptChars: number
     private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
+    private codyGatewayAccessToken?: string
+    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom'>
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>
+        { model, maxContextTokens, client, timeouts, config, authStatus }: Required<FireworksOptions>
     ) {
         super(options)
         this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
+        this.codyGatewayAccessToken = config.accessToken
+            ? dotcomTokenToGatewayToken(config.accessToken)
+            : undefined
+        this.authStatus = authStatus
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -206,9 +216,9 @@ class FireworksProvider extends Provider {
             const isNode = typeof process !== 'undefined'
             const useFastPathClient =
                 this.options.fastPath &&
-                this.client.codyGatewayAccessToken &&
+                this.codyGatewayAccessToken &&
                 // Require the upstream to be dotcom
-                isDotCom(this.client.serverEndpoint) &&
+                this.authStatus.isDotCom &&
                 // The fast path client only supports Node.js style response streams
                 isNode
 
@@ -331,7 +341,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
         headers.set('Content-Type', 'application/json; charset=utf-8')
-        headers.set('Authorization', `Bearer ${this.client.codyGatewayAccessToken}`)
+        headers.set('Authorization', `Bearer ${this.codyGatewayAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')
         addTraceparent(headers)
         // Disable gzip compression since the sg instance will start to batch
@@ -349,13 +359,11 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
+        // The response here is almost identical to the SG instance response but does not contain
+        // information on wether a user is eligible to upgrade to the pro plan. We get this from the
+        // authState instead.
         if (response.status === 429) {
-            // TODO: This API is different
-            // Check for explicit false, because if the header is not set, there
-            // is no upgrade available.
-            const upgradeIsAvailable =
-                response.headers.get('x-is-cody-pro-user') === 'false' &&
-                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+            const upgradeIsAvailable = this.authStatus.userCanUpgrade
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
@@ -497,4 +505,24 @@ function isLlamaCode(model: string): boolean {
 
 interface FireworksSSEData {
     choices: [{ text: string; finish_reason: null }]
+}
+
+function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
+    const DOTCOM_TOKEN_REGEX: RegExp =
+        /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
+    const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
+
+    if (!match) {
+        throw new Error('Access token format is invalid.')
+    }
+
+    const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
+
+    if (!hexEncodedAccessTokenBytes) {
+        throw new Error('Access token not found.')
+    }
+
+    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
+    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
+    return 'sgd_' + gatewayTokenBytes
 }

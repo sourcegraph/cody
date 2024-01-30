@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-import { SHA256, enc } from 'crypto-js'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -177,10 +176,6 @@ export function createClient(
 
     return {
         complete,
-        serverEndpoint: config.serverEndpoint,
-        codyGatewayAccessToken: config.accessToken
-            ? dotcomTokenToGatewayToken(config.accessToken)
-            : undefined,
         logger,
         onConfigurationChange(newConfig) {
             config = newConfig
@@ -253,24 +248,4 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
-}
-
-function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
-    const DOTCOM_TOKEN_REGEX: RegExp =
-        /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
-    const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
-
-    if (!match) {
-        throw new Error('Access token format is invalid.')
-    }
-
-    const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
-
-    if (!hexEncodedAccessTokenBytes) {
-        throw new Error('Access token not found.')
-    }
-
-    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
-    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
-    return 'sgd_' + gatewayTokenBytes
 }
