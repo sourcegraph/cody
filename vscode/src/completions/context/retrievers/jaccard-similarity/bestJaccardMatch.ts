@@ -3,6 +3,8 @@ import winkUtils from 'wink-nlp-utils'
 export interface JaccardMatch {
     score: number
     content: string
+    startLine: number
+    endLine: number
 }
 
 /**
@@ -119,6 +121,8 @@ export function bestJaccardMatch(
     return {
         score: bestScore,
         content: lines.slice(bestWindow[0], bestWindow[1]).join('\n'),
+        startLine: bestWindow[0],
+        endLine: Math.max(bestWindow[1] - 1, 0),
     }
 }
 
