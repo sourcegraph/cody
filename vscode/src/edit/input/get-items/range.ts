@@ -87,7 +87,7 @@ export const getRangeInputItems = async (
     }
 
     if (!symbolItems || symbolItems.length === 0) {
-        return { items: defaultItems, activeItems: activeItem ? [activeItem] : undefined }
+        return { items: defaultItems, activeItem }
     }
 
     return {
@@ -97,6 +97,6 @@ export const getRangeInputItems = async (
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
             ...symbolItems,
         ],
-        activeItems: activeItem ? [activeItem] : undefined,
+        activeItem,
     }
 }

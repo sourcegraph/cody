@@ -34,6 +34,6 @@ export const getModelInputItems = (activeModelItem: EditModelItem): GetItemsResu
 
     return {
         items,
-        activeItems: activeItem ? [activeItem] : undefined,
+        activeItem,
     }
 }

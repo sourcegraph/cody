@@ -63,7 +63,7 @@ export const getDocumentInputItems = async (
         defaultItems.find(item => item.range instanceof vscode.Range && item.range.isEqual(activeRange))
 
     if (!symbolItems || symbolItems.length === 0) {
-        return { items: defaultItems, activeItems: activeItem ? [activeItem] : undefined }
+        return { items: defaultItems, activeItem }
     }
 
     return {
@@ -73,6 +73,6 @@ export const getDocumentInputItems = async (
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
             ...symbolItems,
         ],
-        activeItems: activeItem ? [activeItem] : undefined,
+        activeItem,
     }
 }

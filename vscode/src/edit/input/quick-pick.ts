@@ -2,13 +2,13 @@ import * as vscode from 'vscode'
 
 export interface GetItemsResult {
     items: vscode.QuickPickItem[]
-    activeItems?: vscode.QuickPickItem[]
+    activeItem?: vscode.QuickPickItem
 }
 
 interface QuickPickConfiguration {
     title: string
     placeHolder: string
-    onDidAccept: () => void
+    onDidAccept: (item: vscode.QuickPickItem) => void
     onDidChangeActive?: (items: readonly vscode.QuickPickItem[]) => void
     onDidChangeValue?: (value: string) => void
     onDidHide?: () => void
@@ -39,7 +39,7 @@ export const createQuickPick = ({
     quickPick.title = title
     quickPick.placeholder = placeHolder
     quickPick.value = value
-    quickPick.onDidAccept(onDidAccept)
+    quickPick.onDidAccept(() => onDidAccept(quickPick.activeItems[0]))
 
     // VS Code automatically sorts quick pick items by label.
     // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
@@ -74,17 +74,17 @@ export const createQuickPick = ({
             const itemsOrPromise = getItems()
             if (itemsOrPromise instanceof Promise) {
                 quickPick.busy = true
-                itemsOrPromise.then(({ items, activeItems }) => {
+                itemsOrPromise.then(({ items, activeItem }) => {
                     quickPick.items = items
-                    if (activeItems) {
-                        quickPick.activeItems = activeItems
+                    if (activeItem) {
+                        quickPick.activeItems = [activeItem]
                     }
                     quickPick.busy = false
                 })
             } else {
                 quickPick.items = itemsOrPromise.items
-                if (itemsOrPromise.activeItems) {
-                    quickPick.activeItems = itemsOrPromise.activeItems
+                if (itemsOrPromise.activeItem) {
+                    quickPick.activeItems = [itemsOrPromise.activeItem]
                 }
             }
 

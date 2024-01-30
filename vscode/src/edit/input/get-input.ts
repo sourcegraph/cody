@@ -141,8 +141,8 @@ export const getInput = async (
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidAccept: () => {
-                activeModelItem = modelInput.input.activeItems[0] as EditModelItem
+            onDidAccept: item => {
+                activeModelItem = item as EditModelItem
                 editInput.render(activeTitle, editInput.input.value)
             },
         })
@@ -159,8 +159,8 @@ export const getInput = async (
                 const range = item.range instanceof vscode.Range ? item.range : await item.range()
                 previewActiveRange(range)
             },
-            onDidAccept: async () => {
-                const acceptedItem = rangeInput.input.activeItems[0] as EditRangeItem
+            onDidAccept: async item => {
+                const acceptedItem = item as EditRangeItem
                 activeRangeItem = acceptedItem
                 const range =
                     acceptedItem.range instanceof vscode.Range
@@ -184,9 +184,8 @@ export const getInput = async (
                 const range = item.range instanceof vscode.Range ? item.range : await item.range()
                 previewActiveRange(range)
             },
-            onDidAccept: async () => {
-                // Use the accepted range
-                const acceptedItem = documentInput.input.activeItems[0] as EditRangeItem
+            onDidAccept: async item => {
+                const acceptedItem = item as EditRangeItem
                 const range =
                     acceptedItem.range instanceof vscode.Range
                         ? acceptedItem.range
@@ -229,9 +228,8 @@ export const getInput = async (
                 const range = item.range instanceof vscode.Range ? item.range : await item.range()
                 previewActiveRange(range)
             },
-            onDidAccept: async () => {
-                // Use the accepted range
-                const acceptedItem = unitTestInput.input.activeItems[0] as EditRangeItem
+            onDidAccept: async item => {
+                const acceptedItem = item as EditRangeItem
                 const range =
                     acceptedItem.range instanceof vscode.Range
                         ? acceptedItem.range
