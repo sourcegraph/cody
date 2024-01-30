@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { fetch } from '../../fetch'
 
 import {
     displayPath,
@@ -209,7 +210,7 @@ class FireworksProvider extends Provider {
                 // Require the upstream to be dotcom
                 isDotCom(this.client.serverEndpoint) &&
                 // The fast path client only supports Node.js style response streams
-                !isNode
+                isNode
 
             const completionResponseGenerator = generatorWithTimeout(
                 useFastPathClient
@@ -314,7 +315,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
 
         // c.f. https://readme.fireworks.ai/reference/createcompletion
         const fireworksRequest = {
-            model: requestParams.model,
+            model: requestParams.model?.replace(/^fireworks\//, ''),
             prompt,
             max_tokens: requestParams.maxTokensToSample,
             echo: false,
@@ -331,6 +332,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         headers.set('Connection', 'keep-alive')
         headers.set('Content-Type', 'application/json; charset=utf-8')
         headers.set('Authorization', `Bearer ${this.client.codyGatewayAccessToken}`)
+        headers.set('X-Sourcegraph-Feature', 'code_completions')
         addTraceparent(headers)
         // Disable gzip compression since the sg instance will start to batch
         // responses afterwards.
@@ -373,7 +375,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
             throw new TracedError('No response body', traceId)
         }
 
-        const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
+        const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
         if (!isStreamingResponse || !isNodeResponse(response)) {
             throw new TracedError('No streaming response given', traceId)
         }
@@ -388,19 +390,30 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                     throw new Error(data)
                 }
 
-                if (event === 'completion') {
-                    if (abortController.signal.aborted) {
-                        break // Stop processing the already received chunks.
-                    }
-
-                    lastResponse = JSON.parse(data) as CompletionResponse
-
-                    if (!lastResponse.stopReason) {
-                        lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
-                    }
-
-                    yield lastResponse
+                if (abortController.signal.aborted) {
+                    break
                 }
+
+                // [DONE] is a special non-JSON message to indicate the end of the stream
+                if (data === '[DONE]') {
+                    break
+                }
+
+                const parsed = JSON.parse(data) as FireworksSSEData
+                const choice = parsed.choices[0]
+
+                if (!choice) {
+                    continue
+                }
+
+                lastResponse = {
+                    completion: (lastResponse ? lastResponse.completion : '') + choice.text,
+                    stopReason:
+                        choice.finish_reason ??
+                        (lastResponse ? lastResponse.stopReason : STOP_REASON_STREAMING_CHUNK),
+                }
+
+                yield lastResponse
 
                 chunkIndex += 1
             }
@@ -480,4 +493,8 @@ function isStarCoderFamily(model: string): boolean {
 
 function isLlamaCode(model: string): boolean {
     return model.startsWith('llama-code')
+}
+
+interface FireworksSSEData {
+    choices: [{ text: string; finish_reason: null }]
 }

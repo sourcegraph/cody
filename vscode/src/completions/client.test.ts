@@ -51,7 +51,9 @@ describe('createSSEIterator', () => {
         }
 
         const messages = []
-        const iterator = createSSEIterator(Readable.from(createIterator()))
+        const iterator = createSSEIterator(Readable.from(createIterator()), {
+            batchCompletionEvents: true,
+        })
 
         for await (const message of iterator) {
             messages.push(message)

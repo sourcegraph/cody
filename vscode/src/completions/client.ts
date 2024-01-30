@@ -112,7 +112,7 @@ export function createClient(
         if (isStreamingResponse && isNodeResponse(response)) {
             let lastResponse: CompletionResponse | undefined
             try {
-                const iterator = createSSEIterator(response.body)
+                const iterator = createSSEIterator(response.body, { batchCompletionEvents: true })
                 let chunkIndex = 0
 
                 for await (const { event, data } of iterator) {
@@ -194,7 +194,10 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(iterator: NodeJS.ReadableStream): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(
+    iterator: NodeJS.ReadableStream,
+    options: { batchCompletionEvents?: boolean } = {}
+): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
@@ -209,16 +212,18 @@ export async function* createSSEIterator(iterator: NodeJS.ReadableStream): Async
             messages.push(parseSSEEvent(message))
         }
 
-        // This is a potential optimization because our current backend includes a repetition of the
-        // whole prior completion in each event. If more than one event is detected inside a chunk,
-        // we can skip all but the last completion events.
         for (let i = 0; i < messages.length; i++) {
-            if (
-                i + 1 < messages.length &&
-                messages[i].event === 'completion' &&
-                messages[i + 1].event === 'completion'
-            ) {
-                continue
+            // This is a potential optimization because our current backend includes a repetition of the
+            // whole prior completion in each event. If more than one event is detected inside a chunk,
+            // we can skip all but the last completion events.
+            if (options.batchCompletionEvents) {
+                if (
+                    i + 1 < messages.length &&
+                    messages[i].event === 'completion' &&
+                    messages[i + 1].event === 'completion'
+                ) {
+                    continue
+                }
             }
 
             yield messages[i]
