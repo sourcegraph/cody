@@ -3,7 +3,6 @@ import type { CommandMenuItem } from '../types'
 export const ASK_QUESTION_COMMAND = {
     description: 'Ask a question',
     slashCommand: '/ask',
-    require,
 }
 
 export const EDIT_COMMAND = {
