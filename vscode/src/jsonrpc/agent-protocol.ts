@@ -1,3 +1,4 @@
+import type * as vscode from 'vscode'
 import type {
     BillingCategory,
     BillingProduct,
@@ -151,6 +152,8 @@ export type Requests = {
     // Server -> Client
     // ================
 
+    'window/showMessage': [ShowWindowMessageParams, string | null]
+
     'textDocument/edit': [TextDocumentEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
@@ -300,6 +303,7 @@ interface ClientCapabilities {
     progressBars?: 'none' | 'enabled'
     edit?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
+    showWindowMessage?: 'notification' | 'request'
 }
 
 export interface ServerInfo {
@@ -427,7 +431,7 @@ interface ExecuteCommandParams {
     arguments?: any[]
 }
 
-interface DebugMessage {
+export interface DebugMessage {
     channel: string
     message: string
 }
@@ -528,4 +532,11 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+}
+
+export interface ShowWindowMessageParams {
+    severity: 'error' | 'warning' | 'information'
+    message: string
+    options?: vscode.MessageOptions
+    items?: string[]
 }
