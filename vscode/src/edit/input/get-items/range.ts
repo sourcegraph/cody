@@ -15,7 +15,6 @@ export const getDefaultRangeItems = (
 
     const cursorItem = {
         ...CURSOR_RANGE_ITEM,
-        alwaysShow: true,
         range: new vscode.Range(initialRange.end, initialRange.end),
     }
 
