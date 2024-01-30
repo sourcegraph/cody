@@ -186,10 +186,10 @@ export class FixupController
             document,
             input.instruction,
             input.userContextFiles,
-            input.model,
             input.range,
             intent,
             mode,
+            input.model,
             source,
             contextMessages
         )
@@ -204,10 +204,10 @@ export class FixupController
         document: vscode.TextDocument,
         instruction: string,
         userContextFiles: ContextFile[],
-        model: EditSupportedModels,
         selectionRange: vscode.Range,
         intent: EditIntent,
         mode: EditMode,
+        model: EditSupportedModels,
         source?: ChatEventSource,
         contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {
@@ -219,9 +219,9 @@ export class FixupController
             intent,
             selectionRange,
             mode,
+            model,
             source,
-            contextMessages,
-            model
+            contextMessages
         )
         this.tasks.set(task.id, task)
         const state = task.mode === 'file' ? CodyTaskState.pending : CodyTaskState.working

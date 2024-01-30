@@ -19,9 +19,13 @@ import { claude } from './claude'
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
-export type EditSupportedModels = 'anthropic/claude-2.1' | 'anthropic/claude-instant-1.2'
+export type EditSupportedModels =
+    | 'anthropic/claude-2.0'
+    | 'anthropic/claude-2.1'
+    | 'anthropic/claude-instant-1.2'
 
 const INTERACTION_MODELS: Record<EditSupportedModels, EditLLMInteraction> = {
+    'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
     'anthropic/claude-instant-1.2': claude,
 } as const

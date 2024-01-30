@@ -106,10 +106,10 @@ export class EditManager implements vscode.Disposable {
                 document,
                 args.instruction,
                 args.userContextFiles ?? [],
-                model,
                 range,
                 intent,
                 mode,
+                model,
                 source,
                 args.contextMessages
             )

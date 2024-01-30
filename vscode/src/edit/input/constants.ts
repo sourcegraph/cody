@@ -4,3 +4,5 @@ export const NO_MATCHES_LABEL = 'No matches found'
 
 export const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0'
 export const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check)'
+
+export const EDIT_CHANGE_MODEL_ENABLED = false

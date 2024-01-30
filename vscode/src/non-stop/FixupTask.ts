@@ -59,10 +59,10 @@ export class FixupTask {
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
+        public readonly model: EditSupportedModels,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[],
-        public readonly model: EditSupportedModels = 'anthropic/claude-2.1'
+        public readonly contextMessages?: ContextMessage[]
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
