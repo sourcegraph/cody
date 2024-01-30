@@ -38,7 +38,6 @@ import {
     type ProviderOptions,
 } from './provider'
 import { createSSEIterator } from '../client'
-import { params } from '../get-inline-completions-tests/helpers'
 
 export interface FireworksOptions {
     model: FireworksModel
@@ -308,7 +307,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         abortController: AbortController
     ): CompletionResponseGenerator {
         const url = 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks'
-        const log = this.client.logger?.startCompletion(params, url)
+        const log = this.client.logger?.startCompletion(requestParams, url)
 
         // Convert the SG instance messages array back to the original prompt
         const prompt = requestParams.messages[0]!.text!
