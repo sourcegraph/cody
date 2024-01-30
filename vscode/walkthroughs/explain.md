@@ -11,7 +11,7 @@ Use Cody to get an in-depth explanation of any piece of code in any programming 
 
 To get started: select code in your editor, right click, and choose "Cody → Explain Code".
 
-You can also run this command from the [Cody: Commands Menu](command:cody.action.commands.menu), which has the default keyboard shortcut of `Option` `C` on macOS and `Alt` `C` on Windows & Linux.
+You can also run this command from the [Cody: Commands Menu](command:cody.menu.commands), which has the default keyboard shortcut of `Option` `C` on macOS and `Alt` `C` on Windows & Linux.
 
 **✨ Pro-tips for understanding code with Cody**
 <br>• Cody can also explain errors too, with the "Ask Cody to Explain" option in the 💡 menus, or by right clicking on any items in the "Problems" tab of VS Code.

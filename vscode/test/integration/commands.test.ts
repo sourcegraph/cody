@@ -25,7 +25,7 @@ suite('Commands', function () {
         await vscode.commands.executeCommand('cody.command.explain-code')
 
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage?.displayText || '', /\/explain \[_@Main.java/)
+        assert.match(humanMessage?.displayText || '', /^Explain/)
         // 2 context files: selection and current file
         assert.equal(humanMessage?.contextFiles?.length, 2)
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
@@ -39,7 +39,7 @@ suite('Commands', function () {
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /\/smell \[_@Main.java/)
+        assert.match(humanMessage.displayText || '', /^Please review and analyze/)
         // 1 context file: selection or visible context
         assert.equal(humanMessage?.contextFiles?.length, 1)
 
@@ -54,11 +54,10 @@ suite('Commands', function () {
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /\/test \[_@Main.java/)
+        assert.match(humanMessage.displayText || '', /^Review the shared code/)
 
-        // Has one or more context
         const contextFileSize = humanMessage?.contextFiles?.length || 0
-        assert.ok(contextFileSize > 1)
+        assert.ok(contextFileSize === 2)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })

@@ -1,9 +1,12 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
+import { loggedEvents } from '../fixtures/mock-server'
 
-test('submit command from command palette', async ({ page, sidebar }) => {
+const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
+
+test('execute command from sidebar', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -23,8 +26,10 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     // Find the chat iframe
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
-    // Check if the command shows up with the current file name
-    await chatPanelFrame.getByText('✨ Context: 13 lines from 1 file').click()
+    // Check if the command shows the current file as context with the correct number of lines
+    // When no selection is made, we will try to create smart selection from the cursor position
+    // If there is no cursor position, we will use the visible content of the editor
+    await chatPanelFrame.getByText('✨ Context: 12 lines from 1 file').click()
 
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
@@ -35,8 +40,24 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
 
-    // Edit button should shows up as disabled for command messages
+    // Click on the 4th line of the file to check if smart selection works
+    await page.getByText('<title>Hello Cody</title>').click()
+    await expect(page.getByText('Explain code')).toBeVisible()
+    await page.getByText('Explain code').click()
+    await chatPanelFrame.getByText('✨ Context: 9 lines from 1 file').click()
+
+    // Edit button should shows up next to the message and is editable
     const editButtons = chatPanelFrame.locator('.codicon-edit')
     await expect(editButtons).toHaveCount(1)
-    await expect(chatPanelFrame.getByTitle('Cannot Edit Command').locator('i')).toBeVisible()
+    await expect(chatPanelFrame.getByTitle('Edit Your Message').locator('i')).toBeVisible()
+
+    // You can submit a chat question via command menu using /ask
+    await page.getByRole('tab', { name: 'index.html' }).click()
+    await page.getByRole('button', { name: /Commands \(.*/ }).click()
+    await page.getByPlaceholder('Search for a command or enter your question here...').fill('hello cody')
+    await page.getByLabel('/ask, Ask a question').locator('a').click()
+    // the question should show up in the chat panel on submit
+    await chatPanelFrame.getByText('hello cody').click()
+
+    await assertEvents(loggedEvents, expectedEvents)
 })

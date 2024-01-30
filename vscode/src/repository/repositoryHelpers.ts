@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { setUpCodyIgnore } from '../services/context-filter'
+import { setUpCodyIgnore } from '../services/cody-ignore'
 
 import type { API, GitExtension, Repository } from './builtinGitExtension'
 

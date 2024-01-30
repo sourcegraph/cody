@@ -5,26 +5,33 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM"]
   },
   "include": [
     "src",
-    "src/commands/prompt/cody.json",
+    "src/commands/default/cody.json",
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-    ".storybook/*.ts",
+    ".storybook/*.ts"
   ],
-  "exclude": ["scripts", "dist", "test/integration", "**/test-data", "vite.config.ts", "webviews/vite.config.ts"],
+  "exclude": [
+    "scripts",
+    "dist",
+    "test/integration",
+    "**/test-data",
+    "vite.config.ts",
+    "webviews/vite.config.ts"
+  ],
   "references": [
     {
-      "path": "../lib/shared",
+      "path": "../lib/shared"
     },
     {
-      "path": "../lib/ui",
-    },
-  ],
+      "path": "../lib/ui"
+    }
+  ]
 }

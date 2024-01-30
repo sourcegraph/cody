@@ -142,7 +142,7 @@ export class Agent extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
-                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
                 return Promise.resolve(false)
             }
             const edits: TextEdit[] = []
@@ -549,6 +549,15 @@ export class Agent extends MessageHandler {
             return res.codyProEnabled
         })
 
+        this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
+            const res = await graphqlClient.getCurrentUserCodySubscription()
+            if (res instanceof Error) {
+                throw res
+            }
+
+            return res
+        })
+
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -621,7 +630,7 @@ export class Agent extends MessageHandler {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+        const commandArgs = [{ source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
             return this.createChatPanel(
@@ -773,6 +782,20 @@ export class Agent extends MessageHandler {
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
+
+        this.registerAuthenticatedRequest('attribution/search', async ({ id, snippet }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, {
+                command: 'attribution-search',
+                snippet,
+            })
+            const result = panel.popAttribution(snippet)
+            return {
+                error: result.error || null,
+                repoNames: result?.attribution?.repositoryNames || [],
+                limitHit: result?.attribution?.limitHit || false,
+            }
+        })
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
@@ -884,6 +907,8 @@ export class Agent extends MessageHandler {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
+                } else if (message.type === 'attribution') {
+                    panel.pushAttribution(message)
                 }
 
                 this.notify('webview/postMessage', {
