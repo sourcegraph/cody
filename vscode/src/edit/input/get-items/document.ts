@@ -48,11 +48,14 @@ export const getDocumentInputItems = async (
     const symbols = await symbolsPromise
     const symbolItems: EditRangeItem[] = symbols
         .filter(sym => symbolIsFunctionLike(sym) || symbolIsVariableLike(sym))
-        .map(symbol => ({
-            label: `$(symbol-method) ${symbol.name}`,
-            range: symbol.range,
-            selectionRange: symbol.selectionRange,
-        }))
+        .map(symbol => {
+            const icon = symbolIsFunctionLike(symbol) ? '$(symbol-method)' : '$(symbol-variable)'
+            return {
+                label: `${icon} ${symbol.name}`,
+                range: symbol.range,
+                selectionRange: symbol.selectionRange,
+            }
+        })
 
     const wrappingSymbol = symbolItems.find(
         item => item.range instanceof vscode.Range && item.range.contains(initialValues.initialRange)
