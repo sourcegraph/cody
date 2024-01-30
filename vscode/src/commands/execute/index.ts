@@ -8,7 +8,7 @@ import { executeExplainCommand } from './explain'
 import { executeTestCommand } from './test'
 import { executeDocCommand } from './doc'
 import type { CommandResult } from '../../main'
-import { executeUnitTestCommand } from './unit'
+import { executeUnitTestCommand } from './unit-file'
 
 export { commands as defaultCommands } from './cody.json'
 
@@ -16,7 +16,8 @@ export { executeSmellCommand } from './smell'
 export { executeExplainCommand } from './explain'
 export { executeTestCommand } from './test'
 export { executeDocCommand } from './doc'
-export { executeUnitTestCommand } from './unit'
+export { executeUnitTestCommand } from './unit-file'
+export { executeUnitCaseCommand } from './unit-case'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any

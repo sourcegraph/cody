@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { extractTestType, isValidTestFile } from './test-commands'
+import { extractTestType, isTestFileForOriginal, isValidTestFile } from './test-commands'
 
 describe('extractTestType', () => {
     it('extracts "unit" from test type', () => {
@@ -74,5 +74,24 @@ describe('isValidTestFile', () => {
         ['contest.ts', false],
     ])('for filename %j it returns %j', (path, condition) => {
         expect(isValidTestFile(URI.file(path))).toBe(condition)
+    })
+})
+
+describe.only('isTestFileForOriginal', () => {
+    it.each([
+        ['/path/to/file.java', '/path/to/testFile.java', true],
+        ['/path/to/test/file.js', '/path/to/testFile.js', false],
+        ['/path/to/test/file.py', '/path/to/test_file.py', false],
+        ['/path/to/file.py', '/path/to/test_file.py', true],
+        ['/path/to/file.js', '/path/to/test-file.js', true],
+        ['/path/to/node_modules/file.js', '/path/to/node_modules/file_test.js', true],
+        ['/path/to/node_modules/file_test.js', '/path/to/node_modules/file.js', true],
+        ['example.rb', 'example_spec.rb', true],
+        ['Example.cs', 'ExampleTest.cs', true],
+        ['Example.groovy', 'ExampleSpec.groovy', true],
+        ['example.rb', 'test_example.rb', true],
+        ['/path/test/to/file.js', '/path/to/test-file.js', false],
+    ])('for file %j and test file %j it returns %j', (file, testFile, condition) => {
+        expect(isTestFileForOriginal(URI.file(file), URI.file(testFile))).toBe(condition)
     })
 })

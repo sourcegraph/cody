@@ -59,6 +59,7 @@ import {
     executeSmellCommand,
     executeDocCommand,
     executeUnitTestCommand,
+    executeUnitCaseCommand,
 } from './commands/execute'
 
 /**
@@ -340,10 +341,11 @@ const register = async (
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
         vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeUnitTestCommand(a)) // behind unstable flag
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestCommand(a)),
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeUnitTestCommand(a)),
+        vscode.commands.registerCommand('cody.command.unit-tests-cases', a => executeUnitCaseCommand(a))
     )
 
     const statusBar = createStatusBar()

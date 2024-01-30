@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getEditor } from './active-editor'
-import { EditorCodeLenses } from './EditorCodeLenses'
+import { CommandCodeLenses } from '../commands/services/CommandCodeLenses'
 import { getSmartSelection } from './utils'
 
 export class VSCodeEditor implements Editor {
@@ -23,7 +23,7 @@ export class VSCodeEditor implements Editor {
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
          */
         vscode.window.onDidChangeActiveTextEditor(() => getEditor())
-        new EditorCodeLenses()
+        new CommandCodeLenses()
     }
 
     public getWorkspaceRootUri(): vscode.Uri | null {
