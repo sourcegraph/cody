@@ -129,13 +129,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Test',
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
-        description: 'Generate unit tests in Chat',
+        description: 'Generate unit tests (Chat)',
     },
     {
         title: 'Unit',
         icon: 'beaker',
         command: { command: 'cody.command.unit-tests' },
-        description: 'Generate unit tests inline',
+        description: 'Generate unit tests (Edit)',
     },
     {
         title: 'Custom',

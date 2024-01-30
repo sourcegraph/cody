@@ -6,7 +6,7 @@ import { loggedEvents } from '../fixtures/mock-server'
 
 const expectedEvents = ['CodyVSCodeExtension:command:test:executed']
 
-test('unit test commands with context fetching', async ({ page, sidebar }) => {
+test('unit test command with context fetching - chat', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -19,8 +19,8 @@ test('unit test commands with context fetching', async ({ page, sidebar }) => {
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
 
-    await page.getByText('Generate unit tests').hover()
-    await page.getByText('Generate unit tests').click()
+    await page.getByText('Generate unit tests (Chat)').hover()
+    await page.getByText('Generate unit tests (Chat)').click()
 
     // Find the chat iframe
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -39,6 +39,30 @@ test('unit test commands with context fetching', async ({ page, sidebar }) => {
 
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
+
+    await assertEvents(loggedEvents, expectedEvents)
+})
+
+test('unit test command - edit', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the File Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+    // Open the buzz.ts file from the tree view
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Click on the Cody command code lenses to execute the unit test command
+    await page.getByRole('button', { name: 'A Cody' }).click()
+    await page.getByText('/unit').click()
+
+    // The test file for the buzz.ts file should be opened automatically
+    await page.getByText('buzz.test.ts').hover()
+
+    // Code lens should be visible
+    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
     await assertEvents(loggedEvents, expectedEvents)
 })
