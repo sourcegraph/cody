@@ -5,7 +5,19 @@ import {
     tokensToChars,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
+    type CompletionResponseGenerator,
     type CodeCompletionsParams,
+    isDotCom,
+    TracedError,
+    type CompletionResponse,
+    isRateLimitError,
+    isAbortError,
+    NetworkError,
+    RateLimitError,
+    STOP_REASON_STREAMING_CHUNK,
+    isNodeResponse,
+    getActiveTraceAndSpanId,
+    addTraceparent,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
@@ -25,11 +37,13 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
+import { createSSEIterator } from '../client'
+import { params } from '../get-inline-completions-tests/helpers'
 
 export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
-    client: Pick<CodeCompletionsClient, 'complete'>
+    client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
 }
 
@@ -91,7 +105,7 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
 class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
-    private client: Pick<CodeCompletionsClient, 'complete'>
+    private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
 
     constructor(
@@ -189,10 +203,19 @@ class FireworksProvider extends Provider {
         const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
             const abortController = forkSignal(abortSignal)
 
+            const isNode = typeof process !== 'undefined'
+            const useFastPathClient =
+                this.options.fastPath &&
+                this.client.codyGatewayAccessToken &&
+                // Require the upstream to be dotcom
+                isDotCom(this.client.serverEndpoint) &&
+                // The fast path client only supports Node.js style response streams
+                !isNode
+
             const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController, {
-                    fastPath: this.options.fastPath,
-                }),
+                useFastPathClient
+                    ? this.createFastPathClient(requestParams, abortController)
+                    : this.createDefaultClient(requestParams, abortController),
                 requestParams.timeoutMs,
                 abortController
             )
@@ -264,6 +287,143 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
             return content.replace(EOT_LLAMA_CODE, '')
         }
         return content
+    }
+
+    private createDefaultClient(
+        requestParams: CodeCompletionsParams,
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        return this.client.complete(requestParams, abortController)
+    }
+
+    // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
+    // proxies to the upstream API, we have to first convert the request to a Fireworks API
+    // compatible payload. We also have to manually convert SSE response chunks.
+    //
+    // Note: This client assumes that it is run inside a Node.js environment and will always use
+    // streaming to simplify the logic. Environments that do not support that should fall back to
+    // the default client.
+    private async *createFastPathClient(
+        requestParams: CodeCompletionsParams,
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        const url = 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks'
+        const log = this.client.logger?.startCompletion(params, url)
+
+        // Convert the SG instance messages array back to the original prompt
+        const prompt = requestParams.messages[0]!.text!
+
+        // c.f. https://readme.fireworks.ai/reference/createcompletion
+        const fireworksRequest = {
+            model: requestParams.model,
+            prompt,
+            max_tokens: requestParams.maxTokensToSample,
+            echo: false,
+            temperature: requestParams.temperature,
+            top_p: requestParams.topP,
+            top_k: requestParams.topK,
+            stop: requestParams.stopSequences,
+            stream: true,
+        }
+
+        const headers = new Headers()
+        // Force HTTP connection reuse to reduce latency.
+        // c.f. https://github.com/microsoft/vscode/issues/173861
+        headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        headers.set('Authorization', `Bearer ${this.client.codyGatewayAccessToken}`)
+        addTraceparent(headers)
+        // Disable gzip compression since the sg instance will start to batch
+        // responses afterwards.
+        // Note: Find out if this is also happening when connecting directly to Cody Gateway
+        headers.set('Accept-Encoding', 'gzip;q=0')
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(fireworksRequest),
+            headers,
+            signal: abortController.signal,
+        })
+
+        const traceId = getActiveTraceAndSpanId()?.traceId
+
+        // When rate-limiting occurs, the response is an error message
+        if (response.status === 429) {
+            // TODO: This API is different
+            // Check for explicit false, because if the header is not set, there
+            // is no upgrade available.
+            const upgradeIsAvailable =
+                response.headers.get('x-is-cody-pro-user') === 'false' &&
+                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+            const retryAfter = response.headers.get('retry-after')
+            const limit = response.headers.get('x-ratelimit-limit')
+            throw new RateLimitError(
+                'autocompletions',
+                await response.text(),
+                upgradeIsAvailable,
+                limit ? parseInt(limit, 10) : undefined,
+                retryAfter
+            )
+        }
+
+        if (!response.ok) {
+            throw new NetworkError(response, await response.text(), traceId)
+        }
+
+        if (response.body === null) {
+            throw new TracedError('No response body', traceId)
+        }
+
+        const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
+        if (!isStreamingResponse || !isNodeResponse(response)) {
+            throw new TracedError('No streaming response given', traceId)
+        }
+
+        let lastResponse: CompletionResponse | undefined
+        try {
+            const iterator = createSSEIterator(response.body)
+            let chunkIndex = 0
+
+            for await (const { event, data } of iterator) {
+                if (event === 'error') {
+                    throw new Error(data)
+                }
+
+                if (event === 'completion') {
+                    if (abortController.signal.aborted) {
+                        break // Stop processing the already received chunks.
+                    }
+
+                    lastResponse = JSON.parse(data) as CompletionResponse
+
+                    if (!lastResponse.stopReason) {
+                        lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
+                    }
+
+                    yield lastResponse
+                }
+
+                chunkIndex += 1
+            }
+
+            if (lastResponse === undefined) {
+                throw new TracedError('No completion response received', traceId)
+            }
+            log?.onComplete(lastResponse)
+
+            return lastResponse
+        } catch (error) {
+            if (isRateLimitError(error as Error)) {
+                throw error
+            }
+            if (isAbortError(error as Error) && lastResponse) {
+                log?.onComplete(lastResponse)
+            }
+
+            const message = `error parsing streaming CodeCompletionResponse: ${error}`
+            log?.onError(message, error)
+            throw new TracedError(message, traceId)
+        }
     }
 }
 

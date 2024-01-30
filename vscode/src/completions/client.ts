@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-import { logDebug } from '../log'
 import { SHA256, enc } from 'crypto-js'
 
 /**
@@ -31,25 +30,9 @@ export function createClient(
 ): CodeCompletionsClient {
     async function* complete(
         params: CodeCompletionsParams,
-        abortController: AbortController,
-        featureFlags: {
-            fastPath: boolean
-        }
+        abortController: AbortController
     ): CompletionResponseGenerator {
-        if (featureFlags.fastPath) {
-            if (!config.accessToken) {
-                throw new Error('No access token found')
-            }
-            logDebug(
-                'fastpath',
-                '' + config.accessToken,
-                '' + dotcomTokenToGatewayToken(config.accessToken)
-            )
-        }
-
-        const url = featureFlags.fastPath
-            ? new URL('https://cody-gateway.sourcegraph.com/v1/completions/fireworks').href
-            : new URL('/.api/completions/code', config.serverEndpoint).href
+        const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
@@ -61,47 +44,13 @@ export function createClient(
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
         headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.accessToken) {
+            headers.set('Authorization', `token ${config.accessToken}`)
+        }
+        if (tracingFlagEnabled) {
+            headers.set('X-Sourcegraph-Should-Trace', '1')
 
-        if (featureFlags.fastPath) {
-            if (!config.accessToken) {
-                throw new Error('No access token found')
-            }
-            headers.set('Authorization', `Bearer ${dotcomTokenToGatewayToken(config.accessToken)}`)
-            headers.set('X-Sourcegraph-Feature', 'code_completions')
-
-            params = { ...params }
-
-            if (params.model) {
-                // Remove the provider name from the model string. E.g. `fireworks/starcoder` => `starcoder`
-                const parts = params.model.split('/')
-                params.model = parts.slice(1).join('/')
-            }
-
-            // Rewrite request so that it works for fireworks duh
-
-            // @ts-ignore
-            params.prompt = params.messages[0].text
-            // @ts-ignore
-            params.messages = undefined
-            // @ts-ignore
-            params.max_tokens = params.maxTokensToSample
-            // @ts-ignore
-            params.maxTokensToSample = undefined
-            // @ts-ignore
-            params.echo = false
-            // @ts-ignore
-            params.stop = params.stopSequences
-            // @ts-ignore
-            params.stopSequences = undefined
-        } else {
-            if (config.accessToken) {
-                headers.set('Authorization', `token ${config.accessToken}`)
-            }
-            if (tracingFlagEnabled) {
-                headers.set('X-Sourcegraph-Should-Trace', '1')
-
-                addTraceparent(headers)
-            }
+            addTraceparent(headers)
         }
 
         // We enable streaming only for Node environments right now because it's hard to make
@@ -110,7 +59,7 @@ export function createClient(
         // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
         // implement SSE parsing for both.
         const isNode = typeof process !== 'undefined'
-        const enableStreaming = false //!!isNode
+        const enableStreaming = !!isNode
 
         // Disable gzip compression since the sg instance will start to batch
         // responses afterwards.
@@ -211,13 +160,6 @@ export function createClient(
             try {
                 const response = JSON.parse(result) as CompletionResponse
 
-                if (featureFlags.fastPath) {
-                    // @ts-ignore
-                    response.completion = response.choices?.[0]?.text
-                    // @ts-ignore
-                    response.stopReason = response.choices?.[0]?.finish_reason
-                }
-
                 if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
                     const message = `response does not satisfy CodeCompletionResponse: ${result}`
                     log?.onError(message)
@@ -235,6 +177,11 @@ export function createClient(
 
     return {
         complete,
+        serverEndpoint: config.serverEndpoint,
+        codyGatewayAccessToken: config.accessToken
+            ? dotcomTokenToGatewayToken(config.accessToken)
+            : undefined,
+        logger,
         onConfigurationChange(newConfig) {
             config = newConfig
         },

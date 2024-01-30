@@ -21,6 +21,9 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
     async *complete() {
         yield { completion: '', stopReason: '' }
     },
+    logger: undefined,
+    codyGatewayAccessToken: undefined,
+    serverEndpoint: 'https://example.com',
     onConfigurationChange: () => undefined,
 }
 
