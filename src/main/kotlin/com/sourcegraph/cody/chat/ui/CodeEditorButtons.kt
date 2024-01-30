@@ -1,5 +1,6 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.ui
 
+import com.sourcegraph.cody.chat.CodeEditorFactory
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter

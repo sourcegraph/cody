@@ -1,5 +1,6 @@
 package com.sourcegraph.cody
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.sourcegraph.cody.agent.CodyAgentServer
@@ -19,33 +20,41 @@ fun fetchSubscriptionPanelData(
     server: CodyAgentServer
 ): CompletableFuture<SubscriptionTabPanelData?> {
   val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+  val result = CompletableFuture<SubscriptionTabPanelData?>()
+
   if (activeAccountType != null) {
     ensureUserIdMatchInAgent(activeAccountType.id, server)
-    return if (activeAccountType.isDotcomAccount()) {
-      val codyProFeatureFlag =
-          server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).get() == true
-      if (codyProFeatureFlag) {
-        val isCurrentUserPro = getIsCurrentUserPro(server) ?: false
-        CompletableFuture.completedFuture(
-            SubscriptionTabPanelData(
-                activeAccountType.isDotcomAccount(),
-                codyProFeatureFlag = true,
-                isCurrentUserPro = isCurrentUserPro))
-      } else {
-        CompletableFuture.completedFuture(
-            SubscriptionTabPanelData(
-                activeAccountType.isDotcomAccount(),
-                codyProFeatureFlag = false,
-                isCurrentUserPro = null))
+
+    if (activeAccountType.isDotcomAccount()) {
+      ApplicationManager.getApplication().executeOnPooledThread {
+        val codyProFeatureFlag =
+            server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).get() == true
+        if (codyProFeatureFlag) {
+          val isCurrentUserPro = getIsCurrentUserPro(server) ?: false
+          result.complete(
+              SubscriptionTabPanelData(
+                  activeAccountType.isDotcomAccount(),
+                  codyProFeatureFlag = true,
+                  isCurrentUserPro = isCurrentUserPro))
+        } else {
+          result.complete(
+              SubscriptionTabPanelData(
+                  activeAccountType.isDotcomAccount(),
+                  codyProFeatureFlag = false,
+                  isCurrentUserPro = null))
+        }
       }
     } else {
-      CompletableFuture.completedFuture(
+      result.complete(
           SubscriptionTabPanelData(
               activeAccountType.isDotcomAccount(),
               codyProFeatureFlag = false,
               isCurrentUserPro = false))
     }
+
+    return result
   }
+
   return CompletableFuture.completedFuture(null)
 }
 

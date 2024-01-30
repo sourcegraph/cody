@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.ui
 
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import java.awt.Component

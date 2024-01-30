@@ -10,60 +10,70 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import javax.annotation.concurrent.GuardedBy
 
 @Service(Service.Level.APP)
 class CodyAgentService : Disposable {
 
   private val logger = Logger.getInstance(CodyAgent::class.java)
-  @GuardedBy("this") private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
+  private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
 
-  @GuardedBy("this")
+  private val startupActions: MutableList<(CodyAgent) -> Unit> = mutableListOf()
+
+  fun onStartup(action: (CodyAgent) -> Unit) {
+    synchronized(startupActions) { startupActions.add(action) }
+  }
+
   private fun getInitializedAgent(project: Project): CompletableFuture<CodyAgent> {
-    return if (codyAgent.isDone) {
-      if (codyAgent.get().isConnected()) codyAgent else restartAgent(project)
-    } else {
-      codyAgent
-    }
-  }
-
-  @GuardedBy("this")
-  fun startAgent(project: Project): CompletableFuture<CodyAgent> {
-    ApplicationManager.getApplication().executeOnPooledThread {
-      var agent: CodyAgent? = null
-      while (agent == null || !agent.isConnected()) {
-        try {
-          agent = CodyAgent.create(project).get(15, TimeUnit.SECONDS)
-        } catch (e: Exception) {
-          logger.warn("Failed to start Cody agent, retrying...", e)
-        }
+    synchronized(this) {
+      return if (codyAgent.isDone) {
+        if (codyAgent.get().isConnected()) codyAgent else restartAgent(project)
+      } else {
+        codyAgent
       }
-      codyAgent.complete(agent)
-      CodyAutocompleteStatusService.resetApplication(project)
     }
-
-    return codyAgent
   }
 
-  @GuardedBy("this")
-  fun stopAgent(project: Project?): CompletableFuture<Void?> {
-    codyAgent.cancel(true)
-
-    val res =
-        codyAgent.thenCompose {
-          project?.let { CodyAutocompleteStatusService.resetApplication(it) }
-          it.shutdown()
+  fun startAgent(project: Project): CompletableFuture<CodyAgent> {
+    synchronized(this) {
+      ApplicationManager.getApplication().executeOnPooledThread {
+        var agent: CodyAgent? = null
+        while (agent == null || !agent.isConnected()) {
+          try {
+            agent = CodyAgent.create(project).get(15, TimeUnit.SECONDS)
+          } catch (e: Exception) {
+            logger.warn("Failed to start Cody agent, retrying...", e)
+          }
         }
+        synchronized(startupActions) { startupActions.forEach { action -> action(agent) } }
+        codyAgent.complete(agent)
+        CodyAutocompleteStatusService.resetApplication(project)
+      }
 
-    codyAgent = CompletableFuture()
-
-    return res
+      return codyAgent
+    }
   }
 
-  @GuardedBy("this")
+  fun stopAgent(project: Project?): CompletableFuture<Void?> {
+    synchronized(this) {
+      codyAgent.cancel(true)
+
+      val res =
+          codyAgent.thenCompose {
+            project?.let { CodyAutocompleteStatusService.resetApplication(it) }
+            it.shutdown()
+          }
+
+      codyAgent = CompletableFuture()
+
+      return res
+    }
+  }
+
   fun restartAgent(project: Project): CompletableFuture<CodyAgent> {
-    stopAgent(project)
-    return startAgent(project)
+    synchronized(this) {
+      stopAgent(project)
+      return startAgent(project)
+    }
   }
 
   override fun dispose() {

@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.protocol.RateLimitError
@@ -13,9 +12,7 @@ object RateLimitStateManager {
     if (UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
       UpgradeToCodyProNotification.chatRateLimitError.set(null)
       CodyAutocompleteStatusService.resetApplication(project)
-      ApplicationManager.getApplication().executeOnPooledThread {
-        CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
-      }
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
     }
   }
 
@@ -23,9 +20,7 @@ object RateLimitStateManager {
     if (UpgradeToCodyProNotification.chatRateLimitError.get() == null) {
       UpgradeToCodyProNotification.chatRateLimitError.set(rateLimitError)
       CodyAutocompleteStatusService.resetApplication(project)
-      ApplicationManager.getApplication().executeOnPooledThread {
-        CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
-      }
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
     }
   }
 }

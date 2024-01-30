@@ -1,21 +1,17 @@
 package com.sourcegraph.cody.context.ui
 
 import com.intellij.openapi.actionSystem.ActionToolbarPosition
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckedTreeNode
-import com.intellij.ui.ColorUtil
 import com.intellij.ui.ToolbarDecorator
-import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.common.CodyBundle
 import java.awt.Dimension
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.BorderFactory
 import javax.swing.JPanel
-import javax.swing.border.TitledBorder
 
 class EnhancedContextPanel(private val project: Project) : JPanel() {
 
@@ -27,7 +23,7 @@ class EnhancedContextPanel(private val project: Project) : JPanel() {
 
   private val tree = run {
     val treeRoot = CheckedTreeNode(CodyBundle.getString("context-panel.tree-root"))
-    val localProject = CheckedTreeNode(CodyBundle.getString("context-panel.tree-local-project"))
+    val chatContext = CheckedTreeNode(CodyBundle.getString("context-panel.tree-chat-context"))
     val currentRepo =
         object : CheckedTreeNode(project) {
           override fun isChecked(): Boolean = isEnhancedContextEnabled.get()
@@ -37,36 +33,26 @@ class EnhancedContextPanel(private val project: Project) : JPanel() {
             CodyAgentService.getInstance(project).restartAgent(project)
           }
         }
-    localProject.add(currentRepo)
-    treeRoot.add(localProject)
+    chatContext.add(currentRepo)
+    treeRoot.add(chatContext)
     CheckboxTree(ContextRepositoriesCheckboxRenderer(), treeRoot)
   }
 
-  private val toolbarPanel = run {
-    val borderColor = ColorUtil.brighter(UIUtil.getPanelBackground(), 3)
-    val lightBorder = BorderFactory.createMatteBorder(1, 0, 0, 1, borderColor)
-    val titledBorder = TitledBorder(lightBorder, CodyBundle.getString("context-panel.panel-name"))
-
-    ToolbarDecorator.createDecorator(tree)
-        .disableUpDownActions()
-        .addExtraAction(reindexButton)
-        .addExtraAction(helpButton)
-        .setPreferredSize(Dimension(0, 20))
-        .setToolbarPosition(ActionToolbarPosition.LEFT)
-        .setPanelBorder(titledBorder)
-        .setScrollPaneBorder(BorderFactory.createEmptyBorder())
-        .setToolbarBorder(BorderFactory.createEmptyBorder())
-        .createPanel()
-  }
+  private val toolbarPanel =
+      ToolbarDecorator.createDecorator(tree)
+          .disableUpDownActions()
+          .addExtraAction(reindexButton)
+          .addExtraAction(helpButton)
+          .setPreferredSize(Dimension(0, 30))
+          .setToolbarPosition(ActionToolbarPosition.LEFT)
+          .setScrollPaneBorder(BorderFactory.createEmptyBorder())
+          .setToolbarBorder(BorderFactory.createEmptyBorder())
+          .createPanel()
 
   init {
-    layout = VerticalFlowLayout(VerticalFlowLayout.BOTTOM, 14, 0, true, false)
+    layout = VerticalFlowLayout(VerticalFlowLayout.BOTTOM, 0, 5, true, false)
+    tree.expandRow(0)
 
-    // Fix for https://github.com/sourcegraph/jetbrains/issues/344
-    // Sometimes we are not instantiated on the EDT.
-    ApplicationManager.getApplication().invokeLater {
-      tree.expandRow(0)
-      add(toolbarPanel)
-    }
+    add(toolbarPanel)
   }
 }

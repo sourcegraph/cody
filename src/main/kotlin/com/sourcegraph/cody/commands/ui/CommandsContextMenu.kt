@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.DumbAwareAction
-import com.sourcegraph.cody.chat.CommandId
+import com.sourcegraph.cody.commands.CommandId
 
 class CommandsContextMenu {
   companion object {

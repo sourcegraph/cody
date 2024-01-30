@@ -169,11 +169,6 @@
             <override-text place="MainMenu" text="Autocomplete"/>
         </action>
 
-        <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
-                text="Reset the Current Conversation with Cody"
-                class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
-        </action>
-
         <action
                 id="cody.downloadAndInstallCodyAction"
                 class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
@@ -190,10 +185,6 @@
                 id="cody.restartAgent"
                 class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
                 text="Restart Cody Agent"/>
-
-        <group id="CodyChatActionsGroup">
-            <reference ref="cody.resetCurrentConversation"/>
-        </group>
 
         <group id="CodyEditorActions" popup="true" text="Cody"
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">

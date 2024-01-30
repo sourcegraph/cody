@@ -10,8 +10,8 @@ import com.sourcegraph.cody.agent.protocol.ContextFile
  */
 data class WebviewMessage(
     val command: String,
-    val text: String,
-    val submitType: String, // One of: "user", "suggestion", "example"
+    val text: String? = null,
+    val submitType: String? = null, // One of: "user", "suggestion", "example"
     val addEnhancedContext: Boolean? = null,
     val contextFiles: List<ContextFile>? = null,
     val error: ChatError? = null,

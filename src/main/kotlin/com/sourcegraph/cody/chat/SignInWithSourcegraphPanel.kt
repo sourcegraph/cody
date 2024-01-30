@@ -2,11 +2,7 @@ package com.sourcegraph.cody.chat
 
 import com.intellij.ide.DataManager
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContextWrapper
-import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -18,6 +14,7 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.auth.SsoAuthMethod.*
 import com.sourcegraph.cody.auth.ui.SignInWithEnterpriseInstanceAction
+import com.sourcegraph.cody.chat.ui.UIComponents
 import com.sourcegraph.cody.config.CodyAccountsHost
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.LogInToSourcegraphAction

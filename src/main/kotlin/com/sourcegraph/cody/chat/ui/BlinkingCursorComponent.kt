@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.ui
 
 import com.intellij.util.ui.UIUtil
 import java.awt.Dimension
@@ -9,11 +9,16 @@ import javax.swing.Timer
 
 class BlinkingCursorComponent private constructor() : JPanel() {
   private var showCursor = true
-  val timer: Timer =
+
+  private val timer: Timer =
       Timer(500) {
         showCursor = !showCursor
         repaint()
       }
+
+  init {
+    timer.start()
+  }
 
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)

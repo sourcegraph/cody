@@ -2,19 +2,29 @@ package com.sourcegraph.cody.vscode;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 public class CancellationToken {
   private final CompletableFuture<Boolean> cancelled = new CompletableFuture<>();
 
+  public boolean isDone() {
+    return cancelled.isDone();
+  }
+
   public void onCancellationRequested(Runnable callback) {
+    onFinished(
+        isCancelled -> {
+          if (isCancelled) callback.run();
+        });
+  }
+
+  public void onFinished(Consumer<Boolean> callback) {
     this.cancelled.thenAccept(
-        (cancelled) -> {
-          if (cancelled) {
-            try {
-              callback.run();
-            } catch (Exception ignored) {
-              // Do nothing about exceptions in cancelation callbacks
-            }
+        (isCancelled) -> {
+          try {
+            callback.accept(isCancelled);
+          } catch (Exception ignored) {
+            // Do nothing about exceptions in cancelation callbacks
           }
         });
   }

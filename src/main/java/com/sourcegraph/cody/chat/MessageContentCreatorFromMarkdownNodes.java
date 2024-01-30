@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.chat;
 
 import com.intellij.util.concurrency.annotations.RequiresEdt;
+import com.sourcegraph.cody.chat.ui.SingleMessagePanel;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -14,11 +15,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private final HtmlRenderer htmlRenderer;
-  private final MessagePanel messagePanel;
+  private final SingleMessagePanel messagePanel;
   private StringBuilder htmlContent = new StringBuilder();
 
   public MessageContentCreatorFromMarkdownNodes(
-      @NotNull MessagePanel messagePanel, @NotNull HtmlRenderer htmlRenderer) {
+      @NotNull SingleMessagePanel messagePanel, @NotNull HtmlRenderer htmlRenderer) {
     this.messagePanel = messagePanel;
     this.htmlRenderer = htmlRenderer;
   }

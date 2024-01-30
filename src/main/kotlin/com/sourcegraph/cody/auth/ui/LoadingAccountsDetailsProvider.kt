@@ -39,9 +39,11 @@ abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails
               if (runningProcesses == 0) loadingStateModel.value = false
             }
           }
-          .exceptionally {
+          .exceptionally { it ->
             val error = CompletableFutureUtil.extractError(it)
-            DetailsLoadingResult(null, null, error.localizedMessage, false)
+            val errorMessage =
+                error.localizedMessage.takeWhile { c -> c.isLetterOrDigit() || c.isWhitespace() }
+            DetailsLoadingResult(null, null, errorMessage, false)
           }
     }
   }

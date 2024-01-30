@@ -17,6 +17,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
+import com.sourcegraph.cody.chat.ui.CodeEditorButtons;
+import com.sourcegraph.cody.chat.ui.CodeEditorPart;
 import com.sourcegraph.cody.ui.TransparentButton;
 import java.awt.Dimension;
 import java.awt.Insets;

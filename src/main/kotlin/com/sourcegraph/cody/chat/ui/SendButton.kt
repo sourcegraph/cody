@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.ui
+package com.sourcegraph.cody.chat.ui
 
 import com.sourcegraph.cody.Icons
 import java.awt.Dimension

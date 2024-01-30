@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.ui
 
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.application.ApplicationManager

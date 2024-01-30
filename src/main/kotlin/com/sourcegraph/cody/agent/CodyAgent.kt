@@ -179,6 +179,7 @@ private constructor(
                 .serializeNulls()
                 .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
                 .registerTypeAdapter(ContextFile::class.java, contextFileDeserializer)
+                .registerTypeAdapter(Speaker::class.java, SpeakerSerializer)
           }
           .setRemoteInterface(CodyAgentServer::class.java)
           .traceMessages(traceWriter())

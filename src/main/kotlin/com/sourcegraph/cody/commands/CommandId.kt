@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.commands
 
 enum class CommandId(val displayName: String) {
   Explain("Explain Code"),

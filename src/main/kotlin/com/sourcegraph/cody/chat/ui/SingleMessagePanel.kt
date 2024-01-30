@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
@@ -6,8 +6,10 @@ import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
+import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.Color
+import java.util.*
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import org.commonmark.ext.gfm.tables.TablesExtension
@@ -15,7 +17,7 @@ import org.commonmark.node.Node
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 
-class MessagePanel(
+class SingleMessagePanel(
     private val chatMessage: ChatMessage,
     private val project: Project,
     private val parentPanel: JPanel,
@@ -27,6 +29,8 @@ class MessagePanel(
     val markdownNodes: Node = markdownParser.parse(chatMessage.actualMessage())
     markdownNodes.accept(MessageContentCreatorFromMarkdownNodes(this, htmlRenderer))
   }
+
+  fun getMessageId(): UUID = chatMessage.id
 
   fun updateContentWith(message: ChatMessage) {
     val markdownNodes = markdownParser.parse(message.actualMessage())

@@ -3,7 +3,6 @@ package com.sourcegraph.cody.config.notification
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
@@ -52,9 +51,6 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
               val toolWindowManager = ToolWindowManager.getInstance(project)
               val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
               toolWindow?.setAvailable(true, null)
-              CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-                refreshPanelsVisibility()
-              }
             }
 
             CodyAutocompleteStatusService.resetApplication(project)
