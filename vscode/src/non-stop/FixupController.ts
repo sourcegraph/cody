@@ -335,7 +335,10 @@ export class FixupController
             }
 
             // We will format this code once applied, so we do not place an undo stop after this edit to avoid cluttering the undo stack.
-            const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+            const applyEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: false,
+            }
 
             let editOk: boolean
             if (edit instanceof vscode.WorkspaceEdit) {
@@ -351,7 +354,10 @@ export class FixupController
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
-            const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+            const formatEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: true,
+            }
             this.setTaskState(task, CodyTaskState.formatting)
             await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
@@ -387,7 +393,10 @@ export class FixupController
         }
 
         // Avoid adding any undo stops when streaming. We want the completed edit to be undone as a single unit, once finished.
-        const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+        const applyEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: false,
+        }
 
         // Insert updated text at selection range
         let editOk: boolean
@@ -454,7 +463,10 @@ export class FixupController
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
-        const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+        const formatEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: true,
+        }
         this.setTaskState(task, CodyTaskState.formatting)
         await new Promise((resolve, reject) => {
             task.formattingResolver = resolve
@@ -675,13 +687,17 @@ export class FixupController
         })
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', {
+                hasV2Event: true,
+            })
             telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
             return
         }
 
         const tokenCount = countCode(replacementText)
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, { hasV2Event: true })
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, {
+            hasV2Event: true,
+        })
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
             metadata: tokenCount,
         })

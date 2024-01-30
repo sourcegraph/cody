@@ -408,11 +408,12 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            "console.log('hello')\n    console.log('world')",
-            document.languageId
-        )
+            insertText: "console.log('hello')\n    console.log('world')",
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`
@@ -447,11 +448,12 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            "'hello', 'world')",
-            document.languageId
-        )
+            insertText: "'hello', 'world')",
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`
@@ -486,11 +488,12 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            '\n        propA: foo,\n        propB: bar,\n    }, 2)',
-            document.languageId
-        )
+            insertText: '\n        propA: foo,\n        propB: bar,\n    }, 2)',
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`

@@ -14,6 +14,7 @@ import { documentAndPosition } from './test-helpers'
 const defaultArgs = {
     multiline: false,
     triggerKind: TriggerKind.Automatic,
+    testFile: false,
     providerIdentifier: 'bfl',
     providerModel: 'blazing-fast-llm',
     languageId: 'typescript',
@@ -73,6 +74,7 @@ describe('logger', () => {
         const shared = {
             id: expect.any(String),
             languageId: 'typescript',
+            testFile: false,
             source: 'Network',
             triggerKind: 'Automatic',
             multiline: false,

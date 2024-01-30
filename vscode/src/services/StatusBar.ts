@@ -143,7 +143,7 @@ export function createStatusBar(): CodyStatusBar {
                 {
                     label: '$(symbol-namespace) Custom Commands Settings',
                     async onSelect(): Promise<void> {
-                        await vscode.commands.executeCommand('cody.settings.commands')
+                        await vscode.commands.executeCommand('cody.menu.commands-settings')
                     },
                 },
                 { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },

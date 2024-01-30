@@ -18,10 +18,5 @@
   "typescript.tsc.autoDetect": "off",
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
-  "editor.codeActionsOnSave": {
-    "quickfix.biome": "explicit",
-    "source.fixAll": "explicit",
-    "source.organizeImports.biome": "explicit"
-  },
   "editor.defaultFormatter": "biomejs.biome"
 }

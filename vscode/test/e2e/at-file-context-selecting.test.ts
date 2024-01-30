@@ -1,15 +1,11 @@
-import path from 'path'
-
 import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
-
-const followUpChatSubmitKey = isWindows() ? 'Control+Enter' : 'Meta+Enter'
 
 test('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -91,7 +87,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     )
 
     // Send the message and check it was included
-    await chatInput.press(followUpChatSubmitKey)
+    await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(
         chatPanelFrame.getByText(
@@ -119,7 +115,3 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
-
-function withPlatformSlashes(input: string) {
-    return input.replaceAll(path.posix.sep, path.sep)
-}

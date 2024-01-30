@@ -1,0 +1,5 @@
+# NOTE: These are examples for manual testing .cody/ignore
+# The automated tests only use the .cody/ignore file inside vscode/test/fixtures/workspace
+playwright/**
+recordings/**
+ignoredByCody.css

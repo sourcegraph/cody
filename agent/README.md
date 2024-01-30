@@ -114,9 +114,7 @@ To fix this problem, update the HTTP recordings with the following command:
 
 ```sh
 # tokens are redacted in the recordings
-export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=sgp_YOUR_ACCESS_TOKEN_WITH_RATE_LIMIT
-export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN
-export SRC_ENDPOINT=https://sourcegraph.com   # tests run against dotcom
+source agent/scripts/export-cody-http-recording-tokens.sh
 src login                                     # confirm you are authenticated to sourcegraph.com
 pnpm update-agent-recordings                  # run tests to update recordings
 # If test fails, press `u` to update the vitest snapshot assertion.

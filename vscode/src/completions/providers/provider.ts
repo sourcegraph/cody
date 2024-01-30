@@ -54,15 +54,23 @@ export function standardContextSizeHints(maxContextTokens: number): ProviderCont
 }
 
 export interface ProviderOptions {
-    // A unique and descriptive identifier for the provider.
+    /**
+     * A unique and descriptive identifier for the provider.
+     */
     id: string
 
     position: Position
     document: TextDocument
     docContext: DocumentContext
     multiline: boolean
-    // Number of parallel LLM requests per completion.
+    /**
+     * Number of parallel LLM requests per completion.
+     */
     n: number
+    /**
+     *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
+     */
+    firstCompletionTimeout: number
 
     // feature flags
     dynamicMultilineCompletions?: boolean
