@@ -1,7 +1,10 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
+import { loggedEvents } from '../fixtures/mock-server'
+
+const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
 
 test('execute command from sidebar', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -54,4 +57,6 @@ test('execute command from sidebar', async ({ page, sidebar }) => {
     await page.getByLabel('/ask, Ask a question').locator('a').click()
     // the question should show up in the chat panel on submit
     await chatPanelFrame.getByText('hello cody').click()
+
+    await assertEvents(loggedEvents, expectedEvents)
 })
