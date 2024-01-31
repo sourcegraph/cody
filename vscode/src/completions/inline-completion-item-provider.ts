@@ -196,7 +196,11 @@ export class InlineCompletionItemProvider
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
-            const completionRequest: CompletionRequest = { document, position, context }
+            const completionRequest: CompletionRequest = {
+                document,
+                position,
+                context,
+            }
             this.lastCompletionRequest = completionRequest
 
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
