@@ -349,10 +349,6 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         headers.set('Authorization', `Bearer ${this.codyGatewayAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')
         addTraceparent(headers)
-        // Disable gzip compression since the sg instance will start to batch
-        // responses afterwards.
-        // Note: Find out if this is also happening when connecting directly to Cody Gateway
-        headers.set('Accept-Encoding', 'gzip;q=0')
 
         const response = await fetch(url, {
             method: 'POST',
