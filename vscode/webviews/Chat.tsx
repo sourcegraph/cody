@@ -5,6 +5,7 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import type {
+    ChatInputHistory,
     ChatMessage,
     ChatModelProvider,
     CodyCommand,
@@ -46,8 +47,8 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     formInput: string
     setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
+    inputHistory: ChatInputHistory[]
+    setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
     chatCommands?: [string, CodyCommand][]

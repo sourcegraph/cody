@@ -491,7 +491,14 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
+
+            // Assert that the server is not using IDs between `chat/new` and
+            // `chat/explain`. In VS Code, we try to reuse empty webview panels,
+            // which is undesireable for agent clients.
+            expect(id).not.toStrictEqual(freshChatID)
+
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `

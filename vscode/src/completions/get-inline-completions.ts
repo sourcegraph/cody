@@ -22,6 +22,7 @@ import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isValidTestFile } from '../commands/utils/test-commands'
+import { completionProviderConfig } from './completion-provider-config'
 
 export interface InlineCompletionsParams {
     // Context
@@ -53,9 +54,6 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    dynamicMultilineCompletions?: boolean
-    hotStreak?: boolean
-    fastPath?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -189,9 +187,6 @@ async function doGetInlineCompletions(
         handleDidPartiallyAcceptCompletionItem,
         artificialDelay,
         completionIntent,
-        dynamicMultilineCompletions,
-        hotStreak,
-        fastPath,
         lastAcceptedCompletionItem,
         isDotComUser,
     } = params
@@ -321,9 +316,6 @@ async function doGetInlineCompletions(
         triggerKind,
         providerConfig,
         docContext,
-        dynamicMultilineCompletions,
-        hotStreak,
-        fastPath,
     })
 
     tracer?.({
@@ -364,53 +356,35 @@ async function doGetInlineCompletions(
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<
-        InlineCompletionsParams,
-        | 'document'
-        | 'position'
-        | 'triggerKind'
-        | 'providerConfig'
-        | 'dynamicMultilineCompletions'
-        | 'hotStreak'
-        | 'fastPath'
-    > {
+    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
 }
 
 function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
-    const {
-        document,
-        position,
-        triggerKind,
-        providerConfig,
-        docContext,
-        dynamicMultilineCompletions,
-        hotStreak,
-        fastPath,
-    } = params
+    const { document, position, triggerKind, providerConfig, docContext } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         document,
         position,
-        dynamicMultilineCompletions,
-        hotStreak,
-        fastPath,
+        dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
+        hotStreak: completionProviderConfig.hotStreak,
+        fastPath: completionProviderConfig.fastPath,
         // For the now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1900,
     }
 
     if (docContext.multilineTrigger) {
         return providerConfig.create({
-            id: 'multiline',
             ...sharedProviderOptions,
-            n: 3, // 3 vs. 1 does not meaningfully affect perf
+            n: completionProviderConfig.getPrefetchedFlag('cody-autocomplete-single-multiline-request')
+                ? 1
+                : 3, // 3 vs. 1 does not meaningfully affect perf
             multiline: true,
         })
     }
 
     return providerConfig.create({
-        id: 'single-line-suffix',
         ...sharedProviderOptions,
         // Show more if manually triggered (but only showing 1 is faster, so we use it
         // in the automatic trigger case).

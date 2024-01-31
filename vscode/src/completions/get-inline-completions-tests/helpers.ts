@@ -3,12 +3,13 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     testFileUri,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    type Configuration,
 } from '@sourcegraph/cody-shared'
 
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
@@ -33,6 +34,8 @@ import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition, sleep } from '../test-helpers'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
+import { completionProviderConfig } from '../completion-provider-config'
+import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -49,6 +52,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
         params: CompletionParameters
     ) => CompletionResponseGenerator | Generator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
+    configuration?: Partial<Configuration>
 }
 
 interface ParamsResult extends InlineCompletionsParams {
@@ -58,6 +62,7 @@ interface ParamsResult extends InlineCompletionsParams {
      * request manager in autocomplete tests.
      */
     completionResponseGeneratorPromise: Promise<unknown>
+    configuration?: Partial<Configuration>
 }
 
 /**
@@ -94,7 +99,7 @@ export function params(
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {
-                    yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                    yield { ...response, stopReason: CompletionStopReason.StreamingChunk }
                 }
 
                 // Signal to tests that all streaming chunks are processed.
@@ -234,7 +239,7 @@ export function paramsWithInlinedCompletion(
                 lastResponse += completionChunk
                 yield {
                     completion: lastResponse,
-                    stopReason: STOP_REASON_STREAMING_CHUNK,
+                    stopReason: CompletionStopReason.StreamingChunk,
                 }
 
                 if (delayBetweenChunks) {
@@ -304,6 +309,9 @@ export async function getInlineCompletionsWithInlinedChunks(
 export async function getInlineCompletions(
     params: ParamsResult
 ): Promise<Omit<InlineCompletionsResult, 'logId'> | null> {
+    const { configuration = {} } = params
+    await initCompletionProviderConfig(configuration)
+
     const result = await _getInlineCompletions(params)
 
     if (result) {
@@ -315,6 +323,7 @@ export async function getInlineCompletions(
         }
     }
 
+    completionProviderConfig.setConfig({} as Configuration)
     return result
 }
 
@@ -325,6 +334,10 @@ export async function getInlineCompletionsInsertText(params: ParamsResult): Prom
 }
 
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
+
+export function initCompletionProviderConfig(config: Partial<Configuration>) {
+    return completionProviderConfig.init(config as Configuration, emptyMockFeatureFlagProvider)
+}
 
 expect.extend({
     /**

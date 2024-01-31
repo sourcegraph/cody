@@ -68,9 +68,9 @@ export class EditProvider {
             },
         })
 
-        // Listen to file name suggestion from responses
-        // Allows Cody to let us know which file we should add the new content to
-        if (this.config.task.mode === 'file') {
+        // Listen to test file name suggestion from responses
+        // Allows Cody to let us know which test file we should add the new content to
+        if (this.config.task.mode === 'test') {
             let filepath = ''
             multiplexer.sub(PROMPT_TOPICS.FILENAME, {
                 onResponse: async (content: string) => {
@@ -141,9 +141,9 @@ export class EditProvider {
             return
         }
 
-        // If the response finished and we didn't receive file name suggestion,
-        // we will create one manually before inserting the response to the new file
-        if (this.config.task.mode === 'file' && !NewFixupFileMap.get(this.config.task.id)) {
+        // If the response finished and we didn't receive a test file name suggestion,
+        // we will create one manually before inserting the response to the new test file
+        if (this.config.task.mode === 'test' && !NewFixupFileMap.get(this.config.task.id)) {
             if (isMessageInProgress) {
                 return
             }

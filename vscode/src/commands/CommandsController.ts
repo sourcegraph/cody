@@ -6,7 +6,7 @@ import type { CodyCommandArgs } from './types'
 import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
-import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './default'
+import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
 
 /**
  * Handles commands execution with commands from CommandsProvider

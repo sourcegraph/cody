@@ -14,11 +14,11 @@ import {
     isAbortError,
     NetworkError,
     RateLimitError,
-    STOP_REASON_STREAMING_CHUNK,
     isNodeResponse,
     getActiveTraceAndSpanId,
     addTraceparent,
     type ConfigurationWithAccessToken,
+    CompletionStopReason,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
@@ -399,6 +399,9 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 }
 
                 if (abortController.signal.aborted) {
+                    if (lastResponse) {
+                        lastResponse.stopReason = CompletionStopReason.RequestAborted
+                    }
                     break
                 }
 
@@ -418,7 +421,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                     completion: (lastResponse ? lastResponse.completion : '') + choice.text,
                     stopReason:
                         choice.finish_reason ??
-                        (lastResponse ? lastResponse.stopReason : STOP_REASON_STREAMING_CHUNK),
+                        (lastResponse ? lastResponse.stopReason : CompletionStopReason.StreamingChunk),
                 }
 
                 yield lastResponse
@@ -429,6 +432,11 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
             if (lastResponse === undefined) {
                 throw new TracedError('No completion response received', traceId)
             }
+
+            if (!lastResponse.stopReason) {
+                lastResponse.stopReason = CompletionStopReason.RequestFinished
+            }
+
             log?.onComplete(lastResponse)
 
             return lastResponse
@@ -469,12 +477,18 @@ export function createProviderConfig({
 
     return {
         create(options: ProviderOptions) {
-            return new FireworksProvider(options, {
-                model: resolvedModel,
-                maxContextTokens,
-                timeouts,
-                ...otherOptions,
-            })
+            return new FireworksProvider(
+                {
+                    ...options,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                {
+                    model: resolvedModel,
+                    maxContextTokens,
+                    timeouts,
+                    ...otherOptions,
+                }
+            )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

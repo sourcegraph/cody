@@ -7,7 +7,7 @@ import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command
 import type { CommandMenuItem } from './types'
 import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
-import { executeChat } from '../default/ask'
+import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
 
 export async function showCommandMenu(

@@ -47,7 +47,7 @@ export interface CompletionCallbacks {
  *   since the last `change` value.
  * - `complete`: Only called when a stream successfully completes. If an error is encountered, this
  *   is never called.
- * - `error`: Only called when a stream fails or encounteres an error. This should be assumed to be
+ * - `error`: Only called when a stream fails or encounters an error. This should be assumed to be
  *   a "complete" event, and no other callbacks will be called afterwards.
  */
 export type CompletionGeneratorValue =

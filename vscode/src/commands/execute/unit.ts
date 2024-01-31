@@ -48,7 +48,7 @@ export async function executeUnitTestCommand(
                 instruction: prompt,
                 document,
                 intent: 'new',
-                mode: 'file',
+                mode: 'test',
                 userContextFiles: contextFiles,
             } satisfies ExecuteEditArguments,
             DefaultEditCommands.Doc

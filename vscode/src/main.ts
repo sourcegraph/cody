@@ -59,7 +59,7 @@ import {
     executeSmellCommand,
     executeDocCommand,
     executeUnitTestCommand,
-} from './commands/default'
+} from './commands/execute'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -206,6 +206,7 @@ const register = async (
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
+            config,
         },
         chatClient,
         enterpriseContextFactory,
@@ -584,9 +585,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const promises: Promise<void>[] = []
-
-    promises.push(setupAutocomplete().catch(() => {}))
+    const autocompleteSetup = setupAutocomplete().catch(() => {})
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
@@ -597,7 +596,11 @@ const register = async (
         )
     }
 
-    promises.push(showSetupNotification(initialConfig))
+    // INC-267 do NOT await on this promise. This promise triggers
+    // `vscode.window.showInformationMessage()`, which only resolves after the
+    // user has clicked on "Setup". Awaiting on this promise will make the Cody
+    // extension timeout during activation.
+    void showSetupNotification(initialConfig)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
@@ -610,6 +613,8 @@ const register = async (
             },
         })
     }
+
+    await autocompleteSetup
 
     return {
         disposable: vscode.Disposable.from(...disposables),
