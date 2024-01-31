@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     isDotCom,
     type CodeCompletionsClient,
-    type Configuration,
+    type ConfigurationWithAccessToken,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -18,7 +18,7 @@ import { registerAutocompleteTraceView } from './tracer/traceView'
 import { completionProviderConfig } from './completion-provider-config'
 
 interface InlineCompletionItemProviderArgs {
-    config: Configuration
+    config: ConfigurationWithAccessToken
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     authProvider: AuthProvider
@@ -50,7 +50,8 @@ export async function createInlineCompletionItemProvider({
     triggerNotice,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
-    if (!authProvider.getAuthStatus().isLoggedIn) {
+    const authStatus = authProvider.getAuthStatus()
+    if (!authStatus.isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
         if (config.isRunningInsideAgent) {
@@ -71,14 +72,14 @@ export async function createInlineCompletionItemProvider({
     const disposables: vscode.Disposable[] = []
 
     const [providerConfig] = await Promise.all([
-        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+        createProviderConfig(config, client, authStatus),
         completionProviderConfig.init(config, featureFlagProvider),
     ])
 
     if (providerConfig) {
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
-            authStatus: authProvider.getAuthStatus(),
+            authStatus,
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,

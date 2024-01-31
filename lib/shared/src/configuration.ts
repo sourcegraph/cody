@@ -56,6 +56,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
+    autocompleteExperimentalFastPath?: boolean
     autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
 

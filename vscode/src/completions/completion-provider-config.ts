@@ -15,6 +15,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteSingleMultilineRequest,
+        FeatureFlag.CodyAutocompleteFastPath,
     ]
 
     private get config() {
@@ -59,6 +60,13 @@ class CompletionProviderConfig {
         return (
             this.config.autocompleteExperimentalHotStreak ||
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)
+        )
+    }
+
+    public get fastPath(): boolean {
+        return (
+            this.config.autocompleteExperimentalFastPath ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
         )
     }
 
