@@ -49,7 +49,7 @@ export async function executeTestCaseCommand(
                 mode: 'insert',
                 userContextFiles: contextFiles,
             } satisfies ExecuteEditArguments,
-            DefaultEditCommands.Doc
+            DefaultEditCommands.Test
         ),
     }
 }
