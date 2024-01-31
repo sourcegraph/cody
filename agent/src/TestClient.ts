@@ -491,6 +491,8 @@ export class TestClient extends MessageHandler {
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
                     'cody.autocomplete.experimental.graphContext': null,
+                    // For testing .cody/ignore
+                    'cody.internal.unstable': true,
                 },
                 debug: false,
                 verboseDebug: false,

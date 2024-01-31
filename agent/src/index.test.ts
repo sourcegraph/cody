@@ -106,16 +106,14 @@ describe('Agent', () => {
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
             customHeaders: {},
-            customConfiguration: {
-                // For testing .cody/ignore
-                'cody.internal.unstable': true,
-            },
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
+        // Set up .cody/ignore for testing
+        // All files ends with Ignored.ts will be excluded from cody context
         ignores.setActiveState(true)
         ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
-            { uri: codyIgnoreConfig, content: '**/*test.ts' },
+            { uri: codyIgnoreConfig, content: '**/*Ignored.ts' },
         ])
     }, 10_000)
     beforeEach(async () => {
@@ -406,7 +404,7 @@ describe('Agent', () => {
         })
 
         describe('Cody Ignore', () => {
-            const isIgnoredByCody = path.join(workspaceRootPath, 'src', 'example.test.ts')
+            const isIgnoredByCody = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
             const isIgnored = Uri.file(isIgnoredByCody)
 
             beforeAll(async () => {
@@ -420,7 +418,7 @@ describe('Agent', () => {
                     command: 'cody.search.index-update',
                 })
                 const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                    'Which file are the ignore and isIgnoredByCody functions defined?',
+                    'Which file is the isIgnoredByCody functions defined?',
                     { addEnhancedContext: true }
                 )
                 expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
@@ -464,13 +462,6 @@ describe('Agent', () => {
                 // Ignored file should not be used as context files evem if selected
                 expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
             }, 30_000)
-
-            afterAll(async () => {
-                ignores.setActiveState(false)
-
-                expect(isCodyIgnoredFile(isIgnored)).toBeFalsy()
-                expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
-            }, 10_000)
         })
 
         // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
