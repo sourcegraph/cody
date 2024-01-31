@@ -6,7 +6,7 @@ import { loggedEvents } from '../fixtures/mock-server'
 
 const expectedEvents = ['CodyVSCodeExtension:command:test:executed']
 
-test('unit test command with context fetching - chat', async ({ page, sidebar }) => {
+test('unit test command (chat)', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -43,7 +43,7 @@ test('unit test command with context fetching - chat', async ({ page, sidebar })
     await assertEvents(loggedEvents, expectedEvents)
 })
 
-test('unit test command - edit', async ({ page, sidebar }) => {
+test('unit test command (edit)', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -55,7 +55,7 @@ test('unit test command - edit', async ({ page, sidebar }) => {
 
     // Click on the Cody command code lenses to execute the unit test command
     await page.getByRole('button', { name: 'A Cody' }).click()
-    await page.getByText('/unit').click()
+    await page.getByText('/test').click()
 
     // The test file for the buzz.ts file should be opened automatically
     await page.getByText('buzz.test.ts').hover()
