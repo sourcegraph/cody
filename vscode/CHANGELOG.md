@@ -8,6 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: Display Cody icon in the editor title of the chat panels when `cody.editorTitleCommandIcon` is enabled. [pull/2937](https://github.com/sourcegraph/cody/pull/2937)
 - Autocomplete: local inference support with [deepseek-coder](https://ollama.ai/library/deepseek-coder) powered by ollama. [pull/2966](https://github.com/sourcegraph/cody/pull/2966)
+- Autocomplete: Add a new experimental fast-path mode for Cody community users that directly connections to our inference services. [pull/2927](https://github.com/sourcegraph/cody/pull/2927)
 
 ### Fixed
 
