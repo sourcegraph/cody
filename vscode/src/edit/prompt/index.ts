@@ -7,47 +7,48 @@ import {
     Transcript,
     type CompletionParameters,
     type Message,
+    type EditModel,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import type { EditIntent } from '../types'
 
-import { claude } from './claude'
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 import { truncateTextByLength } from '@sourcegraph/cody-shared/src/prompt/truncation'
+import { openai } from './models/openai'
+import { claude } from './models/claude'
 
-// TODO: Better typing?
-export type EditSupportedModels = string
-
-const INTERACTION_MODELS: Record<EditSupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
     'anthropic/claude-instant-1.2': claude,
+    'openai/gpt-3.5-turbo': openai,
+    'openai/gpt-4-1106-preview': openai,
 } as const
 
 const getInteractionArgsFromIntent = (
     intent: EditIntent,
-    model: keyof typeof INTERACTION_MODELS,
+    model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
     switch (intent) {
         case 'add':
-            return claude.getAdd(options)
+            return INTERACTION_MODELS[model].getAdd(options)
         case 'fix':
-            return claude.getFix(options)
+            return INTERACTION_MODELS[model].getFix(options)
         case 'doc':
-            return claude.getDoc(options)
+            return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
-            return claude.getEdit(options)
+            return INTERACTION_MODELS[model].getEdit(options)
         case 'new':
-            return claude.getNew(options)
+            return INTERACTION_MODELS[model].getNew(options)
     }
 }
 
 interface BuildInteractionOptions {
-    model: EditSupportedModels
+    model: EditModel
     contextWindow: number
     task: FixupTask
     editor: VSCodeEditor

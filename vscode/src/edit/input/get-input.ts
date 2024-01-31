@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
-import type { ChatEventSource, ModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ModelProvider, ContextFile, EditModel } from '@sourcegraph/cody-shared'
 
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
-import type { EditSupportedModels } from '../prompt'
 import { getEditor } from '../../editor/active-editor'
 import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
@@ -27,7 +26,7 @@ interface QuickPickInput {
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextFile[]
     /** The LLM that the user has selected */
-    model: EditSupportedModels
+    model: EditModel
     /** The range that the user has selected */
     range: vscode.Range
     /**
@@ -41,7 +40,7 @@ interface QuickPickInput {
 export interface EditInputInitialValues {
     initialRange: vscode.Range
     initialExpandedRange?: vscode.Range
-    initialModel: EditSupportedModels
+    initialModel: EditModel
     initialIntent: EditIntent
     initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
@@ -75,6 +74,7 @@ export const getInput = async (
               : SELECTION_RANGE_ITEM
 
     const modelItems = getModelOptionItems(modelOptions)
+    let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     // ContextItems to store possible user-provided context
@@ -150,7 +150,7 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(activeModelItem, modelItems),
+            getItems: () => getModelInputItems(modelOptions, activeModel),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
@@ -162,6 +162,8 @@ export const getInput = async (
 
                 editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
+                activeModel = acceptedItem.model
+
                 editInput.render(activeTitle, editInput.input.value)
             },
         })
@@ -406,7 +408,7 @@ export const getInput = async (
                     userContextFiles: Array.from(selectedContextItems)
                         .filter(([key]) => instruction.includes(`@${key}`))
                         .map(([, value]) => value),
-                    model: activeModelItem?.model || initialValues.initialModel,
+                    model: activeModel,
                     range: activeRange,
                     intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
                 })

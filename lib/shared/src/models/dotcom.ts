@@ -2,7 +2,7 @@ import type { ModelProvider } from '.'
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+export const DEFAULT_DOT_COM_MODELS = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -52,4 +52,4 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
     },
-]
+] as const satisfies ModelProvider[]

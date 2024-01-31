@@ -1,6 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
+export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'

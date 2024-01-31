@@ -1,16 +1,21 @@
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shared'
 import type { AuthProvider } from '../services/AuthProvider'
+import { localStorage } from '../services/LocalStorageProvider'
 
-async function setModel(modelID: string, storageKey: string) {
+async function setModel(modelID: EditModel, storageKey: string) {
     // Store the selected model in local storage to retrieve later
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel(authProvider: AuthProvider, models: ModelProvider[], storageKey: string): string {
+function getModel<T extends string>(
+    authProvider: AuthProvider,
+    models: ModelProvider[],
+    storageKey: string
+): T {
     const authStatus = authProvider.getAuthStatus()
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {
-        return models[0].model
+        return models[0].model as T
     }
     // Check for the last selected model
     const lastSelectedModelID = localStorage.get(storageKey)
@@ -18,7 +23,7 @@ function getModel(authProvider: AuthProvider, models: ModelProvider[], storageKe
         // If the last selected model exists in the list of models then we return it
         const model = models.find(m => m.model === lastSelectedModelID)
         if (model) {
-            return lastSelectedModelID
+            return lastSelectedModelID as T
         }
     }
     // If the user has not selected a model before then we return the default model
@@ -26,16 +31,16 @@ function getModel(authProvider: AuthProvider, models: ModelProvider[], storageKe
     if (!defaultModel) {
         throw new Error('No chat model found in server-provided config')
     }
-    return defaultModel.model
+    return defaultModel.model as T
 }
 
-const createModelAccessor = (storageKey: string) => {
+function createModelAccessor<T extends string>(storageKey: string) {
     return {
         get: (authProvider: AuthProvider, models: ModelProvider[]) =>
-            getModel(authProvider, models, storageKey),
-        set: (modelID: string) => setModel(modelID, storageKey),
+            getModel<T>(authProvider, models, storageKey),
+        set: (modelID: T) => setModel(modelID, storageKey),
     }
 }
 
-export const chatModel = createModelAccessor('model')
-export const editModel = createModelAccessor('editModel')
+export const chatModel = createModelAccessor<ChatModel>('model')
+export const editModel = createModelAccessor<EditModel>('editModel')

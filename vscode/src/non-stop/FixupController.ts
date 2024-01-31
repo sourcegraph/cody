@@ -6,6 +6,7 @@ import {
     type ContextFile,
     type ContextMessage,
     type ModelProvider,
+    type EditModel,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -27,7 +28,6 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState } from './utils'
-import type { EditSupportedModels } from '../edit/prompt'
 import { getInput } from '../edit/input/get-input'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
@@ -164,7 +164,7 @@ export class FixupController
         range: vscode.Range,
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
-        model: EditSupportedModels,
+        model: EditModel,
         modelOptions: ModelProvider[],
         intent: EditIntent,
         contextMessages: ContextMessage[],
@@ -210,7 +210,7 @@ export class FixupController
         selectionRange: vscode.Range,
         intent: EditIntent,
         mode: EditMode,
-        model: EditSupportedModels,
+        model: EditModel,
         source?: ChatEventSource,
         contextMessages?: ContextMessage[]
     ): Promise<FixupTask> {

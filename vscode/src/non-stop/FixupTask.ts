@@ -1,13 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
-import type { EditSupportedModels } from '../edit/prompt'
 
 export type taskID = string
 
@@ -59,7 +58,7 @@ export class FixupTask {
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
-        public readonly model: EditSupportedModels,
+        public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
         public readonly contextMessages?: ContextMessage[]
