@@ -3,18 +3,18 @@ import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
-import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 /**
- * Generates the prompt and context files with arguments for the '/unit' command.
+ * Generates the prompt and context files with arguments for the '/test' command in Chat.
  *
  * Context: Test files, current selection, and current file
  */
 async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
-    let prompt = defaultCommands.unit.prompt
+    let prompt =
+        "Review the shared code context and configurations to identify the test framework and libraries in use. Then, generate a suite of multiple unit tests for the functions in <selected> using the detected test framework and libraries. Be sure to import the function being tested. Follow the same patterns as any shared context. Only add packages, imports, dependencies, and assertions if they are used in the shared code. Pay attention to the file path of each shared context to see if test for <selected> already exists. If one exists, focus on generating new unit tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Only include mocks if one is detected in the shared code. Before writing the tests, identify which test libraries and frameworks to import, e.g. 'No new imports needed - using existing libs' or 'Importing test framework that matches shared context usage' or 'Importing the defined framework', etc. Then briefly summarize test coverage and any limitations. At the end, enclose the full completed code for the new unit tests, including all necessary imports, in a single markdown codeblock. No fragments or TODO. The new tests should validate expected functionality and cover edge cases for <selected> with all required imports, including importing the function being tested. Do not repeat existing tests."
 
     if (args?.additionalInstruction) {
         prompt = `${prompt} ${args.additionalInstruction}`
@@ -45,9 +45,11 @@ async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<Execute
 }
 
 /**
- * Executes the /unit command in chat for generating unit tests for selected code.
+ * Executes the /test command for generating unit tests in Chat for selected code.
+ *
+ * NOTE: Currently used by agent until inline test command is added to agent.
  */
-export async function executeUnitTestCommand(
+export async function executeTestChatCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
     logDebug('executeTestEditCommand', 'executing', { args })

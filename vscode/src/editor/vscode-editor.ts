@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getEditor } from './active-editor'
-import { CommandCodeLenses } from '../commands/services/CommandCodeLenses'
+import { CommandCodeLenses } from '../commands/services/code-lenses'
 import { getSmartSelection } from './utils'
 
 export class VSCodeEditor implements Editor {

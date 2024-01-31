@@ -58,7 +58,7 @@ import {
     executeTestEditCommand,
     executeSmellCommand,
     executeDocCommand,
-    executeUnitTestCommand,
+    executeTestChatCommand,
     executeTestCaseEditCommand,
 } from './commands/execute'
 
@@ -344,7 +344,7 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeUnitTestCommand(a)),
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
     )

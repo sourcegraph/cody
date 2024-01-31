@@ -192,7 +192,7 @@ const commandLenses = {
         tooltip: 'Open command menu',
     },
     test: {
-        title: '$(cody-logo) Add Tests',
+        title: '$(cody-logo) Add More Tests',
         command: 'cody.editor.codelens.click',
         tooltip: 'Generate new test cases',
     },

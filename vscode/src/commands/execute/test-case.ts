@@ -8,7 +8,7 @@ import type { CodyCommandArgs } from '../types'
 import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case'
 
 /**
- * Adds generated test cases to the selected test suite in ine.
+ * Adds generated test cases to the selected test suite inline.
  *
  * NOTE: Used by Code Lenses in test files with 'cody.command.tests-cases'.
  */
@@ -16,7 +16,7 @@ export async function executeTestCaseEditCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
     const instruction =
-        'Review the shared code context to identify the testing framework and libraries in use. Then, create multiple new unit tests for the test suite in my selected code following the same patterns, testing conventions and testing library as shown in shared context. Pay attention to the shared context to ensure your response code do not contain cases that have already been covered. Focus on generating new unit tests for uncovered cases. Response only with the full completed code with the new unit tests added at the end, without any comments, fragments or TODO. The new tests should validate expected functionality and cover edge cases for the test suites. The goal is to provide me with code that I can add to the end of existing test file. Do not repeat tests from shared context. Enclose only the new tests WITHOUT describe/suite, import statements or packages in your response.'
+        'Review the shared code context to identify the testing framework and libraries in use. Then, create multiple new unit tests for the test suite in my selected code following the same patterns, testing conventions, and testing library as shown in the shared context. Pay attention to the shared context to ensure that your response code does not contain cases that have already been covered. Focus on generating new unit tests for uncovered cases. Respond only with the fully completed code with the new unit tests added at the end, without any comments, fragments, or TODO. The new tests should validate expected functionality and cover edge cases for the test suites. The goal is to provide me with code that I can add to the end of the existing test file. Do not repeat tests from the shared context. Enclose only the new tests without describe/suite, import statements, or packages in your response.'
 
     const editor = getEditor()?.active
     const document = editor?.document
