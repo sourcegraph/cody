@@ -106,7 +106,7 @@ export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,

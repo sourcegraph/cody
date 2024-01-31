@@ -1,11 +1,9 @@
 import { isDefined } from '../common'
 import type { OllamaGenerateParameters, OllamaOptions } from '../configuration'
 import {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     type CodeCompletionsClient,
     type CompletionResponseGenerator,
-    STOP_REASON_REQUEST_ABORTED,
-    STOP_REASON_REQUEST_FINISHED,
 } from '../inferenceClient/misc'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type { CompletionResponse } from '../sourcegraph-api/completions/types'
@@ -92,7 +90,7 @@ export function createOllamaClient(
 
             for await (const chunk of iterableBody) {
                 if (signal.aborted) {
-                    stopReason = STOP_REASON_REQUEST_ABORTED
+                    stopReason = CompletionStopReason.RequestAborted
                     break
                 }
 
@@ -101,7 +99,7 @@ export function createOllamaClient(
 
                     if (line.response) {
                         insertText += line.response
-                        yield { completion: insertText, stopReason: STOP_REASON_STREAMING_CHUNK }
+                        yield { completion: insertText, stopReason: CompletionStopReason.StreamingChunk }
                     }
 
                     if (line.done && line.total_duration) {
@@ -114,7 +112,7 @@ export function createOllamaClient(
 
             const completionResponse: CompletionResponse = {
                 completion: insertText,
-                stopReason: stopReason || STOP_REASON_REQUEST_FINISHED,
+                stopReason: stopReason || CompletionStopReason.RequestFinished,
             }
 
             log?.onComplete(completionResponse)

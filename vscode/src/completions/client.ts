@@ -2,7 +2,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     TracedError,
     addTraceparent,
     featureFlagProvider,
@@ -19,10 +19,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-import {
-    STOP_REASON_REQUEST_ABORTED,
-    STOP_REASON_REQUEST_FINISHED,
-} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -127,7 +123,7 @@ export function createClient(
 
                     if (signal.aborted) {
                         if (completionResponse) {
-                            completionResponse.stopReason = STOP_REASON_REQUEST_ABORTED
+                            completionResponse.stopReason = CompletionStopReason.RequestAborted
                         }
 
                         break
@@ -138,7 +134,7 @@ export function createClient(
 
                         yield {
                             completion: completionResponse.completion,
-                            stopReason: completionResponse.stopReason || STOP_REASON_STREAMING_CHUNK,
+                            stopReason: completionResponse.stopReason || CompletionStopReason.StreamingChunk,
                         }
                     }
 
@@ -150,7 +146,7 @@ export function createClient(
                 }
 
                 if (!completionResponse.stopReason) {
-                    completionResponse.stopReason = STOP_REASON_REQUEST_FINISHED
+                    completionResponse.stopReason = CompletionStopReason.RequestFinished
                 }
 
                 log?.onComplete(completionResponse)

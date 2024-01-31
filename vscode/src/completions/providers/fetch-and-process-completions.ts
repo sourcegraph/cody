@@ -1,4 +1,4 @@
-import { STOP_REASON_STREAMING_CHUNK, type CompletionResponseGenerator } from '@sourcegraph/cody-shared'
+import { CompletionStopReason, type CompletionResponseGenerator } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
@@ -79,7 +79,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
     for await (const { completion, stopReason } of completionResponseGenerator) {
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
-        const isFullResponse = stopReason !== STOP_REASON_STREAMING_CHUNK
+        const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
         const shouldYieldFirstCompletion = isFullResponse || isFirstCompletionTimeoutElapsed
 
         const extractCompletion = shouldYieldFirstCompletion
@@ -235,7 +235,7 @@ export async function* fetchAndProcessCompletions(
             completion,
         })
 
-        const isFullResponse = stopReason !== STOP_REASON_STREAMING_CHUNK
+        const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
         const rawCompletion = providerSpecificPostProcess(completion)
 
         if (hotStreakExtractor) {
