@@ -173,11 +173,9 @@ export function createClient(
                 throw error
             }
 
-            /**
-             * In case of the abort error and non-empty completion response, we can
-             * consider the completion partially completed and want to log it to
-             * the Cody output channel via `log.onComplete()` instead of erroring.
-             */
+            // In case of the abort error and non-empty completion response, we can
+            // consider the completion partially completed and want to log it to
+            // the Cody output channel via `log.onComplete()` instead of erroring.
             if (isAbortError(error as Error) && completionResponse) {
                 completionResponse.stopReason = CompletionStopReason.RequestAborted
             } else {
