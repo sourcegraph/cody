@@ -150,8 +150,6 @@ export function createClient(
                     completionResponse.stopReason = CompletionStopReason.RequestFinished
                 }
 
-                log?.onComplete(completionResponse)
-
                 return completionResponse
             }
 
@@ -168,7 +166,6 @@ export function createClient(
                 throw new TracedError(message, traceId)
             }
 
-            log?.onComplete(completionResponse)
             return completionResponse
         } catch (error) {
             // Shared error handling for both streaming and non-streaming requests.
@@ -176,13 +173,22 @@ export function createClient(
                 throw error
             }
 
+            /**
+             * In case of the abort error and non-empty completion response, we can
+             * consider the completion partially completed and want to log it to
+             * the Cody output channel via `log.onComplete()` instead of erroring.
+             */
             if (isAbortError(error as Error) && completionResponse) {
+                completionResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
+                log?.onError(message, error)
+                throw new TracedError(message, traceId)
+            }
+        } finally {
+            if (completionResponse) {
                 log?.onComplete(completionResponse)
             }
-
-            const message = `error parsing CodeCompletionResponse: ${error}`
-            log?.onError(message, error)
-            throw new TracedError(message, traceId)
         }
     }
 
