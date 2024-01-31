@@ -109,7 +109,7 @@ export function createClient(
 
         try {
             if (isStreamingResponse && isNodeResponse(response)) {
-                const iterator = createSSEIterator(response.body, { batchCompletionEvents: true })
+                const iterator = createSSEIterator(response.body, { aggregatedCompletionEvent: true })
                 let chunkIndex = 0
 
                 for await (const { event, data } of iterator) {
@@ -203,8 +203,12 @@ interface SSEMessage {
 const SSE_TERMINATOR = '\n\n'
 export async function* createSSEIterator(
     iterator: NodeJS.ReadableStream,
-    // Message batching or any non-standard SSE behaviors should noe be enabled by default
-    options: { batchCompletionEvents?: boolean } = {}
+    options: {
+        // This is an optimizations to avoid unnecessary work when a streaming chunk contains more
+        // than one completion event. Only use it when the completion repeats all generated tokens
+        // and you can afford to loose some individual chunks.
+        aggregatedCompletionEvent?: boolean
+    } = {}
 ): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
@@ -221,10 +225,7 @@ export async function* createSSEIterator(
         }
 
         for (let i = 0; i < messages.length; i++) {
-            // This is a potential optimization because our current backend includes a repetition of the
-            // whole prior completion in each event. If more than one event is detected inside a chunk,
-            // we can skip all but the last completion events.
-            if (options.batchCompletionEvents) {
+            if (options.aggregatedCompletionEvent) {
                 if (
                     i + 1 < messages.length &&
                     messages[i].event === 'completion' &&

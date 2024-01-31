@@ -52,7 +52,7 @@ describe('createSSEIterator', () => {
 
         const messages = []
         const iterator = createSSEIterator(Readable.from(createIterator()), {
-            batchCompletionEvents: true,
+            aggregatedCompletionEvent: true,
         })
 
         for await (const message of iterator) {

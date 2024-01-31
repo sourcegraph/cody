@@ -110,7 +110,7 @@ class FireworksProvider extends Provider {
     private promptChars: number
     private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
-    private codyGatewayAccessToken?: string
+    private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 
     constructor(
@@ -125,7 +125,7 @@ class FireworksProvider extends Provider {
         this.authStatus = authStatus
 
         const isNode = typeof process !== 'undefined'
-        this.codyGatewayAccessToken =
+        this.fastPathAccessToken =
             this.options.fastPath &&
             config.accessToken &&
             // Require the upstream to be dotcom
@@ -221,7 +221,7 @@ class FireworksProvider extends Provider {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
-                this.codyGatewayAccessToken
+                this.fastPathAccessToken
                     ? this.createFastPathClient(requestParams, abortController)
                     : this.createDefaultClient(requestParams, abortController),
                 requestParams.timeoutMs,
@@ -346,7 +346,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
         headers.set('Content-Type', 'application/json; charset=utf-8')
-        headers.set('Authorization', `Bearer ${this.codyGatewayAccessToken}`)
+        headers.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')
         addTraceparent(headers)
 
@@ -368,7 +368,11 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         }
 
         if (!response.ok) {
-            throw new NetworkError(response, await response.text(), traceId)
+            throw new NetworkError(
+                response,
+                (await response.text()) + (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                traceId
+            )
         }
 
         if (response.body === null) {
