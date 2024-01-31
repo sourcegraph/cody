@@ -777,6 +777,11 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
+
+    public getFromCache(flag: FeatureFlag): boolean {
+        return this.enabledFlags.has(flag)
+    }
+
     public syncAuthStatus(): Promise<void> {
         return Promise.resolve()
     }
@@ -801,6 +806,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
+    commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
     debugEnable: false,
@@ -814,6 +820,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteFormatOnAccept: true,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',

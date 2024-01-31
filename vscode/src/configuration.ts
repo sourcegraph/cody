@@ -100,6 +100,7 @@ export function getConfiguration(
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
+        commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
         /**
          * Hidden settings for internal use only.
@@ -118,11 +119,11 @@ export function getConfiguration(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
         ),
-
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
         ),
+        autocompleteExperimentalFastPath: getHiddenSetting('autocomplete.experimental.fastPath', false),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {

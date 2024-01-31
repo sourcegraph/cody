@@ -12,7 +12,12 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { fetchAndProcessCompletions, type FetchCompletionResult } from './fetch-and-process-completions'
+import { type OllamaModel, getModelHelpers } from './ollama-models'
+import {
+    fetchAndProcessCompletions,
+    fetchAndProcessDynamicMultilineCompletions,
+    type FetchCompletionResult,
+} from './fetch-and-process-completions'
 import {
     Provider,
     type CompletionProviderTracer,
@@ -20,8 +25,11 @@ import {
     type ProviderOptions,
 } from './provider'
 
-interface LlamaCodePrompt {
+interface OllamaPromptContext {
     snippets: { uri: vscode.Uri; content: string }[]
+    context: string
+    currentFileNameComment: string
+    isInfill: boolean
 
     uri: vscode.Uri
     prefix: string
@@ -32,42 +40,6 @@ interface LlamaCodePrompt {
 
 function fileNameLine(uri: vscode.Uri, commentStart: string): string {
     return `${commentStart} Path: ${displayPath(uri)}\n`
-}
-
-function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: string): string {
-    const config = getLanguageConfig(prompt.languageId)
-    const commentStart = config?.commentStart || '//'
-
-    const context = prompt.snippets
-        .map(
-            ({ uri, content }) =>
-                fileNameLine(uri, commentStart) +
-                content
-                    .split('\n')
-                    .map(line => `${commentStart} ${line}`)
-                    .join('\n')
-        )
-        .join('\n\n')
-
-    const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
-
-    if (model.startsWith('codellama:') && infill) {
-        const infillPrefix = context + currentFileNameComment + prompt.prefix
-
-        /**
-         * The infilll prompt for Code Llama.
-         * Source: https://github.com/facebookresearch/codellama/blob/e66609cfbd73503ef25e597fd82c59084836155d/llama/generation.py#L418
-         *
-         * Why are there spaces left and right?
-         * > For instance, the model expects this format: `<PRE> {pre} <SUF>{suf} <MID>`.
-         * But you won’t get infilling if the last space isn’t added such as in `<PRE> {pre} <SUF>{suf}<MID>`
-         *
-         * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
-         */
-        return `<PRE> ${infillPrefix} <SUF>${prompt.suffix} <MID>`
-    }
-
-    return context + currentFileNameComment + prompt.prefix
 }
 
 /**
@@ -85,13 +57,37 @@ class UnstableOllamaProvider extends Provider {
         super(options)
     }
 
-    protected createPrompt(snippets: ContextSnippet[], infill: boolean): LlamaCodePrompt {
-        const prompt: LlamaCodePrompt = {
+    protected createPromptContext(
+        snippets: ContextSnippet[],
+        isInfill: boolean,
+        modelHelpers: OllamaModel
+    ): OllamaPromptContext {
+        const { languageId, uri } = this.options.document
+        const config = getLanguageConfig(languageId)
+        const commentStart = config?.commentStart || '//'
+
+        const context = snippets
+            .map(
+                ({ uri, content }) =>
+                    fileNameLine(uri, commentStart) +
+                    content
+                        .split('\n')
+                        .map(line => `${commentStart} ${line}`)
+                        .join('\n')
+            )
+            .join('\n\n')
+
+        const currentFileNameComment = fileNameLine(uri, commentStart)
+
+        const prompt: OllamaPromptContext = {
             snippets: [],
-            uri: this.options.document.uri,
+            uri,
+            languageId,
+            context,
+            currentFileNameComment,
+            isInfill,
             prefix: this.options.docContext.prefix,
             suffix: this.options.docContext.suffix,
-            languageId: this.options.document.languageId,
         }
 
         if (process.env.OLLAMA_CONTEXT_SNIPPETS) {
@@ -100,11 +96,10 @@ class UnstableOllamaProvider extends Provider {
 
             for (const snippet of snippets) {
                 const extendedSnippets = [...prompt.snippets, snippet]
-                const promptLengthWithSnippet = llamaCodePromptString(
-                    { ...prompt, snippets: extendedSnippets },
-                    infill,
-                    this.ollamaOptions.model
-                ).length
+                const promptLengthWithSnippet = modelHelpers.getPrompt({
+                    ...prompt,
+                    snippets: extendedSnippets,
+                }).length
 
                 if (promptLengthWithSnippet > maxPromptChars) {
                     break
@@ -124,33 +119,19 @@ class UnstableOllamaProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         // Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
-        let timeoutMs = 5_0000
+        const isMultiline = this.options.multiline
+        const isDynamicMultiline = Boolean(this.options.dynamicMultilineCompletions)
+
+        const timeoutMs = 5_0000
+        const modelHelpers = getModelHelpers(this.ollamaOptions.model)
+        const promptContext = this.createPromptContext(snippets, useInfill, modelHelpers)
 
         const requestParams = {
-            prompt: llamaCodePromptString(
-                this.createPrompt(snippets, useInfill),
-                useInfill,
-                this.ollamaOptions.model
-            ),
+            prompt: modelHelpers.getPrompt(promptContext),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
-            options: {
-                stop: SINGLE_LINE_STOP_SEQUENCES,
-                temperature: 0.2,
-                top_k: -1,
-                top_p: -1,
-                num_predict: 30,
-            },
+            options: modelHelpers.getRequestOptions(isMultiline, isDynamicMultiline),
         } satisfies OllamaGenerateParams
-
-        if (this.options.multiline) {
-            timeoutMs = 15_0000
-
-            Object.assign(requestParams.options, {
-                num_predict: 256,
-                stop: MULTI_LINE_STOP_SEQUENCES,
-            })
-        }
 
         if (this.ollamaOptions.parameters) {
             Object.assign(requestParams.options, this.ollamaOptions.parameters)
@@ -159,8 +140,13 @@ class UnstableOllamaProvider extends Provider {
         // TODO(valery): remove `any` casts
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
+        const fetchAndProcessCompletionsImpl = isDynamicMultiline
+            ? fetchAndProcessDynamicMultilineCompletions
+            : fetchAndProcessCompletions
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+        const completionsGenerators = Array.from({
+            length: this.options.n,
+        }).map(() => {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
@@ -169,7 +155,7 @@ class UnstableOllamaProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletions({
+            return fetchAndProcessCompletionsImpl({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: insertText => insertText.trim(),
@@ -181,33 +167,26 @@ class UnstableOllamaProvider extends Provider {
     }
 }
 
-const EOT_TOKEN = '<EOT>'
-const SHARED_STOP_SEQUENCES = [
-    '// Path:',
-    '\u001E',
-    '\u001C',
-    EOT_TOKEN,
-
-    // Tokens that reduce the quality of multi-line completions but improve performance.
-    '; ',
-    ';\t',
-]
-
-const SINGLE_LINE_STOP_SEQUENCES = ['\n', ...SHARED_STOP_SEQUENCES]
-
-// TODO(valery): find the balance between using less stop tokens to get more multiline completions and keeping a good perf.
-// `SHARED_STOP_SEQUENCES` are not included because the number of multiline completions goes down significantly
-// leaving an impression that Ollama provider support only singleline completions.
-const MULTI_LINE_STOP_SEQUENCES: string[] = ['\n\n', EOT_TOKEN /* ...SHARED_STOP_SEQUENCES */]
-
 const PROVIDER_IDENTIFIER = 'unstable-ollama'
+
+export function isLocalCompletionsProvider(providerId: string): boolean {
+    return providerId === PROVIDER_IDENTIFIER
+}
+
 export function createProviderConfig(ollamaOptions: OllamaOptions): ProviderConfig {
     return {
-        create(options: ProviderOptions) {
-            // Always generate just one completion for a better perf.
-            options.n = 1
-
-            return new UnstableOllamaProvider(options, ollamaOptions)
+        create(options: Omit<ProviderOptions, 'id'>) {
+            return new UnstableOllamaProvider(
+                {
+                    ...options,
+                    // Always generate just one completion for a better perf.
+                    n: 1,
+                    // Increased first completion timeout value to account for the higher latency.
+                    firstCompletionTimeout: 3_0000,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                ollamaOptions
+            )
         },
         contextSizeHints: {
             // We don't use other files as context yet in Ollama, so this doesn't matter.

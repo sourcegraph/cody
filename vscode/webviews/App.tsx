@@ -5,6 +5,7 @@ import './App.css'
 import {
     GuardrailsPost,
     type ChatHistory,
+    type ChatInputHistory,
     type ChatMessage,
     type ChatModelProvider,
     type CodyCommand,
@@ -49,7 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     })
 
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 

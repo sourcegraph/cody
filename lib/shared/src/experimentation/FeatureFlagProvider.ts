@@ -26,6 +26,10 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
+    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
+    // Trigger only one request for every multiline completion instead of three.
+    CodyAutocompleteSingleMultilineRequest = 'cody-autocomplete-single-multiline-request',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
@@ -51,7 +55,10 @@ export class FeatureFlagProvider {
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    private getFromCache(flagName: FeatureFlag, endpoint: string): boolean | undefined {
+    public getFromCache(
+        flagName: FeatureFlag,
+        endpoint: string = this.apiClient.endpoint
+    ): boolean | undefined {
         const now = Date.now()
         if (now - this.lastUpdated > ONE_HOUR) {
             // Cache expired, refresh

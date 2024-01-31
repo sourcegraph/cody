@@ -14,7 +14,7 @@ export interface ProviderConfig {
      * inject provider specific parameters outside of the callers of the
      * factory.
      */
-    create(options: ProviderOptions): Provider
+    create(options: Omit<ProviderOptions, 'id'>): Provider
 
     /**
      * Hints about the optimal context size (and length of the document prefix and suffix). It is
@@ -75,6 +75,7 @@ export interface ProviderOptions {
     // feature flags
     dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
+    fastPath?: boolean
 }
 
 export abstract class Provider {

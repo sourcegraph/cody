@@ -456,7 +456,7 @@
         "group": "Cody",
         "icon": "$(list-unordered)",
         "when": "cody.activated && cody.hasChatHistory"
-    },
+      },
       {
         "command": "cody.search.index-update",
         "category": "Cody",
@@ -505,8 +505,7 @@
       },
       {
         "command": "cody.chat.panel.new",
-        "key": "ctrl+l",
-        "mac": "cmd+l",
+        "key": "alt+l",
         "when": "cody.activated && config.cody.internal.unstable"
       },
       {
@@ -517,8 +516,7 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+k",
-        "mac": "cmd+k",
+        "key": "alt+k",
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
@@ -838,6 +836,13 @@
           "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
           "default": true
         },
+        "cody.commandHints.enabled": {
+          "order": 12,
+          "title": "Cody Command Hints",
+          "type": "boolean",
+          "markdownDescription": "Enable hints for Edit and Chat shortcuts, displayed alongside editor selections.",
+          "default": false
+        },
         "cody.experimental.simpleChatContext": {
           "order": 99,
           "type": "boolean",
@@ -965,6 +970,11 @@
           "default": false,
           "markdownDescription": "Preload follow-up completions"
         },
+        "cody.autocomplete.experimental.fastPath": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Routes code completion requests directly to our Cody Gateway instance. Only works when connected to the Cody community edition and when using the default StarCoder model."
+        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
@@ -980,7 +990,7 @@
           "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
           "default": {
             "url": "http://localhost:11434",
-            "model": "codellama:7b-code"
+            "model": "deepseek-coder:6.7b-base-q4_K_M"
           },
           "properties": {
             "url": {
@@ -990,10 +1000,11 @@
             },
             "model": {
               "type": "string",
-              "default": "codellama:7b-code",
+              "default": "deepseek-coder:6.7b-base-q4_K_M",
               "examples": [
                 "codellama:7b-code",
-                "codellama:13b-code"
+                "codellama:13b-code",
+                "deepseek-coder:6.7b-base-q4_K_M"
               ]
             },
             "parameters": {
@@ -1031,6 +1042,13 @@
           "fontCharacter": "\\0042"
         }
       },
+      "anthropic-logo": {
+        "description": "Anthropic logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0043"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {
@@ -1062,6 +1080,7 @@
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
     "classnames": "^2.3.2",
+    "crypto-js": "^4.2.0",
     "detect-indent": "^7.0.1",
     "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
@@ -1088,6 +1107,7 @@
     "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
     "@types/blueimp-md5": "^2.18.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
