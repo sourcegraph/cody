@@ -18296,6 +18296,1505 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 7c0e32c33ef4f396227c70793bf81708
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 4572
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/squirrel.ts`:
+                  ```typescript
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `src/squirrel.ts`:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/multiple-selections.ts`:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/example.test.ts`:
+
+                  ```typescript
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Which file is the isIgnoredByCody functions defined?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 44187
+        content:
+          mimeType: text/event-stream
+          size: 44187
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called '","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called '","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnoredByCody'.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, there is no definition for a function called 'isIgnoredByCody'. The code snippets have contained:\n\n- A TestLogger class in src/TestLogger.ts\n- A TestClass class in src/TestClass.ts \n- An empty sum function in src/sum.ts\n- A Squirrel interface in src/squirrel.ts\n- Multiple selection demo in src/multiple-selections.ts\n- Example tests in src/example.test.ts\n- An Animal interface in src/animal.ts\n\nNone of these contain a definition for a function called 'isIgnoredByCody'.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 19:38:52 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T19:38:47.896Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 78536ea0a6a190ea66c88fca19c54f7c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 381
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: Which file is the isIgnoredByCody functions defined?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 24193
+        content:
+          mimeType: text/event-stream
+          size: 24193
+          text: >+
+            event: completion
+
+            data: {"completion":" Unfortunately","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific function is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific function is defined","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific function is defined.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Unfortunately I do not have enough context to know which specific file or codebase you are referring to that contains a function called isIgnoredByCody. As an AI assistant created by Sourcegraph, I do not have direct access to code files or the ability to search through codebases. I'd need more details about the project context and codebase you are working with in order to help locate where that specific function is defined.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 19:39:03 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T19:39:01.987Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: bfad5b67838879153a80da52e1758aaf
       _order: 0
       cache: {}

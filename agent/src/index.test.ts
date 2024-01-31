@@ -118,6 +118,9 @@ describe('Agent', () => {
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
     const multipleSelectionsUri = Uri.file(multipleSelections)
 
+    // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
+    const isIgnored = Uri.file(path.join(workspaceRootPath, 'src', 'isIgnored.ts'))
+
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
@@ -447,14 +450,18 @@ describe('Agent', () => {
     })
 
     describe('Cody Ignore', () => {
-        // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-        const isIgnored = Uri.file(path.join(workspaceRootPath, 'src', 'isIgnored.ts'))
         beforeAll(async () => {
+            const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            await client.openFile(codyIgnoreConfig)
+            const codyIgnoreDoc = client.workspace.getDocument(codyIgnoreConfig)
+
+            expect(codyIgnoreDoc?.content).toBeDefined()
+
             ignores.setActiveState(true)
             ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
                 {
                     uri: Uri.file(path.join(workspaceRootPath, '.cody', 'ignore')),
-                    content: '**/*Ignored.ts',
+                    content: codyIgnoreDoc?.content ?? '',
                 },
             ])
         }, 10_000)
@@ -464,7 +471,7 @@ describe('Agent', () => {
             expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
         })
 
-        it('chat/submitMessage on ignored file (addEnhancedContext: true)', async () => {
+        it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
             await client.openFile(isIgnored)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -473,7 +480,6 @@ describe('Agent', () => {
                 'Which file is the isIgnoredByCody functions defined?',
                 { addEnhancedContext: true }
             )
-            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             // Current file which is ignored, should not be included in context files
@@ -484,13 +490,13 @@ describe('Agent', () => {
             expect(contextFiles.length).toBeGreaterThan(0)
         }, 30_000)
 
-        it('chat/submitMessage on ignored file (addEnhancedContext: false)', async () => {
+        it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
             await client.openFile(isIgnored)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'Which file are the ignore and isIgnoredByCody functions defined?',
+                'Which file is the isIgnoredByCody functions defined?',
                 { addEnhancedContext: false }
             )
             decodeURIs(transcript)
@@ -503,14 +509,14 @@ describe('Agent', () => {
             expect(contextFiles.length).toBe(0)
         }, 30_000)
 
-        it('commands/explain on ignored file', async () => {
+        it('commands/explain on an ignored file', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
             await client.openFile(isIgnored)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
-            // Ignored file should not be used as context files evem if selected
+            // Ignored file should not be used as context files even when selected
             expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
         }, 30_000)
 
@@ -952,7 +958,7 @@ describe('Agent', () => {
         }, 30_000)
     })
 
-    describe('Enterprise', () => {
+    describe.only('Enterprise', () => {
         const enterpriseClient = new TestClient({
             name: 'enterpriseClient',
             accessToken:

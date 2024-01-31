@@ -109,7 +109,13 @@ export class IgnoreHelper {
             return false
         }
 
-        // Ignore all non-file URIs
+        // Remote context (e.g. unified, multi-repo) are filtered during sync time,
+        // and not ignored by clients.
+        if (uri.scheme === 'https') {
+            return false
+        }
+
+        // Ignore all other non-file URIs
         if (uri.scheme !== 'file') {
             return true
         }
