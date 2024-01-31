@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import {
     MAX_CURRENT_FILE_TOKENS,
@@ -9,7 +9,6 @@ import {
     populateCurrentEditorDiagnosticsTemplate,
     truncateText,
     truncateTextStart,
-    type CodebaseContext,
     type CodyCommand,
     type ContextFile,
     type ContextMessage,
@@ -28,17 +27,14 @@ interface GetContextFromIntentOptions {
     uri: vscode.Uri
     selectionRange: vscode.Range
     editor: VSCodeEditor
-    context: CodebaseContext
 }
 
 const getContextFromIntent = async ({
     intent,
-    selectedText,
     precedingText,
     followingText,
     uri,
     selectionRange,
-    context,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
     const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
@@ -112,15 +108,7 @@ const getContextFromIntent = async ({
             const errorsAndWarnings = diagnostics.filter(
                 ({ type }) => type === 'error' || type === 'warning'
             )
-            const selectionContext = await getContextMessagesFromSelection(
-                selectedText,
-                truncatedPrecedingText,
-                truncatedFollowingText,
-                { fileUri: uri },
-                context
-            )
             return [
-                ...selectionContext,
                 ...errorsAndWarnings.flatMap(diagnostic =>
                     getContextMessageWithResponse(
                         populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
@@ -130,6 +118,14 @@ const getContextFromIntent = async ({
                         }
                     )
                 ),
+                ...[truncatedPrecedingText, truncatedFollowingText]
+                    .filter(text => text.trim().length > 0)
+                    .flatMap(text =>
+                        getContextMessageWithResponse(populateCodeContextTemplate(text, uri), {
+                            type: 'file',
+                            uri,
+                        })
+                    ),
             ]
         }
     }
@@ -167,38 +163,4 @@ export const getContext = async ({
     }
 
     return [...derivedContextMessages, ...userProvidedContextMessages]
-}
-
-async function getContextMessagesFromSelection(
-    selectedText: string,
-    precedingText: string,
-    followingText: string,
-    { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
-    codebaseContext: CodebaseContext
-): Promise<ContextMessage[]> {
-    const workspaceFolderUri = vscode.workspace.workspaceFolders?.at(0)?.uri
-    if (!workspaceFolderUri) {
-        return []
-    }
-    const selectedTextContext = await codebaseContext.getContextMessages(
-        workspaceFolderUri,
-        selectedText,
-        {
-            numCodeResults: 4,
-            numTextResults: 0,
-        }
-    )
-
-    return selectedTextContext.concat(
-        [precedingText, followingText]
-            .filter(text => text.trim().length > 0)
-            .flatMap(text =>
-                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
-                    type: 'file',
-                    uri: fileUri,
-                    repoName,
-                    revision,
-                })
-            )
-    )
 }

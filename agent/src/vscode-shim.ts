@@ -456,6 +456,27 @@ export function setCreateWebviewPanel(
 
 export const progressBars = new Map<string, CancellationTokenSource>()
 
+async function showWindowMessage(
+    severity: 'error' | 'warning' | 'information',
+    message: string,
+    options: vscode.MessageOptions | string,
+    items: string[]
+): Promise<string | undefined> {
+    if (agent) {
+        if (clientInfo?.capabilities?.showWindowMessage === 'request') {
+            const result = await agent.request('window/showMessage', {
+                severity,
+                message,
+                options: typeof options === 'object' ? options : undefined,
+                items: typeof options === 'object' ? items : [options, ...items],
+            })
+            return result ?? undefined
+        }
+        agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
+    }
+    return Promise.resolve(undefined)
+}
+
 const _window: typeof vscode.window = {
     createTreeView: () => defaultTreeView,
     tabGroups,
@@ -534,24 +555,12 @@ const _window: typeof vscode.window = {
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
-    showErrorMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
-    showWarningMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showWarningMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
-    showInformationMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showInformationMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
+    showErrorMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('error', message, options, items),
+    showWarningMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('warning', message, options, items),
+    showInformationMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('information', message, options, items),
     createOutputChannel: (name: string) => outputChannel(name),
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
     showTextDocument: () => {

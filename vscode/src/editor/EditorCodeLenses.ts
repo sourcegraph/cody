@@ -112,7 +112,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
                 codeLenses.push(
                     new vscode.CodeLens(range, {
                         ...editorCodeLenses.cody,
-                        arguments: [{ name: 'cody.action.commands.menu', selection }],
+                        arguments: [{ name: 'cody.menu.commands', selection }],
                     })
                 )
                 codeLensesMap.set(symbol.location.range.start.line.toString(), range)

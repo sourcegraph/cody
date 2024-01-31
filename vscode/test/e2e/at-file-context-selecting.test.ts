@@ -1,11 +1,9 @@
-import path from 'path'
-
 import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
@@ -117,7 +115,3 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
-
-function withPlatformSlashes(input: string) {
-    return input.replaceAll(path.posix.sep, path.sep)
-}

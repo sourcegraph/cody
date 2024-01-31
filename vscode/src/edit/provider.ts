@@ -9,7 +9,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
-import { doesFileExist } from '../editor-context/helpers'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import { NewFixupFileMap } from '../non-stop/FixupFile'
@@ -20,6 +19,7 @@ import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
+import { doesFileExist } from '../commands/utils/workspace-files'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -42,7 +42,6 @@ export class EditProvider {
             model,
             task: this.config.task,
             editor: this.config.editor,
-            context: this.config.contextProvider.context,
         })
 
         const multiplexer = new BotResponseMultiplexer()
@@ -69,9 +68,9 @@ export class EditProvider {
             },
         })
 
-        // Listen to file name suggestion from responses
-        // Allows Cody to let us know which file we should add the new content to
-        if (this.config.task.mode === 'file') {
+        // Listen to test file name suggestion from responses
+        // Allows Cody to let us know which test file we should add the new content to
+        if (this.config.task.mode === 'test') {
             let filepath = ''
             multiplexer.sub(PROMPT_TOPICS.FILENAME, {
                 onResponse: async (content: string) => {
@@ -142,9 +141,9 @@ export class EditProvider {
             return
         }
 
-        // If the response finished and we didn't receive file name suggestion,
-        // we will create one manually before inserting the response to the new file
-        if (this.config.task.mode === 'file' && !NewFixupFileMap.get(this.config.task.id)) {
+        // If the response finished and we didn't receive a test file name suggestion,
+        // we will create one manually before inserting the response to the new test file
+        if (this.config.task.mode === 'test' && !NewFixupFileMap.get(this.config.task.id)) {
             if (isMessageInProgress) {
                 return
             }

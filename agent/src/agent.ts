@@ -142,7 +142,7 @@ export class Agent extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
-                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
                 return Promise.resolve(false)
             }
             const edits: TextEdit[] = []
@@ -630,7 +630,7 @@ export class Agent extends MessageHandler {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+        const commandArgs = [{ source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
             return this.createChatPanel(

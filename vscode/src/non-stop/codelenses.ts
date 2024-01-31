@@ -2,14 +2,12 @@ import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared'
 
-import { getSingleLineRange } from '../services/InlineAssist'
-
 import type { FixupTask } from './FixupTask'
 import { CodyTaskState } from './utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
-    const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
+    const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
     switch (task.state) {
         case CodyTaskState.pending:
         case CodyTaskState.working: {

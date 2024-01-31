@@ -1,6 +1,7 @@
 import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
+import { createServer } from 'net'
 
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
@@ -43,6 +44,11 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
             )
     }
 }
+
+const isDebugMode = process.env.CODY_AGENT_DEBUG_REMOTE === 'true'
+const debugPort = process.env.CODY_AGENT_DEBUG_PORT
+    ? parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
+    : 3113
 
 export const jsonrpcCommand = new Command('jsonrpc')
     .description(
@@ -133,21 +139,38 @@ export const jsonrpcCommand = new Command('jsonrpc')
             process.exit(1)
         }
 
-        if (process.env.CODY_DEBUG === 'true') {
-            process.stderr.write('Starting Cody Agent...\n')
+        if (isDebugMode) {
+            const server = createServer(socket => {
+                setupAgentCommunication(polly, networkRequests, socket, socket)
+            })
+
+            server.listen(debugPort, () => {
+                console.log(`Agent debug server listening on port ${debugPort}`)
+            })
+        } else {
+            setupAgentCommunication(polly, networkRequests, process.stdin, process.stdout)
         }
-
-        const agent = new Agent({ polly, networkRequests })
-
-        // Force the agent process to exit when stdin/stdout close as an attempt to
-        // prevent zombie agent processes. We experienced this problem when we
-        // forcefully exit the IntelliJ process during local `./gradlew :runIde`
-        // workflows. We manually confirmed that this logic makes the agent exit even
-        // when we forcefully quit IntelliJ
-        // https://github.com/sourcegraph/cody/pull/1439#discussion_r1365610354
-        process.stdout.on('close', () => process.exit(1))
-        process.stdin.on('close', () => process.exit(1))
-
-        process.stdin.pipe(agent.messageDecoder)
-        agent.messageEncoder.pipe(process.stdout)
     })
+
+function setupAgentCommunication(
+    polly: Polly | undefined,
+    networkRequests: Request[],
+    stdin: NodeJS.ReadableStream,
+    stdout: NodeJS.WritableStream
+) {
+    const agent = new Agent({ polly, networkRequests })
+
+    // Force the agent process to exit when stdin/stdout close as an attempt to
+    // prevent zombie agent processes. We experienced this problem when we
+    // forcefully exit the IntelliJ process during local `./gradlew :runIde`
+    // workflows. We manually confirmed that this logic makes the agent exit even
+    // when we forcefully quit IntelliJ
+    // https://github.com/sourcegraph/cody/pull/1439#discussion_r1365610354
+    if (!isDebugMode) {
+        stdout.on('close', () => process.exit(1))
+        stdin.on('close', () => process.exit(1))
+    }
+
+    stdin.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(stdout)
+}

@@ -47,19 +47,7 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-export interface VsCodeCommandsController {
-    menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
-}
-
-export interface ActiveTextEditorViewControllers<
-    C extends VsCodeCommandsController = VsCodeCommandsController,
-> {
-    readonly command?: C
-}
-
-export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsController> {
-    controllers?: ActiveTextEditorViewControllers<P>
-
+export interface Editor {
     /** The URI of the workspace root. */
     getWorkspaceRootUri(): URI | null
 
@@ -93,8 +81,6 @@ export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsContr
 }
 
 export class NoopEditor implements Editor {
-    public controllers?: ActiveTextEditorViewControllers<VsCodeCommandsController> | undefined
-
     public getWorkspaceRootUri(): URI | null {
         return null
     }
