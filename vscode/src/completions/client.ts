@@ -134,7 +134,8 @@ export function createClient(
 
                         yield {
                             completion: completionResponse.completion,
-                            stopReason: completionResponse.stopReason || CompletionStopReason.StreamingChunk,
+                            stopReason:
+                                completionResponse.stopReason || CompletionStopReason.StreamingChunk,
                         }
                     }
 
