@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     testFileUri,
     type CodeCompletionsClient,
     type CompletionParameters,
@@ -94,7 +94,7 @@ export function params(
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {
-                    yield { ...response, stopReason: STOP_REASON_STREAMING_CHUNK }
+                    yield { ...response, stopReason: CompletionStopReason.StreamingChunk }
                 }
 
                 // Signal to tests that all streaming chunks are processed.
@@ -234,7 +234,7 @@ export function paramsWithInlinedCompletion(
                 lastResponse += completionChunk
                 yield {
                     completion: lastResponse,
-                    stopReason: STOP_REASON_STREAMING_CHUNK,
+                    stopReason: CompletionStopReason.StreamingChunk,
                 }
 
                 if (delayBetweenChunks) {
