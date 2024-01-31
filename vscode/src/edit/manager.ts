@@ -4,7 +4,7 @@ import {
     ConfigFeaturesSingleton,
     type ChatClient,
     type ChatEventSource,
-    ChatModelProvider,
+    ModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
@@ -35,7 +35,7 @@ export class EditManager implements vscode.Disposable {
     private controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new Map<FixupTask, EditProvider>()
-    private models: ChatModelProvider[] = []
+    private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
         this.controller = new FixupController()
@@ -47,10 +47,11 @@ export class EditManager implements vscode.Disposable {
             )
         )
         const authStatus = options.authProvider.getAuthStatus()
-        if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
-        }
-        this.models = ChatModelProvider.get(authStatus.endpoint)
+        // TODO: authStatus?.configOverwrites?.chatModel?
+        // if (authStatus?.configOverwrites?.chatModel) {
+        //     ModelProvider.add('edit', new ModelProvider(authStatus.configOverwrites.chatModel))
+        // }
+        this.models = ModelProvider.get('edit', authStatus.endpoint)
     }
 
     public async executeEdit(

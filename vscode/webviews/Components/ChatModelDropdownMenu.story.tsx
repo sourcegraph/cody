@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { ChatModelProvider, DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { DOTCOM_URL, ModelProvider } from '@sourcegraph/cody-shared'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
@@ -11,7 +11,7 @@ const meta: Meta<typeof ChatModelDropdownMenu> = {
     component: ChatModelDropdownMenu,
     decorators: [VSCodeStoryDecorator],
     args: {
-        models: ChatModelProvider.get(String(DOTCOM_URL)),
+        models: ModelProvider.get('chat', String(DOTCOM_URL)),
         disabled: false,
     },
     parameters: {

@@ -2,7 +2,7 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
+import { ModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
@@ -92,7 +92,7 @@ export class ChatManager implements vscode.Disposable {
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add('chat', new ModelProvider(authStatus.configOverwrites.chatModel))
         }
         await this.chatPanelsManager.syncAuthStatus(authStatus)
     }

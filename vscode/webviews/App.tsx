@@ -7,7 +7,7 @@ import {
     type ChatHistory,
     type ChatInputHistory,
     type ChatMessage,
-    type ChatModelProvider,
+    type ModelProvider,
     type CodyCommand,
     type Configuration,
     type ContextFile,
@@ -62,7 +62,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+    const [chatModels, setChatModels] = useState<ModelProvider[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)

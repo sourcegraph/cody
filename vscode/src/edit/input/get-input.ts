@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { ChatEventSource, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import type { EditSupportedModels } from '../prompt'
@@ -56,7 +56,7 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
-    modelOptions: ChatModelProvider[],
+    modelOptions: ModelProvider[],
     initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {

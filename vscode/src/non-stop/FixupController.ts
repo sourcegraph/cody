@@ -5,7 +5,7 @@ import {
     type ChatEventSource,
     type ContextFile,
     type ContextMessage,
-    type ChatModelProvider,
+    type ModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -165,7 +165,7 @@ export class FixupController
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
         model: EditSupportedModels,
-        modelOptions: ChatModelProvider[],
+        modelOptions: ModelProvider[],
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource

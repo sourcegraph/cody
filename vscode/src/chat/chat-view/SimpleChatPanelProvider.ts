@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     ConfigFeaturesSingleton,
     hydrateAfterPostMessage,
     isDefined,
@@ -92,7 +92,7 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    models: ChatModelProvider[]
+    models: ModelProvider[]
     guardrails: Guardrails
 }
 
@@ -679,9 +679,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add('chat', new ModelProvider(authStatus.configOverwrites.chatModel))
         }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.get('chat', authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1273,7 +1273,7 @@ export async function setModel(modelID: string) {
 }
 
 // Select the chat model to use in Chat
-export function selectModel(authProvider: AuthProvider, models: ChatModelProvider[]): string {
+export function selectModel(authProvider: AuthProvider, models: ModelProvider[]): string {
     const authStatus = authProvider.getAuthStatus()
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {

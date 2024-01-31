@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, ChatModelProvider, Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ModelProvider, Guardrails } from '@sourcegraph/cody-shared'
 
 import type {
     ApiPostMessage,
@@ -36,9 +36,9 @@ export const Transcript: React.FunctionComponent<
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
-        chatModels?: ChatModelProvider[]
+        chatModels?: ModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-        onCurrentChatModelChange?: (model: ChatModelProvider) => void
+        onCurrentChatModelChange?: (model: ModelProvider) => void
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails

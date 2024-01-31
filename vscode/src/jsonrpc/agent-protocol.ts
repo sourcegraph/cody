@@ -3,7 +3,7 @@ import type {
     BillingCategory,
     BillingProduct,
     ChatMessage,
-    ChatModelProvider,
+    ModelProvider,
     event,
 } from '@sourcegraph/cody-shared'
 import type {
@@ -48,7 +48,7 @@ export type Requests = {
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
-    'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/models': [{ id: string }, { models: ModelProvider[] }]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage

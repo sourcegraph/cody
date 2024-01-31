@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     featureFlagProvider,
     type ChatClient,
     type ConfigurationWithAccessToken,
@@ -211,9 +211,10 @@ export class ChatPanelsManager implements vscode.Disposable {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add('chat', new ModelProvider(authStatus.configOverwrites.chatModel))
         }
-        const models = ChatModelProvider.get(authStatus.endpoint)
+        const models = ModelProvider.get('chat', authStatus.endpoint)
+        console.log('got models', models)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({

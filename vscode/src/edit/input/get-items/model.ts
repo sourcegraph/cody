@@ -1,7 +1,7 @@
 import type { GetItemsResult } from '../quick-pick'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import type { EditModelItem } from './types'
-import type { ChatModelProvider } from '@sourcegraph/cody-shared'
+import type { ModelProvider } from '@sourcegraph/cody-shared'
 
 export const DEFAULT_MODEL_ITEM: EditModelItem = {
     label: '$(anthropic-logo) Claude 2.1',
@@ -30,7 +30,7 @@ export const getModelProviderIcon = (provider: string): string => {
     }
 }
 
-export const getModelOptionItems = (modelOptions: ChatModelProvider[]): EditModelItem[] => {
+export const getModelOptionItems = (modelOptions: ModelProvider[]): EditModelItem[] => {
     return modelOptions.map(modelOption => {
         const icon = getModelProviderIcon(modelOption.provider)
         return {
