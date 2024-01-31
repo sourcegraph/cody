@@ -50,7 +50,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         const { completedCompletion, rawCompletion, isFullResponse } = stopParams
         addAutocompleteDebugEvent('stopStreamingAndUsePartialResponse', {
             isFullResponse,
-            text: rawCompletion,
+            text: completedCompletion.insertText,
         })
 
         yield {
