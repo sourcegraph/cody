@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import type { Range, ProtocolTextDocument } from './agent-protocol'
+import { logDebug } from '../log'
 
 /**
  * Wrapper around `ProtocolTextDocument` that also contains a parsed vscode.Uri.
@@ -10,15 +11,18 @@ import type { Range, ProtocolTextDocument } from './agent-protocol'
  */
 export class ProtocolTextDocumentWithUri {
     public underlying: ProtocolTextDocument
-    constructor(
+    private constructor(
         public readonly uri: vscode.Uri,
         underlying?: ProtocolTextDocument
     ) {
         this.underlying = underlying ?? { uri: uri.toString() }
         if (this.underlying.uri !== uri.toString()) {
-            throw new Error(
-                `ProtocolTextDocumentWithUri invariant violation: ${this.uri} (this.uri) !== ${this.underlying.uri} (this.underlying.uri)`
+            logDebug(
+                'ProtocolTextDocumentWithUri',
+                'correcting invariant violation',
+                `${this.uri} (this.uri) !== ${this.underlying.uri} (this.underlying.uri)`
             )
+            this.underlying.uri = uri.toString()
         }
     }
 
@@ -34,7 +38,7 @@ export class ProtocolTextDocumentWithUri {
 
     public static from(
         uri: vscode.Uri,
-        document: Partial<ProtocolTextDocument>
+        document?: Partial<ProtocolTextDocument>
     ): ProtocolTextDocumentWithUri {
         return new ProtocolTextDocumentWithUri(uri, { ...document, uri: uri.toString() })
     }
