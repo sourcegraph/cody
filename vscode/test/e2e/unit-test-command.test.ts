@@ -19,8 +19,8 @@ test('unit test command with context fetching - chat', async ({ page, sidebar })
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
 
-    await page.getByText('Generate unit tests (Chat)').hover()
-    await page.getByText('Generate unit tests (Chat)').click()
+    await page.getByText('Generate unit tests (chat)').hover()
+    await page.getByText('Generate unit tests (chat)').click()
 
     // Find the chat iframe
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
