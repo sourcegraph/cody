@@ -100,6 +100,7 @@ export function getConfiguration(
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
+        commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
         /**
          * Hidden settings for internal use only.

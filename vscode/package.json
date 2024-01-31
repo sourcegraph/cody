@@ -505,8 +505,7 @@
       },
       {
         "command": "cody.chat.panel.new",
-        "key": "ctrl+l",
-        "mac": "cmd+l",
+        "key": "alt+l",
         "when": "cody.activated && config.cody.internal.unstable"
       },
       {
@@ -517,8 +516,7 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+k",
-        "mac": "cmd+k",
+        "key": "alt+k",
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
@@ -837,6 +835,13 @@
           "type": "boolean",
           "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
           "default": true
+        },
+        "cody.commandHints.enabled": {
+          "order": 12,
+          "title": "Cody Command Hints",
+          "type": "boolean",
+          "markdownDescription": "Enable hints for Edit and Chat shortcuts, displayed alongside editor selections.",
+          "default": false
         },
         "cody.experimental.simpleChatContext": {
           "order": 99,

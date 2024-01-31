@@ -43,6 +43,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.codeActions.enabled':
                         return true
+                    case 'cody.commandHints.enabled':
+                        return true
                     case 'cody.experimental.localSymbols':
                         return true
                     case 'cody.experimental.symf.path':
@@ -121,6 +123,7 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             codeActions: true,
+            commandHints: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
