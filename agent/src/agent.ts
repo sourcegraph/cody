@@ -41,7 +41,7 @@ import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import { PollyRequestError } from './cli/jsonrpc'
+import type { PollyRequestError } from './cli/jsonrpc'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
