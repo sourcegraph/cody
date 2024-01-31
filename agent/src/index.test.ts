@@ -9,11 +9,10 @@ import { Uri } from 'vscode'
 
 import { ignores, isCodyIgnoredFile, isWindows } from '@sourcegraph/cody-shared'
 
-import type { ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
-
 import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
+import { decodeURIs } from './decodeURIs'
 
 const explainPollyError = `
 
@@ -38,9 +37,6 @@ const explainPollyError = `
 const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
-
-// The config file for .cody/ignore
-const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody', 'ignore'))
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
@@ -108,11 +104,13 @@ describe('Agent', () => {
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
-        // Set up .cody/ignore for testing
-        // All files ends with Ignored.ts will be excluded from cody context
+        // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
         ignores.setActiveState(true)
         ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
-            { uri: codyIgnoreConfig, content: '**/*Ignored.ts' },
+            {
+                uri: Uri.file(path.join(workspaceRootPath, '.cody', 'ignore')),
+                content: '**/*Ignored.ts',
+            },
         ])
     }, 10_000)
 
@@ -201,20 +199,6 @@ describe('Agent', () => {
           }
         `)
     }, 10_000)
-
-    // Workaround for the fact that `ContextFile.uri` is a class that
-    // serializes to JSON as an object, and deserializes back into a JS
-    // object instead of the class. Without this,
-    // `ContextFile.uri.toString()` return `"[Object object]".
-    function decodeURIs(transcript: ExtensionTranscriptMessage): void {
-        for (const message of transcript.messages) {
-            if (message.contextFiles) {
-                for (const file of message.contextFiles) {
-                    file.uri = URI.from(file.uri)
-                }
-            }
-        }
-    }
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
@@ -491,7 +475,6 @@ describe('Agent', () => {
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             // Current file which is ignored, should not be included in context files
-            console.log(contextFiles.find(f => f.uri.toString() === isIgnored.toString()))
             expect(contextFiles.find(f => f.uri.toString() === isIgnored.toString())).toBeUndefined()
             // Ignored file should not be included in context files
             expect(contextFiles.filter(f => isCodyIgnoredFile(f.uri))).toHaveLength(0)
@@ -528,6 +511,11 @@ describe('Agent', () => {
             // Ignored file should not be used as context files evem if selected
             expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
         }, 30_000)
+
+        afterAll(async () => {
+            ignores.setActiveState(false)
+            expect(isCodyIgnoredFile(isIgnored)).toBeFalsy()
+        }, 10_000)
     })
 
     describe('Text documents', () => {
@@ -1020,7 +1008,6 @@ describe('Agent', () => {
                     }
                 }
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
-
                 expect(paths).includes('cmd/symbols/squirrel/README.md')
 
                 const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
