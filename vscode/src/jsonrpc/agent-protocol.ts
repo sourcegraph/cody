@@ -114,6 +114,7 @@ export type Requests = {
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
+    'testing/requestErrors': [null, { errors: NetworkRequest[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -532,6 +533,7 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+    error?: string
 }
 
 export interface ShowWindowMessageParams {

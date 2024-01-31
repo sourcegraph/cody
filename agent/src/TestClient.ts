@@ -400,6 +400,21 @@ export class TestClient extends MessageHandler {
 
     public async shutdownAndExit() {
         if (this.isAlive()) {
+            const { errors } = await this.request('testing/requestErrors', null)
+            const missingRecordingErrors = errors.filter(({ error }) =>
+                error?.includes?.('`recordIfMissing` is')
+            )
+            if (missingRecordingErrors.length > 0) {
+                const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
+                throw new Error(
+                    dedent`${errorMessage}.
+
+                           To fix this problem, run the following commands to update the HTTP recordings:
+
+                             source agent/scripts/export-cody-http-recording-tokens.sh
+                             pnpm update-agent-recordings`
+                )
+            }
             await this.request('shutdown', null)
             this.notify('exit', null)
         } else {
