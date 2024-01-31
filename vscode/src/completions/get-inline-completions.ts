@@ -375,7 +375,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
 
     if (docContext.multilineTrigger) {
         return providerConfig.create({
-            id: 'multiline',
             ...sharedProviderOptions,
             n: completionProviderConfig.getPrefetchedFlag('cody-autocomplete-single-multiline-request')
                 ? 1
@@ -385,7 +384,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     }
 
     return providerConfig.create({
-        id: 'single-line-suffix',
         ...sharedProviderOptions,
         // Show more if manually triggered (but only showing 1 is faster, so we use it
         // in the automatic trigger case).

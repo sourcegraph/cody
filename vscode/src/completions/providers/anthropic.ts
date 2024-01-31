@@ -261,6 +261,8 @@ class AnthropicProvider extends Provider {
     }
 }
 
+const PROVIDER_IDENTIFIER = 'anthropic'
+
 export function createProviderConfig({
     maxContextTokens = 2048,
     model,
@@ -274,12 +276,16 @@ export function createProviderConfig({
     return {
         create(options: ProviderOptions) {
             return new AnthropicProvider(
-                { ...options, ...providerOptions },
+                {
+                    ...options,
+                    ...providerOptions,
+                    id: PROVIDER_IDENTIFIER,
+                },
                 { maxContextTokens, model, ...otherOptions }
             )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: 'anthropic',
+        identifier: PROVIDER_IDENTIFIER,
         model: model ?? 'claude-instant-1.2',
     }
 }
