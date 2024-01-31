@@ -408,11 +408,14 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const insertText = "console.log('hello')\n    console.log('world')"
+
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            "console.log('hello')\n    console.log('world')",
-            document.languageId
-        )
+            insertText,
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`
@@ -422,12 +425,14 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: "    console.log('world')",
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: "    console.log('hello')",
             nextNonEmptyLine: '}',
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
             position: { character: 24, line: 2 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 
@@ -447,11 +452,13 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const insertText = "'hello', 'world')"
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            "'hello', 'world')",
-            document.languageId
-        )
+            insertText,
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`
@@ -460,6 +467,7 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: "    console.log('hello', 'world')",
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: 'function helloWorld() {',
             nextNonEmptyLine: '}',
             multilineTrigger: null,
@@ -467,6 +475,7 @@ describe('insertCompletionIntoDocContext', () => {
             injectedPrefix: null,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: "    console.log('hello', 'world')".length, line: 1 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 
@@ -486,11 +495,13 @@ describe('insertCompletionIntoDocContext', () => {
             dynamicMultilineCompletions: false,
         })
 
-        const updatedDocContext = insertIntoDocContext(
+        const insertText = '\n        propA: foo,\n        propB: bar,\n    }, 2)'
+        const updatedDocContext = insertIntoDocContext({
             docContext,
-            '\n        propA: foo,\n        propB: bar,\n    }, 2)',
-            document.languageId
-        )
+            insertText,
+            languageId: document.languageId,
+            dynamicMultilineCompletions: false,
+        })
 
         expect(updatedDocContext).toEqual({
             prefix: dedent`
@@ -503,6 +514,7 @@ describe('insertCompletionIntoDocContext', () => {
             suffix: '\n}',
             currentLinePrefix: '    }, 2)',
             currentLineSuffix: '',
+            injectedCompletionText: insertText,
             prevNonEmptyLine: '        propB: bar,',
             nextNonEmptyLine: '}',
             multilineTrigger: null,
@@ -510,6 +522,7 @@ describe('insertCompletionIntoDocContext', () => {
             injectedPrefix: null,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: '    }, 2)'.length, line: 4 },
+            positionWithoutInjectedCompletionText: docContext.position,
         })
     })
 })

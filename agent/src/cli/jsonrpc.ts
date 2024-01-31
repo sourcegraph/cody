@@ -1,6 +1,7 @@
-import type { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
+import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
+import { createServer } from 'net'
 
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
@@ -44,6 +45,11 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
     }
 }
 
+const isDebugMode = process.env.CODY_AGENT_DEBUG_REMOTE === 'true'
+const debugPort = process.env.CODY_AGENT_DEBUG_PORT
+    ? parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
+    : 3113
+
 export const jsonrpcCommand = new Command('jsonrpc')
     .description(
         'Interact with the Agent using JSON-RPC via stdout/stdin. ' +
@@ -61,6 +67,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             'If true, unused recordings are not removed from the recording file'
         )
             .env('CODY_KEEP_UNUSED_RECORDINGS')
+            .argParser(booleanOption)
             .default(false)
     )
     .addOption(
@@ -98,6 +105,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
             .default(false)
     )
     .action((options: JsonrpcCommandOptions) => {
+        const networkRequests: Request[] = []
         let polly: Polly | undefined
         if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {
@@ -113,30 +121,56 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 recordIfMissing: options.recordIfMissing,
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
+            polly.server.any().on('request', req => {
+                networkRequests.push(req)
+            })
             // Automatically pass through requests to GitHub because we
             // don't want to record huge binary downloads.
             polly.server.get('https://github.com/*path').passthrough()
+            // Uncomment below if you want to intercept network requests to, for
+            // example, fail github.com downloads. This can be helpful to reproduce
+            // situations where users are running Cody on airgapped computers.
+            // polly.server.get('https://github.com/*path').intercept((_req, res) => {
+            //     res.sendStatus(400)
+            // })
             polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)
         }
 
-        if (process.env.CODY_DEBUG === 'true') {
-            process.stderr.write('Starting Cody Agent...\n')
+        if (isDebugMode) {
+            const server = createServer(socket => {
+                setupAgentCommunication(polly, networkRequests, socket, socket)
+            })
+
+            server.listen(debugPort, () => {
+                console.log(`Agent debug server listening on port ${debugPort}`)
+            })
+        } else {
+            setupAgentCommunication(polly, networkRequests, process.stdin, process.stdout)
         }
-
-        const agent = new Agent({ polly })
-
-        // Force the agent process to exit when stdin/stdout close as an attempt to
-        // prevent zombie agent processes. We experienced this problem when we
-        // forcefully exit the IntelliJ process during local `./gradlew :runIde`
-        // workflows. We manually confirmed that this logic makes the agent exit even
-        // when we forcefully quit IntelliJ
-        // https://github.com/sourcegraph/cody/pull/1439#discussion_r1365610354
-        process.stdout.on('close', () => process.exit(1))
-        process.stdin.on('close', () => process.exit(1))
-
-        process.stdin.pipe(agent.messageDecoder)
-        agent.messageEncoder.pipe(process.stdout)
     })
+
+function setupAgentCommunication(
+    polly: Polly | undefined,
+    networkRequests: Request[],
+    stdin: NodeJS.ReadableStream,
+    stdout: NodeJS.WritableStream
+) {
+    const agent = new Agent({ polly, networkRequests })
+
+    // Force the agent process to exit when stdin/stdout close as an attempt to
+    // prevent zombie agent processes. We experienced this problem when we
+    // forcefully exit the IntelliJ process during local `./gradlew :runIde`
+    // workflows. We manually confirmed that this logic makes the agent exit even
+    // when we forcefully quit IntelliJ
+    // https://github.com/sourcegraph/cody/pull/1439#discussion_r1365610354
+    if (!isDebugMode) {
+        stdout.on('close', () => process.exit(1))
+        stdin.on('close', () => process.exit(1))
+    }
+
+    stdin.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(stdout)
+}

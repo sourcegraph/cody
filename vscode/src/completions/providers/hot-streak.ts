@@ -1,5 +1,12 @@
+import detectIndent from 'detect-indent'
+import type { TextDocument } from 'vscode'
+
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
+import { getEditorIndentString } from '../../utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
+import { endsWithBlockStart } from '../detect-multiline'
 import { insertIntoDocContext, type DocumentContext } from '../get-current-doc-context'
+import { getLastLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     processCompletion,
@@ -22,90 +29,118 @@ export interface HotStreakExtractor {
     extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult>
 }
 
+export function pressEnterAndGetIndentString(
+    insertText: string,
+    currentLine: string,
+    document: TextDocument
+): string {
+    const { languageId, uri } = document
+
+    const startsNewBlock = Boolean(endsWithBlockStart(insertText, languageId))
+    const newBlockIndent = startsNewBlock ? getEditorIndentString(uri) : ''
+    const currentIndentReference = insertText.includes('\n') ? getLastLine(insertText) : currentLine
+
+    return '\n' + detectIndent(currentIndentReference).indent + newBlockIndent
+}
+
+/**
+ * For a hot streak, we require the completion to be inserted followed by an enter key
+ * Enter will usually insert a line break followed by the same indentation that the
+ * current line has.
+ */
+function insertCompletionAndPressEnter(
+    docContext: DocumentContext,
+    completion: InlineCompletionItemWithAnalytics,
+    document: TextDocument,
+    dynamicMultilineCompletions: boolean
+): DocumentContext {
+    const { insertText } = completion
+
+    const indentString = pressEnterAndGetIndentString(insertText, docContext.currentLinePrefix, document)
+    const insertTextWithPressedEnter = insertText + indentString
+
+    addAutocompleteDebugEvent('insertCompletionAndPressEnter', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: insertTextWithPressedEnter,
+    })
+
+    const updatedDocContext = insertIntoDocContext({
+        docContext,
+        languageId: document.languageId,
+        insertText: insertTextWithPressedEnter,
+        dynamicMultilineCompletions,
+    })
+
+    return updatedDocContext
+}
+
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
     const { completedCompletion, providerOptions } = params
     const {
         docContext,
+        document,
         document: { languageId },
+        dynamicMultilineCompletions = false,
     } = providerOptions
-    let lastInsertedWhitespace: undefined | string
-    let alreadyInsertedLength = 0
-    let updatedDocContext = insertCompletionAndPressEnter(docContext, completedCompletion)
 
-    function insertCompletionAndPressEnter(
-        docContext: DocumentContext,
-        completion: InlineCompletionItemWithAnalytics
-    ): DocumentContext {
-        // For a hot streak, we require the completion to be inserted followed by an enter key
-        // Enter will usually insert a line break followed by the same indentation that the
-        // current line has.
-        let updatedDocContext = insertIntoDocContext(docContext, completion.insertText, languageId)
-        lastInsertedWhitespace = `\n${updatedDocContext.currentLinePrefix.match(/^([\t ])*/)?.[0] || ''}`
-        updatedDocContext = insertIntoDocContext(updatedDocContext, lastInsertedWhitespace, languageId)
-
-        alreadyInsertedLength += completion.insertText.length + lastInsertedWhitespace.length
-
-        return updatedDocContext
-    }
+    let updatedDocContext = insertCompletionAndPressEnter(
+        docContext,
+        completedCompletion,
+        document,
+        dynamicMultilineCompletions
+    )
 
     function* extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult> {
         while (true) {
-            const unprocessedCompletion = rawCompletion.slice(alreadyInsertedLength)
+            const unprocessedCompletion = rawCompletion.slice(
+                updatedDocContext.injectedCompletionText?.length || 0
+            )
+
+            addAutocompleteDebugEvent('extract start', {
+                text: unprocessedCompletion,
+            })
+
             if (unprocessedCompletion.length === 0) {
                 return undefined
             }
 
-            const updatedProviderOptions = {
-                ...providerOptions,
-                docContext: updatedDocContext,
+            const extractCompletion = isRequestEnd ? parseAndTruncateCompletion : canUsePartialCompletion
+
+            const maybeDynamicMultilineDocContext = {
+                ...updatedDocContext,
+                ...(dynamicMultilineCompletions && !updatedDocContext.multilineTrigger
+                    ? getDynamicMultilineDocContext({
+                          languageId,
+                          docContext: updatedDocContext,
+                          insertText: unprocessedCompletion,
+                      })
+                    : {}),
             }
 
-            const eventualDynamicMultilineProviderOptions = providerOptions.dynamicMultilineCompletions
-                ? {
-                      ...updatedProviderOptions,
-                      docContext: getDynamicMultilineDocContext({
-                          ...params,
-                          initialCompletion: unprocessedCompletion,
-                      }),
-                  }
-                : updatedProviderOptions
+            const completion = extractCompletion(unprocessedCompletion, {
+                document,
+                docContext: maybeDynamicMultilineDocContext,
+                isDynamicMultilineCompletion: Boolean(dynamicMultilineCompletions),
+            })
 
-            const completion = canUsePartialCompletion(
-                unprocessedCompletion,
-                eventualDynamicMultilineProviderOptions
-            )
-            if (completion) {
+            addAutocompleteDebugEvent('attempted to extract completion', {
+                previousNonEmptyLine: docContext.prevNonEmptyLine,
+                currentLinePrefix: docContext.currentLinePrefix,
+                multilineTrigger: maybeDynamicMultilineDocContext.multilineTrigger,
+                text: completion?.insertText,
+            })
+
+            if (completion && completion.insertText.trim().length > 0) {
                 // If the partial completion logic finds a match, extract this as the next hot
                 // streak...
-                const processedCompletion = processCompletion(
-                    completion,
-                    eventualDynamicMultilineProviderOptions
-                )
-
-                yield {
-                    docContext: updatedDocContext,
-                    completion: {
-                        ...processedCompletion,
-                        stopReason: STOP_REASON_HOT_STREAK,
-                    },
-                }
-
-                updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
-            } else if (isRequestEnd) {
                 // ... if not and we are processing the last payload, we use the whole remainder for the
                 // completion (this means we will parse the last line even when a \n is missing at
                 // the end) ...
-                const completion = parseAndTruncateCompletion(
-                    unprocessedCompletion,
-                    eventualDynamicMultilineProviderOptions
-                )
-                if (completion.insertText.trim().length === 0) {
-                    return undefined
-                }
-                const processedCompletion = processCompletion(
-                    completion,
-                    eventualDynamicMultilineProviderOptions
-                )
+                const processedCompletion = processCompletion(completion, {
+                    document,
+                    position: maybeDynamicMultilineDocContext.position,
+                    docContext: maybeDynamicMultilineDocContext,
+                })
 
                 yield {
                     docContext: updatedDocContext,
@@ -115,8 +150,14 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                     },
                 }
 
-                updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
+                updatedDocContext = insertCompletionAndPressEnter(
+                    updatedDocContext,
+                    processedCompletion,
+                    document,
+                    dynamicMultilineCompletions
+                )
             } else {
+                addAutocompleteDebugEvent('hot-streak extractor stop')
                 // ... otherwise we don't have enough in the remaining completion text to generate a full
                 // hot-streak completion and yield to wait for the next chunk (or abort).
                 return undefined

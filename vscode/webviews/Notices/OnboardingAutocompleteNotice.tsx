@@ -32,7 +32,7 @@ export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
             icon={<Icon />}
             title="Congratulations! You just accepted your first Cody autocomplete."
             linkText="Next: Run a Command →"
-            linkHref="command:cody.action.commands.menu"
+            linkHref="command:cody.menu.commands"
             dismissKey="onboarding-autocomplete"
             className="onboarding-autocomplete"
         />

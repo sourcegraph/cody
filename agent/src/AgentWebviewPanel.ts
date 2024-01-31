@@ -6,6 +6,7 @@ import type { ChatModelProvider } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
+import type { Repo } from '../../vscode/src/context/repo-fetcher'
 
 /** Utility class to manage a list of `AgentWebPanel` instances. */
 export class AgentWebviewPanels {
@@ -22,6 +23,14 @@ export class AgentWebviewPanels {
     }
 }
 
+interface AttributionResult {
+    attribution?: {
+        repositoryNames: string[]
+        limitHit: boolean
+    }
+    error?: string
+}
+
 /**
  * Custom implementation of vscode.WebviewPanel that makes it possible to
  * delegate the implementation to the remote JSON-RPC client via the custom
@@ -31,6 +40,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
     public chatID: string | undefined // also known as `sessionID` in some parts of the Cody codebase
     public models: ChatModelProvider[] | undefined
+    public remoteRepos: Repo[] | undefined
     public isInitialized = false
     public isMessageInProgress: undefined | boolean
     // Event that fires whenever the `isMessageInProgress` value changes from the `type: 'transcript'` message.
@@ -40,6 +50,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public receiveMessage = new EventEmitter<WebviewMessage>()
     public postMessage = new EventEmitter<ExtensionMessage>()
     public onDidPostMessage = this.postMessage.event
+    private attributionResults = new Map<string, AttributionResult>()
     constructor(
         viewType: string,
         title: string,
@@ -85,6 +96,15 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     }
     public set iconPath(value) {
         this.panel.iconPath = value
+    }
+
+    public popAttribution(snippet: string): AttributionResult {
+        const attribution = this.attributionResults.get(snippet)
+        this.attributionResults.delete(snippet)
+        return attribution !== undefined ? attribution : { error: 'Attribution result lost' }
+    }
+    public pushAttribution(result: { snippet: string } & AttributionResult) {
+        this.attributionResults.set(result.snippet, result)
     }
 
     public get visible(): boolean {

@@ -14,7 +14,7 @@ export interface ProviderConfig {
      * inject provider specific parameters outside of the callers of the
      * factory.
      */
-    create(options: ProviderOptions): Provider
+    create(options: Omit<ProviderOptions, 'id'>): Provider
 
     /**
      * Hints about the optimal context size (and length of the document prefix and suffix). It is
@@ -54,15 +54,23 @@ export function standardContextSizeHints(maxContextTokens: number): ProviderCont
 }
 
 export interface ProviderOptions {
-    // A unique and descriptive identifier for the provider.
+    /**
+     * A unique and descriptive identifier for the provider.
+     */
     id: string
 
     position: Position
     document: TextDocument
     docContext: DocumentContext
     multiline: boolean
-    // Number of parallel LLM requests per completion.
+    /**
+     * Number of parallel LLM requests per completion.
+     */
     n: number
+    /**
+     *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
+     */
+    firstCompletionTimeout: number
 
     // feature flags
     dynamicMultilineCompletions?: boolean

@@ -5,6 +5,7 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionBookkeepingEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'
+import type { Position } from 'vscode'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -381,4 +382,34 @@ export function getPrevNonEmptyLine(prefix: string): string {
 
 export function lines(text: string): string[] {
     return text.split(/\r?\n/)
+}
+
+export function hasCompleteFirstLine(text: string): boolean {
+    const lastNewlineIndex = text.indexOf('\n')
+    return lastNewlineIndex !== -1
+}
+
+export function lastNLines(text: string, n: number): string {
+    const lines = text.split('\n')
+    return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+export function removeIndentation(text: string): string {
+    const lines = text.split('\n')
+    return lines.map(line => line.replace(INDENTATION_REGEX, '')).join('\n')
+}
+
+export function getPositionAfterTextInsertion(position: Position, text?: string): Position {
+    if (!text || text.length === 0) {
+        return position
+    }
+
+    const insertedLines = lines(text)
+
+    const updatedPosition =
+        insertedLines.length <= 1
+            ? position.translate(0, Math.max(getFirstLine(text).length, 0))
+            : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+
+    return updatedPosition
 }

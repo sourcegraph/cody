@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { ContextWindowLimitError, RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
+import { RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
 
 import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
@@ -26,16 +26,6 @@ export const ErrorItem: React.FunctionComponent<{
         )
     }
 
-    if (typeof error !== 'string' && error.name === ContextWindowLimitError.errorName && postMessage) {
-        return (
-            <ContextWindowLimitErrorItem
-                error={error as ContextWindowLimitError}
-                ChatButtonComponent={ChatButtonComponent}
-                postMessage={postMessage}
-            />
-        )
-    }
-
     return <RequestErrorItem error={error.message} />
 })
 
@@ -49,44 +39,6 @@ export const RequestErrorItem: React.FunctionComponent<{
         <div className={styles.requestError}>
             <span className={styles.requestErrorTitle}>Request Failed: </span>
             {error}
-        </div>
-    )
-})
-
-const ContextWindowLimitErrorItem: React.FunctionComponent<{
-    error: ContextWindowLimitError
-    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    postMessage: ApiPostMessage
-}> = React.memo(function ContextWindowLimitErrorItemContent({
-    error,
-    ChatButtonComponent,
-    postMessage,
-}) {
-    const onClick = useCallback(() => {
-        postMessage({ command: 'reset' })
-    }, [postMessage])
-
-    return (
-        <div className={styles.errorItem}>
-            <div className={styles.icon}>
-                <span className="codicon codicon-warning" />
-            </div>
-            <div className={styles.body}>
-                <header>
-                    <h1>Context Limit Reached</h1>
-                    <p>{error.message}</p>
-                </header>
-                {ChatButtonComponent && (
-                    <div className={styles.actions}>
-                        <ChatButtonComponent
-                            label="Start New Chat"
-                            action=""
-                            appearance="primary"
-                            onClick={onClick}
-                        />
-                    </div>
-                )}
-            </div>
         </div>
     )
 })

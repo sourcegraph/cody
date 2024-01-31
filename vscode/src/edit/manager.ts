@@ -50,7 +50,7 @@ export class EditManager implements vscode.Disposable {
     public async executeEdit(
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor'
-    ): Promise<void> {
+    ): Promise<FixupTask | undefined> {
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
             void vscode.window.showErrorMessage(
@@ -58,13 +58,17 @@ export class EditManager implements vscode.Disposable {
             )
             return
         }
-        const commandEventName = source === 'doc' ? 'doc' : 'edit'
+
+        // Log the default edit command name for doc intent or test mode
+        const isDocCommand = args?.intent === 'doc' ? 'doc' : undefined
+        const isUnitTestCommand = args?.mode === 'test' ? 'test' : undefined
+        const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
         telemetryService.log(
-            `CodyVSCodeExtension:command:${commandEventName}:executed`,
+            `CodyVSCodeExtension:command:${eventName}:executed`,
             { source },
             { hasV2Event: true }
         )
-        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', {
+        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
             privateMetadata: { source },
         })
 
@@ -107,7 +111,8 @@ export class EditManager implements vscode.Disposable {
         }
 
         const provider = this.getProviderForTask(task)
-        return provider.startEdit()
+        await provider.startEdit()
+        return task
     }
 
     public getProviderForTask(task: FixupTask): EditProvider {

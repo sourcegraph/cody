@@ -1,6 +1,5 @@
 import type * as vscode from 'vscode'
-
-import { emptyEvent } from '../../vscode/src/testutils/mocks'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 
 export class AgentTabGroups implements vscode.TabGroups {
     public all: vscode.TabGroup[] = []

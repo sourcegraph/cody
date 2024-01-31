@@ -5,8 +5,8 @@ export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
-export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
+export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
+export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -20,6 +20,7 @@ export type {
     ChatEventSource,
     ChatHistory,
     ChatMessage,
+    ChatInputHistory,
     InteractionMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
@@ -33,6 +34,8 @@ export type {
     Disposable,
     EnhancedContextContextT,
     LocalEmbeddingsProvider,
+    LocalSearchProvider,
+    RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
 export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
@@ -47,8 +50,8 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export { defaultCodyCommandContext } from './commands'
-export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
+export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -82,10 +85,8 @@ export type {
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    VsCodeCommandsController,
 } from './editor'
 export {
     displayPath,
@@ -96,8 +97,6 @@ export {
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
-export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
-export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 export {
     FeatureFlag,
     FeatureFlagProvider,
@@ -108,7 +107,7 @@ export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
@@ -120,6 +119,7 @@ export type {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
+    IRemoteSearch,
     Result,
     SearchPanelFile,
     SearchPanelSnippet,
@@ -150,7 +150,6 @@ export type {
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
-    ContextWindowLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
@@ -160,11 +159,7 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export {
-    SourcegraphGraphQLAPIClient,
-    graphqlClient,
-    type EmbeddingsSearchResults,
-} from './sourcegraph-api/graphql'
+export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
@@ -177,6 +172,7 @@ export {
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
+    ContextSearchResult,
     EmbeddingsSearchResult,
     event,
 } from './sourcegraph-api/graphql/client'

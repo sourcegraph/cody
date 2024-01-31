@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
@@ -16,6 +16,7 @@ import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItem } from './types'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -68,7 +69,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 client: null as any,
             }),
             triggerNotice: null,
-            contextStrategy: 'none',
             authStatus: DUMMY_AUTH_STATUS,
             ...superArgs,
         })
@@ -79,6 +79,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
+    beforeAll(async () => {
+        await initCompletionProviderConfig({})
+    })
+
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
@@ -244,7 +248,7 @@ describe('InlineCompletionItemProvider', () => {
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
             await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
                 chat: { a: null as any },
-                input: [''],
+                input: [{ inputText: '', inputContextFiles: [] }],
             })
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')

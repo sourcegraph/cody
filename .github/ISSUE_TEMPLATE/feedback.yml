@@ -11,6 +11,12 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this form! Please submit any suggestions or feedback on how we can improve Cody for VS Code.
+  - type: input
+    attributes:
+      label: Version
+      description: Please specify the exact VS Code extension version you're reporting for.
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: Areas for Improvement
@@ -28,12 +34,6 @@ body:
     attributes:
       label: What needs to be improved? Please describe how this affects the user experience.
       description: A clear and concise description of what is wrong or needs improvement.
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Why is this feedback important? Please describe the rationale.
-      description: A clear and concise explanation of the rationale.
     validations:
       required: true
   - type: textarea

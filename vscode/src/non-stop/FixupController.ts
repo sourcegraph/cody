@@ -204,7 +204,7 @@ export class FixupController
             contextMessages
         )
         this.tasks.set(task.id, task)
-        const state = task.mode === 'file' ? CodyTaskState.pending : CodyTaskState.working
+        const state = task.mode === 'test' ? CodyTaskState.pending : CodyTaskState.working
         this.setTaskState(task, state)
         return task
     }
@@ -335,7 +335,10 @@ export class FixupController
             }
 
             // We will format this code once applied, so we do not place an undo stop after this edit to avoid cluttering the undo stack.
-            const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+            const applyEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: false,
+            }
 
             let editOk: boolean
             if (edit instanceof vscode.WorkspaceEdit) {
@@ -351,7 +354,10 @@ export class FixupController
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
-            const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+            const formatEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: true,
+            }
             this.setTaskState(task, CodyTaskState.formatting)
             await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
@@ -387,7 +393,10 @@ export class FixupController
         }
 
         // Avoid adding any undo stops when streaming. We want the completed edit to be undone as a single unit, once finished.
-        const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+        const applyEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: false,
+        }
 
         // Insert updated text at selection range
         let editOk: boolean
@@ -454,7 +463,10 @@ export class FixupController
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
-        const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+        const formatEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: true,
+        }
         this.setTaskState(task, CodyTaskState.formatting)
         await new Promise((resolve, reject) => {
             task.formattingResolver = resolve
@@ -477,7 +489,7 @@ export class FixupController
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
         // Consider only ever showing 1 notification that opens a UI to display all fixups.
-        if (!visibleEditor && task.mode !== 'file') {
+        if (!visibleEditor && task.mode !== 'test') {
             await this.notifyTaskComplete(task)
         }
     }
@@ -598,8 +610,8 @@ export class FixupController
 
     // Notify users of task completion when the edited file is not visible
     private async notifyTaskComplete(task: FixupTask): Promise<void> {
-        // Don't show for file mode as the doc will be displayed when done
-        if (task.mode === 'file') {
+        // Don't show for test mode as the doc will be displayed when done
+        if (task.mode === 'test') {
             return
         }
         const showChangesButton = 'Show Changes'
@@ -675,13 +687,17 @@ export class FixupController
         })
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', {
+                hasV2Event: true,
+            })
             telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
             return
         }
 
         const tokenCount = countCode(replacementText)
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, { hasV2Event: true })
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, {
+            hasV2Event: true,
+        })
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
             metadata: tokenCount,
         })

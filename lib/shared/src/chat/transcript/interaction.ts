@@ -1,5 +1,5 @@
 import type { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
-import { isCodyIgnoredFile } from '../context-filter'
+import { isCodyIgnoredFile } from '../../cody-ignore/context-filter'
 
 import type { ChatMessage, InteractionMessage } from './messages'
 

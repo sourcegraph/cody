@@ -11,10 +11,17 @@ import {
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
+import type { Repo } from '../../context/repo-fetcher'
 
+/**
+ * Interface for a chat message with additional context.
+ *
+ * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
+ */
 export interface MessageWithContext {
     message: Message
 
@@ -36,7 +43,8 @@ export class SimpleChatModel {
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
-        private customChatTitle?: string
+        private customChatTitle?: string,
+        private selectedRepos?: Repo[]
     ) {}
 
     public isEmpty(): boolean {
@@ -51,7 +59,7 @@ export class SimpleChatModel {
         if (lastMessage.message.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed
+        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
     public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
@@ -107,6 +115,32 @@ export class SimpleChatModel {
         return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
     }
 
+    public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
+        return this.messagesWithContext.findLastIndex(message => message.message.speaker === speaker)
+    }
+
+    /**
+     * Removes all messages from the given index when it matches the expected speaker.
+     *
+     * expectedSpeaker must match the speaker of the message at the given index.
+     * This helps ensuring the intented messages are being removed.
+     */
+    public removeMessagesFromIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
+        if (this.isEmpty()) {
+            throw new Error('SimpleChatModel.removeMessagesFromIndex: not message to remove')
+        }
+
+        const speakerAtIndex = this.messagesWithContext.at(index)?.message?.speaker
+        if (speakerAtIndex !== expectedSpeaker) {
+            throw new Error(
+                `SimpleChatModel.removeMessagesFromIndex: expected ${expectedSpeaker}, got ${speakerAtIndex}`
+            )
+        }
+
+        // Removes everything from the index to the last element
+        this.messagesWithContext.splice(index)
+    }
+
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         const lastMessage = this.messagesWithContext.at(-1)
         if (!lastMessage) {
@@ -143,6 +177,14 @@ export class SimpleChatModel {
         this.customChatTitle = title
     }
 
+    public getSelectedRepos(): Repo[] | undefined {
+        return this.selectedRepos ? this.selectedRepos.map(r => ({ ...r })) : undefined
+    }
+
+    public setSelectedRepos(repos: Repo[] | undefined): void {
+        this.selectedRepos = repos ? repos.map(r => ({ ...r })) : undefined
+    }
+
     /**
      * Serializes to the legacy transcript JSON format
      */
@@ -153,13 +195,19 @@ export class SimpleChatModel {
             const botMessage = this.messagesWithContext[i + 1]
             interactions.push(messageToInteractionJSON(humanMessage, botMessage))
         }
-        return {
+        const result: TranscriptJSON = {
             id: this.sessionID,
             chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
+        if (this.selectedRepos) {
+            result.enhancedContext = {
+                selectedRepos: this.selectedRepos.map(r => ({ ...r })),
+            }
+        }
+        return result
     }
 }
 
@@ -197,6 +245,9 @@ export interface ContextItem {
     range?: vscode.Range
     text: string
     source?: ContextFileSource
+    repoName?: string
+    revision?: string
+    title?: string
 }
 
 export function contextItemId(contextItem: ContextItem): string {

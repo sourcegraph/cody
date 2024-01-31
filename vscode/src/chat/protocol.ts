@@ -17,6 +17,7 @@ import type {
 import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
+import type { Repo } from '../context/repo-fetcher'
 
 /**
  * A message sent from the webview to the extension host.
@@ -49,15 +50,28 @@ export type WebviewMessage =
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
-          // tends ot munge the type in a weird way (nested fields become array indices).
-          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+          // tends to munge the type in a weird way (nested fields become array indices).
+          range?: {
+              startLine: number
+              startCharacter: number
+              endLine: number
+              endCharacter: number
+          }
       }
-    | { command: 'edit'; text: string }
+    | ({ command: 'edit' } & WebviewEditMessage)
+    | { command: 'context/get-remote-search-repos' }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
+    | {
+          command: 'copy'
+          eventType: 'Button' | 'Keydown'
+          text: string
+          metadata?: CodeBlockMeta
+      }
     | {
           command: 'auth'
           type:
@@ -75,14 +89,17 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'reload-state' | 'web-sign-in-token'
+          type: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
           uri: URI
-          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+          range: {
+              start: { line: number; character: number }
+              end: { line: number; character: number }
+          }
       }
     | {
           command: 'reset'
@@ -109,13 +126,30 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
+    | {
+          type: 'userContextFiles'
+          context: ContextFile[] | null
+          kind?: ContextFileType
+      }
     | { type: 'chatModels'; models: ChatModelProvider[] }
-    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | {
+          type: 'update-search-results'
+          results: SearchPanelFile[]
+          query: string
+      }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
+    | { type: 'webview-state'; isActive: boolean }
+    | { type: 'context/remote-repos'; repos: Repo[] }
+    | {
+          type: 'setConfigFeatures'
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
@@ -128,9 +162,17 @@ interface ExtensionAttributionMessage {
 
 export type ChatSubmitType = 'user' | 'user-newchat'
 
-interface WebviewSubmitMessage {
+export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
+}
+
+interface WebviewEditMessage extends WebviewContextMessage {
+    text: string
+    index?: number
+}
+
+interface WebviewContextMessage {
     addEnhancedContext?: boolean
     contextFiles?: ContextFile[]
 }

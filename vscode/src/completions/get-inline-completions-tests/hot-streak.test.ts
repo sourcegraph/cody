@@ -1,169 +1,105 @@
-import dedent from 'dedent'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
-import { completion, initTreeSitterParser, sleep } from '../test-helpers'
+import { initTreeSitterParser } from '../test-helpers'
 
-import { getInlineCompletions, params } from './helpers'
+import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
+    beforeEach(() => {
+        vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
-            const { completionResponseGeneratorPromise, ...firstParams } = params(
-                dedent`
-                    function myFunction() {
-                        console.log(1)
-                        █
-                    }
-                `,
-                [
-                    completion`
-                        ├console.log(2)
-                        console.log(3)
-                        console.log(4)
-                        ┤
-                    ┴┴┴┴
-                `,
-                ],
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction() {
+                    console.log(1)
+                    █console.log(2)
+                    █console.log(3)
+                    console█.log(4)
+                    █
+                }`,
                 {
-                    async *completionResponseGenerator() {
-                        yield completion`
-                            ├console.log(2)
-                        ┤`
-
-                        // Add paused between completion chunks to emulate
-                        // the production behaviour where packets come with a delay.
-                        await sleep(100)
-
-                        yield completion`
-                            ├console.log(2)
-                            console.log(3)
-                            console.┤
-                        ┴┴┴┴`
-
-                        await sleep(100)
-
-                        yield completion`
-                            ├console.log(2)
-                            console.log(3)
-                            console.log(4)┤
-                        ┴┴┴┴`
-                    },
-                    hotStreak: true,
+                    configuration: { autocompleteExperimentalHotStreak: true },
+                    delayBetweenChunks: 50,
                 }
             )
-            const firstRequest = await getInlineCompletions(firstParams)
 
+            await vi.runAllTimersAsync()
             // Wait for hot streak completions be yielded and cached.
-            await completionResponseGeneratorPromise
+            await request.completionResponseGeneratorPromise
+            expect(request.items[0].insertText).toEqual('console.log(2)')
 
-            expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(3)')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
 
-            const secondRequest = await getInlineCompletions({
-                ...params(
-                    dedent`
-                        function myFunction() {
-                            console.log(1)
-                            console.log(2)
-                            █
-                        }
-                    `,
-                    // No network request needed!
-                    [],
-                    { hotStreak: true }
-                ),
-                // Reuse the request manager to get a cache hit
-                requestManager: firstParams.requestManager,
-            })
-
-            expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
-            expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
-
-            const thirdRequest = await getInlineCompletions({
-                ...params(
-                    dedent`
-                        function myFunction() {
-                            console.log(1)
-                            console.log(2)
-                            console.log(3)
-                            █
-                        }
-                    `,
-                    // No network request needed!
-                    [],
-                    { hotStreak: true }
-                ),
-                // Reuse the request manager to get a cache hit
-                requestManager: firstParams.requestManager,
-            })
-
-            expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
-            expect(thirdRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(4)')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
 
         it('caches hot streaks completions that are added at the end of the request', async () => {
-            const firstParams = params(
-                dedent`
-                    function myFunction() {
-                        console.log(1)
-                        █
-                    }
-                `,
-                [
-                    completion`
-                        ├console.log(2)
-                        console.log(3)
-                        console.log(4)┤
-                    ┴┴┴┴
-                `,
-                ],
-                { hotStreak: true }
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction() {
+                    console.log(1)
+                    █console.log(2)
+                    console.log(3)
+                    console.log(4)
+                    █
+                }`,
+                { configuration: { autocompleteExperimentalHotStreak: true } }
             )
-            const firstRequest = await getInlineCompletions(firstParams)
 
-            expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
+            expect(request.items[0].insertText).toEqual('console.log(2)')
 
-            const secondRequest = await getInlineCompletions({
-                ...params(
-                    dedent`
-                        function myFunction() {
-                            console.log(1)
-                            console.log(2)
-                            █
-                        }
-                    `,
-                    // No network request needed!
-                    [],
-                    { hotStreak: true }
-                ),
-                // Reuse the request manager to get a cache hit
-                requestManager: firstParams.requestManager,
-            })
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(3)')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
 
-            expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
-            expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(4)')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+        })
 
-            const thirdRequest = await getInlineCompletions({
-                ...params(
-                    dedent`
-                        function myFunction() {
-                            console.log(1)
-                            console.log(2)
-                            console.log(3)
-                            █
-                        }
-                    `,
-                    // No network request needed!
-                    [],
-                    { hotStreak: true }
-                ),
-                // Reuse the request manager to get a cache hit
-                requestManager: firstParams.requestManager,
-            })
+        it('supports completion chunks terminated in the middle of the line', async () => {
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction() {
+                    const result = 'foo'
+                    █console.log(result)
+                    if█(i > 1) {
+                        console.log(1)
+                    █}
+                    console.log(4)
+                    return foo█
+                }`,
+                { configuration: { autocompleteExperimentalHotStreak: true } }
+            )
 
-            expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
-            expect(thirdRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
+            await request.completionResponseGeneratorPromise
+            expect(request.items[0].insertText).toEqual('console.log(result)')
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('if(i > 1) {')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(1)\n    }')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('console.log(4)')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('return foo')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
     })
 
@@ -177,64 +113,95 @@ describe('[getInlineCompletions] hot streak', () => {
         })
 
         it('works with dynamic multiline mode', async () => {
-            const firstParams = params(
-                dedent`
-                    function myFunction(i) {
-                        console.log(1)
-                        █
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `function myFunction(i) {
+                    console.log(1)
+                    █if(i > 1) {
+                        console.log(2)
                     }
-                `,
-                [
-                    completion`
-                        ├if(i > 1) {
-                            console.log(2)
-                        }
-                        if(i > 2) {
-                            console.log(3)
-                        }
-                        if(i > 3) {
-                            console.log(4)
-                        }┤
-                    ┴┴┴┴
-                `,
-                ],
+                    if(i > 2) {
+                        console.log(3)
+                    }
+                    if(i > 3) {
+                        console.log(4)
+                    }█
+                }`,
                 {
-                    dynamicMultilineCompletions: true,
-                    hotStreak: true,
+                    configuration: {
+                        autocompleteExperimentalDynamicMultilineCompletions: true,
+                        autocompleteExperimentalHotStreak: true,
+                    },
                 }
             )
-            const firstRequest = await getInlineCompletions(firstParams)
 
-            expect(firstRequest?.items[0]?.insertText).toEqual(
-                'if(i > 1) {\n        console.log(2)\n    }'
-            )
+            expect(request.items[0].insertText).toEqual('if(i > 1) {\n        console.log(2)\n    }')
 
-            const secondRequest = await getInlineCompletions({
-                ...params(
-                    dedent`
-                        function myFunction(i) {
-                            console.log(1)
-                            if(i > 1) {
-                                console.log(2)
-                            }
-                            █
-                        }
-                    `,
-                    // No network request needed!
-                    [],
-                    {
-                        dynamicMultilineCompletions: true,
-                        hotStreak: true,
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('if(i > 2) {\n        console.log(3)\n    }')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+        })
+
+        it('yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready', async () => {
+            const completionsPromise = getInlineCompletionsWithInlinedChunks(
+                `function myFunction█() {
+                    if(i > 1) {█
+                        console.log(2)
                     }
-                ),
-                // Reuse the request manager to get a cache hit
-                requestManager: firstParams.requestManager,
-            })
-
-            expect(secondRequest?.items[0]?.insertText).toEqual(
-                'if(i > 2) {\n        console.log(3)\n    }'
+                    if(i > 2) {
+                        console.log(3)
+                    }█
+                    if(i > 3) {
+                        console.log(4)
+                    }
+                }
+                myFunction()
+                █
+                const`,
+                {
+                    configuration: {
+                        autocompleteExperimentalDynamicMultilineCompletions: true,
+                        autocompleteExperimentalHotStreak: true,
+                    },
+                    delayBetweenChunks: 20,
+                    providerOptions: {
+                        firstCompletionTimeout: 10,
+                    },
+                }
             )
-            expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
+
+            // Wait for the first completion to be ready
+            vi.advanceTimersByTime(15)
+            // Release the `completionsPromise`
+            await vi.runAllTimersAsync()
+
+            let request = await completionsPromise
+            await request.completionResponseGeneratorPromise
+            expect(request.items[0].insertText).toEqual('() {')
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+            expect(request.items[0].insertText).toMatchInlineSnapshot(
+                `
+              "if(i > 1) {
+                      console.log(2)
+                  }
+                  if(i > 2) {
+                      console.log(3)
+                  }
+                  if(i > 3) {
+                      console.log(4)
+                  }
+              }"
+            `
+            )
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+            expect(request.items[0].insertText).toMatchInlineSnapshot(
+                `
+              "myFunction()"
+            `
+            )
         })
     })
 })
