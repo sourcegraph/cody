@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { getActiveTraceAndSpanId, isAbortError, isCodyIgnoredFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -195,9 +195,6 @@ async function doGetInlineCompletions(
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
-    if (isCodyIgnoredFile(document.uri)) {
-        return null
-    }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
