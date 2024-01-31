@@ -22,6 +22,7 @@ import { getEditSmartSelection } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { selectModel } from '../chat/chat-view/SimpleChatPanelProvider'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -47,11 +48,16 @@ export class EditManager implements vscode.Disposable {
             )
         )
         const authStatus = options.authProvider.getAuthStatus()
-        // TODO: authStatus?.configOverwrites?.chatModel?
-        // if (authStatus?.configOverwrites?.chatModel) {
-        //     ModelProvider.add('edit', new ModelProvider(authStatus.configOverwrites.chatModel))
-        // }
-        this.models = ModelProvider.get('edit', authStatus.endpoint)
+        if (authStatus?.configOverwrites?.chatModel) {
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
+        }
+        this.models = ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
     }
 
     public async executeEdit(
