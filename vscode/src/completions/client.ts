@@ -203,7 +203,7 @@ interface SSEMessage {
 const SSE_TERMINATOR = '\n\n'
 export async function* createSSEIterator(
     iterator: NodeJS.ReadableStream,
-    // Message batching or any non-standard SSE behaviors should noe be enabled by default
+    // Message batching or any non-standard SSE behaviors should not be enabled by default
     options: { batchCompletionEvents?: boolean } = {}
 ): AsyncGenerator<SSEMessage> {
     let buffer = ''
