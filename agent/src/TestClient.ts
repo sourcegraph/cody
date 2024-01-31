@@ -11,18 +11,21 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     ClientInfo,
+    DebugMessage,
     EditTask,
     ExtensionConfiguration,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
     ServerInfo,
+    ShowWindowMessageParams,
     WebviewPostMessageParams,
 } from './protocol-alias'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { applyPatch } from 'fast-myers-diff'
+import dedent from 'dedent'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -60,7 +63,9 @@ export class TestClient extends MessageHandler {
             readonly accessToken?: string
             serverEndpoint?: string
             telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
+            featureFlags?: 'enabled' // defaults to testing, which doesn't send telemetry
             logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
+            onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
         }
     ) {
         super()
@@ -93,6 +98,21 @@ export class TestClient extends MessageHandler {
                 id: this.progressID(id),
                 message: {},
             })
+        })
+        this.registerRequest('window/showMessage', params => {
+            if (this.params.onWindowRequest) {
+                return this.params.onWindowRequest(params)
+            }
+            if (params?.items && params.items.length > 0) {
+                this.logMessage({
+                    channel: 'vscode.window.show{Error,Warning,Information}Message',
+                    message: dedent`Unimplemented window/showMessage: ${JSON.stringify(params)}
+                           This promise will never resolve, emulating a user who never clicks on the action items.
+                           If this test is hanging, you need to refactor the code to avoid calling vscode.window.{showErrorMessage,showWarningMessage,showInformationMessage}.`,
+                })
+                return new Promise(() => {})
+            }
+            return Promise.resolve(null)
         })
         this.registerNotification('codeLenses/display', async params => {
             this.codeLenses.set(params.uri, params.codeLenses)
@@ -132,9 +152,13 @@ export class TestClient extends MessageHandler {
             return true
         })
         this.registerNotification('debug/message', message => {
-            // Uncomment below to see `logDebug` messages.
-            // console.log(`${message.channel}: ${message.message}`)
+            this.logMessage(message)
         })
+    }
+
+    private logMessage(params: DebugMessage): void {
+        // Uncomment below to see `logDebug` messages.
+        // console.log(`${params.channel}: ${params.message}`)
     }
 
     public openFile(
@@ -377,6 +401,21 @@ export class TestClient extends MessageHandler {
 
     public async shutdownAndExit() {
         if (this.isAlive()) {
+            const { errors } = await this.request('testing/requestErrors', null)
+            const missingRecordingErrors = errors.filter(({ error }) =>
+                error?.includes?.('`recordIfMissing` is')
+            )
+            if (missingRecordingErrors.length > 0) {
+                const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
+                throw new Error(
+                    dedent`${errorMessage}.
+
+                           To fix this problem, run the following commands to update the HTTP recordings:
+
+                             source agent/scripts/export-cody-http-recording-tokens.sh
+                             pnpm update-agent-recordings`
+                )
+            }
             await this.request('shutdown', null)
             this.notify('exit', null)
         } else {
@@ -440,6 +479,8 @@ export class TestClient extends MessageHandler {
                 CODY_RECORDING_NAME: this.name,
                 SRC_ACCESS_TOKEN: this.accessToken,
                 CODY_TELEMETRY_EXPORTER: this.params.telemetryExporter ?? 'testing',
+                BENCHMARK_DISABLE_FEATURE_FLAGS:
+                    this.params.featureFlags === 'enabled' ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: this.params.logEventMode,
                 ...process.env,
             },
@@ -458,6 +499,7 @@ export class TestClient extends MessageHandler {
                 progressBars: 'enabled',
                 edit: 'enabled',
                 codeLenses: 'enabled',
+                showWindowMessage: 'request',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,

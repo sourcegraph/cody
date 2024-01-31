@@ -189,10 +189,16 @@ export function createProviderConfig({
 }: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(options, {
-                maxContextTokens,
-                ...otherOptions,
-            })
+            return new UnstableOpenAIProvider(
+                {
+                    ...options,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                {
+                    maxContextTokens,
+                    ...otherOptions,
+                }
+            )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

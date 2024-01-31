@@ -1,22 +1,21 @@
 import * as vscode from 'vscode'
 
 import {
-    FeatureFlag,
-    featureFlagProvider,
     isDotCom,
     type CodeCompletionsClient,
     type Configuration,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
+import { completionProviderConfig } from './completion-provider-config'
 
 interface InlineCompletionItemProviderArgs {
     config: Configuration
@@ -71,41 +70,12 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [
-        providerConfig,
-        bfgMixedContextFlag,
-        newJaccardSimilarityContextFlag,
-        dynamicMultilineCompletionsFlag,
-        hotStreakFlag,
-    ] = await Promise.all([
+    const [providerConfig] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
+        completionProviderConfig.init(config, featureFlagProvider),
     ])
+
     if (providerConfig) {
-        const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'bfg'
-                ? 'bfg'
-                : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                  ? 'bfg-mixed'
-                  : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                      ? 'local-mixed'
-                      : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                          ? 'jaccard-similarity'
-                          : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
-                              ? 'new-jaccard-similarity'
-                              : bfgMixedContextFlag
-                                  ? 'bfg-mixed'
-                                  : newJaccardSimilarityContextFlag
-                                      ? 'new-jaccard-similarity'
-                                      : 'jaccard-similarity'
-
-        const dynamicMultilineCompletions =
-            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
-        const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
-
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
             authStatus: authProvider.getAuthStatus(),
@@ -115,10 +85,7 @@ export async function createInlineCompletionItemProvider({
             formatOnAccept: config.autocompleteFormatOnAccept,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
-            contextStrategy,
             createBfgRetriever,
-            dynamicMultilineCompletions,
-            hotStreak,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

@@ -126,7 +126,9 @@ describe('Agent', () => {
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
-            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEEE',
+            // Redacted format of an invalid access token (just random string). Tests fail in replay mode
+            // if we don't use the redacted format here.
+            accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
@@ -550,7 +552,14 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
+
+            // Assert that the server is not using IDs between `chat/new` and
+            // `chat/explain`. In VS Code, we try to reuse empty webview panels,
+            // which is undesireable for agent clients.
+            expect(id).not.toStrictEqual(freshChatID)
+
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `

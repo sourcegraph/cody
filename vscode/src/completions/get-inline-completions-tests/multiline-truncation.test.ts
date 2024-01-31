@@ -726,7 +726,7 @@ for (const isTreeSitterEnabled of cases) {
                             }
                             console.log(5)┤`
                         },
-                        dynamicMultilineCompletions: true,
+                        configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
                     })
 
                     const [insertText] = await getInlineCompletionsInsertText(requestParams)
