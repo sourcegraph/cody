@@ -5,16 +5,16 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
-import { getContextFilesForTestCommand } from '../context/test-command'
+import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 /**
- * Generates the prompt and context files with arguments for the 'test' command.
+ * Generates the prompt and context files with arguments for the '/unit' command.
  *
  * Context: Test files, current selection, and current file
  */
-async function testCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
-    let prompt = defaultCommands.test.prompt
+async function unitCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+    let prompt = defaultCommands.unit.prompt
 
     if (args?.additionalInstruction) {
         prompt = `${prompt} ${args.additionalInstruction}`
@@ -47,7 +47,7 @@ async function testCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChat
 /**
  * Executes the text command as a chat command via 'cody.action.chat'
  */
-export async function executeTestCommand(
+export async function executeUnitTestCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
     logDebug('executeTestCommand', 'executing', { args })
@@ -69,6 +69,6 @@ export async function executeTestCommand(
 
     return {
         type: 'chat',
-        session: await executeChat(await testCommand(args)),
+        session: await executeChat(await unitCommand(args)),
     }
 }

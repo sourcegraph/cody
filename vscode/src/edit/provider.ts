@@ -19,6 +19,8 @@ import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
 import { doesFileExist } from '../commands/utils/workspace-files'
+import { workspace } from 'vscode'
+import { CodyTaskState } from '../non-stop/utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -204,6 +206,10 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
+        if (task.state !== CodyTaskState.pending) {
+            return
+        }
+
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
             // an existing test file from codebase
@@ -215,14 +221,21 @@ export class EditProvider {
                 // create a file uri with untitled scheme that would work on windows
                 const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+                return
             }
+
+            // Create a new untitled file if the suggested file does not exist
+            const currentFile = task.fixupFile.uri
+            const currentDoc = await workspace.openTextDocument(currentFile)
+            const newDoc = await workspace.openTextDocument({ language: currentDoc?.languageId })
+            await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newDoc.uri)
             return
         }
 
         const opentag = `<${PROMPT_TOPICS.FILENAME}>`
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
-        const currentFileUri = this.config.task.fixupFile.uri
+        const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
@@ -231,18 +244,16 @@ export class EditProvider {
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
-
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(
-                this.config.task.id,
-                newFileUri
-            )
+            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
                 await this.insertionPromise
+            } catch {
+                this.handleError(new Error('Cody failed to generate unit tests'))
             } finally {
                 this.insertionPromise = null
             }

@@ -866,7 +866,7 @@ export class FixupController
         })
         task.destinationFile = newFileUri
 
-        // life the pending state from the task so it can proceed to the next stage
+        // lift the pending state from the task so it can proceed to the next stage
         this.setTaskState(task, CodyTaskState.working)
     }
 

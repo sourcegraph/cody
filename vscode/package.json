@@ -288,14 +288,14 @@
         "command": "cody.command.generate-tests",
         "category": "Cody Command",
         "title": "Generate Unit Tests (Chat)",
-        "icon": "$(package)",
+        "icon": "$(beaker)",
         "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.unit-tests",
         "category": "Cody Command",
         "title": "Generate Unit Tests (Edit)",
-        "icon": "$(beaker)",
+        "icon": "$(package)",
         "when": "cody.activated && editorTextFocus"
       },
       {

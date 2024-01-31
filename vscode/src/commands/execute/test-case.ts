@@ -13,7 +13,7 @@ import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case
  * It generates new test cases for the selected test suit.
  * When invoked, the command will be executed as an inline-edit command.
  */
-export async function executeUnitCaseCommand(
+export async function executeTestCaseCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
     const instruction =

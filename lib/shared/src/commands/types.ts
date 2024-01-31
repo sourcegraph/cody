@@ -4,13 +4,13 @@ export type DefaultCodyCommands = DefaultChatCommands | DefaultEditCommands
 // Default Cody Commands that runs as a Chat request
 export enum DefaultChatCommands {
     Explain = 'explain', // Explain code
-    Test = 'test', // Generate unit tests in Chat
+    Unit = 'unit', // Generate unit tests in Chat
     Smell = 'smell', // Generate code smell report in Chat
 }
 
 // Default Cody Commands that runs as an Inline Edit command
 export enum DefaultEditCommands {
-    Unit = 'unit', // Generate unit tests with inline edit
+    Test = 'test', // Generate unit tests with inline edit
     Doc = 'doc', // Generate documentation with inline edit
 }
 
