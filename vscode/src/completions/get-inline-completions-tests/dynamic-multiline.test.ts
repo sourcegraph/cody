@@ -25,7 +25,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             console.log(5)█`,
             {
                 delayBetweenChunks: 50,
-                dynamicMultilineCompletions: true,
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 
@@ -49,7 +49,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
                 return value█
             }`,
             {
-                dynamicMultilineCompletions: true,
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 
@@ -71,7 +71,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             const compeltion = new InlineCompletion(result)█
             console.log(completion)`,
             {
-                dynamicMultilineCompletions: true,
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 
@@ -96,7 +96,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
 
             console.log(oddNumbers)`,
             {
-                dynamicMultilineCompletions: true,
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 
@@ -123,7 +123,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             }
             console.log(5)█`,
             {
-                dynamicMultilineCompletions: true,
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 

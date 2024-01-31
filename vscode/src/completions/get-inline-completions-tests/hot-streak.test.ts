@@ -26,7 +26,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     █
                 }`,
                 {
-                    hotStreak: true,
+                    configuration: { autocompleteExperimentalHotStreak: true },
                     delayBetweenChunks: 50,
                 }
             )
@@ -54,7 +54,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     console.log(4)
                     █
                 }`,
-                { hotStreak: true }
+                { configuration: { autocompleteExperimentalHotStreak: true } }
             )
 
             expect(request.items[0].insertText).toEqual('console.log(2)')
@@ -79,9 +79,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     console.log(4)
                     return foo█
                 }`,
-                {
-                    hotStreak: true,
-                }
+                { configuration: { autocompleteExperimentalHotStreak: true } }
             )
 
             await request.completionResponseGeneratorPromise
@@ -129,8 +127,10 @@ describe('[getInlineCompletions] hot streak', () => {
                     }█
                 }`,
                 {
-                    dynamicMultilineCompletions: true,
-                    hotStreak: true,
+                    configuration: {
+                        autocompleteExperimentalDynamicMultilineCompletions: true,
+                        autocompleteExperimentalHotStreak: true,
+                    },
                 }
             )
 
@@ -158,8 +158,10 @@ describe('[getInlineCompletions] hot streak', () => {
                 █
                 const`,
                 {
-                    dynamicMultilineCompletions: true,
-                    hotStreak: true,
+                    configuration: {
+                        autocompleteExperimentalDynamicMultilineCompletions: true,
+                        autocompleteExperimentalHotStreak: true,
+                    },
                     delayBetweenChunks: 20,
                     providerOptions: {
                         firstCompletionTimeout: 10,
