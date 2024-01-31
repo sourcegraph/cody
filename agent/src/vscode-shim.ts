@@ -4,7 +4,7 @@ import path from 'path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug } from '@sourcegraph/cody-shared'
+import { logDebug, logError } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -50,6 +50,7 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 import { AgentQuickPick } from './AgentQuickPick'
+import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -87,6 +88,7 @@ export {
     Selection,
     StatusBarAlignment,
     SymbolKind,
+    TextDocumentChangeReason,
     ThemeColor,
     ThemeIcon,
     TreeItem,
@@ -153,6 +155,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
     openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
+    newTextEditorFromStringUri: (uri: string) => Promise<vscode.TextEditor>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
@@ -188,7 +191,13 @@ const _workspace: typeof vscode.workspace = {
     onWillRenameFiles: emptyEvent(),
     onWillSaveNotebookDocument: emptyEvent(),
     onWillSaveTextDocument: emptyEvent(),
-    applyEdit: () => Promise.resolve(false), // TODO: this API is used by Cody
+    applyEdit: (edit, metadata) => {
+        if (agent) {
+            return agent.applyWorkspaceEdit(edit, metadata)
+        }
+        logError('vscode.workspace.applyEdit', 'agent is undefined')
+        return Promise.resolve(false)
+    },
     isTrusted: false,
     name: undefined,
     notebookDocuments: [],
@@ -272,15 +281,53 @@ const _workspace: typeof vscode.workspace = {
         )
         return result
     },
-    openTextDocument: uriOrString => {
+    openTextDocument: async uriOrString => {
         if (!workspaceDocuments) {
-            return Promise.reject(new Error('workspaceDocuments is uninitialized'))
+            throw new Error('workspaceDocuments is uninitialized')
         }
         if (typeof uriOrString === 'string') {
             return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
         }
         if (uriOrString instanceof Uri) {
             return workspaceDocuments.openTextDocument(uriOrString)
+        }
+
+        if (
+            typeof uriOrString === 'object' &&
+            ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
+            agent
+        ) {
+            const language: string = (uriOrString as any)?.language ?? ''
+            const content: string = (uriOrString as any)?.content ?? ''
+            const extension = extensionForLanguage(language) ?? language
+            const untitledUri = Uri.from({ scheme: 'untitled', path: `${uuid.v4()}.${extension}` })
+            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+                const errorMessage =
+                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+                throw new Error(errorMessage)
+            }
+            const result = await agent.request('textDocument/openUntitledDocument', {
+                uri: untitledUri.toString(),
+                content,
+                language,
+            })
+
+            if (!result) {
+                throw new Error(
+                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
+                        uriOrString
+                    )}`
+                )
+            }
+            const document = await workspaceDocuments.openTextDocument(untitledUri)
+            if (document.getText() !== content) {
+                throw new Error(
+                    'untitled document has mismatched content. ' +
+                        JSON.stringify({ expected: content, obtained: document.getText() }, null, 2)
+                )
+            }
+            return document
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -587,7 +634,29 @@ const _window: typeof vscode.window = {
         showWindowMessage('information', message, options, items),
     createOutputChannel: (name: string) => outputChannel(name),
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
-    showTextDocument: () => {
+    showTextDocument: async (params, options) => {
+        if (agent) {
+            if (clientInfo?.capabilities?.showDocument !== 'enabled') {
+                throw new Error(
+                    'vscode.window.showTextDocument: not supported by client. ' +
+                        'To fix this problem, enable `showDocument: "enabled"` in client capabilities'
+                )
+            }
+            const uri = params instanceof Uri ? params.toString() : (params as any)?.uri?.toString?.()
+            if (uri === undefined) {
+                throw new TypeError(
+                    `vscode.window.showTextDocument: unable to infer URI from argument ${params}`
+                )
+            }
+            const result = await agent.request('textDocument/show', { uri })
+            if (!result) {
+                throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
+            }
+            if (!workspaceDocuments) {
+                throw new Error('workspaceDocuments is undefined')
+            }
+            return workspaceDocuments.newTextEditorFromStringUri(uri)
+        }
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showTextDocument')
     },

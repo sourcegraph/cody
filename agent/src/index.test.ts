@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import assert from 'assert'
 import { execSync } from 'child_process'
 import fspromises from 'fs/promises'
@@ -5,7 +6,6 @@ import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { Uri } from 'vscode'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
@@ -36,7 +36,7 @@ const explainPollyError = `
     `
 
 const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
 const mayRecord =
@@ -111,13 +111,13 @@ describe('Agent', () => {
     })
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
-    const sumUri = Uri.file(sumPath)
+    const sumUri = vscode.Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const animalUri = Uri.file(animalPath)
+    const animalUri = vscode.Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
-    const squirrelUri = Uri.file(squirrelPath)
+    const squirrelUri = vscode.Uri.file(squirrelPath)
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
-    const multipleSelectionsUri = Uri.file(multipleSelections)
+    const multipleSelectionsUri = vscode.Uri.file(multipleSelections)
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -542,53 +542,56 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
+                  " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
 
-                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
+                  Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
 
-                  \`\`\`typescript
-                  // src/animal.test.ts
+                  \`\`\`ts
+                  import {describe, expect, it} from 'vitest'
+                  import {Animal} from './animal'
 
-                  import { Animal } from './animal';
+                  describe('Animal', () => {
 
-                  describe('Animal interface', () => {
-
-                    it('should have a name property', () => {
+                    it('has a name property', () => {
                       const animal: Animal = {
-                        name: 'Cat',
-                        makeAnimalSound: () => '',
+                        name: 'Leo',
+                        makeAnimalSound() {
+                          return 'Roar'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.name).toBeDefined();
-                    });
+                      expect(animal.name).toBe('Leo')
+                    })
 
-                    it('should have a makeAnimalSound method', () => {
+                    it('has a makeAnimalSound method', () => {
                       const animal: Animal = {
-                        name: 'Dog',
-                        makeAnimalSound: () => 'Woof',
+                        name: 'Whale',
+                        makeAnimalSound() {
+                          return 'Whistle'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.makeAnimalSound).toBeDefined();
-                      expect(typeof animal.makeAnimalSound).toBe('function');
-                    });
+                      expect(animal.makeAnimalSound()).toBe('Whistle')
+                    })
 
-                    it('should have an isMammal property', () => {
+                    it('has an isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound: () => 'Hiss',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
                         isMammal: false
-                      };
+                      }
 
-                      expect(animal.isMammal).toBeDefined();
-                      expect(typeof animal.isMammal).toBe('boolean');
-                    });
+                      expect(animal.isMammal).toBe(false)
+                    })
 
-                  });
+                  })
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
                 `,
                     explainPollyError
                 )
@@ -662,13 +665,67 @@ describe('Agent', () => {
             )
         }, 30_000)
 
+        it('editCommand/test', async () => {
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const uri = vscode.Uri.file(trickyLogicPath)
+
+            await client.openFile(uri)
+            const id = await client.request('editCommands/test', null)
+            await client.taskHasReachedAppliedPhase(id)
+            const originalDocument = client.workspace.getDocument(uri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "export function trickyLogic(a: number, b: number): number {
+                  if (a === 0) {
+                      return 1
+                  }
+                  if (b === 2) {
+                      return 1
+                  }
+
+                  return a - b
+              }
+
+
+              "
+            `)
+
+            const untitledDocuments = client.workspace
+                .allUris()
+                .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
+            expect(untitledDocuments).toHaveLength(1)
+            const [untitledDocument] = untitledDocuments
+            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(`
+              "import { trickyLogic } from './trickyLogic';
+
+              describe('trickyLogic', () => {
+                it('should return 1 if a is 0', () => {
+                  expect(trickyLogic(0, 1)).toBe(1);
+                });
+
+                it('should return 1 if b is 2', () => {
+                  expect(trickyLogic(1, 2)).toBe(1);
+                });
+
+                it('should return a - b if neither a is 0 nor b is 2', () => {
+                  expect(trickyLogic(3, 1)).toBe(2);
+                });
+              });
+              "
+            `)
+
+            // Just to make sure the edit happened via `workspace/edit` instead
+            // of `textDocument/edit`.
+            expect(client.workspaceEditParams).toHaveLength(1)
+        }, 30_000)
+
         describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
                 it(name, async () => {
                     await client.request('command/execute', {
                         command: 'cody.search.index-update',
                     })
-                    const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
+                    const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                     await client.openFile(uri, { removeCursor: false })
                     const task = await client.request('commands/document', null)
                     await client.taskHasReachedAppliedPhase(task)

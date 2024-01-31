@@ -45,6 +45,15 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     txt: ProgrammingLanguage.PlainText,
 }
 
+export function extensionForLanguage(language: string): string | undefined {
+    for (const extension of Object.keys(EXTENSION_TO_LANGUAGE)) {
+        if (EXTENSION_TO_LANGUAGE[extension] === language) {
+            return extension
+        }
+    }
+    return undefined
+}
+
 /**
  * Infer the programming language of {@file} based solely on its filename.
  *

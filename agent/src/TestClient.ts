@@ -11,21 +11,27 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     ClientInfo,
+    CreateFileOperation,
     DebugMessage,
+    DeleteFileOperation,
     EditTask,
     ExtensionConfiguration,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
+    RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
+    TextDocumentEditParams,
     WebviewPostMessageParams,
+    WorkspaceEditParams,
 } from './protocol-alias'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { applyPatch } from 'fast-myers-diff'
 import dedent from 'dedent'
+import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -56,6 +62,7 @@ export class TestClient extends MessageHandler {
     public readonly serverEndpoint: string
     public readonly accessToken?: string
     public workspace = new AgentWorkspaceDocuments()
+    public workspaceEditParams: WorkspaceEditParams[] = []
 
     constructor(
         private readonly params: {
@@ -117,45 +124,140 @@ export class TestClient extends MessageHandler {
         this.registerNotification('codeLenses/display', async params => {
             this.codeLenses.set(params.uri, params.codeLenses)
         })
-        this.registerRequest('textDocument/edit', async params => {
-            const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
-            if (!document) {
-                logError('textDocument/edit: document not found', params.uri)
-                return false
-            }
-            const patches = params.edits.map<[number, number, string]>(edit => {
-                switch (edit.type) {
-                    case 'delete':
-                        return [
-                            document.offsetAt(edit.range.start),
-                            document.offsetAt(edit.range.end),
-                            '',
-                        ]
-                    case 'insert':
-                        return [
-                            document.offsetAt(edit.position),
-                            document.offsetAt(edit.position),
-                            edit.value,
-                        ]
-                    case 'replace':
-                        return [
-                            document.offsetAt(edit.range.start),
-                            document.offsetAt(edit.range.end),
-                            edit.value,
-                        ]
+
+        this.registerRequest('workspace/edit', async params => {
+            this.workspaceEditParams.push(params)
+            // NOTE(olafurpg): this is a best-effort implementation of what an
+            // editor would do.  For IDE client implementations like JetBrains,
+            // I think it's worth adding detailed tests to cover all possible
+            // scenarios because it's easy to leave out a critical
+            // implementation detail that causes us to waste a lot of time
+            // debugging something that should have been done the Right Way
+            // from the start.
+            let result = true
+            const deletedFiles: DeleteFileOperation[] = []
+            const renamedFiles: RenameFileOperation[] = []
+            const createdFiles: CreateFileOperation[] = []
+            for (const operation of params.operations) {
+                if (operation.type === 'edit-file') {
+                    const { success, protocolDocument } = this.editDocument(operation)
+                    result ||= success
+                    if (protocolDocument) {
+                        this.notify('textDocument/didChange', protocolDocument.underlying)
+                    }
+                } else if (operation.type === 'create-file') {
+                    const fileExists = await doesFileExist(vscode.Uri.parse(operation.uri))
+                    if (operation.options?.ignoreIfExists && fileExists) {
+                        result = false
+                        continue
+                    }
+                    if (fileExists && !operation.options?.overwrite) {
+                        result = false
+                        logError(
+                            'workspace/edit',
+                            'cannot create file that already exists and options.overwrite=false',
+                            operation.uri
+                        )
+                        continue
+                    }
+                    const fspath = vscode.Uri.file(operation.uri).fsPath
+                    await fspromises.mkdir(path.dirname(fspath), { recursive: true })
+                    await fspromises.writeFile(fspath, operation.textContents)
+                    createdFiles.push(operation)
+                } else if (operation.type === 'delete-file') {
+                    if (!(await doesFileExist(vscode.Uri.parse(operation.uri)))) {
+                        result = false
+                        continue
+                    }
+                    await fspromises.unlink(vscode.Uri.file(operation.uri).fsPath)
+                    deletedFiles.push(operation)
+                } else if (operation.type === 'rename-file') {
+                    if (!(await doesFileExist(vscode.Uri.parse(operation.oldUri)))) {
+                        continue
+                    }
+                    const newFileExists = await doesFileExist(vscode.Uri.parse(operation.newUri))
+                    if (operation.options?.ignoreIfExists && newFileExists) {
+                        continue
+                    }
+                    if (!operation.options?.overwrite && newFileExists) {
+                        logError(
+                            'workspace/edit',
+                            "can't rename into new URI that already exists and options.overwrite=false",
+                            operation.newUri
+                        )
+                        continue
+                    }
+                    const newPath = vscode.Uri.file(operation.newUri).fsPath
+                    await fspromises.mkdir(path.dirname(newPath), { recursive: true })
+                    await fspromises.rename(vscode.Uri.file(operation.oldUri).fsPath, newPath)
+                    renamedFiles.push(operation)
                 }
-            })
-            const updatedContent = [...applyPatch(document.content, patches)].join('')
-            this.workspace.addDocument(
-                ProtocolTextDocumentWithUri.from(document.uri, { content: updatedContent })
-            )
-            return true
+            }
+
+            if (createdFiles.length > 0) {
+                this.notify('workspace/didCreateFiles', { files: createdFiles })
+            }
+
+            if (deletedFiles.length > 0) {
+                this.notify('workspace/didDeleteFiles', { files: deletedFiles })
+            }
+
+            if (renamedFiles.length > 0) {
+                this.notify('workspace/didRenameFiles', { files: renamedFiles })
+            }
+
+            return result
+        })
+        this.registerRequest('textDocument/openUntitledDocument', params => {
+            this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            this.notify('textDocument/didOpen', params)
+            return Promise.resolve(true)
+        })
+        this.registerRequest('textDocument/edit', params => {
+            return Promise.resolve(this.editDocument(params).success)
+        })
+        this.registerRequest('textDocument/show', () => {
+            return Promise.resolve(true)
         })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
         })
     }
 
+    private editDocument(params: TextDocumentEditParams): {
+        success: boolean
+        protocolDocument?: ProtocolTextDocumentWithUri
+    } {
+        const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
+        if (!document) {
+            logError('textDocument/edit: document not found', params.uri)
+            return { success: false }
+        }
+        const patches = params.edits.map<[number, number, string]>(edit => {
+            switch (edit.type) {
+                case 'delete':
+                    return [document.offsetAt(edit.range.start), document.offsetAt(edit.range.end), '']
+                case 'insert':
+                    return [
+                        document.offsetAt(edit.position),
+                        document.offsetAt(edit.position),
+                        edit.value,
+                    ]
+                case 'replace':
+                    return [
+                        document.offsetAt(edit.range.start),
+                        document.offsetAt(edit.range.end),
+                        edit.value,
+                    ]
+            }
+        })
+        const updatedContent = [...applyPatch(document.content, patches)].join('')
+        const protocolDocument = ProtocolTextDocumentWithUri.from(document.uri, {
+            content: updatedContent,
+        })
+        this.workspace.addDocument(protocolDocument)
+        return { success: true, protocolDocument }
+    }
     private logMessage(params: DebugMessage): void {
         // Uncomment below to see `logDebug` messages.
         // console.log(`${params.channel}: ${params.message}`)
@@ -180,7 +282,9 @@ export class TestClient extends MessageHandler {
         params?: { selectionName?: string; removeCursor?: boolean }
     ): Promise<void> {
         const selectionName = params?.selectionName ?? 'SELECTION'
-        let content = await fspromises.readFile(uri.fsPath, 'utf8')
+        let content: string = (await doesFileExist(uri))
+            ? await fspromises.readFile(uri.fsPath, 'utf8')
+            : ''
         const selectionStartMarker = `/* ${selectionName}_START */`
         const selectionStart = content.indexOf(selectionStartMarker)
         const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
@@ -236,7 +340,7 @@ export class TestClient extends MessageHandler {
 
         let disposable: vscode.Disposable
         return new Promise<void>((resolve, reject) => {
-            disposable = this.onDidChangeTaskState(({ id, state }) => {
+            disposable = this.onDidChangeTaskState(({ id, state, error }) => {
                 if (id === params.id) {
                     switch (state) {
                         case CodyTaskState.applied:
@@ -245,7 +349,11 @@ export class TestClient extends MessageHandler {
                         case CodyTaskState.finished:
                             return reject(
                                 new Error(
-                                    `Task reached terminal state before being applied ${{ id, state }}`
+                                    `Task reached terminal state before being applied ${JSON.stringify({
+                                        id,
+                                        state: CodyTaskState[state],
+                                        error,
+                                    })}`
                                 )
                             )
                     }
@@ -498,6 +606,9 @@ export class TestClient extends MessageHandler {
             capabilities: {
                 progressBars: 'enabled',
                 edit: 'enabled',
+                editWorkspace: 'enabled',
+                untitledDocuments: 'enabled',
+                showDocument: 'enabled',
                 codeLenses: 'enabled',
                 showWindowMessage: 'request',
             },
@@ -509,6 +620,7 @@ export class TestClient extends MessageHandler {
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
                     'cody.autocomplete.experimental.graphContext': null,
+                    'cody.internal.unstable': true,
                 },
                 debug: false,
                 verboseDebug: false,
