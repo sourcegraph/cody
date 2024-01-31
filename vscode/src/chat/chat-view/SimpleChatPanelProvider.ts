@@ -41,7 +41,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/TreeViewProvider'
@@ -81,6 +80,7 @@ import type { EnterpriseContextFactory } from '../../context/enterprise-context-
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { Repo } from '../../context/repo-fetcher'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { chatModel } from '../../models'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -176,7 +176,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
         this.treeView = treeView
-        this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
+        this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
 
         if (TestSupport.instance) {
@@ -519,7 +519,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.modelID = modelID
-        await setModel(modelID)
+        await chatModel.set(modelID)
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
@@ -1272,33 +1272,4 @@ export function getContextWindowForModel(authStatus: AuthStatus, modelID: string
         return 28000 // 7000 tokens * 4 bytes per token
     }
     return 28000 // assume default to Claude-2-like model
-}
-
-export async function setModel(modelID: string) {
-    // Store the selected model in local storage to retrieve later
-    await localStorage.set('model', modelID)
-}
-
-// Select the chat model to use in Chat
-export function selectModel(authProvider: AuthProvider, models: ModelProvider[]): string {
-    const authStatus = authProvider.getAuthStatus()
-    // Free user can only use the default model
-    if (authStatus.isDotCom && authStatus.userCanUpgrade) {
-        return models[0].model
-    }
-    // Check for the last selected model
-    const lastSelectedModelID = localStorage.get('model')
-    if (lastSelectedModelID) {
-        // If the last selected model exists in the list of models then we return it
-        const model = models.find(m => m.model === lastSelectedModelID)
-        if (model) {
-            return lastSelectedModelID
-        }
-    }
-    // If the user has not selected a model before then we return the default model
-    const defaultModel = models.find(m => m.default) || models[0]
-    if (!defaultModel) {
-        throw new Error('No chat model found in server-provided config')
-    }
-    return defaultModel.model
 }

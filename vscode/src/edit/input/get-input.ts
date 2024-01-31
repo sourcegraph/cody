@@ -19,7 +19,7 @@ import { executeEdit } from '../execute'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { isGenerateIntent } from '../utils/edit-selection'
-import { setModel } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { editModel } from '../../models'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -160,7 +160,7 @@ export const getInput = async (
                     return
                 }
 
-                setModel(acceptedItem.model)
+                editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
                 editInput.render(activeTitle, editInput.input.value)
             },

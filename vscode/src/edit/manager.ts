@@ -21,8 +21,8 @@ import { EditProvider } from './provider'
 import { getEditSmartSelection } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
-import { selectModel } from '../chat/chat-view/SimpleChatPanelProvider'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { editModel } from '../models'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -109,7 +109,7 @@ export class EditManager implements vscode.Disposable {
 
         // Set default edit configuration, if not provided
         const mode = args.mode || DEFAULT_EDIT_MODE
-        const model = args.model || selectModel(this.options.authProvider, this.models)
+        const model = args.model || editModel.get(this.options.authProvider, this.models)
         const intent = args.intent || DEFAULT_EDIT_INTENT
 
         let expandedRange: vscode.Range | undefined
