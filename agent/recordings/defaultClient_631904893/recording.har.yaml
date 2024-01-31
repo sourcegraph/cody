@@ -181,6 +181,208 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 934938a1d4cfed8f15fb549551946388
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2009
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "2009"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 335
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  Codebase context from file path 'src/animal.ts': <CODE5711>/*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+                  </CODE5711>
+              - speaker: assistant
+                text: I will refer to this code to complete your next request.
+              - speaker: human
+                text: >-
+                  Codebase context from file path 'src/squirrel.ts':
+                  <CODE5711>/**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  </CODE5711>
+              - speaker: assistant
+                text: I will refer to this code to complete your next request.
+              - speaker: human
+                text: You are a code completion AI designed to take the surrounding code and
+                  shared context into account in order to predict and suggest
+                  high-quality code to complete the code enclosed in <CODE5711>
+                  tags. You only response with code that works and fits
+                  seamlessly with surrounding code if any or use best practice
+                  and nothing else.
+              - speaker: assistant
+                text: I am a code completion AI with exceptional context-awareness designed to
+                  auto-complete nested code blocks with high-quality code that
+                  seamlessly integrates with surrounding code.
+              - speaker: human
+                text: >-
+                  Below is the code from file path src/sum.ts. Review the code
+                  outside the XML tags to detect the functionality, formats,
+                  style, patterns, and logics in use. Then, use what you detect
+                  and reuse methods/libraries to complete and enclose completed
+                  code only inside XML tags precisely without duplicating
+                  existing implementations. Here is the code: 
+
+                  ```
+
+                  export function sum(a: number, b: number): number {
+                     <CODE5711></CODE5711> 
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: "<CODE5711>export function sum(a: number, b: number): number {"
+            stopSequences:
+              - |-
+                
+
+                Human:
+              - </CODE5711>
+            stream: true
+            temperature: 0.5
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 619
+        content:
+          mimeType: text/event-stream
+          size: 619
+          text: >+
+            event: completion
+
+            data: {"completion":"\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a +","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 20:41:56 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T20:41:55.670Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: d8774263a4b8c066170e2392300b78a3
       _order: 0
       cache: {}
@@ -19786,6 +19988,1392 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-31T19:39:01.987Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c2ec195e7e4cf85223b9a4bd8d414e91
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 4578
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/squirrel.ts`:
+                  ```typescript
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `src/squirrel.ts`:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/multiple-selections.ts`:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/example.test.ts`:
+
+                  ```typescript
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Which file is the isIgnoredByCody functions defined?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 7726
+        content:
+          mimeType: text/event-stream
+          size: 7726
+          text: >+
+            event: completion
+
+            data: {"completion":" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnoredByCody.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I don't have enough context to know which file the isIgnoredByCody function is defined in. Based on the code snippets provided so far, there is no definition of a function called isIgnoredByCody.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 20:37:31 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T20:37:28.012Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c8c1b30244dab9148968f3081d3094be
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 4548
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestLogger.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/TestClass.ts`:
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/sum.ts`:
+                  ```typescript
+                  export function sum(a: number, b: number): number {
+                      
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/squirrel.ts`:
+                  ```typescript
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `src/squirrel.ts`:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/multiple-selections.ts`:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `src/example.test.ts`:
+
+                  ```typescript
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Use the following code snippet from file `src/animal.ts`:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Which file is the isIgnoredByCody functions defined?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 28225
+        content:
+          mimeType: text/event-stream
+          size: 28225
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnored","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnoredBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnoredByC","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnoredByCody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnoredByCody`.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets provided so far, the `isIgnoredByCody` function does not appear to be defined in any of them. The code snippets are from the following files:\n\n- src/TestLogger.ts\n- src/TestClass.ts\n- src/sum.ts \n- src/squirrel.ts\n- src/multiple-selections.ts\n- src/example.test.ts\n- src/animal.ts\n\nNone of these files contain a definition for `isIgnoredByCody`.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 20:43:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T20:43:07.788Z
       time: 0
       timings:
         blocked: -1

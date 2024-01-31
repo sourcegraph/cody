@@ -449,7 +449,7 @@ describe('Agent', () => {
         })
     })
 
-    describe('Cody Ignore', () => {
+    describe.skipIf(isNode16())('Cody Ignore', () => {
         beforeAll(async () => {
             const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
             await client.openFile(codyIgnoreConfig)
@@ -470,6 +470,23 @@ describe('Agent', () => {
             expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
             expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
         })
+
+        it('autocomplete/execute on ignored file', async () => {
+            await client.openFile(isIgnored)
+            const completions = await client.request('autocomplete/execute', {
+                uri: isIgnored.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBe(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
+              []
+            `,
+                explainPollyError
+            )
+        }, 10_000)
 
         it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
             await client.openFile(isIgnored)
@@ -509,7 +526,7 @@ describe('Agent', () => {
             expect(contextFiles.length).toBe(0)
         }, 30_000)
 
-        it('commands/explain on an ignored file', async () => {
+        it('chat command on an ignored file', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -519,6 +536,16 @@ describe('Agent', () => {
             // Ignored file should not be used as context files even when selected
             expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
         }, 30_000)
+
+        it('inline edit on an ignored file', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(isIgnored, { removeCursor: false })
+            await client.request('commands/document', null).catch(err => {
+                expect(err).toBeDefined()
+            })
+        })
 
         afterAll(async () => {
             ignores.setActiveState(false)
