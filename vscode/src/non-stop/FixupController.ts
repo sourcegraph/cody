@@ -224,7 +224,7 @@ export class FixupController
             contextMessages
         )
         this.tasks.set(task.id, task)
-        const state = task.mode === 'file' ? CodyTaskState.pending : CodyTaskState.working
+        const state = task.mode === 'test' ? CodyTaskState.pending : CodyTaskState.working
         this.setTaskState(task, state)
         return task
     }
@@ -509,7 +509,7 @@ export class FixupController
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
         // Consider only ever showing 1 notification that opens a UI to display all fixups.
-        if (!visibleEditor && task.mode !== 'file') {
+        if (!visibleEditor && task.mode !== 'test') {
             await this.notifyTaskComplete(task)
         }
     }
@@ -630,8 +630,8 @@ export class FixupController
 
     // Notify users of task completion when the edited file is not visible
     private async notifyTaskComplete(task: FixupTask): Promise<void> {
-        // Don't show for file mode as the doc will be displayed when done
-        if (task.mode === 'file') {
+        // Don't show for test mode as the doc will be displayed when done
+        if (task.mode === 'test') {
             return
         }
         const showChangesButton = 'Show Changes'

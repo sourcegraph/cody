@@ -116,7 +116,7 @@ interface CodyLLMSiteConfigurationProviderResponse {
     site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
 }
 
-interface RepoListResponse {
+export interface RepoListResponse {
     repositories: {
         nodes: { name: string; id: string }[]
         pageInfo: {

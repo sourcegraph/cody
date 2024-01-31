@@ -7,7 +7,16 @@ import type { CompletionParameters, CompletionResponse } from '../sourcegraph-ap
  * TODO: migrate to union of multiple `CompletionResponse` types to explicitly document
  * all possible response types.
  */
-export const STOP_REASON_STREAMING_CHUNK = 'cody-streaming-chunk'
+export enum CompletionStopReason {
+    /**
+     * Used to signal to the completion processing code that we're still streaming.
+     * Can be removed if we make `CompletionResponse.stopReason` optional. Then
+     * `{ stopReason: undefined }` can be used instead.
+     */
+    StreamingChunk = 'cody-streaming-chunk',
+    RequestAborted = 'cody-request-aborted',
+    RequestFinished = 'cody-request-finished',
+}
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>

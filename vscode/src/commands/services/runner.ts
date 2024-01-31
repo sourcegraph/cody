@@ -15,7 +15,7 @@ import { telemetryRecorder } from '../../services/telemetry-v2'
 
 import type { CodyCommandArgs } from '../types'
 import { getCommandContextFiles } from '../context'
-import { executeChat } from '../default/ask'
+import { executeChat } from '../execute/ask'
 import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
 import { getEditor } from '../../editor/active-editor'
 

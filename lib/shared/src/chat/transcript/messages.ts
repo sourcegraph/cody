@@ -53,11 +53,16 @@ interface ChatMetadata {
 
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: string[]
+    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
     [chatID: string]: TranscriptJSON
+}
+
+export interface ChatInputHistory {
+    inputText: string
+    inputContextFiles: ContextFile[]
 }
 
 export type ChatEventSource =
