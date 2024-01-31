@@ -25,7 +25,7 @@ export const getDefaultDocumentItems = (
     return [
         {
             ...SELECTION_RANGE_ITEM,
-            range: new vscode.Range(initialRange.start, initialRange.end),
+            range: initialRange,
         },
         {
             ...EXPANDED_RANGE_ITEM,

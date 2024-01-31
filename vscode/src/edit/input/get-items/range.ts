@@ -9,17 +9,17 @@ import type { EditInputInitialValues } from '../get-input'
 
 export const getDefaultRangeItems = (
     document: vscode.TextDocument,
-    initialValues: EditInputInitialValues
+    initialValues: RangeInputInitialValues
 ): EditRangeItem[] => {
-    const { initialRange, initialExpandedRange } = initialValues
+    const { initialRange, initialExpandedRange, initialCursorPosition } = initialValues
 
     const cursorItem = {
         ...CURSOR_RANGE_ITEM,
-        range: new vscode.Range(initialRange.end, initialRange.end),
+        range: new vscode.Range(initialCursorPosition, initialCursorPosition),
     }
 
     if (initialExpandedRange) {
-        // No need to show the selection (it will be the same)
+        // No need to show the selection (it will be the same as the expanded range)
         return [
             cursorItem,
             {
@@ -30,7 +30,7 @@ export const getDefaultRangeItems = (
     }
 
     if (isGenerateIntent(document, initialRange)) {
-        // No need to show the selection (it will be the same)
+        // No need to show the selection (it will be the same as the cursor position)
         return [
             cursorItem,
             {
@@ -44,9 +44,10 @@ export const getDefaultRangeItems = (
     }
 
     return [
+        cursorItem,
         {
             ...SELECTION_RANGE_ITEM,
-            range: new vscode.Range(initialRange.start, initialRange.end),
+            range: initialRange,
         },
         {
             ...EXPANDED_RANGE_ITEM,
@@ -58,9 +59,13 @@ export const getDefaultRangeItems = (
     ]
 }
 
+interface RangeInputInitialValues extends EditInputInitialValues {
+    initialCursorPosition: vscode.Position
+}
+
 export const getRangeInputItems = async (
     document: vscode.TextDocument,
-    initialValues: EditInputInitialValues,
+    initialValues: RangeInputInitialValues,
     activeRange: vscode.Range,
     symbolsPromise: Thenable<vscode.DocumentSymbol[]>
 ): Promise<GetItemsResult> => {

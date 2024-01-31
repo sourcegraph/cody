@@ -66,6 +66,7 @@ export const getInput = async (
         return null
     }
 
+    const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
     let activeRangeItem =
         initialValues.initialIntent === 'add'
@@ -167,7 +168,13 @@ export const getInput = async (
         const rangeInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a range to edit',
-            getItems: () => getRangeInputItems(document, initialValues, activeRange, symbolsPromise),
+            getItems: () =>
+                getRangeInputItems(
+                    document,
+                    { ...initialValues, initialCursorPosition },
+                    activeRange,
+                    symbolsPromise
+                ),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
