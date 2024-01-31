@@ -6,6 +6,7 @@ import com.sourcegraph.cody.CodyFocusChangeListener
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
+import com.sourcegraph.cody.commands.ui.CommandsContextMenu
 import com.sourcegraph.cody.config.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
@@ -31,5 +32,6 @@ class PostStartupActivity : StartupActivity.DumbAware {
     CodyFocusChangeListener().runActivity(project)
     CodyAgentCodebase.getInstance(project).onFileOpened(project, null)
     EndOfTrialNotificationScheduler.createAndStart(project)
+    CommandsContextMenu.addCommandsToCodyContextMenu(project)
   }
 }

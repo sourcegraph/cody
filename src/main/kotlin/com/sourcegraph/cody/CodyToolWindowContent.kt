@@ -75,7 +75,7 @@ class CodyToolWindowContent(private val project: Project) {
     addChatSession(AgentChatSession.createNew(project))
   }
 
-  private fun addChatSession(chatSession: AgentChatSession) {
+  fun addChatSession(chatSession: AgentChatSession) {
     ApplicationManager.getApplication().invokeLater {
       chatContainerPanel.removeAll()
       chatContainerPanel.add(chatSession.getPanel())

@@ -21,7 +21,6 @@ class CommandsTabPanel(
   init {
     layout = BoxLayout(this, BoxLayout.Y_AXIS)
     CommandId.values().forEach { command -> addButton(command) }
-    CommandsContextMenu.addCommandsToCodyContextMenu { executeCommandWithContext(it) }
   }
 
   private fun executeCommandWithContext(commandId: CommandId) {
