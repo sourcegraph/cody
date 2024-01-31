@@ -12,11 +12,9 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     public static readonly expiredActionUrl = 'https://accounts.sourcegraph.com/cody/subscription'
 
     public static readonly expiredMessageText = `
-                Your Cody Pro trial has ended.
-
-                Thank you for using Cody Pro, you have been downgraded to Cody Free. 
+                Your Cody Pro trial has ended, and you are now on the Cody Free plan.
                 
-                Setup your payment information to continue using Cody Pro for $9 / month, and cancel anytime.
+                If you'd like to upgrade to Cody Pro, please setup your payment information. You can cancel anytime.
             `
     public static readonly nearlyExpiredActionUrl =
         'https://accounts.sourcegraph.com/cody/subscription?on-trial=true'
