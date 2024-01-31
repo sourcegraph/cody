@@ -7,6 +7,7 @@ import {
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
+    type Configuration,
 } from '@sourcegraph/cody-shared'
 
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -39,6 +40,7 @@ interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
+    config: Pick<Configuration, 'isRunningInsideAgent'>
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -147,7 +149,13 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         // Reuse existing "New Chat" panel if there is an empty one
         const emptyNewChatProvider = this.panelProviders.find(p => p.webviewPanel?.title === 'New Chat')
-        if (!chatID && !panel && this.panelProviders.length && emptyNewChatProvider) {
+        if (
+            !this.options.config.isRunningInsideAgent && // Don't reuse panels in the agent
+            !chatID &&
+            !panel &&
+            this.panelProviders.length &&
+            emptyNewChatProvider
+        ) {
             emptyNewChatProvider.webviewPanel?.reveal()
             this.activePanelProvider = emptyNewChatProvider
             this.options.contextProvider.webview = emptyNewChatProvider.webview
