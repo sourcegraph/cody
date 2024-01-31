@@ -2298,7 +2298,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.1.3
+                    clientVersion: 1.2.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2407,7 +2407,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.1.3
+                    clientVersion: 1.2.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
