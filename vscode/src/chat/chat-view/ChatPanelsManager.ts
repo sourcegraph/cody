@@ -125,6 +125,12 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
+
+        if (this.options.config.isRunningInsideAgent) {
+            // Never reuse webviews when running inside the agent.
+            return provider
+        }
+
         // Check if any existing panel is available
         return this.activePanelProvider || provider
     }
