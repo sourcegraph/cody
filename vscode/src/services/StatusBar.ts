@@ -126,6 +126,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
+                    'Command Hints',
+                    undefined,
+                    'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
+                    'cody.commandHints.enabled',
+                    c => c.commandHints
+                ),
+                createFeatureToggle(
                     'Search Context',
                     'Beta',
                     'Enable using the natural language search index as an Enhanced Context chat source',
