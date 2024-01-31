@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, type Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
@@ -37,6 +37,18 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.tooltip = DEFAULT_TOOLTIP
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
+
+    // Listens for changes to the active text editor and updates the status bar text
+    // based on whether the active file is ignored by Cody or not.
+    // If ignored, adds 'Ignored' to the status bar text.
+    // Otherwise, rerenders the status bar.
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
+        if (e && isCodyIgnoredFile(e?.document.uri)) {
+            statusBarItem.text = DEFAULT_TEXT + ' Ignored'
+        } else {
+            rerender()
+        }
+    })
 
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
         const workspaceConfig = vscode.workspace.getConfiguration()
@@ -240,6 +252,7 @@ export function createStatusBar(): CodyStatusBar {
         dispose() {
             statusBarItem.dispose()
             command.dispose()
+            onDocumentChange.dispose()
         },
     }
 }
