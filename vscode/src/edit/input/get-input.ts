@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
 
-import { commands as defaultCommands } from '../../commands/default/cody.json'
+import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import type { EditSupportedModels } from '../prompt'
 import { getEditor } from '../../editor/active-editor'
 import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
