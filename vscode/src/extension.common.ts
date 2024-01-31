@@ -7,7 +7,6 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import type { CommandsController } from './commands/CommandsController'
 import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
@@ -19,6 +18,7 @@ import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
+import type { CommandsProvider } from './commands/services/provider'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -27,7 +27,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
-    createCommandsController?: Constructor<typeof CommandsController>
+    createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever

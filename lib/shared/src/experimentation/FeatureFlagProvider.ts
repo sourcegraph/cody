@@ -26,9 +26,18 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Trigger only one request for every multiline completion instead of three.
+    CodyAutocompleteSingleMultilineRequest = 'cody-autocomplete-single-multiline-request',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
+
+    // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
+    UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
+
+    // cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
+    // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
+    CodyProTrialEnded = 'cody-pro-trial-ended',
 
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
@@ -44,7 +53,10 @@ export class FeatureFlagProvider {
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    private getFromCache(flagName: FeatureFlag, endpoint: string): boolean | undefined {
+    public getFromCache(
+        flagName: FeatureFlag,
+        endpoint: string = this.apiClient.endpoint
+    ): boolean | undefined {
         const now = Date.now()
         if (now - this.lastUpdated > ONE_HOUR) {
             // Cache expired, refresh

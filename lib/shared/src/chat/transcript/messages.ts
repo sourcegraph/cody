@@ -1,8 +1,8 @@
 import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
-import type { CodyDefaultCommands } from '../../commands'
 import type { Message } from '../../sourcegraph-api'
 
 import type { TranscriptJSON } from '.'
+import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatButton {
     label: string
@@ -73,7 +73,7 @@ export type ChatEventSource =
     | 'custom-commands'
     | 'test'
     | 'code-lens'
-    | CodyDefaultCommands
+    | DefaultCodyCommands
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

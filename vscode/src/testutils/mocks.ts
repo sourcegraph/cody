@@ -777,6 +777,11 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
+
+    public getFromCache(flag: FeatureFlag): boolean {
+        return this.enabledFlags.has(flag)
+    }
+
     public syncAuthStatus(): Promise<void> {
         return Promise.resolve()
     }
