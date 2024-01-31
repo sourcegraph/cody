@@ -23,6 +23,7 @@ export interface Configuration {
     customHeaders: Record<string, string>
     chatPreInstruction: string
     codeActions: boolean
+    commandHints: boolean
     commandCodeLenses: boolean
     editorTitleCommandIcon: boolean
 

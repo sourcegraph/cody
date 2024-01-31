@@ -122,7 +122,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('internal.unstable') as boolean
+        const isEnabled = config.get('commandHints.enabled') as boolean
 
         if (!isEnabled) {
             this.dispose()
@@ -138,6 +138,12 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     public dispose(): void {
         this.isActive = false
+
+        // Clear any existing ghost text
+        if (vscode.window.activeTextEditor) {
+            this.clearGhostText(vscode.window.activeTextEditor)
+        }
+
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

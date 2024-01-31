@@ -836,6 +836,13 @@
           "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
           "default": true
         },
+        "cody.commandHints.enabled": {
+          "order": 12,
+          "title": "Cody Command Hints",
+          "type": "boolean",
+          "markdownDescription": "Enable hints for Edit and Chat shortcuts, displayed alongside editor selections.",
+          "default": false
+        },
         "cody.experimental.simpleChatContext": {
           "order": 99,
           "type": "boolean",

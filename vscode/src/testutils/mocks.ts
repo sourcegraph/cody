@@ -806,6 +806,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
+    commandHints: true,
     isRunningInsideAgent: false,
     agentIDE: undefined,
     debugEnable: false,
