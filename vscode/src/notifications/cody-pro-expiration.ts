@@ -28,7 +28,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
     public static readonly actionText = 'Setup Payment Info'
 
-    public static readonly noThanksText = `Don't show again`
+    public static readonly noThanksText = 'Don’t Show Again'
 
     /**
      * Current subscription to auth provider status changes that may trigger a check.
