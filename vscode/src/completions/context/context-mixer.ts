@@ -91,6 +91,7 @@ export class ContextMixer implements vscode.Disposable {
                             },
                         })
                 )
+                // Filtering out snippets that belong to ignored files
                 const filteredSnippets = allSnippets.filter(snippet => !isCodyIgnoredFile(snippet.uri))
 
                 return {
