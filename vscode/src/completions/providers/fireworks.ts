@@ -287,12 +287,18 @@ export function createProviderConfig({
 
     return {
         create(options: ProviderOptions) {
-            return new FireworksProvider(options, {
-                model: resolvedModel,
-                maxContextTokens,
-                timeouts,
-                ...otherOptions,
-            })
+            return new FireworksProvider(
+                {
+                    ...options,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                {
+                    model: resolvedModel,
+                    maxContextTokens,
+                    timeouts,
+                    ...otherOptions,
+                }
+            )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

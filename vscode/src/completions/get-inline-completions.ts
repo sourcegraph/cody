@@ -396,7 +396,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
 
     if (docContext.multilineTrigger) {
         return providerConfig.create({
-            id: 'multiline',
             ...sharedProviderOptions,
             n: 3, // 3 vs. 1 does not meaningfully affect perf
             multiline: true,
@@ -404,7 +403,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     }
 
     return providerConfig.create({
-        id: 'single-line-suffix',
         ...sharedProviderOptions,
         // Show more if manually triggered (but only showing 1 is faster, so we use it
         // in the automatic trigger case).

@@ -44,6 +44,7 @@ import {
     type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { isLocalCompletionsProvider } from './providers/unstable-ollama'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -309,6 +310,8 @@ export class InlineCompletionItemProvider
                 completionIntent
             )
 
+            const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
+
             try {
                 const result = await this.getInlineCompletions({
                     document,
@@ -321,7 +324,7 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: 75,
+                        singleLine: isLocalProvider ? 75 : 125,
                         multiLine: 125,
                     },
                     setIsLoading,
