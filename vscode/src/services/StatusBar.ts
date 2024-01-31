@@ -44,7 +44,8 @@ export function createStatusBar(): CodyStatusBar {
     // Otherwise, rerenders the status bar.
     const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
         if (e && isCodyIgnoredFile(e?.document.uri)) {
-            statusBarItem.text = DEFAULT_TEXT + ' Ignored'
+            statusBarItem.tooltip = 'Current file is ignored by Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
         } else {
             rerender()
         }
