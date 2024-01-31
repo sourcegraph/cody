@@ -54,6 +54,8 @@ export interface EditInputInitialValues {
 const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
     borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
+    borderWidth: '3px',
+    borderStyle: 'solid',
 })
 
 export const getInput = async (
