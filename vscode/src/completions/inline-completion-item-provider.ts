@@ -17,7 +17,7 @@ import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
-import { DefaultContextStrategyFactory, type ContextStrategy } from './context/context-strategy'
+import { DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
@@ -45,6 +45,7 @@ import {
 } from './suggested-autocomplete-items-cache'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/unstable-ollama'
+import { completionProviderConfig } from './completion-provider-config'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -63,7 +64,6 @@ export interface CodyCompletionItemProviderConfig {
     authStatus: AuthStatus
     isDotComUser?: boolean
 
-    contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
     // Settings
@@ -71,8 +71,6 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    dynamicMultilineCompletions?: boolean
-    hotStreak?: boolean
 }
 
 interface CompletionRequest {
@@ -115,8 +113,6 @@ export class InlineCompletionItemProvider
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
-        dynamicMultilineCompletions = false,
-        hotStreak = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -125,8 +121,6 @@ export class InlineCompletionItemProvider
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
-            dynamicMultilineCompletions,
-            hotStreak,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
@@ -153,7 +147,10 @@ export class InlineCompletionItemProvider
 
         this.requestManager = new RequestManager()
         this.contextMixer = new ContextMixer(
-            new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
+            new DefaultContextStrategyFactory(
+                completionProviderConfig.contextStrategy,
+                createBfgRetriever
+            )
         )
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
@@ -290,7 +287,7 @@ export class InlineCompletionItemProvider
                 maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
+                dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
             })
 
             const completionIntent = getCompletionIntent({
@@ -336,8 +333,6 @@ export class InlineCompletionItemProvider
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
                     completionIntent,
-                    dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
-                    hotStreak: this.config.hotStreak,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
                 })
