@@ -103,15 +103,6 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
-
-        // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-        ignores.setActiveState(true)
-        ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
-            {
-                uri: Uri.file(path.join(workspaceRootPath, '.cody', 'ignore')),
-                content: '**/*Ignored.ts',
-            },
-        ])
     }, 10_000)
 
     beforeEach(async () => {
@@ -454,15 +445,24 @@ describe('Agent', () => {
     })
 
     describe('Cody Ignore', () => {
-        const isIgnoredByCody = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
-        const isIgnored = Uri.file(isIgnoredByCody)
-
+        // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
+        const isIgnored = Uri.file(path.join(workspaceRootPath, 'src', 'isIgnored.ts'))
         beforeAll(async () => {
-            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
-            expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
+            ignores.setActiveState(true)
+            ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
+                {
+                    uri: Uri.file(path.join(workspaceRootPath, '.cody', 'ignore')),
+                    content: '**/*Ignored.ts',
+                },
+            ])
         }, 10_000)
 
-        it('chat/submitMessage (addEnhancedContext: true)', async () => {
+        beforeEach(async () => {
+            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
+            expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
+        })
+
+        it('chat/submitMessage on ignored file (addEnhancedContext: true)', async () => {
             await client.openFile(isIgnored)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -482,7 +482,7 @@ describe('Agent', () => {
             expect(contextFiles.length).toBeGreaterThan(0)
         }, 30_000)
 
-        it('chat/submitMessage (addEnhancedContext: false)', async () => {
+        it('chat/submitMessage on ignored file (addEnhancedContext: false)', async () => {
             await client.openFile(isIgnored)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -501,7 +501,7 @@ describe('Agent', () => {
             expect(contextFiles.length).toBe(0)
         }, 30_000)
 
-        it('commands/explain', async () => {
+        it('commands/explain on ignored file', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
