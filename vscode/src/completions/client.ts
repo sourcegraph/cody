@@ -16,6 +16,7 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     type CompletionsClientConfig,
+    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
@@ -81,20 +82,15 @@ export function createClient(
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
-            // Check for explicit false, because if the header is not set, there
-            // is no upgrade available.
+            // Check for explicit false, because if the header is not set, there is no upgrade
+            // available.
+            //
+            // Note: This header is added only via the Sourcegraph instance and thus not added by
+            //       the helper function.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
                 typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-            const retryAfter = response.headers.get('retry-after')
-            const limit = response.headers.get('x-ratelimit-limit')
-            throw new RateLimitError(
-                'autocompletions',
-                await response.text(),
-                upgradeIsAvailable,
-                limit ? parseInt(limit, 10) : undefined,
-                retryAfter
-            )
+            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
         }
 
         if (!response.ok) {
@@ -118,7 +114,7 @@ export function createClient(
 
                 for await (const { event, data } of iterator) {
                     if (event === 'error') {
-                        throw new Error(data)
+                        throw new TracedError(data, traceId)
                     }
 
                     if (signal.aborted) {
@@ -207,6 +203,7 @@ interface SSEMessage {
 const SSE_TERMINATOR = '\n\n'
 export async function* createSSEIterator(
     iterator: NodeJS.ReadableStream,
+    // Message batching or any non-standard SSE behaviors should noe be enabled by default
     options: { batchCompletionEvents?: boolean } = {}
 ): AsyncGenerator<SSEMessage> {
     let buffer = ''
@@ -264,4 +261,19 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
+}
+
+export async function createRateLimitErrorFromResponse(
+    response: BrowserOrNodeResponse,
+    upgradeIsAvailable: boolean
+): Promise<RateLimitError> {
+    const retryAfter = response.headers.get('retry-after')
+    const limit = response.headers.get('x-ratelimit-limit')
+    return new RateLimitError(
+        'autocompletions',
+        await response.text(),
+        upgradeIsAvailable,
+        limit ? parseInt(limit, 10) : undefined,
+        retryAfter
+    )
 }

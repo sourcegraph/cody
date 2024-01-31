@@ -39,7 +39,7 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
-import { createSSEIterator } from '../client'
+import { createRateLimitErrorFromResponse, createSSEIterator } from '../client'
 import type { AuthStatus } from '../../chat/protocol'
 
 export interface FireworksOptions {
@@ -48,7 +48,7 @@ export interface FireworksOptions {
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
     config: Pick<ConfigurationWithAccessToken, 'accessToken'>
-    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom'>
+    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -112,7 +112,7 @@ class FireworksProvider extends Provider {
     private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
     private codyGatewayAccessToken?: string
-    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom'>
+    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 
     constructor(
         options: ProviderOptions,
@@ -123,10 +123,18 @@ class FireworksProvider extends Provider {
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
-        this.codyGatewayAccessToken = config.accessToken
-            ? dotcomTokenToGatewayToken(config.accessToken)
-            : undefined
         this.authStatus = authStatus
+
+        const isNode = typeof process !== 'undefined'
+        this.codyGatewayAccessToken =
+            this.options.fastPath &&
+            config.accessToken &&
+            // Require the upstream to be dotcom
+            this.authStatus.isDotCom &&
+            // The fast path client only supports Node.js style response streams
+            isNode
+                ? dotcomTokenToGatewayToken(config.accessToken)
+                : undefined
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -213,17 +221,8 @@ class FireworksProvider extends Provider {
         const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
             const abortController = forkSignal(abortSignal)
 
-            const isNode = typeof process !== 'undefined'
-            const useFastPathClient =
-                this.options.fastPath &&
-                this.codyGatewayAccessToken &&
-                // Require the upstream to be dotcom
-                this.authStatus.isDotCom &&
-                // The fast path client only supports Node.js style response streams
-                isNode
-
             const completionResponseGenerator = generatorWithTimeout(
-                useFastPathClient
+                this.codyGatewayAccessToken
                     ? this.createFastPathClient(requestParams, abortController)
                     : this.createDefaultClient(requestParams, abortController),
                 requestParams.timeoutMs,
@@ -317,7 +316,14 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const url = 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks'
+        const isLocalInstance =
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+            this.authStatus.endpoint?.includes('localhost')
+        const gatewayUrl = isLocalInstance
+            ? 'http://localhost:9992'
+            : 'https://cody-gateway.sourcegraph.com'
+
+        const url = `${gatewayUrl}/v1/completions/fireworks`
         const log = this.client.logger?.startCompletion(requestParams, url)
 
         // Convert the SG instance messages array back to the original prompt
@@ -358,21 +364,12 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
 
         const traceId = getActiveTraceAndSpanId()?.traceId
 
-        // When rate-limiting occurs, the response is an error message
-        // The response here is almost identical to the SG instance response but does not contain
-        // information on wether a user is eligible to upgrade to the pro plan. We get this from the
-        // authState instead.
+        // When rate-limiting occurs, the response is an error message The response here is almost
+        // identical to the SG instance response but does not contain information on whether a user
+        // is eligible to upgrade to the pro plan. We get this from the authState instead.
         if (response.status === 429) {
             const upgradeIsAvailable = this.authStatus.userCanUpgrade
-            const retryAfter = response.headers.get('retry-after')
-            const limit = response.headers.get('x-ratelimit-limit')
-            throw new RateLimitError(
-                'autocompletions',
-                await response.text(),
-                upgradeIsAvailable,
-                limit ? parseInt(limit, 10) : undefined,
-                retryAfter
-            )
+            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
         }
 
         if (!response.ok) {
@@ -395,7 +392,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
 
             for await (const { event, data } of iterator) {
                 if (event === 'error') {
-                    throw new Error(data)
+                    throw new TracedError(data, traceId)
                 }
 
                 if (abortController.signal.aborted) {
