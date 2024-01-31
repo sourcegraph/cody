@@ -70,8 +70,9 @@ test.only('create a new user command via the custom commands menu', async ({ pag
     await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
-    // Scroll to the buttom
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    // Click on minimap to scroll to the buttom
+    await page.locator('canvas').nth(2).click()
+    await page.getByText(commandName).hover()
     await expect(page.getByText(commandName)).toBeVisible()
     await page.getByText('index.html').first().click()
 
