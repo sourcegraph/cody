@@ -36,8 +36,7 @@ export class EditProvider {
     constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
-        // TODO: Allow users to change edit model
-        const model = 'anthropic/claude-2.1'
+        const model = this.config.task.model
         const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
             model,
             task: this.config.task,

@@ -7,6 +7,7 @@ import type { EditIntent, EditMode } from '../edit/types'
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
+import type { EditSupportedModels } from '../edit/prompt'
 
 export type taskID = string
 
@@ -57,7 +58,8 @@ export class FixupTask {
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
-        public mode: EditMode = 'edit',
+        public readonly mode: EditMode,
+        public readonly model: EditSupportedModels,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
         public readonly contextMessages?: ContextMessage[]
@@ -65,8 +67,6 @@ export class FixupTask {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
         this.originalRange = selectionRange
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        this.intent = selectionRange.isEmpty ? 'add' : intent
     }
 
     /**

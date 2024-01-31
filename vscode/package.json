@@ -1037,6 +1037,13 @@
           "fontCharacter": "\\0042"
         }
       },
+      "anthropic-logo": {
+        "description": "Anthropic logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0043"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {

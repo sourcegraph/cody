@@ -127,7 +127,9 @@ describe('Agent', () => {
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
-            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEEE',
+            // Redacted format of an invalid access token (just random string). Tests fail in replay mode
+            // if we don't use the redacted format here.
+            accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })

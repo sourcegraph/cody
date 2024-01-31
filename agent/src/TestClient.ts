@@ -63,6 +63,7 @@ export class TestClient extends MessageHandler {
             readonly accessToken?: string
             serverEndpoint?: string
             telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
+            featureFlags?: 'enabled' // defaults to testing, which doesn't send telemetry
             logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
             onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
         }
@@ -400,6 +401,21 @@ export class TestClient extends MessageHandler {
 
     public async shutdownAndExit() {
         if (this.isAlive()) {
+            const { errors } = await this.request('testing/requestErrors', null)
+            const missingRecordingErrors = errors.filter(({ error }) =>
+                error?.includes?.('`recordIfMissing` is')
+            )
+            if (missingRecordingErrors.length > 0) {
+                const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
+                throw new Error(
+                    dedent`${errorMessage}.
+
+                           To fix this problem, run the following commands to update the HTTP recordings:
+
+                             source agent/scripts/export-cody-http-recording-tokens.sh
+                             pnpm update-agent-recordings`
+                )
+            }
             await this.request('shutdown', null)
             this.notify('exit', null)
         } else {
@@ -463,6 +479,8 @@ export class TestClient extends MessageHandler {
                 CODY_RECORDING_NAME: this.name,
                 SRC_ACCESS_TOKEN: this.accessToken,
                 CODY_TELEMETRY_EXPORTER: this.params.telemetryExporter ?? 'testing',
+                BENCHMARK_DISABLE_FEATURE_FLAGS:
+                    this.params.featureFlags === 'enabled' ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: this.params.logEventMode,
                 ...process.env,
             },

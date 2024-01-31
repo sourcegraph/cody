@@ -18,6 +18,11 @@ interface JsonrpcCommandOptions {
     recordingName?: string
 }
 
+export interface PollyRequestError {
+    request: Request
+    error: string
+}
+
 function recordingModeOption(value: string): MODE {
     switch (value) {
         case 'record':
@@ -106,6 +111,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
     )
     .action((options: JsonrpcCommandOptions) => {
         const networkRequests: Request[] = []
+        const requestErrors: PollyRequestError[] = []
         let polly: Polly | undefined
         if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {
@@ -124,6 +130,9 @@ export const jsonrpcCommand = new Command('jsonrpc')
             polly.server.any().on('request', req => {
                 networkRequests.push(req)
             })
+            polly.server.any().on('error', (request, error) => {
+                requestErrors.push({ request, error: `${error}` })
+            })
             // Automatically pass through requests to GitHub because we
             // don't want to record huge binary downloads.
             polly.server.get('https://github.com/*path').passthrough()
@@ -141,24 +150,37 @@ export const jsonrpcCommand = new Command('jsonrpc')
 
         if (isDebugMode) {
             const server = createServer(socket => {
-                setupAgentCommunication(polly, networkRequests, socket, socket)
+                setupAgentCommunication({
+                    polly,
+                    networkRequests,
+                    requestErrors,
+                    stdin: socket,
+                    stdout: socket,
+                })
             })
 
             server.listen(debugPort, () => {
                 console.log(`Agent debug server listening on port ${debugPort}`)
             })
         } else {
-            setupAgentCommunication(polly, networkRequests, process.stdin, process.stdout)
+            setupAgentCommunication({
+                polly,
+                networkRequests,
+                requestErrors,
+                stdin: process.stdin,
+                stdout: process.stdout,
+            })
         }
     })
 
-function setupAgentCommunication(
-    polly: Polly | undefined,
-    networkRequests: Request[],
-    stdin: NodeJS.ReadableStream,
+function setupAgentCommunication(params: {
+    polly: Polly | undefined
+    networkRequests: Request[]
+    requestErrors: PollyRequestError[]
+    stdin: NodeJS.ReadableStream
     stdout: NodeJS.WritableStream
-) {
-    const agent = new Agent({ polly, networkRequests })
+}) {
+    const agent = new Agent(params)
 
     // Force the agent process to exit when stdin/stdout close as an attempt to
     // prevent zombie agent processes. We experienced this problem when we
@@ -167,10 +189,10 @@ function setupAgentCommunication(
     // when we forcefully quit IntelliJ
     // https://github.com/sourcegraph/cody/pull/1439#discussion_r1365610354
     if (!isDebugMode) {
-        stdout.on('close', () => process.exit(1))
-        stdin.on('close', () => process.exit(1))
+        params.stdout.on('close', () => process.exit(1))
+        params.stdin.on('close', () => process.exit(1))
     }
 
-    stdin.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(stdout)
+    params.stdin.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(params.stdout)
 }
