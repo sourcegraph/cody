@@ -20,6 +20,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Fixed an issue where the natural language search panel would disappear instead of showing results. [pull/2981](https://github.com/sourcegraph/cody/pull/2981)
 
 - Autocomplete: Improved the new jaccard similarity retriever and context mixing experiments. [pull/2898](https://github.com/sourcegraph/cody/pull/2898)
+- Autocomplete: Remove obvious prompt-continuations. [pull/2974](https://github.com/sourcegraph/cody/pull/2974)
 
 ## [1.2.1]
 
