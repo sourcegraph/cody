@@ -13,7 +13,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { getEditSmartSelection, isGenerateIntent } from './utils/edit-selection'
+import { getEditSmartSelection } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE, DEFAULT_EDIT_MODEL } from './constants'
 
 export interface EditManagerOptions {
@@ -82,11 +82,14 @@ export class EditManager implements vscode.Disposable {
             this.options.ghostHintDecorator.clearGhostText(editor.active)
         }
 
-        const isGenerate = isGenerateIntent(document, range)
-        let expandedRange: vscode.Range | undefined
+        // Set default edit configuration, if not provided
+        const mode = args.mode || DEFAULT_EDIT_MODE
+        const model = args.model || DEFAULT_EDIT_MODEL
+        const intent = args.intent || DEFAULT_EDIT_INTENT
 
+        let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
-        if (!isGenerate) {
+        if (intent !== 'add') {
             const smartRange = await getEditSmartSelection(document, range)
 
             if (!smartRange.isEqual(range)) {
@@ -94,19 +97,13 @@ export class EditManager implements vscode.Disposable {
             }
         }
 
-        // Set default edit configuration, if not provided
-        const mode = args.mode || DEFAULT_EDIT_MODE
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        const intent = isGenerateIntent(document, range) ? 'add' : args.intent || DEFAULT_EDIT_INTENT
-        const model = args.model || DEFAULT_EDIT_MODEL
-
         let task: FixupTask | null
         if (args.instruction?.trim()) {
             task = await this.controller.createTask(
                 document,
                 args.instruction,
                 args.userContextFiles ?? [],
-                range,
+                expandedRange || range,
                 intent,
                 mode,
                 model,
