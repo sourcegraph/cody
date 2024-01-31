@@ -1,2 +1,2 @@
-# NOTE: Used by agent integration test
+# NOTE: For agent integration test only
 **/*Ignored.ts

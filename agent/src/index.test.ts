@@ -958,7 +958,7 @@ describe('Agent', () => {
         }, 30_000)
     })
 
-    describe.only('Enterprise', () => {
+    describe('Enterprise', () => {
         const enterpriseClient = new TestClient({
             name: 'enterpriseClient',
             accessToken:
