@@ -202,6 +202,20 @@ describe('Agent', () => {
         `)
     }, 10_000)
 
+    // Workaround for the fact that `ContextFile.uri` is a class that
+    // serializes to JSON as an object, and deserializes back into a JS
+    // object instead of the class. Without this,
+    // `ContextFile.uri.toString()` return `"[Object object]".
+    function decodeURIs(transcript: ExtensionTranscriptMessage): void {
+        for (const message of transcript.messages) {
+            if (message.contextFiles) {
+                for (const file of message.contextFiles) {
+                    file.uri = URI.from(file.uri)
+                }
+            }
+        }
+    }
+
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
@@ -351,20 +365,6 @@ describe('Agent', () => {
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
 
-        // Workaround for the fact that `ContextFile.uri` is a class that
-        // serializes to JSON as an object, and deserializes back into a JS
-        // object instead of the class. Without this,
-        // `ContextFile.uri.toString()` return `"[Object object]".
-        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
-            for (const message of transcript.messages) {
-                if (message.contextFiles) {
-                    for (const file of message.contextFiles) {
-                        file.uri = URI.from(file.uri)
-                    }
-                }
-            }
-        }
-
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
@@ -477,20 +477,6 @@ describe('Agent', () => {
             expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
             expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
         }, 10_000)
-
-        // Workaround for the fact that `ContextFile.uri` is a class that
-        // serializes to JSON as an object, and deserializes back into a JS
-        // object instead of the class. Without this,
-        // `ContextFile.uri.toString()` return `"[Object object]".
-        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
-            for (const message of transcript.messages) {
-                if (message.contextFiles) {
-                    for (const file of message.contextFiles) {
-                        file.uri = URI.from(file.uri)
-                    }
-                }
-            }
-        }
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(isIgnored)
@@ -969,7 +955,7 @@ describe('Agent', () => {
         }, 30_000)
     })
 
-    describe.only('Enterprise', () => {
+    describe('Enterprise', () => {
         const enterpriseClient = new TestClient({
             name: 'enterpriseClient',
             accessToken:
