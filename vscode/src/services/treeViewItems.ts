@@ -55,44 +55,38 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Settings',
         icon: 'settings-gear',
-        command: { command: 'cody.status-bar.interacted' },
+        command: { command: 'cody.sidebar.settings' },
     },
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: {
-            command: 'workbench.action.openGlobalKeybindings',
-            args: ['@ext:sourcegraph.cody-ai'],
-        },
+        command: { command: 'cody.sidebar.keyboardShortcuts' },
     },
     {
         title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
         description: `v${version}`,
         icon: 'github',
-        command: {
-            command: 'vscode.open',
-            args: [releaseNotesURL(version)],
-        },
+        command: { command: 'cody.sidebar.releaseNotes' },
     },
     {
         title: 'Documentation',
         icon: 'book',
-        command: { command: 'vscode.open', args: [CODY_DOC_URL.href] },
+        command: { command: 'cody.sidebar.documentation' },
     },
     {
         title: 'Feedback',
         icon: 'feedback',
-        command: { command: 'vscode.open', args: [CODY_FEEDBACK_URL.href] },
+        command: { command: 'cody.sidebar.feedback' },
     },
     {
         title: 'Discord',
         icon: 'organization',
-        command: { command: 'vscode.open', args: [DISCORD_URL.href] },
+        command: { command: 'cody.sidebar.discord' },
     },
     {
         title: 'Account',
         icon: 'account',
-        command: { command: 'cody.auth.account' },
+        command: { command: 'cody.sidebar.account' },
     },
 ]
 

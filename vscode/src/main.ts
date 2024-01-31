@@ -19,7 +19,6 @@ import type { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
-    ACCOUNT_USAGE_URL,
     CODY_FEEDBACK_URL,
     type AuthStatus,
 } from './chat/protocol'
@@ -60,6 +59,7 @@ import {
     executeDocCommand,
     executeUnitTestCommand,
 } from './commands/execute'
+import { registerSidebarCommands } from './services/SidebarCommands'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -392,24 +392,7 @@ const register = async (
         ),
 
         // Account links
-        vscode.commands.registerCommand('cody.show-page', (page: string) => {
-            let url: URL
-            switch (page) {
-                case 'upgrade':
-                    url = ACCOUNT_UPGRADE_URL
-                    break
-                case 'usage':
-                    url = ACCOUNT_USAGE_URL
-                    break
-                case 'rate-limits':
-                    url = ACCOUNT_LIMITS_INFO_URL
-                    break
-                default:
-                    console.warn(`Unable to show unknown page: "${page}"`)
-                    return
-            }
-            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
-        }),
+        ...registerSidebarCommands(),
 
         // Account links
         vscode.commands.registerCommand(
