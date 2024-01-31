@@ -165,7 +165,9 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
     await chatPanel.getByText('✨ Context: 14 lines from 2 files').click()
     await expect(chatPanel.getByRole('button', { name: '@index.html:1-10' })).toBeVisible()
-    await expect(chatPanel.getByRole('button', { name: '@lib/batches/env/var.go:1-0' })).toBeVisible()
+    await expect(
+        chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-0') })
+    ).toBeVisible()
 })
 
 test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
