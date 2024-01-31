@@ -1,8 +1,7 @@
 import { isDotCom } from '../sourcegraph-api/environments'
-import { DEFAULT_DOT_COM_EDIT_MODELS } from './edit'
+import { DEFAULT_DOT_COM_MODELS } from './dotcom'
+import type { ModelUsage } from './types'
 import { getProviderName } from './utils'
-
-type ModelUseCase = 'chat' | 'edit'
 
 /**
  * ModelProvider manages available chat and edit models.
@@ -17,6 +16,7 @@ export class ModelProvider {
 
     constructor(
         public readonly model: string,
+        public readonly usage: ModelUsage[],
         isDefaultModel = true
     ) {
         const splittedModel = model.split('/')
@@ -26,27 +26,21 @@ export class ModelProvider {
     }
 
     // Providers available for non-dotcom instances
-    private static privateProviders: Record<ModelUseCase, Map<string, ModelProvider>> = {
-        chat: new Map(),
-        edit: new Map(),
-    }
+    private static privateProviders: Map<string, ModelProvider> = new Map()
     // Providers available for dotcom instances
-    private static dotComProviders: Record<ModelUseCase, ModelProvider[]> = {
-        chat: DEFAULT_DOT_COM_EDIT_MODELS,
-        edit: DEFAULT_DOT_COM_EDIT_MODELS,
-    }
+    private static dotComProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
 
     /**
      * Adds a new chat model provider, instantiated from the given model string,
-     * to the internal providers set. This allows new chat models to be added and
+     * to the internal providers set. This allows new models to be added and
      * made available for use.
      */
-    public static add(type: ModelUseCase, provider: ModelProvider): void {
+    public static add(provider: ModelProvider): void {
         // private instances can only support 1 provider atm
-        if (ModelProvider.privateProviders[type].size) {
-            ModelProvider.privateProviders[type].clear()
+        if (ModelProvider.privateProviders.size) {
+            ModelProvider.privateProviders.clear()
         }
-        ModelProvider.privateProviders[type].set(provider.model.trim(), provider)
+        ModelProvider.privateProviders.set(provider.model.trim(), provider)
     }
 
     /**
@@ -56,17 +50,19 @@ export class ModelProvider {
      * If currentModel is provided, sets it as the default model.
      */
     public static get(
-        type: ModelUseCase,
+        type: ModelUsage,
         endpoint?: string | null,
         currentModel?: string
     ): ModelProvider[] {
         const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
-        const models = isDotComUser
-            ? ModelProvider.dotComProviders[type]
-            : Array.from(ModelProvider.privateProviders[type].values())
+        const models = (
+            isDotComUser
+                ? ModelProvider.dotComProviders
+                : Array.from(ModelProvider.privateProviders.values())
+        ).filter(model => model.usage.includes(type))
 
         if (!isDotComUser) {
-            return Array.from(ModelProvider.privateProviders[type].values())
+            return models
         }
 
         // Set the current model as default

@@ -20,6 +20,7 @@ import { SidebarViewController, type SidebarViewOptions } from './SidebarViewCon
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -92,7 +93,13 @@ export class ChatManager implements vscode.Disposable {
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
         if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add('chat', new ModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
         await this.chatPanelsManager.syncAuthStatus(authStatus)
     }

@@ -1,13 +1,15 @@
 import type { ModelProvider } from '.'
+import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_EDIT_MODELS: ModelProvider[] = [
+export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
         provider: 'Anthropic',
         default: true,
         codyProOnly: false,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
         title: 'Claude 2.1 Preview',
@@ -15,6 +17,7 @@ export const DEFAULT_DOT_COM_EDIT_MODELS: ModelProvider[] = [
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
         title: 'Claude Instant',
@@ -22,6 +25,7 @@ export const DEFAULT_DOT_COM_EDIT_MODELS: ModelProvider[] = [
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
         title: 'ChatGPT 3.5 Turbo',
@@ -29,6 +33,7 @@ export const DEFAULT_DOT_COM_EDIT_MODELS: ModelProvider[] = [
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
         title: 'ChatGPT 4 Turbo Preview',
@@ -36,5 +41,15 @@ export const DEFAULT_DOT_COM_EDIT_MODELS: ModelProvider[] = [
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: 'Mixtral 8x7B',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+        provider: 'Mistral',
+        default: false,
+        codyProOnly: true,
+        // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
+        usage: [ModelUsage.Chat],
     },
 ]

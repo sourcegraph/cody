@@ -80,6 +80,7 @@ import {
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { Repo } from '../../context/repo-fetcher'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -679,9 +680,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
         if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add('chat', new ModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
-        const models = ModelProvider.get('chat', authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
