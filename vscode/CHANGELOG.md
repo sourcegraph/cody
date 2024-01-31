@@ -6,7 +6,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat: Display Cody icon in the editor title of the chat panels when `cody.editorTitleCommandIcon` is enabled. [pull/2937](https://github.com/sourcegraph/cody/pull/2937)
+- Edit: Improved the input UX. You can now adjust the range of the Edit, select from available symbols in the document, and get quick access to the "Document" and "Test" commands. [pull/2884](https://github.com/sourcegraph/cody/pull/2884)
+- Edit: Added new keyboard shortcuts for Edit (`Alt+K`) and Chat (`Alt+L`). [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
+- Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. Enable it by setting `cody.commandHints.enabled` to true. [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
+- Autocomplete: local inference support with [deepseek-coder](https://ollama.ai/library/deepseek-coder) powered by ollama. [pull/2966](https://github.com/sourcegraph/cody/pull/2966)
+- Autocomplete: Add a new experimental fast-path mode for Cody community users that directly connections to our inference services. [pull/2927](https://github.com/sourcegraph/cody/pull/2927)
+
 ### Fixed
+
+- Fixed an issue where the natural language search panel would disappear instead of showing results. [pull/2981](https://github.com/sourcegraph/cody/pull/2981)
 
 ### Changed
 
