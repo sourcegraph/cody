@@ -30,11 +30,7 @@ test('enhanced context selector is keyboard accessible', async ({ page, sidebar 
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
 })
 
-test('enterprise context selector does not dismiss when picking repos', async ({
-    page,
-    sidebar,
-    server,
-}) => {
+test('enterprise context selector can pick repos', async ({ page, sidebar, server }) => {
     const repos1: RepoListResponse = {
         repositories: {
             nodes: [
