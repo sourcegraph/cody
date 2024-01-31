@@ -8,6 +8,11 @@ import type { CompletionParameters, CompletionResponse } from '../sourcegraph-ap
  * all possible response types.
  */
 export enum CompletionStopReason {
+    /**
+     * Used to signal to the completion processing code that we're still streaming.
+     * Can be removed if we make `CompletionResponse.stopReason` optional. Then
+     * `{ stopReason: undefined }` can be used instead.
+     */
     StreamingChunk = 'cody-streaming-chunk',
     RequestAborted = 'cody-request-aborted',
     RequestFinished = 'cody-request-finished',
