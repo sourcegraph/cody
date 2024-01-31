@@ -337,7 +337,7 @@ export const getInput = async (
 
                 const matchingContext = await getMatchingContext(value)
                 if (matchingContext === null) {
-                    // Nothing to match, clear existing items
+                    // Nothing to match, re-render existing items
                     // eslint-disable-next-line no-self-assign
                     input.items = getEditInputItems(input.value, activeRangeItem, activeModelItem).items
                     return

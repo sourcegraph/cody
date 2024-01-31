@@ -36,21 +36,30 @@ export const getEditInputItems = (
     activeRangeItem: vscode.QuickPickItem,
     activeModelItem: vscode.QuickPickItem
 ): GetItemsResult => {
-    const items = [
-        activeValue.trim().length > 0 ? SUBMIT_ITEM : null,
+    const hasActiveValue = activeValue.trim().length > 0
+    const submitItems = hasActiveValue ? [SUBMIT_ITEM] : []
+    const commandItems = hasActiveValue
+        ? []
+        : [
+              {
+                  label: 'edit commands',
+                  kind: vscode.QuickPickItemKind.Separator,
+              },
+              DOCUMENT_ITEM,
+              TEST_ITEM,
+          ]
+    const editItems = [
         {
             label: 'edit options',
             kind: vscode.QuickPickItemKind.Separator,
         },
         { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
         EDIT_CHANGE_MODEL_ENABLED ? { ...MODEL_ITEM, detail: getItemLabel(activeModelItem) } : null,
-        {
-            label: 'edit commands',
-            kind: vscode.QuickPickItemKind.Separator,
-        },
-        DOCUMENT_ITEM,
-        TEST_ITEM,
-    ].filter(Boolean) as vscode.QuickPickItem[]
+    ]
+
+    const items = [...submitItems, ...editItems, ...commandItems].filter(
+        Boolean
+    ) as vscode.QuickPickItem[]
 
     return { items }
 }
