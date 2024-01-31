@@ -76,7 +76,7 @@ const getContextFromIntent = async ({
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedPrecedingText, uri, 'edit'),
+                        populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -87,7 +87,7 @@ const getContextFromIntent = async ({
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedFollowingText, uri, 'edit'),
+                        populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -121,10 +121,13 @@ const getContextFromIntent = async ({
                 ...[truncatedPrecedingText, truncatedFollowingText]
                     .filter(text => text.trim().length > 0)
                     .flatMap(text =>
-                        getContextMessageWithResponse(populateCodeContextTemplate(text, uri, 'edit'), {
-                            type: 'file',
-                            uri,
-                        })
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, uri, undefined, 'edit'),
+                            {
+                                type: 'file',
+                                uri,
+                            }
+                        )
                     ),
             ]
         }

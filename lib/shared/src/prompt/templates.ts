@@ -22,10 +22,18 @@ const CODE_CONTEXT_TEMPLATE_EDIT = `Use the following code snippet from file: {f
 {text}
 `
 
-export function populateCodeContextTemplate(code: string, fileUri: URI, repoName?: string, type: 'chat' | 'edit' = 'chat'): string {
-    const template = type === 'edit' ? CODE_CONTEXT_TEMPLATE_EDIT : repoName
-    ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-    : CODE_CONTEXT_TEMPLATE
+export function populateCodeContextTemplate(
+    code: string,
+    fileUri: URI,
+    repoName?: string,
+    type: 'chat' | 'edit' = 'chat'
+): string {
+    const template =
+        type === 'edit'
+            ? CODE_CONTEXT_TEMPLATE_EDIT
+            : repoName
+              ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+              : CODE_CONTEXT_TEMPLATE
 
     return template
         .replace('{filePath}', displayPath(fileUri))
