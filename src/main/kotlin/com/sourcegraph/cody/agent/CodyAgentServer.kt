@@ -43,6 +43,9 @@ interface CodyAgentServer {
 
   @JsonRequest("graphql/currentUserIsPro") fun isCurrentUserPro(): CompletableFuture<Boolean?>
 
+  @JsonRequest("graphql/getCurrentUserCodySubscription")
+  fun getCurrentUserCodySubscription(): CompletableFuture<CurrentUserCodySubscription?>
+
   // Notifications
   @JsonNotification("initialized") fun initialized()
 

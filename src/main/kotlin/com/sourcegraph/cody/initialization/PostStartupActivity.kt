@@ -30,5 +30,6 @@ class PostStartupActivity : StartupActivity.DumbAware {
     CodyAutocompleteStatusService.resetApplication(project)
     CodyFocusChangeListener().runActivity(project)
     CodyAgentCodebase.getInstance(project).onFileOpened(project, null)
+    EndOfTrialNotificationScheduler.createAndStart(project)
   }
 }
