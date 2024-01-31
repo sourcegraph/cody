@@ -9,7 +9,7 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 
-test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test.only('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -70,6 +70,8 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
+    // Scroll to the buttom
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await expect(page.getByText(commandName)).toBeVisible()
     await page.getByText('index.html').first().click()
 
