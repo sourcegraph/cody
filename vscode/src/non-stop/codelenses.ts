@@ -17,6 +17,9 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.inserting: {
+            if (task.mode === 'test') {
+                return [getAddingTestLens(codeLensRange)]
+            }
             const title = getInsertingLens(codeLensRange)
             return [title]
         }
@@ -190,7 +193,16 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
 function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(sync~spin) Cody is generating unit tests...',
+        title: '$(sync~spin) Generating tests...',
+        command: 'cody.focus',
+    }
+    return lens
+}
+
+function getAddingTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Adding tests...',
         command: 'cody.focus',
     }
     return lens
