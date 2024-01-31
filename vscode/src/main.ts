@@ -55,11 +55,11 @@ import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import {
     executeExplainCommand,
-    executeTestCommand,
+    executeTestEditCommand,
     executeSmellCommand,
     executeDocCommand,
     executeUnitTestCommand,
-    executeTestCaseCommand,
+    executeTestCaseEditCommand,
 } from './commands/execute'
 
 /**
@@ -344,8 +344,8 @@ const register = async (
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeUnitTestCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests-cases', a => executeTestCaseCommand(a))
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
     )
 
     const statusBar = createStatusBar()

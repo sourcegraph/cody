@@ -8,19 +8,19 @@ import { CodyTaskState } from './utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isTest = task.intent === 'test'
     switch (task.state) {
         case CodyTaskState.pending:
         case CodyTaskState.working: {
-            const title =
-                task.mode === 'test' ? getUnitTestLens(codeLensRange) : getWorkingLens(codeLensRange)
+            const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
         case CodyTaskState.inserting: {
-            if (task.mode === 'test') {
-                return [getAddingTestLens(codeLensRange)]
+            let title = getInsertingLens(codeLensRange)
+            if (isTest) {
+                title = getUnitTestLens(codeLensRange)
             }
-            const title = getInsertingLens(codeLensRange)
             return [title]
         }
         case CodyTaskState.applying: {
@@ -37,6 +37,9 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
+            if (isTest) {
+                return [accept, retry, undo]
+            }
             return [title, accept, retry, undo]
         }
         case CodyTaskState.error: {
@@ -194,15 +197,6 @@ function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Generating tests...',
-        command: 'cody.focus',
-    }
-    return lens
-}
-
-function getAddingTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(sync~spin) Adding tests...',
         command: 'cody.focus',
     }
     return lens

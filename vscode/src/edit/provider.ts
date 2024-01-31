@@ -71,7 +71,7 @@ export class EditProvider {
 
         // Listen to test file name suggestion from responses
         // Allows Cody to let us know which test file we should add the new content to
-        if (this.config.task.mode === 'test') {
+        if (this.config.task.intent === 'test') {
             let filepath = ''
             multiplexer.sub(PROMPT_TOPICS.FILENAME, {
                 onResponse: async (content: string) => {
@@ -144,14 +144,14 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        if (this.config.task.mode === 'test' && !this.config.task.destinationFile) {
+        if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
             if (isMessageInProgress) {
                 return
             }
             await this.handleFileCreationResponse('', isMessageInProgress)
         }
 
-        const intentsForInsert = ['add', 'new']
+        const intentsForInsert = ['add', 'test']
         return intentsForInsert.includes(this.config.task.intent)
             ? this.handleFixupInsert(response, isMessageInProgress)
             : this.handleFixupEdit(response, isMessageInProgress)
@@ -207,6 +207,11 @@ export class EditProvider {
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
         if (task.state !== CodyTaskState.pending) {
+            return
+        }
+
+        // Has already been created when set
+        if (task.destinationFile) {
             return
         }
 

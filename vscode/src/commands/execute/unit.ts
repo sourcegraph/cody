@@ -13,7 +13,7 @@ import { telemetryRecorder } from '../../services/telemetry-v2'
  *
  * Context: Test files, current selection, and current file
  */
-async function unitCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     let prompt = defaultCommands.unit.prompt
 
     if (args?.additionalInstruction) {
@@ -45,12 +45,12 @@ async function unitCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChat
 }
 
 /**
- * Executes the text command as a chat command via 'cody.action.chat'
+ * Executes the /unit command in chat for generating unit tests for selected code.
  */
 export async function executeUnitTestCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    logDebug('executeTestCommand', 'executing', { args })
+    logDebug('executeTestEditCommand', 'executing', { args })
     telemetryService.log('CodyVSCodeExtension:command:test:executed', {
         useCodebaseContex: false,
         requestID: args?.requestID,
@@ -69,6 +69,6 @@ export async function executeUnitTestCommand(
 
     return {
         type: 'chat',
-        session: await executeChat(await unitCommand(args)),
+        session: await executeChat(await unitTestCommand(args)),
     }
 }

@@ -106,7 +106,7 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
                 codeLenses.push(
                     new vscode.CodeLens(range, {
                         ...commandLenses.test,
-                        arguments: [{ name: 'cody.command.unit-tests-cases', selection }],
+                        arguments: [{ name: 'cody.command.tests-cases', selection }],
                     })
                 )
 
