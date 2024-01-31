@@ -863,7 +863,7 @@ export class FixupController
      * Update the task's fixup file and selection range with the new info,
      * and then task mode to "insert".
      *
-     * NOTE: Currently used for /uint and /unit-case command only.
+     * NOTE: Currently used for /test command only.
      */
     public async didReceiveNewFileRequest(id: string, newFileUri: vscode.Uri): Promise<void> {
         const task = this.tasks.get(id)

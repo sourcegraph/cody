@@ -13,6 +13,7 @@ interface EditorCodeLens {
  */
 export class CommandCodeLenses implements vscode.CodeLensProvider {
     private isEnabled = false
+    private addTestEnabled = false
 
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
@@ -55,6 +56,7 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
         this.isEnabled = config.get('commandCodeLenses') as boolean
+        this.addTestEnabled = config.get('internal.unstable') as boolean
 
         if (this.isEnabled && !this._disposables.length) {
             this.init()
@@ -72,21 +74,48 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
         if (!this.isEnabled) {
             return []
         }
+
         token.onCancellationRequested(() => [])
-        const editor = getEditor().active
-        if (!editor || editor.document !== document || document.languageId === 'json') {
+        const editor = getEditor()?.active
+        if (editor?.document !== document || document.languageId === 'json') {
             return []
         }
 
-        // Generate code lenses for the document.
+        // For test files, adds code lenses for each symbol
+        if (this.addTestEnabled && isValidTestFile(document.uri)) {
+            return await this.provideCodeLensesForSymbols(document.uri)
+        }
+
         const codeLenses = []
-        const codeLensesMap = new Map<string, vscode.Range>()
-        const isTest = isValidTestFile(document.uri)
+        const linesWithLenses = new Set()
+
+        const smartRanges = await getDocumentSections(document)
+        for (const range of smartRanges) {
+            if (linesWithLenses.has(range.start)) {
+                continue
+            }
+            const selection = new vscode.Selection(range.start, range.end)
+            codeLenses.push(
+                new vscode.CodeLens(range, {
+                    ...commandLenses.cody,
+                    arguments: [{ name: 'cody.menu.commands', selection }],
+                })
+            )
+
+            linesWithLenses.add(range.start.line)
+        }
+
+        return codeLenses
+    }
+
+    private async provideCodeLensesForSymbols(doc: vscode.Uri): Promise<vscode.CodeLens[]> {
+        const codeLenses = []
+        const linesWithLenses = new Set()
 
         // Get a list of symbols from the document, filter out symbols that are not functions / classes / methods
         const allSymbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
             'vscode.executeDocumentSymbolProvider',
-            document.uri
+            doc
         )
         const symbols =
             allSymbols?.filter(
@@ -97,36 +126,23 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
                     symbol.kind === vscode.SymbolKind.Constructor
             ) ?? []
 
-        // For test files, adds code lenses for each symbol
-        if (isTest) {
-            for (const symbol of symbols) {
-                const range = symbol.location.range
-                const selection = new vscode.Selection(range.start.line, 0, range.end.line + 1, 0)
-
-                codeLenses.push(
-                    new vscode.CodeLens(range, {
-                        ...commandLenses.test,
-                        arguments: [{ name: 'cody.command.tests-cases', selection }],
-                    })
-                )
-
-                codeLensesMap.set(symbol.location.range.start.line.toString(), range)
+        for (const symbol of symbols) {
+            const range = symbol.location.range
+            const startLine = range.start.line
+            if (linesWithLenses.has(startLine)) {
+                continue
             }
 
-            return codeLenses
-        }
+            const selection = new vscode.Selection(startLine, 0, range.end.line + 1, 0)
 
-        const smartRanges = await getDocumentSections(document)
-        for (const range of smartRanges) {
-            const selection = new vscode.Selection(range.start, range.end)
             codeLenses.push(
                 new vscode.CodeLens(range, {
-                    ...commandLenses.cody,
-                    arguments: [{ name: 'cody.menu.commands', selection }],
+                    ...commandLenses.test,
+                    arguments: [{ name: 'cody.command.tests-cases', selection }],
                 })
             )
 
-            codeLensesMap.set(range.start.line.toString(), range)
+            linesWithLenses.add(startLine)
         }
 
         return codeLenses
@@ -178,6 +194,6 @@ const commandLenses = {
     test: {
         title: '$(cody-logo) Add Tests',
         command: 'cody.editor.codelens.click',
-        tooltip: 'Generate new test cases for the selected test suit',
+        tooltip: 'Generate new test cases',
     },
 }
