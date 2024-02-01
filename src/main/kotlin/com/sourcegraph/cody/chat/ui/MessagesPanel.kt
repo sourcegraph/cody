@@ -20,7 +20,7 @@ class MessagesPanel(private val project: Project) :
 
   @RequiresEdt
   @Synchronized
-  fun addOrUpdateMessage(message: ChatMessage) {
+  fun addOrUpdateMessage(message: ChatMessage, shouldAddBlinkingCursor: Boolean) {
     removeBlinkingCursor()
 
     if (componentCount > 0) {
@@ -35,7 +35,7 @@ class MessagesPanel(private val project: Project) :
       addChatMessageAsComponent(message)
     }
 
-    if (message.speaker == Speaker.HUMAN) {
+    if (shouldAddBlinkingCursor && message.speaker == Speaker.HUMAN) {
       add(BlinkingCursorComponent.instance)
     }
 

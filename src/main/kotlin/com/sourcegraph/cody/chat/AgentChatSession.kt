@@ -229,7 +229,7 @@ private constructor(
             }
         val chatMessage = ChatMessage(parsed, message.text)
         chatSession.messages.add(chatMessage)
-        chatSession.chatPanel.addOrUpdateMessage(chatMessage)
+        chatSession.chatPanel.addOrUpdateMessage(chatMessage, shouldAddBlinkingCursor = false)
       }
       CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
         chatSession.restoreAgentSession(agent)

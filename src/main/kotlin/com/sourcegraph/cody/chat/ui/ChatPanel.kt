@@ -50,8 +50,8 @@ class ChatPanel(project: Project, val chatSession: ChatSession) :
   fun isEnhancedContextEnabled(): Boolean = contextView.isEnhancedContextEnabled.get()
 
   @RequiresEdt
-  fun addOrUpdateMessage(message: ChatMessage) {
-    messagesPanel.addOrUpdateMessage(message)
+  fun addOrUpdateMessage(message: ChatMessage, shouldAddBlinkingCursor: Boolean = true) {
+    messagesPanel.addOrUpdateMessage(message, shouldAddBlinkingCursor)
   }
 
   @RequiresEdt
