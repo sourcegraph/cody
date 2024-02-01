@@ -179,12 +179,35 @@ describe('FeatureFlagProvider', () => {
             await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
 
             const callback = vitest.fn()
-            const ubsubscribe = provider.onFeatureFlagChanged('test', callback)
-            ubsubscribe()
+            const unsubscribe = provider.onFeatureFlagChanged('test', callback)
+            unsubscribe()
 
             apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: false,
             })
+            vitest.runAllTimers()
+            // The feature flags are being refreshed asynchronous, so we need to wait for the next
+            // micro queue flush.
+            vitest.useRealTimers()
+            await nextTick()
+
+            expect(callback).not.toHaveBeenCalled()
+        })
+
+        it('should not call the callback if a previously false feature flag is no longer set in the new evaluatedFeatureFlag list. This flag is likely not defined upstream', async () => {
+            vitest.useFakeTimers()
+            const apiClient = {
+                getEvaluatedFeatureFlags: () => Promise.resolve({}),
+                evaluateFeatureFlag: vitest.fn().mockResolvedValue(null),
+            }
+            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+
+            // Evaluate a flag so we know that this one is being tracked
+            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
+
+            const callback = vitest.fn()
+            provider.onFeatureFlagChanged('test', callback)
+
             vitest.runAllTimers()
             // The feature flags are being refreshed asynchronous, so we need to wait for the next
             // micro queue flush.

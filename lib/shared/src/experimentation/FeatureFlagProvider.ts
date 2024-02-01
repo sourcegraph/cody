@@ -45,7 +45,7 @@ export enum FeatureFlag {
     CodyChatMockTest = 'cody-chat-mock-test',
 }
 
-const ONE_HOUR = 60 * 60 * 1000
+const ONE_HOUR = 5000 //60 * 60 * 1000
 
 export class FeatureFlagProvider {
     // The first key maps to the endpoint so that we do never cache the wrong flag for different
@@ -91,7 +91,6 @@ export class FeatureFlagProvider {
             this.featureFlags[endpoint] = {}
         }
         this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
-        this.notifyFeatureFlagChanged()
         return this.featureFlags[endpoint][flagName]
     }
 
@@ -100,7 +99,7 @@ export class FeatureFlagProvider {
         await this.refreshFeatureFlags()
     }
 
-    private async refreshFeatureFlags(): Promise<void> {
+    public async refreshFeatureFlags(): Promise<void> {
         const endpoint = this.apiClient.endpoint
         const data = await this.apiClient.getEvaluatedFeatureFlags()
         this.featureFlags[endpoint] = isError(data) ? {} : data
@@ -156,7 +155,7 @@ export class FeatureFlagProvider {
     }
 
     private notifyFeatureFlagChanged(): void {
-        // loop over the feature flags and see if they were changed
+        const callbacksToTrigger: (() => void)[] = []
         for (const [key, subs] of this.subscriptions) {
             const parts = key.split('#')
             const endpoint = parts[0]
@@ -166,11 +165,14 @@ export class FeatureFlagProvider {
             // We only care about flags being changed that we previously already captured. A new
             // evaluation should not trigger a change event unless that new value is later changed.
             if (computeIfExistingFlagChanged(subs.lastSnapshot, currentSnapshot)) {
-                subs.lastSnapshot = currentSnapshot
                 for (const callback of subs.callbacks) {
-                    callback()
+                    callbacksToTrigger.push(callback)
                 }
             }
+            subs.lastSnapshot = currentSnapshot
+        }
+        for (const callback of callbacksToTrigger) {
+            callback()
         }
     }
 
@@ -195,5 +197,15 @@ function computeIfExistingFlagChanged(
     oldFlags: Record<string, boolean>,
     newFlags: Record<string, boolean>
 ): boolean {
-    return Object.keys(oldFlags).some(key => oldFlags[key] !== newFlags[key])
+    return Object.keys(oldFlags).some(key => {
+        const oldValue = oldFlags[key]
+        const newValue = newFlags[key]
+
+        // If the old value was false and the flag is not present in the new set, the flag was
+        // either deleted on the upstream server (in which case it would still evaluate to false) or
+        // was never part of the upstream server (in which case a new call would again evaluate to
+        // false). Thus, we don't need to count this as a change event.
+        const isSame = (oldValue === false && newValue === undefined) || oldValue === newValue
+        return !isSame
+    })
 }
