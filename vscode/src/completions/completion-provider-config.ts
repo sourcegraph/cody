@@ -41,7 +41,7 @@ class CompletionProviderConfig {
         this._config = config
     }
 
-    public getPrefetchedFlag(flag: typeof this.flagsToResolve[number]): boolean {
+    public getPrefetchedFlag(flag: (typeof this.flagsToResolve)[number]): boolean {
         if (!this.featureFlagProvider) {
             throw new Error('CompletionProviderConfig is not initialized')
         }

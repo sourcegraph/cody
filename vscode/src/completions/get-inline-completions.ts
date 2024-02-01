@@ -1,7 +1,12 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { FeatureFlag, getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    FeatureFlag,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -377,7 +382,9 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     if (docContext.multilineTrigger) {
         return providerConfig.create({
             ...sharedProviderOptions,
-            n: completionProviderConfig.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSingleMultilineRequest)
+            n: completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteSingleMultilineRequest
+            )
                 ? 1
                 : 3, // 3 vs. 1 does not meaningfully affect perf
             multiline: true,
