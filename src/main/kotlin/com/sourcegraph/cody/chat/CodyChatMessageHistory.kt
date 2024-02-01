@@ -54,13 +54,13 @@ class CodyChatMessageHistory(private val capacity: Int, chatSession: ChatSession
 
   private fun preloadHistoricalMessages(chatSession: ChatSession) {
     HistoryService.getInstance()
-      .state
-      .chats
-      .find { it.internalId == chatSession.getInternalId() }
-      ?.messages
-      ?.filter { it.speaker == MessageState.SpeakerState.HUMAN }
-      ?.mapNotNull { it.text }
-      ?.forEach { messageSent(it) }
+        .state
+        .chats
+        .find { it.internalId == chatSession.getInternalId() }
+        ?.messages
+        ?.filter { it.speaker == MessageState.SpeakerState.HUMAN }
+        ?.mapNotNull { it.text }
+        ?.forEach { messageSent(it) }
   }
 
   private fun resetHistory() {

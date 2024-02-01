@@ -6,5 +6,4 @@ import javax.swing.tree.DefaultMutableTreeNode
 class LeafNode(val chat: ChatState) : DefaultMutableTreeNode(chat, false) {
 
   fun title() = chat.title() ?: "No title"
-
 }

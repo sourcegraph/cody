@@ -6,8 +6,10 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.jetbrains.rd.util.AtomicReference
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.chat.AgentChatSession
+import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel
 import com.sourcegraph.cody.chat.ui.CodyOnboardingGuidancePanel
 import com.sourcegraph.cody.commands.CommandId
@@ -20,7 +22,6 @@ import com.sourcegraph.cody.history.HistoryTree
 import com.sourcegraph.cody.history.state.ChatState
 import java.awt.CardLayout
 import java.awt.Component
-import java.util.function.Consumer
 import javax.swing.JPanel
 import javax.swing.border.Border
 
@@ -33,6 +34,7 @@ class CodyToolWindowContent(private val project: Project) {
   private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
   private val historyTree = HistoryTree(::selectHistory, ::deleteHistory)
   private val tabbedPane = JBTabbedPane()
+  private val currentChatSession: AtomicReference<AgentChatSession?> = AtomicReference(null)
 
   private val chatContainerPanel =
       object : JPanel(CardLayout()) {
@@ -43,22 +45,12 @@ class CodyToolWindowContent(private val project: Project) {
 
   private val commandsPanel =
       CommandsTabPanel(project) { commandId: CommandId ->
-        addChatSession(AgentChatSession.createFromCommand(project, commandId))
+        switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
       }
 
   private val subscriptionPanel = SubscriptionTabPanel()
 
   init {
-    CodyAgentService.getInstance(project).onStartup { agent ->
-      agent.client.onNewMessage = Consumer { params ->
-        AgentChatSession.getSession(params.id)?.receiveMessage(params.message)
-      }
-
-      AgentChatSession.restoreAllSessions(agent)
-
-      ApplicationManager.getApplication().invokeLater { refreshPanelsVisibility() }
-    }
-
     tabbedPane.insertSimpleTab("Chat", chatContainerPanel, CHAT_TAB_INDEX)
     tabbedPane.insertSimpleTab("Chat History", historyTree, HISTORY_TAB_INDEX)
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
@@ -70,16 +62,17 @@ class CodyToolWindowContent(private val project: Project) {
 
     refreshPanelsVisibility()
     refreshSubscriptionTab()
-    addChatSession(AgentChatSession.createNew(project))
+    switchToChatSession(AgentChatSession.createNew(project))
   }
 
   fun removeAllChatSessions() {
-    AgentChatSession.removeAllSessions()
-    addChatSession(AgentChatSession.createNew(project))
+    AgentChatSessionService.getInstance(project).removeAllSessions()
+    switchToChatSession(AgentChatSession.createNew(project))
   }
 
-  fun addChatSession(chatSession: AgentChatSession) {
+  fun switchToChatSession(chatSession: AgentChatSession) {
     ApplicationManager.getApplication().invokeLater {
+      currentChatSession.getAndSet(chatSession)
       chatContainerPanel.removeAll()
       chatContainerPanel.add(chatSession.getPanel())
       tabbedPane.selectedIndex = CHAT_TAB_INDEX
@@ -139,19 +132,15 @@ class CodyToolWindowContent(private val project: Project) {
   }
 
   private fun selectHistory(state: ChatState) {
-    val session =
-        AgentChatSession.getSessionByInternalId(state.internalId)
-            ?: AgentChatSession.createFromState(project, state)
-    addChatSession(session)
+    val session = AgentChatSessionService.getInstance(project).getOrCreateFromState(state)
+    switchToChatSession(session)
   }
 
   private fun deleteHistory(state: ChatState) {
     HistoryService.getInstance().remove(state.internalId)
-    val session = AgentChatSession.getSessionByInternalId(state.internalId)
-    if (session != null) {
-      AgentChatSession.removeSession(session)
-      val isVisible = session.getPanel().chatSession.getInternalId() == state.internalId
-      if (isVisible) addChatSession(AgentChatSession.createNew(project))
+    if (AgentChatSessionService.getInstance(project).removeSession(state)) {
+      val isVisible = currentChatSession.get()?.getInternalId() == state.internalId
+      if (isVisible) switchToChatSession(AgentChatSession.createNew(project))
     }
   }
 

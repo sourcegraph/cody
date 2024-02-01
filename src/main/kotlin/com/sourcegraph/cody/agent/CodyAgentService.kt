@@ -6,18 +6,31 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-@Service(Service.Level.APP)
-class CodyAgentService : Disposable {
+@Service(Service.Level.PROJECT)
+class CodyAgentService(project: Project) : Disposable {
 
   private val logger = Logger.getInstance(CodyAgent::class.java)
   private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
 
   private val startupActions: MutableList<(CodyAgent) -> Unit> = mutableListOf()
+
+  init {
+    onStartup { agent ->
+      agent.client.onNewMessage = Consumer { params ->
+        AgentChatSessionService.getInstance(project)
+            .getSession(params.id)
+            ?.receiveMessage(params.message)
+      }
+
+      AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
+    }
+  }
 
   fun onStartup(action: (CodyAgent) -> Unit) {
     synchronized(startupActions) { startupActions.add(action) }

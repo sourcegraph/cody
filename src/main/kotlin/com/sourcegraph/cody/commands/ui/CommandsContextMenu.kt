@@ -33,7 +33,8 @@ class CommandsContextMenu {
                   CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
                       it, hasFileChanged = false) {
                         CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-                          addChatSession(AgentChatSession.createFromCommand(project, commandId))
+                          switchToChatSession(
+                              AgentChatSession.createFromCommand(project, commandId))
                         }
                       }
                 }

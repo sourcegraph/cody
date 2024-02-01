@@ -11,7 +11,8 @@ class ChatState : BaseState() {
 
   @get:OptionTag(tag = "internalId", nameAttribute = "") var internalId: String? by string()
 
-  @get:OptionTag(tag = "messages", nameAttribute = "") var messages: MutableList<MessageState> by list()
+  @get:OptionTag(tag = "messages", nameAttribute = "")
+  var messages: MutableList<MessageState> by list()
 
   @get:OptionTag(tag = "updatedAt", nameAttribute = "") var updatedAt: String? by string()
 
@@ -22,8 +23,7 @@ class ChatState : BaseState() {
   }
 
   fun getUpdatedTimeAt(): LocalDateTime {
-    if (updatedAt == null)
-      return LocalDateTime.now()
+    if (updatedAt == null) return LocalDateTime.now()
     return LocalDateTime.parse(updatedAt, DATE_FORMAT)
   }
 
