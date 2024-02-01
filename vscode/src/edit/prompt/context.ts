@@ -18,6 +18,8 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
+import type { ContextItem } from '../../chat/chat-view/SimpleChatModel'
+import { extractContextItemsFromContextMessages } from './utils'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -146,10 +148,9 @@ export const getContext = async ({
     editor,
     contextMessages,
     ...options
-}: GetContextOptions): Promise<ContextMessage[]> => {
-    // return contextMessages is already provided by the caller
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (contextMessages) {
-        return contextMessages
+        return extractContextItemsFromContextMessages(contextMessages)
     }
 
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
@@ -165,5 +166,8 @@ export const getContext = async ({
         }
     }
 
-    return [...derivedContextMessages, ...userProvidedContextMessages]
+    return extractContextItemsFromContextMessages([
+        ...derivedContextMessages,
+        ...userProvidedContextMessages,
+    ])
 }

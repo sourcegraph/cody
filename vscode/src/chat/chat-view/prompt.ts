@@ -231,7 +231,7 @@ function renderContextItem(contextItem: ContextItem): Message[] {
  * - prefixMessages
  * - the reverse of reverseMessages
  */
-class PromptBuilder {
+export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
     private charsUsed = 0

@@ -28,7 +28,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
-        title: 'ChatGPT 3.5 Turbo',
+        title: 'GPT-3.5 Turbo',
         model: 'openai/gpt-3.5-turbo',
         provider: 'OpenAI',
         default: false,
@@ -36,7 +36,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
-        title: 'ChatGPT 4 Turbo Preview',
+        title: 'GPT-4 Turbo Preview',
         model: 'openai/gpt-4-1106-preview',
         provider: 'OpenAI',
         default: false,

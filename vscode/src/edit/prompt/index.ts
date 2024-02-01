@@ -3,8 +3,6 @@ import * as vscode from 'vscode'
 import {
     BotResponseMultiplexer,
     getSimplePreamble,
-    Interaction,
-    Transcript,
     type CompletionParameters,
     type Message,
     type EditModel,
@@ -19,6 +17,7 @@ import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } fro
 import { truncateTextByLength } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { openai } from './models/openai'
 import { claude } from './models/claude'
+import { PromptBuilder } from '../../chat/chat-view/prompt'
 
 const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
@@ -83,7 +82,6 @@ export const buildInteraction = async ({
     const followingText = document.getText(
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
-
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
@@ -93,29 +91,29 @@ export const buildInteraction = async ({
             instruction: task.instruction,
         })
 
-    const transcript = new Transcript()
-    const interaction = new Interaction(
-        { speaker: 'human', text: prompt, displayText: prompt },
-        { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
-        getContext({
-            intent: task.intent,
-            uri: task.fixupFile.uri,
-            selectionRange: task.selectionRange,
-            userContextFiles: task.userContextFiles,
-            contextMessages: task.contextMessages,
-            editor,
-            followingText,
-            precedingText,
-            selectedText,
-        }),
-        []
-    )
-    transcript.addInteraction(interaction)
+    const promptBuilder = new PromptBuilder(contextWindow)
+
     const preamble = getSimplePreamble()
-    const completePrompt = await transcript.getPromptForLastInteraction(preamble)
+    promptBuilder.tryAddToPrefix(preamble)
+    promptBuilder.tryAdd({ speaker: 'human', text: prompt })
+    // TODO: Fix prefix not working correctly
+    // promptBuilder.tryAdd({ speaker: 'assistant', text: assistantText })
+
+    const contextItems = await getContext({
+        intent: task.intent,
+        uri: task.fixupFile.uri,
+        selectionRange: task.selectionRange,
+        userContextFiles: task.userContextFiles,
+        contextMessages: task.contextMessages,
+        editor,
+        followingText,
+        precedingText,
+        selectedText,
+    })
+    promptBuilder.tryAddContext(contextItems)
 
     return {
-        messages: completePrompt.prompt,
+        messages: promptBuilder.build(),
         stopSequences,
         responseTopic: responseTopic || BotResponseMultiplexer.DEFAULT_TOPIC,
         responsePrefix: assistantPrefix,
