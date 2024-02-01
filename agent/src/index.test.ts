@@ -557,7 +557,7 @@ describe('Agent', () => {
             const groupedMsgs = []
             for (const req of requests) {
                 // Get the messages from the request body
-                const messages = JSON.parse(req.body || '')?.messages as {
+                const messages = JSON.parse(req.body || '{}')?.messages as {
                     speaker: string
                     text: string
                 }[]
@@ -568,7 +568,6 @@ describe('Agent', () => {
 
                 groupedMsgs.push(...(text ?? []))
             }
-
             expect(groupedMsgs.length).toBeGreaterThan(0)
 
             // Join all the string from each groupedMsgs[] together into
