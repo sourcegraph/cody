@@ -131,6 +131,7 @@ class CodyToolWindowContent(private val project: Project) {
     allContentLayout.show(allContentPanel, MAIN_PANEL)
   }
 
+  @RequiresEdt
   private fun selectHistory(state: ChatState) {
     val session = AgentChatSessionService.getInstance(project).getOrCreateFromState(state)
     switchToChatSession(session)

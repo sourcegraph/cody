@@ -3,6 +3,7 @@ package com.sourcegraph.cody.commands.ui
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -33,8 +34,10 @@ class CommandsContextMenu {
                   CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
                       it, hasFileChanged = false) {
                         CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-                          switchToChatSession(
-                              AgentChatSession.createFromCommand(project, commandId))
+                          ApplicationManager.getApplication().invokeLater {
+                            switchToChatSession(
+                                AgentChatSession.createFromCommand(project, commandId))
+                          }
                         }
                       }
                 }

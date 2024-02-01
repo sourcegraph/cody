@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAccountManager
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -75,17 +76,11 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
   }
 
   private fun updateCodyStatusBarIcons() {
-    val action = Runnable {
+    UIUtil.invokeLaterIfNeeded {
       val openProjects = ProjectManager.getInstance().openProjects
       openProjects.forEach { project ->
         project.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) }
       }
-    }
-    val application = ApplicationManager.getApplication()
-    if (application.isDispatchThread) {
-      action.run()
-    } else {
-      application.invokeLater(action)
     }
   }
 

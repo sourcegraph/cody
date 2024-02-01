@@ -76,30 +76,35 @@ class HistoryTree(
         addChatToPeriodAndSort(period, chat)
       }
     } else {
-      val period =
+      val currentPeriodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
+      val currentPeriod = root.periods().find { it.periodText == currentPeriodText }
+      val leafWithChangedPeriod =
           root
               .periods()
+              .filter { it.periodText != currentPeriodText }
               .flatMap { it.leafs() }
-              .find { it.chat.internalId == chat.internalId }!!
-              .parent as PeriodNode
-      val periodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
-      //      Checking if chat needs to be moved to different period
-      if (period.periodText != periodText) {
-        val filter = period.leafs().filter { it.chat.internalId != chat.internalId }
-        if (filter.isEmpty()) {
-          model.removeNodeFromParent(period)
-        } else {
-          period.removeAllChildren()
-          for (child in filter) period.add(child)
+              .find { it.chat.internalId == chat.internalId }
+
+      if (leafWithChangedPeriod != null) {
+        val previousPeriod = leafWithChangedPeriod.parent as? PeriodNode
+        previousPeriod?.let { period ->
+          period.remove(leafWithChangedPeriod)
+          if (period.childCount == 0) period.removeFromParent()
           model.reload(period)
         }
-        val per = root.periods().find { it.periodText == periodText }
-        addChatToPeriodAndSort(per!!, chat)
+        currentPeriod?.let { period ->
+          addChatToPeriodAndSort(period, chat)
+          model.reload(period)
+        }
       } else {
-        val sorted = period.leafs().sortedByDescending { it.chat.getUpdatedTimeAt() }
-        period.removeAllChildren()
-        for (child in sorted) period.add(child)
-        model.reload(period)
+        currentPeriod?.let { period ->
+          val sorted = period.leafs().sortedByDescending { it.chat.getUpdatedTimeAt() }
+          if (period.leafs() != sorted) {
+            period.removeAllChildren()
+            for (child in sorted) period.add(child)
+            model.reload(period)
+          }
+        }
       }
     }
   }
