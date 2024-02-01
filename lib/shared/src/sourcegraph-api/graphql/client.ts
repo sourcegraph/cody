@@ -733,7 +733,6 @@ export class SourcegraphGraphQLAPIClient {
             GET_FEATURE_FLAGS_QUERY,
             {}
         ).then(response => {
-            console.log({ response })
             return extractDataOrError(response, data =>
                 data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
                     acc[name] = value
