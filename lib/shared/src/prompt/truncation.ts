@@ -7,7 +7,7 @@ import { CHARS_PER_TOKEN } from './constants'
  */
 export function truncateTextByTokens(text: string, maxTokens: number): string {
     const maxLength = maxTokens * CHARS_PER_TOKEN
-    return truncateTextByTokens(text, maxLength)
+    return truncateTextByChars(text, maxLength)
 }
 
 export function truncateTextByChars(text: string, maxLength: number): string {
