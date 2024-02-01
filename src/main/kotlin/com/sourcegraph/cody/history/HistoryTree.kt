@@ -73,13 +73,43 @@ class HistoryTree(
         model.reload(root)
       } else {
         val period = root.periods().find { it.periodText == periodText }!!
-        val extended = period.leafs() + LeafNode(chat)
-        val sorted = extended.sortedByDescending { it.chat.getUpdatedTimeAt() }
+        addChatToPeriodAndSort(period, chat)
+      }
+    } else {
+      val period =
+          root
+              .periods()
+              .flatMap { it.leafs() }
+              .find { it.chat.internalId == chat.internalId }!!
+              .parent as PeriodNode
+      val periodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
+      //      Checking if chat needs to be moved to different period
+      if (period.periodText != periodText) {
+        val filter = period.leafs().filter { it.chat.internalId != chat.internalId }
+        if (filter.isEmpty()) {
+          model.removeNodeFromParent(period)
+        } else {
+          period.removeAllChildren()
+          for (child in filter) period.add(child)
+          model.reload(period)
+        }
+        val per = root.periods().find { it.periodText == periodText }
+        addChatToPeriodAndSort(per!!, chat)
+      } else {
+        val sorted = period.leafs().sortedByDescending { it.chat.getUpdatedTimeAt() }
         period.removeAllChildren()
         for (child in sorted) period.add(child)
         model.reload(period)
       }
     }
+  }
+
+  private fun addChatToPeriodAndSort(period: PeriodNode, chat: ChatState) {
+    val extended = period.leafs() + LeafNode(chat)
+    val sorted = extended.sortedByDescending { it.chat.getUpdatedTimeAt() }
+    period.removeAllChildren()
+    for (child in sorted) period.add(child)
+    model.reload(period)
   }
 
   private fun selectSelected() {
