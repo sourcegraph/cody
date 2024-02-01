@@ -2,14 +2,14 @@ import { logError, type ContextFile } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
-import { defaultCommands } from '.'
-import type { EditCommandResult } from '../../main'
+import { defaultCommands, executeTestChatCommand } from '.'
+import type { ChatCommandResult, EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
-
+import * as uuid from 'uuid'
 import type { URI } from 'vscode-uri'
 import { isTestFileForOriginal } from '../utils/test-commands'
-
+import { workspace } from 'vscode'
 /**
  * Command that generates a new test file for the selected code with unit tests added.
  * When calls, the command will be executed as an inline-edit command.
@@ -18,7 +18,14 @@ import { isTestFileForOriginal } from '../utils/test-commands'
  */
 export async function executeTestEditCommand(
     args?: Partial<CodyCommandArgs>
-): Promise<EditCommandResult | undefined> {
+): Promise<EditCommandResult | ChatCommandResult | undefined> {
+    // TODO: remove after 1.2.3 patch
+    // Exclude from patch release using a random placeholder config value
+    const config = workspace.getConfiguration('cody')
+    if (!config.get(uuid.v4())) {
+        return executeTestChatCommand(args)
+    }
+
     // The prompt for generating tests in a new test file
     const newTestFilePrompt = defaultCommands.test.prompt
     // The prompt for adding new test suite to an existing test file

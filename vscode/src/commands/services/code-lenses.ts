@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as uuid from 'uuid'
 import { getEditor } from '../../editor/active-editor'
 import { isValidTestFile } from '../utils/test-commands'
 import { getDocumentSections } from '../../editor/utils/document-sections'
@@ -109,6 +110,13 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
     }
 
     private async provideCodeLensesForSymbols(doc: vscode.Uri): Promise<vscode.CodeLens[]> {
+        // TODO: remove after 1.2.3 patch
+        // Exclude from patch release using a random placeholder config value
+        const config = vscode.workspace.getConfiguration('cody')
+        if (!config.get(uuid.v4())) {
+            return []
+        }
+
         const codeLenses = []
         const linesWithLenses = new Set()
 
