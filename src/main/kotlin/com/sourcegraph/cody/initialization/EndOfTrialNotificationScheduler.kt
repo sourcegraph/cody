@@ -31,8 +31,8 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
             this.dispose()
           }
 
-          if (CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() ==
-              false) {
+          if (CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() !=
+              true) {
             return@scheduleAtFixedRate
           }
 
