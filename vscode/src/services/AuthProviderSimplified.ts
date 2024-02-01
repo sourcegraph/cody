@@ -40,7 +40,6 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=${postSignUpSurveyUrl}`
     const googleLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=google&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=${postSignUpSurveyUrl}`
 
-
     let uriSpec: string
     switch (provider) {
         case 'github':
