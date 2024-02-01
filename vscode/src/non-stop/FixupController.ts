@@ -45,7 +45,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor() {
+    constructor(private readonly models: ModelProvider[]) {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -1067,7 +1067,7 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
             document,
-            [], // TODO: How to get ranges?
+            this.models,
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,

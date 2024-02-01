@@ -39,14 +39,6 @@ export class EditManager implements vscode.Disposable {
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController()
-        this.disposables.push(
-            this.controller,
-            vscode.commands.registerCommand(
-                'cody.command.edit-code',
-                (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
-            )
-        )
         const authStatus = options.authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
             ModelProvider.add(
@@ -58,6 +50,14 @@ export class EditManager implements vscode.Disposable {
             )
         }
         this.models = ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
+        this.controller = new FixupController(this.models)
+        this.disposables.push(
+            this.controller,
+            vscode.commands.registerCommand(
+                'cody.command.edit-code',
+                (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
+            )
+        )
     }
 
     public async executeEdit(
