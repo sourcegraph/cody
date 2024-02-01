@@ -32,7 +32,8 @@ class PromptPanel(private val chatSession: ChatSession) : JLayeredPane() {
   private val autoGrowingTextArea = AutoGrowingTextArea(5, 9, this)
   private val scrollPane = autoGrowingTextArea.scrollPane
   private val textArea = autoGrowingTextArea.textArea
-  private val promptMessageHistory = CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY)
+  private val promptMessageHistory =
+      CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY, chatSession)
   private val sendButton = SendButton()
 
   init {

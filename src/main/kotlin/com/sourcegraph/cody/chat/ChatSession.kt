@@ -5,11 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.xml.util.XmlStringUtil
 import com.jetbrains.rd.util.AtomicReference
-import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.ExtensionMessage
-import com.sourcegraph.cody.agent.WebviewMessage
-import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
+import com.sourcegraph.cody.agent.*
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
 import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
@@ -17,6 +13,9 @@ import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.config.RateLimitStateManager
+import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.ChatState
+import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
@@ -36,11 +35,16 @@ interface ChatSession {
   fun receiveMessage(extensionMessage: ExtensionMessage)
 
   fun getCancellationToken(): CancellationToken
+
+  fun getInternalId(): String
 }
 
 class AgentChatSession
-private constructor(private val project: Project, newSessionId: CompletableFuture<SessionId>) :
-    ChatSession {
+private constructor(
+    private val project: Project,
+    newSessionId: CompletableFuture<SessionId>,
+    private val internalId: String = UUID.randomUUID().toString(),
+) : ChatSession {
 
   /**
    * There are situations (like startup of the chat) when we want to show UI immediately, but we
@@ -49,11 +53,8 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
    */
   private val sessionId: AtomicReference<CompletableFuture<SessionId>> =
       AtomicReference(newSessionId)
-
   private val chatPanel: ChatPanel = ChatPanel(project, this)
-
   private val cancellationToken = AtomicReference(CancellationToken())
-
   private val messages = mutableListOf<ChatMessage>()
 
   init {
@@ -67,13 +68,16 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
 
   fun restoreAgentSession(agent: CodyAgent) {
     synchronized(this) {
-      /**
-       * TODO: We should get and save that information after panel is created or model is changed by
-       *   user. Also, `chatId` parameter doesn't really matter as long as it's unique, we need to
-       *   refactor Cody to not require it at all
-       */
-      val model = "openai/gpt-3.5-turbo"
-      val restoreParams = ChatRestoreParams(model, messages.toList(), UUID.randomUUID().toString())
+      // todo serialize model
+      val model = "anthropic/claude-2.0"
+      val messagesToReload =
+          messages
+              .toList()
+              .dropWhile { it.speaker == Speaker.ASSISTANT }
+              .fold(emptyList<ChatMessage>()) { acc, msg ->
+                if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
+              }
+      val restoreParams = ChatRestoreParams(model, messagesToReload, UUID.randomUUID().toString())
       val newSessionId = agent.server.chatRestore(restoreParams)
       sessionId.getAndSet(newSessionId)
     }
@@ -109,6 +113,8 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
   }
 
   override fun getCancellationToken(): CancellationToken = cancellationToken.get()
+
+  override fun getInternalId(): String = internalId
 
   @Throws(ExecutionException::class, InterruptedException::class)
   override fun receiveMessage(extensionMessage: ExtensionMessage) {
@@ -170,6 +176,7 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
       }
       messages.add(message)
       chatPanel.addOrUpdateMessage(message)
+      HistoryService.getInstance().update(internalId, messages)
     }
   }
 
@@ -200,6 +207,13 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
       synchronized(chatSessions) { chatSessions.clear() }
     }
 
+    fun removeSession(session: ChatSession) {
+      synchronized(chatSessions) { chatSessions.remove(session) }
+    }
+
+    fun getSessionByInternalId(internalId: String?): AgentChatSession? =
+        synchronized(chatSessions) { chatSessions.find { it.internalId == internalId } }
+
     @RequiresEdt
     fun createFromCommand(project: Project, commandId: CommandId): AgentChatSession {
       val sessionId =
@@ -215,7 +229,7 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
         GraphQlLogger.logCodyEvent(project, "command:${commandId.displayName}", "submitted")
       }
 
-      val chatSession = getSession(sessionId.get()) ?: AgentChatSession(project, sessionId)
+      val chatSession = AgentChatSession(project, sessionId)
 
       chatSession.createCancellationToken(
           onCancel = {
@@ -237,6 +251,28 @@ private constructor(private val project: Project, newSessionId: CompletableFutur
     fun createNew(project: Project): AgentChatSession {
       val sessionId = createNewPanel(project) { it.server.chatNew() }
       val chatSession = AgentChatSession(project, sessionId)
+      synchronized(chatSessions) { chatSessions.add(chatSession) }
+      return chatSession
+    }
+
+    @RequiresEdt
+    fun createFromState(project: Project, state: ChatState): AgentChatSession {
+      val sessionId = createNewPanel(project) { it.server.chatNew() }
+      val chatSession = AgentChatSession(project, sessionId, state.internalId!!)
+      for (message in state.messages) {
+        val parsed =
+            when (val speaker = message.speaker) {
+              MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
+              MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
+              else -> error("unrecognized speaker $speaker")
+            }
+        val chatMessage = ChatMessage(parsed, message.text)
+        chatSession.messages.add(chatMessage)
+        chatSession.chatPanel.addOrUpdateMessage(chatMessage)
+      }
+      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+        chatSession.restoreAgentSession(agent)
+      }
       synchronized(chatSessions) { chatSessions.add(chatSession) }
       return chatSession
     }

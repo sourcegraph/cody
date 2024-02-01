@@ -15,6 +15,9 @@ import com.sourcegraph.cody.commands.ui.CommandsTabPanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.HistoryTree
+import com.sourcegraph.cody.history.state.ChatState
 import java.awt.CardLayout
 import java.awt.Component
 import java.util.function.Consumer
@@ -28,7 +31,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
-  private val historyTree = JPanel()
+  private val historyTree = HistoryTree(::selectHistory, ::deleteHistory)
   private val tabbedPane = JBTabbedPane()
 
   private val chatContainerPanel =
@@ -133,6 +136,23 @@ class CodyToolWindowContent(private val project: Project) {
       return
     }
     allContentLayout.show(allContentPanel, MAIN_PANEL)
+  }
+
+  private fun selectHistory(state: ChatState) {
+    val session =
+        AgentChatSession.getSessionByInternalId(state.internalId)
+            ?: AgentChatSession.createFromState(project, state)
+    addChatSession(session)
+  }
+
+  private fun deleteHistory(state: ChatState) {
+    HistoryService.getInstance().remove(state.internalId)
+    val session = AgentChatSession.getSessionByInternalId(state.internalId)
+    if (session != null) {
+      AgentChatSession.removeSession(session)
+      val isVisible = session.getPanel().chatSession.getInternalId() == state.internalId
+      if (isVisible) addChatSession(AgentChatSession.createNew(project))
+    }
   }
 
   companion object {

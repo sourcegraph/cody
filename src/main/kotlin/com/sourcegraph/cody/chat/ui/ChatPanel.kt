@@ -18,7 +18,7 @@ import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
 
-class ChatPanel(project: Project, chatSession: ChatSession) :
+class ChatPanel(project: Project, val chatSession: ChatSession) :
     JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
   private val messagesPanel = MessagesPanel(project)
   private val chatPanel = ChatScrollPane(messagesPanel)

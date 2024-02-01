@@ -169,6 +169,12 @@
             <override-text place="MainMenu" text="Autocomplete"/>
         </action>
 
+        <action id="cody.newChat"
+                icon="/icons/chat/newChat.svg"
+                text="New Chat"
+                class="com.sourcegraph.cody.chat.NewChatAction">
+        </action>
+
         <action
                 id="cody.downloadAndInstallCodyAction"
                 class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
@@ -185,6 +191,10 @@
                 id="cody.restartAgent"
                 class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
                 text="Restart Cody Agent"/>
+
+        <group id="CodyChatActionsGroup">
+            <reference ref="cody.newChat"/>
+        </group>
 
         <group id="CodyEditorActions" popup="true" text="Cody"
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">

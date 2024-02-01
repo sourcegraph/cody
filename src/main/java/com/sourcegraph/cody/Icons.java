@@ -43,4 +43,8 @@ public interface Icons {
     Icon Gitlab = IconLoader.getIcon("/icons/signIn/sign-in-logo-gitlab.svg", Icons.class);
     Icon Google = IconLoader.getIcon("/icons/signIn/sign-in-logo-google.svg", Icons.class);
   }
+
+  interface Chat {
+    Icon ChatLeaf = IconLoader.getIcon("/icons/chat/chatLeaf.svg", Icons.class);
+  }
 }

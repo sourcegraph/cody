@@ -1,12 +1,18 @@
 package com.sourcegraph.cody.chat
 
 import com.intellij.ui.components.JBTextArea
+import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.MessageState
 import java.util.*
 
-class CodyChatMessageHistory(private val capacity: Int) {
+class CodyChatMessageHistory(private val capacity: Int, chatSession: ChatSession) {
   var currentValue: String = ""
   private var upperStack: Stack<String> = Stack<String>()
   private var lowerStack: Stack<String> = Stack<String>()
+
+  init {
+    preloadHistoricalMessages(chatSession)
+  }
 
   fun popUpperMessage(promptInput: JBTextArea) {
     resetHistoryIfPromptCleared(promptInput.text)
@@ -44,6 +50,17 @@ class CodyChatMessageHistory(private val capacity: Int) {
     upperStack.clear()
     lowerStack.clear()
     currentValue = ""
+  }
+
+  private fun preloadHistoricalMessages(chatSession: ChatSession) {
+    HistoryService.getInstance()
+      .state
+      .chats
+      .find { it.internalId == chatSession.getInternalId() }
+      ?.messages
+      ?.filter { it.speaker == MessageState.SpeakerState.HUMAN }
+      ?.mapNotNull { it.text }
+      ?.forEach { messageSent(it) }
   }
 
   private fun resetHistory() {

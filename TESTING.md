@@ -21,6 +21,7 @@
 - Chat
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
     - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
+    - [ ] [Organize multiple chats](#organize-multiple-chats)
 - Sourcegraph Code Search
     - [ ] [Find with Sourcegraph...](#find-with-sourcegraph)
     - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
@@ -264,6 +265,41 @@ through the browser. Expected behaviour is identical.
 
 * Scrollbar is **not moving automatically** while new message tokens are generated. You can easily read older messages
   without interruptions and scrolling is smooth.
+
+### Organize multiple chats
+
+You should be able to organize multiple chats and follow up previous conversations.
+Cody should "remember" your questions and chat responses, even after closing IDE.
+
+#### Happy path
+
+1. Start a new chat
+2. Send message similar to `my favorite color is blue`
+3. Close IDE
+4. Run IDE and open previous conversation
+5. Ask `what's my favorite color?`
+6. Response should be similar to `your favorite color is blue`
+
+#### (optional) Test ideas
+
+Useful tips:
+
+* Transcripts in `runIde` mode are located in `build/idea-sandbox/config/options/cody_history.xml`.
+* You can force-save transcript by using the `Ctrl` + `S`.
+
+Test ideas:
+
+1. Delete "active" chat. You should be able to delete the currently opened chat. Messages should be removed from Chat tab.
+2. Restore historical chat, focus on chat input field and use UP/DOWN keys to cycle between previous questions.
+3. Press "new chat" as fast as you can. Especially during the IDE startup.
+4. Switch between chats as fast as you can.
+5. Press "new chat" while being inside Subscription panel or something other than Chat tab. Tabs should switch automatically.
+6. Use commands/recipes inside empty, new chat. Verify serialization/deserialization.
+7. Ask about codebase to force response with listed context files and verify if everything is correctly serialized/deserialized. Links to context files should be clickable.
+8. Remove all chats using history UI. Tree presentation is empty and branches like "Today" are removed from panel. File with transcripts should also disappear.
+9. Use only the keyboard. For example, navigate transcripts with arrows, delete, enter.
+10. Start typing while being focused on Chat History to perform search-by-title.
+11. Open multiple chats and ask few simultaneous questions in several sessions at once.
 
 ## Code Search
 
