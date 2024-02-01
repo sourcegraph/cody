@@ -378,7 +378,9 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params?.networkRequests ?? []
-            return { requests: requests.map(req => ({ url: req.url })) }
+            return {
+                requests: requests.map(req => ({ url: req.url, body: req.body })),
+            }
         })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
