@@ -1,15 +1,11 @@
-import {
-    type ContextFile,
-    MAX_CURRENT_FILE_TOKENS,
-    truncateTextByTokens,
-} from '@sourcegraph/cody-shared'
+import { type ContextFile, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 export async function createContextFile(file: URI, content: string): Promise<ContextFile | undefined> {
     try {
-        const truncatedContent = truncateTextByTokens(content, MAX_CURRENT_FILE_TOKENS)
+        const truncatedContent = truncateText(content, MAX_CURRENT_FILE_TOKENS)
         // From line 0 to the end of truncatedContent
         const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
 

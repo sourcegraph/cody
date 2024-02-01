@@ -5,8 +5,7 @@ import {
     getSimplePreamble,
     type CompletionParameters,
     type Message,
-    type EditModel,
-    truncateTextByChars,
+    type EditModel
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -77,7 +76,7 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (truncateTextByChars(selectedText, contextWindow) !== selectedText) {
+    if (selectedText.length > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText

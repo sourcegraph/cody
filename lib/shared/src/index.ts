@@ -139,8 +139,7 @@ export {
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
 export {
-    truncateTextByTokens,
-    truncateTextByChars,
+    truncateText,
     truncateTextNearestLine,
     truncateTextStart,
 } from './prompt/truncation'

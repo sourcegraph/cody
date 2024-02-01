@@ -6,11 +6,7 @@ import * as vscode from 'vscode'
 
 import { logError } from '../../log'
 
-import {
-    MAX_CURRENT_FILE_TOKENS,
-    type ContextFile,
-    truncateTextByTokens,
-} from '@sourcegraph/cody-shared'
+import { MAX_CURRENT_FILE_TOKENS, type ContextFile, truncateText } from '@sourcegraph/cody-shared'
 import path from 'node:path/posix'
 
 const _exec = promisify(exec)
@@ -49,7 +45,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextF
 
         const file = {
             type: 'file',
-            content: truncateTextByTokens(context, MAX_CURRENT_FILE_TOKENS),
+            content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
             title: 'Terminal Output',
             uri: vscode.Uri.file('terminal-output'),
             source: 'terminal',

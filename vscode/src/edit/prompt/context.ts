@@ -7,7 +7,7 @@ import {
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-    truncateTextByTokens,
+    truncateText,
     truncateTextStart,
     type CodyCommand,
     type ContextFile,
@@ -40,7 +40,7 @@ const getContextFromIntent = async ({
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
     const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
-    const truncatedFollowingText = truncateTextByTokens(followingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
