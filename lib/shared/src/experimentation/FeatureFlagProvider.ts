@@ -55,7 +55,7 @@ export class FeatureFlagProvider {
 
     private subscriptions: Map<
         string, // ${endpoint}#${prefix filter}
-        { lastSnapshot: string; callbacks: Set<() => void> }
+        { lastSnapshot: Record<string, boolean>; callbacks: Set<() => void> }
     > = new Map()
     // When we have at least one subscription, ensure that we also periodically refresh the flags
     private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
@@ -119,25 +119,21 @@ export class FeatureFlagProvider {
     // Allows you to subscribe to a change event that is triggered when feature flags with a
     // predefined prefix are updated. Can be used to sync code that only queries flags at startup
     // to outside changes.
-    public onFeatureFlagChanged(
-        endpoint: string,
-        prefixFilter: string,
-        callback: () => void
-    ): () => void {
+    public onFeatureFlagChanged(prefixFilter: string, callback: () => void): () => void {
+        const endpoint = this.apiClient.endpoint
         const key = endpoint + '#' + prefixFilter
         const subscription = this.subscriptions.get(key)
         if (subscription) {
             subscription.callbacks.add(callback)
             return () => subscription.callbacks.delete(callback)
         }
-
-        this.subscriptions.set(prefixFilter, {
+        this.subscriptions.set(key, {
             lastSnapshot: this.computeFeatureFlagSnapshot(endpoint, prefixFilter),
             callbacks: new Set([callback]),
         })
 
         if (!this.nextRefreshTimeout) {
-            this.nextRefreshTimeout = window.setTimeout(() => {
+            this.nextRefreshTimeout = setTimeout(() => {
                 this.nextRefreshTimeout = undefined
                 void this.refreshFeatureFlags()
             }, ONE_HOUR)
@@ -161,24 +157,27 @@ export class FeatureFlagProvider {
 
     private notifyFeatureFlagChanged(): void {
         // loop over the feature flags and see if they were changed
-        for (const key of this.subscriptions) {
-            const endpoint = key[0].split('#')[0]
-            const prefixFilter = key[0].split('#')[1]
+        for (const [key, subs] of this.subscriptions) {
+            const parts = key.split('#')
+            const endpoint = parts[0]
+            const prefixFilter = parts[1]
 
             const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint, prefixFilter)
-            if (currentSnapshot !== key[1].lastSnapshot) {
-                key[1].lastSnapshot = currentSnapshot
-                for (const callback of key[1].callbacks) {
+            // We only care about flags being changed that we previously already captured. A new
+            // evaluation should not trigger a change event unless that new value is later changed.
+            if (computeIfExistingFlagChanged(subs.lastSnapshot, currentSnapshot)) {
+                subs.lastSnapshot = currentSnapshot
+                for (const callback of subs.callbacks) {
                     callback()
                 }
             }
         }
     }
 
-    private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): string {
+    private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): Record<string, boolean> {
         const featureFlags = this.featureFlags[endpoint]
         if (!featureFlags) {
-            return ''
+            return {}
         }
         const keys = Object.keys(featureFlags)
         const filteredKeys = keys.filter(key => key.startsWith(prefixFilter))
@@ -186,8 +185,15 @@ export class FeatureFlagProvider {
             acc[key] = featureFlags[key]
             return acc
         }, {})
-        return JSON.stringify(filteredFeatureFlags)
+        return filteredFeatureFlags
     }
 }
 
 export const featureFlagProvider = new FeatureFlagProvider(graphqlClient)
+
+function computeIfExistingFlagChanged(
+    oldFlags: Record<string, boolean>,
+    newFlags: Record<string, boolean>
+): boolean {
+    return Object.keys(oldFlags).some(key => oldFlags[key] !== newFlags[key])
+}
