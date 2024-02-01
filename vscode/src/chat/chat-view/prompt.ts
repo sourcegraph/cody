@@ -1,26 +1,12 @@
 import * as vscode from 'vscode'
 
-import {
-    getSimplePreamble,
-    isCodyIgnoredFile,
-    languageFromFilename,
-    populateCodeContextTemplate,
-    populateContextTemplateFromText,
-    populateCurrentSelectedCodeContextTemplate,
-    populateMarkdownContextTemplate,
-    ProgrammingLanguage,
-    type Message,
-} from '@sourcegraph/cody-shared'
+import { getSimplePreamble, type Message } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
 
-import {
-    contextItemId,
-    type ContextItem,
-    type MessageWithContext,
-    type SimpleChatModel,
-} from './SimpleChatModel'
-import { URI } from 'vscode-uri'
+import type { MessageWithContext, SimpleChatModel } from './SimpleChatModel'
+import { PromptBuilder } from '../../prompt-builder'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface PromptInfo {
     prompt: Message[]
@@ -194,130 +180,6 @@ export class DefaultPrompter implements IPrompter {
         return {
             prompt: promptBuilder.build(),
             newContextUsed,
-        }
-    }
-}
-
-function renderContextItem(contextItem: ContextItem): Message[] {
-    // Do not create context item for empty file
-    if (!contextItem.text?.trim()?.length) {
-        return []
-    }
-    let messageText: string
-    const uri = contextItem.source === 'unified' ? URI.parse(contextItem.title || '') : contextItem.uri
-    if (contextItem.source === 'selection') {
-        messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, uri)
-    } else if (contextItem.source === 'editor') {
-        // This template text works best with prompts in our commands
-        // Using populateCodeContextTemplate here will cause confusion to Cody
-        const templateText = 'Codebase context from file path {fileName}: '
-        messageText = populateContextTemplateFromText(templateText, contextItem.text, uri)
-    } else if (contextItem.source === 'terminal') {
-        messageText = contextItem.text
-    } else if (languageFromFilename(uri) === ProgrammingLanguage.Markdown) {
-        messageText = populateMarkdownContextTemplate(contextItem.text, uri, contextItem.repoName)
-    } else {
-        messageText = populateCodeContextTemplate(contextItem.text, uri, contextItem.repoName)
-    }
-    return [
-        { speaker: 'human', text: messageText },
-        { speaker: 'assistant', text: 'Ok.' },
-    ]
-}
-
-/**
- * PromptBuilder constructs a full prompt given a charLimit constraint.
- * The final prompt is constructed by concatenating the following fields:
- * - prefixMessages
- * - the reverse of reverseMessages
- */
-export class PromptBuilder {
-    private prefixMessages: Message[] = []
-    private reverseMessages: Message[] = []
-    private charsUsed = 0
-    private seenContext = new Set<string>()
-    constructor(private readonly charLimit: number) {}
-
-    public build(): Message[] {
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
-    }
-
-    public tryAddToPrefix(messages: Message[]): boolean {
-        let numChars = 0
-        for (const message of messages) {
-            numChars += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        }
-        if (numChars + this.charsUsed > this.charLimit) {
-            return false
-        }
-        this.prefixMessages.push(...messages)
-        this.charsUsed += numChars
-        return true
-    }
-
-    public tryAdd(message: Message): boolean {
-        const lastMessage = this.reverseMessages.at(-1)
-        if (lastMessage?.speaker === message.speaker) {
-            throw new Error('Cannot add message with same speaker as last message')
-        }
-
-        const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        if (this.charsUsed + msgLen > this.charLimit) {
-            return false
-        }
-        this.reverseMessages.push(message)
-        this.charsUsed += msgLen
-        return true
-    }
-
-    /**
-     * Tries to add context items to the prompt, tracking characters used.
-     * Returns info about which items were used vs. ignored.
-     */
-    public tryAddContext(
-        contextItems: ContextItem[],
-        charLimit?: number
-    ): {
-        limitReached: boolean
-        used: ContextItem[]
-        ignored: ContextItem[]
-        duplicate: ContextItem[]
-    } {
-        const effectiveCharLimit = charLimit ? this.charsUsed + charLimit : this.charLimit
-        let limitReached = false
-        const used: ContextItem[] = []
-        const ignored: ContextItem[] = []
-        const duplicate: ContextItem[] = []
-        for (const contextItem of contextItems) {
-            if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
-                ignored.push(contextItem)
-                continue
-            }
-            const id = contextItemId(contextItem)
-            if (this.seenContext.has(id)) {
-                duplicate.push(contextItem)
-                continue
-            }
-            const contextMessages = renderContextItem(contextItem).reverse()
-            const contextLen = contextMessages.reduce(
-                (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
-                0
-            )
-            if (this.charsUsed + contextLen > effectiveCharLimit) {
-                ignored.push(contextItem)
-                limitReached = true
-                continue
-            }
-            this.seenContext.add(id)
-            this.reverseMessages.push(...contextMessages)
-            this.charsUsed += contextLen
-            used.push(contextItem)
-        }
-        return {
-            limitReached,
-            used,
-            ignored,
-            duplicate,
         }
     }
 }

@@ -69,18 +69,14 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, type IPrompter } from './prompt'
-import {
-    SimpleChatModel,
-    toViewMessage,
-    type ContextItem,
-    type MessageWithContext,
-} from './SimpleChatModel'
+import { SimpleChatModel, toViewMessage, type MessageWithContext } from './SimpleChatModel'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { Repo } from '../../context/repo-fetcher'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { chatModel } from '../../models'
 import { getContextWindowForModel } from '../../models/utilts'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig

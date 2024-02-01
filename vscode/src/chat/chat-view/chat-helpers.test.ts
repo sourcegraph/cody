@@ -16,7 +16,7 @@ import {
     getChatPanelTitle,
     stripContextWrapper,
 } from './chat-helpers'
-import type { ContextItem } from './SimpleChatModel'
+import type { ContextItem } from '../../prompt-builder/types'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {

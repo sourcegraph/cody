@@ -17,7 +17,7 @@ import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 import { openai } from './models/openai'
 import { claude } from './models/claude'
-import { PromptBuilder } from '../../chat/chat-view/prompt'
+import { PromptBuilder } from '../../prompt-builder'
 
 const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,

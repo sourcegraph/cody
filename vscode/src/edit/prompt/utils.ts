@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import type { ContextMessage } from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../../chat/chat-view/SimpleChatModel'
+import type { ContextItem } from '../../prompt-builder/types'
 
 type ExtractableContextMessage = Required<Pick<ContextMessage, 'file'>> & ContextMessage
 
@@ -28,6 +28,13 @@ const contextMessageIsExtractable = (
     return contextMessage.file !== undefined
 }
 
+/**
+ * Extract `ContextItems` from `ContextMessages` for interoperability
+ * between existing context mechanisms in the codebase.
+ *
+ * TODO: These types are ultimately very similar, we should refactor this so we
+ * can avoid maintaining both types.
+ */
 export const extractContextItemsFromContextMessages = (
     contextMessages: ContextMessage[]
 ): ContextItem[] => {

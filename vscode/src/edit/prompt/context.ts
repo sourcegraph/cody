@@ -18,8 +18,8 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
-import type { ContextItem } from '../../chat/chat-view/SimpleChatModel'
 import { extractContextItemsFromContextMessages } from './utils'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
