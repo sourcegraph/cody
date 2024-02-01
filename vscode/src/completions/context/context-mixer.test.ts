@@ -221,7 +221,7 @@ describe('ContextMixer', () => {
         })
 
         describe('retrived context is filtered by .cody/ignore', () => {
-            const workspaceRoot = testFileUri('/')
+            const workspaceRoot = testFileUri('')
             beforeAll(() => {
                 ignores.setActiveState(true)
                 // all foo.ts files will be ignored
