@@ -8,7 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit, type ExecuteEditArguments } from '../../edit/execute'
-import type { EditIntent, EditMode } from '../../edit/types'
+import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -22,8 +22,9 @@ import { getEditor } from '../../editor/active-editor'
 /**
  * NOTE: Used by Command Controller only.
  *
- * Handles sorting and executing a Cody command into one of the following:
- * - an inline edit command (mode !== 'ask)
+ * Handles executing a Cody custom command.
+ * It sorts the given command into:
+ * - an inline edit command (mode !== 'ask), or;
  * - a chat command (mode === 'ask')
  *
  * Handles prompt building and context fetching for commands.
@@ -135,12 +136,7 @@ export class CommandRunner implements vscode.Disposable {
 
         // Conditions for categorizing an edit command
         const commandKey = this.command.slashCommand.replace(/^\//, '')
-        const isFileMode = this.command.mode === 'file'
-        const isDocKind = this.command.slashCommand === '/doc'
         const isDefaultCommand = this.command.type === 'default'
-
-        // Assign intent based on command type
-        const intent: EditIntent = isDocKind ? 'doc' : isFileMode ? 'new' : 'edit'
         const instruction = this.command.prompt
         const source = isDefaultCommand ? commandKey : 'custom-commands'
 
@@ -152,7 +148,7 @@ export class CommandRunner implements vscode.Disposable {
             task: await executeEdit(
                 {
                     instruction,
-                    intent,
+                    intent: 'edit',
                     mode: this.command.mode as EditMode,
                     userContextFiles,
                 } satisfies ExecuteEditArguments,

@@ -369,6 +369,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
+        fastPath: completionProviderConfig.fastPath,
         // For the now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1900,
     }

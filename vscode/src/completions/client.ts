@@ -16,6 +16,7 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     type CompletionsClientConfig,
+    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
@@ -81,20 +82,15 @@ export function createClient(
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
-            // Check for explicit false, because if the header is not set, there
-            // is no upgrade available.
+            // Check for explicit false, because if the header is not set, there is no upgrade
+            // available.
+            //
+            // Note: This header is added only via the Sourcegraph instance and thus not added by
+            //       the helper function.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
                 typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-            const retryAfter = response.headers.get('retry-after')
-            const limit = response.headers.get('x-ratelimit-limit')
-            throw new RateLimitError(
-                'autocompletions',
-                await response.text(),
-                upgradeIsAvailable,
-                limit ? parseInt(limit, 10) : undefined,
-                retryAfter
-            )
+            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
         }
 
         if (!response.ok) {
@@ -113,12 +109,12 @@ export function createClient(
 
         try {
             if (isStreamingResponse && isNodeResponse(response)) {
-                const iterator = createSSEIterator(response.body)
+                const iterator = createSSEIterator(response.body, { aggregatedCompletionEvent: true })
                 let chunkIndex = 0
 
                 for await (const { event, data } of iterator) {
                     if (event === 'error') {
-                        throw new Error(data)
+                        throw new TracedError(data, traceId)
                     }
 
                     if (signal.aborted) {
@@ -192,6 +188,7 @@ export function createClient(
 
     return {
         complete,
+        logger,
         onConfigurationChange(newConfig) {
             config = newConfig
         },
@@ -204,7 +201,15 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(iterator: NodeJS.ReadableStream): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(
+    iterator: NodeJS.ReadableStream,
+    options: {
+        // This is an optimizations to avoid unnecessary work when a streaming chunk contains more
+        // than one completion event. Only use it when the completion repeats all generated tokens
+        // and you can afford to loose some individual chunks.
+        aggregatedCompletionEvent?: boolean
+    } = {}
+): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
@@ -219,16 +224,15 @@ export async function* createSSEIterator(iterator: NodeJS.ReadableStream): Async
             messages.push(parseSSEEvent(message))
         }
 
-        // This is a potential optimization because our current backend includes a repetition of the
-        // whole prior completion in each event. If more than one event is detected inside a chunk,
-        // we can skip all but the last completion events.
         for (let i = 0; i < messages.length; i++) {
-            if (
-                i + 1 < messages.length &&
-                messages[i].event === 'completion' &&
-                messages[i + 1].event === 'completion'
-            ) {
-                continue
+            if (options.aggregatedCompletionEvent) {
+                if (
+                    i + 1 < messages.length &&
+                    messages[i].event === 'completion' &&
+                    messages[i + 1].event === 'completion'
+                ) {
+                    continue
+                }
             }
 
             yield messages[i]
@@ -258,4 +262,19 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
+}
+
+export async function createRateLimitErrorFromResponse(
+    response: BrowserOrNodeResponse,
+    upgradeIsAvailable: boolean
+): Promise<RateLimitError> {
+    const retryAfter = response.headers.get('retry-after')
+    const limit = response.headers.get('x-ratelimit-limit')
+    return new RateLimitError(
+        'autocompletions',
+        await response.text(),
+        upgradeIsAvailable,
+        limit ? parseInt(limit, 10) : undefined,
+        retryAfter
+    )
 }

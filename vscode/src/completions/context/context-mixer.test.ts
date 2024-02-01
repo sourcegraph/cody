@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { testFileUri, uriBasename } from '@sourcegraph/cody-shared'
+import { ignores, isCodyIgnoredFile, testFileUri, uriBasename } from '@sourcegraph/cody-shared'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
@@ -8,6 +8,8 @@ import type { ContextRetriever, ContextSnippet } from '../types'
 
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
+import { Utils } from 'vscode-uri'
+import { CODY_IGNORE_URI_PATH } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 
 function createMockStrategy(resultSets: ContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []
@@ -215,6 +217,69 @@ describe('ContextMixer', () => {
                 },
                 strategy: 'jaccard-similarity',
                 totalChars: 136,
+            })
+        })
+
+        describe('retrived context is filtered by .cody/ignore', () => {
+            const workspaceRoot = testFileUri('')
+            beforeAll(() => {
+                ignores.setActiveState(true)
+                // all foo.ts files will be ignored
+                ignores.setIgnoreFiles(workspaceRoot, [
+                    {
+                        uri: Utils.joinPath(workspaceRoot, '.', CODY_IGNORE_URI_PATH),
+                        content: '**/foo.ts',
+                    },
+                ])
+            })
+            it('mixes results are filtered', async () => {
+                const mixer = new ContextMixer(
+                    createMockStrategy([
+                        [
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                            {
+                                uri: testFileUri('foo/bar.ts'),
+                                content: 'function bar1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                        ],
+                        [
+                            {
+                                uri: testFileUri('test/foo.ts'),
+                                content: 'function foo3() {}',
+                                startLine: 10,
+                                endLine: 10,
+                            },
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}\nfunction foo2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                            {
+                                uri: testFileUri('example/bar.ts'),
+                                content: 'function bar1() {}\nfunction bar2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                        ],
+                    ])
+                )
+                const { context } = await mixer.getContext(defaultOptions)
+                const contextFiles = normalize(context)
+                // returns 2 bar.ts context
+                expect(contextFiles?.length).toEqual(2)
+                for (const context of contextFiles) {
+                    expect(
+                        isCodyIgnoredFile(Utils.joinPath(workspaceRoot, context.fileName))
+                    ).toBeFalsy()
+                }
             })
         })
     })

@@ -29,7 +29,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public activeDocumentFilePath: vscode.Uri | null = null
 
     public openUri(uri: vscode.Uri): AgentTextDocument {
-        return this.loadedDocument(new ProtocolTextDocumentWithUri(uri))
+        return this.loadedDocument(ProtocolTextDocumentWithUri.from(uri))
     }
     public loadedDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         const fromCache = this.agentDocuments.get(document.underlying.uri)
@@ -122,7 +122,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     }
 
     public async openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
-        const document = new ProtocolTextDocumentWithUri(uri)
+        const document = ProtocolTextDocumentWithUri.from(uri)
         if (!this.agentDocuments.has(document.underlying.uri)) {
             // Read the file content from disk if the user hasn't opened this file before.
             const buffer = await fspromises.readFile(uri.fsPath, 'utf8')

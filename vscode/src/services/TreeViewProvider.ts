@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
 import type { AuthStatus } from '../chat/protocol'
-import { getFullConfig } from '../configuration'
 
 import { groupCodyChats } from './HistoryChat'
 import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
@@ -99,13 +98,6 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         const updatedTree: vscode.TreeItem[] = []
         this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
         for (const item of this.treeItems) {
-            if (item.isUnstable) {
-                const config = await getFullConfig()
-                if (!config.internalUnstable) {
-                    continue
-                }
-            }
-
             if (item.requireDotCom) {
                 const isConnectedtoDotCom =
                     this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)

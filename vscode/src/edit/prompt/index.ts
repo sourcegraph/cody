@@ -19,11 +19,15 @@ import { claude } from './claude'
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
-type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
+export type EditSupportedModels =
+    | 'anthropic/claude-2.0'
+    | 'anthropic/claude-2.1'
+    | 'anthropic/claude-instant-1.2'
 
-const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<EditSupportedModels, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
+    'anthropic/claude-instant-1.2': claude,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -40,13 +44,13 @@ const getInteractionArgsFromIntent = (
             return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
             return INTERACTION_MODELS[model].getEdit(options)
-        case 'new':
-            return INTERACTION_MODELS[model].getNew(options)
+        case 'test':
+            return INTERACTION_MODELS[model].getTest(options)
     }
 }
 
 interface BuildInteractionOptions {
-    model: SupportedModels
+    model: EditSupportedModels
     task: FixupTask
     editor: VSCodeEditor
 }

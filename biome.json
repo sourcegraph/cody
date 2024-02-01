@@ -35,6 +35,7 @@
             "vscode/src/testutils/vscode/",
             "agent/src/bfg/__tests__/**",
             "agent/src/__tests__/**",
+            "agent/recordings/**",
             "/vitest.workspace.js",
             "vitest.config.ts",
             "vite.config.ts",
