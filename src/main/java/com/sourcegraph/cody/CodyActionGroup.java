@@ -6,6 +6,12 @@ import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyActionGroup extends DefaultActionGroup {
+
+  @Override
+  public boolean isDumbAware() {
+    return true;
+  }
+
   @Override
   public void update(@NotNull AnActionEvent e) {
     super.update(e);
