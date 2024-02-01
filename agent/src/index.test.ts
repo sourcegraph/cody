@@ -548,6 +548,63 @@ describe('Agent', () => {
         })
 
         afterAll(async () => {
+            // Makes sure cody ignore is still active after tests
+            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
+
+            // Check the network requests to ensure no requests include context from ignored files
+            const { requests } = await client.request('testing/networkRequests', null)
+
+            // Use regexs for extracting file paths from context snippets
+            // based on the format we used to encode context snippets into messages.
+            const usedContext = []
+            for (const req of requests) {
+                // Format used by chat and commands to include context snippet.
+                const regex = /^Use the following code snippet from file `(.*?)`:\n/
+                // Format used by chat and commands to include user selection as context snippet.
+                const regex2 = /^My selected (.*) code from file `(.*?)`:\n/
+                // Format used by autocompletions to include context snippet.
+                const regex3 = /^Below is the code from file path (.*?). Review/
+                // Get the messages from the request body
+                const messages = JSON.parse(req.body || '')?.messages as {
+                    speaker: string
+                    text: string
+                }[]
+                // Filter out messages that do not include context snippets.
+                const filtered = messages?.filter(
+                    (m: { speaker: string; text: string }) =>
+                        m?.text?.match(regex) ?? m?.text?.match(regex2) ?? m?.text?.match(regex3)
+                )
+
+                const hasIgnored = messages?.filter(m => m.text?.includes('src/isIgnored.ts'))
+                expect(hasIgnored ?? []).toHaveLength(0)
+
+                // Extract file paths used for each request
+                const relativePaths = filtered?.map(
+                    m =>
+                        regex.exec(m.text)?.[1] ??
+                        regex2.exec(m.text)?.[1] ??
+                        regex3.exec(m.text)?.[1] ??
+                        ''
+                )
+                usedContext.push(...(relativePaths ?? []))
+            }
+
+            // usedContext should never be empty as we only exclude
+            // ignored file for the test.
+            expect(usedContext.length).toBeGreaterThan(0)
+
+            // Confirm the usedContext is valid by checking for known
+            // context file names from the test.
+            expect(usedContext).includes('src/squirrel.ts')
+            expect(usedContext).not.includes('src/isIgnored.ts')
+
+            // Confirm isCodyIgnoredFile works as expected by comparing
+            // the length of unique used context paths to paths that pass the check.
+            const uniques = Array.from(new Set(usedContext))
+            expect(
+                uniques.filter(rp => !isCodyIgnoredFile(Uri.file(path.join(workspaceRootPath, rp))))
+            ).toHaveLength(uniques.length)
+
             ignores.setActiveState(false)
             expect(isCodyIgnoredFile(isIgnored)).toBeFalsy()
         }, 10_000)

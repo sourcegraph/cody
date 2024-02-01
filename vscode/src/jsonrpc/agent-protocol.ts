@@ -533,6 +533,7 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+    body?: string
     error?: string
 }
 
