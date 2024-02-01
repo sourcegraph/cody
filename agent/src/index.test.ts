@@ -699,7 +699,7 @@ describe('Agent', () => {
             check('commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Returns the sum of two numbers.
+                   * Sums two numbers.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -716,7 +716,9 @@ describe('Agent', () => {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Logs a greeting if the shouldGreet property is true.
+                       * Function that conditionally prints a greeting.
+                       * If the shouldGreet property is true, it will log
+                       * "Hello World!" to the console.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -732,7 +734,10 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * Starts logging by initializing and calling the \`recordLog\` function.
+                   * Exported object that contains a startLogging method.
+                   * startLogging initializes some logic to log messages.
+                   * It contains an inner function recordLog that handles
+                   * logging the messages.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -756,13 +761,9 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * A test block with multiple test cases.
-                   *
-                   * Contains 3 test cases:
-                   * - 'does 1' asserts that true equals true
-                   * - 'does 2' asserts that true equals true
-                   * - 'does something else' has a commented out line that would error due to incorrect usage of \`performance.now\`
-                   */
+                   * Describes a test block with multiple test cases using Vitest.
+                   * Includes tests for simple assertions, and an example test that may error due to incorrect usage.
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
