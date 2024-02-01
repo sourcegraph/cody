@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, type Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
@@ -203,6 +203,24 @@ export function createStatusBar(): CodyStatusBar {
         rerender()
     }
 
+    // NOTE: Behind unstable feature flag and requires .cody/ignore enabled
+    // Listens for changes to the active text editor and updates the status bar text
+    // based on whether the active file is ignored by Cody or not.
+    // If ignored, adds 'Ignored' to the status bar text.
+    // Otherwise, rerenders the status bar.
+    const verifyActiveEditor = (uri?: vscode.Uri) => {
+        if (uri && isCodyIgnoredFile(uri)) {
+            statusBarItem.tooltip = 'Current file is ignored by Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+        } else {
+            rerender()
+        }
+    }
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
+        verifyActiveEditor(e?.document?.uri)
+    })
+    verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
+
     return {
         startLoading(label: string) {
             openLoadingLeases++
@@ -240,6 +258,7 @@ export function createStatusBar(): CodyStatusBar {
         dispose() {
             statusBarItem.dispose()
             command.dispose()
+            onDocumentChange.dispose()
         },
     }
 }

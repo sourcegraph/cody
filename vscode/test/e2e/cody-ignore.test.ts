@@ -20,6 +20,13 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await page.getByRole('treeitem', { name: 'ignoredByCody.css' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'ignoredByCody.css' }).hover()
 
+    // Cody icon in the status bar should shows that the file is being ignored
+    const statusBarButton = page.getByRole('button', {
+        name: 'cody-logo-heavy, Current file is ignored by Cody',
+    })
+    await statusBarButton.hover()
+    await expect(statusBarButton).toBeVisible()
+
     // Open Cody sidebar to start a new chat
     await page.click('.badge[aria-label="Cody"]')
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
