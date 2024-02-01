@@ -5,7 +5,6 @@ import {
     type ChatEventSource,
     type ContextFile,
     type ContextMessage,
-    type ModelProvider,
     type EditModel,
 } from '@sourcegraph/cody-shared'
 
@@ -29,6 +28,7 @@ import { FixupTask, type taskID } from './FixupTask'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState } from './utils'
 import { getInput } from '../edit/input/get-input'
+import type { AuthProvider } from '../services/AuthProvider'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -45,7 +45,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(private readonly models: ModelProvider[]) {
+    constructor(private readonly authProvider: AuthProvider) {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -165,14 +165,13 @@ export class FixupController
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
         model: EditModel,
-        modelOptions: ModelProvider[],
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
-            modelOptions,
+            this.authProvider,
             {
                 initialRange: range,
                 initialExpandedRange: expandedRange,
@@ -1075,7 +1074,7 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
             document,
-            this.models,
+            this.authProvider,
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,

@@ -4,7 +4,7 @@ import {
     ConfigFeaturesSingleton,
     type ChatClient,
     type ChatEventSource,
-    ModelProvider,
+    type ModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
@@ -21,8 +21,8 @@ import { EditProvider } from './provider'
 import { getEditSmartSelection } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { editModel } from '../models'
+import { getEditModelsForUser } from './utils/edit-models'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -39,18 +39,8 @@ export class EditManager implements vscode.Disposable {
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        const authStatus = options.authProvider.getAuthStatus()
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
-        this.models = ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
-        this.controller = new FixupController(this.models)
+        this.models = getEditModelsForUser(options.authProvider)
+        this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand(
@@ -143,7 +133,6 @@ export class EditManager implements vscode.Disposable {
                 expandedRange,
                 mode,
                 model,
-                this.models,
                 intent,
                 args.contextMessages || [],
                 source

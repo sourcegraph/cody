@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { ChatEventSource, ModelProvider, ContextFile, EditModel } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, EditModel } from '@sourcegraph/cody-shared'
 
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { getEditor } from '../../editor/active-editor'
@@ -19,6 +19,9 @@ import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { isGenerateIntent } from '../utils/edit-selection'
 import { editModel } from '../../models'
+import type { AuthProvider } from '../../services/AuthProvider'
+import { getEditModelsForUser } from '../utils/edit-models'
+import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -55,7 +58,7 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
-    modelOptions: ModelProvider[],
+    authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
@@ -73,7 +76,9 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const modelItems = getModelOptionItems(modelOptions)
+    const isCodyPro = !authProvider.getAuthStatus().userCanUpgrade
+    const modelOptions = getEditModelsForUser(authProvider)
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
@@ -150,13 +155,37 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(modelOptions, activeModel),
+            getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidAccept: item => {
+            onDidAccept: async item => {
                 const acceptedItem = item as EditModelItem
                 if (!acceptedItem) {
+                    return
+                }
+
+                if (acceptedItem.codyProOnly && !isCodyPro) {
+                    // Temporarily ignore focus out, so that the user can return to the quick pick if desired.
+                    modelInput.input.ignoreFocusOut = true
+
+                    const option = await vscode.window.showInformationMessage(
+                        'Upgrade to Cody Pro',
+                        {
+                            modal: true,
+                            detail: `Upgrade to Cody Pro to use ${acceptedItem.modelTitle} for Edit`,
+                        },
+                        'Upgrade',
+                        'See Plans'
+                    )
+
+                    // Both options go to the same URL
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                    }
+
+                    // Restore the default focus behaviour
+                    modelInput.input.ignoreFocusOut = false
                     return
                 }
 

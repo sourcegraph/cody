@@ -6,5 +6,7 @@ export interface EditRangeItem extends vscode.QuickPickItem {
 }
 
 export interface EditModelItem extends vscode.QuickPickItem {
+    modelTitle: string
     model: EditModel
+    codyProOnly: boolean
 }
