@@ -4,8 +4,6 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { assertEvents, test } from './helpers'
 import { loggedEvents } from '../fixtures/mock-server'
 
-const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
-
 test('execute explain command from sidebar', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -59,6 +57,7 @@ test('execute explain command from sidebar', async ({ page, sidebar }) => {
     // the question should show up in the chat panel on submit
     await chatPanelFrame.getByText('hello cody').click()
 
+    const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
     await assertEvents(loggedEvents, expectedEvents)
 })
 
@@ -83,5 +82,10 @@ test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
+    const expectedEvents = [
+        'CodyVSCodeExtension:command:test:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ]
     await assertEvents(loggedEvents, expectedEvents)
 })
