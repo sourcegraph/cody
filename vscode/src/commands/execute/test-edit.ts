@@ -6,7 +6,6 @@ import { defaultCommands, executeTestChatCommand } from '.'
 import type { ChatCommandResult, EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
-import * as uuid from 'uuid'
 import type { URI } from 'vscode-uri'
 import { isTestFileForOriginal } from '../utils/test-commands'
 import { workspace } from 'vscode'
@@ -19,10 +18,10 @@ import { workspace } from 'vscode'
 export async function executeTestEditCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | ChatCommandResult | undefined> {
-    // TODO: remove after 1.2.3 patch
-    // Exclude from patch release using a random placeholder config value
+    // NOTE: Move behind 'internal.unstable' for 1.2.3 patch release
+    // TODO remove after the patch releases for 1.3 release
     const config = workspace.getConfiguration('cody')
-    if (!config.get(uuid.v4())) {
+    if (!config.get('internal.unstable')) {
         return executeTestChatCommand(args)
     }
 

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import * as uuid from 'uuid'
 import { getEditor } from '../../editor/active-editor'
 import { isValidTestFile } from '../utils/test-commands'
 import { getDocumentSections } from '../../editor/utils/document-sections'
@@ -110,10 +109,10 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
     }
 
     private async provideCodeLensesForSymbols(doc: vscode.Uri): Promise<vscode.CodeLens[]> {
-        // TODO: remove after 1.2.3 patch
-        // Exclude from patch release using a random placeholder config value
+        // NOTE: Move behind 'internal.unstable' for 1.2.3 patch release
+        // TODO remove after the patch releases for 1.3 release
         const config = vscode.workspace.getConfiguration('cody')
-        if (!config.get(uuid.v4())) {
+        if (!config.get('internal.unstable')) {
             return []
         }
 
