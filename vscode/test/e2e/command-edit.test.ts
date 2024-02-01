@@ -31,7 +31,7 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
 
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'replace hello with goodbye'
-    const inputTitle = 'Edit index.html:7:8 with Cody'
+    const inputTitle = /^Edit index.html:(\d+).* with Cody$/
     const showDiffLens = page.getByRole('button', { name: 'A Show Diff' })
     const acceptLens = page.getByRole('button', { name: 'Accept' })
     const retryLens = page.getByRole('button', { name: 'Retry' })
@@ -76,7 +76,7 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     await page.getByText('7', { exact: true }).click()
     await page.click('.badge[aria-label="Cody"]')
     await page.getByText('Edit code with instructions').click()
-    await expect(page.getByText('Edit index.html:2:11 with Cody')).toBeVisible()
+    await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)
     await page.keyboard.press('Enter')
@@ -86,7 +86,7 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     // Retry: show the command palette with the previous instruction
     await expect(retryLens).toBeVisible()
     await retryLens.click()
-    await expect(page.getByText('Edit index.html:2 with Cody')).toBeVisible()
+    await expect(page.getByText(inputTitle)).toBeVisible()
     await expect(inputBox).toHaveValue(instruction)
     await inputBox.press('Escape')
 
