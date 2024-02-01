@@ -490,7 +490,7 @@
             {
                 "command": "cody.chat.panel.new",
                 "key": "alt+l",
-                "when": "cody.activated && config.cody.internal.unstable"
+                "when": "cody.activated"
             },
             {
                 "command": "cody.command.edit-code",
@@ -501,7 +501,7 @@
             {
                 "command": "cody.command.edit-code",
                 "key": "alt+k",
-                "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
+                "when": "cody.activated && !editorReadonly"
             },
             {
                 "command": "cody.menu.commands",
