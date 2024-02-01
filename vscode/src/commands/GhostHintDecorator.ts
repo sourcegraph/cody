@@ -1,5 +1,6 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
+import { AuthStatus } from '../chat/protocol'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -60,15 +61,18 @@ export class GhostHintDecorator implements vscode.Disposable {
             leading: false,
             trailing: true,
         })
-        this.updateConfig()
+    }
+
+    public init(authStatus: AuthStatus): void {
+        this.updateConfig(authStatus)
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
-                this.updateConfig()
+                this.updateConfig(authStatus)
             }
         })
     }
 
-    private init(): void {
+    private showGhostHints(): void {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection(
                 (event: vscode.TextEditorSelectionChangeEvent) => {
@@ -132,10 +136,14 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [])
     }
 
-    private updateConfig(): void {
+    private updateConfig(authStatus: AuthStatus): void {
+        if (!authStatus.isLoggedIn) {
+            this.dispose()
+            return
+        }
+
         const config = vscode.workspace.getConfiguration('cody')
         const isEnabled = config.get('commandHints.enabled') as boolean
-
         if (!isEnabled) {
             this.dispose()
             return
@@ -143,7 +151,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
         if (isEnabled && !this.isActive) {
             this.isActive = true
-            this.init()
+            this.showGhostHints()
             return
         }
     }
