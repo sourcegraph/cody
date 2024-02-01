@@ -198,7 +198,7 @@ tasks {
     return destinationDir
   }
 
-  val codyCommit = "b8911389075215550d9155cd3132383b9e4abe7e"
+  val codyCommit = "70e927ce69c75aea5b2053574333e6525b717ba3"
   fun downloadCody(): File {
     val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
     val destination = githubArchiveCache.resolve("$codyCommit.zip")
