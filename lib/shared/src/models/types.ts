@@ -15,8 +15,10 @@ type HasUsage<T, I> = T extends { usage: readonly ModelUsage[] }
 type Models = typeof DEFAULT_DOT_COM_MODELS
 
 /**
- * Extracts model types from the Models type that have
- * the ModelUsage.Edit usage specified.
+ * Available models for Edit.
+ * This is either:
+ * - one of the availble options (dotcom)
+ * - an unknown `string` (enterprise)
  */
 export type EditModel =
     | {
@@ -24,6 +26,12 @@ export type EditModel =
       }[keyof Models]['model']
     | (string & {})
 
+/**
+ * Available models for Chat.
+ * This is either:
+ * - one of the availble options (dotcom)
+ * - an unknown `string` (enterprise)
+ */
 export type ChatModel =
     | {
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
