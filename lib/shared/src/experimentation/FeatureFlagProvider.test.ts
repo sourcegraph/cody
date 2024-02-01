@@ -3,8 +3,6 @@ import { describe, expect, it, vitest } from 'vitest'
 import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
-import { beforeEach } from 'node:test'
-import { unsubscribe } from 'node:diagnostics_channel'
 
 describe('FeatureFlagProvider', () => {
     it('evaluates the feature flag on dotcom', async () => {
