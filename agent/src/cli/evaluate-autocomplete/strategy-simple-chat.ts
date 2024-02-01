@@ -4,7 +4,7 @@ import type { ExtensionMessage } from '../../../../vscode/src/chat/protocol'
 import { type MessageHandler } from '../../jsonrpc-alias'
 import { type EvaluateAutocompleteOptions, SimpleChatEvalConfig, EvaluationFixture } from './evaluate-autocomplete'
 import { exit } from 'process'
-// import { Semaphore } from 'async-mutex';
+import { Semaphore } from 'async-mutex';
 import { Uri } from 'vscode'
 import { type NotificationMethodName } from '../../jsonrpc-alias'
 import fspromises from 'fs/promises'
@@ -49,12 +49,13 @@ interface EmbeddingFlag {
 
 async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
+    const {workspace} = options
     let embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
         isNumItemNeedIndexZero: false,
         isSearchIndexReady: false,
     }
-    registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs)
+    registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
 
     if(options.fixture?.webViewConfiguration?.useEnhancedContext){
         // todo: remove this behaviour Update embeddings anyways b/c used to fetch the context ranking candidates
@@ -71,7 +72,30 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
     }
 }
 
-function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, chatLogs: StrategySimpleChatLogs): void {
+async function addRepoToBlockedRepo(workspaceName: string, repoDisplayName: string): Promise<void> {
+    const stringToReplace = `repos/${repoDisplayName}`
+    const baseRepoName = path.join(workspaceName.replace(stringToReplace, ''), 'blockedRepos.txt')
+    try {
+        await fspromises.access(baseRepoName);
+    } catch (error) {
+        await fspromises.writeFile(baseRepoName, '');
+    }
+    await fspromises.appendFile(baseRepoName, `${repoDisplayName}\n`);
+}
+
+async function addRepoToCompletedRepoLogs(workspaceName: string, repoDisplayName: string): Promise<void> {
+    const stringToReplace = `repos/${repoDisplayName}`
+    const baseRepoName = path.join(workspaceName.replace(stringToReplace, ''), 'CompletedEmbeddingsRepo.txt')
+    try {
+        await fspromises.access(baseRepoName);
+    } catch (error) {
+        await fspromises.writeFile(baseRepoName, '');
+    }
+    await fspromises.appendFile(baseRepoName, `${repoDisplayName}\n`);
+}
+
+function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: string, embeddingDoneFlag: EmbeddingFlag, 
+    chatLogs: StrategySimpleChatLogs, workspaceName: string): void {
     // override existing debug message
     client.registerNotification('debug/message', async param => {
         await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
@@ -86,6 +110,7 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 try {
                     const indexHealthObj = JSON.parse(jsonString)
                     if(indexHealthObj.numItemsNeedEmbedding===0){
+                        await addRepoToCompletedRepoLogs(workspaceName, repoDisplayName)
                         embeddingDoneFlag.isNumItemNeedIndexZero = true
                         await chatLogs.writeLog(repoDisplayName, `embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
                     }
@@ -100,11 +125,14 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
                 exit(1)
             } else if(debug_message.includes('█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden')){
+                await addRepoToBlockedRepo(workspaceName, repoDisplayName)
                 await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
                 await chatLogs.writeLog(repoDisplayName, `█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden`)
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
-                exit(1)
+                embeddingDoneFlag.isNumItemNeedIndexZero = true
+
+                // exit(1)
             }
         }
     })
@@ -194,29 +222,27 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     client.registerNotification('webview/postMessage', async param => {})
 
     const all_chat_configs = options.chat_config ?? []
-    const replies: ChatReply[] = []
+    // const replies: ChatReply[] = []
 
-    let totalQuestions = all_chat_configs.length
-    for(const single_chat_config of all_chat_configs) {
-        const reply = await simulateChatInRepo(client, options, single_chat_config)
-        replies.push(reply)
-        totalQuestions-=1
-        await chatLogs.writeLog(repoDisplayName, `Number of questions remaining: ${totalQuestions}`)
-    }
+    // let totalQuestions = all_chat_configs.length
+    // for(const single_chat_config of all_chat_configs) {
+    //     const reply = await simulateChatInRepo(client, options, single_chat_config)
+    //     replies.push(reply)
+    //     totalQuestions-=1
+    //     await chatLogs.writeLog(repoDisplayName, `Number of questions remaining: ${totalQuestions}`)
+    // }
 
-    // todo: Add support for concurrency 
-    // todo:     - can't add concurrency as of now b/c for the different question, we might get same webview panel id, if the message is not already posted. 
-    // const concurrencyLimit = 5
-    // const semaphore = new Semaphore(concurrencyLimit);
-    // const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
-    //     const [_, release] = await semaphore.acquire();
-    //     try {
-    //         const reply = await simulateChatInRepo(client, options, single_chat_config);
-    //         return reply
-    //     } finally {
-    //         release();
-    //     }
-    // }));
+    const concurrencyLimit = 5
+    const semaphore = new Semaphore(concurrencyLimit);
+    const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
+        const [_, release] = await semaphore.acquire();
+        try {
+            const reply = await simulateChatInRepo(client, options, single_chat_config);
+            return reply
+        } finally {
+            release();
+        }
+    }));
 
     // const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
     

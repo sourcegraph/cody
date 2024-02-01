@@ -300,7 +300,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 )
         );
         
-        const concurrencyLimit = 5
+        const concurrencyLimit = 25
         const semaphore = new Semaphore(concurrencyLimit);
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;
