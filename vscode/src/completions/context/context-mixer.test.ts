@@ -49,7 +49,7 @@ const defaultOptions = {
     maxChars: 1000,
 }
 
-describe.only('ContextMixer', () => {
+describe('ContextMixer', () => {
     describe('with no retriever', () => {
         it('returns empty result if no retrievers', async () => {
             const mixer = new ContextMixer(createMockStrategy([]))
@@ -232,7 +232,7 @@ describe.only('ContextMixer', () => {
                     },
                 ])
             })
-            it('mixes the results of the retriever using reciprocal rank fusion', async () => {
+            it('mixes results are filtered', async () => {
                 const mixer = new ContextMixer(
                     createMockStrategy([
                         [
