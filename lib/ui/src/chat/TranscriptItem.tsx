@@ -97,7 +97,7 @@ export const TranscriptItem: React.FunctionComponent<
     // TODO (bee) can be removed once we support editing command prompts.
     // A boolean indicating whether the current message is a known command input.
     const isCommandInput =
-        message?.displayText?.startsWith('/') || isDefaultCommandPrompts(message?.displayText || '')
+        message?.displayText?.startsWith('/') || isDefaultCommandPrompts(message?.displayText)
 
     return (
         <div
@@ -183,6 +183,7 @@ export const TranscriptItem: React.FunctionComponent<
                             contextFiles={message.contextFiles}
                             fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
+                            isCommand={isCommandInput}
                         />
                     ) : (
                         inProgress && <LoadingContext />
@@ -219,6 +220,9 @@ const commandPrompts = {
     smell: `Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors'`,
 }
 
-export function isDefaultCommandPrompts(text: string): boolean {
+export function isDefaultCommandPrompts(text?: string): boolean {
+    if (!text) {
+        return false
+    }
     return Object.values(commandPrompts).includes(text)
 }

@@ -27,7 +27,8 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     // Check if the command shows the current file as context with the correct number of lines
     // When no selection is made, we will try to create smart selection from the cursor position
     // If there is no cursor position, we will use the visible content of the editor
-    await chatPanel.getByText('✨ Context: 12 lines from 1 file').click()
+    // NOTE: Core commands context should not start with ✨
+    await chatPanel.getByText('Context: 12 lines from 1 file').click()
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
@@ -44,7 +45,7 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain code')).toBeVisible()
     await page.getByText('Explain code').click()
-    await chatPanel.getByText('✨ Context: 9 lines from 1 file').click()
+    await chatPanel.getByText('Context: 9 lines from 1 file').click()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
     // Edit button should shows as disabled for all command messages.
@@ -56,7 +57,8 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Identify code smells')).toBeVisible()
     await page.getByText('Identify code smells').click()
-    await chatPanel.getByText('✨ Context: 9 lines from 1 file').click()
+    await chatPanel.getByText('Context: 9 lines from 1 file').hover()
+    await chatPanel.getByText('Context: 9 lines from 1 file').click()
     await expect(disabledEditButtons).toHaveCount(1)
     await expect(editLastMessageButton).not.toBeVisible()
 
