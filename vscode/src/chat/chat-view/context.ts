@@ -41,12 +41,12 @@ interface GetEnhancedContextOptions {
 }
 
 export async function logAllEnhancedContextItems({
-        strategy,
-        editor,
-        text,
-        providers,
-        featureFlags,
-        hints,
+    strategy,
+    editor,
+    text,
+    providers,
+    featureFlags,
+    hints,
 }: GetEnhancedContextOptions): Promise<void> {
     const searchContext: ContextItem[] = []
 
@@ -82,7 +82,7 @@ export async function logAllEnhancedContextItems({
 
     logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
     const priorityContext = await getAllPriorityContext(text, editor, searchContext)
-    
+
     const allContext = priorityContext.concat(searchContext)
     const logObj = {
         logUnixTimestamp: new Date().valueOf(),
@@ -499,8 +499,6 @@ async function getAllPriorityContext(
     return priorityContext
 }
 
-
-
 async function getPriorityContext(
     text: string,
     editor: VSCodeEditor,
@@ -599,10 +597,10 @@ function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
 async function getAllReadmeContext(): Promise<ContextItem[]> {
     // global pattern for readme file
     const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
-    const allReadmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1000))
+    const allReadmeUri = await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1000)
     const results: ContextItem[] = []
-    
-    for(const readmeUri of allReadmeUri) {
+
+    for (const readmeUri of allReadmeUri) {
         if (!readmeUri?.path) {
             return []
         }
