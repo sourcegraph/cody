@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import type { DocumentContext } from '../get-current-doc-context'
 import type { ContextSnippet } from '../types'
@@ -80,7 +80,7 @@ export class ContextMixer implements vscode.Disposable {
         const results = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
-                const snippets = await wrapInActiveSpan(
+                const allSnippets = await wrapInActiveSpan(
                     `autocomplete.retrieve.${retriever.identifier}`,
                     () =>
                         retriever.retrieve({
@@ -91,11 +91,12 @@ export class ContextMixer implements vscode.Disposable {
                             },
                         })
                 )
+                const filteredSnippets = allSnippets.filter(snippet => !isCodyIgnoredFile(snippet.uri))
 
                 return {
                     identifier: retriever.identifier,
                     duration: performance.now() - retrieverStart,
-                    snippets: new Set(snippets),
+                    snippets: new Set(filteredSnippets),
                 }
             })
         )

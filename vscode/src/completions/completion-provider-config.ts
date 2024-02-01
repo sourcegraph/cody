@@ -9,13 +9,14 @@ class CompletionProviderConfig {
      */
     private featureFlagProvider?: FeatureFlagProvider
 
-    private flagsToResolve: FeatureFlag[] = [
+    private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity,
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteSingleMultilineRequest,
-    ]
+        FeatureFlag.CodyAutocompleteFastPath,
+    ] as const
 
     private get config() {
         if (!this._config) {
@@ -40,7 +41,7 @@ class CompletionProviderConfig {
         this._config = config
     }
 
-    public getPrefetchedFlag(flag: FeatureFlag | `${FeatureFlag}`): boolean {
+    public getPrefetchedFlag(flag: (typeof this.flagsToResolve)[number]): boolean {
         if (!this.featureFlagProvider) {
             throw new Error('CompletionProviderConfig is not initialized')
         }
@@ -59,6 +60,13 @@ class CompletionProviderConfig {
         return (
             this.config.autocompleteExperimentalHotStreak ||
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)
+        )
+    }
+
+    public get fastPath(): boolean {
+        return (
+            this.config.autocompleteExperimentalFastPath ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
         )
     }
 

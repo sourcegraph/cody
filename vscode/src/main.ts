@@ -55,10 +55,11 @@ import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import {
     executeExplainCommand,
-    executeTestCommand,
+    executeTestEditCommand,
     executeSmellCommand,
     executeDocCommand,
-    executeUnitTestCommand,
+    executeTestChatCommand,
+    executeTestCaseEditCommand,
 } from './commands/execute'
 
 /**
@@ -342,10 +343,11 @@ const register = async (
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
         vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeUnitTestCommand(a)) // behind unstable flag
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
     )
 
     const statusBar = createStatusBar()
@@ -550,7 +552,7 @@ const register = async (
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = getConfiguration(vscode.workspace.getConfiguration())
+                const config = await getFullConfig()
                 if (!config.autocomplete) {
                     completionsProvider?.dispose()
                     completionsProvider = null

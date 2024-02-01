@@ -14,6 +14,8 @@ export interface ExecuteEditArguments {
     range?: vscode.Range
     mode?: EditMode
     model?: EditModel
+    // The file to write the edit to. If not provided, the edit will be applied to the current file.
+    destinationFile?: vscode.Uri
 }
 
 /**

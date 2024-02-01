@@ -119,6 +119,10 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | {
+          type: 'search:config'
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }

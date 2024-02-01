@@ -73,27 +73,16 @@ export const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             {instruction}
             </${PROMPT_TOPICS.DIAGNOSTICS}>`,
     },
-    new: {
+    test: {
         system: dedent`
-            - You are an AI programming assistant who is an expert in updating code to meet given instructions.
-            - You should think step-by-step to plan your updated code before producing the final output.
-            - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-            - Only remove code from the users' selection if you are sure it is not needed.
-            - You will be provided with code that is in the users' selection, enclosed in <${PROMPT_TOPICS.SELECTED}></${PROMPT_TOPICS.SELECTED}> XML tags. You must use this code to help you plan your updated code.
-            - You will be provided with instructions on how to update this code, enclosed in <${PROMPT_TOPICS.INSTRUCTIONS}></${PROMPT_TOPICS.INSTRUCTIONS}> XML tags. You must follow these instructions carefully and to the letter.
-            - Only enclose generated code in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags, with the file name for the generated code enclosed between the <${PROMPT_TOPICS.FILENAME}></${PROMPT_TOPICS.FILENAME}> tags.
-            - Exclude any additional comment from the generated code.`,
+            - Do not enclose response with any markdown formatting or triple backticks.
+            - Enclose only the generated code in <${PROMPT_TOPICS.OUTPUT}> XML tags.
+            - Your response must start with the <${PROMPT_TOPICS.FILENAME}> XML tags with a suggested file name for the test code.`,
         instruction: dedent`
-            This is part of the file: {filePath}
-
-            The user has the following code in their selection:
+            Here is my selected code from my codebase file {filePath}, enclosed in <${PROMPT_TOPICS.SELECTED}> tags:
             <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
-            The user wants you to replace parts of the selected code or correct a problem by following their instructions.
-            Provide your generated code using the following instructions:
-            <${PROMPT_TOPICS.INSTRUCTIONS}>
-            {instruction}
-            </${PROMPT_TOPICS.INSTRUCTIONS}>`,
+            As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: {instruction}`,
     },
     doc: {
         system: dedent`
@@ -142,8 +131,8 @@ export const buildGenericPrompt = (
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))
-        case 'new':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.new)
+        case 'test':
+            return buildCompleteGenericPrompt(GENERIC_PROMPTS.test)
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))

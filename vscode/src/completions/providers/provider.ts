@@ -75,6 +75,7 @@ export interface ProviderOptions {
     // feature flags
     dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
+    fastPath?: boolean
 }
 
 export abstract class Provider {

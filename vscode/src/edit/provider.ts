@@ -11,7 +11,6 @@ import {
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
-import { NewFixupFileMap } from '../non-stop/FixupFile'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
@@ -21,6 +20,8 @@ import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { getContextWindowForModel } from '../chat/chat-view/SimpleChatPanelProvider'
+import { workspace } from 'vscode'
+import { CodyTaskState } from '../non-stop/utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -72,7 +73,7 @@ export class EditProvider {
 
         // Listen to test file name suggestion from responses
         // Allows Cody to let us know which test file we should add the new content to
-        if (this.config.task.mode === 'test') {
+        if (this.config.task.intent === 'test') {
             let filepath = ''
             multiplexer.sub(PROMPT_TOPICS.FILENAME, {
                 onResponse: async (content: string) => {
@@ -145,14 +146,14 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        if (this.config.task.mode === 'test' && !NewFixupFileMap.get(this.config.task.id)) {
+        if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
             if (isMessageInProgress) {
                 return
             }
             await this.handleFileCreationResponse('', isMessageInProgress)
         }
 
-        const intentsForInsert = ['add', 'new']
+        const intentsForInsert = ['add', 'test']
         return intentsForInsert.includes(this.config.task.intent)
             ? this.handleFixupInsert(response, isMessageInProgress)
             : this.handleFixupEdit(response, isMessageInProgress)
@@ -207,6 +208,15 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
+        if (task.state !== CodyTaskState.pending) {
+            return
+        }
+
+        // Has already been created when set
+        if (task.destinationFile) {
+            return
+        }
+
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
             // an existing test file from codebase
@@ -218,14 +228,21 @@ export class EditProvider {
                 // create a file uri with untitled scheme that would work on windows
                 const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
                 await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+                return
             }
+
+            // Create a new untitled file if the suggested file does not exist
+            const currentFile = task.fixupFile.uri
+            const currentDoc = await workspace.openTextDocument(currentFile)
+            const newDoc = await workspace.openTextDocument({ language: currentDoc?.languageId })
+            await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newDoc.uri)
             return
         }
 
         const opentag = `<${PROMPT_TOPICS.FILENAME}>`
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
-        const currentFileUri = this.config.task.fixupFile.uri
+        const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
@@ -234,18 +251,16 @@ export class EditProvider {
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
-
-        if (haveSameExtensions && !NewFixupFileMap.get(task.id)) {
+        if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(
-                this.config.task.id,
-                newFileUri
-            )
+            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
                 await this.insertionPromise
+            } catch {
+                this.handleError(new Error('Cody failed to generate unit tests'))
             } finally {
                 this.insertionPromise = null
             }

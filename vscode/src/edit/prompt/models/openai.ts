@@ -42,10 +42,10 @@ export const openai: EditLLMInteraction = {
             prompt: buildGenericPrompt('add', options),
         }
     },
-    getNew(options) {
+    getTest(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildGenericPrompt('new', options),
+            prompt: buildGenericPrompt('test', options),
         }
     },
 }

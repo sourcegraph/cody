@@ -48,7 +48,7 @@ const getContextFromIntent = async ({
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
-        case 'new':
+        case 'test':
         case 'add': {
             return [
                 ...getContextMessageWithResponse(

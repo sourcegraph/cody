@@ -4,9 +4,7 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { assertEvents, test } from './helpers'
 import { loggedEvents } from '../fixtures/mock-server'
 
-const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
-
-test('execute command from sidebar', async ({ page, sidebar }) => {
+test('execute explain command from sidebar', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -59,5 +57,35 @@ test('execute command from sidebar', async ({ page, sidebar }) => {
     // the question should show up in the chat panel on submit
     await chatPanelFrame.getByText('hello cody').click()
 
+    const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
+    await assertEvents(loggedEvents, expectedEvents)
+})
+
+test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the File Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+    // Open the buzz.ts file from the tree view
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Click on the Cody command code lenses to execute the unit test command
+    await page.getByRole('button', { name: 'A Cody' }).click()
+    await page.getByText('/test').click()
+
+    // The test file for the buzz.ts file should be opened automatically
+    await page.getByText('buzz.test.ts').hover()
+
+    // Code lens should be visible
+    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:command:test:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ]
     await assertEvents(loggedEvents, expectedEvents)
 })

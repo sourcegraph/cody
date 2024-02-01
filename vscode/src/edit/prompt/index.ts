@@ -42,8 +42,8 @@ const getInteractionArgsFromIntent = (
             return INTERACTION_MODELS[model].getDoc(options)
         case 'edit':
             return INTERACTION_MODELS[model].getEdit(options)
-        case 'new':
-            return INTERACTION_MODELS[model].getNew(options)
+        case 'test':
+            return INTERACTION_MODELS[model].getTest(options)
     }
 }
 
