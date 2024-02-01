@@ -53,6 +53,13 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, Record<string, boolean>> = {}
     private lastUpdated = 0
 
+    private subscriptions: Map<
+        string, // ${endpoint}#${prefix filter}
+        { lastSnapshot: string; callbacks: Set<() => void> }
+    > = new Map()
+    // When we have at least one subscription, ensure that we also periodically refresh the flags
+    private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
+
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
     public getFromCache(
@@ -84,6 +91,7 @@ export class FeatureFlagProvider {
             this.featureFlags[endpoint] = {}
         }
         this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
+        this.notifyFeatureFlagChanged()
         return this.featureFlags[endpoint][flagName]
     }
 
@@ -97,6 +105,88 @@ export class FeatureFlagProvider {
         const data = await this.apiClient.getEvaluatedFeatureFlags()
         this.featureFlags[endpoint] = isError(data) ? {} : data
         this.lastUpdated = Date.now()
+        this.notifyFeatureFlagChanged()
+
+        if (this.nextRefreshTimeout) {
+            clearTimeout(this.nextRefreshTimeout)
+            this.nextRefreshTimeout = undefined
+        }
+        if (this.subscriptions.size > 0) {
+            this.nextRefreshTimeout = setTimeout(() => this.refreshFeatureFlags(), ONE_HOUR)
+        }
+    }
+
+    // Allows you to subscribe to a change event that is triggered when feature flags with a
+    // predefined prefix are updated. Can be used to sync code that only queries flags at startup
+    // to outside changes.
+    public onFeatureFlagChanged(
+        endpoint: string,
+        prefixFilter: string,
+        callback: () => void
+    ): () => void {
+        const key = endpoint + '#' + prefixFilter
+        const subscription = this.subscriptions.get(key)
+        if (subscription) {
+            subscription.callbacks.add(callback)
+            return () => subscription.callbacks.delete(callback)
+        }
+
+        this.subscriptions.set(prefixFilter, {
+            lastSnapshot: this.computeFeatureFlagSnapshot(endpoint, prefixFilter),
+            callbacks: new Set([callback]),
+        })
+
+        if (!this.nextRefreshTimeout) {
+            this.nextRefreshTimeout = window.setTimeout(() => {
+                this.nextRefreshTimeout = undefined
+                void this.refreshFeatureFlags()
+            }, ONE_HOUR)
+        }
+
+        return () => {
+            const sub = this.subscriptions.get(key)
+            if (sub) {
+                sub.callbacks.delete(callback)
+                if (sub.callbacks.size === 0) {
+                    this.subscriptions.delete(key)
+                }
+
+                if (this.subscriptions.size === 0 && this.nextRefreshTimeout) {
+                    clearTimeout(this.nextRefreshTimeout)
+                    this.nextRefreshTimeout = undefined
+                }
+            }
+        }
+    }
+
+    private notifyFeatureFlagChanged(): void {
+        // loop over the feature flags and see if they were changed
+        for (const key of this.subscriptions) {
+            const endpoint = key[0].split('#')[0]
+            const prefixFilter = key[0].split('#')[1]
+
+            const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint, prefixFilter)
+            if (currentSnapshot !== key[1].lastSnapshot) {
+                key[1].lastSnapshot = currentSnapshot
+                for (const callback of key[1].callbacks) {
+                    callback()
+                }
+            }
+        }
+    }
+
+    private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): string {
+        const featureFlags = this.featureFlags[endpoint]
+        if (!featureFlags) {
+            return ''
+        }
+        const keys = Object.keys(featureFlags)
+        const filteredKeys = keys.filter(key => key.startsWith(prefixFilter))
+        const filteredFeatureFlags = filteredKeys.reduce((acc: any, key) => {
+            acc[key] = featureFlags[key]
+            return acc
+        }, {})
+        return JSON.stringify(filteredFeatureFlags)
     }
 }
 
