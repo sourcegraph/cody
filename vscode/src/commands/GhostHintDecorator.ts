@@ -1,6 +1,7 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 import { AuthStatus } from '../chat/protocol'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -60,6 +61,12 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
             leading: false,
             trailing: true,
+        })
+        vscode.commands.registerCommand('cody.commandHint.chat', () => {
+            telemetryRecorder.recordEvent('cody.commandHint', 'chat')
+            // TODO: Programatically open chat, add context, etc
+            // TODO: Expand seelction
+            return vscode.commands.executeCommand('cody.chat.panel.new')
         })
     }
 
