@@ -5,7 +5,7 @@ import {
     getSimplePreamble,
     type CompletionParameters,
     type Message,
-    type EditModel
+    type EditModel,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
