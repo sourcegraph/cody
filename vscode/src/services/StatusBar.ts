@@ -38,19 +38,6 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
 
-    // Listens for changes to the active text editor and updates the status bar text
-    // based on whether the active file is ignored by Cody or not.
-    // If ignored, adds 'Ignored' to the status bar text.
-    // Otherwise, rerenders the status bar.
-    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
-        if (e && isCodyIgnoredFile(e?.document.uri)) {
-            statusBarItem.tooltip = 'Current file is ignored by Cody'
-            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-        } else {
-            rerender()
-        }
-    })
-
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
@@ -215,6 +202,24 @@ export function createStatusBar(): CodyStatusBar {
         }
         rerender()
     }
+
+    // NOTE: Behind unstable feature flag and requires .cody/ignore enabled
+    // Listens for changes to the active text editor and updates the status bar text
+    // based on whether the active file is ignored by Cody or not.
+    // If ignored, adds 'Ignored' to the status bar text.
+    // Otherwise, rerenders the status bar.
+    const verifyActiveEditor = (uri?: vscode.Uri) => {
+        if (uri && isCodyIgnoredFile(uri)) {
+            statusBarItem.tooltip = 'Current file is ignored by Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+        } else {
+            rerender()
+        }
+    }
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
+        verifyActiveEditor(e?.document?.uri)
+    })
+    verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
 
     return {
         startLoading(label: string) {
