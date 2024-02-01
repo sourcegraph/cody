@@ -62,7 +62,9 @@ export class FixupTask {
         public readonly model: EditSupportedModels,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[]
+        public readonly contextMessages?: ContextMessage[],
+        /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
+        public destinationFile?: vscode.Uri
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

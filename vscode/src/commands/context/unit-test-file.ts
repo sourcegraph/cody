@@ -24,14 +24,19 @@ export async function getContextFilesForUnitTestCommand(file: URI): Promise<Cont
     // To search for files in the current directory only
     const searchInCurrentDirectoryOnly = true
     // The max number of files to search for in each workspace search
-    const max = 5
+    const max = 10
 
+    // Search for test files in the current directory first
     const curerntDirPattern = getSearchPatternForTestFiles(file, searchInCurrentDirectoryOnly)
-    contextFiles.push(...(await getWorkspaceFilesContext(curerntDirPattern, excludePattern, max)))
+    const currentDirContext = await getWorkspaceFilesContext(curerntDirPattern, excludePattern, max)
 
+    contextFiles.push(...currentDirContext)
+
+    // If no test files found in the current directory, search the entire workspace
     if (!contextFiles.length) {
         const wsTestPattern = getSearchPatternForTestFiles(file, !searchInCurrentDirectoryOnly)
-        const codebaseFiles = await getWorkspaceFilesContext(wsTestPattern, excludePattern, max)
+        // Will try to look for half the max number of files in the workspace for faster results
+        const codebaseFiles = await getWorkspaceFilesContext(wsTestPattern, excludePattern, max / 2)
 
         contextFiles.push(...codebaseFiles)
     }

@@ -283,16 +283,9 @@ export const getInput = async (
                 // Hide the input and execute a new edit for 'Test'
                 unitTestInput.input.hide()
 
-                const config = vscode.workspace.getConfiguration('cody')
-                const unstableTestCommandEnabled = config.get('internal.unstable') as boolean
-
-                if (unstableTestCommandEnabled) {
-                    // TODO: This should entirely run through `executeEdit` when
-                    // the unit test command has fully moved over to Edit.
-                    return vscode.commands.executeCommand('cody.command.unit-tests')
-                }
-
-                return vscode.commands.executeCommand('cody.command.generate-tests')
+                // TODO: This should entirely run through `executeEdit` when
+                // the unit test command has fully moved over to Edit.
+                return vscode.commands.executeCommand('cody.command.unit-tests')
             },
         })
 

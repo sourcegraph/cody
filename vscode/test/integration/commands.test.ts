@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import {
     afterIntegrationTest,
     beforeIntegrationTest,
+    getTestDocWithCursor,
     getTextEditorWithSelection,
     getTranscript,
     waitUntil,
@@ -46,18 +47,22 @@ suite('Commands', function () {
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test('Generate Unit Tests', async () => {
-        await getTextEditorWithSelection()
+    test('Context fetching for Test command', async () => {
+        await getTestDocWithCursor()
 
-        // Run the "/test" command
+        // Run the old test command that runs in Chat to
+        // check context fetching for all test commands
         await vscode.commands.executeCommand('cody.command.generate-tests')
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^Review the shared code/)
 
-        const contextFileSize = humanMessage?.contextFiles?.length || 0
-        assert.ok(contextFileSize === 2)
+        // Should contains 'buzz.ts' and 'buzz.test.ts'
+        assert.ok(humanMessage?.contextFiles?.length === 2)
+        for (const message of humanMessage?.contextFiles || []) {
+            assert.match(message.uri?.path, /buzz.*ts$/)
+        }
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
