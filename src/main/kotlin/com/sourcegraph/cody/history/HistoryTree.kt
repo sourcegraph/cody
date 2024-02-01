@@ -23,6 +23,7 @@ import javax.swing.Icon
 import javax.swing.KeyStroke
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
 class HistoryTree(
@@ -86,11 +87,21 @@ class HistoryTree(
   }
 
   private fun deleteSelected() {
-    tree.selectedLeafOrNull()?.let { leaf ->
-      onDelete(leaf.chat)
-      val period = leaf.parent as PeriodNode
-      model.removeNodeFromParent(leaf)
+    tree.selectedLeafOrNull()?.let { selectedLeaf ->
+      val period = selectedLeaf.parent as PeriodNode
+      val selectedIndex = period.getIndex(selectedLeaf)
+      onDelete(selectedLeaf.chat)
+      model.removeNodeFromParent(selectedLeaf)
       if (model.getChildCount(period) == 0) model.removeNodeFromParent(period)
+
+      val leafsCount = period.childCount
+      if (leafsCount > 0) {
+        val newIndex = if (selectedIndex < leafsCount) selectedIndex else selectedIndex - 1
+        val previousLeaf = period.getChildAt(newIndex) as LeafNode
+        val path = TreePath(previousLeaf.path)
+        val row = tree.getRowForPath(path)
+        tree.setSelectionRow(row)
+      }
     }
   }
 

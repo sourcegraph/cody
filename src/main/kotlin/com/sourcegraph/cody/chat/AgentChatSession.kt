@@ -54,20 +54,18 @@ private constructor(
       sessionId.get().getNow(null) == thatSessionId
 
   fun restoreAgentSession(agent: CodyAgent) {
-    synchronized(this) {
-      // todo serialize model
-      val model = "anthropic/claude-2.0"
-      val messagesToReload =
-          messages
-              .toList()
-              .dropWhile { it.speaker == Speaker.ASSISTANT }
-              .fold(emptyList<ChatMessage>()) { acc, msg ->
-                if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
-              }
-      val restoreParams = ChatRestoreParams(model, messagesToReload, UUID.randomUUID().toString())
-      val newSessionId = agent.server.chatRestore(restoreParams)
-      sessionId.getAndSet(newSessionId)
-    }
+    // todo serialize model
+    val model = "anthropic/claude-2.0"
+    val messagesToReload =
+        messages
+            .toList()
+            .dropWhile { it.speaker == Speaker.ASSISTANT }
+            .fold(emptyList<ChatMessage>()) { acc, msg ->
+              if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
+            }
+    val restoreParams = ChatRestoreParams(model, messagesToReload, UUID.randomUUID().toString())
+    val newSessionId = agent.server.chatRestore(restoreParams)
+    sessionId.getAndSet(newSessionId)
   }
 
   @RequiresEdt
@@ -157,25 +155,21 @@ private constructor(
 
   @RequiresEdt
   private fun addMessage(message: ChatMessage) {
-    synchronized(messages) {
-      if (messages.lastOrNull()?.id == message.id) {
-        messages.removeLast()
-      }
-      messages.add(message)
-      chatPanel.addOrUpdateMessage(message)
-      HistoryService.getInstance().update(internalId, messages)
+    if (messages.lastOrNull()?.id == message.id) {
+      messages.removeLast()
     }
+    messages.add(message)
+    chatPanel.addOrUpdateMessage(message)
+    HistoryService.getInstance().update(internalId, messages)
   }
 
   @RequiresEdt
   private fun createCancellationToken(onCancel: () -> Unit, onFinish: () -> Unit) {
-    synchronized(this) {
-      val newCancellationToken = CancellationToken()
-      newCancellationToken.onCancellationRequested { onCancel() }
-      newCancellationToken.onFinished { onFinish() }
-      cancellationToken.getAndSet(newCancellationToken).abort()
-      chatPanel.registerCancellationToken(newCancellationToken)
-    }
+    val newCancellationToken = CancellationToken()
+    newCancellationToken.onCancellationRequested { onCancel() }
+    newCancellationToken.onFinished { onFinish() }
+    cancellationToken.getAndSet(newCancellationToken).abort()
+    chatPanel.registerCancellationToken(newCancellationToken)
   }
 
   companion object {

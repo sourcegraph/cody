@@ -70,12 +70,12 @@ class CodyToolWindowContent(private val project: Project) {
     switchToChatSession(AgentChatSession.createNew(project))
   }
 
-  fun switchToChatSession(chatSession: AgentChatSession) {
+  fun switchToChatSession(chatSession: AgentChatSession, showChatWindow: Boolean = true) {
     ApplicationManager.getApplication().invokeLater {
       currentChatSession.getAndSet(chatSession)
       chatContainerPanel.removeAll()
       chatContainerPanel.add(chatSession.getPanel())
-      tabbedPane.selectedIndex = CHAT_TAB_INDEX
+      if (showChatWindow) tabbedPane.selectedIndex = CHAT_TAB_INDEX
     }
   }
 
@@ -140,7 +140,9 @@ class CodyToolWindowContent(private val project: Project) {
     HistoryService.getInstance().remove(state.internalId)
     if (AgentChatSessionService.getInstance(project).removeSession(state)) {
       val isVisible = currentChatSession.get()?.getInternalId() == state.internalId
-      if (isVisible) switchToChatSession(AgentChatSession.createNew(project))
+      if (isVisible) {
+        switchToChatSession(AgentChatSession.createNew(project), showChatWindow = false)
+      }
     }
   }
 
