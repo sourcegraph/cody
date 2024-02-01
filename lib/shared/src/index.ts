@@ -138,7 +138,12 @@ export {
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
-export { truncateText, truncateTextNearestLine, truncateTextStart } from './prompt/truncation'
+export {
+    truncateTextByTokens,
+    truncateTextByChars,
+    truncateTextNearestLine,
+    truncateTextStart,
+} from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'

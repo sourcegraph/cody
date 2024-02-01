@@ -1,7 +1,7 @@
 import {
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    truncateTextByTokens,
     logError,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
@@ -37,7 +37,7 @@ export async function getContextFileFromCursor(): Promise<ContextFile[]> {
             {
                 type: 'file',
                 uri: document.uri,
-                content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
+                content: truncateTextByTokens(content, MAX_CURRENT_FILE_TOKENS),
                 source: 'selection',
                 range: selection,
             } as ContextFile,

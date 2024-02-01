@@ -6,6 +6,7 @@ import {
     type CompletionParameters,
     type Message,
     type EditModel,
+    truncateTextByChars,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -14,7 +15,6 @@ import type { EditIntent } from '../types'
 
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
-import { truncateTextByLength } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { openai } from './models/openai'
 import { claude } from './models/claude'
 import { PromptBuilder } from '../../chat/chat-view/prompt'
@@ -77,7 +77,7 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (truncateTextByLength(selectedText, contextWindow) !== selectedText) {
+    if (truncateTextByChars(selectedText, contextWindow) !== selectedText) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText

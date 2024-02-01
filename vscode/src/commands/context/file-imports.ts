@@ -1,7 +1,7 @@
 import {
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    truncateTextByTokens,
     logError,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -35,7 +35,7 @@ export async function getContextFileFromImports(): Promise<ContextFile[]> {
             throw new Error('No import statements')
         }
 
-        const truncatedContent = truncateText(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
+        const truncatedContent = truncateTextByTokens(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
 
         return [
             {

@@ -1,7 +1,7 @@
 import {
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    truncateTextByTokens,
     logError,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -14,7 +14,7 @@ export async function getContextFileFromUri(file: URI): Promise<ContextFile[]> {
     try {
         const doc = await vscode.workspace.openTextDocument(file)
         const decoded = doc?.getText()
-        const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS).trim()
+        const truncatedContent = truncateTextByTokens(decoded, MAX_CURRENT_FILE_TOKENS).trim()
         if (!decoded || !truncatedContent) {
             throw new Error('No file content')
         }

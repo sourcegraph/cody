@@ -31,7 +31,7 @@ export class ModelProvider {
     private static dotComProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
 
     /**
-     * Adds a new chat model provider, instantiated from the given model string,
+     * Adds a new model provider, instantiated from the given model string,
      * to the internal providers set. This allows new models to be added and
      * made available for use.
      */
@@ -44,7 +44,7 @@ export class ModelProvider {
     }
 
     /**
-     * Gets the chat model providers based on the endpoint and current model.
+     * Gets the model providers based on the endpoint and current model.
      * If endpoint is a dotcom endpoint, returns dotComProviders.
      * Otherwise returns providers.
      * If currentModel is provided, sets it as the default model.
