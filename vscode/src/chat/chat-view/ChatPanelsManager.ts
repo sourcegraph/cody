@@ -227,7 +227,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             )
         }
         const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
-        console.log('got models', models)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({

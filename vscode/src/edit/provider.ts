@@ -19,9 +19,9 @@ import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { getContextWindowForModel } from '../chat/chat-view/SimpleChatPanelProvider'
 import { workspace } from 'vscode'
 import { CodyTaskState } from '../non-stop/utils'
+import { getContextWindowForModel } from '../models/utilts'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask

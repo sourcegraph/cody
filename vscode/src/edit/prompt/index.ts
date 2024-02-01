@@ -32,17 +32,19 @@ const getInteractionArgsFromIntent = (
     model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
+    // Default to the generic Claude prompt if the model is unknown
+    const interaction = INTERACTION_MODELS[model] || claude
     switch (intent) {
         case 'add':
-            return INTERACTION_MODELS[model].getAdd(options)
+            return interaction.getAdd(options)
         case 'fix':
-            return INTERACTION_MODELS[model].getFix(options)
+            return interaction.getFix(options)
         case 'doc':
-            return INTERACTION_MODELS[model].getDoc(options)
+            return interaction.getDoc(options)
         case 'edit':
-            return INTERACTION_MODELS[model].getEdit(options)
+            return interaction.getEdit(options)
         case 'test':
-            return INTERACTION_MODELS[model].getTest(options)
+            return interaction.getTest(options)
     }
 }
 
