@@ -300,6 +300,7 @@ Test ideas:
 9. Use only the keyboard. For example, navigate transcripts with arrows, delete, enter.
 10. Start typing while being focused on Chat History to perform search-by-title.
 11. Open multiple chats and ask few simultaneous questions in several sessions at once.
+12. Open new chat with <kbd>Alt</kbd> + <kbd>=</kbd> shortcut (or <kbd>Option</kbd> + <kbd>=</kbd> on Mac).
 
 ## Code Search
 
