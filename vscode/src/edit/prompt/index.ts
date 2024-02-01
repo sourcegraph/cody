@@ -95,9 +95,11 @@ export const buildInteraction = async ({
 
     const preamble = getSimplePreamble()
     promptBuilder.tryAddToPrefix(preamble)
+
+    if (assistantText) {
+        promptBuilder.tryAdd({ speaker: 'assistant', text: assistantText })
+    }
     promptBuilder.tryAdd({ speaker: 'human', text: prompt })
-    // TODO: Fix prefix not working correctly
-    // promptBuilder.tryAdd({ speaker: 'assistant', text: assistantText })
 
     const contextItems = await getContext({
         intent: task.intent,
