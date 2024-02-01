@@ -5,7 +5,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
@@ -77,9 +76,7 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
               else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
             }
 
-        ApplicationManager.getApplication().invokeLater {
-          UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
-        }
+        UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
       }
     }
 

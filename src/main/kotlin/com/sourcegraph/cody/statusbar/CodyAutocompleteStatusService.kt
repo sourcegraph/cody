@@ -38,9 +38,11 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
 
   override fun onCodyAutocompleteStatusReset(project: Project) {
     ApplicationManager.getApplication().executeOnPooledThread {
-      val notify = didStatusChanged(project)
-      if (notify) {
-        updateCodyStatusBarIcons()
+      if (!project.isDisposed) {
+        val notify = didStatusChanged(project)
+        if (notify) {
+          updateCodyStatusBarIcons()
+        }
       }
     }
   }

@@ -7,6 +7,7 @@ import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 data class SubscriptionTabPanelData(
     val isDotcomAccount: Boolean,
@@ -28,7 +29,10 @@ fun fetchSubscriptionPanelData(
     if (activeAccountType.isDotcomAccount()) {
       ApplicationManager.getApplication().executeOnPooledThread {
         val codyProFeatureFlag =
-            server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).get() == true
+            server
+                .evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains)
+                .completeOnTimeout(false, 4, TimeUnit.SECONDS)
+                .get() == true
         if (codyProFeatureFlag) {
           val isCurrentUserPro = getIsCurrentUserPro(server) ?: false
           result.complete(

@@ -159,7 +159,7 @@ public class RepoUtil {
                 .thenCompose(
                     agent ->
                         agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
-                .completeOnTimeout(/* value= */ null, /* timeout= */ 4, TimeUnit.SECONDS)
+                .completeOnTimeout(null, 4, TimeUnit.SECONDS)
                 .get();
 
         if (codebaseName == null) {
