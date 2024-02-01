@@ -1,7 +1,6 @@
 import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
-import { releaseNotesURL, releaseType } from '../release'
+import { releaseType } from '../release'
 import { version } from '../version'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
