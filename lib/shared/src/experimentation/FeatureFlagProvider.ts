@@ -45,7 +45,7 @@ export enum FeatureFlag {
     CodyChatMockTest = 'cody-chat-mock-test',
 }
 
-const ONE_HOUR = 5000 //60 * 60 * 1000
+const ONE_HOUR = 10000 //60 * 60 * 1000
 
 export class FeatureFlagProvider {
     // The first key maps to the endpoint so that we do never cache the wrong flag for different
@@ -139,10 +139,10 @@ export class FeatureFlagProvider {
         }
 
         return () => {
-            const sub = this.subscriptions.get(key)
-            if (sub) {
-                sub.callbacks.delete(callback)
-                if (sub.callbacks.size === 0) {
+            const subscription = this.subscriptions.get(key)
+            if (subscription) {
+                subscription.callbacks.delete(callback)
+                if (subscription.callbacks.size === 0) {
                     this.subscriptions.delete(key)
                 }
 

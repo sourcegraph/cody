@@ -581,7 +581,10 @@ const register = async (
 
                 const autocompleteFeatureFlagChangeSubscriber = featureFlagProvider.onFeatureFlagChanged(
                     'cody-autocomplete',
-                    () => setupAutocomplete()
+                    () => {
+                        logDebug('featureflag')
+                        setupAutocomplete()
+                    }
                 )
                 autocompleteDisposables.push({ dispose: autocompleteFeatureFlagChangeSubscriber })
                 autocompleteDisposables.push(
