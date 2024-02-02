@@ -1,12 +1,14 @@
 import { expect } from '@playwright/test'
 
-import { resetLoggedEvents } from '../fixtures/mock-server'
+import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test, withPlatformSlashes } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, withPlatformSlashes } from './helpers'
+
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test.beforeEach(() => {
-    resetLoggedEvents()
+    mockServer.resetLoggedEvents()
 })
 
 test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
