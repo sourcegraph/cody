@@ -36,7 +36,8 @@ async function main(): Promise<void> {
         await MockServer.run(async () => {
             for (const testConfig of testConfigs) {
                 await runTests({
-                    version: '1.81.1',
+                    // The version to download. The version in test/e2e/install-deps.ts should match this so both e2e + integration tests are using the same.
+                    version: 'stable',
                     extensionDevelopmentPath,
                     extensionTestsPath: path.normalize(
                         path.resolve(integrationTestsPath, testConfig.testsFolder, 'index')

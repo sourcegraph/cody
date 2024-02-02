@@ -7,7 +7,8 @@ import {
     type ProgressReport,
 } from '@vscode/test-electron'
 
-const vscodeVersion = '1.85.1'
+// The version to download. This should match the version being used in test/integration/main.ts!
+const vscodeVersion = 'stable'
 
 // A custom version of the VS Code download reporter that silences matching installation
 // notifications as these otherwise are emitted on every test run
