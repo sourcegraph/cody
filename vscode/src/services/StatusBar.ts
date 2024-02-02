@@ -209,7 +209,7 @@ export function createStatusBar(): CodyStatusBar {
     // If ignored, adds 'Ignored' to the status bar text.
     // Otherwise, rerenders the status bar.
     const verifyActiveEditor = (uri?: vscode.Uri) => {
-        if (uri && isCodyIgnoredFile(uri)) {
+        if (uri?.scheme === 'file' && isCodyIgnoredFile(uri)) {
             statusBarItem.tooltip = 'Current file is ignored by Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
         } else {
