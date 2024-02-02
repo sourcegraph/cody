@@ -74,6 +74,18 @@ export class GhostHintDecorator implements vscode.Disposable {
                 (event: vscode.TextEditorSelectionChangeEvent) => {
                     const editor = event.textEditor
 
+                    if (editor.document.uri.scheme !== 'file') {
+                        // Selection changed on a non-file document, e.g. (an output pane)
+                        // Edit's aren't possible here, so do nothing
+                        return
+                    }
+
+                    if (event.selections.length > 1) {
+                        // Multiple selections, it will be confusing to show the ghost text on all of them, or just the first
+                        // Clear existing text and avoid showing anything.
+                        return this.clearGhostText(editor)
+                    }
+
                     const selection = event.selections[0]
                     if (isEmptyOrIncompleteSelection(editor.document, selection)) {
                         // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
