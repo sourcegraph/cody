@@ -49,15 +49,25 @@ interface EmbeddingFlag {
 
 async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-    const {workspace} = options
+    const { workspace } = options
+    const SymfPath = path.resolve('~/.local/share/Cody-nodejs/symf/indexroot', workspace);
+
+    let doesSymfIndexExist = false;
+    try {
+        await fspromises.access(SymfPath);
+        doesSymfIndexExist = true;
+    } catch (error) {
+        doesSymfIndexExist = false;
+    }
+
     let embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
         isNumItemNeedIndexZero: false,
-        isSearchIndexReady: false,
+        isSearchIndexReady: doesSymfIndexExist,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
 
-    if(options.fixture?.webViewConfiguration?.useEnhancedContext){
+    if (options.fixture?.webViewConfiguration?.useEnhancedContext) {
         // todo: remove this behaviour Update embeddings anyways b/c used to fetch the context ranking candidates
         const id = await client.request('chat/new', null)
         await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
@@ -118,6 +128,13 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                     await chatLogs.writeLog(repoDisplayName, `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`)
                 }
             }
+            else if (debug_message.toLowerCase().includes('cody') && (debug_message.toLowerCase().includes('gateway'))) {
+                console.log(`some message related to cody gateway: reponame: ${repoDisplayName} debug_message: ${debug_message}`)
+            }
+            else if(debug_message.startsWith('█ Symf Custom Log Symf [Done]: ')) {
+                embeddingDoneFlag.isSearchIndexReady = true
+                await chatLogs.writeLog(repoDisplayName, `Indexing is again done.. : ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(embeddingDoneFlag)}`)
+            }
             else if(debug_message.includes('Access denied | sourcegraph.com used Cloudflare to restrict access')) {
                 await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
@@ -131,8 +148,14 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 await chatLogs.writeLog(repoDisplayName, `█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden`)
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
                 embeddingDoneFlag.isNumItemNeedIndexZero = true
-
                 // exit(1)
+            } else if(debug_message.includes('Cody Gateway request failed: 429 Too Many Requests')) {
+                await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                await chatLogs.writeLog(repoDisplayName, `Cody Gateway request failed: 429 Too Many Requests`)
+                await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                embeddingDoneFlag.isNumItemNeedIndexZero = true
+                exit(1)
             }
         }
     })
@@ -185,6 +208,8 @@ interface ChatReply {
     ground_truth_answer: string
     reply: ExtensionMessage
     fixture: EvaluationFixture
+    isValidReply: boolean
+    debugMessage?: string
 }
 
 async function appendAllContextCandidatesToFile(file_path: string, jsonString: string) {
@@ -237,7 +262,15 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     const replies = await Promise.all(all_chat_configs.map(async (single_chat_config) => {
         const [_, release] = await semaphore.acquire();
         try {
-            const reply = await simulateChatInRepo(client, options, single_chat_config);
+            // let reply = await simulateChatInRepo(client, options, single_chat_config);
+            // return reply
+
+            let maxTries = 10
+            let reply = await simulateChatInRepo(client, options, single_chat_config);
+            while(maxTries>0 &&!reply.isValidReply) {
+                maxTries-=1
+                reply = await simulateChatInRepo(client, options, single_chat_config);
+            }
             return reply
         } finally {
             release();
@@ -328,7 +361,7 @@ async function simulateChatInRepo(
             },
         })
     
-    checkInvalidReplyAndExit(chatLogs, repoDisplayName, reply)
+    const isValidReply = await checkInvalidReplyAndExit(chatLogs, repoDisplayName, reply)
 
     await client.request('webview/didDispose', {id})
     return {
@@ -337,18 +370,19 @@ async function simulateChatInRepo(
         ground_truth_answer: chatEvalConfig.ground_truth_answer,
         reply: reply,
         fixture: options.fixture,
+        isValidReply: isValidReply,
     }
 }
 
-async function checkInvalidReplyAndExit(chatLogs: StrategySimpleChatLogs, repoDisplayName: string, reply: ExtensionMessage): Promise<Promise<Promise<Promise<void>>>> {
+async function checkInvalidReplyAndExit(chatLogs: StrategySimpleChatLogs, repoDisplayName: string, reply: ExtensionMessage): Promise<boolean> {
     if (reply.type === 'transcript') {
         const llm_reply_message = reply.messages.at(-1)
         if (llm_reply_message == undefined || llm_reply_message.error)  {
             await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
             await chatLogs.writeLog(repoDisplayName, `Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
-            exit(1)
+            return false
         }
-        return
+        return true
     }
     await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
     await chatLogs.writeLog(repoDisplayName, `Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
