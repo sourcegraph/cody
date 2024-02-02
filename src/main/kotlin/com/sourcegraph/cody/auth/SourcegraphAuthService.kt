@@ -31,17 +31,17 @@ internal class SourcegraphAuthService : AuthServiceBase() {
         when (authMethod) {
           SsoAuthMethod.GITHUB -> {
             val end =
-                ".auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=github&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           SsoAuthMethod.GITLAB -> {
             val end =
-                ".auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3Ab45ecb474e92c069567822400cf73db6e39917635bf682f062c57aca68a1e41c&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=gitlab&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           SsoAuthMethod.GOOGLE -> {
             val end =
-                ".auth/openidconnect/login?pc=google&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=google&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           else ->
