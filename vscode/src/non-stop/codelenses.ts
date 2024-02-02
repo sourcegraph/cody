@@ -38,7 +38,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
             if (isTest) {
-                return [accept, retry, undo]
+                return [accept, undo]
             }
             return [title, accept, retry, undo]
         }
