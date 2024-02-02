@@ -229,12 +229,18 @@ export class TreeItem {
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri: Uri
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
+        this.baseUri =
+            typeof _base === 'string'
+                ? Uri.file(_base)
+                : 'uri' in _base
+                  ? Uri.from(_base.uri)
+                  : Uri.from(_base)
         this.base = _base.toString()
     }
 }
