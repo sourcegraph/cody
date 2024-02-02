@@ -5,6 +5,7 @@ import { posixAndURIPaths } from '../common/path'
 import { isWindows } from '../common/platform'
 import { uriBasename } from '../common/uri'
 import { uriHasPrefix } from '../editor/displayPath'
+import { workspace } from 'vscode'
 
 /**
  * The Cody ignore URI path.
@@ -112,6 +113,11 @@ export class IgnoreHelper {
         // Ignore all non-file URIs
         if (uri.scheme !== 'file') {
             return true
+        }
+
+        // Ignore files from unknown workspaces
+        if (!workspace.getWorkspaceFolder(uri)) {
+            return false
         }
 
         this.ensureFileUri('uri', uri)
