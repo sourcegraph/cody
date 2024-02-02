@@ -57,8 +57,7 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Identify code smells')).toBeVisible()
     await page.getByText('Identify code smells').click()
-    await chatPanel.getByText('Context: 9 lines from 1 file').hover()
-    await chatPanel.getByText('Context: 9 lines from 1 file').click()
+    await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(1)
     await expect(editLastMessageButton).not.toBeVisible()
 
