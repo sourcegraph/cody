@@ -1,9 +1,5 @@
 import type * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
-
-import type { EditIntent, EditMode } from '../edit/types'
-
 import type { FixupFile } from './FixupFile'
 import type { FixupTask } from './FixupTask'
 
@@ -30,21 +26,6 @@ export interface FixupFileCollection {
  */
 export interface FixupIdleTaskRunner {
     scheduleIdle<T>(callback: () => T): Promise<T>
-}
-
-/**
- * Creates and starts processing a task.
- */
-export interface FixupTaskFactory {
-    createTask(
-        documentUri: vscode.TextDocument,
-        instruction: string,
-        userContextFiles: ContextFile[],
-        selectionRange: vscode.Range,
-        intent?: EditIntent,
-        mode?: EditMode,
-        source?: ChatEventSource
-    ): Promise<FixupTask>
 }
 
 /**

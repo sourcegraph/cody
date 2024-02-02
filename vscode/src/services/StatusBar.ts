@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, type Configuration } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
@@ -126,6 +126,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
+                    'Command Hints',
+                    undefined,
+                    'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
+                    'cody.commandHints.enabled',
+                    c => c.commandHints
+                ),
+                createFeatureToggle(
                     'Search Context',
                     'Beta',
                     'Enable using the natural language search index as an Enhanced Context chat source',
@@ -196,6 +203,24 @@ export function createStatusBar(): CodyStatusBar {
         rerender()
     }
 
+    // NOTE: Behind unstable feature flag and requires .cody/ignore enabled
+    // Listens for changes to the active text editor and updates the status bar text
+    // based on whether the active file is ignored by Cody or not.
+    // If ignored, adds 'Ignored' to the status bar text.
+    // Otherwise, rerenders the status bar.
+    const verifyActiveEditor = (uri?: vscode.Uri) => {
+        if (uri && isCodyIgnoredFile(uri)) {
+            statusBarItem.tooltip = 'Current file is ignored by Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+        } else {
+            rerender()
+        }
+    }
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
+        verifyActiveEditor(e?.document?.uri)
+    })
+    verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
+
     return {
         startLoading(label: string) {
             openLoadingLeases++
@@ -233,6 +258,7 @@ export function createStatusBar(): CodyStatusBar {
         dispose() {
             statusBarItem.dispose()
             command.dispose()
+            onDocumentChange.dispose()
         },
     }
 }

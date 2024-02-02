@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
-
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
@@ -53,7 +51,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
 
         const matches: JaccardMatchWithFilename[] = []
         for (const { uri, contents } of files) {
-            if (isCodyIgnoredFile(uri) || abortSignal?.aborted) {
+            if (abortSignal?.aborted) {
                 continue
             }
             const fileMatches = bestJaccardMatches(
@@ -129,11 +127,6 @@ async function getRelevantFiles(
     function addDocument(document: vscode.TextDocument): void {
         // Only add files and VSCode user settings.
         if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
-            return
-        }
-
-        // Do not add files that are on the codyignore list
-        if (isCodyIgnoredFile(document.uri)) {
             return
         }
 

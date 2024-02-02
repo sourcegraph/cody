@@ -12,6 +12,7 @@ import { displayPathBasename, displayPathDirname, type SearchPanelFile } from '@
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './SearchPanel.module.css'
+import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 
 const SEARCH_DEBOUNCE_MS = 400
 
@@ -107,6 +108,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     resultsCache.clear()
                     break
                 }
+                case 'search:config':
+                    updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
+                    break
             }
         })
     }, [vscodeAPI, resultsCache, query])

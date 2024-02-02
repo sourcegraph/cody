@@ -4,7 +4,6 @@ import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
     ChatModelProvider,
-    CodyCommand,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
@@ -119,12 +118,15 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | {
+          type: 'search:config'
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'
