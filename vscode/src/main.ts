@@ -48,16 +48,18 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { executeNewTestCommand } from './commands/default/unit'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import type { FixupTask } from './non-stop/FixupTask'
-import { executeExplainCommand } from './commands/default/explain'
-import { executeTestCommand } from './commands/default/test'
-import { executeSmellCommand } from './commands/default/smell'
-import { executeDocCommand } from './commands/default/doc'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import {
+    executeExplainCommand,
+    executeTestCommand,
+    executeSmellCommand,
+    executeDocCommand,
+    executeUnitTestCommand,
+} from './commands/execute'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -204,6 +206,7 @@ const register = async (
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
+            config,
         },
         chatClient,
         enterpriseContextFactory,
@@ -341,7 +344,7 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeNewTestCommand(a)) // behind unstable flag
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeUnitTestCommand(a)) // behind unstable flag
     )
 
     const statusBar = createStatusBar()
@@ -582,9 +585,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const promises: Promise<void>[] = []
-
-    promises.push(setupAutocomplete().catch(() => {}))
+    const autocompleteSetup = setupAutocomplete().catch(() => {})
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
@@ -595,9 +596,11 @@ const register = async (
         )
     }
 
-    promises.push(showSetupNotification(initialConfig))
-
-    await Promise.all(promises)
+    // INC-267 do NOT await on this promise. This promise triggers
+    // `vscode.window.showInformationMessage()`, which only resolves after the
+    // user has clicked on "Setup". Awaiting on this promise will make the Cody
+    // extension timeout during activation.
+    void showSetupNotification(initialConfig)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
@@ -610,6 +613,8 @@ const register = async (
             },
         })
     }
+
+    await autocompleteSetup
 
     return {
         disposable: vscode.Disposable.from(...disposables),

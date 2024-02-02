@@ -1,3 +1,4 @@
+import type * as vscode from 'vscode'
 import type {
     BillingCategory,
     BillingProduct,
@@ -113,6 +114,7 @@ export type Requests = {
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
+    'testing/requestErrors': [null, { errors: NetworkRequest[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -150,6 +152,8 @@ export type Requests = {
     // ================
     // Server -> Client
     // ================
+
+    'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
 
@@ -300,6 +304,7 @@ interface ClientCapabilities {
     progressBars?: 'none' | 'enabled'
     edit?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
+    showWindowMessage?: 'notification' | 'request'
 }
 
 export interface ServerInfo {
@@ -427,7 +432,7 @@ interface ExecuteCommandParams {
     arguments?: any[]
 }
 
-interface DebugMessage {
+export interface DebugMessage {
     channel: string
     message: string
 }
@@ -528,4 +533,12 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+    error?: string
+}
+
+export interface ShowWindowMessageParams {
+    severity: 'error' | 'warning' | 'information'
+    message: string
+    options?: vscode.MessageOptions
+    items?: string[]
 }

@@ -17,6 +17,10 @@ const expectedEvents = [
 test.beforeEach(() => {
     void resetLoggedEvents()
 })
+import { assertEvents, test } from './helpers'
+import { loggedEvents } from '../fixtures/mock-server'
+
+const expectedEvents = ['CodyVSCodeExtension:command:explain:executed']
 
 test('execute command from sidebar', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -63,7 +67,13 @@ test('execute command from sidebar', async ({ page, sidebar }) => {
     await expect(editButtons).toHaveCount(1)
     await expect(chatPanelFrame.getByTitle('Edit Your Message').locator('i')).toBeVisible()
 
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
+    // You can submit a chat question via command menu using /ask
+    await page.getByRole('tab', { name: 'index.html' }).click()
+    await page.getByRole('button', { name: /Commands \(.*/ }).click()
+    await page.getByPlaceholder('Search for a command or enter your question here...').fill('hello cody')
+    await page.getByLabel('/ask, Ask a question').locator('a').click()
+    // the question should show up in the chat panel on submit
+    await chatPanelFrame.getByText('hello cody').click()
+
     await assertEvents(loggedEvents, expectedEvents)
 })

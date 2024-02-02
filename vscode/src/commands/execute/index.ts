@@ -8,8 +8,15 @@ import { executeExplainCommand } from './explain'
 import { executeTestCommand } from './test'
 import { executeDocCommand } from './doc'
 import type { CommandResult } from '../../main'
+import { executeUnitTestCommand } from './unit'
 
 export { commands as defaultCommands } from './cody.json'
+
+export { executeSmellCommand } from './smell'
+export { executeExplainCommand } from './explain'
+export { executeTestCommand } from './test'
+export { executeDocCommand } from './doc'
+export { executeUnitTestCommand } from './unit'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any
@@ -35,19 +42,21 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
  * Returns the command result if a matched command is found, otherwise returns undefined.
  */
 export async function executeDefaultCommand(
-    id: DefaultCodyCommands | string
+    id: DefaultCodyCommands | string,
+    additionalInstruction?: string
 ): Promise<CommandResult | undefined> {
-    switch (id) {
+    const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
+    switch (key) {
         case DefaultChatCommands.Explain:
-            return executeExplainCommand()
+            return executeExplainCommand({ additionalInstruction })
         case DefaultChatCommands.Smell:
-            return executeSmellCommand()
+            return executeSmellCommand({ additionalInstruction })
         case DefaultChatCommands.Test:
-            return executeTestCommand()
+            return executeTestCommand({ additionalInstruction })
         case DefaultEditCommands.Unit:
-            return executeTestCommand()
+            return executeUnitTestCommand({ additionalInstruction })
         case DefaultEditCommands.Doc:
-            return executeDocCommand()
+            return executeDocCommand({ additionalInstruction })
         default:
             console.log('not a default command')
             return undefined

@@ -5,6 +5,7 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import type {
+    ChatInputHistory,
     ChatMessage,
     ChatModelProvider,
     CodyCommand,
@@ -46,8 +47,8 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     formInput: string
     setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
+    inputHistory: ChatInputHistory[]
+    setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
     chatCommands?: [string, CodyCommand][]
@@ -293,7 +294,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     isNewChat,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const tips = '(@ to include code, / for commands)'
+    const tips = '(@ to include files or symbols)'
     const placeholder = isNewChat ? `Message ${tips}` : `Follow-Up Message ${tips}`
     const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 

@@ -15,10 +15,14 @@ import { getContextFilesForUnitTestCommand } from '../context/unit-test-command'
  *
  * Context: Test files, current selection, and current file
  */
-export async function executeNewTestCommand(
+export async function executeUnitTestCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
-    const prompt = defaultCommands.unit.prompt
+    let prompt = defaultCommands.unit.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const editor = getEditor()?.active
     const document = editor?.document
@@ -44,7 +48,7 @@ export async function executeNewTestCommand(
                 instruction: prompt,
                 document,
                 intent: 'new',
-                mode: 'file',
+                mode: 'test',
                 userContextFiles: contextFiles,
             } satisfies ExecuteEditArguments,
             DefaultEditCommands.Doc

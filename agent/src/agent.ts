@@ -41,6 +41,7 @@ import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+import type { PollyRequestError } from './cli/jsonrpc'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -142,7 +143,7 @@ export class Agent extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
-                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
                 return Promise.resolve(false)
             }
             const edits: TextEdit[] = []
@@ -209,7 +210,13 @@ export class Agent extends MessageHandler {
             },
         ])
 
-    constructor(private readonly params?: { polly?: Polly | undefined; networkRequests: Request[] }) {
+    constructor(
+        private readonly params?: {
+            polly?: Polly | undefined
+            networkRequests: Request[]
+            requestErrors: PollyRequestError[]
+        }
+    ) {
         super()
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
@@ -372,6 +379,10 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params?.networkRequests ?? []
             return { requests: requests.map(req => ({ url: req.url })) }
+        })
+        this.registerAuthenticatedRequest('testing/requestErrors', async () => {
+            const requests = this.params?.requestErrors ?? []
+            return { errors: requests.map(({ request, error }) => ({ url: request.url, error })) }
         })
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(

@@ -10,7 +10,7 @@ const utf8 = new TextDecoder('utf-8')
  * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
- * This is called once the git extension has started up
+ * NOTE: This is only called once at git extension start up time (gitAPIinit)
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()

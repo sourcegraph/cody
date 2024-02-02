@@ -16,7 +16,11 @@ export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
     logDebug('executeDocCommand', 'executing', { args })
-    const prompt = defaultCommands.doc.prompt
+    let prompt = defaultCommands.doc.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const editor = getEditor()?.active
     const document = editor?.document

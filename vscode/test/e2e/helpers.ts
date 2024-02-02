@@ -7,7 +7,7 @@ import { test as base, expect, type Frame, type FrameLocator, type Page } from '
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
+import { MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -45,15 +45,25 @@ export const test = base
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
             'cody.experimental.symfContext': false,
+            // NOTE: Enable unstable features for testing.
+            'cody.internal.unstable': true,
         },
     })
     // By default, treat https://sourcegraph.com as "dotcom".
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<{ server: MockServer }>({
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+        server: async ({}, use) => {
+            MockServer.run(async server => {
+                await use(server)
+            })
+        },
+    })
     .extend({
         page: async (
-            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl },
+            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl, server: MockServer },
             use,
             testInfo
         ) => {
@@ -122,15 +132,13 @@ export const test = base
             // the signed-in and signed-out cases
             await new Promise(resolve => setTimeout(resolve, 500))
 
-            await run(async () => {
-                // Ensure we're signed out.
-                if (await page.isVisible('[aria-label="User Settings"]')) {
-                    await signOut(page)
-                }
+            // Ensure we're signed out.
+            if (await page.isVisible('[aria-label="User Settings"]')) {
+                await signOut(page)
+            }
 
-                resetLoggedEvents()
-                await use(page)
-            })
+            resetLoggedEvents()
+            await use(page)
 
             await app.close()
 
@@ -261,6 +269,14 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
             prompt: 'Directory has one context file.',
             context: {
                 directoryPath: 'lib/batches/env',
+            },
+        },
+        openTabs: {
+            description: 'Get files from open tabs.',
+            prompt: 'Open tabs as context.',
+            context: {
+                selection: false,
+                openTabs: true,
             },
         },
     }

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -694,7 +694,7 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon && resourceScheme == file && !editorReadonly",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -980,7 +980,7 @@
           "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
           "default": {
             "url": "http://localhost:11434",
-            "model": "codellama:7b-code"
+            "model": "deepseek-coder:6.7b-base-q4_K_M"
           },
           "properties": {
             "url": {
@@ -990,10 +990,11 @@
             },
             "model": {
               "type": "string",
-              "default": "codellama:7b-code",
+              "default": "deepseek-coder:6.7b-base-q4_K_M",
               "examples": [
                 "codellama:7b-code",
-                "codellama:13b-code"
+                "codellama:13b-code",
+                "deepseek-coder:6.7b-base-q4_K_M"
               ]
             },
             "parameters": {
@@ -1029,6 +1030,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
+        }
+      },
+      "anthropic-logo": {
+        "description": "Anthropic logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0043"
         }
       },
       "new-comment-icon": {

@@ -1,7 +1,10 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
+import { loggedEvents } from '../fixtures/mock-server'
+
+const expectedEvents = ['CodyVSCodeExtension:command:test:executed']
 
 test('unit test commands with context fetching', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -36,4 +39,6 @@ test('unit test commands with context fetching', async ({ page, sidebar }) => {
 
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
+
+    await assertEvents(loggedEvents, expectedEvents)
 })

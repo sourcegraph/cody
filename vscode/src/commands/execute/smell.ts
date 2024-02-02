@@ -5,15 +5,21 @@ import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
  *
  * Context: Current selection
  */
-export async function smellCommand(): Promise<ExecuteChatArguments> {
+export async function smellCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
-    const prompt = defaultCommands.smell.prompt
+    let prompt = defaultCommands.smell.prompt
+
+    if (args?.additionalInstruction) {
+        prompt = `${prompt} ${args.additionalInstruction}`
+    }
 
     const contextFiles: ContextFile[] = []
     const currentSelection = await getContextFileFromCursor()
@@ -34,9 +40,25 @@ export async function smellCommand(): Promise<ExecuteChatArguments> {
 export async function executeSmellCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    logDebug('executeDocCommand', 'executing', { args })
+    logDebug('executeSmellCommand', 'executing', { args })
+    telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
+        useCodebaseContex: false,
+        requestID: args?.requestID,
+        source: args?.source,
+    })
+    telemetryRecorder.recordEvent('cody.command.smell', 'executed', {
+        metadata: {
+            useCodebaseContex: 0,
+        },
+        interactionID: args?.requestID,
+        privateMetadata: {
+            requestID: args?.requestID,
+            source: args?.source,
+        },
+    })
+
     return {
         type: 'chat',
-        session: await executeChat(await smellCommand()),
+        session: await executeChat(await smellCommand(args)),
     }
 }

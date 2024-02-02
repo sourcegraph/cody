@@ -5,6 +5,7 @@ dist/
 .DS_Store
 .env
 .idea/
+.run/
 playwright/**/*.webm
 **/*.iml
 **/*.vsix

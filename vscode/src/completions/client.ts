@@ -2,7 +2,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     TracedError,
     addTraceparent,
     featureFlagProvider,
@@ -33,6 +33,7 @@ export function createClient(
     ): CompletionResponseGenerator {
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
+        const { signal } = abortController
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteTracing
@@ -73,7 +74,7 @@ export function createClient(
                 stream: enableStreaming,
             }),
             headers,
-            signal: abortController.signal,
+            signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
@@ -108,9 +109,10 @@ export function createClient(
         // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-        if (isStreamingResponse && isNodeResponse(response)) {
-            let lastResponse: CompletionResponse | undefined
-            try {
+        let completionResponse: CompletionResponse | undefined = undefined
+
+        try {
+            if (isStreamingResponse && isNodeResponse(response)) {
                 const iterator = createSSEIterator(response.body)
                 let chunkIndex = 0
 
@@ -119,57 +121,71 @@ export function createClient(
                         throw new Error(data)
                     }
 
+                    if (signal.aborted) {
+                        if (completionResponse) {
+                            completionResponse.stopReason = CompletionStopReason.RequestAborted
+                        }
+
+                        break
+                    }
+
                     if (event === 'completion') {
-                        if (abortController.signal.aborted) {
-                            break // Stop processing the already received chunks.
+                        completionResponse = JSON.parse(data) as CompletionResponse
+
+                        yield {
+                            completion: completionResponse.completion,
+                            stopReason:
+                                completionResponse.stopReason || CompletionStopReason.StreamingChunk,
                         }
-
-                        lastResponse = JSON.parse(data) as CompletionResponse
-
-                        if (!lastResponse.stopReason) {
-                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
-                        }
-
-                        yield lastResponse
                     }
 
                     chunkIndex += 1
                 }
 
-                if (lastResponse === undefined) {
+                if (completionResponse === undefined) {
                     throw new TracedError('No completion response received', traceId)
                 }
-                log?.onComplete(lastResponse)
 
-                return lastResponse
-            } catch (error) {
-                if (isRateLimitError(error as Error)) {
-                    throw error
-                }
-                if (isAbortError(error as Error) && lastResponse) {
-                    log?.onComplete(lastResponse)
+                if (!completionResponse.stopReason) {
+                    completionResponse.stopReason = CompletionStopReason.RequestFinished
                 }
 
-                const message = `error parsing streaming CodeCompletionResponse: ${error}`
+                return completionResponse
+            }
+
+            // Handle non-streaming response
+            const result = await response.text()
+            completionResponse = JSON.parse(result) as CompletionResponse
+
+            if (
+                typeof completionResponse.completion !== 'string' ||
+                typeof completionResponse.stopReason !== 'string'
+            ) {
+                const message = `response does not satisfy CodeCompletionResponse: ${result}`
+                log?.onError(message)
+                throw new TracedError(message, traceId)
+            }
+
+            return completionResponse
+        } catch (error) {
+            // Shared error handling for both streaming and non-streaming requests.
+            if (isRateLimitError(error as Error)) {
+                throw error
+            }
+
+            // In case of the abort error and non-empty completion response, we can
+            // consider the completion partially completed and want to log it to
+            // the Cody output channel via `log.onComplete()` instead of erroring.
+            if (isAbortError(error as Error) && completionResponse) {
+                completionResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
                 log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
-        } else {
-            const result = await response.text()
-            try {
-                const response = JSON.parse(result) as CompletionResponse
-
-                if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
-                    const message = `response does not satisfy CodeCompletionResponse: ${result}`
-                    log?.onError(message)
-                    throw new TracedError(message, traceId)
-                }
-                log?.onComplete(response)
-                return response
-            } catch (error) {
-                const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-                log?.onError(message, error)
-                throw new TracedError(message, traceId)
+        } finally {
+            if (completionResponse) {
+                log?.onComplete(completionResponse)
             }
         }
     }

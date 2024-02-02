@@ -5,8 +5,8 @@ export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
-export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
+export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
+export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -20,6 +20,7 @@ export type {
     ChatEventSource,
     ChatHistory,
     ChatMessage,
+    ChatInputHistory,
     InteractionMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
@@ -106,7 +107,7 @@ export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
