@@ -262,6 +262,13 @@
                 "icon": "$(feedback)"
             },
             {
+              "command": "cody.command.explain-output",
+              "title": "Ask Cody",
+              "category": "Cody Command",
+              "when": "cody.activated",
+              "icon": "$(cody-logo)"
+            },
+            {
                 "command": "cody.command.edit-code",
                 "category": "Cody Command",
                 "title": "Edit Code",
@@ -701,6 +708,13 @@
                     "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
                     "group": "inline@2"
                 }
+            ],
+            "terminal/context": [
+              {
+                "command": "cody.command.explain-output",
+                "group": "0_cody",
+                "when": "terminalFocus && cody.activated"
+              }
             ]
         },
         "configuration": {
