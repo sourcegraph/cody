@@ -7,7 +7,7 @@ import path from 'path'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
-import { ignores, isCodyIgnoredFile, isWindows } from '@sourcegraph/cody-shared'
+import { isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
@@ -103,6 +103,10 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
+
+        // Confirm .cody/ignore is active at start up
+        const codyIgnore = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+        expect(codyIgnore).toBeTruthy()
     }, 10_000)
 
     beforeEach(async () => {
@@ -119,7 +123,8 @@ describe('Agent', () => {
     const multipleSelectionsUri = Uri.file(multipleSelections)
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-    const isIgnored = Uri.file(path.join(workspaceRootPath, 'src', 'isIgnored.ts'))
+    const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
+    const ignoredUri = Uri.file(ignoredPath)
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -451,30 +456,20 @@ describe('Agent', () => {
 
     describe.skipIf(isNode16())('Cody Ignore', () => {
         beforeAll(async () => {
+            // Make sure Cody ignore config exists and works
             const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
             await client.openFile(codyIgnoreConfig)
-            const codyIgnoreDoc = client.workspace.getDocument(codyIgnoreConfig)
+            const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
+            expect(codyIgnoreConfigFile?.content).toBeDefined()
 
-            expect(codyIgnoreDoc?.content).toBeDefined()
-
-            ignores.setActiveState(true)
-            ignores.setIgnoreFiles(Uri.file(workspaceRootPath), [
-                {
-                    uri: Uri.file(path.join(workspaceRootPath, '.cody', 'ignore')),
-                    content: codyIgnoreDoc?.content ?? '',
-                },
-            ])
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
         }, 10_000)
 
-        beforeEach(async () => {
-            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
-            expect(isCodyIgnoredFile(squirrelUri)).toBeFalsy()
-        })
-
         it('autocomplete/execute on ignored file', async () => {
-            await client.openFile(isIgnored)
+            await client.openFile(ignoredUri)
             const completions = await client.request('autocomplete/execute', {
-                uri: isIgnored.toString(),
+                uri: ignoredUri.toString(),
                 position: { line: 1, character: 3 },
                 triggerKind: 'Invoke',
             })
@@ -489,7 +484,7 @@ describe('Agent', () => {
         }, 10_000)
 
         it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
-            await client.openFile(isIgnored)
+            await client.openFile(ignoredUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -500,15 +495,17 @@ describe('Agent', () => {
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             // Current file which is ignored, should not be included in context files
-            expect(contextFiles.find(f => f.uri.toString() === isIgnored.toString())).toBeUndefined()
+            expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
             // Ignored file should not be included in context files
-            expect(contextFiles.filter(f => isCodyIgnoredFile(f.uri))).toHaveLength(0)
+            const contextFilesUrls = contextFiles.map(f => f.uri?.path)
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextFilesUrls })
+            expect(result).toBeFalsy()
             // Files that are not ignored should be used as context files
             expect(contextFiles.length).toBeGreaterThan(0)
         }, 30_000)
 
         it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
-            await client.openFile(isIgnored)
+            await client.openFile(ignoredUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -518,19 +515,21 @@ describe('Agent', () => {
             )
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            const contextUrls = contextFiles.map(f => f.uri?.path)
             // Current file which is ignored, should not be included in context files
-            expect(contextFiles.find(f => f.uri.toString() === isIgnored.toString())).toBeUndefined()
-            // Ignored file should not be included in context files
-            expect(contextFiles.filter(f => isCodyIgnoredFile(f.uri))).toHaveLength(0)
+            expect(contextUrls.find(uri => uri === ignoredUri.toString())).toBeUndefined()
             // Since no enhanced context is requested, no context files should be included
             expect(contextFiles.length).toBe(0)
+            // Ignored file should not be included in context files
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextUrls })
+            expect(result).toBeFalsy()
         }, 30_000)
 
         it('chat command on an ignored file', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
-            await client.openFile(isIgnored)
+            await client.openFile(ignoredUri)
             const id = await client.request('commands/explain', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
             // Ignored file should not be used as context files even when selected
@@ -541,7 +540,7 @@ describe('Agent', () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
-            await client.openFile(isIgnored, { removeCursor: false })
+            await client.openFile(ignoredUri, { removeCursor: false })
             await client.request('commands/document', null).catch(err => {
                 expect(err).toBeDefined()
             })
@@ -549,7 +548,9 @@ describe('Agent', () => {
 
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
-            expect(isCodyIgnoredFile(isIgnored)).toBeTruthy()
+            // as it should stay active for each workspace session.
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
 
             // Check the network requests to ensure no requests include context from ignored files
             const { requests } = await client.request('testing/networkRequests', null)
@@ -579,10 +580,6 @@ describe('Agent', () => {
             // Confirm the grouped text is valid by checking for known
             // context file names from the test.
             expect(groupedText).includes('src/squirrel.ts')
-
-            // Disable Cody ignore after the test
-            ignores.setActiveState(false)
-            expect(isCodyIgnoredFile(isIgnored)).toBeFalsy()
         }, 10_000)
     })
 

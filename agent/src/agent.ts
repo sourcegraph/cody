@@ -19,6 +19,7 @@ import {
     type BillingProduct,
     logDebug,
     isError,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -622,6 +623,11 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('git/codebaseName', ({ url }) => {
             const result = convertGitCloneURLToCodebaseName(url)
             return Promise.resolve(typeof result === 'string' ? result : null)
+        })
+
+        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
+            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
+            return Promise.resolve(result.length > 0)
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
