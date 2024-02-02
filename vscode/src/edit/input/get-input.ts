@@ -76,9 +76,12 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const isCodyPro = !authProvider.getAuthStatus().userCanUpgrade
+    const authStatus = authProvider.getAuthStatus()
+    const isCodyPro = !authStatus.userCanUpgrade
     const modelOptions = getEditModelsForUser(authProvider)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
+    const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
+
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
@@ -322,7 +325,13 @@ export const getInput = async (
         const editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
-            getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModelItem),
+            getItems: () =>
+                getEditInputItems(
+                    editInput.input.value,
+                    activeRangeItem,
+                    activeModelItem,
+                    showModelSelector
+                ),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
@@ -362,7 +371,12 @@ export const getInput = async (
                 if (matchingContext === null) {
                     // Nothing to match, re-render existing items
                     // eslint-disable-next-line no-self-assign
-                    input.items = getEditInputItems(input.value, activeRangeItem, activeModelItem).items
+                    input.items = getEditInputItems(
+                        input.value,
+                        activeRangeItem,
+                        activeModelItem,
+                        showModelSelector
+                    ).items
                     return
                 }
 
