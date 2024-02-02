@@ -50,6 +50,7 @@ dependencies {
   implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")
   implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
+  testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
 }
 
 spotless {
@@ -386,4 +387,6 @@ tasks {
         listOf(
             properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first()))
   }
+
+  test { dependsOn(project.tasks.getByPath("buildCody")) }
 }

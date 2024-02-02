@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
@@ -94,6 +95,7 @@ private constructor(
       try {
         val conn = startAgentProcess()
         val client = CodyAgentClient()
+        client.onSetConfigFeatures = project.service<CurrentConfigFeatures>()
         val launcher = startAgentLauncher(conn, client)
         val server = launcher.remoteProxy
         val listeningToJsonRpc = launcher.startListening()
