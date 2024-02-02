@@ -64,7 +64,7 @@ export type Requests = {
     // shortcuts to start a new chat with a templated question. The return value
     // of these commands is the same as `chat/new`, an ID to reference to the
     // webview panel where the reply from this command appears.
-    'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,text,smell}
+    'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
     'commands/test': [null, string]
     'commands/smell': [null, string]
 

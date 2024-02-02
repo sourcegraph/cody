@@ -620,7 +620,10 @@ export class TestClient extends MessageHandler {
                 autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
                     'cody.autocomplete.experimental.graphContext': null,
-                    'cody.internal.unstable': true,
+                    // Unstable is disabled because codyignore rules filter out
+                    // remote multi-repo files.  Should get fixed in
+                    // https://github.com/sourcegraph/cody/pull/2963
+                    // 'cody.internal.unstable': true,
                 },
                 debug: false,
                 verboseDebug: false,

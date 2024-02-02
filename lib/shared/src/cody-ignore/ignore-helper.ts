@@ -115,7 +115,7 @@ export class IgnoreHelper {
         // remote multi-repo context files, which are already filtered by the
         // backend to respect codyignore files.
         if (uri.scheme !== 'file') {
-            return false
+            return true
         }
 
         this.ensureFileUri('uri', uri)
