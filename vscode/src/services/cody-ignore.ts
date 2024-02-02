@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { TestSupport } from '../test-support'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -14,9 +13,6 @@ const utf8 = new TextDecoder('utf-8')
  * NOTE: This is only called once at git extension start up time (gitAPIinit)
  */
 export function setUpCodyIgnore(): vscode.Disposable {
-    if (TestSupport.instance) {
-        TestSupport.instance.ignoreHelper.set(ignores)
-    }
     onConfigChange()
 
     // Refresh ignore rules when any ignore file in the workspace changes.
