@@ -4,7 +4,6 @@ import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
     ModelProvider,
-    CodyCommand,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
@@ -128,7 +127,6 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'

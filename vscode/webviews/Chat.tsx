@@ -8,7 +8,6 @@ import type {
     ChatInputHistory,
     ChatMessage,
     ModelProvider,
-    CodyCommand,
     ContextFile,
     Guardrails,
     TelemetryService,
@@ -28,7 +27,6 @@ import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/compone
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
-import { ChatCommandsComponent } from './ChatCommands'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
@@ -51,7 +49,6 @@ interface ChatboxProps {
     setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
-    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ModelProvider[]) => void
@@ -73,7 +70,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    chatCommands,
     isTranscriptError,
     contextSelection,
     setChatModels,
@@ -243,9 +239,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             afterMarkdown={welcomeMessage}
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
-            chatCommands={chatCommands}
-            filterChatCommands={filterChatCommands}
-            ChatCommandsComponent={ChatCommandsComponent}
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
@@ -495,31 +488,4 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             )}
         </div>
     )
-}
-
-const slashCommandRegex = /^\/[A-Za-z]+/
-function isSlashCommand(value: string): boolean {
-    return slashCommandRegex.test(value)
-}
-
-function normalize(input: string): string {
-    return input.trim().toLowerCase()
-}
-
-function filterChatCommands(
-    chatCommands: [string, CodyCommand][],
-    query: string
-): [string, CodyCommand][] {
-    const normalizedQuery = normalize(query)
-
-    if (!isSlashCommand(normalizedQuery)) {
-        return []
-    }
-
-    const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
-        ([key, command]) =>
-            key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
-    )
-    return matchingCommands.sort()
 }
