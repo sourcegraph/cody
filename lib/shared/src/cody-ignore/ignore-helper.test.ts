@@ -139,9 +139,15 @@ describe('IgnoreHelper', () => {
     })
 
     it('handles comments and blank lines in the ignore file', () => {
-        setWorkspace1Ignores(['#.foo', '', 'bar'])
+        setWorkspace1Ignores([
+            '# header comment',
+            '#.foo',
+            '',
+            '.bar # an explanatory reason that .bar is ignored',
+        ])
         expect(ignore.isIgnored(Utils.joinPath(workspace1Root, '.env'))).toBe(true)
         expect(ignore.isIgnored(Utils.joinPath(workspace1Root, '.foo'))).toBe(false)
+        expect(ignore.isIgnored(Utils.joinPath(workspace1Root, '.bar'))).toBe(true)
     })
 
     describe('returns the correct value for a sample of rules', () => {
