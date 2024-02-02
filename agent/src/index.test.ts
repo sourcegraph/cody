@@ -699,8 +699,8 @@ describe('Agent', () => {
             check('commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   */
+                   * Sums two numbers and returns the result.
+                  */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
@@ -716,9 +716,7 @@ describe('Agent', () => {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Function that conditionally prints a greeting.
-                       * If the shouldGreet property is true, it will log
-                       * "Hello World!" to the console.
+                       * If shouldGreet is true, logs a greeting to the console.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -734,10 +732,9 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * Exported object that contains a startLogging method.
-                   * startLogging initializes some logic to log messages.
-                   * It contains an inner function recordLog that handles
-                   * logging the messages.
+                   * Starts logging by initializing some internal state,
+                   * and then calls an internal \`recordLog\` function
+                   * to log a sample message.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -761,8 +758,10 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Describes a test block with multiple test cases using Vitest.
-                   * Includes tests for simple assertions, and an example test that may error due to incorrect usage.
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does another test that has a bug
                   */
                   describe('test block', () => {
                       it('does 1', () => {
