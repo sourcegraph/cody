@@ -159,6 +159,12 @@ export const getInput = async (
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidChangeActive: () => {
+                // We don't have a way to distinguish between a quick pick being implicitly or explicity closed
+                // The active range will have been cleared as the primary quick pick will be hidden.
+                // We need to ensure we show it again so users still see the range.
+                previewActiveRange(activeRange)
+            },
             onDidAccept: async item => {
                 const acceptedItem = item as EditModelItem
                 if (!acceptedItem) {
@@ -194,6 +200,9 @@ export const getInput = async (
                 activeModel = acceptedItem.model
 
                 editInput.render(activeTitle, editInput.input.value)
+                // We don't have a way to distinguish between a quick pick being implicitly or explicity closed
+                // We always clear any decorations on close, but we know the editInput is shown here, so show them again.
+                previewActiveRange(activeRange)
             },
         })
 
@@ -323,7 +332,6 @@ export const getInput = async (
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
             getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModelItem),
-            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
                       buttons: [vscode.QuickInputButtons.Back],
