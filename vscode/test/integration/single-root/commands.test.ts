@@ -9,7 +9,7 @@ import {
     getTextEditorWithSelection,
     getTranscript,
     waitUntil,
-} from './helpers'
+} from '../helpers'
 
 // This checks the chat messages after submitting a command to make sure it contains
 // display text which includes command name and file name

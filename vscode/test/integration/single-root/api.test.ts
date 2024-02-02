@@ -2,9 +2,9 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { VSCodeDocumentHistory } from '../../src/completions/context/retrievers/jaccard-similarity/history'
+import { VSCodeDocumentHistory } from '../../../src/completions/context/retrievers/jaccard-similarity/history'
 
-import { testFileUri } from './helpers'
+import { testFileUri } from '../helpers'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {
