@@ -13,14 +13,14 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
     public static readonly expiredMessageText = `
                 Your Cody Pro trial has ended, and you are now on the Cody Free plan.
-                
+
                 If you'd like to upgrade to Cody Pro, please setup your payment information. You can cancel anytime.
             `
     public static readonly nearlyExpiredActionUrl =
         'https://accounts.sourcegraph.com/cody/subscription?on-trial=true'
 
     public static readonly nearlyExpiredMessageText = `
-                Your Cody Pro Trial is ending soon. 
+                Your Cody Pro Trial is ending soon.
 
                 Setup your payment information to continue using Cody Pro, you won't be charged until February 15.
             `
@@ -59,6 +59,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         ) => Thenable<string | undefined>,
         private readonly openExternal: (target: URI) => Thenable<boolean>,
         private readonly flagCheckDelayMs: number = 1000 * 60 * 30, // 30 mins
+        private readonly autoUpdateDelay: number = 1000 * 3, // 3 sec
         checkImmediately = true
     ) {
         if (checkImmediately) {
@@ -74,8 +75,16 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
         // Set up check for each time auth changes...
         if (!this.authProviderSubscription) {
+            // HACK: authProvider listeners will fire before the GraphQL client is updated and
+            // therefore checking feature flags may return incorrect results for a short period.
+            //
+            // As a short-term workaround, delay the check for a few seconds after the auth change
+            // to allow the GraphQL client to be updated and reduce the chance of not picking up the
+            // right flags.
+            //
+            // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
             this.authProviderSubscription = this.authProvider.addChangeListener(() =>
-                this.triggerExpirationCheck()
+                setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
             )
         }
 

@@ -78,6 +78,7 @@ describe('Cody Pro expiration notifications', () => {
             showInformationMessage,
             openExternal,
             10,
+            0,
             false
         )
     }
