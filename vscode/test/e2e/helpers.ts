@@ -279,6 +279,10 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
                 openTabs: true,
             },
         },
+        invalid: {
+            description: 'Command without prompt should not break the custom command menu.',
+            note: 'This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu.',
+        },
     }
 
     // add file to the .vscode directory created in the buildWorkSpaceSettings step
