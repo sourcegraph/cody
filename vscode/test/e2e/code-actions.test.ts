@@ -31,7 +31,7 @@ test('code action: explain', async ({ page, sidebar }) => {
     await page.waitForSelector(ERROR_DECORATION_SELECTOR)
     await erredText.click()
     await erredText.hover()
-    await page.getByRole('button', { name: 'Quick Fix... (⌘.)' }).click()
+    await page.getByRole('button', { name: /Quick Fix/ }).click()
     // Get by text takes a very long time, it's faster to type and let the quick fix item be focused
     await page.keyboard.type('Explain')
     await page.keyboard.press('Enter')
@@ -63,7 +63,7 @@ test('code action: fix', async ({ page, sidebar }) => {
     await page.waitForSelector(ERROR_DECORATION_SELECTOR)
     await erredText.click()
     await erredText.hover()
-    await page.getByRole('button', { name: 'Quick Fix... (⌘.)' }).click()
+    await page.getByRole('button', { name: /Quick Fix/ }).click()
     // Get by text takes a very long time, it's faster to type and let the quick fix item be focused
     await page.keyboard.type('Fix')
     await page.keyboard.press('Enter')
