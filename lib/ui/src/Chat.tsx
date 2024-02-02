@@ -9,7 +9,7 @@ import {
     type ChatButton,
     type ChatInputHistory,
     type ChatMessage,
-    type ChatModelProvider,
+    type ModelProvider,
     type CodyCommand,
     type ContextFile,
     type Guardrails,
@@ -72,14 +72,14 @@ interface ChatProps extends ChatClassNames {
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
-    chatModels?: ChatModelProvider[]
+    chatModels?: ModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{
         isOpen: boolean
         setOpen: (open: boolean) => void
         presentationMode: 'consumer' | 'enterprise'
     }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-    onCurrentChatModelChange?: (model: ChatModelProvider) => void
+    onCurrentChatModelChange?: (model: ModelProvider) => void
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -120,7 +120,7 @@ export interface ChatUITextAreaProps {
     onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
     onKeyUp?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
     onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
-    chatModels?: ChatModelProvider[]
+    chatModels?: ModelProvider[]
     messageBeingEdited: number | undefined
 }
 
@@ -170,9 +170,9 @@ export interface UserContextSelectorProps {
 export type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'
 
 export interface ChatModelDropdownMenuProps {
-    models: ChatModelProvider[]
+    models: ModelProvider[]
     disabled: boolean // Disabled when transcript length > 1
-    onCurrentChatModelChange: (model: ChatModelProvider) => void
+    onCurrentChatModelChange: (model: ModelProvider) => void
     userInfo: UserAccountInfo
 }
 

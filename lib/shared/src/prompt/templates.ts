@@ -18,12 +18,24 @@ const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use the following code snippet from fil
 {text}
 \`\`\``
 
-export function populateCodeContextTemplate(code: string, fileUri: URI, repoName?: string): string {
-    return (
-        repoName
-            ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : CODE_CONTEXT_TEMPLATE
-    )
+const CODE_CONTEXT_TEMPLATE_EDIT = `Use the following code snippet from file: {filePath}:
+{text}
+`
+
+export function populateCodeContextTemplate(
+    code: string,
+    fileUri: URI,
+    repoName?: string,
+    type: 'chat' | 'edit' = 'chat'
+): string {
+    const template =
+        type === 'edit'
+            ? CODE_CONTEXT_TEMPLATE_EDIT
+            : repoName
+              ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+              : CODE_CONTEXT_TEMPLATE
+
+    return template
         .replace('{filePath}', displayPath(fileUri))
         .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
         .replace('{text}', code)
@@ -107,12 +119,11 @@ export function populateCurrentEditorSelectedContextTemplate(
     )
 }
 
-const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file \`{filePath}\`
+const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file: {filePath}:
 {prefix}: {message}
 Code snippet:
-\`\`\`{languageID}
 {code}
-\`\`\``
+`
 
 export function populateCurrentEditorDiagnosticsTemplate(
     { message, type, text }: ActiveTextEditorDiagnostic,

@@ -262,6 +262,12 @@
                 "icon": "$(feedback)"
             },
             {
+                "command": "cody.command.explain-output",
+                "title": "Ask Cody to Explain",
+                "category": "Cody Command",
+                "icon": "$(cody-logo)"
+            },
+            {
                 "command": "cody.command.edit-code",
                 "category": "Cody Command",
                 "title": "Edit Code",
@@ -701,6 +707,13 @@
                     "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
                     "group": "inline@2"
                 }
+            ],
+            "terminal/context": [
+                {
+                    "command": "cody.command.explain-output",
+                    "group": "0_cody",
+                    "when": "cody.activated"
+                }
             ]
         },
         "configuration": {
@@ -999,6 +1012,20 @@
                 "default": {
                     "fontPath": "resources/cody-icons.woff",
                     "fontCharacter": "\\0043"
+                }
+            },
+            "openai-logo": {
+                "description": "OpenAI logo",
+                "default": {
+                    "fontPath": "resources/cody-icons.woff",
+                    "fontCharacter": "\\0044"
+                }
+            },
+            "mistral-logo": {
+                "description": "Mistral logo",
+                "default": {
+                    "fontPath": "resources/cody-icons.woff",
+                    "fontCharacter": "\\0045"
                 }
             },
             "new-comment-icon": {

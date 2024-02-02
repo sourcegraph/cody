@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
+import {
+    ConfigFeaturesSingleton,
+    type ChatClient,
+    type ChatEventSource,
+    type ModelProvider,
+} from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -14,22 +19,28 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditSmartSelection } from './utils/edit-selection'
-import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE, DEFAULT_EDIT_MODEL } from './constants'
+import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
+import type { AuthProvider } from '../services/AuthProvider'
+import { editModel } from '../models'
+import { getEditModelsForUser } from './utils/edit-models'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
+    authProvider: AuthProvider
 }
 
 export class EditManager implements vscode.Disposable {
     private controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new Map<FixupTask, EditProvider>()
+    private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController()
+        this.models = getEditModelsForUser(options.authProvider)
+        this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand(
@@ -88,7 +99,7 @@ export class EditManager implements vscode.Disposable {
 
         // Set default edit configuration, if not provided
         const mode = args.mode || DEFAULT_EDIT_MODE
-        const model = args.model || DEFAULT_EDIT_MODEL
+        const model = args.model || editModel.get(this.options.authProvider, this.models)
         const intent = args.intent || DEFAULT_EDIT_INTENT
 
         let expandedRange: vscode.Range | undefined

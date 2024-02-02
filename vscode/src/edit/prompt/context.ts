@@ -18,6 +18,8 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
+import { extractContextItemsFromContextMessages } from './utils'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -76,7 +78,7 @@ const getContextFromIntent = async ({
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedPrecedingText, uri),
+                        populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -87,7 +89,7 @@ const getContextFromIntent = async ({
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedFollowingText, uri),
+                        populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -121,10 +123,13 @@ const getContextFromIntent = async ({
                 ...[truncatedPrecedingText, truncatedFollowingText]
                     .filter(text => text.trim().length > 0)
                     .flatMap(text =>
-                        getContextMessageWithResponse(populateCodeContextTemplate(text, uri), {
-                            type: 'file',
-                            uri,
-                        })
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, uri, undefined, 'edit'),
+                            {
+                                type: 'file',
+                                uri,
+                            }
+                        )
                     ),
             ]
         }
@@ -143,10 +148,9 @@ export const getContext = async ({
     editor,
     contextMessages,
     ...options
-}: GetContextOptions): Promise<ContextMessage[]> => {
-    // return contextMessages is already provided by the caller
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (contextMessages) {
-        return contextMessages
+        return extractContextItemsFromContextMessages(contextMessages)
     }
 
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
@@ -162,5 +166,8 @@ export const getContext = async ({
         }
     }
 
-    return [...derivedContextMessages, ...userProvidedContextMessages]
+    return extractContextItemsFromContextMessages([
+        ...derivedContextMessages,
+        ...userProvidedContextMessages,
+    ])
 }

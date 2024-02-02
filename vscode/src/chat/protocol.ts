@@ -3,7 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
-    ChatModelProvider,
+    ModelProvider,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
@@ -133,7 +133,7 @@ export type ExtensionMessage =
           context: ContextFile[] | null
           kind?: ContextFileType
       }
-    | { type: 'chatModels'; models: ChatModelProvider[] }
+    | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
           results: SearchPanelFile[]

@@ -1,12 +1,14 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { type DotcomUrlOverride, assertEvents, test as baseTest } from './helpers'
+
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test.beforeEach(() => {
-    resetLoggedEvents()
+    mockServer.resetLoggedEvents()
 })
 
 test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
@@ -102,5 +104,5 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
         'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
         'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
     ]
-    await assertEvents(loggedEvents, expectedEvents)
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
