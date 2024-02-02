@@ -262,11 +262,10 @@
                 "icon": "$(feedback)"
             },
             {
-              "command": "cody.command.explain-output",
-              "title": "Ask Cody",
-              "category": "Cody Command",
-              "when": "cody.activated",
-              "icon": "$(cody-logo)"
+                "command": "cody.command.explain-output",
+                "title": "Ask Cody",
+                "category": "Cody Command",
+                "icon": "$(cody-logo)"
             },
             {
                 "command": "cody.command.edit-code",
@@ -710,11 +709,11 @@
                 }
             ],
             "terminal/context": [
-              {
-                "command": "cody.command.explain-output",
-                "group": "0_cody",
-                "when": "terminalFocus && cody.activated"
-              }
+                {
+                    "command": "cody.command.explain-output",
+                    "group": "0_cody",
+                    "when": "cody.activated"
+                }
             ]
         },
         "configuration": {
