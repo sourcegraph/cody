@@ -263,7 +263,7 @@
             },
             {
                 "command": "cody.command.explain-output",
-                "title": "Ask Cody",
+                "title": "Ask Cody to Explain",
                 "category": "Cody Command",
                 "icon": "$(cody-logo)"
             },
