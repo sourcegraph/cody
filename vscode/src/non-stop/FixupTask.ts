@@ -7,6 +7,7 @@ import type { EditIntent, EditMode } from '../edit/types'
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 
 export type taskID = string
 
@@ -68,6 +69,7 @@ export class FixupTask {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
         this.originalRange = selectionRange
+        this.model = getOverridenModelForIntent(this.intent, this.model)
     }
 
     /**
