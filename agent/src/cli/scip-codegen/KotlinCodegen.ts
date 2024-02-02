@@ -6,11 +6,12 @@ import type { SymbolTable } from './SymbolTable'
 import { typescriptKeyword, typescriptKeywordSyntax } from './utils'
 import { KotlinFormatter } from './KotlinFormatter'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
-import type * as pb_1 from 'google-protobuf'
 import type { CodegenOptions } from './command'
 import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
 import dedent from 'dedent'
+import { resetOutputPath } from './resetOutputPath'
+import { BaseCodegen } from './BaseCodegen'
 
 interface DocumentContext {
     f: KotlinFormatter
@@ -18,39 +19,28 @@ interface DocumentContext {
     symtab: SymbolTable
 }
 
-export class KotlinCodegen {
+export class KotlinCodegen extends BaseCodegen {
     private f: KotlinFormatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
-    public siblingDiscriminatedUnionProperties = new Map<string, string[]>()
 
-    constructor(
-        private readonly options: CodegenOptions,
-        private readonly symtab: SymbolTable,
-        private readonly reporter: ConsoleReporter
-    ) {
+    constructor(options: CodegenOptions, symtab: SymbolTable, reporter: ConsoleReporter) {
+        super(options, symtab, reporter)
         this.f = new KotlinFormatter(this.symtab)
     }
 
     public async run(): Promise<void> {
-        try {
-            await fspromises.stat(this.options.output)
-            await fspromises.rm(this.options.output, { recursive: true })
-        } catch {
-            // ignore
-        }
-        await fspromises.mkdir(this.options.output, { recursive: true })
+        await resetOutputPath(this.options.output)
         await this.writeNullAlias()
-        // TODO: infer package version from package.json
         await this.writeProtocolInterface(
             'CodyAgentServer',
-            'cody-ai src/jsonrpc/`agent-protocol.ts`/ClientRequests#',
-            'cody-ai src/jsonrpc/`agent-protocol.ts`/ClientNotifications#'
+            BaseCodegen.protocolSymbols.client.requests,
+            BaseCodegen.protocolSymbols.client.notifications
         )
         await this.writeProtocolInterface(
             'CodyAgentClient',
-            'cody-ai src/jsonrpc/`agent-protocol.ts`/ServerRequests#',
-            'cody-ai src/jsonrpc/`agent-protocol.ts`/ServerNotifications#'
+            BaseCodegen.protocolSymbols.server.requests,
+            BaseCodegen.protocolSymbols.server.notifications
         )
         let info = this.queue.pop()
         while (info !== undefined) {
@@ -64,25 +54,7 @@ export class KotlinCodegen {
         await fspromises.mkdir(this.options.output, { recursive: true })
     }
 
-    // Intentionally not private to prevent "unused method" warnings.
-    public debug(msg: pb_1.Message, params?: { verbose: boolean }): string {
-        if (params?.verbose) {
-            return JSON.stringify(
-                {
-                    message: msg.toObject(),
-                    debug: this.symtab.debuggingInfo.map(({ line, info }) => ({
-                        line,
-                        info: info.toObject(),
-                    })),
-                },
-                null,
-                2
-            )
-        }
-        return JSON.stringify(msg.toObject(), null, 2)
-    }
-
-    private context(): DocumentContext & {
+    private startDocument(): DocumentContext & {
         c: DocumentContext
     } {
         const context: DocumentContext = { f: this.f, p: new CodePrinter(), symtab: this.symtab }
@@ -90,7 +62,7 @@ export class KotlinCodegen {
     }
 
     private async writeNullAlias(): Promise<void> {
-        const { p } = this.context()
+        const { p } = this.startDocument()
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
         p.line('typealias Null = Void?')
@@ -164,8 +136,10 @@ export class KotlinCodegen {
 
     private aliasType(info: scip.SymbolInformation): string | undefined {
         if (info.display_name === 'Date') {
-            // HACK: we should not be using `Date` in our protocol because it doesn't have serializate properly
-            return 'Double'
+            // Special case for built-in `Date` type because it doesn't
+            // serialize to JSON objects with `JSON.stringify()` like it does
+            // for other classes.
+            return 'String'
         }
 
         if (this.isStringTypeInfo(info)) {
@@ -177,7 +151,7 @@ export class KotlinCodegen {
     }
 
     private async writeType(info: scip.SymbolInformation): Promise<void> {
-        const { f, p, c } = this.context()
+        const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
         p.line('@file:Suppress("FunctionName", "ClassName")')
         p.line(`package ${this.options.kotlinPackage}`)
@@ -197,7 +171,7 @@ export class KotlinCodegen {
         requests: string,
         notifications: string
     ): Promise<void> {
-        const { f, p, symtab } = this.context()
+        const { f, p, symtab } = this.startDocument()
         p.line('@file:Suppress("FunctionName", "ClassName")')
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
@@ -253,194 +227,6 @@ export class KotlinCodegen {
         p.line('}')
 
         await fspromises.writeFile(path.join(this.options.output, `${name}.kt`), p.build())
-    }
-
-    private isStringType(type: scip.Type): boolean {
-        if (type.has_constant_type) {
-            return type.constant_type.constant.has_string_constant
-        }
-
-        if (type.has_union_type) {
-            return type.union_type.types.every(type => this.isStringType(type))
-        }
-
-        if (type.has_intersection_type) {
-            return Boolean(
-                type.intersection_type.types.find(
-                    type => type.has_type_ref && type.type_ref.symbol === typescriptKeyword('string')
-                )
-            )
-        }
-
-        if (type.has_type_ref) {
-            return (
-                type.type_ref.symbol === typescriptKeyword('string') ||
-                this.isStringTypeInfo(this.symtab.info(type.type_ref.symbol))
-            )
-        }
-
-        return false
-    }
-
-    private isStringTypeInfo(info: scip.SymbolInformation): boolean {
-        if (info.signature.has_value_signature) {
-            return this.isStringType(info.signature.value_signature.tpe)
-        }
-
-        if (
-            info.signature.has_type_signature &&
-            info.signature.type_signature.type_parameters &&
-            info.signature.type_signature.type_parameters.symlinks.length === 0
-        ) {
-            return this.isStringType(info.signature.type_signature.lower_bound)
-        }
-
-        if (info.signature.has_class_signature && info.kind === scip.SymbolInformation.Kind.Enum) {
-            return info.signature.class_signature.declarations.symlinks.every(member =>
-                this.isStringTypeInfo(this.symtab.info(member))
-            )
-        }
-
-        return false
-    }
-
-    public compatibleSignatures(a: scip.SymbolInformation, b: scip.SymbolInformation): boolean {
-        if (this.isStringTypeInfo(a) && this.isStringTypeInfo(b)) {
-            return true
-        }
-        // TODO: more optimized comparison?
-        return JSON.stringify(a.signature.toObject()) === JSON.stringify(b.signature.toObject())
-    }
-
-    private infoProperties(info: scip.SymbolInformation): string[] {
-        if (info.signature.has_class_signature) {
-            const result: string[] = []
-            result.push(...info.signature.class_signature.declarations.symlinks)
-            for (const parent of info.signature.class_signature.parents) {
-                result.push(...this.properties(parent))
-            }
-            return result
-        }
-
-        if (info.signature.has_type_signature) {
-            return this.properties(info.signature.type_signature.lower_bound)
-        }
-
-        this.reporter.error(info.symbol, `info has no properties: ${this.debug(info)}`)
-        return []
-    }
-
-    private stringConstantsFromType(type: scip.Type): string[] {
-        return this.stringConstantsFromInfo(
-            new scip.SymbolInformation({
-                signature: new scip.Signature({
-                    value_signature: new scip.ValueSignature({ tpe: type }),
-                }),
-            })
-        )
-    }
-    private stringConstantsFromInfo(info: scip.SymbolInformation): string[] {
-        const result: string[] = []
-        const isVisited = new Set<string>()
-        const visitInfo = (info: scip.SymbolInformation) => {
-            if (isVisited.has(info.symbol)) {
-                return
-            }
-            isVisited.add(info.symbol)
-            for (const sibling of this.siblingDiscriminatedUnionProperties.get(info.symbol) ?? []) {
-                visitInfo(this.symtab.info(sibling))
-            }
-            if (info.signature.has_value_signature) {
-                visitType(info.signature.value_signature.tpe)
-                return
-            }
-            if (info.signature.has_type_signature) {
-                visitType(info.signature.type_signature.lower_bound)
-                return
-            }
-            if (info.signature.has_class_signature && info.kind === scip.SymbolInformation.Kind.Enum) {
-                for (const member of info.signature.class_signature.declarations.symlinks) {
-                    visitInfo(this.symtab.info(member))
-                }
-                return
-            }
-            return info.symbol === typescriptKeyword('string')
-        }
-        const visitType = (type: scip.Type) => {
-            if (type.has_constant_type && type.constant_type.constant.has_string_constant) {
-                result.push(type.constant_type.constant.string_constant.value)
-            }
-            if (type.has_union_type) {
-                for (const constant of type.union_type.types) {
-                    visitType(constant)
-                }
-            }
-            if (type.has_type_ref) {
-                visitInfo(this.symtab.info(type.type_ref.symbol))
-            }
-        }
-        visitInfo(info)
-        return result
-    }
-
-    private pickProperties(type: scip.Type): string[] {
-        const [t, k] = type.type_ref.type_arguments
-        const constants = new Set<string>(this.stringConstantsFromType(k))
-        return this.properties(t).filter(property =>
-            constants.has(this.symtab.info(property).display_name)
-        )
-    }
-
-    private omitProperties(type: scip.Type): string[] {
-        const [t, k] = type.type_ref.type_arguments
-        const constants = new Set<string>(this.stringConstantsFromType(k))
-        return this.properties(t).filter(
-            property => !constants.has(this.symtab.info(property).display_name)
-        )
-    }
-
-    private properties(type: scip.Type): string[] {
-        if (type.has_structural_type) {
-            return type.structural_type.declarations.symlinks
-        }
-
-        if (type.has_intersection_type) {
-            return type.intersection_type.types.flatMap(intersectionType =>
-                this.properties(intersectionType)
-            )
-        }
-
-        if (type.has_union_type) {
-            return type.union_type.types.flatMap(unionType => this.properties(unionType))
-        }
-
-        if (type.has_type_ref) {
-            if (type.type_ref.symbol.endsWith(' lib/`lib.es5.d.ts`/Pick#')) {
-                return this.pickProperties(type)
-            }
-            if (type.type_ref.symbol.endsWith(' lib/`lib.es5.d.ts`/Omit#')) {
-                return this.omitProperties(type)
-            }
-            return this.infoProperties(this.symtab.info(type.type_ref.symbol))
-        }
-
-        // NOTE: we must not return [] for non-class-like types such as string
-        // literals. If you're hitting on this error with types like string
-        // literals it means you are not guarding against it higher up in the
-        // call stack.
-        // throw new TypeError(`type has no properties: ${this.debug(type)}`)
-        this.reporter.error('', `type has no properties: ${this.debug(type)}`)
-        return []
-    }
-
-    public isEmptySignature(signature: scip.Signature): boolean {
-        if (
-            signature.has_value_signature &&
-            Object.keys(signature.value_signature.tpe.toObject()).length === 0
-        ) {
-            return true
-        }
-        return false
     }
 
     // We are referencing the given type in the generated code. If this type
