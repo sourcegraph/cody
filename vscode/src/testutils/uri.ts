@@ -31,7 +31,7 @@ export class Uri {
         return new Uri(URI.parse(value, strict))
     }
 
-    public static file(path: string): URI {
+    public static file(path: string): Uri {
         return new Uri(URI.file(path))
     }
 
