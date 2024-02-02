@@ -48,7 +48,7 @@ export function buildCodyCommandMap(
         command.type = type
         command.slashCommand = toSlashCommand(key)
         // Set default mode to ask unless it's an edit command
-        command.mode = command.mode ?? (command.prompt?.startsWith('/edit ') ? 'edit' : 'ask')
+        command.mode = command.mode ?? (command.prompt.startsWith('/edit ') ? 'edit' : 'ask')
         map.set(command.slashCommand, command as CodyCommand)
     }
 
