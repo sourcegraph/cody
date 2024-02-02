@@ -8,7 +8,6 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     type ChatModelProvider,
-    type CodyCommand,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
@@ -57,9 +56,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<
-        [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
-    >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
@@ -154,36 +150,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'webview-state':
                         setIsWebviewActive(message.isActive)
                         break
-                    case 'custom-prompts': {
-                        let prompts: [
-                            string,
-                            CodyCommand & { isLastInGroup?: boolean; instruction?: string },
-                        ][] = message.prompts
-
-                        if (!prompts) {
-                            setMyPrompts(null)
-                            break
-                        }
-
-                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions).sort()
-
-                        // mark last prompts as last in group before adding another group
-                        const lastPrompt = prompts.at(-1)
-                        if (lastPrompt) {
-                            const [_, command] = lastPrompt
-                            command.isLastInGroup = true
-                        }
-
-                        setMyPrompts([
-                            ...prompts,
-                            // add another group
-                            [
-                                'reset',
-                                { prompt: '', slashCommand: '/reset', description: 'Clear the chat' },
-                            ],
-                        ])
-                        break
-                    }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
@@ -318,7 +284,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
-                                        chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
@@ -359,45 +324,6 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
-
-/**
- * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
- */
-function groupPrompts(
-    acc: [string, CodyCommand & { isLastInGroup?: boolean }][],
-    [key, command]: [string, CodyCommand],
-    index: number,
-    array: [string, CodyCommand][]
-): [string, CodyCommand & { isLastInGroup?: boolean }][] {
-    if (key === 'separator') {
-        return acc
-    }
-
-    const nextItem = array[index + 1]
-    if (nextItem?.[0] === 'separator') {
-        acc.push([key, { ...command, isLastInGroup: true }])
-        return acc
-    }
-
-    acc.push([key, command])
-    return acc
-}
-
-const instructionLabels: Record<string, string> = {
-    '/ask': '[question]',
-    '/edit': '[instruction]',
-}
-
-/**
- * Adds `instruction` field to a prompt if it requires additional instruction.
- */
-function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [
-    string,
-    T & { instruction?: string },
-] {
-    const instruction = instructionLabels[command.slashCommand]
-    return [key, { ...command, instruction }]
-}
 
 function getWelcomeMessageByOS(os: string): string {
     const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
