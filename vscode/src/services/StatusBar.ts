@@ -209,6 +209,9 @@ export function createStatusBar(): CodyStatusBar {
     // If ignored, adds 'Ignored' to the status bar text.
     // Otherwise, rerenders the status bar.
     const verifyActiveEditor = (uri?: vscode.Uri) => {
+        // NOTE: Non-file URIs are not supported by the .cody/ignore files and
+        // are ignored by default. As they are files that a user would not expect to
+        // be used by Cody, we will not display them with the "warning".
         if (uri?.scheme === 'file' && isCodyIgnoredFile(uri)) {
             statusBarItem.tooltip = 'Current file is ignored by Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
