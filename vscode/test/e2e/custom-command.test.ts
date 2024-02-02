@@ -38,7 +38,6 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.getByText('Custom commands').click()
 
     const commandName = 'ATestCommand'
-    const description = 'A test command added via menu'
     const prompt = 'The test command has been created'
 
     // Create a new command via menu
@@ -47,10 +46,6 @@ test('create a new user command via the custom commands menu', async ({ page, si
     // Enter command name
     await expect(page.getByText('New Custom Cody Command: Slash Name')).toBeVisible()
     await page.keyboard.type(commandName)
-    await page.keyboard.press('Enter')
-    // Enter description
-    await expect(page.getByText('New Custom Cody Command: Description')).toBeVisible()
-    await page.keyboard.type(description)
     await page.keyboard.press('Enter')
     // Enter prompt
     await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()

@@ -26,7 +26,7 @@ export async function showCommandMenu(
             items.push(CommandMenuSeperator.commands)
             for (const [_name, _command] of vscodeDefaultCommands) {
                 const label = _command.slashCommand
-                const description = _command.description
+                const description = _command.description ?? _command.prompt
                 const command = _command.slashCommand
                 items.push({ label, description, command })
             }
@@ -36,7 +36,7 @@ export async function showCommandMenu(
         items.push(CommandMenuSeperator.custom)
         for (const customCommand of customCommands) {
             const label = customCommand.slashCommand
-            const description = customCommand.description
+            const description = customCommand.description ?? customCommand.prompt
             const command = customCommand.slashCommand
             items.push({ label, description, command })
         }

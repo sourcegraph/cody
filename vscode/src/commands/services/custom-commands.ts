@@ -174,22 +174,23 @@ export class CustomCommandsManager implements vscode.Disposable {
      */
     private async save(
         id: string,
-        prompt: CodyCommand,
+        command: CodyCommand,
         type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
-        this.customCommandsMap.set(id, prompt)
+        this.customCommandsMap.set(id, command)
+        let updated: Omit<CodyCommand, 'slashCommand'> | undefined = omit(command, 'slashCommand')
 
         // Filter map to remove commands with non-match type
         const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
-        for (const [key, command] of this.customCommandsMap) {
-            if (command.type === type) {
-                command.type = undefined
-                filtered.set(fromSlashCommand(key), omit(command, 'slashCommand'))
+        for (const [key, _command] of this.customCommandsMap) {
+            if (_command.type === type) {
+                updated = omit(updated, 'type')
+                filtered.set(fromSlashCommand(key), updated)
             }
         }
 
         // Add the new command to the filtered map
-        filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
+        filtered.set(fromSlashCommand(id), updated)
 
         // turn map into json
         const jsonContext = { ...this.userJSON }
