@@ -5,7 +5,7 @@ import type { GetLLMInteractionOptions } from '../type'
 import { displayPath } from '@sourcegraph/cody-shared'
 
 interface PromptVariant {
-    system: string
+    system?: string
     instruction: string
 }
 
@@ -77,15 +77,16 @@ export const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             </${PROMPT_TOPICS.DIAGNOSTICS}>`,
     },
     test: {
-        system: dedent`
-            - Do not enclose response with any markdown formatting or triple backticks.
-            - Enclose only the generated code in <${PROMPT_TOPICS.OUTPUT}> XML tags.
-            - Your response must start with the <${PROMPT_TOPICS.FILENAME}> XML tags with a suggested file name for the test code.`,
         instruction: dedent`
             Here is my selected code from my codebase file {filePath}, enclosed in <${PROMPT_TOPICS.SELECTED}> tags:
             <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
-            As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: {instruction}`,
+            As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: {instruction}
+
+            RULES:
+            - Do not enclose response with any markdown formatting or triple backticks.
+            - Enclose only the generated code in <${PROMPT_TOPICS.OUTPUT}> XML tags.
+            - Your response must start with the <${PROMPT_TOPICS.FILENAME}> XML tags with a suggested file name for the test code.`,
     },
     doc: {
         system: dedent`
@@ -113,7 +114,8 @@ export const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
 }
 
 const buildCompleteGenericPrompt = (promptVariant: PromptVariant) => {
-    return `${promptVariant.system}\n\n${promptVariant.instruction}`
+    const system = promptVariant.system ? `${promptVariant.system}\n\n` : ''
+    return `${system}${promptVariant.instruction}`
 }
 
 export const buildGenericPrompt = (
