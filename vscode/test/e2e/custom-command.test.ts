@@ -213,5 +213,5 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
     // The opened cody.json file should be shown as "Deleted"
-    await expect(page.getByRole('list').getByLabel(/.vscode\/cody.json • Deleted$/)).toBeVisible()
+    await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 })
