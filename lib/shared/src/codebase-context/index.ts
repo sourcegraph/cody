@@ -8,7 +8,6 @@ import type {
     LocalEmbeddingsFetcher,
 } from '../local-context'
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
-import type { Message } from '../sourcegraph-api'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 import {
@@ -112,7 +111,7 @@ export class CodebaseContext {
                 ? populateMarkdownContextTemplate
                 : populateCodeContextTemplate
 
-        return groupedResults.results.flatMap<Message>(text =>
+        return groupedResults.results.flatMap<ContextMessage>(text =>
             getContextMessageWithResponse(
                 contextTemplateFn(text, groupedResults.file.uri, groupedResults.file.repoName),
                 groupedResults.file

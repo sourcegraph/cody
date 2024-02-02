@@ -1,8 +1,10 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
-import { loggedEvents } from '../fixtures/mock-server'
+import { type DotcomUrlOverride, assertEvents, test as baseTest } from './helpers'
+import * as mockServer from '../fixtures/mock-server'
+
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -73,7 +75,7 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
         'CodyVSCodeExtension:command:explain:executed',
         'CodyVSCodeExtension:command:smell:executed',
     ]
-    await assertEvents(loggedEvents, expectedEvents)
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
 test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
@@ -102,5 +104,5 @@ test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
     ]
-    await assertEvents(loggedEvents, expectedEvents)
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

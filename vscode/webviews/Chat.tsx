@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import type {
     ChatInputHistory,
     ChatMessage,
-    ChatModelProvider,
+    ModelProvider,
     ContextFile,
     Guardrails,
     TelemetryService,
@@ -51,8 +51,8 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelProvider[]) => void
-    chatModels?: ChatModelProvider[]
+    setChatModels?: (models: ModelProvider[]) => void
+    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
@@ -133,7 +133,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ChatModelProvider): void => {
+        (selected: ModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }

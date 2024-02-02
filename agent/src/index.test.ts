@@ -542,57 +542,54 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-              " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
+                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
 
-              Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
+                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
 
-              \`\`\`ts
-              import {describe, expect, it} from 'vitest'
-              import {Animal} from './animal'
+                  \`\`\`typescript
+                  // src/animal.test.ts
 
-              describe('Animal', () => {
+                  import { Animal } from './animal';
 
-                it('has a name property', () => {
-                  const animal: Animal = {
-                    name: 'Leo',
-                    makeAnimalSound() {
-                      return 'Roar'
-                    },
-                    isMammal: true
-                  }
+                  describe('Animal interface', () => {
 
-                  expect(animal.name).toBe('Leo')
-                })
+                    it('should have a name property', () => {
+                      const animal: Animal = {
+                        name: 'Cat',
+                        makeAnimalSound: () => '',
+                        isMammal: true
+                      };
 
-                it('has a makeAnimalSound method', () => {
-                  const animal: Animal = {
-                    name: 'Whale',
-                    makeAnimalSound() {
-                      return 'Whistle'
-                    },
-                    isMammal: true
-                  }
+                      expect(animal.name).toBeDefined();
+                    });
 
-                  expect(animal.makeAnimalSound()).toBe('Whistle')
-                })
+                    it('should have a makeAnimalSound method', () => {
+                      const animal: Animal = {
+                        name: 'Dog',
+                        makeAnimalSound: () => 'Woof',
+                        isMammal: true
+                      };
 
-                it('has an isMammal property', () => {
-                  const animal: Animal = {
-                    name: 'Snake',
-                    makeAnimalSound() {
-                      return 'Hiss'
-                    },
-                    isMammal: false
-                  }
+                      expect(animal.makeAnimalSound).toBeDefined();
+                      expect(typeof animal.makeAnimalSound).toBe('function');
+                    });
 
-                  expect(animal.isMammal).toBe(false)
-                })
+                    it('should have an isMammal property', () => {
+                      const animal: Animal = {
+                        name: 'Snake',
+                        makeAnimalSound: () => 'Hiss',
+                        isMammal: false
+                      };
 
-              })
-              \`\`\`
+                      expect(animal.isMammal).toBeDefined();
+                      expect(typeof animal.isMammal).toBe('boolean');
+                    });
 
-              This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
-            `,
+                  });
+                  \`\`\`
+
+                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
+                `,
                     explainPollyError
                 )
             },
@@ -699,8 +696,8 @@ describe('Agent', () => {
             check('commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Returns the sum of two numbers.
-                   */
+                   * Sums two numbers and returns the result.
+                  */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
@@ -716,7 +713,7 @@ describe('Agent', () => {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Logs a greeting if the shouldGreet property is true.
+                       * If shouldGreet is true, logs a greeting to the console.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -732,7 +729,9 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * Starts logging by initializing and calling the \`recordLog\` function.
+                   * Starts logging by initializing some internal state,
+                   * and then calls an internal \`recordLog\` function
+                   * to log a sample message.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -756,13 +755,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * A test block with multiple test cases.
-                   *
-                   * Contains 3 test cases:
-                   * - 'does 1' asserts that true equals true
-                   * - 'does 2' asserts that true equals true
-                   * - 'does something else' has a commented out line that would error due to incorrect usage of \`performance.now\`
-                   */
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does another test that has a bug
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
