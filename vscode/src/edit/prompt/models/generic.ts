@@ -4,7 +4,7 @@ import { PROMPT_TOPICS } from '../constants'
 import type { GetLLMInteractionOptions } from '../type'
 import { displayPath } from '@sourcegraph/cody-shared'
 
-interface PromptVariant {
+export interface PromptVariant {
     system?: string
     instruction: string
 }
@@ -118,32 +118,33 @@ const buildCompleteGenericPrompt = (promptVariant: PromptVariant) => {
     return `${system}${promptVariant.instruction}`
 }
 
-export const buildGenericPrompt = (
+export const buildPrompt = (
     intent: EditIntent,
-    { instruction, selectedText, uri }: GetLLMInteractionOptions
+    { instruction, selectedText, uri }: GetLLMInteractionOptions,
+    templateBuilder = buildCompleteGenericPrompt
 ): string => {
     switch (intent) {
         case 'edit':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.edit)
+            return templateBuilder(GENERIC_PROMPTS.edit)
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))
         case 'add':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.add)
+            return templateBuilder(GENERIC_PROMPTS.add)
                 .replace('{instruction}', instruction)
                 .replace('{filePath}', displayPath(uri))
         case 'fix':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.fix)
+            return templateBuilder(GENERIC_PROMPTS.fix)
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))
         case 'test':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.test)
+            return templateBuilder(GENERIC_PROMPTS.test)
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))
         case 'doc':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.doc)
+            return templateBuilder(GENERIC_PROMPTS.doc)
                 .replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
                 .replace('{filePath}', displayPath(uri))

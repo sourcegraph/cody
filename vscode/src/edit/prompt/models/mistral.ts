@@ -1,6 +1,6 @@
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
-import { buildPrompt } from './generic'
+import { type PromptVariant, buildPrompt } from './generic'
 
 const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>\n`
 const SHARED_PARAMETERS = {
@@ -10,11 +10,15 @@ const SHARED_PARAMETERS = {
     assistantPrefix: RESPONSE_PREFIX,
 }
 
+const buildMistralTemplate = (promptVariant: PromptVariant) => {
+    return `<s> [INST]${promptVariant.system}[/INST]` + promptVariant.instruction
+}
+
 export const openai: EditLLMInteraction = {
     getEdit(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildPrompt('edit', options),
+            prompt: buildPrompt('edit', options, buildMistralTemplate),
         }
     },
     getDoc(options) {
