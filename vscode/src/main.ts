@@ -59,9 +59,9 @@ import {
     executeDocCommand,
     executeTestChatCommand,
     executeTestCaseEditCommand,
+    executeExplainOutput,
 } from './commands/execute'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { executeExplainOutput } from './commands/execute/terminal'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -348,9 +348,7 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.explain-output', a =>
-            executeExplainOutput(a)
-        )
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
 
     const statusBar = createStatusBar()
