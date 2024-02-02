@@ -40,11 +40,15 @@ export function buildCodyCommandMap(
     // If it doesn't, use the root as the root
     const commands = parsed.commands ?? parsed
     for (const key in commands) {
-        const command = commands[key] as CodyCommand
+        const command = commands[key] as Partial<CodyCommand>
+        // Skip adding the command if it doesn't have a prompt
+        if (!command.prompt) {
+            continue
+        }
         command.type = type
         command.slashCommand = toSlashCommand(key)
         // Set default mode to ask unless it's an edit command
-        command.mode = command.mode ?? (command.prompt.startsWith('/edit ') ? 'edit' : 'ask')
+        command.mode = command.mode ?? (command.prompt?.startsWith('/edit ') ? 'edit' : 'ask')
         map.set(command.slashCommand, command as CodyCommand)
     }
 
