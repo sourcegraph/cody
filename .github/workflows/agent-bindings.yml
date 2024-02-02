@@ -1,0 +1,36 @@
+name: agent-bindings
+on:
+  push:
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+
+jobs:
+  kotlin:
+    if: github.repository == 'sourcegraph/cody'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 8.6.7
+          run_install: false
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
+      - run: ./agent/scripts/generate-agent-kotlin-bindings.sh
+      - run: ./agent/scripts/error-if-diff.sh
+      - run: ./gradlew compileKotlin
+        working-directory: ./agent/src/main/kotlin

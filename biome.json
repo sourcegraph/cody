@@ -36,6 +36,7 @@
             "agent/src/bfg/__tests__/**",
             "agent/src/__tests__/**",
             "agent/recordings/**",
+            "agent/src/cli/scip-codegen/scip.ts",
             "/vitest.workspace.js",
             "vitest.config.ts",
             "vite.config.ts",
