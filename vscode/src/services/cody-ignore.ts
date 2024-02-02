@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
+import { TestSupport } from '../test-support'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -13,6 +14,9 @@ const utf8 = new TextDecoder('utf-8')
  * NOTE: This is only called once at git extension start up time (gitAPIinit)
  */
 export function setUpCodyIgnore(): vscode.Disposable {
+    if (TestSupport.instance) {
+        TestSupport.instance.ignoreHelper.set(ignores)
+    }
     onConfigChange()
 
     // Refresh ignore rules when any ignore file in the workspace changes.
@@ -64,9 +68,12 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     }
 
     // Get the codebase name from the git clone URL on each refresh
-    // NOTE: This is needed because the ignore rules are mapped to workspace addreses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
+    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB).pattern
-    const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern)
+    const ignoreFiles = await vscode.workspace.findFiles(
+        // UseRelativePattern to restrict the search to this WorkspaceFolder
+        new vscode.RelativePattern(wf, ignoreFilePattern)
+    )
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles.map(async fileUri => ({
             uri: fileUri,
