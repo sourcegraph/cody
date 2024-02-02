@@ -454,7 +454,7 @@ describe('Agent', () => {
         })
     })
 
-    describe.skipIf(isNode16())('Cody Ignore', () => {
+    describe('Cody Ignore', () => {
         beforeAll(async () => {
             // Make sure Cody ignore config exists and works
             const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
