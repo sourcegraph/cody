@@ -158,11 +158,17 @@ let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({
-            name: 'Workspace Root',
-            uri: newWorkspaceDocuments.workspaceRootUri,
-            index: 0,
-        })
+        if (
+            !workspaceFolders
+                .map(wf => wf.uri.toString())
+                .includes(newWorkspaceDocuments.workspaceRootUri.toString())
+        ) {
+            workspaceFolders.push({
+                name: 'Workspace Root',
+                uri: newWorkspaceDocuments.workspaceRootUri,
+                index: 0,
+            })
+        }
     }
 }
 
