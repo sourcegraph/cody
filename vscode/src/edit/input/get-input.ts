@@ -22,6 +22,7 @@ import { editModel } from '../../models'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getEditModelsForUser } from '../utils/edit-models'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -167,6 +168,7 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
+                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
 
                 if (acceptedItem.codyProOnly && !isCodyPro) {
                     // Temporarily ignore focus out, so that the user can return to the quick pick if desired.
@@ -225,6 +227,7 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
+                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected')
 
                 activeRangeItem = acceptedItem
                 const range =
