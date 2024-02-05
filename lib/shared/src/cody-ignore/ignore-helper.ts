@@ -12,9 +12,9 @@ import { uriHasPrefix } from '../editor/displayPath'
 export const CODY_IGNORE_URI_PATH = '.cody/ignore'
 
 /**
- * A glob matching the Cody ignore URI path at workspace root.
+ * A glob matching the Cody ignore URI path.
  */
-export const CODY_IGNORE_POSIX_GLOB = `${CODY_IGNORE_URI_PATH}`
+export const CODY_IGNORE_POSIX_GLOB = `**/${CODY_IGNORE_URI_PATH}`
 
 type ClientWorkspaceRootURI = string
 
