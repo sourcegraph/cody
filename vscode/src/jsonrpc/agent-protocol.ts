@@ -98,6 +98,10 @@ export type Requests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
+    /**
+     * Checks if a given set of URLs includes a Cody ignored file.
+     */
+    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -606,6 +610,7 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+    body?: string
     error?: string
 }
 
