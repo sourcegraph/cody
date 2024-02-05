@@ -76,6 +76,9 @@ export class FixupTask {
      * Sets the task state. Checks the state transition is valid.
      */
     public set state(state: CodyTaskState) {
+        if (state === CodyTaskState.error) {
+            console.log(new Error().stack)
+        }
         this.state_ = state
         this.stateChanges.fire(state)
     }

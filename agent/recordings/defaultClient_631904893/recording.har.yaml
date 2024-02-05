@@ -14176,6 +14176,870 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 987bd02f24e14d7f3e336f412a5c7897
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2902
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Below is the code from file path src/trickyLogic.ts. Review
+                  the code outside the XML tags to detect the functionality,
+                  formats, style, patterns, and logics in use. Then, use what
+                  you detect and reuse methods/libraries to complete and enclose
+                  completed code only inside XML tags precisely without
+                  duplicating existing implementations. Here is the code:
+
+                  <PRECEDINGCODE3493>export function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+                  </PRECEDINGCODE3493><CODE5711></{outputTag}><FOLLOWINGCODE2472></FOLLOWINGCODE2472>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  (Reply as Cody, a coding assistant developed by Sourcegraph.
+                  If context is available: never make any assumptions nor
+                  provide any misleading or hypothetical examples.) 
+
+                  Here is my selected code from my codebase file src/trickyLogic.ts, enclosed in <SELECTEDCODE7662> tags:
+
+                  <SELECTEDCODE7662></SELECTEDCODE7662>
+
+
+                  As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing conventions, and testing library as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.
+
+
+                  RULES:
+
+                  - Do not enclose response with any markdown formatting or triple backticks.
+
+                  - Enclose only the generated code in <CODE5711> XML tags.
+
+                  - Your response must starts with the <TESTFILE7041> XML tags with a suggested file name for the test code.
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.1
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 46404
+        content:
+          mimeType: text/event-stream
+          size: 46404
+          text: >+
+            event: completion
+
+            data: {"completion":"\u003cTEST","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE70","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TEST","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE70","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1);","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);\n  });","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);\n  });\n});","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);\n  });\n});\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\u003cTESTFILE7041\u003esrc/trickyLogic.spec.ts\u003c/TESTFILE7041\u003e\n\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n  it('should return 1 if a is 0', () =\u003e {\n    expect(trickyLogic(0, 1)).toBe(1);\n  });\n\n  it('should return 1 if b is 2', () =\u003e {\n    expect(trickyLogic(1, 2)).toBe(1); \n  });\n\n  it('should return a - b if neither a is 0 nor b is 2', () =\u003e {\n    expect(trickyLogic(3, 1)).toBe(2);\n  });\n});\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 Feb 2024 13:38:21 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-02T13:38:18.836Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: bfad5b67838879153a80da52e1758aaf
       _order: 0
       cache: {}

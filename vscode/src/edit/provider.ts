@@ -259,8 +259,8 @@ export class EditProvider {
             this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
                 await this.insertionPromise
-            } catch {
-                this.handleError(new Error('Cody failed to generate unit tests'))
+            } catch (error) {
+                this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
             } finally {
                 this.insertionPromise = null
             }

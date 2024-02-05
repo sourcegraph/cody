@@ -2,12 +2,13 @@ import fspromises from 'fs/promises'
 
 import * as vscode from 'vscode'
 
-import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import * as vscode_shim from './vscode-shim'
-import { logDebug } from '@sourcegraph/cody-shared'
+import { logDebug, logError } from '@sourcegraph/cody-shared'
+import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
+import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 
 type EditFunction = (
     uri: vscode.Uri,
@@ -121,12 +122,22 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         } as any
     }
 
-    public async openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
+    public async openTextDocument(uri: vscode.Uri): Promise<AgentTextDocument> {
         const document = ProtocolTextDocumentWithUri.from(uri)
         if (!this.agentDocuments.has(document.underlying.uri)) {
-            // Read the file content from disk if the user hasn't opened this file before.
-            const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
-            document.underlying.content = buffer.toString()
+            if (!doesFileExist(uri)) {
+                logError(
+                    'AgentWorkspaceDocuments.openTextDocument()',
+                    'File does not exist',
+                    uri.toString()
+                )
+            } else if (uri.scheme === 'file') {
+                // Read the file content from disk if the user hasn't opened this file before.
+                const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
+                document.underlying.content = buffer.toString()
+            } else {
+                logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
+            }
         }
         return Promise.resolve(this.loadedDocument(document))
     }
@@ -142,6 +153,10 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
         vscode_shim.tabGroups.reset()
         resetActiveEditor()
+    }
+
+    public async newTextEditorFromStringUri(uri: string): Promise<vscode.TextEditor> {
+        return this.newTextEditor(await this.openTextDocument(vscode.Uri.parse(uri)))
     }
 
     public newTextEditor(document: AgentTextDocument): vscode.TextEditor {

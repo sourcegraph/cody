@@ -111,7 +111,9 @@ export class IgnoreHelper {
             return false
         }
 
-        // Ignore all non-file URIs
+        // Return all non-file URIs on the assumption that they origin from
+        // remote multi-repo context files, which are already filtered by the
+        // backend to respect codyignore files.
         if (uri.scheme !== 'file') {
             return true
         }
