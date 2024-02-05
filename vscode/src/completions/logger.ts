@@ -6,7 +6,7 @@ import { isNetworkError, type BillingCategory, type BillingProduct } from '@sour
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
-import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
+import { captureException, getActiveSpan, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -19,6 +19,7 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
+import { trace } from '@opentelemetry/api'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -431,6 +432,8 @@ export function create(
         multilineMode: inputParams.multiline ? 'block' : null,
         id: null,
     }
+
+    trace.getActiveSpan()?.setAttributes(inputParams as any)
 
     activeSuggestionRequests.set(id, {
         id,
