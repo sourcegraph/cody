@@ -3,7 +3,7 @@ import * as path from 'path'
 
 import { expect } from '@playwright/test'
 
-import { SERVER_URL } from '../fixtures/mock-server'
+import { SERVER_URL, loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
 import * as helpers from './helpers'
@@ -17,6 +17,15 @@ import { newChat, openFile, spawn, withTempDir } from './helpers'
 const test = helpers.test
     .extend<helpers.DotcomUrlOverride>({
         dotcomUrl: SERVER_URL,
+    })
+    .extend<helpers.ExpectedEvents>({
+        expectedEvents: [
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ],
     })
     .extend<helpers.WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
@@ -61,6 +70,7 @@ const test = helpers.test
 test.beforeAll(() => {
     // These tests depend on downloading cody-engine, which can be slow.
     test.slow()
+    void resetLoggedEvents()
 })
 
 test.extend<helpers.WorkspaceDirectory>({
@@ -78,23 +88,30 @@ test.extend<helpers.WorkspaceDirectory>({
             await use(dir)
         })
     },
-})('non-git repositories should explain lack of embeddings', async ({ page, sidebar }) => {
-    await openFile(page, 'main.c')
-    await sidebarSignin(page, sidebar)
-    const chatFrame = await newChat(page)
-    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await enhancedContextButton.click()
+})(
+    'non-git repositories should explain lack of embeddings',
+    async ({ page, sidebar, expectedEvents }) => {
+        await openFile(page, 'main.c')
+        await sidebarSignin(page, sidebar)
+        const chatFrame = await newChat(page)
+        const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
+        await enhancedContextButton.click()
 
-    // Embeddings is visible at first as cody-engine starts...
-    await expect(chatFrame.getByText('Embeddings')).toBeVisible()
-    // ...and displays this message when the engine works out this is not a git repo.
-    await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
-        timeout: 60000,
-    })
-    await expect(chatFrame.getByText('Folder is not a Git repository.')).toBeVisible()
-})
+        // Embeddings is visible at first as cody-engine starts...
+        await expect(chatFrame.getByText('Embeddings')).toBeVisible()
+        // ...and displays this message when the engine works out this is not a git repo.
+        await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
+            timeout: 60000,
+        })
+        await expect(chatFrame.getByText('Folder is not a Git repository.')).toBeVisible()
+    }
+)
 
-test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {
+test('git repositories without a remote should explain the issue', async ({
+    page,
+    sidebar,
+    expectedEvents,
+}) => {
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
@@ -104,36 +121,58 @@ test('git repositories without a remote should explain the issue', async ({ page
         timeout: 60000,
     })
     await expect(chatFrame.getByText('Git repository is missing a remote origin.')).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await helpers.assertEvents(loggedEvents, expectedEvents)
 })
 
-test.extend<helpers.WorkspaceDirectory>({
-    workspaceDirectory: async ({ workspaceDirectory }, use) => {
-        // Add a remote to the git repo so that it can be indexed.
-        await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/repo.git'], {
-            cwd: workspaceDirectory,
+test
+    .extend<helpers.WorkspaceDirectory>({
+        workspaceDirectory: async ({ workspaceDirectory }, use) => {
+            // Add a remote to the git repo so that it can be indexed.
+            await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/repo.git'], {
+                cwd: workspaceDirectory,
+            })
+            await use(workspaceDirectory)
+        },
+    })
+    .extend<helpers.ExpectedEvents>({
+        expectedEvents: [
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+            'CodyVSCodeExtension:chat-question:executed',
+        ],
+    })(
+    'should be able to index, then search, a git repository',
+    async ({ page, sidebar, expectedEvents }) => {
+        await openFile(page, 'main.c')
+        await sidebarSignin(page, sidebar)
+        const chatFrame = await newChat(page)
+        const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
+        await enhancedContextButton.click()
+
+        const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
+        // This may take a while, we download and start cody-engine
+        await expect(enableEmbeddingsButton).toBeVisible({ timeout: 60000 })
+        await enableEmbeddingsButton.click()
+
+        await expect(chatFrame.getByText('Embeddings — Indexed')).toBeVisible({
+            timeout: 30000,
         })
-        await use(workspaceDirectory)
-    },
-})('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
-    await openFile(page, 'main.c')
-    await sidebarSignin(page, sidebar)
-    const chatFrame = await newChat(page)
-    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await enhancedContextButton.click()
 
-    const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
-    // This may take a while, we download and start cody-engine
-    await expect(enableEmbeddingsButton).toBeVisible({ timeout: 60000 })
-    await enableEmbeddingsButton.click()
+        // Search the embeddings. This test uses the "stub" embedding model, which
+        // is deterministic, but the searches are not semantic.
+        await chatFrame.locator('textarea').type('hello world\n')
+        await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({
+            timeout: 10000,
+        })
 
-    await expect(chatFrame.getByText('Embeddings — Indexed')).toBeVisible({
-        timeout: 30000,
-    })
-
-    // Search the embeddings. This test uses the "stub" embedding model, which
-    // is deterministic, but the searches are not semantic.
-    await chatFrame.locator('textarea').type('hello world\n')
-    await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({
-        timeout: 10000,
-    })
-})
+        // Critical test to prevent event logging regressions.
+        // Do not remove without consulting data analytics team.
+        await helpers.assertEvents(loggedEvents, expectedEvents)
+    }
+)

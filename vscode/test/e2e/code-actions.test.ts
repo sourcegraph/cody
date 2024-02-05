@@ -1,7 +1,7 @@
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, test as baseTest, assertEvents } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, assertEvents, type ExpectedEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -11,7 +11,12 @@ test.beforeEach(() => {
 
 const ERROR_DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="squiggly-error"]'
 
-test('code action: explain', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('code action: explain', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -36,14 +41,16 @@ test('code action: explain', async ({ page, sidebar }) => {
     await page.keyboard.type('Explain')
     await page.keyboard.press('Enter')
 
-    const expectedEvents = [
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-    ]
     await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
-test('code action: fix', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:command:edit:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ],
+})('code action: fix', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -68,10 +75,5 @@ test('code action: fix', async ({ page, sidebar }) => {
     await page.keyboard.type('Fix')
     await page.keyboard.press('Enter')
 
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:edit:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:applied',
-    ]
     await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

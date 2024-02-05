@@ -2,30 +2,30 @@ import { expect } from '@playwright/test'
 
 import { loggedEvents, resetLoggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { assertEvents, signOut, test } from './helpers'
-
-// list of events we expect this test to log, add to this list as needed
-const expectedEvents = [
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:failed',
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
-    'CodyVSCodeExtension:logout:clicked',
-    'CodyVSCodeExtension:Auth:failed',
-    'CodyVSCodeExtension:Auth:disconnected',
-]
+import { assertEvents, type ExpectedEvents, signOut, test } from './helpers'
 
 test.beforeEach(() => {
     void resetLoggedEvents()
 })
 
-test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:logout:clicked',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:Auth:disconnected',
+    ],
+})('requires a valid auth token and allows logouts', async ({ page, sidebar, expectedEvents }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()

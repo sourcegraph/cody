@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, assertEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, assertEvents, test as baseTest, type ExpectedEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -11,7 +11,15 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:command:edit:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
+        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
+        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
+    ],
+})('code lenses for edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -97,12 +105,5 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     await expect(page.getByText('>Hello Cody</')).toBeVisible()
     await expect(page.getByText('>Goodbye Cody</')).not.toBeVisible()
 
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:edit:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
-        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
-        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
-    ]
     await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

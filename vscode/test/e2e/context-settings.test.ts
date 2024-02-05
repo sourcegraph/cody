@@ -1,25 +1,25 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { newChat, test, assertEvents } from './helpers'
+import { newChat, test, assertEvents, type ExpectedEvents } from './helpers'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
-
-// list of events we expect this test to log, add to this list as needed
-const expectedEvents = [
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
-    'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
-]
 
 test.beforeEach(() => {
     void resetLoggedEvents()
 })
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-test('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+    ],
+})('enhanced context selector is keyboard accessible', async ({ page, sidebar, expectedEvents }) => {
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
@@ -43,9 +43,13 @@ test('enhanced context selector is keyboard accessible', async ({ page, sidebar 
     await expect(enhancedContextCheckbox).not.toBeVisible()
     // ... and focus the button which re-opens it.
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
-test('enterprise context selector can pick repos', async ({ page, sidebar, server }) => {
+test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
     const repos1: RepoListResponse = {
         repositories: {
             nodes: [
@@ -117,4 +121,8 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
 
     // The chosen repo should appear in the picker.
     await expect(chatFrame.getByTitle('repo/foo').getByText(/^foo$/)).toBeVisible()
+
+    // Critical test to prevent event logging regressions.
+    // Do not remove without consulting data analytics team.
+    await assertEvents(loggedEvents, expectedEvents)
 })

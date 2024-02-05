@@ -31,6 +31,11 @@ export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
 }
 
+// playwright test extension: Add expectedEvents to each test to compare against
+export interface ExpectedEvents {
+    expectedEvents: string[]
+}
+
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
@@ -156,6 +161,15 @@ export const test = base
             const sidebar = await getCodySidebar(page)
             await use(sidebar)
         },
+    })
+    .extend<ExpectedEvents>({
+        expectedEvents: [
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ],
     })
 
 /**

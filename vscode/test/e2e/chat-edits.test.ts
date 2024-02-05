@@ -1,29 +1,29 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { type ExpectedEvents, assertEvents, test } from './helpers'
 import { resetLoggedEvents, loggedEvents } from '../fixtures/mock-server'
 
 const isPlatform = (platform: string) => process.platform === platform
 const isMac = isPlatform('darwin')
 const osKey = isMac ? 'Meta' : 'Control'
 
-// list of events we expect this test to log, add to this list as needed
-const expectedEvents = [
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
-    'CodyVSCodeExtension:chat-question:executed',
-    'CodyVSCodeExtension:chatResponse:hasCode',
-]
-
 test.beforeEach(() => {
     void resetLoggedEvents()
 })
 
-test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:hasCode',
+    ],
+})('editing follow-up messages in chat view', async ({ page, sidebar, expectedEvents }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()

@@ -1,26 +1,35 @@
 import { expect } from '@playwright/test'
 
-import { resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, resetLoggedEvents, SERVER_URL } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, type DotcomUrlOverride, test as baseTest, withPlatformSlashes } from './helpers'
+import {
+    assertEvents,
+    type DotcomUrlOverride,
+    test as baseTest,
+    withPlatformSlashes,
+    type ExpectedEvents,
+} from './helpers'
 
-// list of events we expect this test to log, add to this list as needed
-const expectedEvents = [
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
-]
-
-const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: SERVER_URL }).extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+    ],
+})
 test.beforeEach(() => {
-    mockServer.resetLoggedEvents()
+    resetLoggedEvents()
 })
 
-test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test('create a new user command via the custom commands menu', async ({
+    page,
+    sidebar,
+    expectedEvents,
+}) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -105,7 +114,11 @@ test('create a new user command via the custom commands menu', async ({ page, si
 
 // NOTE: If no custom commands are showing up in the command menu, it might
 // indicate a breaking change during the custom command building step.
-test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
+test('execute custom commands with context defined in cody.json', async ({
+    page,
+    sidebar,
+    expectedEvents,
+}) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -195,7 +208,11 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     ).toBeVisible()
 })
 
-test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
+test('open and delete cody.json from the custom command menu', async ({
+    page,
+    sidebar,
+    expectedEvents,
+}) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

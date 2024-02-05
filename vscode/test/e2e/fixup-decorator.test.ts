@@ -3,23 +3,29 @@ import { expect } from '@playwright/test'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { assertEvents, test, type ExpectedEvents } from './helpers'
 
 const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
-
-const expectedEvents = [
-    'CodyVSCodeExtension:command:edit:executed',
-    'CodyVSCodeExtension:keywordContext:searchDuration',
-    'CodyVSCodeExtension:fixupResponse:hasCode',
-]
 
 test.beforeEach(() => {
     resetLoggedEvents()
 })
 
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:command:edit:executed',
+        'CodyVSCodeExtension:keywordContext:searchDuration',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+    ],
+})
+
 // TODO: Fix flaky test due to typewriter delay: https://github.com/sourcegraph/cody/pull/1578
-test.skip('decorations from un-applied Cody changes appear', async ({ page, sidebar }) => {
+test.skip('decorations from un-applied Cody changes appear', async ({
+    page,
+    sidebar,
+    expectedEvents,
+}) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

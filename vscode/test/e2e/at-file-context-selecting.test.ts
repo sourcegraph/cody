@@ -5,27 +5,27 @@ import { isWindows } from '@sourcegraph/cody-shared'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { assertEvents, test, withPlatformSlashes } from './helpers'
+import { assertEvents, test, type ExpectedEvents, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
-
-// list of events we expect this test to log, add to this list as needed
-const expectedEvents = [
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
-    'CodyVSCodeExtension:chat-question:executed',
-    'CodyVSCodeExtension:chat-question:executed',
-    'CodyVSCodeExtension:Auth:connected',
-]
 
 test.beforeEach(() => {
     void resetLoggedEvents()
 })
 
-test('@-file empty state', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:Auth:connected',
+    ],
+})('@-file empty state', async ({ page, sidebar, expectedEvents }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
