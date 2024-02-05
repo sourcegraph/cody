@@ -14,7 +14,7 @@ const buildMistralTemplate = (promptVariant: PromptVariant) => {
     return `<s> [INST]${promptVariant.system}[/INST]` + promptVariant.instruction
 }
 
-export const openai: EditLLMInteraction = {
+export const mistral: EditLLMInteraction = {
     getEdit(options) {
         return {
             ...SHARED_PARAMETERS,
