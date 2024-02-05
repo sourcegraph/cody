@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
+import { CODY_IGNORE_URI_PATH } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -72,7 +73,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     // At v1, we only support .cody/ignore at the workspace root.
     // This is because searching for nested .cody/ignore files via
     // findFiles can be expensive in a monorepos and cause slowness for users.
-    const wsRootIgnoreFile = vscode.Uri.joinPath(wf.uri, CODY_IGNORE_POSIX_GLOB)
+    const wsRootIgnoreFile = vscode.Uri.joinPath(wf.uri, CODY_IGNORE_URI_PATH)
     const ignoreFiles = [wsRootIgnoreFile]
     try {
         const filesWithContent: IgnoreFileContent[] = await Promise.all(
