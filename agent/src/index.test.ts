@@ -542,56 +542,53 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
+                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
 
-                  Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
+                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
 
-                  \`\`\`ts
-                  import {describe, expect, it} from 'vitest'
-                  import {Animal} from './animal'
+                  \`\`\`typescript
+                  // src/animal.test.ts
 
-                  describe('Animal', () => {
+                  import { Animal } from './animal';
 
-                    it('has a name property', () => {
+                  describe('Animal interface', () => {
+
+                    it('should have a name property', () => {
                       const animal: Animal = {
-                        name: 'Leo',
-                        makeAnimalSound() {
-                          return 'Roar'
-                        },
+                        name: 'Cat',
+                        makeAnimalSound: () => '',
                         isMammal: true
-                      }
+                      };
 
-                      expect(animal.name).toBe('Leo')
-                    })
+                      expect(animal.name).toBeDefined();
+                    });
 
-                    it('has a makeAnimalSound method', () => {
+                    it('should have a makeAnimalSound method', () => {
                       const animal: Animal = {
-                        name: 'Whale',
-                        makeAnimalSound() {
-                          return 'Whistle'
-                        },
+                        name: 'Dog',
+                        makeAnimalSound: () => 'Woof',
                         isMammal: true
-                      }
+                      };
 
-                      expect(animal.makeAnimalSound()).toBe('Whistle')
-                    })
+                      expect(animal.makeAnimalSound).toBeDefined();
+                      expect(typeof animal.makeAnimalSound).toBe('function');
+                    });
 
-                    it('has an isMammal property', () => {
+                    it('should have an isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound() {
-                          return 'Hiss'
-                        },
+                        makeAnimalSound: () => 'Hiss',
                         isMammal: false
-                      }
+                      };
 
-                      expect(animal.isMammal).toBe(false)
-                    })
+                      expect(animal.isMammal).toBeDefined();
+                      expect(typeof animal.isMammal).toBe('boolean');
+                    });
 
-                  })
+                  });
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
+                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
                 `,
                     explainPollyError
                 )
