@@ -124,7 +124,7 @@ describe('Agent', () => {
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
-    const ignoredUri = Uri.file(ignoredPath)
+    const ignoredUri = vscode.Uri.file(ignoredPath)
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -457,7 +457,7 @@ describe('Agent', () => {
     describe('Cody Ignore', () => {
         beforeAll(async () => {
             // Make sure Cody ignore config exists and works
-            const codyIgnoreConfig = Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            const codyIgnoreConfig = vscode.Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
             await client.openFile(codyIgnoreConfig)
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
