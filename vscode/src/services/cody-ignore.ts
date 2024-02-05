@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { CODY_IGNORE_URI_PATH } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -47,6 +46,7 @@ export function setUpCodyIgnore(): vscode.Disposable {
     }
 }
 
+let findFilesInProgressToken = new vscode.CancellationTokenSource()
 /**
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
@@ -55,35 +55,42 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     if (!wf) {
         // If this happens, we either have no workspace folder or it was removed before we started
         // processing the watch event.
-        logDebug('CodyIgnore:refresh', 'workspace', { verbose: 'no workspace detecetd' })
+        logDebug('CodyIgnore:refresh', 'failed', { verbose: 'no workspace detecetd' })
         return
     }
 
     // We currently only support file://. To support others, we need to change all file
     // paths in lots of places to be URIs.
     if (wf.uri.scheme !== 'file') {
-        logDebug('CodyIgnore:refresh', 'file', { verbose: 'not a file' })
+        logDebug('CodyIgnore:refresh', 'failed', { verbose: 'not a file' })
         return
     }
 
-    // At v1, we only support .cody/ignore at the workspace root.
-    // This is because searching for nested .cody/ignore files via
-    // findFiles can be expensive in a monorepos and cause slowness for users.
-    const wsRootIgnoreFile = vscode.Uri.joinPath(wf.uri, CODY_IGNORE_URI_PATH)
-    const ignoreFiles = [wsRootIgnoreFile]
-    try {
-        const filesWithContent: IgnoreFileContent[] = await Promise.all(
-            ignoreFiles?.map(async fileUri => ({
-                uri: fileUri,
-                content: await tryReadFile(fileUri),
-            }))
-        )
+    logDebug('CodyIgnore:refresh:workspace', 'starting...', { verbose: wf.uri.path })
 
-        ignores.setIgnoreFiles(wf.uri, filesWithContent)
-        logDebug('CodyIgnore:refresh:workspace', wf.uri.path)
-    } catch {
-        logDebug('CodyIgnore:refresh:workspace', wf.uri.path, { verbose: 'failed to read ignore file' })
-    }
+    // Cancel current fileFiles process if refresh gets called while one is in progress.
+    findFilesInProgressToken.cancel()
+    findFilesInProgressToken.dispose()
+    findFilesInProgressToken = new vscode.CancellationTokenSource()
+
+    // Get the codebase name from the git clone URL on each refresh
+    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
+    const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB)
+    const ignoreFiles = await vscode.workspace.findFiles(
+        ignoreFilePattern,
+        undefined,
+        undefined,
+        findFilesInProgressToken.token
+    )
+    const filesWithContent: IgnoreFileContent[] = await Promise.all(
+        ignoreFiles?.map(async fileUri => ({
+            uri: fileUri,
+            content: await tryReadFile(fileUri),
+        }))
+    )
+
+    ignores.setIgnoreFiles(wf.uri, filesWithContent)
+    logDebug('CodyIgnore:refresh:workspace', 'completed', { verbose: wf.uri.path })
 }
 
 /**
