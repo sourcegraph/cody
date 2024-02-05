@@ -114,6 +114,15 @@ function clear(wf: vscode.WorkspaceFolder): void {
     }
 
     ignores.clearIgnoreFiles(wf.uri)
+
+    // Remove any in-progress cancellation tokens for the workspace.
+    const tokens = wsInProgressTokens.values()
+    for (const token of tokens) {
+        token.cancel()
+        token.dispose()
+    }
+    wsInProgressTokens.clear()
+
     logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.toString() })
 }
 
