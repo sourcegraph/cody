@@ -26,6 +26,8 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
+    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
     // Trigger only one request for every multiline completion instead of three.
     CodyAutocompleteSingleMultilineRequest = 'cody-autocomplete-single-multiline-request',
 

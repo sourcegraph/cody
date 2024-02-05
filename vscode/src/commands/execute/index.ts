@@ -5,18 +5,20 @@ import {
 } from '@sourcegraph/cody-shared/src/commands/types'
 import { executeSmellCommand } from './smell'
 import { executeExplainCommand } from './explain'
-import { executeTestCommand } from './test'
+import { executeTestChatCommand } from './test-chat'
 import { executeDocCommand } from './doc'
 import type { CommandResult } from '../../main'
-import { executeUnitTestCommand } from './unit'
+import { executeTestEditCommand } from './test-edit'
 
 export { commands as defaultCommands } from './cody.json'
 
 export { executeSmellCommand } from './smell'
 export { executeExplainCommand } from './explain'
-export { executeTestCommand } from './test'
+export { executeTestChatCommand } from './test-chat'
 export { executeDocCommand } from './doc'
-export { executeUnitTestCommand } from './unit'
+export { executeTestEditCommand } from './test-edit'
+export { executeTestCaseEditCommand } from './test-case'
+export { executeExplainOutput } from './terminal'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any
@@ -51,10 +53,10 @@ export async function executeDefaultCommand(
             return executeExplainCommand({ additionalInstruction })
         case DefaultChatCommands.Smell:
             return executeSmellCommand({ additionalInstruction })
-        case DefaultChatCommands.Test:
-            return executeTestCommand({ additionalInstruction })
-        case DefaultEditCommands.Unit:
-            return executeUnitTestCommand({ additionalInstruction })
+        case DefaultChatCommands.Unit:
+            return executeTestChatCommand({ additionalInstruction })
+        case DefaultEditCommands.Test:
+            return executeTestEditCommand({ additionalInstruction })
         case DefaultEditCommands.Doc:
             return executeDocCommand({ additionalInstruction })
         default:

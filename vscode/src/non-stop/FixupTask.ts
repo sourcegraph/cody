@@ -1,13 +1,13 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
-import type { EditSupportedModels } from '../edit/prompt'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 
 export type taskID = string
 
@@ -59,20 +59,26 @@ export class FixupTask {
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
-        public readonly model: EditSupportedModels,
+        public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[]
+        public readonly contextMessages?: ContextMessage[],
+        /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
+        public destinationFile?: vscode.Uri
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
         this.originalRange = selectionRange
+        this.model = getOverridenModelForIntent(this.intent, this.model)
     }
 
     /**
      * Sets the task state. Checks the state transition is valid.
      */
     public set state(state: CodyTaskState) {
+        if (state === CodyTaskState.error) {
+            console.log(new Error().stack)
+        }
         this.state_ = state
         this.stateChanges.fire(state)
     }

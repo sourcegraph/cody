@@ -403,7 +403,7 @@ export class MessageHandler {
                             logError(
                                 'JSON-RPC',
                                 `Uncaught error in notification handler for method '${msg.method}'`,
-                                error
+                                error + (error instanceof Error ? '\n\n' + error.stack : '')
                             )
                         }
                     } else {

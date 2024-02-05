@@ -19,7 +19,6 @@ import type { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
-    ACCOUNT_USAGE_URL,
     CODY_FEEDBACK_URL,
     type AuthStatus,
 } from './chat/protocol'
@@ -55,11 +54,14 @@ import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import {
     executeExplainCommand,
-    executeTestCommand,
+    executeTestEditCommand,
     executeSmellCommand,
     executeDocCommand,
-    executeUnitTestCommand,
+    executeTestChatCommand,
+    executeTestCaseEditCommand,
+    executeExplainOutput,
 } from './commands/execute'
+import { registerSidebarCommands } from './services/SidebarCommands'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -223,6 +225,7 @@ const register = async (
             editor,
             contextProvider,
             ghostHintDecorator,
+            authProvider,
         }),
         new CodeActionProvider({ contextProvider })
     )
@@ -341,10 +344,12 @@ const register = async (
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
         vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeUnitTestCommand(a)) // behind unstable flag
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
 
     const statusBar = createStatusBar()
@@ -392,24 +397,7 @@ const register = async (
         ),
 
         // Account links
-        vscode.commands.registerCommand('cody.show-page', (page: string) => {
-            let url: URL
-            switch (page) {
-                case 'upgrade':
-                    url = ACCOUNT_UPGRADE_URL
-                    break
-                case 'usage':
-                    url = ACCOUNT_USAGE_URL
-                    break
-                case 'rate-limits':
-                    url = ACCOUNT_LIMITS_INFO_URL
-                    break
-                default:
-                    console.warn(`Unable to show unknown page: "${page}"`)
-                    return
-            }
-            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
-        }),
+        ...registerSidebarCommands(),
 
         // Account links
         vscode.commands.registerCommand(
@@ -549,7 +537,7 @@ const register = async (
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = getConfiguration(vscode.workspace.getConfiguration())
+                const config = await getFullConfig()
                 if (!config.autocomplete) {
                     completionsProvider?.dispose()
                     completionsProvider = null

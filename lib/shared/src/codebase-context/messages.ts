@@ -54,7 +54,7 @@ export type ContextFileSymbol = ContextFileCommon & {
     kind: SymbolKind
 }
 
-export interface ContextMessage extends Message {
+export interface ContextMessage extends Required<Message> {
     file?: ContextFile
     preciseContext?: PreciseContext
 }

@@ -185,7 +185,7 @@ export class AuthProvider {
         const displayName = this.authStatus.displayName || this.authStatus.username
         const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(
-            `Signed in as ${displayName} (${email})}`,
+            `Signed in as ${displayName} (${email})`,
             { modal: true, detail },
             ...options
         )

@@ -1,12 +1,10 @@
 import { findLast } from 'lodash'
-import type * as vscode from 'vscode'
 
 import {
     errorToChatError,
     reformatBotMessageForChat,
     type ChatError,
     type ChatMessage,
-    type ContextFileSource,
     type InteractionJSON,
     type InteractionMessage,
     type Message,
@@ -16,6 +14,7 @@ import {
 
 import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 import type { Repo } from '../../context/repo-fetcher'
+import type { ContextItem } from '../../prompt-builder/types'
 
 /**
  * Interface for a chat message with additional context.
@@ -238,22 +237,6 @@ function messageToInteractionMessage(message: MessageWithContext): InteractionMe
         text: message.message.text,
         displayText: getDisplayText(message),
     }
-}
-
-export interface ContextItem {
-    uri: vscode.Uri
-    range?: vscode.Range
-    text: string
-    source?: ContextFileSource
-    repoName?: string
-    revision?: string
-    title?: string
-}
-
-export function contextItemId(contextItem: ContextItem): string {
-    return contextItem.range
-        ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-        : contextItem.uri.toString()
 }
 
 export function toViewMessage(mwc: MessageWithContext): ChatMessage {

@@ -1,4 +1,4 @@
-import type { CompletionsClientConfig } from '../sourcegraph-api/completions/client'
+import type { CompletionLogger, CompletionsClientConfig } from '../sourcegraph-api/completions/client'
 import type { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
 
 /**
@@ -22,6 +22,11 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
+    logger: CompletionLogger | undefined
+    complete(
+        params: T,
+        abortController: AbortController,
+        featureFlags?: { fastPath?: boolean }
+    ): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }

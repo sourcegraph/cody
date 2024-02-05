@@ -1,9 +1,9 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test, withPlatformSlashes } from './helpers'
+import { assertEvents, type DotcomUrlOverride, test as baseTest, withPlatformSlashes } from './helpers'
 
 // list of events we expect this test to log, add to this list as needed
 const expectedEvents = [
@@ -14,8 +14,10 @@ const expectedEvents = [
     'CodyVSCodeExtension:Auth:connected',
 ]
 
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
+
 test.beforeEach(() => {
-    resetLoggedEvents()
+    mockServer.resetLoggedEvents()
 })
 
 test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
@@ -101,6 +103,8 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await assertEvents(loggedEvents, expectedEvents)
 })
 
+// NOTE: If no custom commands are showing up in the command menu, it might
+// indicate a breaking change during the custom command building step.
 test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -134,8 +138,8 @@ test('execute custom commands with context defined in cody.json', async ({ page,
 
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
     // Show the current file numbers used as context
-    await expect(chatPanel.getByText('✨ Context: 55 lines from 4 files')).toBeVisible()
-    await chatPanel.getByText('✨ Context: 55 lines from 4 files').click()
+    await expect(chatPanel.getByText('✨ Context: 66 lines from 5 files')).toBeVisible()
+    await chatPanel.getByText('✨ Context: 66 lines from 5 files').click()
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.locator('span').filter({ hasText: '@Main.java:1-9' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.test.ts:1-12' })).toBeVisible()
@@ -225,9 +229,11 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
         .getByLabel('Configure Custom Commands..., Manage your custom reusable commands, settings')
         .locator('a')
         .click()
+    await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
+    await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
-    await sidebarExplorer(page).click()
-    await expect(page.getByRole('treeitem', { name: 'cody.json' }).locator('a')).toBeVisible()
+    // The opened cody.json file should be shown as "Deleted"
+    await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 
     // Critical test to prevent event logging regressions.
     // Do not remove without consulting data analytics team.

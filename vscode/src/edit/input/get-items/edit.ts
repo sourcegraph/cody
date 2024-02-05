@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 import type { GetItemsResult } from '../quick-pick'
 import { getItemLabel } from '../utils'
-import { EDIT_CHANGE_MODEL_ENABLED } from '../constants'
 
 export const RANGE_ITEM: vscode.QuickPickItem = {
     label: 'Range',
@@ -25,6 +24,10 @@ export const TEST_ITEM: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
+const SUBMIT_SEPARATOR: vscode.QuickPickItem = {
+    label: 'submit',
+    kind: vscode.QuickPickItemKind.Separator,
+}
 const SUBMIT_ITEM: vscode.QuickPickItem = {
     label: 'Submit',
     detail: 'Submit edit instruction (or type @ to include code)',
@@ -34,10 +37,11 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 export const getEditInputItems = (
     activeValue: string,
     activeRangeItem: vscode.QuickPickItem,
-    activeModelItem: vscode.QuickPickItem
+    activeModelItem: vscode.QuickPickItem | undefined,
+    showModelSelector: boolean
 ): GetItemsResult => {
     const hasActiveValue = activeValue.trim().length > 0
-    const submitItems = hasActiveValue ? [SUBMIT_ITEM] : []
+    const submitItems = hasActiveValue ? [SUBMIT_SEPARATOR, SUBMIT_ITEM] : []
     const commandItems = hasActiveValue
         ? []
         : [
@@ -54,7 +58,9 @@ export const getEditInputItems = (
             kind: vscode.QuickPickItemKind.Separator,
         },
         { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
-        EDIT_CHANGE_MODEL_ENABLED ? { ...MODEL_ITEM, detail: getItemLabel(activeModelItem) } : null,
+        showModelSelector
+            ? { ...MODEL_ITEM, detail: activeModelItem ? getItemLabel(activeModelItem) : undefined }
+            : null,
     ]
 
     const items = [...submitItems, ...editItems, ...commandItems].filter(

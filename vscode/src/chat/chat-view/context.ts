@@ -16,8 +16,8 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { viewRangeToRange } from './chat-helpers'
-import type { ContextItem } from './SimpleChatModel'
 import type { RemoteSearch } from '../../context/remote-search'
+import type { ContextItem } from '../../prompt-builder/types'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
