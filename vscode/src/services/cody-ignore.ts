@@ -14,6 +14,10 @@ const utf8 = new TextDecoder('utf-8')
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
+    const initWorkspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
+    if (initWorkspaceUri) {
+        refresh(initWorkspaceUri)
+    }
 
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
@@ -54,12 +58,14 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     if (!wf) {
         // If this happens, we either have no workspace folder or it was removed before we started
         // processing the watch event.
+        logDebug('CodyIgnore:refresh', 'workspace', { verbose: 'no workspace detecetd' })
         return
     }
 
     // We currently only support file://. To support others, we need to change all file
     // paths in lots of places to be URIs.
     if (wf.uri.scheme !== 'file') {
+        logDebug('CodyIgnore:refresh', 'file', { verbose: 'not a file' })
         return
     }
 
@@ -116,5 +122,7 @@ async function tryReadFile(fileUri: vscode.Uri): Promise<string> {
  */
 function onConfigChange(): void {
     const config = vscode.workspace.getConfiguration('cody')
-    ignores.setActiveState(config.get('internal.unstable') as boolean)
+    const isEnabled = config.get('internal.unstable') as boolean
+    ignores.setActiveState(isEnabled)
+    logDebug('CodyIgnore:onConfigChange', 'isEnabled', { verbose: isEnabled })
 }
