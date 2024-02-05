@@ -3,8 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
-    ChatModelProvider,
-    CodyCommand,
+    ModelProvider,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
@@ -119,19 +118,22 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | {
+          type: 'search:config'
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'
           context: ContextFile[] | null
           kind?: ContextFileType
       }
-    | { type: 'chatModels'; models: ChatModelProvider[] }
+    | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
           results: SearchPanelFile[]

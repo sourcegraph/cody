@@ -23,6 +23,7 @@ export interface Configuration {
     customHeaders: Record<string, string>
     chatPreInstruction: string
     codeActions: boolean
+    commandHints: boolean
     commandCodeLenses: boolean
     editorTitleCommandIcon: boolean
 
@@ -55,6 +56,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
+    autocompleteExperimentalFastPath?: boolean
     autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
 

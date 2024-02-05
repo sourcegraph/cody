@@ -1,8 +1,8 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
+const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
@@ -74,6 +74,18 @@ export class GhostHintDecorator implements vscode.Disposable {
                 (event: vscode.TextEditorSelectionChangeEvent) => {
                     const editor = event.textEditor
 
+                    if (editor.document.uri.scheme !== 'file') {
+                        // Selection changed on a non-file document, e.g. (an output pane)
+                        // Edit's aren't possible here, so do nothing
+                        return
+                    }
+
+                    if (event.selections.length > 1) {
+                        // Multiple selections, it will be confusing to show the ghost text on all of them, or just the first
+                        // Clear existing text and avoid showing anything.
+                        return this.clearGhostText(editor)
+                    }
+
                     const selection = event.selections[0]
                     if (isEmptyOrIncompleteSelection(editor.document, selection)) {
                         // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
@@ -122,7 +134,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('internal.unstable') as boolean
+        const isEnabled = config.get('commandHints.enabled') as boolean
 
         if (!isEnabled) {
             this.dispose()
@@ -138,6 +150,12 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     public dispose(): void {
         this.isActive = false
+
+        // Clear any existing ghost text
+        if (vscode.window.activeTextEditor) {
+            this.clearGhostText(vscode.window.activeTextEditor)
+        }
+
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

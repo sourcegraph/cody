@@ -5,8 +5,7 @@ import type {
     ContextFile,
     ContextMessage,
 } from '@sourcegraph/cody-shared'
-
-import type { ContextItem } from './SimpleChatModel'
+import type { ContextItem } from '../../prompt-builder/types'
 
 export async function openFile(
     uri: vscode.Uri,

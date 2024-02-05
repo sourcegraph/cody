@@ -11,7 +11,7 @@ import {
     type SearchPanelSnippet,
 } from '@sourcegraph/cody-shared'
 
-import type { WebviewMessage } from '../chat/protocol'
+import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
 import type { IndexStartEvent, SymfRunner } from '../local-context/symf'
 
@@ -292,6 +292,14 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         if (cancellationToken.isCancellationRequested) {
             return
         }
+
+        // Update the config. We could do this on a smarter schedule, but this suffices for when the
+        // webview needs it for now.
+        this.webview?.postMessage({
+            type: 'search:config',
+            workspaceFolderUris:
+                vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? [],
+        } satisfies ExtensionMessage)
 
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
             const cumulativeResults: SearchPanelFile[] = []

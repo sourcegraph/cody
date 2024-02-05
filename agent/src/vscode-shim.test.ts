@@ -212,6 +212,21 @@ describe('vscode.workspace.findFiles', () => {
         `)
     })
 
+    it('findFiles(RelativePattern(workspaceFolder, "**.sh"))', async () => {
+        // TODO(dantup): add tests for multiple WorkspaceFolders to ensure the
+        //  filter actually works if/when we support multiple workspace folders.
+        const files = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(vscode.workspaceFolders[0], '**/*.sh'),
+            undefined,
+            undefined
+        )
+        expect(files.map(relativize)).toMatchInlineSnapshot(`
+          [
+            "scripts/hello.sh",
+          ]
+        `)
+    })
+
     it('findFiles(exclude="**.sh")', async () => {
         const files = await vscode.workspace.findFiles('', '**/*.sh', undefined)
         expect(files.map(relativize).sort()).toMatchInlineSnapshot(`

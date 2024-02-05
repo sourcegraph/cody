@@ -75,10 +75,12 @@ export class IgnoreHelper {
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
-                // Skip blanks/ comments
-                ignoreLine = ignoreLine.trim()
+                // Trim off any trailing comments.
+                ignoreLine = ignoreLine.split('#')[0]
 
-                if (!ignoreLine.length || ignoreLine.startsWith('#')) {
+                // Skip any lines that are now empty.
+                ignoreLine = ignoreLine.trim()
+                if (!ignoreLine.length) {
                     continue
                 }
 
@@ -109,8 +111,9 @@ export class IgnoreHelper {
             return false
         }
 
-        // Remote context (e.g. unified, multi-repo) are filtered during sync time,
-        // and not ignored by clients.
+        // Return all https URIs on the assumption that they origin from
+        // remote context (e.g. unified, multi-repo) files, which are already
+        // filtered by the backend to respect codyignore files during sync time.
         if (uri.scheme === 'https') {
             return false
         }

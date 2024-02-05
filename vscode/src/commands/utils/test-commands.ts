@@ -1,4 +1,4 @@
-import type { URI } from 'vscode-uri'
+import { Utils, type URI } from 'vscode-uri'
 
 import { uriBasename, uriExtname } from '@sourcegraph/cody-shared'
 
@@ -32,3 +32,27 @@ export function isValidTestFile(uri: URI): boolean {
 
 // REGEX for trailing non-alphanumeric characters
 export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/
+
+/**
+ * Checks if the given test file path matches the path of the original file
+ * by comparing stripped down versions of the paths.
+ *
+ * @param file - The original file URI
+ * @param testFile - The possible test file URI to check
+ * @returns True if the test file matches the file
+ */
+export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
+    // Assume not a test file for the current file if they are in different directories
+    if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
+        return false
+    }
+
+    const regex = /[^a-zA-Z0-9]/g
+    const fileName = Utils.basename(file).toLowerCase().replace(regex, '')
+    const testFileName = Utils.basename(testFile).toLowerCase().replace(regex, '')
+
+    const strippedFile = fileName.replace('spec', '').replace('test', '')
+    const strippedTestFile = testFileName.replace('spec', '').replace('test', '')
+
+    return strippedFile === strippedTestFile
+}

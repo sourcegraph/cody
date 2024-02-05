@@ -25,7 +25,13 @@ export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
+    isCommand: boolean
+}> = React.memo(function ContextFilesContent({
+    contextFiles,
+    fileLinkComponent: FileLink,
+    className,
+    isCommand,
+}) {
     if (!contextFiles.length) {
         return
     }
@@ -44,7 +50,14 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const prefix = '✨ Context: '
+    // Enhanced Context are context added by one of Cody's context fetchers.
+    // NOTE: sparkle should only be added to messages that use enhanced context.
+    // NOTE: Core chat commands (e.g. /explain and /smell) use local context only.
+    // Check if the filteredFiles only contain local context (non-enhanced context).
+    const localContextType = ['user', 'selection', 'terminal', 'editor']
+    const localContextOnly = filteredFiles.every(file => localContextType.includes(file.type))
+    const sparkle = localContextOnly || isCommand ? '' : '✨ '
+    const prefix = sparkle + 'Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
     const lineCount = filteredFiles.reduce(

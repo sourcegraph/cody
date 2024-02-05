@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatClient, type ChatEventSource } from '@sourcegraph/cody-shared'
+import {
+    ConfigFeaturesSingleton,
+    type ChatClient,
+    type ChatEventSource,
+    type ModelProvider,
+} from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -13,36 +18,34 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import type { EditIntent, EditMode } from './types'
+import { getEditSmartSelection } from './utils/edit-selection'
+import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
+import type { AuthProvider } from '../services/AuthProvider'
+import { editModel } from '../models'
+import { getEditModelsForUser } from './utils/edit-models'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
+    authProvider: AuthProvider
 }
 
 export class EditManager implements vscode.Disposable {
     private controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new Map<FixupTask, EditProvider>()
+    private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController()
+        this.models = getEditModelsForUser(options.authProvider)
+        this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand(
                 'cody.command.edit-code',
-                (
-                    args: {
-                        range?: vscode.Range
-                        instruction?: string
-                        intent?: EditIntent
-                        document?: vscode.TextDocument
-                        mode?: EditMode
-                    },
-                    source?: ChatEventSource
-                ) => this.executeEdit(args, source)
+                (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
             )
         )
     }
@@ -61,7 +64,7 @@ export class EditManager implements vscode.Disposable {
 
         // Log the default edit command name for doc intent or test mode
         const isDocCommand = args?.intent === 'doc' ? 'doc' : undefined
-        const isUnitTestCommand = args?.mode === 'test' ? 'test' : undefined
+        const isUnitTestCommand = args?.intent === 'test' ? 'test' : undefined
         const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${eventName}:executed`,
@@ -94,18 +97,48 @@ export class EditManager implements vscode.Disposable {
             this.options.ghostHintDecorator.clearGhostText(editor.active)
         }
 
-        const task = args.instruction?.trim()
-            ? await this.controller.createTask(
-                  document,
-                  args.instruction,
-                  args.userContextFiles ?? [],
-                  range,
-                  args.intent,
-                  args.mode,
-                  source,
-                  args.contextMessages
-              )
-            : await this.controller.promptUserForTask(args, source)
+        // Set default edit configuration, if not provided
+        const mode = args.mode || DEFAULT_EDIT_MODE
+        const model = args.model || editModel.get(this.options.authProvider, this.models)
+        const intent = args.intent || DEFAULT_EDIT_INTENT
+
+        let expandedRange: vscode.Range | undefined
+        // Support expanding the selection range for intents where it is useful
+        if (intent !== 'add') {
+            const smartRange = await getEditSmartSelection(document, range)
+
+            if (!smartRange.isEqual(range)) {
+                expandedRange = smartRange
+            }
+        }
+
+        let task: FixupTask | null
+        if (args.instruction?.trim()) {
+            task = await this.controller.createTask(
+                document,
+                args.instruction,
+                args.userContextFiles ?? [],
+                expandedRange || range,
+                intent,
+                mode,
+                model,
+                source,
+                args.contextMessages,
+                args.destinationFile
+            )
+        } else {
+            task = await this.controller.promptUserForTask(
+                document,
+                range,
+                expandedRange,
+                mode,
+                model,
+                intent,
+                args.contextMessages || [],
+                source
+            )
+        }
+
         if (!task) {
             return
         }

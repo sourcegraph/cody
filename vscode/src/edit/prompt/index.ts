@@ -3,50 +3,53 @@ import * as vscode from 'vscode'
 import {
     BotResponseMultiplexer,
     getSimplePreamble,
-    Interaction,
-    MAX_CURRENT_FILE_TOKENS,
-    Transcript,
-    truncateText,
     type CompletionParameters,
     type Message,
+    type EditModel,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import type { EditIntent } from '../types'
 
-import { claude } from './claude'
 import { getContext } from './context'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
+import { openai } from './models/openai'
+import { claude } from './models/claude'
+import { PromptBuilder } from '../../prompt-builder'
 
-type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
-
-const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
+    'anthropic/claude-instant-1.2': claude,
+    'openai/gpt-3.5-turbo': openai,
+    'openai/gpt-4-1106-preview': openai,
 } as const
 
 const getInteractionArgsFromIntent = (
     intent: EditIntent,
-    model: keyof typeof INTERACTION_MODELS,
+    model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
+    // Default to the generic Claude prompt if the model is unknown
+    const interaction = INTERACTION_MODELS[model] || claude
     switch (intent) {
         case 'add':
-            return INTERACTION_MODELS[model].getAdd(options)
+            return interaction.getAdd(options)
         case 'fix':
-            return INTERACTION_MODELS[model].getFix(options)
+            return interaction.getFix(options)
         case 'doc':
-            return INTERACTION_MODELS[model].getDoc(options)
+            return interaction.getDoc(options)
         case 'edit':
-            return INTERACTION_MODELS[model].getEdit(options)
-        case 'new':
-            return INTERACTION_MODELS[model].getNew(options)
+            return interaction.getEdit(options)
+        case 'test':
+            return interaction.getTest(options)
     }
 }
 
 interface BuildInteractionOptions {
-    model: SupportedModels
+    model: EditModel
+    contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
 }
@@ -59,6 +62,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    contextWindow,
     task,
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
@@ -72,14 +76,13 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
+    if (selectedText.length > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText
     const followingText = document.getText(
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
-
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
@@ -89,29 +92,31 @@ export const buildInteraction = async ({
             instruction: task.instruction,
         })
 
-    const transcript = new Transcript()
-    const interaction = new Interaction(
-        { speaker: 'human', text: prompt, displayText: prompt },
-        { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
-        getContext({
-            intent: task.intent,
-            uri: task.fixupFile.uri,
-            selectionRange: task.selectionRange,
-            userContextFiles: task.userContextFiles,
-            contextMessages: task.contextMessages,
-            editor,
-            followingText,
-            precedingText,
-            selectedText,
-        }),
-        []
-    )
-    transcript.addInteraction(interaction)
+    const promptBuilder = new PromptBuilder(contextWindow)
+
     const preamble = getSimplePreamble()
-    const completePrompt = await transcript.getPromptForLastInteraction(preamble)
+    promptBuilder.tryAddToPrefix(preamble)
+
+    if (assistantText) {
+        promptBuilder.tryAdd({ speaker: 'assistant', text: assistantText })
+    }
+    promptBuilder.tryAdd({ speaker: 'human', text: prompt })
+
+    const contextItems = await getContext({
+        intent: task.intent,
+        uri: task.fixupFile.uri,
+        selectionRange: task.selectionRange,
+        userContextFiles: task.userContextFiles,
+        contextMessages: task.contextMessages,
+        editor,
+        followingText,
+        precedingText,
+        selectedText,
+    })
+    promptBuilder.tryAddContext(contextItems)
 
     return {
-        messages: completePrompt.prompt,
+        messages: promptBuilder.build(),
         stopSequences,
         responseTopic: responseTopic || BotResponseMultiplexer.DEFAULT_TOPIC,
         responsePrefix: assistantPrefix,
