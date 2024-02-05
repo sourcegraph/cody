@@ -1,7 +1,6 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
-import { AuthStatus } from '../chat/protocol'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { isGenerateIntent } from '../edit/utils/edit-selection'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -51,6 +50,9 @@ export const ghostHintDecoration = vscode.window.createTextEditorDecorationType(
     },
 })
 
+/**
+ * Decorates the editor with a "ghost" hint to provide feedback to the user.
+ */
 export class GhostHintDecorator implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private isActive = false
@@ -62,24 +64,25 @@ export class GhostHintDecorator implements vscode.Disposable {
             leading: false,
             trailing: true,
         })
-        vscode.commands.registerCommand('cody.commandHint.chat', () => {
-            telemetryRecorder.recordEvent('cody.commandHint', 'chat')
-            // TODO: Programatically open chat, add context, etc
-            // TODO: Expand seelction
-            return vscode.commands.executeCommand('cody.chat.panel.new')
-        })
+        this.updateConfig()
+        // vscode.commands.registerCommand('cody.commandHint.chat', () => {
+        //     telemetryRecorder.recordEvent('cody.commandHint', 'chat')
+        //     // TODO: Programatically open chat, add context, etc
+        //     // TODO: Expand seelction
+        //     return vscode.commands.executeCommand('cody.chat.panel.new')
+        // })
     }
 
-    public init(authStatus: AuthStatus): void {
-        this.updateConfig(authStatus)
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('cody')) {
-                this.updateConfig(authStatus)
-            }
-        })
-    }
+    // public init(): void {
+    //     this.updateConfig()
+    //     vscode.workspace.onDidChangeConfiguration(e => {
+    //         if (e.affectsConfiguration('cody')) {
+    //             this.updateConfig()
+    //         }
+    //     })
+    // }
 
-    private showGhostHints(): void {
+    private init(): void {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection(
                 (event: vscode.TextEditorSelectionChangeEvent) => {
@@ -98,11 +101,11 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     const selection = event.selections[0]
-                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                        return this.clearGhostText(editor)
-                    }
+                    // if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                    //     // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                    //     // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
+                    //     return this.clearGhostText(editor)
+                    // }
 
                     /**
                      * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
@@ -120,18 +123,36 @@ export class GhostHintDecorator implements vscode.Disposable {
                         this.clearGhostText(editor)
                     }
 
-                    // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                    return this.throttledSetGhostText(editor, targetPosition)
+                    if (isGenerateIntent(editor.document, selection)) {
+                        // Generate flow, clear existing and immediately show the decoration
+                        // this.clearGhostText(editor)
+                        return this.setGhostText(editor, targetPosition, 'Generate')
+                    }
+
+                    if (selection.isEmpty) {
+                        // Edit code from cursor flow, clear existing and immediately show the decoration
+                        // this.clearGhostText(editor)
+                        return this.setGhostText(editor, targetPosition, 'Edit')
+                    }
+
+                    // Edit code from selection flow, throttled show to avoid spamming whilst the user makes an active selection
+                    return this.throttledSetGhostText(editor, targetPosition, 'Edit')
                 }
             )
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, position: vscode.Position): void {
+    private setGhostText(
+        editor: vscode.TextEditor,
+        position: vscode.Position,
+        editVerb: 'Edit' | 'Generate'
+    ): void {
         this.activeDecoration = {
             range: new vscode.Range(position, position),
             renderOptions: {
-                after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` },
+                after: {
+                    contentText: `${EDIT_SHORTCUT_LABEL} to ${editVerb}, ${CHAT_SHORTCUT_LABEL} to Chat`,
+                },
             },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
@@ -143,23 +164,19 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [])
     }
 
-    private updateConfig(authStatus: AuthStatus): void {
-        if (!authStatus.isLoggedIn) {
-            this.dispose()
-            return
-        }
-
+    private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('commandHints.enabled') as boolean
-        if (!isEnabled) {
+        const isEnabled = config.get('commandHints.enabled')
+        const isAuthenticated = this.authService.isAuthenticated()
+
+        if (!isEnabled || !isAuthenticated) {
             this.dispose()
             return
         }
 
-        if (isEnabled && !this.isActive) {
+        if (isEnabled && isAuthenticated && !this.isActive) {
             this.isActive = true
-            this.showGhostHints()
-            return
+            this.init()
         }
     }
 
