@@ -72,9 +72,23 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     // Get the codebase name from the git clone URL on each refresh
     // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB)
-    const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern)
+
+    // Cancel file search after 30 seconds
+    const token = new vscode.CancellationTokenSource()
+    setTimeout(() => {
+        logDebug('CodyIgnore:refresh:timeout', wf.uri.toString())
+        token.cancel()
+    }, 30000)
+
+    const ignoreFileAtRoot = vscode.Uri.joinPath(wf.uri, CODY_IGNORE_POSIX_GLOB)
+    const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern, undefined, 1, token.token)
+    if (!ignoreFiles || ignoreFiles.length === 0) {
+        logDebug('CodyIgnore:refresh:ignoreFiles', 'cannot find ignore files')
+        ignoreFiles.push(ignoreFileAtRoot)
+    }
+
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
-        ignoreFiles.map(async fileUri => ({
+        ignoreFiles?.map(async fileUri => ({
             uri: fileUri,
             content: await tryReadFile(fileUri),
         }))
