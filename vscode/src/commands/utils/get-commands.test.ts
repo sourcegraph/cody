@@ -17,6 +17,10 @@ describe('buildCodyCommandMap', () => {
                 slashCommand: 'bye',
                 prompt: 'Bye!',
             },
+            missing: {
+                description: 'Missing prompt',
+                type: 'user',
+            },
         }
         // Turn file into Record<string, unknown>
 
@@ -35,6 +39,9 @@ describe('buildCodyCommandMap', () => {
         expect(commandMap.get('bye')?.type).toBe(undefined)
         // Command type set up by user should be replaced on build
         expect(commandMap.get('/bye')?.type).toBe('workspace')
+        // the /missing command will not be available due to the missing prompt
+        // but it shouldn't break the map building process.
+        expect(commandMap.get('/missing')?.type).toBe(undefined)
     })
 
     it('sets edit mode for edit commands correctly', () => {

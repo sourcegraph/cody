@@ -158,11 +158,17 @@ let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({
-            name: 'Workspace Root',
-            uri: newWorkspaceDocuments.workspaceRootUri,
-            index: 0,
-        })
+        if (
+            !workspaceFolders
+                .map(wf => wf.uri.toString())
+                .includes(newWorkspaceDocuments.workspaceRootUri.toString())
+        ) {
+            workspaceFolders.push({
+                name: 'Workspace Root',
+                uri: newWorkspaceDocuments.workspaceRootUri,
+                index: 0,
+            })
+        }
     }
 }
 
@@ -195,9 +201,27 @@ const _workspace: typeof vscode.workspace = {
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
     async findFiles(include, exclude, maxResults, token) {
-        if (typeof include !== 'string') {
-            throw new TypeError('workspaces.findFiles: include must be a string')
+        let searchFolders: vscode.WorkspaceFolder[]
+        let searchPattern: string
+
+        if (typeof include === 'string') {
+            searchFolders = workspaceFolders
+            searchPattern = include
+        } else {
+            const matchingWorkspaceFolder = workspaceFolders.find(
+                wf => wf.uri.toString() === include.baseUri.toString()
+            )
+            if (!matchingWorkspaceFolder) {
+                throw new TypeError(
+                    `workspaces.findFiles: RelativePattern must use a known WorkspaceFolder\n  Got: ${
+                        include.baseUri
+                    }\n  Known:\n${workspaceFolders.map(wf => `  - ${wf.uri.toString()}\n`).join()}`
+                )
+            }
+            searchFolders = [matchingWorkspaceFolder]
+            searchPattern = include.pattern
         }
+
         if (exclude !== undefined && typeof exclude !== 'string') {
             throw new TypeError('workspaces.findFiles: exclude must be a string')
         }
@@ -216,7 +240,7 @@ const _workspace: typeof vscode.workspace = {
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
                     if (
                         !matchesGlobPatterns(
-                            include ? [include] : [],
+                            searchPattern ? [searchPattern] : [],
                             exclude ? [exclude] : [],
                             relativePath
                         )
@@ -232,7 +256,7 @@ const _workspace: typeof vscode.workspace = {
         }
 
         await Promise.all(
-            workspaceFolders.map(async folder => {
+            searchFolders.map(async folder => {
                 try {
                     const stat = await workspaceFs.stat(folder.uri)
                     if (stat.type.valueOf() === FileType.Directory.valueOf()) {

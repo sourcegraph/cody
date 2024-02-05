@@ -90,6 +90,8 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await expect(chatPanel.getByText(prompt)).toBeVisible()
 })
 
+// NOTE: If no custom commands are showing up in the command menu, it might
+// indicate a breaking change during the custom command building step.
 test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -209,7 +211,9 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
         .getByLabel('Configure Custom Commands..., Manage your custom reusable commands, settings')
         .locator('a')
         .click()
+    await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
+    await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
-    await sidebarExplorer(page).click()
-    await expect(page.getByRole('treeitem', { name: 'cody.json' }).locator('a')).toBeVisible()
+    // The opened cody.json file should be shown as "Deleted"
+    await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 })

@@ -1,0 +1,19 @@
+{
+    "folders": [
+        {
+            "path": "workspace"
+        },
+        {
+            "path": "workspace2"
+        }
+    ],
+    "settings": {
+        // Settings that should also apply to the single-root workspace tests should also be
+        // included in fixtures\workspace\.vscode\settings.json!
+        "cody.serverEndpoint": "http://localhost:49300",
+        "cody.commandCodeLenses": true,
+        "cody.editorTitleCommandIcon": true,
+        "cody.experimental.symfContext": false,
+        "cody.internal.unstable": true
+    }
+}
