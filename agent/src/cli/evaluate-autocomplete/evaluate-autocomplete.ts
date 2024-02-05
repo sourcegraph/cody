@@ -17,6 +17,7 @@ import { StrategySimpleChatLogs } from './strategy-simple-chat-logs'
 export interface SimpleChatEvalConfig {
     question: string,
     ground_truth_answer: string,
+    commit: string,
     open_files?: string[]
 }
 
@@ -300,7 +301,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 )
         );
         
-        const concurrencyLimit = 5
+        const concurrencyLimit = 1
         const semaphore = new Semaphore(concurrencyLimit);
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;

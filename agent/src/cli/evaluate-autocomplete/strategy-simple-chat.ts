@@ -32,11 +32,19 @@ export async function evaluateSimpleChatStrategy(
 ): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
 
-    await createEmbeddings(client, options)
-    chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
+    const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, 10 * 60 * 1000); // 10 minutes
+    });
 
-    await simulateWorkspaceChat(client, options)
-    chatLogs.writeLog(repoDisplayName, `Simulation chat done for repo: ${repoDisplayName}`)
+    const embeddingFlag = await Promise.race([timeoutPromise, createEmbeddings(client, options)])
+    await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
+
+    if(embeddingFlag){
+        await simulateWorkspaceChat(client, options)
+        chatLogs.writeLog(repoDisplayName, `Simulation chat done for repo: ${repoDisplayName}`)
+    }
 }
 
 // ================== Handle embeddings creation =====================
@@ -47,23 +55,24 @@ interface EmbeddingFlag {
     isSearchIndexReady: boolean,
 }
 
-async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
+async function createEmbeddings(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<EmbeddingFlag> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     const { workspace } = options
-    const SymfPath = path.resolve('~/.local/share/Cody-nodejs/symf/indexroot', workspace);
+    // const SymfPath = path.resolve('~/.local/share/Cody-nodejs/symf/indexroot', workspace);
 
-    let doesSymfIndexExist = false;
-    try {
-        await fspromises.access(SymfPath);
-        doesSymfIndexExist = true;
-    } catch (error) {
-        doesSymfIndexExist = false;
-    }
+    // let doesSymfIndexExist = false;
+    // try {
+    //     await fspromises.access(SymfPath);
+    //     doesSymfIndexExist = true;
+    // } catch (error) {
+    //     doesSymfIndexExist = false;
+    // }
 
     let embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
         isNumItemNeedIndexZero: false,
-        isSearchIndexReady: doesSymfIndexExist,
+        isSearchIndexReady: true,
+        // isSearchIndexReady: doesSymfIndexExist,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
 
@@ -72,7 +81,7 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
         const id = await client.request('chat/new', null)
         await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
         await client.request("command/execute", { command: 'cody.embeddings.resolveIssue' })
-        await client.request('command/execute', { command: 'cody.search.index-update' })
+        // await client.request('command/execute', { command: 'cody.search.index-update' })
         await waitForVariable(embeddingDoneFlag)
         await client.request('webview/didDispose', {id})
 
@@ -80,6 +89,7 @@ async function createEmbeddings(client: MessageHandler, options: EvaluateAutocom
         await chatLogs.writeLog(repoDisplayName, `embedding creation completed for repo: ${repoDisplayName}`)
         await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
     }
+    return embeddingDoneFlag
 }
 
 async function addRepoToBlockedRepo(workspaceName: string, repoDisplayName: string): Promise<void> {
@@ -147,7 +157,12 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
                 await chatLogs.writeLog(repoDisplayName, `█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden`)
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
+                
+                // Make all true, don't get stuck
+                embeddingDoneFlag.isEmbeddingReady = true
                 embeddingDoneFlag.isNumItemNeedIndexZero = true
+                // embeddingDoneFlag.isSearchIndexReady = true
+
                 // exit(1)
             } else if(debug_message.includes('Cody Gateway request failed: 429 Too Many Requests')) {
                 await chatLogs.writeLog(repoDisplayName, `SourceGraph restricted access message: ${debug_message}`)
@@ -156,6 +171,14 @@ function registerEmbeddingsHandlers(client: MessageHandler, repoDisplayName: str
                 await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
                 embeddingDoneFlag.isNumItemNeedIndexZero = true
                 exit(1)
+            } else if(debug_message.startsWith('█ LocalEmbeddingsController') && debug_message.includes('error')) {
+                embeddingDoneFlag.isEmbeddingReady = true
+                embeddingDoneFlag.isNumItemNeedIndexZero = true
+                // embeddingDoneFlag.isSearchIndexReady = true
+            } else if(debug_message.startsWith('█ symf: symf index creation failed EvalError')) {
+                embeddingDoneFlag.isEmbeddingReady = true
+                embeddingDoneFlag.isNumItemNeedIndexZero = true
+                embeddingDoneFlag.isSearchIndexReady = true
             }
         }
     })
@@ -206,6 +229,7 @@ interface ChatReply {
     repo_path: string
     question: string
     ground_truth_answer: string
+    commit: string
     reply: ExtensionMessage
     fixture: EvaluationFixture
     isValidReply: boolean
@@ -282,7 +306,7 @@ async function simulateWorkspaceChat(client: MessageHandler, options: EvaluateAu
     if(replies.length<=0) {
         await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
         await chatLogs.writeLog(repoDisplayName, `length of replies is 0 ${replies}`)
-        exit(1)
+        // exit(1)
     }
 
     await saveListToFile(replies, path.join(options.snapshotDirectory, 'strategy-chat.json'))
@@ -368,6 +392,7 @@ async function simulateChatInRepo(
         repo_path: options.workspace,
         question: chatEvalConfig.question,
         ground_truth_answer: chatEvalConfig.ground_truth_answer,
+        commit: chatEvalConfig.commit,
         reply: reply,
         fixture: options.fixture,
         isValidReply: isValidReply,
@@ -386,7 +411,8 @@ async function checkInvalidReplyAndExit(chatLogs: StrategySimpleChatLogs, repoDi
     }
     await chatLogs.writeLog(repoDisplayName, '--------- --------- --------- --------- --------- --------- ---------')
     await chatLogs.writeLog(repoDisplayName, `Error: expected transcript, got unexpected reply: ${JSON.stringify(reply)}`)
-    exit(1)
+    return false
+    // exit(1)
 }
 
 async function saveListToFile(list: any[], filePath: string): Promise<void> {
