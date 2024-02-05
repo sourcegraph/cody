@@ -15,10 +15,6 @@ const utf8 = new TextDecoder('utf-8')
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
-    const initWorkspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
-    if (initWorkspaceUri) {
-        refresh(initWorkspaceUri)
-    }
 
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
