@@ -46,7 +46,11 @@ export function setUpCodyIgnore(): vscode.Disposable {
     }
 }
 
-let findFilesInProgressToken = new vscode.CancellationTokenSource()
+/**
+ * The cancellation tokens for finding workspace ignore file processes.
+ */
+const wsInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
+
 /**
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
@@ -68,10 +72,15 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 
     logDebug('CodyIgnore:refresh:workspace', 'starting...', { verbose: wf.uri.path })
 
-    // Cancel current fileFiles process if refresh gets called while one is in progress.
-    findFilesInProgressToken.cancel()
-    findFilesInProgressToken.dispose()
-    findFilesInProgressToken = new vscode.CancellationTokenSource()
+    // Cancel fileFiles process for current workspace if there is one in progress to avoid
+    // having multiple find files in progress that can cause performance slow-down issues.
+    const findFilesInProgressToken = wsInProgressTokens.get(uri.path)
+    findFilesInProgressToken?.cancel()
+    findFilesInProgressToken?.dispose()
+
+    // Set a new cancellation token for the workspace.
+    const newFindFilesToken = new vscode.CancellationTokenSource()
+    wsInProgressTokens.set(uri.path, newFindFilesToken)
 
     // Get the codebase name from the git clone URL on each refresh
     // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
@@ -80,7 +89,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         ignoreFilePattern,
         undefined,
         undefined,
-        findFilesInProgressToken.token
+        newFindFilesToken.token
     )
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
@@ -90,6 +99,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     )
 
     ignores.setIgnoreFiles(wf.uri, filesWithContent)
+    wsInProgressTokens.delete(uri.path)
     logDebug('CodyIgnore:refresh:workspace', 'completed', { verbose: wf.uri.path })
 }
 
