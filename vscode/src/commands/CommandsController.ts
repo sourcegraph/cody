@@ -7,6 +7,7 @@ import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
+import { fromSlashCommand } from './utils/common'
 
 /**
  * Handles commands execution with commands from CommandsProvider
@@ -34,7 +35,7 @@ class CommandsController implements vscode.Disposable {
         const commandSplit = text?.trim().split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit?.shift() || text
-        const command = this.provider?.get(commandKey)
+        const command = this.provider?.get(fromSlashCommand(commandKey))
 
         // Additional instruction that will be added to end of prompt in the custom command prompt
         // It's added at execution time to allow dynamic arguments

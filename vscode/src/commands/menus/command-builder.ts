@@ -4,7 +4,7 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { customPromptsContextOptions } from './items'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { toSlashCommand } from '../utils/common'
+import { fromSlashCommand } from '../utils/common'
 
 export interface CustomCommandsBuilder {
     slashCommand: string
@@ -39,7 +39,7 @@ export class CustomCommandsBuilderMenu {
 
     private async makeSlashCommand(commands: string[]): Promise<string | undefined> {
         const commandSet = new Set(commands)
-        let value = await window.showInputBox({
+        const value = await window.showInputBox({
             title: 'New Custom Cody Command: Command Name',
             prompt: 'Enter the name of the custom command',
             placeHolder: 'e.g. hello',
@@ -51,15 +51,13 @@ export class CustomCommandsBuilderMenu {
                 if (input.split(' ').length > 1) {
                     return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
-                if (commandSet.has(toSlashCommand(input))) {
+                if (commandSet.has(fromSlashCommand(input))) {
                     return 'A command with the same name already exists.'
                 }
                 return
             },
         })
-        if (value) {
-            value = toSlashCommand(value)
-        }
+
         return value
     }
 

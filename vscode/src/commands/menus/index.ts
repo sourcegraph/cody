@@ -9,7 +9,7 @@ import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } fr
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
-import { fromSlashCommand, toSlashCommand } from '../utils/common'
+import { fromSlashCommand } from '../utils/common'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -149,7 +149,7 @@ export async function showCommandMenu(
             }
 
             // Else, process the selection as custom command
-            void commands.executeCommand('cody.action.command', toSlashCommand(selected) + ' ' + value)
+            void commands.executeCommand('cody.action.command', fromSlashCommand(selected) + ' ' + value)
 
             resolve()
             quickPick.hide()
