@@ -52,6 +52,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import {
     executeExplainCommand,
     executeTestEditCommand,
@@ -504,7 +505,14 @@ const register = async (
                 authStatus.userCanUpgrade = !res.codyProEnabled
                 void chatManager.syncAuthStatus(authStatus)
             }
-        })
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
+        )
     )
 
     /**
