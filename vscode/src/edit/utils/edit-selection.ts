@@ -119,6 +119,10 @@ export function getEditLineSelection(
     document: vscode.TextDocument,
     selection: vscode.Range
 ): vscode.Range {
+    if (selection.isEmpty) {
+        return selection
+    }
+
     const startChar = document.lineAt(selection.start.line).firstNonWhitespaceCharacterIndex
     const endChar = document.lineAt(selection.end.line).text.length
     return new vscode.Range(selection.start.line, startChar, selection.end.line, endChar)
