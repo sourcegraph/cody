@@ -28,7 +28,8 @@ import javax.swing.tree.TreeSelectionModel
 
 class HistoryTree(
     private val onSelect: (ChatState) -> Unit,
-    private val onDelete: (ChatState) -> Unit
+    private val onRemove: (ChatState) -> Unit,
+    private val onRemoveAll: () -> Unit
 ) : SimpleToolWindowPanel(true, true) {
 
   private val model = DefaultTreeModel(buildTree())
@@ -42,20 +43,31 @@ class HistoryTree(
         selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), ENTER_MAP_KEY)
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), DELETE_MAP_KEY)
-        actionMap.put(ENTER_MAP_KEY, ActionWrapper(::selectSelected))
-        actionMap.put(DELETE_MAP_KEY, ActionWrapper(::deleteSelected))
+        actionMap.put(ENTER_MAP_KEY, ActionWrapper(::selectLeaf))
+        actionMap.put(DELETE_MAP_KEY, ActionWrapper(::removeLeaf))
       }
 
   init {
     val group = DefaultActionGroup()
     group.add(
-        LeafPopupAction(tree, CodyBundle.getString("popup.select-chat"), null, ::selectSelected))
+        LeafPopupAction(
+            CodyBundle.getString("popup.select-chat"), null, ::hasLeafSelected, ::selectLeaf))
+    group.add(
+        LeafPopupAction(
+            CodyBundle.getString("popup.remove-chat"),
+            AllIcons.Actions.GC,
+            ::hasLeafSelected,
+            ::removeLeaf))
     group.addSeparator()
     group.add(
         LeafPopupAction(
-            tree, CodyBundle.getString("popup.remove-chat"), AllIcons.Actions.GC, ::deleteSelected))
+            CodyBundle.getString("popup.remove-all-chats"),
+            AllIcons.Actions.GC,
+            isEnabled = { true },
+            ::removeAllLeafs))
+
     PopupHandler.installPopupMenu(tree, group, "ChatActionsPopup")
-    EditSourceOnDoubleClickHandler.install(tree, ::selectSelected)
+    EditSourceOnDoubleClickHandler.install(tree, ::selectLeaf)
     setContent(ScrollPaneFactory.createScrollPane(tree))
     HistoryService.getInstance().listenOnUpdate(::updatePresentation)
   }
@@ -117,15 +129,15 @@ class HistoryTree(
     model.reload(period)
   }
 
-  private fun selectSelected() {
-    tree.selectedLeafOrNull()?.let { onSelect(it.chat) }
+  private fun selectLeaf() {
+    getSelectedLeaf()?.let { onSelect(it.chat) }
   }
 
-  private fun deleteSelected() {
-    tree.selectedLeafOrNull()?.let { selectedLeaf ->
+  private fun removeLeaf() {
+    getSelectedLeaf()?.let { selectedLeaf ->
       val period = selectedLeaf.parent as PeriodNode
       val selectedIndex = period.getIndex(selectedLeaf)
-      onDelete(selectedLeaf.chat)
+      onRemove(selectedLeaf.chat)
       model.removeNodeFromParent(selectedLeaf)
       if (model.getChildCount(period) == 0) model.removeNodeFromParent(period)
 
@@ -138,6 +150,11 @@ class HistoryTree(
         tree.setSelectionRow(row)
       }
     }
+  }
+
+  private fun removeAllLeafs() {
+    onRemoveAll()
+    model.setRoot(RootNode())
   }
 
   private fun buildTree(): DefaultMutableTreeNode {
@@ -160,32 +177,31 @@ class HistoryTree(
           .groupBy { chat -> DurationGroupFormatter.format(chat.getUpdatedTimeAt()) }
 
   private class LeafPopupAction(
-      private val tree: SimpleTree,
       text: String,
-      icon: Icon? = null,
+      icon: Icon?,
+      private val isEnabled: () -> Boolean,
       private val action: () -> Unit
   ) : AnAction(text, null, icon) {
+
     override fun update(e: AnActionEvent) {
-      super.update(e)
-      e.presentation.isEnabled = tree.selectedLeafOrNull() != null
+      e.presentation.isEnabled = isEnabled()
     }
 
-    override fun actionPerformed(event: AnActionEvent) {
-      action()
-    }
+    override fun actionPerformed(event: AnActionEvent) = action()
   }
 
   private class ActionWrapper(private val action: () -> Unit) : AbstractAction() {
-    override fun actionPerformed(p0: ActionEvent?) {
-      action()
-    }
+
+    override fun actionPerformed(p0: ActionEvent?) = action()
   }
+
+  private fun getSelectedLeaf() = tree.selectionPath?.lastPathComponent as? LeafNode
+
+  private fun hasLeafSelected() = tree.selectionPath?.lastPathComponent is LeafNode
 
   private companion object {
 
     private const val ENTER_MAP_KEY = "enter"
     private const val DELETE_MAP_KEY = "delete"
-
-    private fun SimpleTree.selectedLeafOrNull() = selectionPath?.lastPathComponent as? LeafNode
   }
 }

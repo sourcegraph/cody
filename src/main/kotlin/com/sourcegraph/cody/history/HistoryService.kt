@@ -31,6 +31,10 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     state.chats.removeIf { it.internalId == internalId }
   }
 
+  fun removeAll() {
+    state.chats = mutableListOf()
+  }
+
   private fun convertToMessageState(chatMessage: ChatMessage): MessageState {
     val message = MessageState()
     message.text = chatMessage.text
