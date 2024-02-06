@@ -189,10 +189,6 @@ export function createStatusBar(): CodyStatusBar {
             item?.button?.onClick?.()
             quickPick.hide()
         })
-
-        // if (option && 'onSelect' in option) {
-        //     option.onSelect().catch(console.error)
-        // }
     })
 
     // Reference counting to ensure loading states are handled consistently across different
