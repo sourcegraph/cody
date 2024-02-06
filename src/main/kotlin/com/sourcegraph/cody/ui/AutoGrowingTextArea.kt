@@ -20,6 +20,7 @@ import javax.swing.plaf.basic.BasicTextAreaUI
 import javax.swing.text.AttributeSet
 import javax.swing.text.Document
 import javax.swing.text.PlainDocument
+import javax.swing.undo.UndoManager
 import kotlin.math.max
 import kotlin.math.min
 
@@ -28,6 +29,7 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
   val scrollPane: JBScrollPane
   private val initialPreferredSize: Dimension
   private val autoGrowUpToRow: Int
+  val undoManager = UndoManager()
 
   init {
     autoGrowUpToRow = maxRows + 1
@@ -48,8 +50,19 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
             outerPanel.revalidate()
           }
         }
+
     textArea.document = document
+    document.addUndoableEditListener { event -> undoManager.addEdit(event.edit) }
+
     updateTextAreaSize()
+  }
+
+  fun getText(): String {
+    return this.textArea.text
+  }
+
+  fun setText(newText: String) {
+    textArea.text = newText
   }
 
   private fun createTextArea(): JBTextArea {

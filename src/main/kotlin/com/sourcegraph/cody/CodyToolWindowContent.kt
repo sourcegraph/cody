@@ -7,7 +7,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.jetbrains.rd.util.AtomicReference
+import com.sourcegraph.cody.agent.*
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.chat.AgentChatSession
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel

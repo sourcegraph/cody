@@ -22,7 +22,7 @@ class ChatPanel(project: Project, val chatSession: ChatSession) :
     JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
   private val messagesPanel = MessagesPanel(project)
   private val chatPanel = ChatScrollPane(messagesPanel)
-  private val promptPanel: PromptPanel = PromptPanel(chatSession)
+  val promptPanel: PromptPanel = PromptPanel(chatSession)
   private val contextView: EnhancedContextPanel = EnhancedContextPanel(project)
 
   private val stopGeneratingButton =

@@ -3,6 +3,8 @@ package com.sourcegraph.cody.agent
 import com.sourcegraph.cody.agent.protocol.ChatError
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextFile
+import kotlinx.serialization.*
+import kotlinx.serialization.modules.*
 
 /**
  * A message sent from the webview to the extension host. See vscode/src/chat/protocol.ts for the
@@ -15,6 +17,7 @@ data class WebviewMessage(
     val addEnhancedContext: Boolean? = null,
     val contextFiles: List<ContextFile>? = null,
     val error: ChatError? = null,
+    val query: String? = null,
 )
 
 data class WebviewReceiveMessageParams(val id: String, val message: WebviewMessage)
@@ -30,14 +33,16 @@ data class ExtensionMessage(
     val chatID: String? = null,
     val isTranscriptError: Boolean? = null,
     val customPrompts: List<List<Any>>? = null,
-    val context: Any? = null,
+    val context: List<ContextFile>? = null,
     val errors: String?,
+    val query: String? = null,
     val configFeatures: ConfigFeatures? = null,
 ) {
 
   object Type {
     const val TRANSCRIPT = "transcript"
     const val ERRORS = "errors"
+    const val USER_CONTEXT_FILES = "userContextFiles"
     const val SET_CONFIG_FEATURES = "setConfigFeatures"
   }
 }

@@ -30,6 +30,14 @@ class CodyAgentService(project: Project) : Disposable {
         }
       }
 
+      agent.client.onReceivedWebviewMessage = Consumer { params ->
+        if (!project.isDisposed) {
+          AgentChatSessionService.getInstance(project)
+              .getSession(params.id)
+              ?.receiveWebviewExtensionMessage(params.message)
+        }
+      }
+
       if (!project.isDisposed) {
         AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
       }

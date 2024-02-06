@@ -1,10 +1,13 @@
 package com.sourcegraph.cody.agent;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.sourcegraph.cody.agent.protocol.DebugMessage;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
@@ -18,8 +21,13 @@ public class CodyAgentClient {
   private static final Logger logger = Logger.getInstance(CodyAgentClient.class);
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable public Consumer<WebviewPostMessageParams> onNewMessage;
+
   // Callback that is invoked when the agent sends a "setConfigFeatures" message.
   @Nullable public ConfigFeaturesObserver onSetConfigFeatures;
+
+  // Callback that is invoked on webview messages which aren't handled by onNewMessage or onSetConfigFeatures
+  @Nullable public Consumer<WebviewPostMessageParams> onReceivedWebviewMessage;
+
   @Nullable public Editor editor;
 
   /**
@@ -64,15 +72,21 @@ public class CodyAgentClient {
     if (onNewMessage != null
         && extensionMessage.getType().equals(ExtensionMessage.Type.TRANSCRIPT)) {
       ApplicationManager.getApplication().invokeLater(() -> onNewMessage.accept(params));
-    } else {
-      logger.debug("onNewMessage is null or message type is not transcript");
-      logger.debug(String.format("webview/postMessage %s: %s", params.getId(), extensionMessage));
+      return;
     }
 
     if (onSetConfigFeatures != null
         && extensionMessage.getType().equals(ExtensionMessage.Type.SET_CONFIG_FEATURES)) {
       ApplicationManager.getApplication()
           .invokeLater(() -> onSetConfigFeatures.update(extensionMessage.getConfigFeatures()));
+      return;
     }
+
+    if (onReceivedWebviewMessage != null) {
+      ApplicationManager.getApplication().invokeLater(() -> onReceivedWebviewMessage.accept(params));
+      return;
+    }
+
+    logger.debug(String.format("webview/postMessage %s: %s", params.getId(), params.getMessage()));
   }
 }
