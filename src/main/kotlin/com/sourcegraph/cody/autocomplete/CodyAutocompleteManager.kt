@@ -145,8 +145,7 @@ class CodyAutocompleteManager {
     }
     val textDocument: TextDocument = IntelliJTextDocument(editor, project)
 
-    if (isTriggeredExplicitly &&
-        CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
+    if (isTriggeredExplicitly && CodyAuthenticationManager.instance.hasNoActiveAccount(project)) {
       HintManager.getInstance().showErrorHint(editor, "Cody: Sign in to use autocomplete")
       return
     }

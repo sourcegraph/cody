@@ -56,6 +56,8 @@ class CodyAuthenticationManager internal constructor() {
     return getActiveAccount(project)?.getAccountType() ?: AccountType.DOTCOM
   }
 
+  fun hasNoActiveAccount(project: Project) = instance.getActiveAccount(project) == null
+
   companion object {
     @JvmStatic
     val instance: CodyAuthenticationManager
