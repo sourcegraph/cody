@@ -609,6 +609,37 @@ describe('Agent', () => {
         }, 20_000)
     })
 
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        it(name, async () => {
+            await documentClient.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
+            await documentClient.openFile(uri, { removeCursor: false })
+            const task = await documentClient.request('commands/document', null)
+            await documentClient.taskHasReachedAppliedPhase(task)
+            const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
+            expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+            const acceptCommand = lenses.find(
+                ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+            )
+            if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                throw new Error(
+                    `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
+                )
+            }
+            await documentClient.request('command/execute', acceptCommand.command)
+            expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+            const newContent = documentClient.workspace.getDocument(uri)?.content
+            assertion(trimEndOfLine(newContent))
+        })
+    }
+
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.request('command/execute', {
@@ -842,37 +873,7 @@ describe('Agent', () => {
         }, 30_000)
 
         describe('Document code', () => {
-            function check(name: string, filename: string, assertion: (obtained: string) => void): void {
-                it(name, async () => {
-                    await client.request('command/execute', {
-                        command: 'cody.search.index-update',
-                    })
-                    const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
-                    await client.openFile(uri, { removeCursor: false })
-                    const task = await client.request('commands/document', null)
-                    await client.taskHasReachedAppliedPhase(task)
-                    const lenses = client.codeLenses.get(uri.toString()) ?? []
-                    expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-                    const acceptCommand = lenses.find(
-                        ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-                    )
-                    if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                        throw new Error(
-                            `Expected accept command, found none. Lenses ${JSON.stringify(
-                                lenses,
-                                null,
-                                2
-                            )}`
-                        )
-                    }
-                    await client.request('command/execute', acceptCommand.command)
-                    expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
-                    const newContent = client.workspace.getDocument(uri)?.content
-                    assertion(trimEndOfLine(newContent))
-                })
-            }
-
-            check('commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
                    * Sums two numbers and returns the result.
@@ -884,8 +885,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Method as part of a class)', 'TestClass.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Method as part of a class)',
+                'TestClass.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
 
                   export class TestClass {
@@ -904,8 +909,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Function within a property)', 'TestLogger.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Function within a property)',
+                'TestLogger.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
                    * Starts logging by initializing some internal state,
@@ -927,8 +936,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (nested test case)', 'example.test.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (nested test case)',
+                'example.test.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "import { expect } from 'vitest'
                   import { it } from 'vitest'
                   import { describe } from 'vitest'
@@ -1092,6 +1105,40 @@ describe('Agent', () => {
             const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
+
+        checkDocumentCommand(
+            enterpriseClient,
+            'commands/document (enterprise client)',
+            'example.test.ts',
+            obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
+
+                  /**
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does another test that has a bug
+                  */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `)
+        )
 
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword
         // query is not replaying on Windows due to some platform-dependency on
