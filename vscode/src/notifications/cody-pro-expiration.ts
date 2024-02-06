@@ -9,7 +9,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import { URI } from 'vscode-uri'
 
 export class CodyProExpirationNotifications implements vscode.Disposable {
-    public static readonly expiredActionUrl = 'https://accounts.sourcegraph.com/cody/subscription'
+    public static readonly expiredActionUrl = 'https://sourcegraph.com/cody/subscription'
 
     public static readonly expiredMessageText = `
                 Your Cody Pro trial has ended, and you are now on the Cody Free plan.
@@ -17,7 +17,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
                 If you'd like to upgrade to Cody Pro, please setup your payment information. You can cancel anytime.
             `
     public static readonly nearlyExpiredActionUrl =
-        'https://accounts.sourcegraph.com/cody/subscription?on-trial=true'
+        'https://sourcegraph.com/cody/subscription?on-trial=true'
 
     public static readonly nearlyExpiredMessageText = `
                 Your Cody Pro Trial is ending soon.
