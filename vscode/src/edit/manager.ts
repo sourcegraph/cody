@@ -19,10 +19,11 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
-import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
+import { DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { editModel } from '../models'
 import { getEditModelsForUser } from './utils/edit-models'
+import { getEditIntent } from './utils/edit-intent'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -102,12 +103,12 @@ export class EditManager implements vscode.Disposable {
         const range = getEditLineSelection(document, proposedRange)
         const mode = args.mode || DEFAULT_EDIT_MODE
         const model = args.model || editModel.get(this.options.authProvider, this.models)
-        const intent = args.intent || DEFAULT_EDIT_INTENT
+        const intent = getEditIntent(document, range, args.intent)
 
         let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
         if (intent !== 'add') {
-            const smartRange = await getEditSmartSelection(document, range)
+            const smartRange = await getEditSmartSelection(document, range, intent)
 
             if (!smartRange.isEqual(range)) {
                 expandedRange = smartRange

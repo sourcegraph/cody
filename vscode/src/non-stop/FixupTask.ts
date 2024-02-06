@@ -66,6 +66,7 @@ export class FixupTask {
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri
     ) {
+        console.log('Creating task with intent', intent)
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
         this.originalRange = selectionRange

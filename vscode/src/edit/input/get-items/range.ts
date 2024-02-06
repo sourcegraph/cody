@@ -2,10 +2,11 @@ import * as vscode from 'vscode'
 import type { GetItemsResult } from '../quick-pick'
 import { symbolIsFunctionLike } from './utils'
 import type { EditRangeItem } from './types'
-import { getEditSmartSelection, isGenerateIntent } from '../../utils/edit-selection'
+import { getEditSmartSelection } from '../../utils/edit-selection'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
 import type { EditInputInitialValues } from '../get-input'
+import { isGenerateIntent } from '../../utils/edit-intent'
 
 export const getDefaultRangeItems = (
     document: vscode.TextDocument,
@@ -36,7 +37,7 @@ export const getDefaultRangeItems = (
             {
                 ...EXPANDED_RANGE_ITEM,
                 range: async () =>
-                    getEditSmartSelection(document, initialRange, {
+                    getEditSmartSelection(document, initialRange, undefined, {
                         forceExpand: true,
                     }),
             },

@@ -17,12 +17,12 @@ import { getTestInputItems } from './get-items/test'
 import { executeEdit } from '../execute'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
-import { isGenerateIntent } from '../utils/edit-selection'
 import { editModel } from '../../models'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getEditModelsForUser } from '../utils/edit-models'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { getEditIntent } from '../utils/edit-intent'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -446,7 +446,7 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
-                    intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
+                    intent: getEditIntent(document, activeRange),
                 })
             },
         })
