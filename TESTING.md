@@ -12,11 +12,8 @@
 - Commands
     - [ ] [General commands availability in toolbar](#general-commands-availability-in-cody-toolbar)
     - [ ] [General commands availability in context menu](#general-commands-availability-in-context-menu)
-    - [ ] [Explain Selected Code (Detailed)](#explain-selected-code-detailed)
-    - [ ] [Explain Selected Code (High Level)](#explain-selected-code-high-level)
-    - [ ] [Generate Docstring](#generate-docstring)
-    - [ ] [Generate Unit Test](#generate-unit-test)
-    - [ ] [Improve Variable Names](#improve-variable-names)
+    - [ ] [Explain Selected Code](#explain-selected-code)
+    - [ ] [Generate Test](#generate-unit-test)
     - [ ] [Smell Code](#smell-code)
 - Chat
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
@@ -137,34 +134,21 @@ through the browser. Expected behaviour is identical.
 * All commands are visible in context menu and can be selected.
 * All commands works after selection.
 
-### Explain Selected Code (Detailed)
+### Explain Code
 
 1. Paste the following Java code:
     ```java
     System.out.println("Hello, Cody!");
     ```
-2. Select line and use `Cody | Commands | Explain Selected Code (Detailed)`.
+2. Select line and use `Cody | Commands | Explain Code`.
 
 #### Expected behaviour
 
 * User is automatically switched to `Chat` tab.
-* Chat responds with a **detailed** description of the selected code and will elaborate on the fields, classes, and
+* Chat responds with a description of the selected code and will elaborate on the fields, classes, and
   methods, going into technical details, often structuring the text in bullet points.
 
-### Explain Selected Code (High Level)
-
-1. Paste the following Java code:
-    ```java
-    System.out.println("Hello, Cody!");
-    ```
-2. Select line and use `Cody | Commands | Explain Selected Code (Detailed)`.
-
-#### Expected behaviour
-
-* User is automatically switched to `Chat` tab.
-* Chat responds with a **high-level** and a short description of the code without going into technical details.
-
-### Generate Docstring
+### Generate Test
 
 1. Paste following Java function:
     ```java
@@ -172,32 +156,7 @@ through the browser. Expected behaviour is identical.
         return "Hello, " + name + "!";
     }
     ```
-2. Select function and use `Cody | Commands | Generate Docstring`.
-
-#### Expected behaviour
-
-* User is automatically switched to `Chat` tab.
-* Language has been identified as Java, so the documentation syntax is also in that language (see: `@param`
-  and `@return` tags).
-* Chat responds with generated docstring, similar to this:
-    ```java
-    /*
-     * Returns a greeting string with the provided name.
-     *
-     * @param name The name to greet.
-     * @return A greeting string.
-     */
-    ```
-
-### Generate Unit Test
-
-1. Paste following Java function:
-    ```java
-    public static String greet(String name) {
-        return "Hello, " + name + "!";
-    }
-    ```
-2. Select function and use `Cody | Commands | Generate Unit Test`.
+2. Select function and use `Cody | Commands | Generate Test`.
 
 #### Expected behaviour
 
@@ -209,22 +168,6 @@ through the browser. Expected behaviour is identical.
       String result = greet("Alice");
       assertEquals("Hello, Alice!", result);
     }
-    ```
-
-### Improve Variable Names
-
-1. Paste the following Java code:
-    ```java
-    String[] var0 = new String[]{"apple", "banana", "peach"};
-    ```
-2. Select line and use `Cody | Commands | Improve Variable Names`
-
-#### Expected behaviour
-
-* User is automatically switched to `Chat` tab.
-* Chat responds with code similar to this:
-    ```java
-    String[] fruits = new String[]{"apple", "banana", "peach"};
     ```
 
 ### Smell Code
