@@ -333,102 +333,99 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }
 
     /**
+     * Resets the context selection and query state.
+     */
+    const resetContextSelection = useCallback(() => {
+        setSelectedChatContext(0)
+        setCurrentChatContextQuery(undefined)
+        setContextSelection(null)
+    }, [setContextSelection])
+
+    /**
      * Callback function called when a chat context file is selected from the context selector.
+     * This updates the chat input with the selected file context.
      *
-     * Updates the chat input with the selected file context.
-     *
-     * Trims any existing @file text from the input.
-     * Adds the selected file path and range to the input.
-     * Updates contextConfig with the new added context file.
-     *
-     * This allows the user to quickly insert file context into the chat input.
+     * Allows users to quickly insert file context into the chat input.
      */
     const onChatContextSelected = useCallback(
         (selected: ContextFile): void => {
-            // Reset the current chat context query and selection
-            if (!inputCaretPosition) {
-                setSelectedChatContext(0)
-                setCurrentChatContextQuery(undefined)
-                setContextSelection(null)
-                return
-            }
-
-            const inputBeforeCaret = formInput.slice(0, inputCaretPosition) || ''
-            const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
-            if (lastAtIndex >= 0 && selected) {
-                // Trim the @file portion from input
-                const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
-                const fileDisplayText = getContextFileDisplayText(selected).trim()
-                const afterCaret = formInput.slice(inputCaretPosition)
-                const spaceAfterCaret = afterCaret.indexOf(' ')
-                const inputSuffix = !spaceAfterCaret ? afterCaret : afterCaret.slice(spaceAfterCaret)
-                // Add empty space at the end to end the file matching process
-                const newInput = `${inputPrefix}${fileDisplayText} ${inputSuffix.trimStart()}`
-                // we will use the newInput as key to check if the file still exists in formInput on submit
-                setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
-                setFormInput(newInput.trimEnd())
-                // move the caret to the end of the newly added file display text,
-                // including the length of text exisited before the lastAtIndex
-                setInputCaretPosition(fileDisplayText.length + inputPrefix.length)
-            }
-            setCurrentChatContextQuery(undefined)
-            setContextSelection(null)
-        },
-        [formInput, chatContextFiles, setFormInput, inputCaretPosition, setContextSelection]
-    )
-
-    /**
-     * Callback handler for when a user types an '@' symbol in the chat input.
-     * Checks if it is an @mention by looking at the last '@' symbol before the caret position.
-     * example 1: 'what is @example{caretPosition} vscode' -> query = 'example'
-     * example 2: 'what is @path/to/file and @example{caretPosition} vscode' -> query = 'example'
-     * example 3: 'what is @path/to/file and @ example{caretPosition} vscode' -> query = ''
-     * example 4: '@path{caretPosition}' -> query = 'path'
-     */
-    const atMentionHandler = useCallback(
-        (inputValue: string, caretPosition?: number) => {
-            if (!caretPosition || !postMessage || !inputValue) {
-                setContextSelection(null)
-                setCurrentChatContextQuery(undefined)
-                return
-            }
-
-            // If the user is typing an @mention,
-            // then we will send a query to get starter context results
-            if (inputValue[caretPosition - 1] === '@') {
-                if (inputValue.length === caretPosition || inputValue[caretPosition] === ' ') {
-                    setCurrentChatContextQuery('')
-                    postMessage({ command: 'getUserContext', query: '' })
-                    return
+            if (inputCaretPosition) {
+                const inputBeforeCaret = formInput.slice(0, inputCaretPosition) || ''
+                const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
+                if (lastAtIndex >= 0 && selected) {
+                    // Trims any existing @file text from the input.
+                    const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
+                    const fileDisplayText = getContextFileDisplayText(selected).trim()
+                    const afterCaret = formInput.slice(inputCaretPosition)
+                    const spaceAfterCaret = afterCaret.indexOf(' ')
+                    const inputSuffix = !spaceAfterCaret ? afterCaret : afterCaret.slice(spaceAfterCaret)
+                    // Add empty space at the end to end the file matching process
+                    const newInput = `${inputPrefix}${fileDisplayText} ${inputSuffix.trimStart()}`
+                    // Updates contextConfig with the new added context file.
+                    // We will use the newInput as key to check if the file still exists in formInput on submit
+                    setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
+                    setFormInput(newInput.trimEnd())
+                    // Move the caret to the end of the newly added file display text,
+                    // including the length of text exisited before the lastAtIndex
+                    setInputCaretPosition(fileDisplayText.length + inputPrefix.length)
                 }
             }
 
-            // Splits input value into before/after caret sections.
-            const inputBeforeCaret = inputValue.slice(0, caretPosition) || ''
-            const inputAfterCaret = inputValue.slice(caretPosition) || ''
+            // Resets the context selection and query state.
+            resetContextSelection()
+        },
+        [formInput, chatContextFiles, setFormInput, inputCaretPosition, resetContextSelection]
+    )
 
-            // Find the last '@' index in inputBeforeCaret to determine if it's an @mention
-            // If there are any empty spaces between lastAtIndex and caretPosition, it's not an @mention
-            const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
-
-            // Extracts text between last '@' and caret position as mention query
-            // by getting the input value after the last '@' in inputBeforeCaret
-            const inputPrefix = inputBeforeCaret.slice(lastAtIndex + 1)
-            const inputSuffix = inputAfterCaret.split(' ')?.[0]
-            const query = inputPrefix + inputSuffix
-
-            // Filters invalid queries and sets context query state.
-            if (!inputPrefix || query?.split(' ').length > 1 || !inputBeforeCaret.includes('@')) {
-                setContextSelection(null)
-                setCurrentChatContextQuery(undefined)
+    /**
+     * Callback function to handle at mentions in the chat input.
+     *
+     * Checks if the text before the caret in the chat input contains an '@' symbol,
+     * and if so extracts the text after the last '@' up to the caret position as the
+     * mention query.
+     */
+    const atMentionHandler = useCallback(
+        (inputValue: string, caretPosition?: number) => {
+            // If any of these conditions are false, it indicates an invalid state
+            // where the necessary inputs for processing the at-mention are missing.
+            if (!caretPosition || !postMessage || !inputValue) {
+                // Resets the context selection and query state.
+                resetContextSelection()
                 return
             }
 
-            // Sends getUserContext message to fetch mention context results.
+            // At mention should start with @ and contains no whitespaces
+            const isAtMention = (word: string) => /^@/.test(word) && !word.includes(' ')
+
+            // Extract mention query by splitting input value into before/after caret sections.
+            const extractMentionQuery = (input: string, caretPos: number) => {
+                const inputBeforeCaret = input.slice(0, caretPos) || ''
+                const inputAfterCaret = input.slice(caretPos) || ''
+                // Find the last '@' index in inputBeforeCaret to determine if it's an @mention
+                const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
+                // Extracts text between last '@' and caret position as mention query
+                // by getting the input value after the last '@' in inputBeforeCaret
+                const inputPrefix = inputBeforeCaret.slice(lastAtIndex)
+                const inputSuffix = inputAfterCaret.split(' ')?.[0]
+                return inputPrefix + inputSuffix
+            }
+
+            const mentionQuery = extractMentionQuery(inputValue, caretPosition)
+            const query = mentionQuery.replace(/^@/, '')
+
+            // Filters invalid queries and sets context query state accordingly:
+            // Sets the current chat context query state if a valid mention is detected.
+            // Otherwise resets the context selection and query state.
+            if (!isAtMention(mentionQuery)) {
+                resetContextSelection()
+                return
+            }
+
+            // Posts a getUserContext command to fetch context for the mention query.
             setCurrentChatContextQuery(query)
             postMessage({ command: 'getUserContext', query })
         },
-        [postMessage, setContextSelection]
+        [postMessage, resetContextSelection]
     )
 
     const inputHandler = useCallback(
@@ -613,9 +610,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
                 if (event.key === 'Escape') {
                     event.preventDefault()
-                    setSelectedChatContext(0)
-                    setCurrentChatContextQuery(undefined)
-                    setContextSelection(null)
+                    resetContextSelection()
                     return
                 }
                 // tab/enter to complete
@@ -706,7 +701,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             selectedChatContext,
             onChatContextSelected,
             enableNewChatMode,
-            setContextSelection,
+            resetContextSelection,
         ]
     )
 
