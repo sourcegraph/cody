@@ -299,7 +299,6 @@ export class InlineCompletionItemProvider
                 prefix: docContext.prefix,
             })
 
-            console.log('disableInsideComments', this.config.disableInsideComments, completionIntent)
             if (this.config.disableInsideComments && completionIntent === 'comment') {
                 return null
             }
