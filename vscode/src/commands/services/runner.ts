@@ -79,11 +79,6 @@ export class CommandRunner implements vscode.Disposable {
 
         // Conditions checks
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
-            const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
-            void vscode.window.showErrorMessage(disabledMsg)
-            return
-        }
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored

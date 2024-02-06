@@ -54,13 +54,6 @@ export class EditManager implements vscode.Disposable {
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor'
     ): Promise<FixupTask | undefined> {
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
-            void vscode.window.showErrorMessage(
-                'This feature has been disabled by your Sourcegraph site admin.'
-            )
-            return
-        }
 
         // Log the default edit command name for doc intent or test mode
         const isDocCommand = args?.intent === 'doc' ? 'doc' : undefined

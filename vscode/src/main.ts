@@ -328,14 +328,6 @@ const register = async (
         id: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!commands) {
-            void vscode.window.showErrorMessage(
-                'This feature has been disabled by your Sourcegraph site admin.'
-            )
-            return undefined
-        }
-
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
