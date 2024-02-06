@@ -30,10 +30,35 @@ export function endsWithBlockStart(text: string, languageId: string): string | n
     return blockStart && text.trimEnd().endsWith(blockStart) ? blockStart : null
 }
 
+// Languages with more than 100 multiline completions in the last month and CAR > 20%:
+// https://sourcegraph.looker.com/explore/sourcegraph/cody?qid=JBItVt6VFMlCtMa9KOBmjh&origin_space=562
+const LANGUAGES_WITH_DYNAMIC_MULTILINE_SUPPORT = [
+    'astro',
+    'cpp',
+    'csharp',
+    'css',
+    'dart',
+    'elixir',
+    'go',
+    'html',
+    'java',
+    'javascript',
+    'javascriptreact',
+    'php',
+    'python',
+    'rust',
+    'svelte',
+    'typescript',
+    'typescriptreact',
+    'vue',
+]
+
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, dynamicMultilineCompletions, position } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } =
         docContext
+    const isDynamicMultiline =
+        dynamicMultilineCompletions && LANGUAGES_WITH_DYNAMIC_MULTILINE_SUPPORT.includes(languageId)
 
     const blockStart = endsWithBlockStart(prefix, languageId)
     const isBlockStartActive = Boolean(blockStart)
@@ -47,9 +72,11 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
 
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
-    if (!dynamicMultilineCompletions && isMethodOrFunctionInvocation) {
+    // Don't fire multiline completion for unsupported languages.
+    if (!isDynamicMultiline && isMethodOrFunctionInvocation) {
         addAutocompleteDebugEvent('detectMultiline', {
-            dynamicMultilineCompletions,
+            languageId,
+            isDynamicMultiline,
             isMethodOrFunctionInvocation,
         })
 
@@ -78,9 +105,9 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
-    if ((dynamicMultilineCompletions && isNewLineOpeningBracketMatch) || isSameLineOpeningBracketMatch) {
+    if ((isDynamicMultiline && isNewLineOpeningBracketMatch) || isSameLineOpeningBracketMatch) {
         addAutocompleteDebugEvent('detectMultiline', {
-            dynamicMultilineCompletions,
+            isDynamicMultiline,
             isNewLineOpeningBracketMatch,
             isSameLineOpeningBracketMatch,
         })
@@ -107,9 +134,9 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
-    if ((dynamicMultilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
+    if ((isDynamicMultiline && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
         addAutocompleteDebugEvent('detectMultiline', {
-            dynamicMultilineCompletions,
+            isDynamicMultiline,
             nonEmptyLineEndsWithBlockStart,
             isEmptyLineAfterBlockStart,
         })
@@ -121,7 +148,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
     }
 
     addAutocompleteDebugEvent('detectMultiline', {
-        dynamicMultilineCompletions,
+        isDynamicMultiline,
         nonEmptyLineEndsWithBlockStart,
         isEmptyLineAfterBlockStart,
         isNewLineOpeningBracketMatch,
