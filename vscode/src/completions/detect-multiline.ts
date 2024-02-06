@@ -34,6 +34,7 @@ export function endsWithBlockStart(text: string, languageId: string): string | n
 // https://sourcegraph.looker.com/explore/sourcegraph/cody?qid=JBItVt6VFMlCtMa9KOBmjh&origin_space=562
 const LANGUAGES_WITH_MULTILINE_SUPPORT = [
     'astro',
+    'c',
     'cpp',
     'csharp',
     'css',
