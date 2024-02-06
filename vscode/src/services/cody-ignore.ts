@@ -13,7 +13,9 @@ const utf8 = new TextDecoder('utf-8')
  * NOTE: This is only called once at git extension start up time (gitAPIinit)
  */
 export function setUpCodyIgnore(): vscode.Disposable {
+    // Enable ignore and then handle existing workspace folders.
     onConfigChange()
+    vscode.workspace.workspaceFolders?.map(async wf => await refresh(wf.uri))
 
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
@@ -26,9 +28,6 @@ export function setUpCodyIgnore(): vscode.Disposable {
         e.added.map(wf => refresh(wf.uri))
         e.removed.map(wf => clear(wf))
     })
-
-    // Handle existing workspace folders.
-    vscode.workspace.workspaceFolders?.map(wf => refresh(wf.uri))
 
     // NOTE This can be removed once cody ignore is stable.
     const onDidChangeConfig = vscode.workspace.onDidChangeConfiguration(e => {
@@ -49,7 +48,7 @@ export function setUpCodyIgnore(): vscode.Disposable {
 /**
  * The cancellation tokens for finding workspace ignore file processes.
  */
-const wsInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
+const findInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
 
 /**
  * Rebuilds the ignore files for the workspace containing `uri`.
@@ -69,38 +68,45 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         logDebug('CodyIgnore:refresh', 'failed', { verbose: 'not a file' })
         return
     }
-
-    logDebug('CodyIgnore:refresh:workspace', 'starting...', { verbose: wf.uri.path })
+    const startTime = performance.now()
+    logDebug('CodyIgnore:refresh:workspace', 'started', { verbose: wf.uri.path })
 
     // Cancel fileFiles process for current workspace if there is one in progress to avoid
     // having multiple find files in progress that can cause performance slow-down issues.
-    const findFilesInProgressToken = wsInProgressTokens.get(uri.path)
+    const findFilesInProgressToken = findInProgressTokens.get(uri.path)
     findFilesInProgressToken?.cancel()
     findFilesInProgressToken?.dispose()
 
     // Set a new cancellation token for the workspace.
-    const newFindFilesToken = new vscode.CancellationTokenSource()
-    wsInProgressTokens.set(uri.path, newFindFilesToken)
+    const newToken = new vscode.CancellationTokenSource()
+    findInProgressTokens.set(uri.path, newToken)
 
+    // TODO (bee) Cancel the search after n minutes if it's taking too long.
     // Get the codebase name from the git clone URL on each refresh
-    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
+    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time,
+    // we will need to map the name of the codebase to each workspace for us to map the embedding results
+    // returned for a specific codebase by the search API to the correct workspace later.
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB)
+    // exclude all dot files (except .cody) and node_modules files
+    const excludePattern = '.*, **/.* ,**/node_modules/**'
     const ignoreFiles = await vscode.workspace.findFiles(
         ignoreFilePattern,
+        excludePattern,
         undefined,
-        undefined,
-        newFindFilesToken.token
+        newToken.token
     )
+
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
             uri: fileUri,
             content: await tryReadFile(fileUri),
         }))
     )
-
     ignores.setIgnoreFiles(wf.uri, filesWithContent)
-    wsInProgressTokens.delete(uri.path)
-    logDebug('CodyIgnore:refresh:workspace', 'completed', { verbose: wf.uri.path })
+
+    findInProgressTokens.delete(uri.path)
+    const elapsed = performance.now() - startTime
+    logDebug('CodyIgnore:refresh:workspace', `completed in ${elapsed}`, { verbose: wf.uri.path })
 }
 
 /**
@@ -116,12 +122,12 @@ function clear(wf: vscode.WorkspaceFolder): void {
     ignores.clearIgnoreFiles(wf.uri)
 
     // Remove any in-progress cancellation tokens for the workspace.
-    const tokens = wsInProgressTokens.values()
+    const tokens = findInProgressTokens.values()
     for (const token of tokens) {
         token.cancel()
         token.dispose()
     }
-    wsInProgressTokens.clear()
+    findInProgressTokens.clear()
 
     logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.toString() })
 }

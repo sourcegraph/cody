@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { setUpCodyIgnore } from '../services/cody-ignore'
 
 import type { API, GitExtension, Repository } from './builtinGitExtension'
 import { TestSupport } from '../test-support'
@@ -33,13 +32,12 @@ export function gitAPI(): API | undefined {
  * Also sets up the .codyignore handler.
  */
 let vscodeGitAPI: API | undefined
-export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
+export async function gitAPIinit(): Promise<vscode.Disposable> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
     // Initializes the Git API by activating the Git extension and getting the API instance.
     // Sets up the .codyignore handler.
     function init(): void {
         if (!vscodeGitAPI && extension?.isActive) {
-            setUpCodyIgnore()
             if (TestSupport.instance) {
                 TestSupport.instance.ignoreHelper.set(ignores)
             }
@@ -61,12 +59,16 @@ export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
         }
     }
     // Update vscodeGitAPI when the extension becomes enabled/disabled
-    return extension?.exports?.onDidChangeEnablement(enabled => {
-        if (enabled) {
-            return init()
-        }
-        vscodeGitAPI = undefined
-    })
+    return {
+        dispose() {
+            extension?.exports?.onDidChangeEnablement(enabled => {
+                if (enabled) {
+                    return init()
+                }
+                vscodeGitAPI = undefined
+            })
+        },
+    }
 }
 
 /**
