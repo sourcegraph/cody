@@ -10965,6 +10965,1032 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 03de15edb1e51c1d76695fd6c2450709
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1189
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Explain what the selected code does in simple terms. Assume the audience
+                  is a beginner programmer who has just learned the language
+                  features and basic syntax. Focus on explaining: 1) The purpose
+                  of the code 2) What input(s) it takes 3) What output(s) it
+                  produces 4) How it achieves its purpose through the logic and
+                  algorithm. 5) Any important logic flows or data
+                  transformations happening. Use simple language a beginner
+                  could understand. Include enough detail to give a full picture
+                  of what the code aims to accomplish without getting too
+                  technical. Format the explanation in coherent paragraphs,
+                  using proper punctuation and grammar. Write the explanation
+                  assuming no prior context about the code is known. Do not make
+                  assumptions about variables or functions not shown in the
+                  shared code. Start the answer with the name of the code that
+                  is being explained."
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 96149
+        content:
+          mimeType: text/event-stream
+          size: 96149
+          text: >+
+            event: completion
+
+            data: {"completion":" This","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverse","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that rever","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it append","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, rever","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this newly","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this newly reversed","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this newly reversed string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this newly reversed string.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" This is a function called reverseString that reverses a string.\n\nIt takes one input, which is a string called str. \n\nIt returns a new string that is the reverse of the input string.\n\nThe way it works is:\n\nFirst it initializes an empty string called reversed. This will hold the reversed version of the input string.\n\nThen it loops through each character in the input string, from the last character to the first character. \n\nFor each character, it appends that character to the reversed string.\n\nBy looping from the end of the input string to the start, and appending each character to the reversed string, it builds up the reversed version one character at a time.\n\nFinally, after the loop is done, reversed contains the fully reversed string, which is returned from the function.\n\nSo in summary, it takes a string as input, reverses the order of the characters, and returns this newly reversed string.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 31 Jan 2024 14:28:41 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-01-31T14:28:38.180Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 78536ea0a6a190ea66c88fca19c54f7c
       _order: 0
       cache: {}
@@ -11483,6 +12509,1106 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-01-31T19:39:01.987Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fb480d4379d60f232590285f1de0b27a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2589
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/sum.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1291
+        content:
+          mimeType: text/event-stream
+          size: 1291
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * S","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the result","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the result.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the result.\n*/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the result.\n*/\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Sums two numbers and returns the result.\n*/\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 Feb 2024 09:45:34 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-02T09:45:31.926Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 99b9a00e7c648908043334b415a7226d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2932
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/TestClass.ts: Use the
+                  following code snippet from file: src/TestClass.ts:
+
+                  const foo = 42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/TestClass.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>    public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }</SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1877
+        content:
+          mimeType: text/event-stream
+          size: 1877
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldG","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the console","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the console.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the console.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the console.\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * If shouldGreet is true, logs a greeting to the console.\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 Feb 2024 09:45:39 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-02T09:45:34.868Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e4634d827b69e1be103e128622a19b30
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2940
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/TestLogger.ts: Use the
+                  following code snippet from file: src/TestLogger.ts:
+
+                  const foo = 42
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/TestLogger.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 4790
+        content:
+          mimeType: text/event-stream
+          size: 4790
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `record","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample message","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample message.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample message.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample message.\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Starts logging by initializing some internal state, \n * and then calls an internal `recordLog` function \n * to log a sample message.\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 Feb 2024 09:45:43 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-02T09:45:39.872Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 77d20448e5d4ed79cf0d46299c822d34
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3164
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/example.test.ts: Use the
+                  following code snippet from file: src/example.test.ts:
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 4300
+        content:
+          mimeType: text/event-stream
+          size: 4300
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has a bug","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has a bug\n*/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has a bug\n*/\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Test block that contains 3 test cases:\n * - Does test 1 \n * - Does test 2\n * - Does another test that has a bug\n*/\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 Feb 2024 09:45:48 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-02T09:45:44.596Z
       time: 0
       timings:
         blocked: -1
@@ -15397,837 +17523,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-02-05T15:58:22.639Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 10c6669fe2a39489f4197a95d85894ef
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2748
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file path src/sum.ts: Use the following
-                  code snippet from file: src/sum.ts:
-
-                  rt function sum(a: number, b: number): number {
-                      
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>/* CURSOR */</SELECTEDCODE7662>
-
-
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1109
-        content:
-          mimeType: text/event-stream
-          size: 1109
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two numbers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two numbers.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two numbers.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two numbers.\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Calculates the sum of two numbers.\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 06 Feb 2024 11:01:01 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1289
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-06T11:00:57.382Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 4b98041aea07aaf718bd686ada3ea24a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2899
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file path src/TestClass.ts: Use the
-                  following code snippet from file: src/TestClass.ts:
-
-                  42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestClass.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>console.log(/* CURSOR */ 'Hello World!')</SELECTEDCODE7662>
-
-
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1265
-        content:
-          mimeType: text/event-stream
-          size: 1265
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs '","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!'","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the console","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the console.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the console.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the console.\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs 'Hello World!' to the console.\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 06 Feb 2024 11:01:04 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1289
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-06T11:01:01.187Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 1b35aff65b8714ac9b19b0c86bda9ee6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2881
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file path src/TestLogger.ts: Use the
-                  following code snippet from file: src/TestLogger.ts:
-
-                  42
-
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
-
-                          function recordLog() {
-                              
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestLogger.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>console.log(/* CURSOR */ 'Recording the log')</SELECTEDCODE7662>
-
-
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 664
-        content:
-          mimeType: text/event-stream
-          size: 664
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a log message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a log message */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a log message */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/** Records a log message */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 06 Feb 2024 11:01:06 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1289
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-06T11:01:04.270Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 4096dcb67d3b3ec29d5d8fcdf813c852
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3142
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file path src/example.test.ts: Use the
-                  following code snippet from file: src/example.test.ts:
-                   expect } from 'vitest'
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
-
-
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1289
-        content:
-          mimeType: text/event-stream
-          size: 1289
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time in milliseconds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time in milliseconds\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time in milliseconds\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current high resolution time in milliseconds\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 06 Feb 2024 11:01:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1289
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-06T11:01:06.646Z
       time: 0
       timings:
         blocked: -1
