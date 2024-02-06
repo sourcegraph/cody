@@ -380,11 +380,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     /**
      * Callback handler for when a user types an '@' symbol in the chat input.
      * Checks if it is an @mention by looking at the last '@' symbol before the caret position.
-     * Splits input value into before/after caret sections.
-     * Finds last '@' index in before caret section.
-     * Extracts text between last '@' and caret position as mention query.
-     * Filters invalid queries and sets context query state.
-     * Sends getUserContext message to fetch mention context results.
+     * example 1: 'what is @example{caretPosition} vscode' -> query = 'example'
+     * example 2: 'what is @path/to/file and @example{caretPosition} vscode' -> query = 'example'
+     * example 3: 'what is @path/to/file and @ example{caretPosition} vscode' -> query = ''
+     * example 4: '@path{caretPosition}' -> query = 'path'
      */
     const atMentionHandler = useCallback(
         (inputValue: string, caretPosition?: number) => {
@@ -394,7 +393,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
-            // If the user is typing an @mention, then we will send a query to the server to start
+            // If the user is typing an @mention,
+            // then we will send a query to get starter context results
             if (inputValue[caretPosition - 1] === '@') {
                 if (inputValue.length === caretPosition || inputValue[caretPosition] === ' ') {
                     setCurrentChatContextQuery('')
@@ -403,28 +403,28 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
-            // split the input value at it's caret position
+            // Splits input value into before/after caret sections.
             const inputBeforeCaret = inputValue.slice(0, caretPosition) || ''
             const inputAfterCaret = inputValue.slice(caretPosition) || ''
 
-            // In inputBeforeCaret, search for the last '@' index to see if it's an @mention
+            // Find the last '@' index in inputBeforeCaret to determine if it's an @mention
+            // If there are any empty spaces between lastAtIndex and caretPosition, it's not an @mention
             const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
-            // if there is any empty spaces between the lastAtIndex and the caretPosition in the inputValue, then it's not an @mention
-            // example: 'what is @example{caretPosition} vscode' -> query = 'example'
-            // example2: 'what is @path/to/file and @example{caretPosition} vscode' -> query = 'example'
-            // example3: 'what is @path/to/file and @ example{caretPosition} vscode' -> query = ''
-            // we want to get the input value after lastAt in inputBeforeCaret
+
+            // Extracts text between last '@' and caret position as mention query
+            // by getting the input value after the last '@' in inputBeforeCaret
             const inputPrefix = inputBeforeCaret.slice(lastAtIndex + 1)
             const inputSuffix = inputAfterCaret.split(' ')?.[0]
             const query = inputPrefix + inputSuffix
 
-            // Filter invalid queries
+            // Filters invalid queries and sets context query state.
             if (!inputPrefix || query?.split(' ').length > 1 || !inputBeforeCaret.includes('@')) {
                 setContextSelection(null)
                 setCurrentChatContextQuery(undefined)
                 return
             }
 
+            // Sends getUserContext message to fetch mention context results.
             setCurrentChatContextQuery(query)
             postMessage({ command: 'getUserContext', query })
         },
@@ -613,14 +613,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
                 if (event.key === 'Escape') {
                     event.preventDefault()
-                    const lastAtIndex = formInput.lastIndexOf('@')
-                    if (lastAtIndex >= 0) {
-                        const inputWithoutFileInput = formInput.slice(0, lastAtIndex)
-                        // Remove @ from input
-                        setFormInput(inputWithoutFileInput)
-                    }
-                    setContextSelection(null)
                     setSelectedChatContext(0)
+                    setCurrentChatContextQuery(undefined)
+                    setContextSelection(null)
                     return
                 }
                 // tab/enter to complete
