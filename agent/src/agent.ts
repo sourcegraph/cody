@@ -730,6 +730,13 @@ export class Agent extends MessageHandler {
             return { models: panel.models ?? [] }
         })
 
+        this.registerAuthenticatedRequest('chat/setModel', async ({id, model}) => {
+            await this.receiveWebviewMessage(id, {
+                command: 'chatModel', model: model
+            })
+            return true
+        })
+
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await this.receiveWebviewMessage(id, { command: 'context/get-remote-search-repos' })

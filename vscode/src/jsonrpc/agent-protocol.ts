@@ -49,6 +49,7 @@ export type Requests = {
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/setModel': [{id: string; model: string}, boolean]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
