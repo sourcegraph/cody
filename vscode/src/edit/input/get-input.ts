@@ -147,10 +147,7 @@ export const getInput = async (
         editor.setDecorations(PREVIEW_RANGE_DECORATION, [range])
         editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
     }
-
-    if (initialValues.initialExpandedRange) {
-        previewActiveRange(initialValues.initialExpandedRange)
-    }
+    previewActiveRange(activeRange)
 
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
