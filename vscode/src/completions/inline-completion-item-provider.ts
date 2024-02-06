@@ -191,7 +191,10 @@ export class InlineCompletionItemProvider
             return null
         }
 
-        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
+        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            console.log('IDIDIDIDID')
+            console.log(span.spanContext().traceId)
+            console.log('ENDNENDNENED')
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -209,10 +212,7 @@ export class InlineCompletionItemProvider
                     // the error banner for autocomplete config turned off
                     throw new Error('AutocompleteConfigTurnedOff')
                 }
-            } catch (error) {
-                this.onError(error as Error)
-                throw error
-            }
+            } catch (error) {}
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {
@@ -406,7 +406,8 @@ export class InlineCompletionItemProvider
                     docContext,
                     position,
                     visibleItems,
-                    context
+                    context,
+                    span
                 )
 
                 // Store the log ID for each completion item so that we can later map to the selected
@@ -514,13 +515,14 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem'> | CompletionItemID
+        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem' | 'span'> | CompletionItemID
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
 
+        completion.span?.addEvent('suggested')
         CompletionLogger.suggested(completion.logId)
     }
 

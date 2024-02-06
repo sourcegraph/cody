@@ -769,7 +769,7 @@ export class SourcegraphGraphQLAPIClient {
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+        return (
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
@@ -800,16 +800,14 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
-        return wrapInActiveSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
-            fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ query, variables }),
-                headers,
-            })
-                .then(verifyResponseCode)
-                .then(response => response.json() as T)
-                .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
-        )
+        return fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ query, variables }),
+            headers,
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
     }
 
     // make an anonymous request to the Testing API

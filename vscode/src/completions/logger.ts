@@ -6,7 +6,7 @@ import { isNetworkError, type BillingCategory, type BillingProduct } from '@sour
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
-import { captureException, getActiveSpan, shouldErrorBeReported } from '../services/sentry/sentry'
+import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'

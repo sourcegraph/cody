@@ -3,8 +3,9 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 
 import {
     FeatureFlag,
@@ -62,13 +63,11 @@ export class OpenTelemetryService {
                 [SemanticResourceAttributes.SERVICE_VERSION]: version,
             }),
             instrumentations: [new HttpInstrumentation()],
-            traceExporter: new OTLPTraceExporter({
-                url: traceUrl,
-            }),
+            traceExporter: new OTLPTraceExporter({ url: traceUrl }),
 
-            ...(process.env.NODE_ENV === 'development' && {
-                spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
-            }),
+            // ...(process.env.NODE_ENV === 'development' && {
+            //     spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
+            // }),
         })
         this.sdk.start()
     }
