@@ -120,6 +120,7 @@ export function getEditLineSelection(
     selection: vscode.Range
 ): vscode.Range {
     if (selection.isEmpty) {
+        // No selection to expand, do nothing
         return selection
     }
 
