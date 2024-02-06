@@ -6,7 +6,6 @@ import { sidebarSignin } from './common'
 import { test, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
-
 test('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -124,4 +123,19 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type(' and @Main.ja', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java')
+
+    // TEST: Support @-file in mid-sentence
+    await chatInput.focus()
+    await chatInput.clear()
+    await chatInput.type('Explain the file', { delay: 50 })
+    // move cursor after 'Explain the'
+    await chatInput.press('ArrowLeft')
+    await chatInput.press('ArrowLeft')
+    await chatInput.press('ArrowLeft')
+    await chatInput.press('ArrowLeft')
+    await chatInput.press('ArrowLeft')
+    await chatInput.press('Space')
+    await chatInput.type('@Main', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('Explain the @Main.java file')
 })
