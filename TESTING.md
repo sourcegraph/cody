@@ -1,9 +1,8 @@
 ## Checklist
 
 - Onboarding
-    - [ ] [Sign in with GitHub](#sign-in-with-github)
-    - [ ] [Sign in with GitLab](#sign-in-with-gitlab)
-    - [ ] [Sign in with Google](#sign-in-with-google)
+    - [ ] [Sign in with GitHub, GitLab and Google](#sign-in-with-github-gitlab-and-google)
+    - [ ] [Remove all accounts](#remove-all-accounts)
 - Autocomplete
     - [ ] [Single-line autocomplete](#single-line-autocomplete)
     - [ ] [Multi-line autocomplete](#multi-line-autocomplete)
@@ -35,7 +34,7 @@
 
 ## Onboarding
 
-### Sign in with GitHub
+### Sign in with GitHub, GitLab and Google
 
 Prerequisite: You have to **sign out** from all existing accounts.
 
@@ -48,15 +47,19 @@ Prerequisite: You have to **sign out** from all existing accounts.
 * IDE should receive a valid token automatically.
 * `Commands` and `Chat` tabs are ready to use.
 
-### Sign in with GitLab
+Verify the remaining SSO methods by performing the same steps for `Sign in with GitLab` and `Sign in with Google`.
 
-Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done
-through the browser. Expected behaviour is identical.
+### Remove all accounts
 
-### Sign in with Google
+Prerequisite: You have to be **signed in**. This is important because we expect certain components to be refreshed automatically.
 
-Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done
-through the browser. Expected behaviour is identical.
+1. Navigate to `Settings` > `Sourcegraph & Cody`.
+2. Remove all accounts and apply settings.
+
+#### Expected behaviour
+
+* Cody toolbar is automatically refreshed and the user is greeted with the `Welcome to Cody` panel.
+* Status bar widget has a `No account signed-in` status. Status bar is located in the bottom right corner of the IDE.
 
 ## Autocomplete
 
