@@ -100,4 +100,9 @@ interface CodyAgentServer {
   fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>
 
   @JsonRequest("chat/restore") fun chatRestore(params: ChatRestoreParams): CompletableFuture<String>
+
+  @JsonRequest("attribution/search")
+  fun attributionSearch(
+      params: AttributionSearchParams
+  ): CompletableFuture<AttributionSearchResponse>
 }

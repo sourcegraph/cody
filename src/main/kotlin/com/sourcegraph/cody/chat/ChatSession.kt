@@ -10,6 +10,8 @@ typealias SessionId = String
 
 interface ChatSession {
 
+  fun getSessionId(): SessionId?
+
   fun sendWebviewMessage(message: WebviewMessage)
 
   @RequiresEdt fun sendMessage(text: String, contextFiles: List<ContextFile>)

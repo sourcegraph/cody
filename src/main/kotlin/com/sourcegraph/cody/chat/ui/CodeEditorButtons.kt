@@ -41,7 +41,9 @@ class CodeEditorButtons(val buttons: Array<JButton>) {
           0,
           jButtonPreferredSize.width,
           jButtonPreferredSize.height)
-      shift += jButtonPreferredSize.width + CodeEditorFactory.spaceBetweenButtons
+      if (jButtonPreferredSize.width > 0) { // Do not add space for collapsed button.
+        shift += jButtonPreferredSize.width + CodeEditorFactory.spaceBetweenButtons
+      }
     }
   }
 

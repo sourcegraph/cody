@@ -19,6 +19,7 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
 import com.sourcegraph.cody.chat.ui.CodeEditorButtons;
 import com.sourcegraph.cody.chat.ui.CodeEditorPart;
+import com.sourcegraph.cody.ui.AttributionButtonController;
 import com.sourcegraph.cody.ui.TransparentButton;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -64,6 +65,9 @@ public class CodeEditorFactory {
     insertAtCursorButton.setToolTipText("Insert text at current cursor position");
     insertAtCursorButton.addActionListener(insertAtCursorActionListener(editor));
 
+    AttributionButtonController attributionButtonController =
+        AttributionButtonController.Companion.setup(project);
+
     Dimension copyButtonPreferredSize = copyButton.getPreferredSize();
     int halfOfButtonHeight = copyButtonPreferredSize.height / 2;
     JLayeredPane layeredEditorPane = new JLayeredPane();
@@ -89,9 +93,16 @@ public class CodeEditorFactory {
         editorPreferredSize.height + halfOfButtonHeight);
     layeredEditorPane.add(editorComponent, JLayeredPane.DEFAULT_LAYER);
 
-    JButton[] buttons = new JButton[] {copyButton, insertAtCursorButton};
+    // Rendering order of buttons is right-to-left:
+    JButton[] buttons =
+        new JButton[] {attributionButtonController.getButton(), copyButton, insertAtCursorButton};
     CodeEditorButtons codeEditorButtons = new CodeEditorButtons(buttons);
     codeEditorButtons.addButtons(layeredEditorPane, editorComponent.getWidth());
+    attributionButtonController.onUpdate(
+        () -> {
+          // Resize buttons on text update.
+          codeEditorButtons.updateBounds(editorComponent.getWidth());
+        });
 
     // resize the editor and move the copy button when the parent panel is resized
     layeredEditorPane.addComponentListener(
@@ -144,7 +155,8 @@ public class CodeEditorFactory {
 
     editor.addEditorMouseMotionListener(editorMouseMotionListener);
     editor.addEditorMouseListener(editorMouseListener);
-    CodeEditorPart codeEditorPart = new CodeEditorPart(layeredEditorPane, editor);
+    CodeEditorPart codeEditorPart =
+        new CodeEditorPart(layeredEditorPane, editor, attributionButtonController);
     codeEditorPart.updateLanguage(language);
     return codeEditorPart;
   }

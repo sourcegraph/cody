@@ -1,13 +1,10 @@
 package com.sourcegraph.cody.agent;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.sourcegraph.cody.agent.protocol.DebugMessage;
-import java.lang.ref.WeakReference;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
@@ -25,7 +22,8 @@ public class CodyAgentClient {
   // Callback that is invoked when the agent sends a "setConfigFeatures" message.
   @Nullable public ConfigFeaturesObserver onSetConfigFeatures;
 
-  // Callback that is invoked on webview messages which aren't handled by onNewMessage or onSetConfigFeatures
+  // Callback that is invoked on webview messages which aren't handled by onNewMessage or
+  // onSetConfigFeatures
   @Nullable public Consumer<WebviewPostMessageParams> onReceivedWebviewMessage;
 
   @Nullable public Editor editor;
@@ -83,7 +81,8 @@ public class CodyAgentClient {
     }
 
     if (onReceivedWebviewMessage != null) {
-      ApplicationManager.getApplication().invokeLater(() -> onReceivedWebviewMessage.accept(params));
+      ApplicationManager.getApplication()
+          .invokeLater(() -> onReceivedWebviewMessage.accept(params));
       return;
     }
 

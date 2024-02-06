@@ -6,8 +6,9 @@ import com.intellij.util.ui.UIUtil
 import java.awt.*
 import javax.swing.JButton
 
-class TransparentButton(text: String) : JButton(text) {
+open class TransparentButton(text: String) : JButton(text) {
   private val cornerRadius = 5
+  private val fontMetric: FontMetrics
 
   init {
     isContentAreaFilled = false
@@ -15,12 +16,16 @@ class TransparentButton(text: String) : JButton(text) {
     isBorderPainted = false
     isVisible = false
 
-    // Calculate the preferred size based on the size of the text
-    val fm = getFontMetrics(font)
+    this.fontMetric = getFontMetrics(font)
+    updatePreferredSize()
+  }
+
+  /** Calculate the preferred size based on the size of the text. */
+  fun updatePreferredSize() {
     val horizontalPadding = 10
     val verticalPadding = 5
-    val width = fm.stringWidth(getText()) + horizontalPadding * 2
-    val height = fm.height + verticalPadding * 2
+    val width = fontMetric.stringWidth(getText()) + horizontalPadding * 2
+    val height = fontMetric.height + verticalPadding * 2
     preferredSize = Dimension(width, height)
   }
 

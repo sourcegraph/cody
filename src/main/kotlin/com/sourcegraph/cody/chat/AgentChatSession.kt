@@ -62,8 +62,11 @@ private constructor(
 
   fun getPanel(): ChatPanel = chatPanel
 
-  fun hasSessionId(thatSessionId: SessionId): Boolean =
-      sessionId.get().getNow(null) == thatSessionId
+  override fun getSessionId(): SessionId? = sessionId.get().getNow(null)
+
+  fun hasSessionId(thatSessionId: SessionId): Boolean = getSessionId() == thatSessionId
+
+  fun hasMessageId(messageId: UUID): Boolean = messages.any { it.id == messageId }
 
   override fun getInternalId(): String = internalId
 
