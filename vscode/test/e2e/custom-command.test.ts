@@ -45,7 +45,7 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.keyboard.type('New Custom Command...')
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     // Enter command name
-    await expect(page.getByText('New Custom Cody Command: Slash Name')).toBeVisible()
+    await expect(page.getByText('New Custom Cody Command: Command Name')).toBeVisible()
     await page.keyboard.type(commandName)
     await page.keyboard.press('Enter')
     // Enter description
@@ -115,7 +115,7 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
-    /* Test: context.currentDir with /currentDir command */
+    /* Test: context.currentDir with currentDir command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
@@ -133,21 +133,21 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-15' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-11' })).toBeVisible()
 
-    /* Test: context.filePath with /filePath command */
+    /* Test: context.filePath with filePath command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('/filePath')
+    await page.getByPlaceholder('Search command to run...').fill('filePath')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
 
-    /* Test: context.directory with /directory command */
+    /* Test: context.directory with directory command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('/directory')
+    await page.getByPlaceholder('Search command to run...').fill('directory')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
     await expect(chatPanel.getByText('✨ Context: 15 lines from 2 file')).toBeVisible()
@@ -161,11 +161,11 @@ test('execute custom commands with context defined in cody.json', async ({ page,
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
-    /* Test: context.openTabs with /openTabs command */
+    /* Test: context.openTabs with openTabs command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('/openTabs')
+    await page.getByPlaceholder('Search command to run...').fill('openTabs')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context

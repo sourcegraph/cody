@@ -9,6 +9,7 @@ import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } fr
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
+import { fromSlashCommand, toSlashCommand } from '../utils/common'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -25,7 +26,7 @@ export async function showCommandMenu(
         if (type === 'default') {
             items.push(CommandMenuSeperator.commands)
             for (const [_name, _command] of vscodeDefaultCommands) {
-                const label = _command.slashCommand
+                const label = fromSlashCommand(_command.slashCommand)
                 const description = _command.description
                 const command = _command.slashCommand
                 items.push({ label, description, command })
@@ -35,7 +36,7 @@ export async function showCommandMenu(
         // Add custom commands
         items.push(CommandMenuSeperator.custom)
         for (const customCommand of customCommands) {
-            const label = customCommand.slashCommand
+            const label = fromSlashCommand(customCommand.slashCommand)
             const description = customCommand.description
             const command = customCommand.slashCommand
             items.push({ label, description, command })
@@ -82,14 +83,12 @@ export async function showCommandMenu(
         })
 
         quickPick.onDidChangeValue(value => {
-            if (value?.startsWith('/')) {
-                const commandKey = value.split(' ')[0]
-                const isCommand = items.find(item => item.label === commandKey)
-                if (commandKey && isCommand) {
-                    isCommand.alwaysShow = true
-                    quickPick.items = [isCommand]
-                    return
-                }
+            const commandKey = value.split(' ')[0]
+            const isCommand = items.find(item => item.label === commandKey)
+            if (commandKey && isCommand) {
+                isCommand.alwaysShow = true
+                quickPick.items = [isCommand]
+                return
             }
 
             if (value && !value.startsWith('/')) {
@@ -130,8 +129,8 @@ export async function showCommandMenu(
             }
 
             // Check if it's an ask command
-            if (selected.startsWith('/ask')) {
-                const inputValue = value.replace(/^\/ask/, '').trim()
+            if (selected.startsWith('ask ')) {
+                const inputValue = value.replace('ask ', '').trim()
                 // show input box if no value
                 if (!inputValue) {
                     void showChatInputBox()
@@ -143,16 +142,14 @@ export async function showCommandMenu(
             }
 
             // Check if it's an edit command
-            if (selected.startsWith('/edit')) {
+            if (selected.startsWith('edit ')) {
                 void executeEdit({ instruction: value }, 'menu')
                 quickPick.hide()
                 return
             }
 
             // Else, process the selection as custom command
-            if (selected.startsWith('/')) {
-                void commands.executeCommand('cody.action.command', selected + ' ' + value)
-            }
+            void commands.executeCommand('cody.action.command', toSlashCommand(selected) + ' ' + value)
 
             resolve()
             quickPick.hide()
@@ -178,7 +175,7 @@ export async function showNewCustomCommandMenu(
 
 async function showChatInputBox(): Promise<void> {
     const input = await window.showInputBox({
-        title: '/ask Cody',
+        title: 'ask Cody',
         placeHolder: 'Enter your question for Cody.',
     })
     if (!input) {

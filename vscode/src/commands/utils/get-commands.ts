@@ -5,7 +5,6 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '../execute'
 import type { CodyCommandArgs } from '../types'
 import type { CodyCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { toSlashCommand } from './common'
 
 export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
     const map = new Map<string, CodyCommand>()
@@ -46,9 +45,10 @@ export function buildCodyCommandMap(
             continue
         }
         command.type = type
-        command.slashCommand = toSlashCommand(key)
+        // NOTE: we no longer support slash commands, this is for backward compatibility
+        command.slashCommand = key
         // Set default mode to ask unless it's an edit command
-        command.mode = command.mode ?? (command.prompt.startsWith('/edit ') ? 'edit' : 'ask')
+        command.mode = command.mode ?? 'ask'
         map.set(command.slashCommand, command as CodyCommand)
     }
 

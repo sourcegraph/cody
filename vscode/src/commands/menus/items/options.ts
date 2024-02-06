@@ -2,12 +2,12 @@ import type { CommandMenuItem } from '../types'
 
 export const ASK_QUESTION_COMMAND = {
     description: 'Ask a question',
-    slashCommand: '/ask',
+    slashCommand: 'ask',
 }
 
 export const EDIT_COMMAND = {
     description: 'Edit code',
-    slashCommand: '/edit',
+    slashCommand: 'edit',
 }
 
 // Common Menu Options

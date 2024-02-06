@@ -40,19 +40,19 @@ export class CustomCommandsBuilderMenu {
     private async makeSlashCommand(commands: string[]): Promise<string | undefined> {
         const commandSet = new Set(commands)
         let value = await window.showInputBox({
-            title: 'New Custom Cody Command: Slash Name',
-            prompt: 'Enter the slash name of the custom command',
-            placeHolder: 'e.g. /my-custom-command',
+            title: 'New Custom Cody Command: Command Name',
+            prompt: 'Enter the name of the custom command',
+            placeHolder: 'e.g. hello',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
-                    return 'Slash name cannot be empty.'
+                    return 'Command name cannot be empty.'
                 }
                 if (input.split(' ').length > 1) {
-                    return 'Slash name cannot contain spaces. Use dashes, underscores, or camelCase.'
+                    return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
                 if (commandSet.has(toSlashCommand(input))) {
-                    return 'A command with the slash name already exists.'
+                    return 'A command with the same name already exists.'
                 }
                 return
             },
