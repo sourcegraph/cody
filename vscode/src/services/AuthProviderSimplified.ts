@@ -36,9 +36,9 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     const site = DOTCOM_URL.toString() // Note, ends with the path /
 
     const genericLoginUrl = `${site}sign-in?returnTo=${postSignUpSurveyUrl}`
-    const gitHubLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=github&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=${postSignUpSurveyUrl}`
-    const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=${postSignUpSurveyUrl}`
-    const googleLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=google&pc=PhZek7LEdAkR3-I9XyVEMw&redirect=${postSignUpSurveyUrl}`
+    const gitHubLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=${postSignUpSurveyUrl}`
+    const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=${postSignUpSurveyUrl}`
+    const googleLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=google&pc=sams&redirect=${postSignUpSurveyUrl}`
 
     let uriSpec: string
     switch (provider) {
