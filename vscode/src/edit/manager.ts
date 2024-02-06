@@ -23,6 +23,7 @@ import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { editModel } from '../models'
 import { getEditModelsForUser } from './utils/edit-models'
+import type { AuthStatus } from '../chat/protocol'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -39,7 +40,6 @@ export class EditManager implements vscode.Disposable {
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.models = getEditModelsForUser(options.authProvider)
         this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
@@ -48,6 +48,10 @@ export class EditManager implements vscode.Disposable {
                 (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
             )
         )
+    }
+
+    public syncAuthStatus(authStatus: AuthStatus): void {
+        this.models = getEditModelsForUser(authStatus)
     }
 
     public async executeEdit(
