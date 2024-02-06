@@ -124,7 +124,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java')
 
-    // TEST: Support @-file in mid-sentence
+    // Support @-file in mid-sentence
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.type('Explain the file', { delay: 50 })
@@ -138,4 +138,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('@Main', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('Explain the @Main.java file')
+    // Confirm the cursor is at the end of the newly added file name
+    await page.keyboard.type('!')
+    await expect(chatInput).toHaveValue('Explain the @Main.java! file')
 })
