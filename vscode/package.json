@@ -914,6 +914,11 @@
                     "default": false,
                     "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
                 },
+                "cody.autocomplete.disableInsideComments": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Prevent autocomplete requests while inside code comments."
+                },
                 "cody.experimental.foldingRanges": {
                     "type": "string",
                     "enum": ["lsp", "indentation-based"],

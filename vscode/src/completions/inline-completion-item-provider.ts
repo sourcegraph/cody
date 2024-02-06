@@ -68,6 +68,7 @@ export interface CodyCompletionItemProviderConfig {
 
     // Settings
     formatOnAccept?: boolean
+    disableInsideComments?: boolean
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -113,6 +114,7 @@ export class InlineCompletionItemProvider
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
+        disableInsideComments = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -121,6 +123,7 @@ export class InlineCompletionItemProvider
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
+            disableInsideComments,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
@@ -295,6 +298,10 @@ export class InlineCompletionItemProvider
                 position,
                 prefix: docContext.prefix,
             })
+
+            if (this.config.disableInsideComments && completionIntent === 'comment') {
+                return null
+            }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
                 user: await userLatencyPromise,

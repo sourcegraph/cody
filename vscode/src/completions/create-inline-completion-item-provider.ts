@@ -84,6 +84,7 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
+            disableInsideComments: config.autocompleteDisableInsideComments,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             createBfgRetriever,
