@@ -71,6 +71,7 @@ interface ChatProps extends ChatClassNames {
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
+    setContextSelection: (context: ContextFile[] | null) => void
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{
@@ -122,6 +123,7 @@ export interface ChatUITextAreaProps {
     onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
     chatModels?: ModelProvider[]
     messageBeingEdited: number | undefined
+    inputCaretPosition?: number
 }
 
 export interface ChatUISubmitButtonProps {
@@ -222,6 +224,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isTranscriptError,
     UserContextSelectorComponent,
     contextSelection,
+    setContextSelection,
     chatModels,
     ChatModelDropdownMenu,
     EnhancedContextSettings,
@@ -236,12 +239,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const isMac = isMacOS()
     const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker)
     const [inputRows, setInputRows] = useState(1)
+    const [inputCaretPosition, setInputCaretPosition] = useState<number | undefined>(undefined)
 
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
+    const [currentChatContextQuery, setCurrentChatContextQuery] = useState<string | undefined>(undefined)
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
@@ -338,22 +343,80 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      */
     const onChatContextSelected = useCallback(
         (selected: ContextFile, input: string): void => {
-            const lastAtIndex = input.lastIndexOf('@')
+            if (!inputCaretPosition) {
+                setSelectedChatContext(0)
+                setCurrentChatContextQuery(undefined)
+                setContextSelection(null)
+                return
+            }
+            const inputBeforeCaret = input.slice(0, inputCaretPosition) || ''
+            const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
-                const inputPrefix = input.slice(0, lastAtIndex)
+                const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
                 const fileDisplayText = getContextFileDisplayText(selected)
+                const afterCaret = input.slice(inputCaretPosition)
+                const firstSpaceAfterCaret = afterCaret.indexOf(' ')
+                const inputSuffix = !firstSpaceAfterCaret
+                    ? afterCaret
+                    : afterCaret.slice(firstSpaceAfterCaret)
                 // Add empty space at the end to end the file matching process
-                const newInput = `${inputPrefix}${fileDisplayText} `
-
+                const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
                 // we will use the newInput as key to check if the file still exists in formInput on submit
                 setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
-                setSelectedChatContext(0)
                 setFormInput(newInput)
+
+                // move the caret to the end of the file display text
+                setInputCaretPosition(inputCaretPosition + fileDisplayText.length)
             }
+            setCurrentChatContextQuery(undefined)
+            setContextSelection(null)
         },
-        [chatContextFiles, setFormInput]
+        [chatContextFiles, setFormInput, inputCaretPosition, setContextSelection]
     )
+
+    const atMentionHandler = useCallback(() => {
+        const inputValue = formInput
+        if (!inputCaretPosition || !postMessage || !inputValue) {
+            setContextSelection(null)
+            setCurrentChatContextQuery(undefined)
+            return
+        }
+
+        // If the user is typing an @mention, then we will send a query to the server to start
+        if (inputValue[inputCaretPosition - 1] === '@') {
+            if (inputValue.length === inputCaretPosition || inputValue[inputCaretPosition] === ' ') {
+                setCurrentChatContextQuery('')
+                postMessage({ command: 'getUserContext', query: '' })
+                return
+            }
+        }
+
+        // split the input value at it's caret position
+        const inputBeforeCaret = inputValue.slice(0, inputCaretPosition) || ''
+        const inputAfterCaret = inputValue.slice(inputCaretPosition) || ''
+
+        // In inputBeforeCaret, search for the last '@' index to see if it's an @mention
+        const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
+        // if there is any empty spaces between the lastAtIndex and the caretPosition in the inputValue, then it's not an @mention
+        // example: 'what is @example{caretPosition} vscode' -> query = 'example'
+        // example2: 'what is @path/to/file and @example{caretPosition} vscode' -> query = 'example'
+        // example3: 'what is @path/to/file and @ example{caretPosition} vscode' -> query = ''
+        // we want to get the input value after lastAt in inputBeforeCaret
+        const inputPrefix = inputBeforeCaret.slice(lastAtIndex + 1)
+        const inputSuffix = inputAfterCaret.split(' ')?.[0]
+        const query = inputPrefix + inputSuffix
+
+        // Filter invalid queries
+        if (!inputPrefix || !query || query.split(' ').length > 1 || !inputBeforeCaret.includes('@')) {
+            setContextSelection(null)
+            setCurrentChatContextQuery(undefined)
+            return
+        }
+
+        setCurrentChatContextQuery(query)
+        postMessage({ command: 'getUserContext', query })
+    }, [formInput, inputCaretPosition, postMessage, setContextSelection])
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
@@ -434,6 +497,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onChatKeyUp = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+            setInputCaretPosition(event.currentTarget?.selectionStart)
+            atMentionHandler()
             // Captures Escape button clicks
             if (event.key === 'Escape') {
                 // Exits editing mode if a message is being edited
@@ -451,11 +516,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress]
+        [
+            messageBeingEdited,
+            setEditMessageState,
+            messageInProgress,
+            onAbortMessageInProgress,
+            atMentionHandler,
+        ]
     )
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null): void => {
+            setInputCaretPosition(caretPosition || undefined)
+            atMentionHandler()
             // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
             const isModifierDown = isMac ? event.metaKey : event.ctrlKey
             if (isModifierDown) {
@@ -515,7 +588,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // Handles cycling through context matches on key presses
-            if (contextSelection?.length && !formInput.endsWith(' ')) {
+            if (contextSelection?.length) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     const selectionLength = contextSelection?.length - 1
@@ -534,6 +607,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         // Remove @ from input
                         setFormInput(inputWithoutFileInput)
                     }
+                    setContextSelection(null)
                     setSelectedChatContext(0)
                     return
                 }
@@ -625,6 +699,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             selectedChatContext,
             onChatContextSelected,
             enableNewChatMode,
+            atMentionHandler,
+            setContextSelection,
         ]
     )
 
@@ -723,16 +799,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 />
 
                 <div className={styles.textAreaContainer}>
-                    {contextSelection && UserContextSelectorComponent && formInput && (
-                        <UserContextSelectorComponent
-                            selected={selectedChatContext}
-                            onSelected={onChatContextSelected}
-                            contextSelection={contextSelection}
-                            formInput={formInput}
-                            onSubmit={onSubmit}
-                            setSelectedChatContext={setSelectedChatContext}
-                        />
-                    )}
+                    {contextSelection &&
+                        UserContextSelectorComponent &&
+                        currentChatContextQuery !== undefined && (
+                            <UserContextSelectorComponent
+                                selected={selectedChatContext}
+                                onSelected={onChatContextSelected}
+                                contextSelection={contextSelection}
+                                formInput={'@' + currentChatContextQuery}
+                                onSubmit={onSubmit}
+                                setSelectedChatContext={setSelectedChatContext}
+                            />
+                        )}
                     <div className={styles.chatInputContainer}>
                         <TextArea
                             className={classNames(styles.chatInput, chatInputClassName)}
@@ -750,6 +828,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             chatModels={chatModels}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
+                            inputCaretPosition={inputCaretPosition}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>

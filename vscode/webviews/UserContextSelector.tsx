@@ -31,9 +31,6 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return null
     }
 
-    // TODO(toolmantim): Would be nicer to have a Search data type to use
-    // instead of recreating string regex logic
-
     let headingTitle: string | undefined
     if (formInput.endsWith('@')) {
         headingTitle = 'Search for a file to include, or type # to search symbols...'

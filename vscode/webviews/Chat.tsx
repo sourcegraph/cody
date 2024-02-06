@@ -51,6 +51,7 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
+    setContextSelection: (context: ContextFile[] | null) => void
     setChatModels?: (models: ModelProvider[]) => void
     chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
@@ -72,6 +73,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     telemetryService,
     isTranscriptError,
     contextSelection,
+    setContextSelection,
     setChatModels,
     chatModels,
     chatEnabled,
@@ -240,6 +242,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
             contextSelection={contextSelection}
+            setContextSelection={setContextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
@@ -285,6 +288,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
     messageBeingEdited,
     isNewChat,
+    inputCaretPosition,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const tips = '(@ to include files or symbols)'
@@ -296,12 +300,23 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (isFocusd) {
             inputRef.current?.focus()
 
+            if (inputCaretPosition) {
+                return
+            }
+
             // move cursor to end of line if current cursor position is at the beginning
             if (inputRef.current?.selectionStart === 0 && value.length > 0) {
                 inputRef.current?.setSelectionRange(value.length, value.length)
             }
         }
     }, [isFocusd, value, messageBeingEdited, chatModels])
+
+    useEffect(() => {
+        if (inputCaretPosition) {
+            inputRef.current?.setSelectionRange(inputCaretPosition, inputCaretPosition)
+            return
+        }
+    }, [inputCaretPosition])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
