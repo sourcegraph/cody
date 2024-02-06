@@ -8,13 +8,4 @@ package com.sourcegraph.cody.agent.protocol
 interface Message {
   val speaker: Speaker
   val text: String?
-
-  companion object {
-    // convenience method, only used in (the unused) Premable.java
-    fun newPrimitive(speaker: Speaker, text: String?) =
-        object : Message {
-          override val speaker: Speaker = speaker
-          override val text: String? = text
-        }
-  }
 }

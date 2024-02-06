@@ -34,6 +34,12 @@ class CommandsTabPanel(
 
   private fun addButton(commandId: CommandId) {
     val button = JButton(commandId.displayName)
+    val indexOfFirst = commandId.displayName.indexOfFirst { it == commandId.mnemonic }
+    if (indexOfFirst >= 0) {
+      button.displayedMnemonicIndex = indexOfFirst
+    } else {
+      button.setMnemonic(commandId.mnemonic)
+    }
     button.alignmentX = Component.CENTER_ALIGNMENT
     button.maximumSize = Dimension(Int.MAX_VALUE, button.getPreferredSize().height)
     val buttonUI = DarculaButtonUI.createUI(button) as ButtonUI

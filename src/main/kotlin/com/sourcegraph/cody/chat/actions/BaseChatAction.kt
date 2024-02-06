@@ -1,21 +1,24 @@
-package com.sourcegraph.cody.chat
+package com.sourcegraph.cody.chat.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 
-class NewChatAction : DumbAwareAction() {
+abstract class BaseChatAction : DumbAwareAction() {
+
+  abstract fun doAction(project: Project)
 
   override fun actionPerformed(event: AnActionEvent) {
     val project = event.project ?: return
-    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-      switchToChatSession(AgentChatSession.createNew(project))
-    }
-    showToolbar(project)
+
+    ToolWindowManager.getInstance(project)
+        .getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
+        ?.show()
+
+    doAction(project)
   }
 
   override fun update(event: AnActionEvent) {

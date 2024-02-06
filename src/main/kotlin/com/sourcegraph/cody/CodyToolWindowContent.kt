@@ -7,9 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.jetbrains.rd.util.AtomicReference
-import com.sourcegraph.cody.agent.*
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.chat.AgentChatSession
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel
@@ -50,20 +48,20 @@ class CodyToolWindowContent(private val project: Project) {
         switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
       }
 
-  private val subscriptionPanel = SubscriptionTabPanel()
+  private val myAccountPanel = MyAccountTabPanel()
 
   init {
     tabbedPane.insertSimpleTab("Chat", chatContainerPanel, CHAT_TAB_INDEX)
     tabbedPane.insertSimpleTab("Chat History", historyTree, HISTORY_TAB_INDEX)
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
-    tabbedPane.insertSimpleTab("Subscription", subscriptionPanel, SUBSCRIPTION_TAB_INDEX)
+    tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
 
     allContentPanel.add(tabbedPane, MAIN_PANEL, CHAT_PANEL_INDEX)
     allContentPanel.add(signInWithSourcegraphPanel, SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
     allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
 
     refreshPanelsVisibility()
-    refreshSubscriptionTab()
+    refreshMyAccountTab()
     switchToChatSession(AgentChatSession.createNew(project))
   }
 
@@ -81,20 +79,19 @@ class CodyToolWindowContent(private val project: Project) {
     }
   }
 
-  fun refreshSubscriptionTab() {
+  fun refreshMyAccountTab() {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-      fetchSubscriptionPanelData(project, agent.server).thenApply { data ->
+      fetchMyAccountPanelData(project, agent.server).thenApply { data ->
         if (data != null) {
           ApplicationManager.getApplication().invokeLater {
-            val isSubscriptionTabPresent = tabbedPane.tabCount > SUBSCRIPTION_TAB_INDEX
+            val isMyAccountTabVisible = tabbedPane.tabCount > MY_ACCOUNT_TAB_INDEX
             if (data.isDotcomAccount && data.codyProFeatureFlag) {
-              if (!isSubscriptionTabPresent) {
-                tabbedPane.insertSimpleTab(
-                    "Subscription", subscriptionPanel, SUBSCRIPTION_TAB_INDEX)
+              if (!isMyAccountTabVisible) {
+                tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
               }
-              subscriptionPanel.update(data.isCurrentUserPro)
-            } else if (isSubscriptionTabPresent) {
-              tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
+              myAccountPanel.update(data.isCurrentUserPro)
+            } else if (isMyAccountTabVisible) {
+              tabbedPane.remove(MY_ACCOUNT_TAB_INDEX)
             }
           }
         }
@@ -167,7 +164,7 @@ class CodyToolWindowContent(private val project: Project) {
     private const val CHAT_TAB_INDEX = 0
     private const val HISTORY_TAB_INDEX = 1
     private const val COMMANDS_TAB_INDEX = 2
-    private const val SUBSCRIPTION_TAB_INDEX = 3
+    private const val MY_ACCOUNT_TAB_INDEX = 3
 
     var logger = Logger.getInstance(CodyToolWindowContent::class.java)
 

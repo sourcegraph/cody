@@ -13,7 +13,6 @@ import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.common.BrowserOpener.openInBrowser
-import com.sourcegraph.common.CodyBundle.fmt
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
@@ -66,7 +65,6 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
             when {
               shouldShowUpgradeOption ->
                   CodyBundle.getString("UpgradeToCodyProNotification.content.upgrade")
-                      .fmt(rateLimitError.limit?.let { " $it" } ?: "")
               else -> CodyBundle.getString("UpgradeToCodyProNotification.content.explain")
             }
         val title =

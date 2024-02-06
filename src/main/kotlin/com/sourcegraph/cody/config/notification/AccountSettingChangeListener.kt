@@ -39,7 +39,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             if (ConfigUtil.isCodyEnabled()) {
               CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
                 refreshPanelsVisibility()
-                refreshSubscriptionTab()
+                refreshMyAccountTab()
               }
             }
 

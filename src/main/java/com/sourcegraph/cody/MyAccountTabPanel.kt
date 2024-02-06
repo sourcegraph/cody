@@ -14,7 +14,7 @@ import java.awt.BorderLayout
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
-class SubscriptionTabPanel : JPanel() {
+class MyAccountTabPanel : JPanel() {
 
   private var isCurrentUserPro: Boolean? = null
   private var chatLimitError = UpgradeToCodyProNotification.chatRateLimitError.get()
@@ -41,12 +41,12 @@ class SubscriptionTabPanel : JPanel() {
               "<td width=\"10%\"><span style=\"font-size:20px;\">⚡</span></td>" +
               "<td width=\"90%\"><p>${
                   if (autocompleteLimitError != null && chatLimitError != null) {
-                    CodyBundle.getString("subscription-tab.chat-and-autocomplete-rate-limit-error")
+                    CodyBundle.getString("my-account-tab.chat-and-autocomplete-rate-limit-error")
                   } else {
                     if (chatLimitError != null) {
-                      CodyBundle.getString("subscription-tab.chat-rate-limit-error")
+                      CodyBundle.getString("my-account-tab.chat-rate-limit-error")
                     } else {
-                      CodyBundle.getString("subscription-tab.autocomplete-rate-limit-error")
+                      CodyBundle.getString("my-account-tab.autocomplete-rate-limit-error")
                     }
                   }
                 }</p></td>" +
@@ -66,9 +66,9 @@ class SubscriptionTabPanel : JPanel() {
   private fun createCenterPanel() = panel {
     val getIsCurrentUserPro = isCurrentUserPro
     val tier =
-        if (getIsCurrentUserPro == null) CodyBundle.getString("subscription-tab.loading-label")
-        else if (getIsCurrentUserPro) CodyBundle.getString("subscription-tab.cody-pro-label")
-        else CodyBundle.getString("subscription-tab.cody-free-label")
+        if (getIsCurrentUserPro == null) CodyBundle.getString("my-account-tab.loading-label")
+        else if (getIsCurrentUserPro) CodyBundle.getString("my-account-tab.cody-pro-label")
+        else CodyBundle.getString("my-account-tab.cody-free-label")
     row { label("<html>Current tier: <b>$tier</b><html/>") }
     row {
       if (getIsCurrentUserPro != null && !getIsCurrentUserPro) {
@@ -79,7 +79,7 @@ class SubscriptionTabPanel : JPanel() {
       button("Check Usage") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/manage") }
     }
     if (getIsCurrentUserPro != null && !getIsCurrentUserPro) {
-      row { text(CodyBundle.getString("tab.subscription.already-pro")) }
+      row { text(CodyBundle.getString("my-account-tab.already-pro")) }
     }
   }
 

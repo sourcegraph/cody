@@ -9,19 +9,19 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
-data class SubscriptionTabPanelData(
+data class MyAccountTabPanelData(
     val isDotcomAccount: Boolean,
     val codyProFeatureFlag: Boolean,
     val isCurrentUserPro: Boolean?
 )
 
 @RequiresBackgroundThread
-fun fetchSubscriptionPanelData(
+fun fetchMyAccountPanelData(
     project: Project,
     server: CodyAgentServer
-): CompletableFuture<SubscriptionTabPanelData?> {
+): CompletableFuture<MyAccountTabPanelData?> {
   val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-  val result = CompletableFuture<SubscriptionTabPanelData?>()
+  val result = CompletableFuture<MyAccountTabPanelData?>()
 
   if (activeAccountType != null) {
     ensureUserIdMatchInAgent(activeAccountType.id, server)
@@ -36,13 +36,13 @@ fun fetchSubscriptionPanelData(
         if (codyProFeatureFlag) {
           val isCurrentUserPro = getIsCurrentUserPro(server) ?: false
           result.complete(
-              SubscriptionTabPanelData(
+              MyAccountTabPanelData(
                   activeAccountType.isDotcomAccount(),
                   codyProFeatureFlag = true,
                   isCurrentUserPro = isCurrentUserPro))
         } else {
           result.complete(
-              SubscriptionTabPanelData(
+              MyAccountTabPanelData(
                   activeAccountType.isDotcomAccount(),
                   codyProFeatureFlag = false,
                   isCurrentUserPro = null))
@@ -50,7 +50,7 @@ fun fetchSubscriptionPanelData(
       }
     } else {
       result.complete(
-          SubscriptionTabPanelData(
+          MyAccountTabPanelData(
               activeAccountType.isDotcomAccount(),
               codyProFeatureFlag = false,
               isCurrentUserPro = false))

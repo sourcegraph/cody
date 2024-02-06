@@ -12,7 +12,7 @@ object RateLimitStateManager {
     if (UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
       UpgradeToCodyProNotification.chatRateLimitError.set(null)
       CodyAutocompleteStatusService.resetApplication(project)
-      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshMyAccountTab() }
     }
   }
 
@@ -20,7 +20,7 @@ object RateLimitStateManager {
     if (UpgradeToCodyProNotification.chatRateLimitError.get() == null) {
       UpgradeToCodyProNotification.chatRateLimitError.set(rateLimitError)
       CodyAutocompleteStatusService.resetApplication(project)
-      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshSubscriptionTab() }
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshMyAccountTab() }
     }
   }
 }

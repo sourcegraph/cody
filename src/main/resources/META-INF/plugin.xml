@@ -173,8 +173,32 @@
         <action id="cody.newChat"
                 icon="/icons/chat/newChat.svg"
                 text="New Chat"
-                class="com.sourcegraph.cody.chat.NewChatAction">
+                class="com.sourcegraph.cody.chat.actions.NewChatAction">
             <keyboard-shortcut first-keystroke="alt EQUALS" keymap="$default"/>
+        </action>
+
+        <action id="cody.command.Explain"
+                icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Explain Code'"
+                class="com.sourcegraph.cody.chat.actions.ExplainCommand">
+            <keyboard-shortcut first-keystroke="control shift E" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="alt shift 1" keymap="$default"/>
+        </action>
+
+        <action id="cody.command.Smell"
+                icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Smell Code'"
+                class="com.sourcegraph.cody.chat.actions.SmellCommand">
+            <keyboard-shortcut first-keystroke="control shift S" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="alt shift 2" keymap="$default"/>
+        </action>
+
+        <action id="cody.command.Test"
+                icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Generate Test'"
+                class="com.sourcegraph.cody.chat.actions.TestCommand">
+            <keyboard-shortcut first-keystroke="control shift T" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="alt shift 3" keymap="$default"/>
         </action>
 
         <action
@@ -203,6 +227,9 @@
             <reference ref="cody.downloadAndInstallCodyAction"/>
             <reference ref="cody.runCodyAppAction"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+            <reference ref="cody.command.Explain"/>
+            <reference ref="cody.command.Smell"/>
+            <reference ref="cody.command.Test"/>
         </group>
 
         <group id="SourcegraphEditor" popup="true" text="Sourcegraph"

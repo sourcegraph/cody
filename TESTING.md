@@ -9,10 +9,10 @@
     - [ ] [Infilling autocomplete](#infilling-autocomplete)
     - [ ] [Cycle through autocomplete](#cycle-through-autocomplete)
 - Commands
-    - [ ] [General commands availability in toolbar](#general-commands-availability-in-cody-toolbar)
+    - [ ] [General commands availability in Cody tool window](#general-commands-availability-in-cody-tool-window)
     - [ ] [General commands availability in context menu](#general-commands-availability-in-context-menu)
-    - [ ] [Explain Selected Code](#explain-selected-code)
-    - [ ] [Generate Test](#generate-unit-test)
+    - [ ] [Explain Selected Code](#explain-code)
+    - [ ] [Generate Test](#generate-test)
     - [ ] [Smell Code](#smell-code)
 - Chat
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
@@ -25,7 +25,7 @@
     - [ ] [Open Selection on Sourcegraph Web](#open-selection-on-sourcegraph-web)
     - [ ] [Copy Sourcegraph File Link](#copy-sourcegraph-file-link)
 - Product-led growth
-    - [ ] [Cody Free/Pro subscription tab](#cody-freepro-subscription-tab)
+    - [ ] [My Account Tab](#my-account-tab)
     - [ ] [Cody Free/Pro rate limit errors](#cody-freepro-rate-limit-errors)
 - Other
     - [ ] [Automatic repository recognition](#automatic-repository-recognition)
@@ -38,7 +38,7 @@
 
 Prerequisite: You have to **sign out** from all existing accounts.
 
-1. Navigate to `Cody` toolbar and use `Sign in with GitHub`.
+1. Navigate to `Cody` tool window and use `Sign in with GitHub`.
 2. Browser is launched automatically and IDE freezes with spinning `Login to Sourcegraph` dialog.
 3. Authorize with a valid account.
 
@@ -58,7 +58,7 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
 
 #### Expected behaviour
 
-* Cody toolbar is automatically refreshed and the user is greeted with the `Welcome to Cody` panel.
+* `Cody` tool window is automatically refreshed and the user is greeted with the `Welcome to Cody` panel.
 * Status bar widget has a `No account signed-in` status. Status bar is located in the bottom right corner of the IDE.
 
 ## Autocomplete
@@ -119,13 +119,25 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
 
 ## Commands
 
-### General commands availability in Cody toolbar
+### General commands availability in Cody tool window
 
-1. Navigate to `Cody` toolbar and open `Commands`.
+1. Navigate to `Cody` tool window and open `Commands`.
 
 #### Expected behaviour
 
-* List of commands is immediately available after the toolbar is displayed. **No refresh is required.**
+* List of commands is immediately available after the tool window is displayed. **No refresh is required.**
+
+### General commands availability from keyboard shortcuts
+
+| Command       | Windows / Linux                                      | MacOs                                                |
+|---------------|------------------------------------------------------|------------------------------------------------------|
+| Explain Code  | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd>     | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> |
+| Smell Code    | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> |
+| Generate Test | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> |
+
+#### Expected behaviour
+
+* Commands work as executed from any other place (the tool window opens if needed).
 
 ### General commands availability in context menu
 
@@ -239,7 +251,7 @@ Test ideas:
 2. Restore historical chat, focus on chat input field and use UP/DOWN keys to cycle between previous questions.
 3. Press "new chat" as fast as you can. Especially during the IDE startup.
 4. Switch between chats as fast as you can.
-5. Press "new chat" while being inside Subscription panel or something other than Chat tab. Tabs should switch automatically.
+5. Press "new chat" while being inside `My Account` tab or something other than Chat tab. Tabs should switch automatically.
 6. Use commands/recipes inside empty, new chat. Verify serialization/deserialization.
 7. Ask about codebase to force response with listed context files and verify if everything is correctly serialized/deserialized. Links to context files should be clickable.
 8. Remove all chats using history UI. Tree presentation is empty and branches like "Today" are removed from panel. File with transcripts should also disappear.
@@ -294,23 +306,23 @@ To open the context menu:
 
 ## [Product-led growth](https://handbook.sourcegraph.com/departments/data-analytics/product-led-growth/)
 
-### Cody Free/Pro subscription tab
+### My Account Tab
 
 1. Log in to Sourcegraph.com with a **Free** account and `cody-pro-jetbrains` feature flag enabled.
-2. Go to the `Cody` toolbar and open `Subscription` tab.
+2. Go to `Cody` tool window and open `My Account` tab.
 3. Verify:
     * The current tier should be `Cody Free`.
     * The `Upgrade` button is visible and it points to `https://sourcegraph.com/cody/subscription`.
     * The `Check Usage` button is visible and it points to `https://sourcegraph.com/cody/manage`.
 4. Go to accounts settings and switch to **Pro** account.
-5. Go to `Subscription` tab.
+5. Go to `My Account` tab.
 6. Verify:
     * The current tier should be `Cody Pro`.
     * The `Upgrade` is **not visible**.
 7. Go to account settings and switch to an Enterprise account (AKA *non-dotcom*).
-8. Verify: `Subscription` panel is not visible in `Cody` toolbar.
+8. Verify: `My Account` tab is not visible in `Cody` tool window.
 9. Go to accounts settings and switch back to the **Free** account.
-10. Verify: `Subscription` panel is visible.
+10. Verify: `My Account` tab is visible.
 
 ### Cody Free/Pro rate limit errors
 
@@ -325,8 +337,8 @@ To open the context menu:
 ### Automatic repository recognition
 
 1. Open project with enabled Git VCS. This repository must be publicly available on GitHub.
-2. Open to `Cody` toolbar.
-3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` toolbar on left, bottom
+2. Open to `Cody` tool window.
+3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` tool window on left, bottom
    corner.
 
 #### Expected behaviour
@@ -337,7 +349,7 @@ To open the context menu:
 ### Persistent custom repository
 
 1. Open project with enabled Git VCS. This repository must be publicly available on GitHub.
-2. Open to `Cody` toolbar.
+2. Open to `Cody` tool window.
 3. Click on repository button to open `Context Selection` dialog.
 4. Change `Git URL` to a different, valid Git URL repository.
 5. Click `OK` button and restart IDE.

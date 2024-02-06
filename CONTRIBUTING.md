@@ -229,7 +229,7 @@ Choose Edit Configurations and `+` to add a new one:
 
 ### Agent Run Config
 
-Create this configuration in the `sourcegraph/cod`y project window.
+Create this configuration in the `sourcegraph/cody` project window.
 Choose Edit Configurations and `+` to add a new one:
 
 - Type: Attach to Node.js/Chrome
@@ -239,7 +239,7 @@ Choose Edit Configurations and `+` to add a new one:
 - Attach to: `Chrome or Node.js > 6.3 started with --inspect`
 - Reconnect automatically: yes
 
-## Cody connects to remote Agent
+## Option 2: Cody connects to remote Agent
 
 This option has two run configurations, different from two above. Note that
 if you want both debugging options available, you can set up all four run
@@ -286,7 +286,7 @@ iteration. You can make code changes to the TypeScript and just hit
 Debug or Run, and it will `pnpm build` your repo before spawning the agent.
 
 Note that for Option 1 (Cody spawns Agent), the Before Task is added to the run
-configuration on the java side. For IntelliJ spawning the AGent, the Before Task is
+configuration on the java side. For IntelliJ spawning the Agent, the Before Task is
 added to the run configuration on the TypeScript side.
 
 ### Setup
