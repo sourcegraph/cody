@@ -141,4 +141,10 @@ test('@-file empty state', async ({ page, sidebar }) => {
     // Confirm the cursor is at the end of the newly added file name
     await page.keyboard.type('!')
     await expect(chatInput).toHaveValue('Explain the @Main.java! file')
+
+    // Pressing "Escape" will close the selection and will not alter current input
+    await page.keyboard.type(' @abcdefg')
+    await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await chatInput.press('Escape')
+    await expect(chatInput).toHaveValue('Explain the @Main.java! @abcdefg file')
 })
