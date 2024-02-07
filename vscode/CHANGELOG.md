@@ -17,6 +17,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Added Cody Pro support for models: GPT-4, GPT-3.5, Claude 2.1 and Claude Instant. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
 - Edit: Added a multi-model selector to the Edit input, allowing quick access to change the Edit LLM. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
 - Chat: Added support for `@-mentioned files` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
+- Autocomplete: Added a shortcut to go to the Autocomplete settings from the Cody Settings overlay. [pull/3048(https://github.com/sourcegraph/cody/pull/3048)
 
 ### Fixed
 

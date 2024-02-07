@@ -65,8 +65,10 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
 
     // Submit a chat question via command menu using /ask option
     await page.getByRole('tab', { name: 'index.html' }).click()
-    await page.getByRole('button', { name: /Commands \(.*/ }).click()
-    await page.getByPlaceholder('Search for a command or enter your question here...').fill('hello cody')
+    await page.getByRole('button', { name: /Commands \(.*/ }).dblclick()
+    const commandInputBox = page.getByPlaceholder(/Search for a command or enter/)
+    await expect(commandInputBox).toBeVisible()
+    await commandInputBox.fill('hello cody')
     await page.getByLabel('/ask, Ask a question').locator('a').click()
     // the question should show up in the chat panel on submit
     await chatPanel.getByText('hello cody').click()
