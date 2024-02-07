@@ -219,7 +219,7 @@ const register = async (
         guardrails
     )
 
-    const ghostHintDecorator = new GhostHintDecorator()
+    const ghostHintDecorator = new GhostHintDecorator({ authProvider })
     const editorManager = new EditManager({
         chat: chatClient,
         editor,

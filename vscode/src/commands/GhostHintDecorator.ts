@@ -1,5 +1,7 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
+import type { AuthProvider } from '../services/AuthProvider'
+import type { AuthStatus } from '../chat/protocol'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -55,15 +57,23 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecoration: vscode.DecorationOptions | null = null
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
-    constructor() {
+    constructor(authProvider: AuthProvider) {
         this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
             leading: false,
             trailing: true,
         })
-        this.updateConfig()
+
+        // Set initial state, based on the configuration and authentication status
+        const initialAuth = authProvider.getAuthStatus()
+        this.updateEnablement(initialAuth)
+
+        // Listen to authentication changes
+        authProvider.addChangeListener(authStatus => this.updateEnablement(authStatus))
+
+        // Listen to configuration changes (e.g. if the setting is disabled)
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
-                this.updateConfig()
+                this.updateEnablement(authProvider.getAuthStatus())
             }
         })
     }
@@ -132,16 +142,17 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [])
     }
 
-    private updateConfig(): void {
+    private updateEnablement(authStatus: AuthStatus): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('commandHints.enabled') as boolean
+        const isEnabledInConfig = config.get('commandHints.enabled') as boolean
+        const isEnabled = isEnabledInConfig && authStatus.isLoggedIn
 
         if (!isEnabled) {
             this.dispose()
             return
         }
 
-        if (isEnabled && !this.isActive) {
+        if (!this.isActive) {
             this.isActive = true
             this.init()
             return
