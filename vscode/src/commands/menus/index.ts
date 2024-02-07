@@ -144,7 +144,7 @@ export async function showCommandMenu(
 
             // Check if it's an edit command
             if (selected.startsWith('/edit')) {
-                void executeEdit({ instruction: value }, 'menu')
+                void executeEdit({ configuration: { instruction: value }, source: 'menu' })
                 quickPick.hide()
                 return
             }

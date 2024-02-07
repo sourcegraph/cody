@@ -3,6 +3,7 @@ import { Utils } from 'vscode-uri'
 import {
     BotResponseMultiplexer,
     isAbortError,
+    isDotCom,
     posixAndURIPaths,
     Typewriter,
     uriBasename,
@@ -22,6 +23,9 @@ import { doesFileExist } from '../commands/utils/workspace-files'
 import { workspace } from 'vscode'
 import { CodyTaskState } from '../non-stop/utils'
 import { getContextWindowForModel } from '../models/utilts'
+import { telemetryService } from '../services/telemetry'
+import { countCode } from '../services/utils/code-count'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -153,6 +157,23 @@ export class EditProvider {
             await this.handleFileCreationResponse('', isMessageInProgress)
         }
 
+        if (!isMessageInProgress) {
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                ...countCode(response),
+                source: this.config.task.source,
+                hasV2Event: true,
+            })
+            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
+            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata: countCode(response),
+                privateMetadata: {
+                    source: this.config.task.source,
+                    responseText,
+                },
+            })
+        }
+
         const intentsForInsert = ['add', 'test']
         return intentsForInsert.includes(this.config.task.intent)
             ? this.handleFixupInsert(response, isMessageInProgress)
@@ -259,8 +280,8 @@ export class EditProvider {
             this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
                 await this.insertionPromise
-            } catch {
-                this.handleError(new Error('Cody failed to generate unit tests'))
+            } catch (error) {
+                this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
             } finally {
                 this.insertionPromise = null
             }

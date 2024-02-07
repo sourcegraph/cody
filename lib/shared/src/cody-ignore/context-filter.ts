@@ -5,7 +5,7 @@ import { IgnoreHelper } from './ignore-helper'
 export const ignores = new IgnoreHelper()
 
 /**
- * Checks if a file should be ignored by Cody based on the ignore rules.
+ * Checks if a local file should be ignored by Cody based on the ignore rules.
  *
  * Takes URI with file scheme to ensure absolute file paths are ignored correctly across workspaces
  *

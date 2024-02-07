@@ -111,7 +111,14 @@ export class IgnoreHelper {
             return false
         }
 
-        // Ignore all non-file URIs
+        // Return all https URIs on the assumption that they origin from
+        // remote context (e.g. unified, multi-repo) files, which are already
+        // filtered by the backend to respect codyignore files during sync time.
+        if (uri.scheme === 'https') {
+            return false
+        }
+
+        // Ignore all other non-file URIs
         if (uri.scheme !== 'file') {
             return true
         }

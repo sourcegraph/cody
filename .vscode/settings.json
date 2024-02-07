@@ -18,5 +18,6 @@
   "typescript.tsc.autoDetect": "off",
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
-  "editor.defaultFormatter": "biomejs.biome"
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.insertSpaces": true,
 }

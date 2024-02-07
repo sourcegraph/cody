@@ -1545,7 +1545,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7efb6955b6d0ed426ba91027ccfdac85
+    - _id: bb5cb3a6396174175799535fec314c00
       _order: 0
       cache: {}
       request:
@@ -1601,7 +1601,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.2.2
+                    clientVersion: 1.4.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1622,7 +1622,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 01 Feb 2024 01:22:17 GMT
+            value: Wed, 07 Feb 2024 17:48:33 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1653,7 +1653,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-01T01:22:17.217Z
+      startedDateTime: 2024-02-07T17:48:32.900Z
       time: 0
       timings:
         blocked: -1
@@ -1663,7 +1663,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 56d9a6a59fe16116d31771fa1cddf611
+    - _id: bb06d37420e53d61d9bbb7034ef2632b
       _order: 0
       cache: {}
       request:
@@ -1719,7 +1719,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.2.2
+                    clientVersion: 1.4.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1740,7 +1740,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 01 Feb 2024 01:22:17 GMT
+            value: Wed, 07 Feb 2024 17:48:33 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1771,7 +1771,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-01T01:22:17.273Z
+      startedDateTime: 2024-02-07T17:48:32.942Z
       time: 0
       timings:
         blocked: -1
