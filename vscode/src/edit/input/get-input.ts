@@ -79,7 +79,7 @@ export const getInput = async (
 
     const authStatus = authProvider.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = getEditModelsForUser(authProvider)
+    const modelOptions = getEditModelsForUser(authStatus)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
 
