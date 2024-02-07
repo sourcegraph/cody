@@ -512,7 +512,16 @@ const register = async (
             featureFlagProvider,
             vscode.window.showInformationMessage,
             vscode.env.openExternal
-        )
+        ),
+        // For register sidebar clicks
+        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
+            const source = 'sidebar'
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
+                privateMetadata: { source },
+            })
+            void vscode.commands.executeCommand(command, [source])
+        })
     )
 
     /**
