@@ -1077,8 +1077,8 @@ export class FixupController
         // Revert and remove the previous task
         await this.undoTask(task)
 
-        void executeEdit(
-            {
+        void executeEdit({
+            configuration: {
                 range: updatedRange,
                 instruction: input.instruction,
                 userContextFiles: input.userContextFiles,
@@ -1087,8 +1087,8 @@ export class FixupController
                 mode: task.mode,
                 model: input.model,
             },
-            'code-lens'
-        )
+            source: 'code-lens',
+        })
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {

@@ -1,11 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
-    ConfigFeaturesSingleton,
-    type ChatClient,
-    type ChatEventSource,
-    type ModelProvider,
-} from '@sourcegraph/cody-shared'
+import { ConfigFeaturesSingleton, type ChatClient, type ModelProvider } from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -43,17 +38,22 @@ export class EditManager implements vscode.Disposable {
         this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
-            vscode.commands.registerCommand(
-                'cody.command.edit-code',
-                (args: ExecuteEditArguments, source?: ChatEventSource) => this.executeEdit(args, source)
+            vscode.commands.registerCommand('cody.command.edit-code', (args: ExecuteEditArguments) =>
+                this.executeEdit(args)
             )
         )
     }
 
-    public async executeEdit(
-        args: ExecuteEditArguments = {},
-        source: ChatEventSource = 'menu'
-    ): Promise<FixupTask | undefined> {
+    public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
+        const {
+            configuration = {},
+            /**
+             * Note: Source must default to `editor` as these are
+             * editor actions that cannot provide executeEdit `args`.
+             * E.g. triggering this command via the command palette, right-click menus
+             **/
+            source = 'editor',
+        } = args
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
             void vscode.window.showErrorMessage(
@@ -63,8 +63,8 @@ export class EditManager implements vscode.Disposable {
         }
 
         // Log the default edit command name for doc intent or test mode
-        const isDocCommand = args?.intent === 'doc' ? 'doc' : undefined
-        const isUnitTestCommand = args?.intent === 'test' ? 'test' : undefined
+        const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
+        const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
         const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${eventName}:executed`,
@@ -81,13 +81,13 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        const document = args.document || editor.active?.document
+        const document = configuration.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
-        const range = args.range || editor.active?.selection
+        const range = configuration.range || editor.active?.selection
         if (!range) {
             return
         }
@@ -98,9 +98,9 @@ export class EditManager implements vscode.Disposable {
         }
 
         // Set default edit configuration, if not provided
-        const mode = args.mode || DEFAULT_EDIT_MODE
-        const model = args.model || editModel.get(this.options.authProvider, this.models)
-        const intent = args.intent || DEFAULT_EDIT_INTENT
+        const mode = configuration.mode || DEFAULT_EDIT_MODE
+        const model = configuration.model || editModel.get(this.options.authProvider, this.models)
+        const intent = configuration.intent || DEFAULT_EDIT_INTENT
 
         let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
@@ -113,18 +113,18 @@ export class EditManager implements vscode.Disposable {
         }
 
         let task: FixupTask | null
-        if (args.instruction?.trim()) {
+        if (configuration.instruction?.trim()) {
             task = await this.controller.createTask(
                 document,
-                args.instruction,
-                args.userContextFiles ?? [],
+                configuration.instruction,
+                configuration.userContextFiles ?? [],
                 expandedRange || range,
                 intent,
                 mode,
                 model,
                 source,
-                args.contextMessages,
-                args.destinationFile
+                configuration.contextMessages,
+                configuration.destinationFile
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -134,7 +134,7 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 intent,
-                args.contextMessages || [],
+                configuration.contextMessages || [],
                 source
             )
         }

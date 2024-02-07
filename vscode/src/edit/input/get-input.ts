@@ -274,8 +274,8 @@ export const getInput = async (
 
                 // Hide the input and execute a new edit for 'Document'
                 documentInput.input.hide()
-                return executeEdit(
-                    {
+                return executeEdit({
+                    configuration: {
                         document,
                         instruction: defaultCommands.doc.prompt,
                         range: activeRange,
@@ -284,8 +284,8 @@ export const getInput = async (
                         contextMessages: [],
                         userContextFiles: [],
                     },
-                    'menu'
-                )
+                    source: 'menu',
+                })
             },
         })
 

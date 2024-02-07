@@ -10,6 +10,7 @@ import {
     setLogger,
     type ConfigurationWithAccessToken,
     ConfigFeaturesSingleton,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -515,7 +516,7 @@ const register = async (
         ),
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source = 'sidebar'
+            const source: ChatEventSource = 'sidebar'
             telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
