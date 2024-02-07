@@ -825,6 +825,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
+    autocompleteDisableInsideComments: false,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalFastPath: false,

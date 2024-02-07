@@ -14,9 +14,12 @@ import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import type { CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
-import { documentAndPosition } from './test-helpers'
+import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 import type { InlineCompletionItem } from './types'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
+import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { SupportedLanguage } from '../tree-sitter/grammars'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -107,6 +110,28 @@ describe('InlineCompletionItemProvider', () => {
             },
           ]
         `)
+    })
+
+    it('prevents completions inside comments', async () => {
+        try {
+            const { document, position } = documentAndPosition('// █', 'typescript')
+
+            await initTreeSitterParser()
+            const parser = getParser(SupportedLanguage.TypeScript)
+            if (parser) {
+                updateParseTreeCache(document, parser)
+            }
+
+            const fn = vi.fn()
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                disableInsideComments: true,
+            })
+            const result = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(result).toBeNull()
+            expect(fn).not.toHaveBeenCalled()
+        } finally {
+            resetParsersCache()
+        }
     })
 
     it('saves lastInlineCompletionResult', async () => {

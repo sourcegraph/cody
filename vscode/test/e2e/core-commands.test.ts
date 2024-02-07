@@ -108,3 +108,43 @@ test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     ]
     await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
+
+test('Document Command (Edit)', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the File Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+
+    // Open the buzz.ts file from the tree view
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Click on some code within the function
+    await page.getByText("fizzbuzz.push('Buzz')").click()
+
+    // Bring the cody sidebar to the foreground
+    await page.click('.badge[aria-label="Cody"]')
+
+    // Trigger the documentaton command
+    await page.getByText('Add code documentation').hover()
+    await page.getByText('Add code documentation').click()
+
+    // Code lens should be visible
+    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+
+    // Code lens should be at the start of the function (range expanded from click position)
+    expect(
+        await page.getByText(
+            '<title>Goodbye Cody < /title>export function fizzbuzz() {const fizzbuzz = []for '
+        )
+    ).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:command:doc:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
+})
