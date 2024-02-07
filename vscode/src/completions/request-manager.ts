@@ -22,7 +22,7 @@ import {
 import type { ContextSnippet } from './types'
 import { lines, removeIndentation } from './text-processing'
 import { logDebug } from '../log'
-import { isLocalCompletionsProvider } from './providers/unstable-ollama'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 
 export interface RequestParams {
     /** The request's document */

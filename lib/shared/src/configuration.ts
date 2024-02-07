@@ -32,7 +32,12 @@ export interface Configuration {
      */
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'fireworks'
+        | 'unstable-openai'
+        | 'experimental-ollama'
+        | null
     autocompleteAdvancedModel: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
