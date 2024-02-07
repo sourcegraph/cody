@@ -14,6 +14,9 @@ import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { fromSlashCommand } from '../utils/common'
 
+const isTesting = process.env.CODY_TESTING === 'true'
+const isMac = os.platform() === 'darwin'
+
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
  */
@@ -219,17 +222,26 @@ export class CustomCommandsManager implements vscode.Disposable {
                 void vscode.commands.executeCommand('vscode.open', uri)
                 break
             case 'delete': {
-                let message = 'Remove user settings file (~/.vscode/cody.json)?'
+                let fileType = 'user settings file (~/.vscode/cody.json)'
                 if (type === CustomCommandType.Workspace) {
-                    message = 'Remove workspace settings file (.vscode/cody.json)?'
+                    fileType = 'workspace settings file (.vscode/cody.json)'
                 }
-                // Show confirmation for user setting only, as
-                // workspace config can be reverted with git history.
-                vscode.window.showInformationMessage(message, 'Remove File').then(async choice => {
-                    if (choice === 'Remove File') {
-                        void vscode.workspace.fs.delete(uri)
-                    }
-                })
+                const bin = isMac ? 'Trash' : 'Recycle Bin'
+                const confirmationKey = `Move to ${bin}`
+                // Playwright cannot capture and interact with pop-up modal in VS Code,
+                // so we need to turn off modal mode for the display message during tests.
+                const modal = !isTesting
+                vscode.window
+                    .showInformationMessage(
+                        `Are you sure you want to delete your Cody ${fileType}?`,
+                        { detail: `You can restore this file from the ${bin}.`, modal },
+                        confirmationKey
+                    )
+                    .then(async choice => {
+                        if (choice === confirmationKey) {
+                            void vscode.workspace.fs.delete(uri)
+                        }
+                    })
                 break
             }
             case 'create':

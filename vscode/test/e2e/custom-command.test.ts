@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test'
-
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
@@ -209,6 +208,12 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
+
+    // Because we have turned off notification, we will need to check the notification center
+    // for the confirmation message.
+    await page.getByRole('button', { name: 'Do Not Disturb' }).click()
+    await page.getByRole('button', { name: /^Move to / }).click()
+
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 })
