@@ -129,8 +129,8 @@ class FireworksProvider extends Provider {
             this.options.fastPath &&
             config.accessToken &&
             // Require the upstream to be dotcom
-            // this.authStatus.isDotCom &&
-            // The fast path client only suppor ts Node.js style response streams
+            this.authStatus.isDotCom &&
+            // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
                 : undefined

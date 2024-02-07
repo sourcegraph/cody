@@ -769,18 +769,13 @@ export class SourcegraphGraphQLAPIClient {
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        return (
+        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
             })
                 .then(verifyResponseCode)
-                //.then(response => response.text())
-                //.then(text => {
-                //    console.log('fetched:', text)
-                //    return JSON.parse(text) as T
-                //})
                 .then(response => response.json() as T)
                 .catch(error => {
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
@@ -800,7 +795,7 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
-        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+        return wrapInActiveSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),

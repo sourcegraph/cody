@@ -203,13 +203,13 @@ export class InlineCompletionItemProvider
 
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
-            try {
-                if (!configFeatures.autoComplete) {
-                    // If Configfeatures exists and autocomplete is disabled then raise
-                    // the error banner for autocomplete config turned off
-                    throw new Error('AutocompleteConfigTurnedOff')
-                }
-            } catch (error) {}
+            if (!configFeatures.autoComplete) {
+                // If Configfeatures exists and autocomplete is disabled then raise
+                // the error banner for autocomplete config turned off
+                const error = new Error('AutocompleteConfigTurnedOff')
+                this.onError(error)
+                throw error
+            }
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {

@@ -65,9 +65,9 @@ export class OpenTelemetryService {
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({ url: traceUrl }),
 
-            // ...(process.env.NODE_ENV === 'development' && {
-            //     spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
-            // }),
+            ...(process.env.NODE_ENV === 'development' && {
+                spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
+            }),
         })
         this.sdk.start()
     }
