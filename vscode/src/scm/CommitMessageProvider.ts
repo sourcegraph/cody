@@ -192,10 +192,15 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             return null
         }
 
-        const vscodeDiffs = diffs || []
-        const cliDiffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
+        if (!diffs?.length) {
+            diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
+        }
 
-        const allowedDiffs = [...vscodeDiffs, ...cliDiffs].filter(diff => {
+        if (diffs.length === 0) {
+            return { isEmpty: true, isTruncated: false, prompt: '' }
+        }
+
+        const allowedDiffs = diffs.filter(diff => {
             const diffHeader = DIFF_FILE_REGEX.exec(diff)
             const affectedFiles = [diffHeader?.groups?.a, diffHeader?.groups?.b].filter(
                 Boolean
