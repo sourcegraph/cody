@@ -1,3 +1,5 @@
+import type { ChatEventSource } from '../../chat/transcript/messages'
+
 interface DoneEvent {
     type: 'done'
 }
@@ -15,6 +17,7 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
     speaker: 'human' | 'assistant'
+    source?: ChatEventSource
     text?: string
 }
 

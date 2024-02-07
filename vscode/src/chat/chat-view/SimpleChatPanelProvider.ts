@@ -23,6 +23,7 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -238,6 +239,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     uuid.v4(),
                     message.text,
                     message.submitType,
+                    undefined,
                     message.contextFiles ?? [],
                     message.addEnhancedContext ?? false
                 )
@@ -379,6 +381,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
+        source: ChatEventSource | undefined,
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
@@ -394,7 +397,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             ? createDisplayTextWithFileLinks(inputText, userContextFiles)
             : inputText
         const promptText = inputText
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        this.chatModel.addHumanMessage({ text: promptText, source: source }, displayText)
         await this.saveSession({ inputText, inputContextFiles: userContextFiles })
 
         this.postEmptyMessageInProgress()
@@ -495,6 +498,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 requestID,
                 text,
                 'user',
+                undefined,
                 contextFiles,
                 addEnhancedContext
             )
