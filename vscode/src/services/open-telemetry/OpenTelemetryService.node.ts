@@ -5,7 +5,6 @@ import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 
 import {
     FeatureFlag,
