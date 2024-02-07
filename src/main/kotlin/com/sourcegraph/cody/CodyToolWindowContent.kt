@@ -32,7 +32,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
-  private val historyTree = HistoryTree(::selectChat, ::removeChat, ::removeAllChats)
+  private val historyTree = HistoryTree(project, ::selectChat, ::removeChat, ::removeAllChats)
   private val tabbedPane = JBTabbedPane()
   private val currentChatSession: AtomicReference<AgentChatSession?> = AtomicReference(null)
 
@@ -103,6 +103,8 @@ class CodyToolWindowContent(private val project: Project) {
       }
     }
   }
+
+  @RequiresEdt fun refreshHistoryTree() = historyTree.rebuildTree(project)
 
   @RequiresEdt
   fun refreshPanelsVisibility() {

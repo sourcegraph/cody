@@ -179,7 +179,7 @@ private constructor(
     }
     messages.add(message)
     chatPanel.addOrUpdateMessage(message)
-    HistoryService.getInstance().update(internalId, messages)
+    HistoryService.getInstance().update(project, internalId, messages)
   }
 
   @RequiresEdt

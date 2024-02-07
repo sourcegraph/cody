@@ -18,6 +18,7 @@
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
     - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
     - [ ] [Organize multiple chats](#organize-multiple-chats)
+    - [ ] [Isolate multiple chats](#isolate-multiple-chats)
 - Sourcegraph Code Search
     - [ ] [Find with Sourcegraph...](#find-with-sourcegraph)
     - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
@@ -262,6 +263,19 @@ Test ideas:
 13. Open existing chat with shortcut <kbd>Alt</kbd> + <kbd>-</kbd> (or <kbd>Option</kbd> + <kbd>-</kbd> on Mac) and start typing question. Tab should be switched automatically on Chat.
 14. Second click <kbd>Alt</kbd> + <kbd-</kbd> should hide tool window if focused (similar behavior as other tool windows).
 15. Click <kbd>Esc</kbd> while being focused inside Cody tool window. You should be automatically focused on code.  
+
+#### Isolate multiple chats
+
+Prerequisite: You need two working accounts. Preferably one Free, and one Enterprise.
+
+1. Switch to first account.
+2. Send a message.
+3. Switch to second account. 
+4. Send a message.
+
+These two chats should be isolated between different accounts. Both accounts should have one conversation each.
+
+You should also be able to switch between accounts while tokens are still being generated.
 
 ## Code Search
 

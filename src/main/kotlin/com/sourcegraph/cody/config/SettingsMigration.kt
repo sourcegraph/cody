@@ -11,46 +11,47 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
+import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.initialization.Activity
-import com.sourcegraph.config.AccessTokenStorage
-import com.sourcegraph.config.CodyApplicationService
-import com.sourcegraph.config.CodyProjectService
-import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.config.UserLevelConfig
+import com.sourcegraph.config.*
 import java.util.concurrent.CompletableFuture
-
-private const val RUN_ONCE_CODY_ACCOUNTS_IDS_REFRESH = "CodyAccountsIdsRefresh"
-private const val RUN_ONCE_TOGGLE_CODY_TOOL_WINDOW_AFTER_MIGRATION =
-    "ToggleCodyToolWindowAfterMigration"
-private const val RUN_ONCE_CODY_APPLICATION_SETTINGS_MIGRATION = "CodyApplicationSettingsMigration"
-private const val RUN_ONCE_CODY_PROJECT_SETTINGS_MIGRATION = "CodyProjectSettingsMigration"
 
 class SettingsMigration : Activity {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.instance
 
   override fun runActivity(project: Project) {
-    RunOnceUtil.runOnceForProject(project, RUN_ONCE_CODY_PROJECT_SETTINGS_MIGRATION) {
-      val customRequestHeaders = extractCustomRequestHeaders(project)
+    RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
       migrateProjectSettings(project)
-      migrateAccounts(project, customRequestHeaders)
+      migrateAccounts(project)
     }
-    RunOnceUtil.runOnceForApp(RUN_ONCE_CODY_APPLICATION_SETTINGS_MIGRATION) {
-      migrateApplicationSettings()
+    RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
+    RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
+      toggleCodyToolbarWindow(project)
     }
-    RunOnceUtil.runOnceForApp(RUN_ONCE_TOGGLE_CODY_TOOL_WINDOW_AFTER_MIGRATION) {
-      ApplicationManager.getApplication().invokeLater { toggleCodyToolbarWindow(project) }
-    }
-    RunOnceUtil.runOnceForApp(RUN_ONCE_CODY_ACCOUNTS_IDS_REFRESH) {
-      val customRequestHeaders = extractCustomRequestHeaders(project)
-      refreshAccountsIds(customRequestHeaders)
+    RunOnceUtil.runOnceForApp("CodyAccountsIdsRefresh") { refreshAccountsIds(project) }
+    RunOnceUtil.runOnceForApp("CodyAssignOrphanedChatsToActiveAccount") {
+      migrateOrphanedChatsToActiveAccount(project)
     }
   }
 
-  private fun refreshAccountsIds(customRequestHeaders: String) {
+  private fun migrateOrphanedChatsToActiveAccount(project: Project) {
+    val activeAccountId = CodyAuthenticationManager.instance.getActiveAccount(project)?.id
+    HistoryService.getInstance()
+        .state
+        .chats
+        .filter { it.accountId == null }
+        .forEach { it.accountId = activeAccountId }
+    // required because this activity is executed later than tool window creation
+    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshHistoryTree() }
+  }
+
+  private fun refreshAccountsIds(project: Project) {
+    val customRequestHeaders = extractCustomRequestHeaders(project)
     codyAuthenticationManager.getAccounts().forEach { codyAccount ->
       val server = SourcegraphServerPath.from(codyAccount.server.url, customRequestHeaders)
       val token = codyAuthenticationManager.getTokenForAccount(codyAccount)
@@ -68,12 +69,15 @@ class SettingsMigration : Activity {
   }
 
   private fun toggleCodyToolbarWindow(project: Project) {
-    val toolWindowManager = ToolWindowManager.getInstance(project)
-    val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
-    toolWindow?.setAvailable(CodyApplicationSettings.instance.isCodyEnabled, null)
+    ApplicationManager.getApplication().invokeLater {
+      val toolWindowManager = ToolWindowManager.getInstance(project)
+      val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
+      toolWindow?.setAvailable(CodyApplicationSettings.instance.isCodyEnabled, null)
+    }
   }
 
-  private fun migrateAccounts(project: Project, customRequestHeaders: String) {
+  private fun migrateAccounts(project: Project) {
+    val customRequestHeaders = extractCustomRequestHeaders(project)
     val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.instance
     migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
     migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)

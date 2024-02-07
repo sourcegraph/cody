@@ -16,6 +16,8 @@ class ChatState : BaseState() {
 
   @get:OptionTag(tag = "updatedAt", nameAttribute = "") var updatedAt: String? by string()
 
+  @get:OptionTag(tag = "accountId", nameAttribute = "") var accountId: String? by string()
+
   fun title(): String? = messages.firstOrNull()?.text
 
   fun setUpdatedTimeAt(date: LocalDateTime) {
@@ -30,5 +32,12 @@ class ChatState : BaseState() {
   companion object {
 
     private val DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    fun create(accountId: String?, internalId: String): ChatState {
+      val chat = ChatState()
+      chat.accountId = accountId
+      chat.internalId = internalId
+      return chat
+    }
   }
 }

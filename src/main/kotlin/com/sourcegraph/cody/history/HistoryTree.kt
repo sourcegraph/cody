@@ -4,11 +4,13 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.treeStructure.SimpleTree
 import com.intellij.util.EditSourceOnDoubleClickHandler
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.node.LeafNode
 import com.sourcegraph.cody.history.node.PeriodNode
 import com.sourcegraph.cody.history.node.RootNode
@@ -27,12 +29,13 @@ import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
 class HistoryTree(
+    project: Project,
     private val onSelect: (ChatState) -> Unit,
     private val onRemove: (ChatState) -> Unit,
     private val onRemoveAll: () -> Unit
 ) : SimpleToolWindowPanel(true, true) {
 
-  private val model = DefaultTreeModel(buildTree())
+  private val model = DefaultTreeModel(buildTree(project))
   private val root
     get() = model.root as RootNode
 
@@ -70,6 +73,10 @@ class HistoryTree(
     EditSourceOnDoubleClickHandler.install(tree, ::selectLeaf)
     setContent(ScrollPaneFactory.createScrollPane(tree))
     HistoryService.getInstance().listenOnUpdate(::updatePresentation)
+  }
+
+  fun rebuildTree(project: Project) {
+    model.setRoot(buildTree(project))
   }
 
   private fun updatePresentation(chat: ChatState) {
@@ -157,9 +164,9 @@ class HistoryTree(
     model.setRoot(RootNode())
   }
 
-  private fun buildTree(): DefaultMutableTreeNode {
+  private fun buildTree(project: Project): DefaultMutableTreeNode {
     val root = RootNode()
-    for ((period, chats) in getChatsGroupedByPeriod()) {
+    for ((period, chats) in getChatsGroupedByPeriod(project)) {
       val periodNode = PeriodNode(period)
       for (chat in chats) {
         periodNode.add(LeafNode(chat))
@@ -169,10 +176,13 @@ class HistoryTree(
     return root
   }
 
-  private fun getChatsGroupedByPeriod(): Map<String, List<ChatState>> =
+  private fun getChatsGroupedByPeriod(project: Project): Map<String, List<ChatState>> =
       HistoryService.getInstance()
           .state
           .chats
+          .filter {
+            it.accountId == CodyAuthenticationManager.instance.getActiveAccount(project)?.id
+          }
           .sortedByDescending { chat -> chat.getUpdatedTimeAt() }
           .groupBy { chat -> DurationGroupFormatter.format(chat.getUpdatedTimeAt()) }
 

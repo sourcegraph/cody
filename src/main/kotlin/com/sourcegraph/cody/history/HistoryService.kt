@@ -1,8 +1,10 @@
 package com.sourcegraph.cody.history
 
 import com.intellij.openapi.components.*
+import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.HistoryState
 import com.sourcegraph.cody.history.state.MessageState
@@ -18,8 +20,8 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     synchronized(listeners) { listeners += listener }
   }
 
-  fun update(internalId: String, chatMessages: List<ChatMessage>) {
-    val found = getChatOrCreate(internalId)
+  fun update(project: Project, internalId: String, chatMessages: List<ChatMessage>) {
+    val found = getChatOrCreate(project, internalId)
     found.messages = chatMessages.map(::convertToMessageState).toMutableList()
     if (chatMessages.lastOrNull()?.speaker == Speaker.HUMAN) {
       found.setUpdatedTimeAt(LocalDateTime.now())
@@ -46,10 +48,11 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     return message
   }
 
-  private fun getChatOrCreate(internalId: String): ChatState {
+  private fun getChatOrCreate(project: Project, internalId: String): ChatState {
     val found = state.chats.find { it.internalId == internalId }
     if (found != null) return found
-    val newChat = ChatState().also { it.internalId = internalId }
+    val activeAccountId = CodyAuthenticationManager.instance.getActiveAccount(project)?.id
+    val newChat = ChatState.create(activeAccountId, internalId)
     state.chats += newChat
     return newChat
   }
