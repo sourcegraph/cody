@@ -68,6 +68,10 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint]?.[flagName]
     }
 
+    public getExposedExperiments(endpoint: string = this.apiClient.endpoint): Record<string, boolean> {
+        return this.featureFlags[endpoint] || {}
+    }
+
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
         const endpoint = this.apiClient.endpoint
         if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {

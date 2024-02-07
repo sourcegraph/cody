@@ -365,6 +365,8 @@ export class InlineCompletionItemProvider
                     )
                 }
 
+                span.addEvent('computed', { source: result.source })
+
                 const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
@@ -523,6 +525,7 @@ export class InlineCompletionItemProvider
         }
 
         completion.span?.addEvent('suggested')
+        completion.span?.addEvent('exposed_experiments', featureFlagProvider.getExposedExperiments())
         CompletionLogger.suggested(completion.logId)
     }
 
