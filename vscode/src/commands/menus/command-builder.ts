@@ -19,11 +19,6 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        const description = await this.makeDescription()
-        if (!description) {
-            return null
-        }
-
         const prompt = await this.makePrompt()
         if (!prompt) {
             return null
@@ -34,7 +29,7 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        return { key, prompt: { ...prompt, description, key }, type }
+        return { key, prompt: { ...prompt, key }, type }
     }
 
     private async makeCommandKey(commands: string[]): Promise<string | undefined> {
@@ -62,22 +57,6 @@ export class CustomCommandsBuilderMenu {
         return value
     }
 
-    private async makeDescription(): Promise<string | undefined> {
-        const description = await window.showInputBox({
-            title: 'New Custom Cody Command: Description',
-            prompt: 'Enter a description for the command in sentence case.',
-            placeHolder: 'e.g. Scan for vulnerabilities',
-            ignoreFocusOut: true,
-            validateInput: (input: string) => {
-                if (!input) {
-                    return 'Command description cannot be empty.'
-                }
-                return
-            },
-        })
-        return description
-    }
-
     private async makePrompt(): Promise<Omit<CodyCommand, 'key'> | null> {
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
@@ -97,9 +76,7 @@ export class CustomCommandsBuilderMenu {
         return this.addContext({ prompt })
     }
 
-    private async addContext(
-        newPrompt?: Omit<CodyCommand, 'key'>
-    ): Promise<Omit<CodyCommand, 'key'> | null> {
+    private async addContext(newPrompt?: Partial<CodyCommand>): Promise<CodyCommand | null> {
         if (!newPrompt) {
             return null
         }
@@ -116,7 +93,7 @@ export class CustomCommandsBuilderMenu {
         })
 
         if (!promptContext?.length) {
-            return newPrompt
+            return newPrompt as CodyCommand
         }
 
         for (const context of promptContext) {
@@ -134,7 +111,7 @@ export class CustomCommandsBuilderMenu {
             }
         }
 
-        return newPrompt
+        return newPrompt as CodyCommand
     }
 
     private async makeType(): Promise<CustomCommandType> {

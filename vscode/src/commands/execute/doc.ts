@@ -31,13 +31,13 @@ export async function executeDocCommand(
 
     return {
         type: 'edit',
-        task: await executeEdit(
-            {
+        task: await executeEdit({
+            configuration: {
                 instruction: prompt,
                 intent: 'doc',
                 mode: 'insert',
-            } satisfies ExecuteEditArguments,
-            DefaultEditCommands.Doc
-        ),
+            },
+            source: DefaultEditCommands.Doc,
+        } satisfies ExecuteEditArguments),
     }
 }

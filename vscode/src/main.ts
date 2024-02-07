@@ -10,6 +10,7 @@ import {
     setLogger,
     type ConfigurationWithAccessToken,
     ConfigFeaturesSingleton,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -218,18 +219,15 @@ const register = async (
         guardrails
     )
 
-    const ghostHintDecorator = new GhostHintDecorator()
-    disposables.push(
+    const ghostHintDecorator = new GhostHintDecorator(authProvider)
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        contextProvider,
         ghostHintDecorator,
-        new EditManager({
-            chat: chatClient,
-            editor,
-            contextProvider,
-            ghostHintDecorator,
-            authProvider,
-        }),
-        new CodeActionProvider({ contextProvider })
-    )
+        authProvider,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -286,6 +284,7 @@ const register = async (
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
@@ -512,7 +511,16 @@ const register = async (
             featureFlagProvider,
             vscode.window.showInformationMessage,
             vscode.env.openExternal
-        )
+        ),
+        // For register sidebar clicks
+        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
+            const source: ChatEventSource = 'sidebar'
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
+                privateMetadata: { source },
+            })
+            void vscode.commands.executeCommand(command, [source])
+        })
     )
 
     /**

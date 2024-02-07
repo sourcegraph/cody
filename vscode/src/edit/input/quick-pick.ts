@@ -30,9 +30,9 @@ export const createQuickPick = ({
     onDidChangeActive,
     onDidChangeValue,
     onDidHide,
+    onDidTriggerButton,
     getItems,
     buttons,
-    onDidTriggerButton,
     value = '',
 }: QuickPickConfiguration): QuickPick => {
     const quickPick = vscode.window.createQuickPick()

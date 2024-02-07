@@ -26,7 +26,7 @@ export async function showCommandMenu(
             items.push(CommandMenuSeperator.commands)
             for (const [_name, _command] of vscodeDefaultCommands) {
                 const label = _command.key
-                const description = _command.description
+                const description = _command.description ?? _command.prompt
                 const command = _command.key
                 items.push({ label, description, command })
             }
@@ -36,7 +36,7 @@ export async function showCommandMenu(
         items.push(CommandMenuSeperator.custom)
         for (const customCommand of customCommands) {
             const label = customCommand.key
-            const description = customCommand.description
+            const description = customCommand.description ?? customCommand.prompt
             const command = customCommand.key
             items.push({ label, description, command })
         }
@@ -141,8 +141,8 @@ export async function showCommandMenu(
             }
 
             // Check if it's an edit command
-            if (selected.startsWith('edit ')) {
-                void executeEdit({ instruction: value }, 'menu')
+            if (selected.startsWith('/edit')) {
+                void executeEdit({ configuration: { instruction: value }, source: 'menu' })
                 quickPick.hide()
                 return
             }

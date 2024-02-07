@@ -38,13 +38,15 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
             command: 'cody.command.edit-code',
             arguments: [
                 {
-                    instruction: this.instruction,
-                    range,
-                    intent: 'doc',
-                    document,
-                    mode: 'insert',
+                    configuration: {
+                        instruction: this.instruction,
+                        range,
+                        intent: 'doc',
+                        document,
+                        mode: 'insert',
+                    },
+                    source,
                 } satisfies ExecuteEditArguments,
-                source,
             ],
             title: displayText,
         }

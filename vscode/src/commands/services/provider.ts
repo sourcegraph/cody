@@ -13,12 +13,14 @@ const editorCommands: CodyCommand[] = [
         prompt: ASK_QUESTION_COMMAND.key,
         key: ASK_QUESTION_COMMAND.key,
         mode: 'ask',
+        type: 'default',
     },
     {
         description: EDIT_COMMAND.description,
         prompt: EDIT_COMMAND.key,
         key: EDIT_COMMAND.key,
         mode: 'edit',
+        type: 'default',
     },
 ]
 
