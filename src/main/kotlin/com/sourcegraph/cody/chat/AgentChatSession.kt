@@ -179,7 +179,7 @@ private constructor(
     }
     messages.add(message)
     chatPanel.addOrUpdateMessage(message)
-    HistoryService.getInstance().update(project, internalId, messages)
+    HistoryService.getInstance(project).updateChatMessages(internalId, messages)
   }
 
   @RequiresEdt
@@ -220,12 +220,7 @@ private constructor(
       val chatSession = AgentChatSession(project, sessionId)
 
       chatSession.createCancellationToken(
-          onCancel = {
-            CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-              agent.server.webviewReceiveMessage(
-                  WebviewReceiveMessageParams(sessionId.get(), WebviewMessage(command = "abort")))
-            }
-          },
+          onCancel = { chatSession.sendWebviewMessage(WebviewMessage(command = "abort")) },
           onFinish = {
             GraphQlLogger.logCodyEvent(project, "command:${commandId.displayName}", "executed")
           })

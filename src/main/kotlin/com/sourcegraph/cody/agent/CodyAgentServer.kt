@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.util.ChatRemoteReposResponse
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -34,6 +35,9 @@ interface CodyAgentServer {
 
   @JsonRequest("graphql/getRepoId")
   fun getRepoId(repoName: GetRepoIDResponse): CompletableFuture<String?>
+
+  @JsonRequest("graphql/getRepoIds")
+  fun getRepoIds(repoName: GetRepoIdsParam): CompletableFuture<GetRepoIdsResponse>
 
   @JsonRequest("git/codebaseName")
   fun convertGitCloneURLToCodebaseName(cloneURL: CloneURL): CompletableFuture<String?>
@@ -105,4 +109,6 @@ interface CodyAgentServer {
   fun attributionSearch(
       params: AttributionSearchParams
   ): CompletableFuture<AttributionSearchResponse>
+
+  @JsonRequest("chat/remoteRepos") fun chatRemoteRepos(): CompletableFuture<ChatRemoteReposResponse>
 }

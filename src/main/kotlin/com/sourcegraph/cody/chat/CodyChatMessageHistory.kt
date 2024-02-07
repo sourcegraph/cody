@@ -1,11 +1,16 @@
 package com.sourcegraph.cody.chat
 
+import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTextArea
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.MessageState
 import java.util.*
 
-class CodyChatMessageHistory(private val capacity: Int, chatSession: ChatSession) {
+class CodyChatMessageHistory(
+    private val project: Project,
+    private val capacity: Int,
+    chatSession: ChatSession
+) {
   var currentValue: String = ""
   private var upperStack: Stack<String> = Stack<String>()
   private var lowerStack: Stack<String> = Stack<String>()
@@ -53,8 +58,8 @@ class CodyChatMessageHistory(private val capacity: Int, chatSession: ChatSession
   }
 
   private fun preloadHistoricalMessages(chatSession: ChatSession) {
-    HistoryService.getInstance()
-        .state
+    HistoryService.getInstance(project)
+        .getHistoryReadOnly()
         .chats
         .find { it.internalId == chatSession.getInternalId() }
         ?.messages

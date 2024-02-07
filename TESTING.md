@@ -19,6 +19,9 @@
     - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
     - [ ] [Organize multiple chats](#organize-multiple-chats)
     - [ ] [Isolate multiple chats](#isolate-multiple-chats)
+- Multi-repo context
+    - [] [Free/pro accounts:](#freepro-accounts)
+    - [] [Enterprise accounts:](#enterprise-accounts)
 - Sourcegraph Code Search
     - [ ] [Find with Sourcegraph...](#find-with-sourcegraph)
     - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
@@ -52,7 +55,8 @@ Verify the remaining SSO methods by performing the same steps for `Sign in with 
 
 ### Remove all accounts
 
-Prerequisite: You have to be **signed in**. This is important because we expect certain components to be refreshed automatically.
+Prerequisite: You have to be **signed in**. This is important because we expect certain components to be refreshed
+automatically.
 
 1. Navigate to `Settings` > `Sourcegraph & Cody`.
 2. Remove all accounts and apply settings.
@@ -130,9 +134,9 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
 
 ### General commands availability from keyboard shortcuts
 
-| Command       | Windows / Linux                                      | MacOs                                                |
-|---------------|------------------------------------------------------|------------------------------------------------------|
-| Explain Code  | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd>     | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> |
+| Command       | Windows / Linux                                  | MacOs                                                |
+|---------------|--------------------------------------------------|------------------------------------------------------|
+| Explain Code  | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> |
 | Smell Code    | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> |
 | Generate Test | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> |
 
@@ -248,21 +252,27 @@ Useful tips:
 
 Test ideas:
 
-1. Delete "active" chat. You should be able to delete the currently opened chat. Messages should be removed from Chat tab.
+1. Delete "active" chat. You should be able to delete the currently opened chat. Messages should be removed from Chat
+   tab.
 2. Restore historical chat, focus on chat input field and use UP/DOWN keys to cycle between previous questions.
 3. Press "new chat" as fast as you can. Especially during the IDE startup.
 4. Switch between chats as fast as you can.
-5. Press "new chat" while being inside `My Account` tab or something other than Chat tab. Tabs should switch automatically.
+5. Press "new chat" while being inside `My Account` tab or something other than Chat tab. Tabs should switch
+   automatically.
 6. Use commands/recipes inside empty, new chat. Verify serialization/deserialization.
-7. Ask about codebase to force response with listed context files and verify if everything is correctly serialized/deserialized. Links to context files should be clickable.
-8. Remove all chats using history UI. Tree presentation is empty and branches like "Today" are removed from panel. File with transcripts should also disappear.
+7. Ask about codebase to force response with listed context files and verify if everything is correctly
+   serialized/deserialized. Links to context files should be clickable.
+8. Remove all chats using history UI. Tree presentation is empty and branches like "Today" are removed from panel. File
+   with transcripts should also disappear.
 9. Use only the keyboard. For example, navigate transcripts with arrows, delete, enter.
 10. Start typing while being focused on Chat History to perform search-by-title.
 11. Open multiple chats and ask few simultaneous questions in several sessions at once.
 12. Open new chat with <kbd>Alt</kbd> + <kbd>=</kbd> shortcut (or <kbd>Option</kbd> + <kbd>=</kbd> on Mac).
-13. Open existing chat with shortcut <kbd>Alt</kbd> + <kbd>-</kbd> (or <kbd>Option</kbd> + <kbd>-</kbd> on Mac) and start typing question. Tab should be switched automatically on Chat.
-14. Second click <kbd>Alt</kbd> + <kbd-</kbd> should hide tool window if focused (similar behavior as other tool windows).
-15. Click <kbd>Esc</kbd> while being focused inside Cody tool window. You should be automatically focused on code.  
+13. Open existing chat with shortcut <kbd>Alt</kbd> + <kbd>-</kbd> (or <kbd>Option</kbd> + <kbd>-</kbd> on Mac) and
+    start typing question. Tab should be switched automatically on Chat.
+14. Second click <kbd>Alt</kbd> + <kbd-</kbd> should hide tool window if focused (similar behavior as other tool
+    windows).
+15. Click <kbd>Esc</kbd> while being focused inside Cody tool window. You should be automatically focused on code.
 
 #### Isolate multiple chats
 
@@ -270,21 +280,58 @@ Prerequisite: You need two working accounts. Preferably one Free, and one Enterp
 
 1. Switch to first account.
 2. Send a message.
-3. Switch to second account. 
+3. Switch to second account.
 4. Send a message.
 
 These two chats should be isolated between different accounts. Both accounts should have one conversation each.
 
 You should also be able to switch between accounts while tokens are still being generated.
 
+## Multi-repo context
+
+### Free/pro accounts:
+
+1. Open `sourcegraph/cody` project with non-enterprise account.
+2. Open new chat and ask question about current repo (e.g. some class) - assistant should know the answer.
+3. Open new chat and ask question about squirrel - assistant should describe you an animal.
+4. Open new chat and disable local context. Ask about current repo (e.g. some class) - assistant should not have a
+   context.
+5. Save current context as default. Close the IDE. Reopen the IDE.
+    - Go to Chat History tab and open previous chats one by one. Both history and context settings are properly
+      preserved.
+    - Open new chat. Context should be disabled, as we previously set that as new default. Enable it again and set as
+      default.
+
+### Enterprise accounts:
+
+1. Open `sourcegraph/cody` project with enterprise account.
+2. Re-do all check from `Testing free/pro accounts` section but now with enterprise account.
+3. Click [+] button in the context panel and type sourcegraph repo url (`github.com/sourcegraph/sourcegraph`)
+    - Validator should block accepting incomplete or invalid URL.
+    - Add the `sourcegraph/sourcegraph` repo by hitting Add button.
+4. Open new chat and ask question about squirrel - assistant should describe you an HTTP server, **NOT** animal.
+5. Set current context as default and open new chat. It should use/display default context configuration.
+6. Disable `sourcegraph/sourcegraph` remote repo context.
+7. Ask question about squirrel. It should again describe you an animal or have no context.
+8. Save current context as default. Close the IDE. Reopen the IDE.
+    - Go to Chat History tab and open previous chats one by one. Check if both history and context settings are properly
+      preserved.
+    - Open new chat and check if `sourcegraph/sourcegraph` is disabled. It should be, as we previously set that as a
+      default. Enable it again and set as default.
+    - Open new chat and check if `sourcegraph/sourcegraph` is enabled, it should be.
+    - Remove `sourcegraph/sourcegraph` repo by selecting it, and then clicking [-] button.
+    - Ask question about squirrel. It should again describe you an animal or have no context.
+
 ## Code Search
 
-All `Code Search` actions are available under the same `Sourcegraph` right-click context menu, so for simplicity, we describe only the **Expected behaviours**.
+All `Code Search` actions are available under the same `Sourcegraph` right-click context menu, so for simplicity, we
+describe only the **Expected behaviours**.
 
 To open the context menu:
 
 1. Open a file in the repository that is indexed by Sourcegraph.
-2. Select the fragment of code you want to search for (for example: `System.out.println` or `println` may be the simplest candidate).
+2. Select the fragment of code you want to search for (for example: `System.out.println` or `println` may be the
+   simplest candidate).
 3. Right-click on selected fragment, navigate to the `Sourcegraph` sub-menu and choose one of the actions.
 
 ### Find with Sourcegraph...
@@ -303,7 +350,8 @@ To open the context menu:
 #### Expected behaviour:
 
 1. The browser is launched.
-2. The result is a list of fragments that are found **within the same repository** from which the searched fragment originates.
+2. The result is a list of fragments that are found **within the same repository** from which the searched fragment
+   originates.
 
 ### Open Selection on Sourcegraph Web
 
@@ -319,7 +367,8 @@ To open the context menu:
 
 1. A link is copied to the clipboard.
 2. Notification pops up with successful message.
-3. After pasting the link into the browser, the Code Search page opens with the file and the exact line from which the searched fragment originates.
+3. After pasting the link into the browser, the Code Search page opens with the file and the exact line from which the
+   searched fragment originates.
 
 ## [Product-led growth](https://handbook.sourcegraph.com/departments/data-analytics/product-led-growth/)
 
@@ -355,7 +404,8 @@ To open the context menu:
 
 1. Open project with enabled Git VCS. This repository must be publicly available on GitHub.
 2. Open to `Cody` tool window.
-3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` tool window on left, bottom
+3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` tool window on left,
+   bottom
    corner.
 
 #### Expected behaviour

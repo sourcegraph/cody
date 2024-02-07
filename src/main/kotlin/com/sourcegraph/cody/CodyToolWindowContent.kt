@@ -104,7 +104,7 @@ class CodyToolWindowContent(private val project: Project) {
     }
   }
 
-  @RequiresEdt fun refreshHistoryTree() = historyTree.rebuildTree(project)
+  @RequiresEdt fun refreshHistoryTree() = historyTree.rebuildTree()
 
   @RequiresEdt
   fun refreshPanelsVisibility() {
@@ -144,7 +144,7 @@ class CodyToolWindowContent(private val project: Project) {
   }
 
   private fun removeChat(state: ChatState) {
-    HistoryService.getInstance().remove(state.internalId)
+    HistoryService.getInstance(project).remove(state.internalId)
     if (AgentChatSessionService.getInstance(project).removeSession(state)) {
       val isVisible = currentChatSession.get()?.getInternalId() == state.internalId
       if (isVisible) {
@@ -155,7 +155,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   private fun removeAllChats() {
     AgentChatSessionService.getInstance(project).removeAllSessions()
-    HistoryService.getInstance().removeAll()
+    HistoryService.getInstance(project).removeAll()
     switchToChatSession(AgentChatSession.createNew(project))
   }
 

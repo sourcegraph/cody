@@ -21,10 +21,11 @@ import javax.swing.JPanel
 class ChatPanel(project: Project, chatSession: ChatSession) :
     JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
 
-  val promptPanel: PromptPanel = PromptPanel(chatSession)
+  val promptPanel: PromptPanel = PromptPanel(project, chatSession)
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
-  private val contextView: EnhancedContextPanel = EnhancedContextPanel(project)
+
+  private val contextView: EnhancedContextPanel = EnhancedContextPanel(project, chatSession)
 
   private val stopGeneratingButton =
       object : JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend)) {

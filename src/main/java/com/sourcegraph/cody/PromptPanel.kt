@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -27,9 +28,7 @@ import javax.swing.event.AncestorEvent
 import javax.swing.event.AncestorListener
 import javax.swing.event.DocumentEvent
 
-class PromptPanel(
-    private val chatSession: ChatSession,
-) : JLayeredPane() {
+class PromptPanel(project: Project, private val chatSession: ChatSession) : JLayeredPane() {
 
   /** View components */
   private val autoGrowingTextArea = AutoGrowingTextArea(5, 9, this)
@@ -45,7 +44,7 @@ class PromptPanel(
 
   /** Related components */
   private val promptMessageHistory =
-      CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY, chatSession)
+      CodyChatMessageHistory(project, CHAT_MESSAGE_HISTORY_CAPACITY, chatSession)
 
   init {
     /** Initialize view */

@@ -1,34 +1,43 @@
 package com.sourcegraph.cody.context.ui
 
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckedTreeNode
 import com.intellij.ui.SimpleTextAttributes
+import java.io.File
 import javax.swing.JTree
 
 class ContextRepositoriesCheckboxRenderer : CheckboxTree.CheckboxTreeCellRenderer() {
 
   override fun customizeRenderer(
       tree: JTree?,
-      value: Any?,
+      node: Any?,
       selected: Boolean,
       expanded: Boolean,
       leaf: Boolean,
       row: Int,
       hasFocus: Boolean
   ) {
-    when (value) {
+    val style =
+        if (ApplicationInfo.getInstance().build.baselineVersion > 233) "style='color:#808080'"
+        else ""
+
+    when (node) {
+      is ContextTreeRemoteRepoNode -> {
+        val repoName = node.repoUrl.split(File.separator).lastOrNull() ?: node.repoUrl
+        textRenderer.appendHTML(
+            "<b>${repoName}</b> <i ${style}>${node.repoUrl}</i>",
+            SimpleTextAttributes.REGULAR_ATTRIBUTES)
+      }
+      is ContextTreeLocalRepoNode -> {
+        val projectPath = node.project.basePath?.replace(System.getProperty("user.home"), "~")
+        textRenderer.appendHTML(
+            "<b>${node.project.name}</b> <i ${style}>${projectPath}</i>",
+            SimpleTextAttributes.REGULAR_ATTRIBUTES)
+      }
       is CheckedTreeNode -> {
-        when (val userObject = value.userObject) {
-          is Project -> {
-            textRenderer.appendHTML(
-                "<b>${userObject.name}</b> - <i>${userObject.basePath}</i>",
-                SimpleTextAttributes.REGULAR_ATTRIBUTES)
-          }
-          is String -> {
-            textRenderer.appendHTML(userObject, SimpleTextAttributes.REGULAR_ATTRIBUTES)
-          }
-        }
+        textRenderer.appendHTML(
+            "<b>${node.userObject}</b>", SimpleTextAttributes.REGULAR_ATTRIBUTES)
       }
     }
   }

@@ -6,4 +6,7 @@ import com.intellij.util.xmlb.annotations.OptionTag
 class HistoryState : BaseState() {
 
   @get:OptionTag(tag = "chats", nameAttribute = "") var chats: MutableList<ChatState> by list()
+
+  @get:OptionTag(tag = "defaultEnhancedContext", nameAttribute = "")
+  var defaultEnhancedContext: EnhancedContextState? by property()
 }

@@ -45,7 +45,7 @@ object ConfigUtil {
             UserLevelConfig.getAutocompleteProviderType()?.vscodeSettingString(),
         debug = isCodyDebugEnabled(),
         verboseDebug = isCodyVerboseDebugEnabled(),
-        codebase = CodyAgentCodebase.getInstance(project).getUrl(),
+        codebase = CodyAgentCodebase.getInstance(project).getUrl().getNow(null),
     )
   }
 

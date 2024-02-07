@@ -2,17 +2,20 @@ package com.sourcegraph.cody.history
 
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
+import com.jetbrains.rd.framework.base.deepClonePolymorphic
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.state.ChatState
+import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.HistoryState
 import com.sourcegraph.cody.history.state.MessageState
 import java.time.LocalDateTime
 
 @State(name = "ChatHistory", storages = [Storage("cody_history.xml")])
 @Service(Service.Level.PROJECT)
-class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState()) {
+class HistoryService(private val project: Project) :
+    SimplePersistentStateComponent<HistoryState>(HistoryState()) {
 
   private val listeners = mutableListOf<(ChatState) -> Unit>()
 
@@ -20,8 +23,9 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     synchronized(listeners) { listeners += listener }
   }
 
-  fun update(project: Project, internalId: String, chatMessages: List<ChatMessage>) {
-    val found = getChatOrCreate(project, internalId)
+  @Synchronized
+  fun updateChatMessages(internalId: String, chatMessages: List<ChatMessage>) {
+    val found = getOrCreateChat(internalId)
     found.messages = chatMessages.map(::convertToMessageState).toMutableList()
     if (chatMessages.lastOrNull()?.speaker == Speaker.HUMAN) {
       found.setUpdatedTimeAt(LocalDateTime.now())
@@ -29,6 +33,28 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     synchronized(listeners) { listeners.forEach { it(found) } }
   }
 
+  @Synchronized
+  fun updateContextState(internalId: String, contextState: EnhancedContextState?) {
+    val found = getOrCreateChat(internalId)
+    found.enhancedContext = contextState
+  }
+
+  @Synchronized
+  fun updateDefaultContextState(contextState: EnhancedContextState) {
+    state.defaultEnhancedContext = contextState
+  }
+
+  @Synchronized
+  fun getOrCreateChatReadOnly(internalId: String): ChatState {
+    return getOrCreateChat(internalId).deepClonePolymorphic()
+  }
+
+  @Synchronized
+  fun getHistoryReadOnly(): HistoryState {
+    return state.deepClonePolymorphic()
+  }
+
+  @Synchronized
   fun remove(internalId: String?) {
     state.chats.removeIf { it.internalId == internalId }
   }
@@ -48,7 +74,7 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
     return message
   }
 
-  private fun getChatOrCreate(project: Project, internalId: String): ChatState {
+  private fun getOrCreateChat(internalId: String): ChatState {
     val found = state.chats.find { it.internalId == internalId }
     if (found != null) return found
     val activeAccountId = CodyAuthenticationManager.instance.getActiveAccount(project)?.id
@@ -58,7 +84,6 @@ class HistoryService : SimplePersistentStateComponent<HistoryState>(HistoryState
   }
 
   companion object {
-
-    @JvmStatic fun getInstance() = service<HistoryService>()
+    @JvmStatic fun getInstance(project: Project): HistoryService = project.service<HistoryService>()
   }
 }

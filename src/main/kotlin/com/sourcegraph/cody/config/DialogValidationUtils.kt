@@ -2,6 +2,7 @@ package com.sourcegraph.cody.config
 
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.NlsContexts
+import javax.swing.JComponent
 import javax.swing.JTextField
 
 object DialogValidationUtils {
@@ -12,11 +13,11 @@ object DialogValidationUtils {
 
   /** Returns [ValidationInfo] with [message] if [isValid] returns false */
   fun custom(
-      textField: JTextField,
+      component: JComponent,
       @NlsContexts.DialogMessage message: String,
       isValid: () -> Boolean
   ): ValidationInfo? {
-    return if (!isValid()) ValidationInfo(message, textField) else null
+    return if (!isValid()) ValidationInfo(message, component) else null
   }
 
   /**

@@ -29,13 +29,13 @@ import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
 class HistoryTree(
-    project: Project,
+    private val project: Project,
     private val onSelect: (ChatState) -> Unit,
     private val onRemove: (ChatState) -> Unit,
     private val onRemoveAll: () -> Unit
 ) : SimpleToolWindowPanel(true, true) {
 
-  private val model = DefaultTreeModel(buildTree(project))
+  private val model = DefaultTreeModel(buildTree())
   private val root
     get() = model.root as RootNode
 
@@ -72,11 +72,11 @@ class HistoryTree(
     PopupHandler.installPopupMenu(tree, group, "ChatActionsPopup")
     EditSourceOnDoubleClickHandler.install(tree, ::selectLeaf)
     setContent(ScrollPaneFactory.createScrollPane(tree))
-    HistoryService.getInstance().listenOnUpdate(::updatePresentation)
+    HistoryService.getInstance(project).listenOnUpdate(::updatePresentation)
   }
 
-  fun rebuildTree(project: Project) {
-    model.setRoot(buildTree(project))
+  fun rebuildTree() {
+    model.setRoot(buildTree())
   }
 
   private fun updatePresentation(chat: ChatState) {
@@ -164,9 +164,9 @@ class HistoryTree(
     model.setRoot(RootNode())
   }
 
-  private fun buildTree(project: Project): DefaultMutableTreeNode {
+  private fun buildTree(): DefaultMutableTreeNode {
     val root = RootNode()
-    for ((period, chats) in getChatsGroupedByPeriod(project)) {
+    for ((period, chats) in getChatsGroupedByPeriod()) {
       val periodNode = PeriodNode(period)
       for (chat in chats) {
         periodNode.add(LeafNode(chat))
@@ -176,13 +176,14 @@ class HistoryTree(
     return root
   }
 
-  private fun getChatsGroupedByPeriod(project: Project): Map<String, List<ChatState>> =
-      HistoryService.getInstance()
+  private fun getChatsGroupedByPeriod(): Map<String, List<ChatState>> =
+      HistoryService.getInstance(project)
           .state
           .chats
           .filter {
             it.accountId == CodyAuthenticationManager.instance.getActiveAccount(project)?.id
           }
+          .filter { it.messages.isNotEmpty() }
           .sortedByDescending { chat -> chat.getUpdatedTimeAt() }
           .groupBy { chat -> DurationGroupFormatter.format(chat.getUpdatedTimeAt()) }
 

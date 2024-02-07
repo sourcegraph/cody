@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.ui.ToolbarDecorator
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.CommandExecuteParams
 import com.sourcegraph.common.CodyBundle
@@ -15,8 +14,8 @@ import com.sourcegraph.common.CodyBundle.fmt
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ReindexButton(private val project: Project) :
-    ToolbarDecorator.ElementActionButton(
-        CodyBundle.getString("context-panel.reindex-button-name"), AllIcons.Actions.Refresh) {
+    ContextToolbarButton(
+        CodyBundle.getString("context-panel.button.reindex"), AllIcons.Actions.Refresh) {
   override fun actionPerformed(p0: AnActionEvent) {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       ProgressManager.getInstance()
@@ -44,8 +43,6 @@ class ReindexButton(private val project: Project) :
   }
 
   override fun isEnabled(): Boolean = !isReindexingInProgress.get()
-
-  override fun isDumbAware(): Boolean = true
 
   private val isReindexingInProgress = AtomicBoolean(false)
 }

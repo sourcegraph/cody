@@ -22,12 +22,15 @@ class CodyAccountDetailsProvider(
       account: CodyAccount,
       indicator: ProgressIndicator
   ): CompletableFuture<DetailsLoadingResult<CodyAccountDetails>> {
-    val token =
-        accountsModel.newCredentials.getOrElse(account) { accountManager.findCredentials(account) }
-            ?: return CompletableFuture.completedFuture(noToken())
-    val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
+
     return ProgressManager.getInstance()
         .submitIOTask(indicator) { indicator ->
+          val token =
+              accountsModel.newCredentials.getOrElse(account) {
+                accountManager.findCredentials(account)
+              } ?: return@submitIOTask noToken()
+          val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
+
           if (account.isCodyApp()) {
             val details = CodyAccountDetails(account.id, account.name, account.name, null)
             DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)

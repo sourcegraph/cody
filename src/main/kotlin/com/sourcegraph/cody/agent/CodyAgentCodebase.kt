@@ -8,22 +8,28 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.config.CodyProjectSettings
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.vcs.RepoUtil
+import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
 class CodyAgentCodebase(val project: Project) {
 
   // TODO: Support list of repository names instead of just one.
-  private val application = ApplicationManager.getApplication()
   private val settings = CodyProjectSettings.getInstance(project)
-  private var inferredUrl: String? = null
+  private var inferredUrl: CompletableFuture<String> = CompletableFuture()
 
-  fun getUrl(): String? = settings.remoteUrl ?: inferredUrl
+  init {
+    onFileOpened(project, null)
+  }
+
+  fun getUrl(): CompletableFuture<String> =
+      if (settings.remoteUrl != null) CompletableFuture.completedFuture(settings.remoteUrl)
+      else inferredUrl
 
   fun onFileOpened(project: Project, file: VirtualFile?) {
-    application.executeOnPooledThread {
+    ApplicationManager.getApplication().executeOnPooledThread {
       val repositoryName = RepoUtil.findRepositoryName(project, file)
-      if (repositoryName != null && inferredUrl != repositoryName) {
-        inferredUrl = repositoryName
+      if (repositoryName != null && inferredUrl.getNow(null) != repositoryName) {
+        inferredUrl.complete(repositoryName)
         CodyAgentService.applyAgentOnBackgroundThread(project) {
           it.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
         }

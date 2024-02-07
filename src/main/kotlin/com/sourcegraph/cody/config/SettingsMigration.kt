@@ -41,7 +41,7 @@ class SettingsMigration : Activity {
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {
     val activeAccountId = CodyAuthenticationManager.instance.getActiveAccount(project)?.id
-    HistoryService.getInstance()
+    HistoryService.getInstance(project)
         .state
         .chats
         .filter { it.accountId == null }
