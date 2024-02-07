@@ -35,6 +35,8 @@
     - [ ] [Automatic repository recognition](#automatic-repository-recognition)
     - [ ] [Persistent custom repository](#persistent-custom-repository)
     - [ ] [Colour scheme changes](#colour-scheme-changes)
+- Context
+    - [ ] [PLG / SYMF / Local Keyword search](#local-keyword-search)
 
 ## Onboarding
 
@@ -397,6 +399,28 @@ To open the context menu:
 3. Verify: A notification about the exceeded rate limit is shown. It should suggest upgrading to Cody Pro.
 4. Trigger autocomplete in the editor.
 5. Verify: A similar notification is shown to the user.
+
+## Context
+
+### Local Keyword search
+
+1. Open the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repo locally in the IDE to be tested
+2. Go to the `Chat`
+3. **Verify**: Local context is enabled:
+   
+  ![Local Context Enabled](https://github.com/sourcegraph/jetbrains/assets/7814431/11a68b1a-53a4-474e-97c7-74c18374beda)
+  
+5. Type: "what is squirrel?"
+6. **Verify**: You get an answer similar to:
+   > "Squirrel is a code intelligence service developed by Sourcegraph that uses tree-sitter for syntactic analysis of code. Some key things about Squirrel"
+8. Disable Local context
+   
+   ![Local Context Disabled](https://github.com/sourcegraph/jetbrains/assets/7814431/3c755039-e19e-4e58-a9d7-72ac1a381e16)
+   
+10. Create (or refresh) a new Chat thread
+11. **Type**: "what is squirrel?"
+12. **Verify**: You get an answer similar to:
+    > Squirrels are small, bushy-tailed rodents that are found all over the world. Here are some key facts about squirrels...
 
 ## Other
 
