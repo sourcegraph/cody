@@ -12,7 +12,7 @@ import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type {
     Repository,
     API as ScmAPI,
@@ -33,6 +33,11 @@ export interface CommitMessageGuide {
 }
 
 const COMMIT_MESSAGE_TOPIC = 'commit-message'
+//Used to split a full diff into individual file diffs
+const DIFF_SPLIT_REGEX = /(^diff --git)/gm
+// Is used to get the affected names (a and b) of the files in the diff. A & B are captured separately in case
+// they have some semantic meaning in the future
+const DIFF_FILE_REGEX = /^diff --git a\/(?<a>.*?)\s*(?:b\/(?<b>.*?)|\/dev\/null)?$/m
 
 export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscode.Disposable {
     public icon = new vscode.ThemeIcon('cody-logo')
@@ -109,7 +114,7 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             )
             cancellationToken?.onCancellationRequested(abortController.abort)
             for await (const message of stream) {
-                switch(message.type) {
+                switch (message.type) {
                     case 'change':
                         void multiplexer.publish(message.text)
                         break
@@ -136,8 +141,16 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         return fullText.trim()
     }
 
-    private async getDiffFromGitCli(cwd: string): Promise<string | null> {
-        const diffCliCommands = ['diff', '--patch', '--unified=1', '--diff-algorithm=minimal', '--no-color', '-M', '-C']
+    private async getDiffFromGitCli(cwd: string): Promise<string[]> {
+        const diffCliCommands = [
+            'diff',
+            '--patch',
+            '--unified=1',
+            '--diff-algorithm=minimal',
+            '--no-color',
+            '-M',
+            '-C',
+        ]
         let diff: string
 
         // First, attempt to get a diff from only staged changes
@@ -148,24 +161,61 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             diff = (await execFile('git', [...diffCliCommands, 'HEAD'], { cwd })).stdout.trim()
         }
 
-        return diff.length > 0 ? diff : null
+        // we now split the diff per file to match what VSCode would have given us
+        const diffParts = diff.split(DIFF_SPLIT_REGEX)
+        while (diffParts.length > 0 && diffParts[0] === '') {
+            diffParts.shift()
+        }
+        const chunks = diffParts.reduce((acc, part, idx) => {
+            if (idx % 2 === 0) {
+                // delimiter
+                acc.push(part)
+            } else {
+                acc[acc.length - 1] += part
+            }
+            return acc
+        }, [] as string[])
+
+        return chunks
     }
 
     public async getHumanPrompt(
         diffs: string[] | undefined
     ): Promise<{ prompt: string; isTruncated: boolean; isEmpty: boolean } | null> {
         const workspaceUri = this.options.editor.getWorkspaceRootUri()
+        //TODO: we need to discover the git root path for the workspace because it might be further up the tree
+        //For instance if you debug this application it opens the `vscode` workspace and suddenly everything breaks
+        //But I can't see a good way to do so and it affects more than just the diff. Also doesn't seem to fetch
+        //.cody files from the root of the git repo when in a sub-workspace.
+        //If you look at the git plugin they run git root discovery for the workspace. We probably want a similar helper.
         if (!workspaceUri) {
             return null
         }
 
-        const diffContent =
-            diffs && diffs.length > 0 ? diffs.join('\n') : await this.getDiffFromGitCli(workspaceUri.fsPath)
+        const vscodeDiffs = diffs || []
+        const cliDiffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
+
+        const allowedDiffs = [...vscodeDiffs, ...cliDiffs].filter(diff => {
+            const diffHeader = DIFF_FILE_REGEX.exec(diff)
+            const affectedFiles = [diffHeader?.groups?.a, diffHeader?.groups?.b].filter(
+                Boolean
+            ) as unknown as string[]
+            const affectedFileURIs = affectedFiles.map(file =>
+                vscode.Uri.file(path.join(workspaceUri.fsPath, file))
+            )
+            if (affectedFileURIs.some(isCodyIgnoredFile)) {
+                return false
+            }
+            return true
+        })
+
+        const diffContent = allowedDiffs.join('\n').trim()
         if (!diffContent) {
             return { isEmpty: true, isTruncated: false, prompt: '' }
         }
 
-        const templateContent = (await this.getCommitTemplate(workspaceUri.fsPath)) || DEFAULT_TEMPLATE_CONTENT
+        const templateContent =
+            (await this.getCommitTemplate(workspaceUri!.fsPath)) || DEFAULT_TEMPLATE_CONTENT //somehow tsc screws up here?!?
         const fullPrompt = PROMPT_PREFIX(diffContent) + PROMPT_SUFFIX(templateContent)
         const prompt = truncateText(fullPrompt, MAX_AVAILABLE_PROMPT_LENGTH)
 
