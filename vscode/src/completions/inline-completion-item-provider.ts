@@ -192,9 +192,6 @@ export class InlineCompletionItemProvider
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
-            console.log('IDIDIDIDID')
-            console.log(span.spanContext().traceId)
-            console.log('ENDNENDNENED')
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -365,8 +362,6 @@ export class InlineCompletionItemProvider
                     )
                 }
 
-                span.addEvent('computed', { source: result.source })
-
                 const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
@@ -524,9 +519,7 @@ export class InlineCompletionItemProvider
             return
         }
 
-        completion.span?.addEvent('suggested')
-        completion.span?.addEvent('exposed_experiments', featureFlagProvider.getExposedExperiments())
-        CompletionLogger.suggested(completion.logId)
+        CompletionLogger.suggested(completion.logId, completion.span)
     }
 
     /**

@@ -2,7 +2,12 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
+import {
+    isNetworkError,
+    type BillingCategory,
+    type BillingProduct,
+    featureFlagProvider,
+} from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
@@ -19,7 +24,7 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
-import { trace } from '@opentelemetry/api'
+import { Span, trace } from '@opentelemetry/api'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -433,8 +438,6 @@ export function create(
         id: null,
     }
 
-    trace.getActiveSpan()?.setAttributes(inputParams as any)
-
     activeSuggestionRequests.set(id, {
         id,
         params,
@@ -508,7 +511,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID): void {
+export function suggested(id: CompletionLogID, span?: Span): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -521,6 +524,12 @@ export function suggested(id: CompletionLogID): void {
 
     if (!event.suggestedAt) {
         event.suggestedAt = performance.now()
+
+        // Add exposed experiments at the very end to make sure we include experiments that the user
+        // is being exposed to while the completion was generated
+        span?.setAttributes(featureFlagProvider.getExposedExperiments())
+        span?.setAttributes(getSharedParams(event) as any)
+        span?.addEvent('suggested')
 
         setTimeout(() => {
             const event = activeSuggestionRequests.get(id)

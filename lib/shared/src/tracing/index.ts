@@ -24,18 +24,14 @@ export function getActiveTraceAndSpanId(): { traceId: string; spanId: string } |
 }
 
 export function wrapInActiveSpan<R>(name: string, fn: (span: Span) => R): R {
-    let isSync = true
     return tracer.startActiveSpan(name, (span): R => {
-        const start = performance.now()
         const handleSuccess = (response: R): R => {
-            console.log('SUCCESS', name, performance.now() - start)
             span.setStatus({ code: SpanStatusCode.OK })
             span.end()
             return response
         }
 
-        const catchError = (error: unknown): never => {
-            console.log('ERROR', name, performance.now() - start)
+        const handleError = (error: unknown): never => {
             span.recordException(error as Exception)
             span.setStatus({ code: SpanStatusCode.ERROR })
             span.end()
@@ -46,18 +42,13 @@ export function wrapInActiveSpan<R>(name: string, fn: (span: Span) => R): R {
             const response = fn(span)
 
             if (typeof response === 'object' && response !== null && 'then' in response) {
-                isSync = false
-                // @ts-ignore Thenable, duh!
-                return response.then(handleSuccess, catchError) as R
+                // @ts-ignore Response seems to be a Thenable
+                return response.then(handleSuccess, handleError) as R
             }
 
             return handleSuccess(response)
         } catch (error) {
-            return catchError(error)
-        } finally {
-            if (isSync) {
-                span.end()
-            }
+            return handleError(error)
         }
     })
 }
