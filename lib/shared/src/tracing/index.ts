@@ -3,7 +3,7 @@ import opentelemetry, {
     context,
     propagation,
     type Exception,
-    Span,
+    type Span,
 } from '@opentelemetry/api'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
