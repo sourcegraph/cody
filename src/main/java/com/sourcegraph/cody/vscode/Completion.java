@@ -1,15 +1,15 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.agent.protocol.ChatMessage;
+import com.sourcegraph.cody.agent.protocol.Message;
 import java.util.List;
 
 public class Completion {
   public final String prefix;
-  public final List<ChatMessage> messages;
+  public final List<Message> messages;
   public final String content;
   public final String stopReason;
 
-  public Completion(String prefix, List<ChatMessage> messages, String content, String stopReason) {
+  public Completion(String prefix, List<Message> messages, String content, String stopReason) {
     this.prefix = prefix;
     this.messages = messages;
     this.content = content;
@@ -20,7 +20,7 @@ public class Completion {
     return new Completion(newPrefix, this.messages, this.content, this.stopReason);
   }
 
-  public Completion withMessages(List<ChatMessage> newMessages) {
+  public Completion withMessages(List<Message> newMessages) {
     return new Completion(this.prefix, newMessages, this.content, this.stopReason);
   }
 

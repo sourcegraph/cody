@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.Source
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.chat.ChatUIConstants
@@ -17,24 +16,26 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
     JPanel(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true)) {
   init {
     val welcomeText = CodyBundle.getString("messages-panel.welcome-text")
-    addChatMessageAsComponent(ChatMessage(Speaker.ASSISTANT, Source.CHAT, welcomeText, id = -1))
+    addChatMessageAsComponent(ChatMessage(Speaker.ASSISTANT, welcomeText))
   }
 
   @RequiresEdt
+  @Synchronized
   fun addOrUpdateMessage(message: ChatMessage, shouldAddBlinkingCursor: Boolean) {
     removeBlinkingCursor()
 
-    val messageToUpdate = components.getOrNull(message.id + 1).let { it as? JPanel }
-    if (messageToUpdate != null) {
-      val singleMessagePanel = messageToUpdate.getComponent(0) as? SingleMessagePanel
-      val contextFilesPanel = messageToUpdate.getComponent(1) as? ContextFilesPanel
-      singleMessagePanel?.updateContentWith(message)
-      contextFilesPanel?.updateContentWith(message.contextFiles)
+    if (componentCount > 0) {
+      val lastMessage = getLastMessage()
+      if (message.id == lastMessage?.getMessageId()) {
+        lastMessage.updateContentWith(message)
+      } else {
+        addChatMessageAsComponent(message)
+      }
     } else {
       addChatMessageAsComponent(message)
     }
 
-    if (shouldAddBlinkingCursor) {
+    if (shouldAddBlinkingCursor && message.speaker == Speaker.HUMAN) {
       add(BlinkingCursorComponent.instance)
     }
 
@@ -57,16 +58,20 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
   }
 
   @RequiresEdt
+  private fun addComponentToChat(messageContent: JPanel) {
+    val wrapperPanel = JPanel()
+    wrapperPanel.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
+    wrapperPanel.add(messageContent, VerticalFlowLayout.TOP)
+    add(wrapperPanel)
+    revalidate()
+    repaint()
+  }
+
+  @RequiresEdt
   private fun addChatMessageAsComponent(message: ChatMessage) {
-    val singleMessagePanel =
+    addComponentToChat(
         SingleMessagePanel(
-            message, project, this, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, chatSession)
-    val contextFilesPanel = ContextFilesPanel(project, message)
-    val wrapper = JPanel()
-    wrapper.add(singleMessagePanel)
-    wrapper.add(contextFilesPanel)
-    wrapper.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
-    add(wrapper)
+            message, project, this, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, chatSession))
   }
 
   private fun getLastMessage(): SingleMessagePanel? {

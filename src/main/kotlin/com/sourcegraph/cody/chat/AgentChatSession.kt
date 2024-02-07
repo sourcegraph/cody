@@ -15,7 +15,8 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
-import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
+import com.sourcegraph.common.CodyBundle.fmt
+import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -65,33 +66,17 @@ private constructor(
 
   fun hasSessionId(thatSessionId: SessionId): Boolean = getSessionId() == thatSessionId
 
+  fun hasMessageId(messageId: UUID): Boolean = messages.any { it.id == messageId }
+
   override fun getInternalId(): String = internalId
 
   override fun getCancellationToken(): CancellationToken = cancellationToken.get()
 
-  private val logger = LoggerFactory.getLogger(ChatSession::class.java)
-
   @RequiresEdt
   override fun sendMessage(text: String, contextFiles: List<ContextFile>) {
     val displayText = XmlStringUtil.escapeString(text)
-    val humanMessage =
-        ChatMessage(
-            Speaker.HUMAN,
-            source = Source.CHAT,
-            text,
-            id = messages.count(),
-            displayText,
-        )
+    val humanMessage = ChatMessage(Speaker.HUMAN, text, displayText)
     addMessage(humanMessage)
-    val responsePlaceholder =
-        ChatMessage(
-            Speaker.ASSISTANT,
-            source = Source.CHAT,
-            text = "",
-            id = messages.count(),
-            displayText = "",
-        )
-    addMessage(responsePlaceholder)
 
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       val message =
@@ -117,10 +102,17 @@ private constructor(
 
   @Throws(ExecutionException::class, InterruptedException::class)
   override fun receiveMessage(extensionMessage: ExtensionMessage) {
+    fun addAssistantResponseToChat(text: String, displayText: String? = null) {
+      // Updates of the given message will always have the same UUID
+      val messageId =
+          UUID.nameUUIDFromBytes(extensionMessage.messages?.count().toString().toByteArray())
+      ApplicationManager.getApplication().invokeLater {
+        addMessage(ChatMessage(Speaker.ASSISTANT, text, displayText, id = messageId))
+      }
+    }
 
     try {
       val lastMessage = extensionMessage.messages?.lastOrNull()
-      val prevLastMessage = extensionMessage.messages?.dropLast(1)?.lastOrNull()
 
       if (lastMessage?.error != null && extensionMessage.isMessageInProgress == false) {
 
@@ -128,15 +120,16 @@ private constructor(
         val rateLimitError = lastMessage.error.toRateLimitError()
         if (rateLimitError != null) {
           RateLimitStateManager.reportForChat(project, rateLimitError)
-          isCodyProJetbrains(project).thenApply { isCodyPro ->
+          UpgradeToCodyProNotification.isCodyProJetbrains(project).thenApply { isCodyPro ->
             val text =
                 when {
                   rateLimitError.upgradeIsAvailable && isCodyPro ->
                       CodyBundle.getString("chat.rate-limit-error.upgrade")
+                          .fmt(rateLimitError.limit?.let { " $it" } ?: "")
                   else -> CodyBundle.getString("chat.rate-limit-error.explain")
                 }
 
-            addErrorMessageAsAssistantMessage(text)
+            addAssistantResponseToChat(text)
           }
         } else {
           // Currently we ignore other kind of errors like context window limit reached
@@ -147,37 +140,15 @@ private constructor(
             extensionMessage.isMessageInProgress == false) {
           getCancellationToken().dispose()
         } else {
-
-          if (extensionMessage.chatID != null) {
-            if (prevLastMessage != null) {
-              if (lastMessage?.contextFiles != messages.lastOrNull()?.contextFiles) {
-                val messageId = extensionMessage.messages.count() - 2
-                ApplicationManager.getApplication().invokeLater {
-                  addMessage(prevLastMessage.withId(messageId))
-                }
-              }
-            }
-
-            if (lastMessage?.text != null) {
-              val messageId = extensionMessage.messages.count() - 1
-              ApplicationManager.getApplication().invokeLater {
-                addMessage(lastMessage.withId(messageId))
-              }
-            }
+          if (lastMessage?.text != null && extensionMessage.chatID != null) {
+            addAssistantResponseToChat(lastMessage.text, lastMessage.displayText)
           }
         }
       }
     } catch (error: Exception) {
       getCancellationToken().dispose()
       logger.error(CodyBundle.getString("chat-session.error-title"), error)
-      addErrorMessageAsAssistantMessage(CodyBundle.getString("chat-session.error-title"))
-    }
-  }
-
-  private fun addErrorMessageAsAssistantMessage(stringMessage: String) {
-    val messageId = messages.count()
-    ApplicationManager.getApplication().invokeLater {
-      addMessage(ChatMessage(Speaker.ASSISTANT, Source.CHAT, stringMessage, id = messageId))
+      addAssistantResponseToChat(CodyBundle.getString("chat-session.error-title"))
     }
   }
 
@@ -203,14 +174,11 @@ private constructor(
 
   @RequiresEdt
   private fun addMessage(message: ChatMessage) {
-    val messageToUpdate = messages.getOrNull(message.id)
-    if (messageToUpdate != null) {
-      messages[message.id] = message
-    } else {
-      messages.add(message)
+    if (messages.lastOrNull()?.id == message.id) {
+      messages.removeLast()
     }
-    chatPanel.addOrUpdateMessage(
-        message, shouldAddBlinkingCursor = message.actualMessage().isBlank())
+    messages.add(message)
+    chatPanel.addOrUpdateMessage(message)
     HistoryService.getInstance(project).updateChatMessages(internalId, messages)
   }
 
@@ -257,21 +225,7 @@ private constructor(
             GraphQlLogger.logCodyEvent(project, "command:${commandId.displayName}", "executed")
           })
 
-      chatSession.addMessage(
-          ChatMessage(
-              Speaker.HUMAN,
-              source = commandId.source,
-              commandId.displayName,
-              id = chatSession.messages.count()))
-      val responsePlaceholder =
-          ChatMessage(
-              Speaker.ASSISTANT,
-              Source.CHAT,
-              text = "",
-              id = chatSession.messages.count(),
-              displayText = "",
-          )
-      chatSession.addMessage(responsePlaceholder)
+      chatSession.addMessage(ChatMessage(Speaker.HUMAN, commandId.displayName))
       AgentChatSessionService.getInstance(project).addSession(chatSession)
       return chatSession
     }
@@ -280,15 +234,14 @@ private constructor(
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
       val sessionId = createNewPanel(project) { it.server.chatNew() }
       val chatSession = AgentChatSession(project, sessionId, state.internalId!!)
-      state.messages.forEachIndexed { index, message ->
+      for (message in state.messages) {
         val parsed =
             when (val speaker = message.speaker) {
               MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
               MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
               else -> error("unrecognized speaker $speaker")
             }
-        val chatMessage =
-            ChatMessage(speaker = parsed, source = message.source, message.text, id = index)
+        val chatMessage = ChatMessage(parsed, message.text)
         chatSession.messages.add(chatMessage)
         chatSession.chatPanel.addOrUpdateMessage(chatMessage, shouldAddBlinkingCursor = false)
       }

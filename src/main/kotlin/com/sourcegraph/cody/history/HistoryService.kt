@@ -64,15 +64,12 @@ class HistoryService(private val project: Project) :
   }
 
   private fun convertToMessageState(chatMessage: ChatMessage): MessageState {
-    val message =
-        MessageState().also {
-          it.text = chatMessage.text
-          it.speaker =
-              when (chatMessage.speaker) {
-                Speaker.HUMAN -> MessageState.SpeakerState.HUMAN
-                Speaker.ASSISTANT -> MessageState.SpeakerState.ASSISTANT
-              }
-          it.source = chatMessage.source
+    val message = MessageState()
+    message.text = chatMessage.text
+    message.speaker =
+        when (chatMessage.speaker) {
+          Speaker.HUMAN -> MessageState.SpeakerState.HUMAN
+          Speaker.ASSISTANT -> MessageState.SpeakerState.ASSISTANT
         }
     return message
   }

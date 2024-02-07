@@ -4,5 +4,5 @@ import com.sourcegraph.cody.commands.CommandId
 
 class TestCommand : BaseCommandAction() {
 
-  override val myCommandId = CommandId.Test
+  override fun myCommandId() = CommandId.Test
 }

@@ -3,7 +3,6 @@ package com.sourcegraph.cody.history.state
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.OptionTag
 import com.intellij.util.xmlb.annotations.Tag
-import com.sourcegraph.cody.agent.protocol.ChatMessage
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -22,10 +21,7 @@ class ChatState : BaseState() {
   @get:OptionTag(tag = "enhancedContext", nameAttribute = "")
   var enhancedContext: EnhancedContextState? by property()
 
-  fun title(): String? =
-      messages.firstOrNull()?.let {
-        ChatMessage.sourceToCommandId[it.source]?.displayName ?: it.text?.take(48)
-      }
+  fun title(): String? = messages.firstOrNull()?.text
 
   fun setUpdatedTimeAt(date: LocalDateTime) {
     updatedAt = date.format(DATE_FORMAT)
