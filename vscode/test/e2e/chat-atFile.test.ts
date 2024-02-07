@@ -130,13 +130,12 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.type('Explain the file', { delay: 50 })
-    // move cursor after 'Explain the'
-    await chatInput.press('ArrowLeft')
-    await chatInput.press('ArrowLeft')
-    await chatInput.press('ArrowLeft')
-    await chatInput.press('ArrowLeft')
-    await chatInput.press('ArrowLeft')
-    await chatInput.press('Space')
+    await chatInput.press('ArrowLeft') // 'Explain the fil|e'
+    await chatInput.press('ArrowLeft') // 'Explain the fi|le'
+    await chatInput.press('ArrowLeft') // 'Explain the f|ile'
+    await chatInput.press('ArrowLeft') // 'Explain the |file'
+    await chatInput.press('ArrowLeft') // 'Explain the| file'
+    await chatInput.press('Space') // 'Explain the | file'
     await chatInput.type('@Main', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('Explain the @Main.java file')
@@ -144,16 +143,19 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await page.keyboard.type('!')
     await expect(chatInput).toHaveValue('Explain the @Main.java !file')
 
-    // Pressing "ArrowLeft" / "ArrowRight" will close the selection and will not alter current input.
-    // Submitting the message will close the selection and will clear the input area.
+    //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
     await page.keyboard.type(' @abcdefg')
+    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
-    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('ArrowRight')
+    await expect(noMatches).not.toBeVisible()
     await chatInput.press('?')
-    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdef?gfile')
+    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefg?file')
     await expect(noMatches).toBeVisible()
+    // Selection close on submit
     await chatInput.press('Enter')
     await expect(noMatches).not.toBeVisible()
     await expect(chatInput).toBeEmpty()

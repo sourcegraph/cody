@@ -545,6 +545,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null): void => {
+            // Left & right arrow to hide the context suggestion popover
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                resetContextSelection()
+            }
+
             // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
             const isModifierDown = isMac ? event.metaKey : event.ctrlKey
             if (isModifierDown) {
@@ -616,14 +621,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     return
                 }
 
-                // Left. right, escape, should hide the suggestion popover
-                if (event.key === 'Escape' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                    if (event.key === 'Escape') {
-                        event.preventDefault()
-                    }
+                // Escape to hide the suggestion popover
+                if (event.key === 'Escape') {
+                    event.preventDefault()
                     resetContextSelection()
                     return
                 }
+
                 // tab/enter to complete
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
@@ -812,6 +816,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
                 <div className={styles.textAreaContainer}>
                     {contextSelection &&
+                        inputCaretPosition &&
                         UserContextSelectorComponent &&
                         currentChatContextQuery !== undefined && (
                             <UserContextSelectorComponent
