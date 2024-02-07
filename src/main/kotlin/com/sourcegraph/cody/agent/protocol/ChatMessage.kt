@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent.protocol
 
+import com.sourcegraph.cody.commands.CommandId
 import java.time.OffsetDateTime
-import java.util.*
 
 data class ChatError(
     val kind: String? = null,
@@ -27,14 +27,31 @@ data class ChatError(
 }
 
 data class ChatMessage(
-    override val speaker: Speaker,
-    override val text: String?,
-    val displayText: String? = null,
-    val contextFiles: List<ContextFile>? = null,
-    val error: ChatError? = null,
+    val speaker: Speaker,
+    val source: Source?,
+    val text: String?,
+
     // Internal ID used for identifying updates of the message
     // All partial messages which are part of the same response are required to have the same ID
-    val id: UUID = UUID.randomUUID()
-) : Message {
-  fun actualMessage(): String = displayText ?: text ?: ""
+    val id: Int,
+    val displayText: String? = null,
+    val contextFiles: List<ContextFile>? = null,
+    val error: ChatError? = null
+) {
+
+  fun withId(newId: Int) =
+      ChatMessage(
+          this.speaker,
+          this.source,
+          this.text,
+          newId,
+          this.displayText,
+          this.contextFiles,
+          this.error)
+
+  companion object {
+    val sourceToCommandId = CommandId.values().associateBy { it.source }
+  }
+
+  fun actualMessage(): String = sourceToCommandId[source]?.displayName ?: displayText ?: text ?: ""
 }

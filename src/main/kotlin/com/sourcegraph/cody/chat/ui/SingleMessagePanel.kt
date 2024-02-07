@@ -11,7 +11,6 @@ import com.sourcegraph.cody.attribution.AttributionSearchCommand
 import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.Color
-import java.util.*
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import org.commonmark.ext.gfm.tables.TablesExtension
@@ -32,8 +31,6 @@ class SingleMessagePanel(
     val markdownNodes: Node = markdownParser.parse(chatMessage.actualMessage())
     markdownNodes.accept(MessageContentCreatorFromMarkdownNodes(this, htmlRenderer))
   }
-
-  fun getMessageId(): UUID = chatMessage.id
 
   fun updateContentWith(message: ChatMessage) {
     val markdownNodes = markdownParser.parse(message.actualMessage())

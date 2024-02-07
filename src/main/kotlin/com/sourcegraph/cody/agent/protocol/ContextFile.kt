@@ -7,9 +7,8 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSerializer
 import java.lang.reflect.Type
 import java.net.URI
-import kotlinx.serialization.json.jsonObject
 
-sealed class ContextFile() {
+sealed class ContextFile {
   abstract val type: String
   abstract val uri: URI
   abstract val repoName: String?
@@ -60,15 +59,4 @@ val uriSerializer = JsonSerializer { uri: URI, type, context ->
   obj.addProperty("query", uri.query)
   obj.addProperty("fragment", uri.fragment)
   obj
-}
-
-fun contextFilesFromList(list: List<Any>): List<String> {
-  val contextFiles = ArrayList<String>()
-  for (item in list) {
-    if (item is Map<*, *> && item.get("type") == "file") {
-      val path = (item.get("uri") as Map<*, *>).get("path")
-      contextFiles.add(path as String)
-    }
-  }
-  return contextFiles
 }

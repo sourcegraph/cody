@@ -28,6 +28,8 @@ class AccordionSection(title: String) : JPanel() {
         contentPanel.isVisible = true
         toggleButton.text = createToggleButtonHTML(sectionTitle, false)
       }
+      revalidate()
+      repaint()
     }
     contentPanel.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
     contentPanel.isVisible = false

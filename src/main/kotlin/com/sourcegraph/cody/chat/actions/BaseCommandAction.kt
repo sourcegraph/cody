@@ -10,7 +10,7 @@ import com.sourcegraph.cody.commands.CommandId
 
 abstract class BaseCommandAction : BaseChatAction() {
 
-  abstract fun myCommandId(): CommandId
+  abstract val myCommandId: CommandId
 
   override fun doAction(project: Project) {
 
@@ -18,7 +18,7 @@ abstract class BaseCommandAction : BaseChatAction() {
       CodyEditorFactoryListener.Util.informAgentAboutEditorChange(it, hasFileChanged = false) {
         CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
           ApplicationManager.getApplication().invokeLater {
-            switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId()))
+            switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId))
           }
         }
       }
