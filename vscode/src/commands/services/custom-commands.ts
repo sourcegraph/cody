@@ -218,24 +218,20 @@ export class CustomCommandsManager implements vscode.Disposable {
             case 'open':
                 void vscode.commands.executeCommand('vscode.open', uri)
                 break
-            case 'delete':
+            case 'delete': {
+                let message = 'Remove user settings file (~/.vscode/cody.json)?'
                 if (type === CustomCommandType.Workspace) {
-                    void vscode.workspace.fs.delete(uri)
-                    return
+                    message = 'Remove workspace settings file (.vscode/cody.json)?'
                 }
                 // Show confirmation for user setting only, as
                 // workspace config can be reverted with git history.
-                vscode.window
-                    .showInformationMessage(
-                        'Remove the Cody Custom Command file from your User setting?',
-                        'Confirm'
-                    )
-                    .then(async choice => {
-                        if (choice === 'Confirm') {
-                            void vscode.workspace.fs.delete(uri)
-                        }
-                    })
+                vscode.window.showInformationMessage(message, 'Remove File').then(async choice => {
+                    if (choice === 'Remove File') {
+                        void vscode.workspace.fs.delete(uri)
+                    }
+                })
                 break
+            }
             case 'create':
                 await createJSONFile(uri)
                     .then(() => {
