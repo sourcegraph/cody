@@ -14,7 +14,7 @@ describe('buildCodyCommandMap', () => {
             bye: {
                 description: 'Say Good-bye',
                 type: 'user',
-                slashCommand: 'bye',
+                key: 'bye',
                 prompt: 'Bye!',
             },
             missing: {
@@ -30,7 +30,7 @@ describe('buildCodyCommandMap', () => {
         expect(commandMap.get('hello')).toStrictEqual({
             description: 'Say Hello World',
             type: 'workspace',
-            slashCommand: 'hello',
+            key: 'hello',
             prompt: 'Hello world',
             mode: 'ask',
         })
@@ -47,11 +47,11 @@ describe('buildCodyCommandMap', () => {
     it('sets edit mode for edit commands correctly', () => {
         const file = {
             hello: {
-                slashCommand: 'hello',
+                key: 'hello',
                 prompt: 'Add hello world',
             },
             bye: {
-                slashCommand: 'bye',
+                key: 'bye',
                 prompt: 'Say good-bye',
             },
         }
@@ -64,7 +64,7 @@ describe('buildCodyCommandMap', () => {
         expect(commandMap.get('hello')?.type).toBe('user')
 
         // All slash commands should be prefixed with '/'
-        expect(commandMap.get('bye')?.slashCommand).toBe('bye')
-        expect(commandMap.get('hello')?.slashCommand).toBe('hello')
+        expect(commandMap.get('bye')?.key).toBe('bye')
+        expect(commandMap.get('hello')?.key).toBe('hello')
     })
 })

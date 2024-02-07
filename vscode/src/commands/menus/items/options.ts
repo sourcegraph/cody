@@ -2,39 +2,39 @@ import type { CommandMenuItem } from '../types'
 
 export const ASK_QUESTION_COMMAND = {
     description: 'Ask a question',
-    slashCommand: 'ask',
+    key: 'ask',
 }
 
 export const EDIT_COMMAND = {
     description: 'Edit code',
-    slashCommand: 'edit',
+    key: 'edit',
 }
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {
-    label: ASK_QUESTION_COMMAND.slashCommand,
+    label: ASK_QUESTION_COMMAND.key,
     description: ASK_QUESTION_COMMAND.description,
-    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+    commandKey: ASK_QUESTION_COMMAND.key,
     alwaysShow: true,
 }
 
 const fixOption: CommandMenuItem = {
-    label: EDIT_COMMAND.slashCommand,
+    label: EDIT_COMMAND.key,
     description: EDIT_COMMAND.description,
-    slashCommand: EDIT_COMMAND.slashCommand,
+    commandKey: EDIT_COMMAND.key,
     alwaysShow: true,
 }
 
 const configOption: CommandMenuItem = {
     label: 'Configure Custom Commands...',
     description: 'Manage your custom reusable commands',
-    slashCommand: '',
+    commandKey: '',
 }
 const addOption: CommandMenuItem = {
     label: 'New Custom Command...',
     alwaysShow: true,
     description: 'Create a new reusable command',
-    slashCommand: '',
+    commandKey: '',
     command: 'cody.commands.add',
 }
 

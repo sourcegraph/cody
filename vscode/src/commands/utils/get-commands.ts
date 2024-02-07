@@ -11,8 +11,8 @@ export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<s
 
     // Add editor specific commands
     for (const command of editorCommands) {
-        if (command.slashCommand) {
-            map.set(command.slashCommand, command)
+        if (command.key) {
+            map.set(command.key, command)
         }
     }
 
@@ -46,10 +46,10 @@ export function buildCodyCommandMap(
         }
         command.type = type
         // NOTE: we no longer support slash commands, this is for backward compatibility
-        command.slashCommand = key
+        command.key = key
         // Set default mode to ask unless it's an edit command
         command.mode = command.mode ?? 'ask'
-        map.set(command.slashCommand, command as CodyCommand)
+        map.set(command.key, command as CodyCommand)
     }
 
     return map

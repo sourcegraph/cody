@@ -36,7 +36,7 @@ export class CommandRunner implements vscode.Disposable {
         private readonly command: CodyCommand,
         private readonly args: CodyCommandArgs
     ) {
-        logDebug('CommandRunner', command.slashCommand, { verbose: { command, args } })
+        logDebug('CommandRunner', command.key, { verbose: { command, args } })
         // If runInChatMode is true, set mode to 'ask' to run as chat command
         // This allows users to run any edit commands in chat mode
         command.mode = args.runInChatMode ? 'ask' : command.mode ?? 'ask'
@@ -49,8 +49,7 @@ export class CommandRunner implements vscode.Disposable {
      */
     public async start(): Promise<CommandResult | undefined> {
         // all user and workspace custom command should be logged under 'custom'
-        const name =
-            this.command.type === 'default' ? this.command.slashCommand.replace('/', '') : 'custom'
+        const name = this.command.type === 'default' ? this.command.key : 'custom'
 
         // Only log the chat commands (mode === ask) to avoid double logging by the edit commands
         if (this.command.mode === 'ask') {
@@ -135,7 +134,7 @@ export class CommandRunner implements vscode.Disposable {
         logDebug('CommandRunner:handleEditRequest', 'fixup request detected')
 
         // Conditions for categorizing an edit command
-        const commandKey = this.command.slashCommand.replace(/^\//, '')
+        const commandKey = this.command.key
         const isDefaultCommand = this.command.type === 'default'
         const instruction = this.command.prompt
         const source = isDefaultCommand ? commandKey : 'custom-commands'

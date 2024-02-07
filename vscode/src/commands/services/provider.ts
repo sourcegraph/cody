@@ -10,14 +10,14 @@ import { getDefaultCommandsMap } from '../utils/get-commands'
 const editorCommands: CodyCommand[] = [
     {
         description: ASK_QUESTION_COMMAND.description,
-        prompt: ASK_QUESTION_COMMAND.slashCommand,
-        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+        prompt: ASK_QUESTION_COMMAND.key,
+        key: ASK_QUESTION_COMMAND.key,
         mode: 'ask',
     },
     {
         description: EDIT_COMMAND.description,
-        prompt: EDIT_COMMAND.slashCommand,
-        slashCommand: EDIT_COMMAND.slashCommand,
+        prompt: EDIT_COMMAND.key,
+        key: EDIT_COMMAND.key,
         mode: 'edit',
     },
 ]

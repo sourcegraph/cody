@@ -12,7 +12,6 @@ import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { fromSlashCommand } from '../utils/common'
 
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
@@ -140,14 +139,14 @@ export class CustomCommandsManager implements vscode.Disposable {
      * Quick pick for creating a new custom command
      */
     private async newCustomCommandQuickPick(): Promise<void> {
-        const commands = [...this.customCommandsMap.values()].map(c => c.slashCommand)
+        const commands = [...this.customCommandsMap.values()].map(c => c.key)
         const newCommand = await showNewCustomCommandMenu(commands)
         if (!newCommand) {
             return
         }
 
         // Save the prompt to the current Map and Extension storage
-        await this.save(newCommand.slashCommand, newCommand.prompt, newCommand.type)
+        await this.save(newCommand.key, newCommand.prompt, newCommand.type)
         await this.refresh()
 
         // Notify user
@@ -155,7 +154,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         const buttonTitle = `Open ${isUserCommand ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
             .showInformationMessage(
-                `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
+                `New ${newCommand.key} command saved to ${newCommand.type} settings`,
                 buttonTitle
             )
             .then(async choice => {
@@ -180,16 +179,16 @@ export class CustomCommandsManager implements vscode.Disposable {
         this.customCommandsMap.set(id, prompt)
 
         // Filter map to remove commands with non-match type
-        const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
+        const filtered = new Map<string, Omit<CodyCommand, 'key'>>()
         for (const [key, command] of this.customCommandsMap) {
             if (command.type === type) {
                 command.type = undefined
-                filtered.set(fromSlashCommand(key), omit(command, 'slashCommand'))
+                filtered.set(key, omit(command, 'key'))
             }
         }
 
         // Add the new command to the filtered map
-        filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
+        filtered.set(id, omit(prompt, 'key'))
 
         // turn map into json
         const jsonContext = { ...this.userJSON }

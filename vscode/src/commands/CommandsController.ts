@@ -35,6 +35,7 @@ class CommandsController implements vscode.Disposable {
         const commandSplit = text?.trim().split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit?.shift() || text
+        // Provide backward compatibility for old commands that starts with slashes
         const command = this.provider?.get(fromSlashCommand(commandKey))
 
         // Additional instruction that will be added to end of prompt in the custom command prompt

@@ -9,7 +9,6 @@ import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } fr
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
-import { fromSlashCommand } from '../utils/common'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -26,9 +25,9 @@ export async function showCommandMenu(
         if (type === 'default') {
             items.push(CommandMenuSeperator.commands)
             for (const [_name, _command] of vscodeDefaultCommands) {
-                const label = fromSlashCommand(_command.slashCommand)
+                const label = _command.key
                 const description = _command.description
-                const command = _command.slashCommand
+                const command = _command.key
                 items.push({ label, description, command })
             }
         }
@@ -36,9 +35,9 @@ export async function showCommandMenu(
         // Add custom commands
         items.push(CommandMenuSeperator.custom)
         for (const customCommand of customCommands) {
-            const label = fromSlashCommand(customCommand.slashCommand)
+            const label = customCommand.key
             const description = customCommand.description
-            const command = customCommand.slashCommand
+            const command = customCommand.key
             items.push({ label, description, command })
         }
 
@@ -149,7 +148,7 @@ export async function showCommandMenu(
             }
 
             // Else, process the selection as custom command
-            void commands.executeCommand('cody.action.command', fromSlashCommand(selected) + ' ' + value)
+            void commands.executeCommand('cody.action.command', selected + ' ' + value)
 
             resolve()
             quickPick.hide()

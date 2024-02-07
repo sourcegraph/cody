@@ -7,15 +7,15 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { fromSlashCommand } from '../utils/common'
 
 export interface CustomCommandsBuilder {
-    slashCommand: string
+    key: string
     prompt: CodyCommand
     type: CustomCommandType
 }
 
 export class CustomCommandsBuilderMenu {
     public async start(commands: string[]): Promise<CustomCommandsBuilder | null> {
-        const slashCommand = await this.makeSlashCommand(commands)
-        if (!slashCommand) {
+        const key = await this.makeCommandKey(commands)
+        if (!key) {
             return null
         }
 
@@ -34,10 +34,10 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
+        return { key, prompt: { ...prompt, description, key }, type }
     }
 
-    private async makeSlashCommand(commands: string[]): Promise<string | undefined> {
+    private async makeCommandKey(commands: string[]): Promise<string | undefined> {
         const commandSet = new Set(commands)
         const value = await window.showInputBox({
             title: 'New Custom Cody Command: Command Name',
@@ -51,6 +51,7 @@ export class CustomCommandsBuilderMenu {
                 if (input.split(' ').length > 1) {
                     return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
+                // Remove leading slash before checking if command already exists
                 if (commandSet.has(fromSlashCommand(input))) {
                     return 'A command with the same name already exists.'
                 }
@@ -77,7 +78,7 @@ export class CustomCommandsBuilderMenu {
         return description
     }
 
-    private async makePrompt(): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
+    private async makePrompt(): Promise<Omit<CodyCommand, 'key'> | null> {
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
@@ -97,8 +98,8 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async addContext(
-        newPrompt?: Omit<CodyCommand, 'slashCommand'>
-    ): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
+        newPrompt?: Omit<CodyCommand, 'key'>
+    ): Promise<Omit<CodyCommand, 'key'> | null> {
         if (!newPrompt) {
             return null
         }
