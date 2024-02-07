@@ -79,6 +79,11 @@ class CodyToolWindowContent(private val project: Project) {
     }
   }
 
+  fun focusOnChat() {
+    tabbedPane.selectedIndex = CHAT_TAB_INDEX
+    currentChatSession.get()?.getPanel()?.promptPanel?.focus()
+  }
+
   fun refreshMyAccountTab() {
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       fetchMyAccountPanelData(project, agent.server).thenApply { data ->

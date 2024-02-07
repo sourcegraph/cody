@@ -119,6 +119,8 @@ class PromptPanel(
     }
   }
 
+  fun focus() = textArea.requestFocusInWindow()
+
   private fun didUseShortcut(shortcut: CustomShortcutSet) {
     if (contextFilesListView.model.size > 0) {
       when (shortcut) {

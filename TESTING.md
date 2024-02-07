@@ -259,6 +259,9 @@ Test ideas:
 10. Start typing while being focused on Chat History to perform search-by-title.
 11. Open multiple chats and ask few simultaneous questions in several sessions at once.
 12. Open new chat with <kbd>Alt</kbd> + <kbd>=</kbd> shortcut (or <kbd>Option</kbd> + <kbd>=</kbd> on Mac).
+13. Open existing chat with shortcut <kbd>Alt</kbd> + <kbd>-</kbd> (or <kbd>Option</kbd> + <kbd>-</kbd> on Mac) and start typing question. Tab should be switched automatically on Chat.
+14. Second click <kbd>Alt</kbd> + <kbd-</kbd> should hide tool window if focused (similar behavior as other tool windows).
+15. Click <kbd>Esc</kbd> while being focused inside Cody tool window. You should be automatically focused on code.  
 
 ## Code Search
 

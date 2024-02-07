@@ -177,6 +177,12 @@
             <keyboard-shortcut first-keystroke="alt EQUALS" keymap="$default"/>
         </action>
 
+        <action id="cody.openChat"
+                text="Open Chat"
+                class="com.sourcegraph.cody.chat.OpenChatAction">
+            <keyboard-shortcut first-keystroke="alt MINUS" keymap="$default"/>
+        </action>
+
         <action id="cody.command.Explain"
                 icon="/icons/chat/newChat.svg"
                 text="Execute Command 'Explain Code'"

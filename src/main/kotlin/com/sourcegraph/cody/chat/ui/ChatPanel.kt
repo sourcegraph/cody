@@ -18,11 +18,12 @@ import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
 
-class ChatPanel(project: Project, val chatSession: ChatSession) :
+class ChatPanel(project: Project, chatSession: ChatSession) :
     JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
+
+  val promptPanel: PromptPanel = PromptPanel(chatSession)
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
-  val promptPanel: PromptPanel = PromptPanel(chatSession)
   private val contextView: EnhancedContextPanel = EnhancedContextPanel(project)
 
   private val stopGeneratingButton =
