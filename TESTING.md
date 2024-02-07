@@ -24,60 +24,96 @@
 ## Commands
 
 ### Explain
-- [ ] Verify that the option to run the `Explain` command is available from the sidebar, right-click menu, or from the command palette (option+c, /explain). 
-- [ ] Highlight a section of code. 
-- [ ] Run the `Explain` command and verify that Cody provides an explanation of the selected code in a new chat window.
-- [ ] Do not select any code (just place your cursor in an open file), run the `Explain` command, and verify that Cody explains the code that's visible in the file. 
-- [ ] Verify that the chat executed by running the command appears in the chat list in the lefthand panel. 
+- [ ] Verify that the option to run the `Explain` command is available in the following locations: 
+  - [ ] Sidebar `Explain`
+  - [ ] Context (right-click) menu `Cody > Explain Code`
+  - [ ] Command palette (MetaKey+Shift+p) `Cody Command: Explain Code`
+  - [ ] Cody Command Menu (option+c, `/explain`)
+- [ ] Highlight a section of code in a file. 
+- [ ] Run the `Explain` command.
+- [ ] Verify that Cody provides an explanation of the selected code in a new chat window.
+- [ ] Move your cursor inside a function in the file without highlighting code, before running the `Explain` command again.
+- [ ] Verify that Cody provides an explanation of the function that contains your cursor in a new chat window.
+- [ ] Verify that the chat executed by running the command is added to the sidebar under `Chats`. 
 
 ### Edit
 
 #### Editing code
-- [ ] Verify that the option to run the `Edit` command is available from the sidebar, right-click menu, the command palette (option+c, /edit), or shift+command+v keyboard shortcut.
+- [ ] Verify that the option to run the `Edit` command is available from the sidebar, right-click menu, the command palette (option+c, /edit), or Option+K keyboard shortcut.
 - [ ] Highlight a section of code.
 - [ ] Run the `Edit` command with instructions for how Cody should edit the selected code. 
 - [ ] Verify that Cody automatically applies edits to the selected code, per the user’s instructions.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied. 
-- [ ] Verify that you can see a list of code lenses with a Cody icon above the generated code: `Show diff`, `Retry`, `Undo`, and `Done`.
+- [ ] Verify that you can see a list of code lenses with a Cody icon above the generated code: `Show diff`, `Accept`, `Retry`, and `Undo`.
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
+#### Editing code (Additional Configuration)
+- [ ] Highlight a section of code.
+- [ ] Trigger the Edit shortcut with Option+K
+- [ ] Try to add a file to the Edit instruction, by using "@" and searching for a file
+- [ ] Try to add a symbol to the Edit instruction, by using "@#" and searching for a symbol
+- [ ] Try to change the range of the Edit, by selecting "Range". Check that navigating through the options correctly updates the range shown in the editor.
+- [ ] Try to change the model of the Edit, by selecting "Model".
+- [ ] Submit edits after changing the above values, and check that the Edit performs correctly (e.g. uses correct range, uses correct context)
+- [ ] Verify that the selected configuration is shown in the input after clicking "Retry" on a completed edit.
+- [ ] Verify that you can still change the configuration shown in the input after clicking "Retry" on a completed edit.
 
 #### Generating code
 - [ ] Move the cursor to an empty line, do not highlight any selection.
-- [ ] Verify that the option to run the `Edit` command is available from the sidebar, right-click menu, the command palette (option+c, /edit), or shift+command+v keyboard shortcut.
+- [ ] Verify that the option to run the `Edit` command is available from the sidebar, right-click menu, the command palette (option+c, /edit), or Option+K keyboard shortcut.
 - [ ] Run the `Edit` command with instructions for what Cody should generate.
 - [ ] Verify that there is a notification that "Cody is working..." while code is being generated.
 - [ ] Verify that, per the user’s instructions, Cody automatically streams the generated code into the document, line-by-line.
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
 ### Test
-- [ ] Verify that the option to run the `Test` command is available from the sidebar, right-click menu, or from the command palette (option+c, /test).
-- [ ] Highlight a section of code.
+- [ ] Verify that the option to run the `Test` command is available in the following locations: 
+  - [ ] Sidebar `Test`
+  - [ ] Context (right-click) menu `Cody > Generate Unit Tests`
+  - [ ] Command palette (MetaKey+Shift+p) `Cody Command: Generate Unit Tests`
+  - [ ] Cody Command Menu (option+c, `/test`)
+- [ ] Highlight a section of code in a file that does not have any test files created.
 - [ ] Run the `Test` command. 
-- [ ] Verify that in a new chat window, Cody generates code for a unit test for the selected code.
-- [ ] Verify that the chat executed by running the command appears in the chat list in the left hand panel. 
+- [ ] Verify that an icon appears above the highlighted code with "Cody is working..." while Cody generates the tests.
+- [ ] Verify that a new unsaved file is created and opened.
+- [ ] Verify that Cody automatically streams the generated tests to the new file.
+- [ ] Verify that you can remove the generated tests by clicking `Undo`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
 ### Document
-- [ ] Verify that the option to run the `Document` command is available from the sidebar, right-click menu, or from the command palette (option+c, /doc).
-- [ ] Highlight a section of code.
-- [ ] Verify that there is a notification that "Cody is working..." while Cody generates documentation.
+- [ ] Verify that the option to run the `Document` command is available in the following locations: 
+  - [ ] Sidebar `Document`
+  - [ ] Context (right-click) menu `Cody > Explain Code`
+  - [ ] Command palette (MetaKey+Shift+p) `Cody Command: Document Code`
+  - [ ] Cody Command Menu (option+c, `/doc`)
+- [ ] Highlight a section of code in a file. 
+- [ ] Run the `Document` command. 
+- [ ] Verify that an icon appears above the highlighted code with "Cody is working..." while Cody generates documentation.
 - [ ] Verify that you can see a diff view of the generated documentation in a new tab by clicking `Show diff`.
-- [ ] Verify that you can prompt Cody to retry the command by clicking `Done` and entering new instructions.
+- [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the documentation by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
-- [ ] Do not select any code (just place your cursor in an open file), run the doc command, and verify that Cody provides documentation for the code that’s within the correct range of your cursor. 
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
+- [ ] Move your cursor inside a function in the file without highlighting code, before running the `Document` command again.
+- [ ] Verify that Cody adds documentation above the function that contains your cursor. 
 
 ### Smell
-- [ ] Verify that the option to run the `Smell` command on the selected code is available from the sidebar, right-click menu, or from the command palette (option+c, /smell).
-- [ ] Highlight a section of code.
-- [ ] Run the `Smell` command and verify that Cody provides suggestion for how to improve the selected code in a new chat window.
-- [ ] Verify that the chat executed by running the command appears in the chat list in the left hand panel. 
+- [ ] Verify that the option to run the `Smell` command is available in the following locations: 
+  - [ ] Sidebar `Smell`
+  - [ ] Context (right-click) menu `Cody > Find Code Smells`
+  - [ ] Command palette (MetaKey+Shift+p) `Cody Command: Find Code Smells`
+  - [ ] Cody Command Menu (option+c, `/smell`)
+- [ ] Highlight a section of code in a file. 
+- [ ] Run the `Smell` command.
+- [ ] Verify that Cody provides suggestion for how to improve the selected code in a new chat window.
+- [ ] Move your cursor inside a function in the file without highlighting code, before running the `Smell` command again
+- [ ] Verify that Cody provides suggestion for how to improve the function that contains your cursor in a new chat window.
+- [ ] Verify that the chat executed by running the command is added to the sidebar under `Chats`. 
 
 ### Code Actions
 
@@ -90,7 +126,7 @@
 - [ ] Verify that you can see a diff view of the fix in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the fix by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
 
 #### Explaining code
@@ -110,7 +146,7 @@
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
 #### Generating code
 - [ ] Move the cursor to an empty line, do not highlight any selection.
@@ -122,44 +158,69 @@
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Done`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
 
 ### Custom Commands
 
-#### Create a custom command using the command builder
-- [ ] Click the `Custom` command in the left hand panel or from the command palette (option+c, Configure Custom Commands) and select `New Custom Command`.
-- [ ] Enter the title of a new custom command (e.g., `recent-git-changes`) and press enter.
+#### Create a custom command from the command palette
+- [ ] In your command palette, search for `Cody Command: Custom Commands` to open the Custom Command Menu.
+- [ ] Select “Configure Custom Commands”.
+- [ ] Select `New Custom Command`.
+- [ ] Enter the title of a new custom command (e.g., `correct`) and press enter.
 - [ ] Verify that you cannot use a title that already exists.
-- [ ] Enter a description for the command (e.g., `Summarize recent changes`) and press enter.
-- [ ] Enter the instructions that Cody should follow (e.g., `Summarize the given git changes in 3-5 sentences`). 
-- [ ] Choose where to save the command (User Settings or Workspace Settings).
+- [ ] Enter a description for the command (e.g., `Correct spelling mistakes`) and press enter.
+- [ ] Enter the instructions that Cody should follow (e.g., `Correct any spelling mistakes`). 
+- [ ] Select the context that Cody should use with the instructions (e.g., `selection`). 
+- [ ] Choose where to save the command (`User Settings` or `Workspace Settings`).
+- [ ] Click the `Custom` command in the Cody sidebar to open the Custom Command Menu.
+- [ ] Verify `/correct` command shows up in the menu.
 
 #### Create a custom command by editing the configuration JSON file
-- [ ] Click the “Custom” command in the left hand panel or from the command palette (option+c, Configure Custom Commands) and select “Configure Custom Commands”
-- [ ] Select “Open User Settings (JSON)”
-- [ ] Add a new custom command, eg: 
 
-```
+##### User Custom Commands
+- [ ] Click the `Custom` command in the Cody sidebar to open the Custom Command Menu.
+- [ ] Select “Configure Custom Commands”.
+- [ ] Select “Open User Settings (JSON)”.
+- [ ] Add a new user custom command:
+
+```json
 {
     "commands": {
-        "recent-git-changes": {
-            "prompt": "Summarize the recent git changes in 3-5 sentences",
+        "summarize": {
+            "prompt": "Summarize the share context in 3-5 sentences",
             "context": {
-                "codebase": false
+                "currentFile": true
             },
-            "description": "Summarize recent git changes",
+            "description": "Summarize current file.",
         }       
     }
 }
 ```
-- [ ] Open “Configure Custom Commands” again and select “Open Workspace Settings (JSON)” and add a different custom command.
 
-#### Verify cusom command
-- [ ] Select the `Custom` command from the left hand panel and verify that the newly created custom command is available in the command palette. 
-- [ ] Run the newly created command and verify its behavior. (Eg, for `/recent-git-changes`, you should see Cody summarize the recent git changes in the chat window).
-- [ ] Click the `Custom` command in the left hand panel or from the command palette (option+c) and select “Configure Custom Commands”.
-- [ ] Select “Open User Settings (JSON)” and verify that the command saved to User Settings is in the JSON file.
-- [ ] Select “Open Workspace Settings (JSON)” and verify that the command saved to Workspace Settings in the JSON file.
+##### Workspace Custom Commands
+- [ ] Click the `Custom` command in the Cody sidebar to open the Custom Command Menu.
+- [ ] Select “Configure Custom Commands”.
+- [ ] Select “Open Workspace Settings (JSON)”.
+- [ ] Add a new workspace custom command:
+```json
+{
+    "commands": {
+        "checker": {
+            "prompt": "Check for spelling mistakes in the share context",
+            "context": {
+                "selection": true
+            },
+            "description": "Spell checker.",
+        }       
+    }
+}
+```
+  
+#### Verify custom command
+- [ ] Click the `Custom` command in the Cody sidebar to open the Custom Command Menu.
+- [ ] Verify `/summarize` and `/checker` are available in the menu.
+- [ ] Select the newly created commands to run the custom command.
+- [ ] Verify the responses show up in a new chat window and the responses align with the prompt of the commands. (E.g., for the  `/summarize` command above, you should see Cody summarize the current file in the output).
 
 ## Chat
 

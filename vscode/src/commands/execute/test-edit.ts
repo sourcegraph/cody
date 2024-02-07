@@ -51,8 +51,8 @@ export async function executeTestEditCommand(
 
     return {
         type: 'edit',
-        task: await executeEdit(
-            {
+        task: await executeEdit({
+            configuration: {
                 instruction: destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt,
                 document,
                 intent: 'test',
@@ -60,8 +60,8 @@ export async function executeTestEditCommand(
                 // use 3 context files as sharing too many context could result in quality issue
                 userContextFiles: contextFiles.slice(0, 2),
                 destinationFile,
-            } satisfies ExecuteEditArguments,
-            DefaultEditCommands.Test
-        ),
+            },
+            source: DefaultEditCommands.Test,
+        } satisfies ExecuteEditArguments),
     }
 }

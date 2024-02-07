@@ -79,7 +79,7 @@ export const getInput = async (
 
     const authStatus = authProvider.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = getEditModelsForUser(authProvider)
+    const modelOptions = getEditModelsForUser(authStatus)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
 
@@ -147,10 +147,7 @@ export const getInput = async (
         editor.setDecorations(PREVIEW_RANGE_DECORATION, [range])
         editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
     }
-
-    if (initialValues.initialExpandedRange) {
-        previewActiveRange(initialValues.initialExpandedRange)
-    }
+    previewActiveRange(activeRange)
 
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
@@ -274,8 +271,8 @@ export const getInput = async (
 
                 // Hide the input and execute a new edit for 'Document'
                 documentInput.input.hide()
-                return executeEdit(
-                    {
+                return executeEdit({
+                    configuration: {
                         document,
                         instruction: defaultCommands.doc.prompt,
                         range: activeRange,
@@ -284,8 +281,8 @@ export const getInput = async (
                         contextMessages: [],
                         userContextFiles: [],
                     },
-                    'menu'
-                )
+                    source: 'menu',
+                })
             },
         })
 

@@ -1,10 +1,9 @@
 import { ModelProvider } from '@sourcegraph/cody-shared'
-import type { AuthProvider } from '../../services/AuthProvider'
 import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { EditIntent } from '../types'
+import type { AuthStatus } from '../../chat/protocol'
 
-export function getEditModelsForUser(authProvider: AuthProvider): ModelProvider[] {
-    const authStatus = authProvider.getAuthStatus()
+export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
     if (authStatus?.configOverwrites?.chatModel) {
         ModelProvider.add(
             new ModelProvider(authStatus.configOverwrites.chatModel, [
