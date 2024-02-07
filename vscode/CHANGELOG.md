@@ -16,6 +16,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - [Internal] Command: Added new code lenses for generating additional unit tests. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
 - Edit: Added Cody Pro support for models: GPT-4, GPT-3.5, Claude 2.1 and Claude Instant. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
 - Edit: Added a multi-model selector to the Edit input, allowing quick access to change the Edit LLM. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
+- Autocomplete: Add a new `cody.autocomplete.disableInsideComments` option to prevent completions from being displayed while writing code comments. [pull/3049](https://github.com/sourcegraph/cody/pull/3049)
 - Autocomplete: Added a shortcut to go to the Autocomplete settings from the Cody Settings overlay. [pull/3048](https://github.com/sourcegraph/cody/pull/3048)
 - Command: You can now highlight the output in your terminal panel and right-click to `Ask Cody to Explain`. [pull/3008](https://github.com/sourcegraph/cody/pull/3008)
 

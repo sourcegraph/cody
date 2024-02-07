@@ -77,6 +77,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.formatOnAccept':
                         return true
+                    case 'cody.autocomplete.disableInsideComments':
+                        return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
@@ -135,6 +137,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
+            autocompleteDisableInsideComments: false,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalFastPath: false,
