@@ -22,6 +22,7 @@ import {
 import type { ContextSnippet } from './types'
 import { lines, removeIndentation } from './text-processing'
 import { logDebug } from '../log'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 
 export interface RequestParams {
     /** The request's document */
@@ -229,14 +230,22 @@ export class RequestManager {
             return
         }
 
+        const isLocalProvider = isLocalCompletionsProvider(this.latestRequestParams.provider.options.id)
+
         for (const request of this.inflightRequests) {
-            if (
-                !computeIfRequestStillRelevant(
-                    this.latestRequestParams.requestParams,
-                    request.lastRequestParams,
-                    request.lastCompletions
-                )
-            ) {
+            let shouldAbort = !computeIfRequestStillRelevant(
+                this.latestRequestParams.requestParams,
+                request.lastRequestParams,
+                request.lastCompletions
+            )
+
+            if (isLocalProvider) {
+                shouldAbort =
+                    this.latestRequestParams.requestParams.docContext.currentLinePrefix !==
+                    request.params.docContext.currentLinePrefix
+            }
+
+            if (shouldAbort) {
                 logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)

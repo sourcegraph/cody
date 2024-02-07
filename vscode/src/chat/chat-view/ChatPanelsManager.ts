@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     featureFlagProvider,
     type ChatClient,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
+    type Configuration,
 } from '@sourcegraph/cody-shared'
 
-import type { CommandsController } from '../../commands/CommandsController'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -24,6 +24,7 @@ import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 type ChatID = string
 
@@ -40,6 +41,7 @@ interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
+    config: Pick<Configuration, 'isRunningInsideAgent'>
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -67,8 +69,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
         private readonly enterpriseContext: EnterpriseContextFactory | null,
-        private readonly guardrails: Guardrails,
-        private readonly commandsController?: CommandsController
+        private readonly guardrails: Guardrails
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = {
@@ -125,6 +126,12 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
+
+        if (this.options.config.isRunningInsideAgent) {
+            // Never reuse webviews when running inside the agent.
+            return provider
+        }
+
         // Check if any existing panel is available
         return this.activePanelProvider || provider
     }
@@ -149,7 +156,13 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         // Reuse existing "New Chat" panel if there is an empty one
         const emptyNewChatProvider = this.panelProviders.find(p => p.webviewPanel?.title === 'New Chat')
-        if (!chatID && !panel && this.panelProviders.length && emptyNewChatProvider) {
+        if (
+            !this.options.config.isRunningInsideAgent && // Don't reuse panels in the agent
+            !chatID &&
+            !panel &&
+            this.panelProviders.length &&
+            emptyNewChatProvider
+        ) {
             emptyNewChatProvider.webviewPanel?.reveal()
             this.activePanelProvider = emptyNewChatProvider
             this.options.contextProvider.webview = emptyNewChatProvider.webview
@@ -205,9 +218,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
-        const models = ChatModelProvider.get(authStatus.endpoint)
+        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({
@@ -218,7 +237,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             symf: isConsumer ? this.symf : null,
             enterpriseContext: isConsumer ? null : this.enterpriseContext,
             models,
-            commandsController: this.commandsController,
             guardrails: this.guardrails,
         })
     }

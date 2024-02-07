@@ -2,7 +2,7 @@ import { Utils, type URI } from 'vscode-uri'
 
 import { uriBasename, uriExtname, uriParseNameAndExtension } from '@sourcegraph/cody-shared'
 
-import { isValidTestFile } from '../prompt/utils'
+import { isValidTestFile } from './test-commands'
 
 // Language extension that uses '.test' suffix for test files
 const TEST_FILE_DOT_SUFFIX_EXTENSIONS = new Set(['js', 'ts', 'jsx', 'tsx'])

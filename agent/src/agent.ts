@@ -19,6 +19,7 @@ import {
     type BillingProduct,
     logDebug,
     isError,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -32,7 +33,14 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
-import type { AutocompleteItem, ClientInfo, ExtensionConfiguration, TextEdit } from './protocol-alias'
+import type {
+    AutocompleteItem,
+    ClientInfo,
+    CodyError,
+    EditTask,
+    ExtensionConfiguration,
+    TextEdit,
+} from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 import type { CommandResult } from '../../vscode/src/main'
@@ -41,6 +49,8 @@ import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+import type { PollyRequestError } from './cli/jsonrpc'
+import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -142,7 +152,7 @@ export class Agent extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
-                logDebug('CodyAgent', 'client does not support operation: AgenTextDocument.edit()')
+                logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
                 return Promise.resolve(false)
             }
             const edits: TextEdit[] = []
@@ -209,7 +219,13 @@ export class Agent extends MessageHandler {
             },
         ])
 
-    constructor(private readonly params?: { polly?: Polly | undefined; networkRequests: Request[] }) {
+    constructor(
+        private readonly params?: {
+            polly?: Polly | undefined
+            networkRequests: Request[]
+            requestErrors: PollyRequestError[]
+        }
+    ) {
         super()
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
@@ -371,7 +387,13 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params?.networkRequests ?? []
-            return { requests: requests.map(req => ({ url: req.url })) }
+            return {
+                requests: requests.map(req => ({ url: req.url, body: req.body })),
+            }
+        })
+        this.registerAuthenticatedRequest('testing/requestErrors', async () => {
+            const requests = this.params?.requestErrors ?? []
+            return { errors: requests.map(({ request, error }) => ({ url: request.url, error })) }
         })
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
@@ -549,6 +571,15 @@ export class Agent extends MessageHandler {
             return res.codyProEnabled
         })
 
+        this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
+            const res = await graphqlClient.getCurrentUserCodySubscription()
+            if (res instanceof Error) {
+                throw res
+            }
+
+            return res
+        })
+
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -602,6 +633,11 @@ export class Agent extends MessageHandler {
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
+        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
+            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
+            return Promise.resolve(result.length > 0)
+        })
+
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
@@ -621,7 +657,7 @@ export class Agent extends MessageHandler {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ runInChatMode: true, source: 'editor' }]
+        const commandArgs = [{ source: 'editor' }]
 
         this.registerAuthenticatedRequest('commands/explain', () => {
             return this.createChatPanel(
@@ -635,34 +671,22 @@ export class Agent extends MessageHandler {
             )
         })
 
+        this.registerAuthenticatedRequest('editCommands/test', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
             )
         })
 
-        this.registerAuthenticatedRequest('commands/document', async () => {
-            const result = await vscode.commands.executeCommand<CommandResult | undefined>(
-                'cody.command.document-code'
+        this.registerAuthenticatedRequest('commands/document', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
             )
-            if (result?.type !== 'edit' || result.task === undefined) {
-                throw new TypeError(
-                    `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
-                )
-            }
-            this.tasks.set(result.task.id, result.task)
-            const { id } = result.task
-            const disposable = result.task.onDidStateChange(newState => {
-                this.notify('editTaskState/didChange', { id, state: newState })
-                switch (newState) {
-                    // TODO: confirm these are the only "terminal" states.
-                    case CodyTaskState.finished:
-                    case CodyTaskState.error:
-                        disposable.dispose()
-                        break
-                }
-            })
-            return { id, state: result.task?.state }
         })
 
         this.registerAuthenticatedRequest('chat/new', async () => {
@@ -772,6 +796,20 @@ export class Agent extends MessageHandler {
             return featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
+        })
+
+        this.registerAuthenticatedRequest('attribution/search', async ({ id, snippet }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, {
+                command: 'attribution-search',
+                snippet,
+            })
+            const result = panel.popAttribution(snippet)
+            return {
+                error: result.error || null,
+                repoNames: result?.attribution?.repositoryNames || [],
+                limitHit: result?.attribution?.limitHit || false,
+            }
         })
     }
 
@@ -884,6 +922,8 @@ export class Agent extends MessageHandler {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
+                } else if (message.type === 'attribution') {
+                    panel.pushAttribution(message)
                 }
 
                 this.notify('webview/postMessage', {
@@ -903,6 +943,45 @@ export class Agent extends MessageHandler {
             return
         }
         await panel.receiveMessage.cody_fireAsync(message)
+    }
+
+    private async createEditTask(commandResult: Thenable<CommandResult | undefined>): Promise<EditTask> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        if (result?.type !== 'edit' || result.task === undefined) {
+            throw new TypeError(
+                `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+            )
+        }
+        this.tasks.set(result.task.id, result.task)
+        const { id } = result.task
+        const disposable = result.task.onDidStateChange(newState => {
+            this.notify('editTaskState/didChange', {
+                id,
+                state: newState,
+                error: this.codyError(result.task?.error),
+            })
+            switch (newState) {
+                case CodyTaskState.finished:
+                case CodyTaskState.error:
+                    disposable.dispose()
+                    break
+            }
+        })
+        return {
+            id,
+            state: result.task?.state,
+            error: this.codyError(result.task?.error),
+        }
+    }
+
+    private codyError(error?: Error): CodyError | undefined {
+        return error
+            ? {
+                  message: error.message,
+                  stack: error.stack,
+                  cause: error.cause instanceof Error ? this.codyError(error.cause) : undefined,
+              }
+            : undefined
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
@@ -941,5 +1020,26 @@ export class Agent extends MessageHandler {
             await this.authenticationPromise
             return callback(params, token)
         })
+    }
+
+    public applyWorkspaceEdit(
+        edit: vscode.WorkspaceEdit,
+        metadata: vscode.WorkspaceEditMetadata | undefined
+    ): Promise<boolean> {
+        if (edit instanceof AgentWorkspaceEdit) {
+            if (this.clientInfo?.capabilities?.editWorkspace === 'enabled') {
+                return this.request('workspace/edit', { operations: edit.operations, metadata })
+            }
+            logError(
+                'Agent',
+                'client does not support vscode.workspace.applyEdit() yet. ' +
+                    'If you are a client author, enable this operation by setting ' +
+                    'the client capability `editWorkspace: "enabled"`',
+                new Error().stack // adding the stack trace to help debugging by this method is being called
+            )
+            return Promise.resolve(false)
+        }
+
+        throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
 }

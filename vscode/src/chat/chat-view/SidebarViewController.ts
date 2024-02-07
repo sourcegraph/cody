@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { type Configuration, DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
@@ -21,6 +21,7 @@ export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> 
 
 export interface SidebarViewOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
+    config: Pick<Configuration, 'isRunningInsideAgent'>
 }
 
 export class SidebarViewController implements vscode.WebviewViewProvider {

@@ -2,14 +2,13 @@ import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared'
 
-import { getSingleLineRange } from '../services/InlineAssist'
-
 import type { FixupTask } from './FixupTask'
 import { CodyTaskState } from './utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
-    const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
+    const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isTest = task.intent === 'test'
     switch (task.state) {
         case CodyTaskState.pending:
         case CodyTaskState.working: {
@@ -18,7 +17,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.inserting: {
-            const title = getInsertingLens(codeLensRange)
+            let title = getInsertingLens(codeLensRange)
+            if (isTest) {
+                title = getUnitTestLens(codeLensRange)
+            }
             return [title]
         }
         case CodyTaskState.applying: {
@@ -35,6 +37,9 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
+            if (isTest) {
+                return [accept, undo]
+            }
             return [title, accept, retry, undo]
         }
         case CodyTaskState.error: {
@@ -184,6 +189,15 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
         title: 'Accept',
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
+    }
+    return lens
+}
+
+function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Generating tests...',
+        command: 'cody.focus',
     }
     return lens
 }

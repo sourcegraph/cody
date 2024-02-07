@@ -29,6 +29,20 @@ export interface HotStreakExtractor {
     extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult>
 }
 
+export function pressEnterAndGetIndentString(
+    insertText: string,
+    currentLine: string,
+    document: TextDocument
+): string {
+    const { languageId, uri } = document
+
+    const startsNewBlock = Boolean(endsWithBlockStart(insertText, languageId))
+    const newBlockIndent = startsNewBlock ? getEditorIndentString(uri) : ''
+    const currentIndentReference = insertText.includes('\n') ? getLastLine(insertText) : currentLine
+
+    return '\n' + detectIndent(currentIndentReference).indent + newBlockIndent
+}
+
 /**
  * For a hot streak, we require the completion to be inserted followed by an enter key
  * Enter will usually insert a line break followed by the same indentation that the
@@ -41,35 +55,25 @@ function insertCompletionAndPressEnter(
     dynamicMultilineCompletions: boolean
 ): DocumentContext {
     const { insertText } = completion
-    const { languageId, uri } = document
 
-    const startsNewBlock = Boolean(endsWithBlockStart(insertText, languageId))
-    const newBlockIndent = startsNewBlock ? getEditorIndentString(uri) : ''
-    const currentIndentReference = insertText.includes('\n')
-        ? getLastLine(insertText)
-        : docContext.currentLinePrefix
-
-    const indentString = '\n' + detectIndent(currentIndentReference).indent + newBlockIndent
+    const indentString = pressEnterAndGetIndentString(insertText, docContext.currentLinePrefix, document)
     const insertTextWithPressedEnter = insertText + indentString
 
     addAutocompleteDebugEvent('insertCompletionAndPressEnter', {
         currentLinePrefix: docContext.currentLinePrefix,
-        startsNewBlock,
         text: insertTextWithPressedEnter,
     })
 
     const updatedDocContext = insertIntoDocContext({
         docContext,
-        languageId,
+        languageId: document.languageId,
         insertText: insertTextWithPressedEnter,
         dynamicMultilineCompletions,
     })
 
-    updatedDocContext.injectedCompletionText =
-        (docContext.injectedCompletionText || '') + insertTextWithPressedEnter
-
     return updatedDocContext
 }
+
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
     const { completedCompletion, providerOptions } = params
     const {

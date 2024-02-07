@@ -116,9 +116,13 @@ async function main(): Promise<void> {
     const { changes, previousVersion } = extractSection(changelogBody, currentVersion)
 
     const minor = currentVersion.split('.').slice(0, 2).join('.')
+    const previousMinor = extractPreviousMinor(minor)
 
     const intro = dedent`
-        ✨ See the [What’s new in v${minor}](https://about.sourcegraph.com/blog/cody-vscode-${minor}.0-release) blog post for what’s new in this release since v${minor} ✨
+        ✨ See the [What’s new in v${minor}](https://about.sourcegraph.com/blog/cody-vscode-${minor.replaceAll(
+            '.',
+            '-'
+        )}-0-release) blog post for what’s new in this release since v${previousMinor} ✨
 
         ## v${currentVersion} Changes
     `
@@ -155,3 +159,8 @@ async function main(): Promise<void> {
 }
 
 main().catch(console.error)
+
+function extractPreviousMinor(majorAndMinor: string): string {
+    const [major, minor] = majorAndMinor.split('.')
+    return `${major}.${parseInt(minor) - 1}`
+}

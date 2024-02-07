@@ -17,7 +17,9 @@ import { Uri } from './uri'
 export { Uri } from './uri'
 
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 export { Disposable } from './Disposable'
+import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -229,12 +231,18 @@ export class TreeItem {
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri: Uri
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
+        this.baseUri =
+            typeof _base === 'string'
+                ? Uri.file(_base)
+                : 'uri' in _base
+                  ? Uri.from(_base.uri)
+                  : Uri.from(_base)
         this.base = _base.toString()
     }
 }
@@ -452,15 +460,6 @@ export class InlineCompletionItem {
 }
 
 // TODO(abeatrix): Implement delete and insert mocks
-export class WorkspaceEdit {
-    public delete(uri: vscode_types.Uri, range: Range): Range {
-        return range
-    }
-    public insert(uri: vscode_types.Uri, position: Position, content: string): string {
-        return content
-    }
-}
-
 export enum EndOfLine {
     LF = 1,
     CRLF = 2,
@@ -535,8 +534,12 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         await fspromises.mkdir(uri.fsPath, { recursive: true })
     },
     readFile: async uri => {
-        const content = await fspromises.readFile(uri.fsPath)
-        return new Uint8Array(content.buffer)
+        try {
+            const content = await fspromises.readFile(uri.fsPath)
+            return new Uint8Array(content.buffer)
+        } catch (error) {
+            throw new Error(`no such file: ${uri}`, { cause: error })
+        }
     },
     writeFile: async (uri, content) => {
         await fspromises.writeFile(uri.fsPath, content)
@@ -668,6 +671,10 @@ const languages: Partial<typeof vscode_types.languages> = {
     },
 }
 
+export enum TextDocumentChangeReason {
+    Undo = 1,
+    Redo = 2,
+}
 export enum UIKind {
     Desktop = 1,
     Web = 2,
@@ -777,6 +784,11 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
+
+    public getFromCache(flag: FeatureFlag): boolean {
+        return this.enabledFlags.has(flag)
+    }
+
     public syncAuthStatus(): Promise<void> {
         return Promise.resolve()
     }
@@ -802,6 +814,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
+    commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
     debugEnable: false,
@@ -813,8 +826,10 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
+    autocompleteDisableInsideComments: false,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',

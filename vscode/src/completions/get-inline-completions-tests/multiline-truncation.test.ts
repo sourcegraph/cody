@@ -581,33 +581,60 @@ for (const isTreeSitterEnabled of cases) {
             if (isTreeSitterEnabled) {
                 it('stops when the next non-empty line of the suffix matches', async () => {
                     expect(
-                        await getInlineCompletionsInsertText(
-                            params(
-                                dedent`
+                        (
+                            await getInlineCompletionsInsertText(
+                                params(
+                                    dedent`
                                 function myFunction() {
                                     █
                                 }
                         `,
-                                [
-                                    completion`
+                                    [
+                                        completion`
                                 ├function nestedFunction() {
                                     console.log('one')
                                 }
 
                                 nestedFunction()
                                 }┤`,
-                                ]
+                                    ]
+                                )
                             )
-                        )
+                        )[0]
                     ).toMatchInlineSnapshot(`
-                  [
-                    "function nestedFunction() {
-                      console.log('one')
-                  }
+                      "function nestedFunction() {
+                          console.log('one')
+                      }
 
-                  nestedFunction()",
-                  ]
-                `)
+                      nestedFunction()"
+                    `)
+                })
+
+                it('stops when the next non-empty line of the suffix starts with the last completion line', async () => {
+                    expect(
+                        (
+                            await getInlineCompletionsInsertText(
+                                params(
+                                    dedent`
+                                    const controller = {
+                                        set(value) {
+                                            █
+                                        },
+                                        get() {
+                                            return 1
+                                        }
+                                    }`,
+                                    [
+                                        completion`
+                                            ├this.value = value
+                                        },
+                                        whatever() ┤
+                                    ┴┴┴┴`,
+                                    ]
+                                )
+                            )
+                        )[0]
+                    ).toBe('this.value = value')
                 })
 
                 it('truncates multiline completions with inconsistent indentation', async () => {
@@ -726,7 +753,7 @@ for (const isTreeSitterEnabled of cases) {
                             }
                             console.log(5)┤`
                         },
-                        dynamicMultilineCompletions: true,
+                        configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
                     })
 
                     const [insertText] = await getInlineCompletionsInsertText(requestParams)

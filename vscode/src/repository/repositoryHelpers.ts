@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared'
+import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { setUpCodyIgnore } from '../services/context-filter'
+import { setUpCodyIgnore } from '../services/cody-ignore'
 
 import type { API, GitExtension, Repository } from './builtinGitExtension'
+import { TestSupport } from '../test-support'
 
 export function gitDirectoryUri(uri: vscode.Uri): vscode.Uri | undefined {
     return gitAPI()?.getRepository(uri)?.rootUri
@@ -39,6 +40,9 @@ export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
     function init(): void {
         if (!vscodeGitAPI && extension?.isActive) {
             setUpCodyIgnore()
+            if (TestSupport.instance) {
+                TestSupport.instance.ignoreHelper.set(ignores)
+            }
             // This throws error if the git extension is disabled
             vscodeGitAPI = extension.exports?.getAPI(1)
         }

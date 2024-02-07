@@ -45,6 +45,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.codeActions.enabled':
                         return true
+                    case 'cody.commandHints.enabled':
+                        return true
                     case 'cody.experimental.localSymbols':
                         return true
                     case 'cody.experimental.symf.path':
@@ -68,7 +70,7 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
                     case 'cody.autocomplete.advanced.model':
-                        return 'starcoder-32b'
+                        return 'starcoder-16b'
                     case 'cody.autocomplete.advanced.timeout.multiline':
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.singleline':
@@ -77,11 +79,15 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.formatOnAccept':
                         return true
+                    case 'cody.autocomplete.disableInsideComments':
+                        return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
+                        return false
+                    case 'cody.autocomplete.experimental.fastPath':
                         return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
@@ -122,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalCommitMessage: true,
             experimentalGuardrails: true,
             codeActions: true,
+            commandHints: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
@@ -130,11 +137,13 @@ describe('getConfiguration', () => {
             debugFilter: /.*/,
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-openai',
-            autocompleteAdvancedModel: 'starcoder-32b',
+            autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
+            autocompleteDisableInsideComments: false,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
+            autocompleteExperimentalFastPath: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',

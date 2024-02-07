@@ -1,21 +1,26 @@
 import { findLast } from 'lodash'
-import type * as vscode from 'vscode'
 
 import {
     errorToChatError,
     reformatBotMessageForChat,
     type ChatError,
     type ChatMessage,
-    type ContextFileSource,
     type InteractionJSON,
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 import type { Repo } from '../../context/repo-fetcher'
+import type { ContextItem } from '../../prompt-builder/types'
 
+/**
+ * Interface for a chat message with additional context.
+ *
+ * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
+ */
 export interface MessageWithContext {
     message: Message
 
@@ -53,7 +58,7 @@ export class SimpleChatModel {
         if (lastMessage.message.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed
+        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
     public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
@@ -232,22 +237,6 @@ function messageToInteractionMessage(message: MessageWithContext): InteractionMe
         text: message.message.text,
         displayText: getDisplayText(message),
     }
-}
-
-export interface ContextItem {
-    uri: vscode.Uri
-    range?: vscode.Range
-    text: string
-    source?: ContextFileSource
-    repoName?: string
-    revision?: string
-    title?: string
-}
-
-export function contextItemId(contextItem: ContextItem): string {
-    return contextItem.range
-        ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-        : contextItem.uri.toString()
 }
 
 export function toViewMessage(mwc: MessageWithContext): ChatMessage {

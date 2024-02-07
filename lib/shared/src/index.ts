@@ -1,12 +1,13 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ChatModelProvider } from './chat-models'
+export { ModelProvider } from './models'
+export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
-export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
+export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
+export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -20,6 +21,7 @@ export type {
     ChatEventSource,
     ChatHistory,
     ChatMessage,
+    ChatInputHistory,
     InteractionMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
@@ -49,8 +51,8 @@ export type {
     PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
-export { defaultCodyCommandContext, isFixupCommand } from './commands'
-export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
+export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -84,10 +86,8 @@ export type {
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
-    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    VsCodeCommandsController,
 } from './editor'
 export {
     displayPath,
@@ -108,7 +108,7 @@ export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
@@ -138,7 +138,11 @@ export {
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
-export { truncateText, truncateTextNearestLine, truncateTextStart } from './prompt/truncation'
+export {
+    truncateText,
+    truncateTextNearestLine,
+    truncateTextStart,
+} from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'

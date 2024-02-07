@@ -1,26 +1,23 @@
 import * as vscode from 'vscode'
 
 import {
-    isCodyIgnoredFile,
     isFileURI,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     truncateTextNearestLine,
     uriBasename,
-    type CodyCommand,
     type ConfigurationUseContext,
     type Result,
 } from '@sourcegraph/cody-shared'
 
-import { getContextForCommand } from '../../commands/utils/get-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { viewRangeToRange } from './chat-helpers'
-import type { ContextItem } from './SimpleChatModel'
 import type { RemoteSearch } from '../../context/remote-search'
+import type { ContextItem } from '../../prompt-builder/types'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -204,9 +201,6 @@ async function searchSymf(
     const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
         const items = (await results).flatMap(
             async (result: Result): Promise<ContextItem[] | ContextItem> => {
-                if (isCodyIgnoredFile(result.file)) {
-                    return []
-                }
                 const range = new vscode.Range(
                     result.range.startPoint.row,
                     result.range.startPoint.col,
@@ -274,15 +268,12 @@ async function searchEmbeddingsLocal(
             new vscode.Position(result.endLine, 0)
         )
 
-        // Filter out ignored files
-        if (!isCodyIgnoredFile(result.uri)) {
-            contextItems.push({
-                uri: result.uri,
-                range,
-                text: result.content,
-                source: 'embeddings',
-            })
-        }
+        contextItems.push({
+            uri: result.uri,
+            range,
+            text: result.content,
+            source: 'embeddings',
+        })
     }
     return contextItems
 }
@@ -296,7 +287,7 @@ const userAttentionRegexps: RegExp[] = [
 
 function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
     const selection = editor.getActiveTextEditorSelection()
-    if (!selection?.selectedText || isCodyIgnoredFile(selection.fileUri)) {
+    if (!selection?.selectedText) {
         return []
     }
     let range: vscode.Range | undefined
@@ -325,7 +316,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     if (!visible || !fileUri) {
         return []
     }
-    if (isCodyIgnoredFile(fileUri) || !visible.content.trim()) {
+    if (!visible.content.trim()) {
         return []
     }
     return [
@@ -433,7 +424,7 @@ async function getReadmeContext(): Promise<ContextItem[]> {
     // global pattern for readme file
     const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
     const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
-    if (!readmeUri || isCodyIgnoredFile(readmeUri)) {
+    if (!readmeUri?.path) {
         return []
     }
     const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
@@ -454,31 +445,6 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             source: 'editor',
         },
     ]
-}
-
-export async function getCommandContext(
-    editor: VSCodeEditor,
-    command: CodyCommand
-): Promise<ContextItem[]> {
-    logDebug('SimpleChatPanelProvider.getCommandContext', command.slashCommand)
-
-    const contextItems: ContextItem[] = []
-    const contextMessages = await getContextForCommand(editor, command)
-    // Turn ContextMessages to ContextItems
-    for (const msg of contextMessages) {
-        if (msg.file?.uri && msg.file?.content) {
-            contextItems.push({
-                uri: msg.file?.uri,
-                text: msg.file?.content,
-                range: viewRangeToRange(msg.file?.range),
-                source: msg.file?.source || 'editor',
-            })
-        }
-    }
-
-    // TODO(beyang): add codebase context when command.context.codebase is true
-
-    return contextItems
 }
 
 function extractQuestion(input: string): string | undefined {

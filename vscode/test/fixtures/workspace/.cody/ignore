@@ -1,0 +1,4 @@
+# NOTE: USED FOR AUTOMATED TEST CODY IGNORE
+# All .css files will be excluded from Cody context
+*.css
+**/*.ws1 # Used by ignore integration tests

@@ -10,7 +10,7 @@ import {
     getMatchingSuffixLength,
     type InlineCompletionItemWithAnalytics,
 } from './process-inline-completions'
-import { getLastLine, getPositionAfterTextDeletion, lines } from './utils'
+import { getLastLine, lines } from './utils'
 
 interface CompletionContext {
     completion: InlineCompletionItem
@@ -113,21 +113,27 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         document,
         tree,
         parser,
-        docContext: { position, currentLineSuffix, injectedCompletionText = '' },
+        docContext: {
+            position,
+            currentLineSuffix,
+            // biome-ignore lint/nursery/noInvalidUseBeforeDeclaration: it's actually correct
+            positionWithoutInjectedCompletionText = position,
+            injectedCompletionText = '',
+        },
         completionEndPosition,
     } = params
 
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
-    const actualPosition = getPositionAfterTextDeletion(position, injectedCompletionText)
 
     // Adjust suffix and prefix based on completion insert range.
     const prefix =
-        document.getText(new Range(new Position(0, 0), actualPosition)) + injectedCompletionText
+        document.getText(new Range(new Position(0, 0), positionWithoutInjectedCompletionText)) +
+        injectedCompletionText
     const suffix = document.getText(
-        new Range(actualPosition, document.positionAt(document.getText().length))
+        new Range(positionWithoutInjectedCompletionText, document.positionAt(document.getText().length))
     )
 
-    const offset = document.offsetAt(actualPosition)
+    const offset = document.offsetAt(positionWithoutInjectedCompletionText)
 
     // Remove the characters that are being replaced by the completion to avoid having
     // them in the parse tree. It breaks the multiline truncation logic which looks for
@@ -143,8 +149,8 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         startIndex: offset,
         oldEndIndex: offset,
         newEndIndex: offset + injectedCompletionText.length + insertText.length,
-        startPosition: asPoint(actualPosition),
-        oldEndPosition: asPoint(actualPosition),
+        startPosition: asPoint(positionWithoutInjectedCompletionText),
+        oldEndPosition: asPoint(positionWithoutInjectedCompletionText),
         newEndPosition: asPoint(completionEndPosition),
     })
 

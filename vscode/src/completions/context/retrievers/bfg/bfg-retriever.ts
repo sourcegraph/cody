@@ -197,7 +197,24 @@ export class BfgRetriever implements ContextRetriever {
                 return []
             }
 
-            return [...(responses?.symbols || []), ...(responses?.files || [])]
+            const mergedContextSnippets = [...(responses.symbols || []), ...(responses?.files || [])]
+
+            // Convert BFG snippets to match the format expected on the client.
+            const symbols = mergedContextSnippets.map(contextSnippet => ({
+                ...contextSnippet,
+                uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
+            })) satisfies Omit<ContextSnippet, 'startLine' | 'endLine'>[]
+
+            logDebug(
+                'CodyEngine',
+                'bfg/contextAtPosition',
+                `returning ${mergedContextSnippets.length} results`
+            )
+
+            // TODO: add `startLine` and `endLine` to `responses` or explicitly add
+            // another context snippet type to the client.
+            // @ts-ignore
+            return symbols
         } catch (error) {
             logDebug('CodyEngine:error', `${error}`)
             return []

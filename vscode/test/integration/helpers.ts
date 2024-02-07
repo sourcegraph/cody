@@ -84,6 +84,16 @@ export async function getTextEditorWithSelection(): Promise<void> {
     textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 }
 
+export async function getTestDocWithCursor(): Promise<void> {
+    // Open buzz.ts
+    assert.ok(vscode.workspace.workspaceFolders)
+    const uri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/buzz.ts`)
+    const textEditor = await vscode.window.showTextDocument(uri)
+
+    // Move cursor inside the function
+    textEditor.selection = new vscode.Selection(5, 0, 5, 0)
+}
+
 /**
  * For testing only. Return a platform-native absolute path for a filename. Tests should almost
  * always use this instead of {@link URI.file}. Only use {@link URI.file} directly if the test is

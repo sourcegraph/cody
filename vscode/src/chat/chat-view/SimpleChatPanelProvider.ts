@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     ConfigFeaturesSingleton,
     hydrateAfterPostMessage,
     isDefined,
@@ -13,8 +13,8 @@ import {
     reformatBotMessageForChat,
     Typewriter,
     type ChatClient,
+    type ChatInputHistory,
     type ChatMessage,
-    type CodyCommand,
     type ContextFile,
     type ContextMessage,
     type Editor,
@@ -23,19 +23,12 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
-    isFixupCommand,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
-import type { CommandsController } from '../../commands/CommandsController'
-import {
-    createDisplayTextWithFileLinks,
-    createDisplayTextWithFileSelection,
-} from '../../commands/prompt/display-text'
+import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
-import { executeEdit } from '../../edit/execute'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -48,7 +41,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/TreeViewProvider'
@@ -63,7 +55,6 @@ import { countGeneratedCode } from '../utils'
 
 import type { MessageErrorType } from '../MessageProvider'
 import type {
-    AuthStatus,
     ChatSubmitType,
     ConfigurationSubsetForWebview,
     ExtensionMessage,
@@ -75,18 +66,17 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getCommandContext, getEnhancedContext } from './context'
+import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
-import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
-import {
-    SimpleChatModel,
-    toViewMessage,
-    type ContextItem,
-    type MessageWithContext,
-} from './SimpleChatModel'
+import { DefaultPrompter, type IPrompter } from './prompt'
+import { SimpleChatModel, toViewMessage, type MessageWithContext } from './SimpleChatModel'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { Repo } from '../../context/repo-fetcher'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { chatModel } from '../../models'
+import { getContextWindowForModel } from '../../models/utilts'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -99,9 +89,8 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    models: ChatModelProvider[]
+    models: ModelProvider[]
     guardrails: Guardrails
-    commandsController?: CommandsController
 }
 
 export interface ChatSession {
@@ -148,7 +137,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly guardrails: Guardrails
-    private readonly commandsController?: CommandsController
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
 
@@ -171,7 +159,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         editor,
         treeView,
         models,
-        commandsController,
         guardrails,
         enterpriseContext,
     }: SimpleChatPanelProviderOptions) {
@@ -183,13 +170,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
-        this.commandsController = commandsController
         this.editor = editor
         this.treeView = treeView
-        this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
+        this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
-
-        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -325,7 +309,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                void this.handleAttributionSearch(message.snippet)
+                await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
@@ -385,7 +369,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.postChatModels()
         await this.saveSession()
-        await this.postCodyCommands()
         this.initDoer.signalInitialized()
     }
 
@@ -399,29 +382,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
-        // DEPRECATED (remove after slash commands are removed)
-        // If this is a slash command, run it with custom command instead
-        if (inputText.startsWith('/')) {
-            if (inputText.match(/^\/r(eset)?$/)) {
-                return this.clearAndRestartSession()
-            }
-            if (inputText.match(/^\/edit(\s)?/)) {
-                await executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
-                return
-            }
-            if (inputText === '/commands-settings') {
-                // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.settings.commands')
-            }
-            const commandArgs = newCodyCommandArgs({
-                source: 'chat',
-                requestID,
-            })
-            const command = (await this.commandsController?.startCommand(inputText, commandArgs))
-                ?.command
-            if (command) {
-                return this.handleCommand(command, commandArgs)
-            }
+        if (inputText.match(/^\/reset$/)) {
+            return this.clearAndRestartSession()
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -433,7 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             : inputText
         const promptText = inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
+        await this.saveSession({ inputText, inputContextFiles: userContextFiles })
 
         this.postEmptyMessageInProgress()
 
@@ -541,44 +503,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // It's a fixup command, so we can exit early.
-        // This is because startCommand will start the CommandRunner,
-        // which would send all fixup command requests to the FixupController
-        if (isFixupCommand(command)) {
-            return
-        }
-
-        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (
-                command.context?.selection ||
-                command.context?.currentFile ||
-                command.context?.currentDir
-            ) {
-                return this.postError(
-                    new Error('Command failed. Please open a file and try again.'),
-                    'transcript'
-                )
-            }
-        }
-
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
-        const displayText = createDisplayTextWithFileSelection(
-            inputText,
-            this.editor.getActiveTextEditorSelectionOrEntireFile()
-        )
-        const promptText = command.prompt
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
-
-        this.postEmptyMessageInProgress()
-
-        const prompt = await this.buildPrompt(
-            new CommandPrompter(() => getCommandContext(this.editor, command))
-        )
-        this.streamAssistantResponse(args.requestID, prompt)
-    }
-
     private handleAbort(): void {
         this.cancelInProgressCompletion()
         telemetryService.log(
@@ -591,8 +515,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.modelID = modelID
-        // Store the selected model in local storage to retrieve later
-        await localStorage.set('model', modelID)
+        await chatModel.set(modelID)
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
@@ -753,35 +676,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
             models,
         })
-    }
-
-    // Send a list of commands to webview that can be triggered via chat input box with slash
-    private async postCodyCommands(): Promise<void> {
-        const send = async (): Promise<void> => {
-            await this.commandsController?.refresh()
-            const allCommands = await this.commandsController?.getAllCommands(true)
-            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
-            const prompts =
-                allCommands?.filter(([id, { mode }]) => {
-                    // The /ask command is only useful outside of chat
-                    const isRedundantCommand = id === '/ask'
-                    return !isRedundantCommand
-                }) || []
-            void this.postMessage({
-                type: 'custom-prompts',
-                prompts,
-            })
-        }
-        this.commandsController?.setMessenger(send)
-        await send()
     }
 
     private postContextStatus(): void {
@@ -1035,7 +943,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
     }
 
-    private async saveSession(humanInput?: string): Promise<void> {
+    private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toTranscriptJSON(),
@@ -1327,61 +1235,4 @@ function deserializedContextFilesToContextItems(
 
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
-}
-
-function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
-    // In enterprise mode, we let the sg instance dictate the token limits and allow users to
-    // overwrite it locally (for debugging purposes).
-    //
-    // This is similiar to the behavior we had before introducing the new chat and allows BYOK
-    // customers to set a model of their choice without us having to map it to a known model on
-    // the client.
-    if (authStatus.endpoint && !isDotCom(authStatus.endpoint)) {
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        if (tokenLimit) {
-            return tokenLimit * 4 // bytes per token
-        }
-
-        if (authStatus.configOverwrites?.chatModelMaxTokens) {
-            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
-        }
-
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-
-    if (modelID.includes('openai/gpt-4-1106-preview')) {
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-    if (modelID.endsWith('openai/gpt-3.5-turbo')) {
-        return 10000 // 4,096 tokens * < 4 bytes per token
-    }
-    if (modelID.includes('mixtral-8x7b-instruct') && modelID.includes('fireworks')) {
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-    return 28000 // assume default to Claude-2-like model
-}
-
-// Select the chat model to use in Chat
-function selectModel(authProvider: AuthProvider, models: ChatModelProvider[]): string {
-    const authStatus = authProvider.getAuthStatus()
-    // Free user can only use the default model
-    if (authStatus.isDotCom && authStatus.userCanUpgrade) {
-        return models[0].model
-    }
-    // Check for the last selected model
-    const lastSelectedModelID = localStorage.get('model')
-    if (lastSelectedModelID) {
-        // If the last selected model exists in the list of models then we return it
-        const model = models.find(m => m.model === lastSelectedModelID)
-        if (model) {
-            return lastSelectedModelID
-        }
-    }
-    // If the user has not selected a model before then we return the default model
-    const defaultModel = models.find(m => m.default) || models[0]
-    if (!defaultModel) {
-        throw new Error('No chat model found in server-provided config')
-    }
-    return defaultModel.model
 }

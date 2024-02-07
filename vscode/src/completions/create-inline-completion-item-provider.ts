@@ -1,25 +1,24 @@
 import * as vscode from 'vscode'
 
 import {
-    FeatureFlag,
-    featureFlagProvider,
     isDotCom,
     type CodeCompletionsClient,
-    type Configuration,
+    type ConfigurationWithAccessToken,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
+import { completionProviderConfig } from './completion-provider-config'
 
 interface InlineCompletionItemProviderArgs {
-    config: Configuration
+    config: ConfigurationWithAccessToken
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     authProvider: AuthProvider
@@ -51,7 +50,8 @@ export async function createInlineCompletionItemProvider({
     triggerNotice,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
-    if (!authProvider.getAuthStatus().isLoggedIn) {
+    const authStatus = authProvider.getAuthStatus()
+    if (!authStatus.isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
         if (config.isRunningInsideAgent) {
@@ -71,54 +71,23 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [
-        providerConfig,
-        bfgMixedContextFlag,
-        newJaccardSimilarityContextFlag,
-        dynamicMultilineCompletionsFlag,
-        hotStreakFlag,
-    ] = await Promise.all([
-        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
+    const [providerConfig] = await Promise.all([
+        createProviderConfig(config, client, authStatus),
+        completionProviderConfig.init(config, featureFlagProvider),
     ])
+
     if (providerConfig) {
-        const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'bfg'
-                ? 'bfg'
-                : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                  ? 'bfg-mixed'
-                  : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                      ? 'local-mixed'
-                      : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                          ? 'jaccard-similarity'
-                          : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
-                              ? 'new-jaccard-similarity'
-                              : bfgMixedContextFlag
-                                  ? 'bfg-mixed'
-                                  : newJaccardSimilarityContextFlag
-                                      ? 'new-jaccard-similarity'
-                                      : 'jaccard-similarity'
-
-        const dynamicMultilineCompletions =
-            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
-        const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
-
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
-            authStatus: authProvider.getAuthStatus(),
+            authStatus,
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
+            disableInsideComments: config.autocompleteDisableInsideComments,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
-            contextStrategy,
             createBfgRetriever,
-            dynamicMultilineCompletions,
-            hotStreak,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

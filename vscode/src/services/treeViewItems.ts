@@ -1,7 +1,6 @@
 import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
-import { releaseNotesURL, releaseType } from '../release'
+import { releaseType } from '../release'
 import { version } from '../version'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
@@ -19,8 +18,6 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
-    // If item requires the `config.internalUnstable` configuration to be displayed
-    isUnstable?: boolean
 }
 
 /**
@@ -55,44 +52,38 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Settings',
         icon: 'settings-gear',
-        command: { command: 'cody.status-bar.interacted' },
+        command: { command: 'cody.sidebar.settings' },
     },
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: {
-            command: 'workbench.action.openGlobalKeybindings',
-            args: ['@ext:sourcegraph.cody-ai'],
-        },
+        command: { command: 'cody.sidebar.keyboardShortcuts' },
     },
     {
         title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
         description: `v${version}`,
         icon: 'github',
-        command: {
-            command: 'vscode.open',
-            args: [releaseNotesURL(version)],
-        },
+        command: { command: 'cody.sidebar.releaseNotes' },
     },
     {
         title: 'Documentation',
         icon: 'book',
-        command: { command: 'vscode.open', args: [CODY_DOC_URL.href] },
+        command: { command: 'cody.sidebar.documentation' },
     },
     {
         title: 'Feedback',
         icon: 'feedback',
-        command: { command: 'vscode.open', args: [CODY_FEEDBACK_URL.href] },
+        command: { command: 'cody.sidebar.feedback' },
     },
     {
         title: 'Discord',
         icon: 'organization',
-        command: { command: 'vscode.open', args: [DISCORD_URL.href] },
+        command: { command: 'cody.sidebar.discord' },
     },
     {
         title: 'Account',
         icon: 'account',
-        command: { command: 'cody.auth.account' },
+        command: { command: 'cody.sidebar.account' },
     },
 ]
 
@@ -101,49 +92,42 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Chat',
         icon: 'comment',
         description: 'Ask Cody a question',
-        command: { command: 'cody.chat.panel.new' },
+        command: { command: 'cody.sidebar.click', args: ['ask', 'cody.chat.panel.new'] },
     },
     {
         title: 'Document',
         icon: 'book',
         description: 'Add code documentation',
-        command: { command: 'cody.command.document-code' },
+        command: { command: 'cody.sidebar.click', args: ['doc', 'cody.command.document-code'] },
     },
     {
         title: 'Edit',
         icon: 'wand',
-        command: { command: 'cody.command.edit-code' },
+        command: { command: 'cody.sidebar.click', args: ['edit', 'cody.command.edit-code'] },
         description: 'Edit code with instructions',
     },
     {
         title: 'Explain',
         icon: 'file-binary',
-        command: { command: 'cody.command.explain-code' },
+        command: { command: 'cody.sidebar.click', args: ['explain', 'cody.command.explain-code'] },
         description: 'Explain code',
     },
     {
         title: 'Smell',
         icon: 'checklist',
-        command: { command: 'cody.command.smell-code' },
+        command: { command: 'cody.sidebar.click', args: ['smell', 'cody.command.smell-code'] },
         description: 'Identify code smells',
     },
     {
         title: 'Test',
         icon: 'package',
-        command: { command: 'cody.command.generate-tests' },
+        command: { command: 'cody.sidebar.click', args: ['test', 'cody.command.unit-tests'] },
         description: 'Generate unit tests',
-    },
-    {
-        title: 'Test File (Experimental)',
-        icon: 'beaker',
-        command: { command: 'cody.command.unit-tests' },
-        description: 'Generate unit test file',
-        isUnstable: true,
     },
     {
         title: 'Custom',
         icon: 'tools',
-        command: { command: 'cody.action.commands.custom.menu' },
+        command: { command: 'cody.sidebar.click', args: ['custom', 'cody.menu.custom-commands'] },
         description: 'Custom commands',
     },
 ]

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fuseContext } from './context'
 import { testFileUri } from '@sourcegraph/cody-shared'
-import type { ContextItem } from './SimpleChatModel'
+import type { ContextItem } from '../../prompt-builder/types'
 
 describe('fuseContext', () => {
     const uri = testFileUri('test.ts')

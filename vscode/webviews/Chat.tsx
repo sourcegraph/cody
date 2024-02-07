@@ -5,9 +5,9 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import type {
+    ChatInputHistory,
     ChatMessage,
-    ChatModelProvider,
-    CodyCommand,
+    ModelProvider,
     ContextFile,
     Guardrails,
     TelemetryService,
@@ -27,7 +27,6 @@ import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/compone
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
-import { ChatCommandsComponent } from './ChatCommands'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
@@ -46,15 +45,14 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     formInput: string
     setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
+    inputHistory: ChatInputHistory[]
+    setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
-    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelProvider[]) => void
-    chatModels?: ChatModelProvider[]
+    setChatModels?: (models: ModelProvider[]) => void
+    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
@@ -72,7 +70,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    chatCommands,
     isTranscriptError,
     contextSelection,
     setChatModels,
@@ -136,7 +133,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ChatModelProvider): void => {
+        (selected: ModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
@@ -242,9 +239,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             afterMarkdown={welcomeMessage}
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
-            chatCommands={chatCommands}
-            filterChatCommands={filterChatCommands}
-            ChatCommandsComponent={ChatCommandsComponent}
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
@@ -293,7 +287,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     isNewChat,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const tips = '(@ to include code, / for commands)'
+    const tips = '(@ to include files or symbols)'
     const placeholder = isNewChat ? `Message ${tips}` : `Follow-Up Message ${tips}`
     const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
 
@@ -494,31 +488,4 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             )}
         </div>
     )
-}
-
-const slashCommandRegex = /^\/[A-Za-z]+/
-function isSlashCommand(value: string): boolean {
-    return slashCommandRegex.test(value)
-}
-
-function normalize(input: string): string {
-    return input.trim().toLowerCase()
-}
-
-function filterChatCommands(
-    chatCommands: [string, CodyCommand][],
-    query: string
-): [string, CodyCommand][] {
-    const normalizedQuery = normalize(query)
-
-    if (!isSlashCommand(normalizedQuery)) {
-        return []
-    }
-
-    const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
-        ([key, command]) =>
-            key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
-    )
-    return matchingCommands.sort()
 }

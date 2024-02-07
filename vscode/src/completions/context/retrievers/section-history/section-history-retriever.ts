@@ -144,7 +144,12 @@ export class SectionHistoryRetriever implements ContextRetriever {
                             const uri = section.location.uri
                             const textDocument = await vscode.workspace.openTextDocument(uri)
                             const content = textDocument.getText(section.location.range)
-                            return { uri, content }
+                            return {
+                                uri,
+                                content,
+                                startLine: section.location.range.start.line,
+                                endLine: section.location.range.end.line,
+                            }
                         } catch (error) {
                             // Ignore errors opening the text file. This can happen when the file was deleted
                             console.error(error)

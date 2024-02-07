@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    ConfigFeaturesSingleton,
     FeatureFlag,
     featureFlagProvider,
     graphqlClient,
@@ -10,7 +9,8 @@ import {
     PromptMixin,
     setLogger,
     type ConfigurationWithAccessToken,
-    isFixupCommand,
+    ConfigFeaturesSingleton,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -20,12 +20,11 @@ import type { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
-    ACCOUNT_USAGE_URL,
     CODY_FEEDBACK_URL,
     type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { newCodyCommandArgs, type CodyCommandArgs } from './commands'
+import type { CodyCommandArgs } from './commands/types'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -50,8 +49,22 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { executeCodyCommand, setCommandController } from './commands/CommandsController'
+import { newCodyCommandArgs } from './commands/utils/get-commands'
+import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
+import {
+    executeExplainCommand,
+    executeTestEditCommand,
+    executeSmellCommand,
+    executeDocCommand,
+    executeTestChatCommand,
+    executeTestCaseEditCommand,
+    executeExplainOutput,
+} from './commands/execute'
+import { registerSidebarCommands } from './services/SidebarCommands'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -121,7 +134,6 @@ const register = async (
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     const editor = new VSCodeEditor()
-    const commandsController = platform.createCommandsController?.(editor)
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -199,13 +211,13 @@ const register = async (
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
+            config,
         },
         chatClient,
         enterpriseContextFactory,
         localEmbeddings || null,
         symfRunner || null,
-        guardrails,
-        commandsController
+        guardrails
     )
 
     const gitApi = getGitAPI()
@@ -216,19 +228,15 @@ const register = async (
         disposables.push(commitMessageProvider)
     }
 
-    disposables.push(new CodeActionProvider({ contextProvider }))
-
-    const ghostHintDecorator = new GhostHintDecorator()
-    disposables.push(
+    const ghostHintDecorator = new GhostHintDecorator(authProvider)
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        contextProvider,
         ghostHintDecorator,
-        new EditManager({
-            chat: chatClient,
-            editor,
-            contextProvider,
-            ghostHintDecorator,
-        }),
-        new CodeActionProvider({ contextProvider })
-    )
+        authProvider,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -286,6 +294,7 @@ const register = async (
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
@@ -308,9 +317,12 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
+    const commandsManager = platform.createCommandsProvider?.()
+    setCommandController(commandsManager)
+
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
-        commandKey: string,
+        commandKey: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
         return executeCommandUnsafe(commandKey, args).catch(error => {
@@ -321,36 +333,34 @@ const register = async (
             return undefined
         })
     }
+
     const executeCommandUnsafe = async (
-        commandKey: string,
+        id: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        logDebug('executeCommand', commandKey, args)
-        const commandArgs = newCodyCommandArgs(args)
-        const runner = await commandsController?.startCommand(commandKey, commandArgs)
-        const command = runner?.command
-        // Stop processing the command if it is not an ask(chat) request
-        if (!command) {
+        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (!commands) {
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Sourcegraph site admin.'
+            )
             return undefined
         }
-        if (isFixupCommand(command)) {
-            return {
-                type: 'edit',
-                task: await runner.fixupTask,
-            }
-        }
 
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        const session = await chatManager.executeCommand(
-            runner.command,
-            commandArgs,
-            configFeatures.commands
-        )
-        return {
-            type: 'chat',
-            session,
-        }
+        // Process command with the commands controller
+        return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Register Cody Commands
+    disposables.push(
+        vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
+        vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
+        vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
+        vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
+        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
+        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
+    )
 
     const statusBar = createStatusBar()
 
@@ -395,54 +405,9 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai chat',
             })
         ),
-        // Cody Commands
-        vscode.commands.registerCommand('cody.action.commands.menu', async () => {
-            await commandsController?.menu('default')
-        }),
-        vscode.commands.registerCommand('cody.action.commands.custom.menu', () =>
-            commandsController?.menu('custom')
-        ),
-        vscode.commands.registerCommand('cody.settings.commands', () =>
-            commandsController?.menu('config')
-        ),
-        vscode.commands.registerCommand('cody.action.commands.exec', async (title, args) =>
-            executeCommand(title, args)
-        ),
-        vscode.commands.registerCommand('cody.command.explain-code', async args =>
-            executeCommand('/explain', args)
-        ),
-        vscode.commands.registerCommand('cody.command.generate-tests', async args =>
-            executeCommand('/test', args)
-        ),
-        vscode.commands.registerCommand('cody.command.unit-tests', async args =>
-            executeCommand('/unit', args)
-        ),
-        vscode.commands.registerCommand('cody.command.document-code', async args =>
-            executeCommand('/doc', args)
-        ),
-        vscode.commands.registerCommand('cody.command.smell-code', async args =>
-            executeCommand('/smell', args)
-        ),
 
         // Account links
-        vscode.commands.registerCommand('cody.show-page', (page: string) => {
-            let url: URL
-            switch (page) {
-                case 'upgrade':
-                    url = ACCOUNT_UPGRADE_URL
-                    break
-                case 'usage':
-                    url = ACCOUNT_USAGE_URL
-                    break
-                case 'rate-limits':
-                    url = ACCOUNT_LIMITS_INFO_URL
-                    break
-                default:
-                    console.warn(`Unable to show unknown page: "${page}"`)
-                    return
-            }
-            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
-        }),
+        ...registerSidebarCommands(),
 
         // Account links
         vscode.commands.registerCommand(
@@ -549,6 +514,22 @@ const register = async (
                 authStatus.userCanUpgrade = !res.codyProEnabled
                 void chatManager.syncAuthStatus(authStatus)
             }
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
+        ),
+        // For register sidebar clicks
+        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
+            const source: ChatEventSource = 'sidebar'
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
+                privateMetadata: { source },
+            })
+            void vscode.commands.executeCommand(command, [source])
         })
     )
 
@@ -582,7 +563,7 @@ const register = async (
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = getConfiguration(vscode.workspace.getConfiguration())
+                const config = await getFullConfig()
                 if (!config.autocomplete) {
                     completionsProvider?.dispose()
                     completionsProvider = null
@@ -618,9 +599,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const promises: Promise<void>[] = []
-
-    promises.push(setupAutocomplete().catch(() => {}))
+    const autocompleteSetup = setupAutocomplete().catch(() => {})
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
@@ -631,9 +610,11 @@ const register = async (
         )
     }
 
-    promises.push(showSetupNotification(initialConfig))
-
-    await Promise.all(promises)
+    // INC-267 do NOT await on this promise. This promise triggers
+    // `vscode.window.showInformationMessage()`, which only resolves after the
+    // user has clicked on "Setup". Awaiting on this promise will make the Cody
+    // extension timeout during activation.
+    void showSetupNotification(initialConfig)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
@@ -646,6 +627,8 @@ const register = async (
             },
         })
     }
+
+    await autocompleteSetup
 
     return {
         disposable: vscode.Disposable.from(...disposables),

@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import assert from 'assert'
 import { execSync } from 'child_process'
 import fspromises from 'fs/promises'
@@ -5,15 +6,13 @@ import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { Uri } from 'vscode'
 
 import { isWindows } from '@sourcegraph/cody-shared'
-
-import type { ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
+import { decodeURIs } from './decodeURIs'
 
 const explainPollyError = `
 
@@ -36,7 +35,7 @@ const explainPollyError = `
     `
 
 const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
 const mayRecord =
@@ -83,7 +82,9 @@ describe('Agent', () => {
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, {
+            recursive: true,
+        })
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -102,6 +103,10 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
+
+        // Confirm .cody/ignore is active at start up
+        const codyIgnore = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+        expect(codyIgnore).toBeTruthy()
     }, 10_000)
 
     beforeEach(async () => {
@@ -109,13 +114,17 @@ describe('Agent', () => {
     })
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
-    const sumUri = Uri.file(sumPath)
+    const sumUri = vscode.Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const animalUri = Uri.file(animalPath)
+    const animalUri = vscode.Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
-    const squirrelUri = Uri.file(squirrelPath)
+    const squirrelUri = vscode.Uri.file(squirrelPath)
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
-    const multipleSelectionsUri = Uri.file(multipleSelections)
+    const multipleSelectionsUri = vscode.Uri.file(multipleSelections)
+
+    // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
+    const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
+    const ignoredUri = vscode.Uri.file(ignoredPath)
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -125,7 +134,9 @@ describe('Agent', () => {
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
-            accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEEE',
+            // Redacted format of an invalid access token (just random string). Tests fail in replay mode
+            // if we don't use the redacted format here.
+            accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
@@ -172,6 +183,22 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', {
             completionID: completions.items[0].id,
         })
+    }, 10_000)
+
+    it('graphql/getCurrentUserCodySubscription', async () => {
+        const currentUserCodySubscription = await client.request(
+            'graphql/getCurrentUserCodySubscription',
+            null
+        )
+        expect(currentUserCodySubscription).toMatchInlineSnapshot(`
+          {
+            "applyProRateLimits": true,
+            "currentPeriodEndAt": "2024-02-10T23:59:59Z",
+            "currentPeriodStartAt": "2024-01-11T00:00:00Z",
+            "plan": "PRO",
+            "status": "PENDING",
+          }
+        `)
     }, 10_000)
 
     describe('Chat', () => {
@@ -276,7 +303,9 @@ describe('Agent', () => {
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(animalUri)
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
                 {
@@ -320,20 +349,6 @@ describe('Agent', () => {
             expect(contextFiles).not.toHaveLength(0)
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
-
-        // Workaround for the fact that `ContextFile.uri` is a class that
-        // serializes to JSON as an object, and deserializes back into a JS
-        // object instead of the class. Without this,
-        // `ContextFile.uri.toString()` return `"[Object object]".
-        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
-            for (const message of transcript.messages) {
-                if (message.contextFiles) {
-                    for (const file of message.contextFiles) {
-                        file.uri = URI.from(file.uri)
-                    }
-                }
-            }
-        }
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
@@ -439,9 +454,140 @@ describe('Agent', () => {
         })
     })
 
+    describe('Cody Ignore', () => {
+        beforeAll(async () => {
+            // Make sure Cody ignore config exists and works
+            const codyIgnoreConfig = vscode.Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            await client.openFile(codyIgnoreConfig)
+            const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
+            expect(codyIgnoreConfigFile?.content).toBeDefined()
+
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
+        }, 10_000)
+
+        it('autocomplete/execute on ignored file', async () => {
+            await client.openFile(ignoredUri)
+            const completions = await client.request('autocomplete/execute', {
+                uri: ignoredUri.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBe(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
+              []
+            `,
+                explainPollyError
+            )
+        }, 10_000)
+
+        it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
+            await client.openFile(ignoredUri)
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                'Which file is the isIgnoredByCody functions defined?',
+                { addEnhancedContext: true }
+            )
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            // Current file which is ignored, should not be included in context files
+            expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
+            // Ignored file should not be included in context files
+            const contextFilesUrls = contextFiles.map(f => f.uri?.path)
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextFilesUrls })
+            expect(result).toBeFalsy()
+            // Files that are not ignored should be used as context files
+            expect(contextFiles.length).toBeGreaterThan(0)
+        }, 30_000)
+
+        it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
+            await client.openFile(ignoredUri)
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                'Which file is the isIgnoredByCody functions defined?',
+                { addEnhancedContext: false }
+            )
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            const contextUrls = contextFiles.map(f => f.uri?.path)
+            // Current file which is ignored, should not be included in context files
+            expect(contextUrls.find(uri => uri === ignoredUri.toString())).toBeUndefined()
+            // Since no enhanced context is requested, no context files should be included
+            expect(contextFiles.length).toBe(0)
+            // Ignored file should not be included in context files
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextUrls })
+            expect(result).toBeFalsy()
+        }, 30_000)
+
+        it('chat command on an ignored file', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(ignoredUri)
+            // Cannot execute commands in an ignored files, so this should throw error
+            await client.request('commands/explain', null).catch(err => {
+                expect(err).toBeDefined()
+            })
+        }, 30_000)
+
+        it('inline edit on an ignored file', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(ignoredUri, { removeCursor: false })
+            await client.request('commands/document', null).catch(err => {
+                expect(err).toBeDefined()
+            })
+        })
+
+        afterAll(async () => {
+            // Makes sure cody ignore is still active after tests
+            // as it should stay active for each workspace session.
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
+
+            // Check the network requests to ensure no requests include context from ignored files
+            const { requests } = await client.request('testing/networkRequests', null)
+
+            const groupedMsgs = []
+            for (const req of requests) {
+                // Get the messages from the request body
+                const messages = JSON.parse(req.body || '{}')?.messages as {
+                    speaker: string
+                    text: string
+                }[]
+                // Filter out messages that do not include context snippets.
+                const text = messages
+                    ?.filter(m => m.speaker === 'human' && m.text !== undefined)
+                    ?.map(m => m.text)
+
+                groupedMsgs.push(...(text ?? []))
+            }
+            expect(groupedMsgs.length).toBeGreaterThan(0)
+
+            // Join all the string from each groupedMsgs[] together into
+            // one block of text, and then check if it contains the ignored file name
+            // to confirm context from the ignored file was not sent to the server.
+            const groupedText = groupedMsgs.flat().join(' ')
+            expect(groupedText).not.includes('src/isIgnored.ts')
+
+            // Confirm the grouped text is valid by checking for known
+            // context file names from the test.
+            expect(groupedText).includes('src/squirrel.ts')
+        }, 10_000)
+    })
+
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             await client.openFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri, {
@@ -465,29 +611,42 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            await client.request('command/execute', { command: 'cody.search.index-update' })
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
             await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
+
+            // Assert that the server is not using IDs between `chat/new` and
+            // `chat/explain`. In VS Code, we try to reuse empty webview panels,
+            // which is undesireable for agent clients.
+            expect(id).not.toStrictEqual(freshChatID)
+
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " The Animal interface:
+              " Here is an explanation of the selected TypeScript code in simple terms:
 
-              The Animal interface defines the shape of objects that represent animals. Interfaces in TypeScript are used to define the structure of an object - what properties and methods it should have.
+              The Animal interface
 
-              This interface has three properties:
+              The Animal interface defines the shape of an Animal object. It does not contain any actual implementation, just declarations for what properties and methods an Animal object should have.
 
-              1. name - This will be a string property to represent the animal's name.
+              The interface has three members:
 
-              2. makeAnimalSound() - This is a method that will be implemented by classes that implement the Animal interface. It allows each animal to have its own implementation of making a sound.
+              1. name - This is a string property to store the animal's name.
 
-              3. isMammal - This is a boolean property that will specify if the animal is a mammal or not.
+              2. makeAnimalSound() - This is a method that should return a string representing the sound the animal makes.
 
-              The interface does not contain any actual implementation, just the definition of what properties and methods any class implementing Animal should have. This allows us to define a consistent structure that can be reused across different animal classes.
+              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
 
-              By defining an Animal interface, we can then create multiple classes like Dog, Cat, Bird etc that implement the interface and provide their own specific logic while ensuring they match the general Animal structure.
+              The purpose of this interface is to define a consistent structure for Animal objects. Any class that implements the Animal interface will be required to have these three members with these types.
 
-              Interfaces are a powerful way to define contracts in TypeScript code and allow different implementations to guarantee they can work together smoothly. This Animal interface creates a reusable way to model animals in a type-safe way."
+              This allows code dealing with Animal objects to know it can call animal.makeAnimalSound() and access animal.name and animal.isMammal, regardless of the specific class. The interface defines the contract between the implementation and usage of Animals, without caring about specific details.
+
+              Interfaces like this are useful for writing reusable code that can handle different types of objects in a consistent way. The code using the interface doesn't need to know about the specifics of each class, just that it implements the Animal interface. This allows easily extending the code to handle new types of animals by simply creating a new class implementing Animal.
+
+              So in summary, the Animal interface defines the input expectations and output guarantees for objects representing animals in the system, allowing code to work with any animal in a generic way based on this contract."
             `,
                 explainPollyError
             )
@@ -497,67 +656,62 @@ describe('Agent', () => {
         it.skipIf(isNode16() || isWindows())(
             'commands/test',
             async () => {
-                await client.request('command/execute', { command: 'cody.search.index-update' })
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-              " Okay, based on the shared context, it looks like:
+                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
 
-              - The test framework in use is Vitest
-              - The assertion library is vitest's built-in expect
+                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
 
-              No additional packages or imports are needed.
+                  \`\`\`typescript
+                  // src/animal.test.ts
 
-              I will focus on testing the Animal interface by validating:
+                  import { Animal } from './animal';
 
-              - The name property is a string
-              - makeAnimalSound returns a string
-              - isMammal is a boolean
+                  describe('Animal interface', () => {
 
-              \`\`\`ts
-              import { expect } from 'vitest'
-              import { describe, it } from 'vitest'
-              import { Animal } from './animal'
+                    it('should have a name property', () => {
+                      const animal: Animal = {
+                        name: 'Cat',
+                        makeAnimalSound: () => '',
+                        isMammal: true
+                      };
 
-              describe('Animal', () => {
+                      expect(animal.name).toBeDefined();
+                    });
 
-                it('has a name property that is a string', () => {
-                  const animal: Animal = {
-                    name: 'Lion',
-                    makeAnimalSound: () => '',
-                    isMammal: true
-                  }
+                    it('should have a makeAnimalSound method', () => {
+                      const animal: Animal = {
+                        name: 'Dog',
+                        makeAnimalSound: () => 'Woof',
+                        isMammal: true
+                      };
 
-                  expect(typeof animal.name).toBe('string')
-                })
+                      expect(animal.makeAnimalSound).toBeDefined();
+                      expect(typeof animal.makeAnimalSound).toBe('function');
+                    });
 
-                it('makeAnimalSound returns a string', () => {
-                  const animal: Animal = {
-                    name: 'Lion',
-                    makeAnimalSound: () => 'Roar!',
-                    isMammal: true
-                  }
+                    it('should have an isMammal property', () => {
+                      const animal: Animal = {
+                        name: 'Snake',
+                        makeAnimalSound: () => 'Hiss',
+                        isMammal: false
+                      };
 
-                  expect(typeof animal.makeAnimalSound()).toBe('string')
-                })
+                      expect(animal.isMammal).toBeDefined();
+                      expect(typeof animal.isMammal).toBe('boolean');
+                    });
 
-                it('isMammal is a boolean', () => {
-                  const animal: Animal = {
-                    name: 'Lion',
-                    makeAnimalSound: () => '',
-                    isMammal: true
-                  }
+                  });
+                  \`\`\`
 
-                  expect(typeof animal.isMammal).toBe('boolean')
-                })
-
-              })
-              \`\`\`
-
-              This covers basic validation of the Animal interface's properties and methods. Let me know if you'd like me to expand the tests further."
-            `,
+                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
+                `,
                     explainPollyError
                 )
             },
@@ -573,7 +727,7 @@ describe('Agent', () => {
                 `
               " Here are 5 potential improvements for the selected TypeScript code:
 
-              1. Add type annotations for method parameters and return types:
+              1. Add type annotations for method parameters and return values:
 
               \`\`\`
               export interface Animal {
@@ -583,70 +737,117 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              Adding explicit types for methods makes the interface clearer and allows TypeScript to catch more errors at compile time.
+              Adding type annotations makes the code more self-documenting and enables stronger type checking.
 
-              2. Make name readonly:
+              2. Make interface name more semantic:
 
               \`\`\`
-              export interface Animal {
-                readonly name: string
+              export interface Creature {
                 // ...
               }
               \`\`\`
 
-              This prevents the name from being reassigned after initialization, making the code more robust.
+              The name 'Animal' is not very descriptive. A name like 'Creature' captures the intent better.
 
-              3. Add alternate method name:
-
-              \`\`\`
-              export interface Animal {
-
-                // ...
-
-                getSound(): string
-              }
-              \`\`\`
-
-              Adding a method like \`getSound()\` as an alias for \`makeAnimalSound()\` improves readability.
-
-              4. Use boolean getter instead of property for isMammal:
+              3. Make sound method name more semantic:
 
               \`\`\`
-              export interface Animal {
-
-                // ...
-
-                get isMammal(): boolean
-              }
+              makeSound()
               \`\`\`
 
-              This allows encapsulation of the logic for determining if mammal.
+              The name 'makeAnimalSound' is verbose. A shorter name like 'makeSound' conveys the purpose clearly.
 
-              5. Extend a base interface like LivingThing:
+              4. Use boolean type for isMammal property:
 
               \`\`\`
-              interface LivingThing {
-                name: string
-              }
+              isMammal: boolean
+              \`\`\`
 
-              interface Animal extends LivingThing {
+              Using the boolean type instead of just true/false improves readability.
+
+              5. Add JSDoc comments for documentation:
+
+              \`\`\`
+              /**
+               * Represents a creature in the game
+               */
+              export interface Creature {
                 // ...
               }
               \`\`\`
 
-              This improves maintainability by separating common properties into a base interface.
+              JSDoc comments enable generating API documentation and improve understandability.
 
-              Overall, the code is well-written but could benefit from some minor changes like adding types, encapsulation, and semantic method names. The interface follows sound principles like read-only properties andboolean getters. No major issues were found."
+              Overall, the selected code follows reasonable design principles. The interface encapsulates animal data nicely. The suggestions above would incrementally improve quality but no major issues were found."
             `,
                 explainPollyError
             )
         }, 30_000)
 
+        // Skipped because it's timing out for some reason and the functionality
+        // is still not working 100% correctly. Keeping the test so we can fix
+        // the test later.
+        it.skip('editCommand/test', async () => {
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const uri = vscode.Uri.file(trickyLogicPath)
+
+            await client.openFile(uri)
+            const id = await client.request('editCommands/test', null)
+            await client.taskHasReachedAppliedPhase(id)
+            const originalDocument = client.workspace.getDocument(uri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "export function trickyLogic(a: number, b: number): number {
+                  if (a === 0) {
+                      return 1
+                  }
+                  if (b === 2) {
+                      return 1
+                  }
+
+                  return a - b
+              }
+
+
+              "
+            `)
+
+            const untitledDocuments = client.workspace
+                .allUris()
+                .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
+            expect(untitledDocuments).toHaveLength(1)
+            const [untitledDocument] = untitledDocuments
+            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(`
+              "import { trickyLogic } from './trickyLogic';
+
+              describe('trickyLogic', () => {
+                it('should return 1 if a is 0', () => {
+                  expect(trickyLogic(0, 1)).toBe(1);
+                });
+
+                it('should return 1 if b is 2', () => {
+                  expect(trickyLogic(1, 2)).toBe(1);
+                });
+
+                it('should return a - b if neither a is 0 nor b is 2', () => {
+                  expect(trickyLogic(3, 1)).toBe(2);
+                });
+              });
+              "
+            `)
+
+            // Just to make sure the edit happened via `workspace/edit` instead
+            // of `textDocument/edit`.
+            expect(client.workspaceEditParams).toHaveLength(1)
+        }, 30_000)
+
         describe('Document code', () => {
             function check(name: string, filename: string, assertion: (obtained: string) => void): void {
                 it(name, async () => {
-                    await client.request('command/execute', { command: 'cody.search.index-update' })
-                    const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
+                    await client.request('command/execute', {
+                        command: 'cody.search.index-update',
+                    })
+                    const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                     await client.openFile(uri, { removeCursor: false })
                     const task = await client.request('commands/document', null)
                     await client.taskHasReachedAppliedPhase(task)
@@ -674,11 +875,8 @@ describe('Agent', () => {
             check('commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   * @param a - The first number to sum.
-                   * @param b - The second number to sum.
-                   * @returns The sum of a and b.
-                   */
+                   * Sums two numbers and returns the result.
+                  */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
@@ -694,8 +892,7 @@ describe('Agent', () => {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Prints "Hello World!" to the console if this.shouldGreet is true.
-                       * This allows conditionally greeting the user.
+                       * If shouldGreet is true, logs a greeting to the console.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -711,8 +908,9 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * TestLogger object that contains a startLogging method to initialize logging.
-                   * startLogging sets up a recordLog function that writes log messages to the console.
+                   * Starts logging by initializing some internal state,
+                   * and then calls an internal \`recordLog\` function
+                   * to log a sample message.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -736,13 +934,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that runs a set of test cases.
-                   *
-                   * Contains 3 test cases:
-                   * - 'does 1' checks an expectation
-                   * - 'does 2' checks an expectation
-                   * - 'does something else' has a commented out line that errors
-                   */
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does another test that has a bug
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
@@ -911,7 +1107,10 @@ describe('Agent', () => {
                 })
                 await enterpriseClient.request('webview/receiveMessage', {
                     id,
-                    message: { command: 'context/choose-remote-search-repo', explicitRepos: repos },
+                    message: {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: repos,
+                    },
                 })
                 const { lastMessage, transcript } =
                     await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
@@ -935,7 +1134,6 @@ describe('Agent', () => {
                     }
                 }
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
-
                 expect(paths).includes('cmd/symbols/squirrel/README.md')
 
                 const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
@@ -950,6 +1148,54 @@ describe('Agent', () => {
                 .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
             expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
+            await enterpriseClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 30_000)
+    })
+
+    // Enterprise tests are run at demo instance, which is at a recent release version.
+    // Use this section if you need to run against S2 which is released continuously.
+    describe('Enterprise - close main branch', () => {
+        const enterpriseClient = new TestClient({
+            name: 'enterpriseMainBranchClient',
+            accessToken:
+                process.env.SRC_S2_ACCESS_TOKEN ??
+                // See comment above `const client =` about how this value is derived.
+                'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
+            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+            telemetryExporter: 'graphql',
+            logEventMode: 'connected-instance-only',
+        })
+
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            const serverInfo = await enterpriseClient.initialize()
+
+            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }, 10_000)
+
+        it('attribution/found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new URL',
+            })
+            expect(repoNames).not.empty
+            expect(error).null
+        }, 20_000)
+
+        it('attribution/not found', async () => {
+            const id = await enterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new LRU',
+            })
+            expect(repoNames).empty
+            expect(error).null
+        }, 20_000)
+
+        afterAll(async () => {
             await enterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)

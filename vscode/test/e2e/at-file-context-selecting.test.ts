@@ -1,11 +1,9 @@
-import path from 'path'
-
 import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, withPlatformSlashes } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
@@ -71,8 +69,16 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 
-    // Keyboard nav
+    // Use history to re-send a message with context files
+    await page.waitForTimeout(50)
+    await chatInput.press('ArrowUp', { delay: 50 })
+    await expect(chatInput).toHaveValue('Explain @Main.java ')
+    await chatInput.press('Meta+Enter')
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(2)
+
+    // Keyboard nav through context files
     await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
     await chatInput.press('Enter')
     await expect(chatInput).toHaveValue(withPlatformSlashes('Explain @lib/batches/env/var.go '))
@@ -100,7 +106,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
-    expect(await chatPanelFrame.getByText(/^✨ Context:/).count()).toEqual(2)
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(3)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -117,7 +123,3 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
-
-function withPlatformSlashes(input: string) {
-    return input.replaceAll(path.posix.sep, path.sep)
-}

@@ -2,8 +2,7 @@ import {
     FeatureFlag,
     featureFlagProvider,
     type CodeCompletionsClient,
-    type CodyLLMSiteConfiguration,
-    type Configuration,
+    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
@@ -14,13 +13,14 @@ import {
     type FireworksOptions,
 } from './fireworks'
 import type { ProviderConfig } from './provider'
-import { createProviderConfig as createUnstableOllamaProviderConfig } from './unstable-ollama'
+import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
+import type { AuthStatus } from '../../chat/protocol'
 
 export async function createProviderConfig(
-    config: Configuration,
+    config: ConfigurationWithAccessToken,
     client: CodeCompletionsClient,
-    codyLLMSiteConfig?: CodyLLMSiteConfiguration
+    authStatus: AuthStatus
 ): Promise<ProviderConfig | null> {
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
@@ -42,13 +42,18 @@ export async function createProviderConfig(
                     client,
                     model: config.autocompleteAdvancedModel ?? model ?? null,
                     timeouts: config.autocompleteTimeouts,
+                    authStatus,
+                    config,
                 })
             }
             case 'anthropic': {
                 return createAnthropicProviderConfig({ client })
             }
+            case 'experimental-ollama':
             case 'unstable-ollama': {
-                return createUnstableOllamaProviderConfig(config.autocompleteExperimentalOllamaOptions)
+                return createExperimentalOllamaProviderConfig(
+                    config.autocompleteExperimentalOllamaOptions
+                )
             }
             default:
                 logError(
@@ -64,15 +69,15 @@ export async function createProviderConfig(
      * check the completions provider in the connected Sourcegraph instance site config
      * and return the matching provider config.
      */
-    if (codyLLMSiteConfig?.provider) {
+    if (authStatus.configOverwrites?.provider) {
         const parsed = parseProviderAndModel({
-            provider: codyLLMSiteConfig.provider,
-            model: codyLLMSiteConfig.completionModel,
+            provider: authStatus.configOverwrites.provider,
+            model: authStatus.configOverwrites.completionModel,
         })
         if (!parsed) {
             logError(
                 'createProviderConfig',
-                `Failed to parse the model name for '${codyLLMSiteConfig.provider}' completions provider.`
+                `Failed to parse the model name for '${authStatus.configOverwrites.provider}' completions provider.`
             )
             return null
         }
@@ -91,6 +96,8 @@ export async function createProviderConfig(
                     client,
                     timeouts: config.autocompleteTimeouts,
                     model: model ?? null,
+                    authStatus,
+                    config,
                 })
             case 'aws-bedrock':
             case 'anthropic':
@@ -98,8 +105,8 @@ export async function createProviderConfig(
                     client,
                     // Only pass through the upstream-defined model if we're using Cody Gateway
                     model:
-                        codyLLMSiteConfig.provider === 'sourcegraph'
-                            ? codyLLMSiteConfig.completionModel
+                        authStatus.configOverwrites.provider === 'sourcegraph'
+                            ? authStatus.configOverwrites.completionModel
                             : undefined,
                 })
             default:

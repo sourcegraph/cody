@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
@@ -14,8 +14,12 @@ import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import type { CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
-import { documentAndPosition } from './test-helpers'
+import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 import type { InlineCompletionItem } from './types'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
+import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { SupportedLanguage } from '../tree-sitter/grammars'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -68,7 +72,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 client: null as any,
             }),
             triggerNotice: null,
-            contextStrategy: 'none',
             authStatus: DUMMY_AUTH_STATUS,
             ...superArgs,
         })
@@ -79,6 +82,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
+    beforeAll(async () => {
+        await initCompletionProviderConfig({})
+    })
+
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
@@ -103,6 +110,28 @@ describe('InlineCompletionItemProvider', () => {
             },
           ]
         `)
+    })
+
+    it('prevents completions inside comments', async () => {
+        try {
+            const { document, position } = documentAndPosition('// █', 'typescript')
+
+            await initTreeSitterParser()
+            const parser = getParser(SupportedLanguage.TypeScript)
+            if (parser) {
+                updateParseTreeCache(document, parser)
+            }
+
+            const fn = vi.fn()
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                disableInsideComments: true,
+            })
+            const result = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(result).toBeNull()
+            expect(fn).not.toHaveBeenCalled()
+        } finally {
+            resetParsersCache()
+        }
     })
 
     it('saves lastInlineCompletionResult', async () => {
@@ -244,7 +273,7 @@ describe('InlineCompletionItemProvider', () => {
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
             await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
                 chat: { a: null as any },
-                input: [''],
+                input: [{ inputText: '', inputContextFiles: [] }],
             })
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')

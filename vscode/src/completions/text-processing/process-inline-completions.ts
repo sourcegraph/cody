@@ -213,10 +213,17 @@ function rankCompletions(completions: ParsedCompletion[]): ParsedCompletion[] {
     })
 }
 
+const PROMPT_CONTINUATIONS = [
+    // Anthropic style prompt continuation
+    /^(\n){0,2}Human:\ /,
+    // StarCoder style code example
+    /^(\/\/|\#) Path:\ /,
+]
 function removeLowQualityCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
-    return (
-        completions
-            // Filter out empty or single character completions.
-            .filter(c => c.insertText.trim().length > 1)
-    )
+    return completions.filter(c => {
+        const isEmptyOrSingleCharacterCompletion = c.insertText.trim().length <= 1
+        const isPromptContinuation = PROMPT_CONTINUATIONS.some(regex => c.insertText.match(regex))
+
+        return !isEmptyOrSingleCharacterCompletion && !isPromptContinuation
+    })
 }
