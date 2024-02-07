@@ -239,6 +239,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const isMac = isMacOS()
     const [inputFocus, setInputFocus] = useState(!messageInProgress?.speaker)
     const [inputRows, setInputRows] = useState(1)
+
+    // This is used to keep track of the current position of the text input caret and for updating
+    // the caret position to the altered text after selecting a context file to insert to the input.
     const [inputCaretPosition, setInputCaretPosition] = useState<number | undefined>(undefined)
 
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
