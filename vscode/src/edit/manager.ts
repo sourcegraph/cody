@@ -52,7 +52,7 @@ export class EditManager implements vscode.Disposable {
 
     public async executeEdit(
         args: ExecuteEditArguments = {},
-        source: ChatEventSource = 'editor'
+        source: ChatEventSource = 'menu'
     ): Promise<FixupTask | undefined> {
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
