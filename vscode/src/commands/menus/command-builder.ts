@@ -19,11 +19,6 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        const description = await this.makeDescription()
-        if (!description) {
-            return null
-        }
-
         const prompt = await this.makePrompt()
         if (!prompt) {
             return null
@@ -34,7 +29,7 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
+        return { slashCommand, prompt: { ...prompt, slashCommand }, type }
     }
 
     private async makeSlashCommand(commands: string[]): Promise<string | undefined> {
@@ -42,7 +37,7 @@ export class CustomCommandsBuilderMenu {
         let value = await window.showInputBox({
             title: 'New Custom Cody Command: Slash Name',
             prompt: 'Enter the slash name of the custom command',
-            placeHolder: 'e.g. /my-custom-command',
+            placeHolder: 'e.g. /name',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
@@ -61,22 +56,6 @@ export class CustomCommandsBuilderMenu {
             value = toSlashCommand(value)
         }
         return value
-    }
-
-    private async makeDescription(): Promise<string | undefined> {
-        const description = await window.showInputBox({
-            title: 'New Custom Cody Command: Description',
-            prompt: 'Enter a description for the command in sentence case.',
-            placeHolder: 'e.g. Scan for vulnerabilities',
-            ignoreFocusOut: true,
-            validateInput: (input: string) => {
-                if (!input) {
-                    return 'Command description cannot be empty.'
-                }
-                return
-            },
-        })
-        return description
     }
 
     private async makePrompt(): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
@@ -98,9 +77,7 @@ export class CustomCommandsBuilderMenu {
         return this.addContext({ prompt })
     }
 
-    private async addContext(
-        newPrompt?: Omit<CodyCommand, 'slashCommand'>
-    ): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
+    private async addContext(newPrompt?: Partial<CodyCommand>): Promise<CodyCommand | null> {
         if (!newPrompt) {
             return null
         }
@@ -117,7 +94,7 @@ export class CustomCommandsBuilderMenu {
         })
 
         if (!promptContext?.length) {
-            return newPrompt
+            return newPrompt as CodyCommand
         }
 
         for (const context of promptContext) {
@@ -135,7 +112,7 @@ export class CustomCommandsBuilderMenu {
             }
         }
 
-        return newPrompt
+        return newPrompt as CodyCommand
     }
 
     private async makeType(): Promise<CustomCommandType> {

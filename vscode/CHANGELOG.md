@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Custom Command: The `description` field is now optional and will default to use the command prompt. [pull/3025](https://github.com/sourcegraph/cody/pull/3025)
+
 ## [1.4.0]
 
 ### Added
