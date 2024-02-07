@@ -45,6 +45,7 @@ import com.sourcegraph.utils.CodyFormatter
 import difflib.Delta
 import difflib.DiffUtils
 import difflib.Patch
+import java.nio.file.Paths
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -199,14 +200,14 @@ class CodyAutocompleteManager {
     val params =
         if (lookupString.isNullOrEmpty())
             AutocompleteParams(
-                virtualFile.path,
+                Paths.get(virtualFile.path).toUri().path,
                 Position(position.line, position.character),
                 if (triggerKind == InlineCompletionTriggerKind.INVOKE)
                     AutocompleteTriggerKind.INVOKE.value
                 else AutocompleteTriggerKind.AUTOMATIC.value)
         else
             AutocompleteParams(
-                virtualFile.path,
+                Paths.get(virtualFile.path).toUri().path,
                 Position(position.line, position.character),
                 AutocompleteTriggerKind.AUTOMATIC.value,
                 SelectedCompletionInfo(
