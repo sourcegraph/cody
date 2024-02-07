@@ -7,6 +7,7 @@ interface LanguageConfig {
 
 export function getLanguageConfig(languageId: string): LanguageConfig | null {
     switch (languageId) {
+        case 'astro':
         case 'c':
         case 'cpp':
         case 'csharp':
@@ -16,6 +17,8 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
         case 'javascript':
         case 'javascriptreact':
         case 'php':
+        case 'rust':
+        case 'svelte':
         case 'typescript':
         case 'typescriptreact':
         case 'vue':
@@ -31,6 +34,14 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
                 blockElseTest: /^[\t ]*(elif |else:)/,
                 blockEnd: null,
                 commentStart: '# ',
+            }
+        }
+        case 'elixir': {
+            return {
+                blockStart: 'do',
+                blockElseTest: /^[\t ]*(else|else do)/,
+                blockEnd: 'end',
+                commentStart: '#',
             }
         }
         default:
