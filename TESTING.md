@@ -72,7 +72,7 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
     System.out.
     ```
 2. Place a cursor at the end of the `System.out.` line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>/</kbd>.
+3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
 
 #### Expected behaviour
 
@@ -85,7 +85,7 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
     public void bubbleSort(int[] array) {
     ```
 2. Place the cursor at the end of the line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>/</kbd>.
+3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
 
 #### Expected behaviour
 
@@ -99,7 +99,7 @@ Prerequisite: You have to be **signed in**. This is important because we expect 
     System.out.println("Hello World!");
     ```
 2. Place cursor at the end of the `// print ` line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>/</kbd>.
+3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
 
 #### Expected behaviour
 
