@@ -42,7 +42,7 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
-import { createStatusBar } from './services/StatusBar'
+import { StatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
@@ -352,8 +352,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
 
-    const statusBar = createStatusBar()
-
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
@@ -445,7 +443,7 @@ const register = async (
                 }
             },
         }),
-        statusBar,
+        StatusBar,
         // Walkthrough / Support
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
@@ -524,7 +522,7 @@ const register = async (
             removeAuthStatusBarError = undefined
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
-            removeAuthStatusBarError = statusBar.addError({
+            removeAuthStatusBarError = StatusBar.addError({
                 title: 'Sign In to Use Cody',
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
@@ -566,7 +564,7 @@ const register = async (
                 completionsProvider = await createInlineCompletionItemProvider({
                     config,
                     client: codeCompletionsClient,
-                    statusBar,
+                    statusBar: StatusBar,
                     authProvider,
                     triggerNotice: notice => {
                         void chatManager.triggerNotice(notice)

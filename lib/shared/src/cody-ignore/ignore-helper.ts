@@ -43,6 +43,9 @@ export class IgnoreHelper {
     public setActiveState(isActive: boolean): void {
         this.isActive = isActive
     }
+    public get isEnabled(): boolean {
+        return this.isActive
+    }
 
     /**
      * Computes the relative path `from` to `to`.

@@ -29,7 +29,7 @@ const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
 
-type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
+type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'CodyIgnore'
 
 interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
@@ -288,3 +288,5 @@ export function createStatusBar(): CodyStatusBar {
         },
     }
 }
+
+export const StatusBar = createStatusBar()

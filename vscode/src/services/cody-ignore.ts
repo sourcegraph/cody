@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
+import { StatusBar } from './StatusBar'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -54,6 +55,11 @@ const findInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
 async function refresh(uri: vscode.Uri): Promise<void> {
+    // Skip refresh if .cody/ignore is not enabled
+    if (!ignores.isEnabled) {
+        return
+    }
+
     const wf = vscode.workspace.getWorkspaceFolder(uri)
     if (!wf) {
         // If this happens, we either have no workspace folder or it was removed before we started
@@ -68,27 +74,52 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         logDebug('CodyIgnore:refresh', 'failed', { verbose: 'not a file' })
         return
     }
+
+    const cancel = () => {
+        const tokenFound = findInProgressTokens.get(uri.path)
+        tokenFound?.cancel()
+        tokenFound?.dispose()
+        findInProgressTokens.delete(uri.path)
+    }
+
     const startTime = performance.now()
     logDebug('CodyIgnore:refresh:workspace', 'started', { verbose: wf.uri.path })
 
     // Cancel fileFiles process for current workspace if there is one in progress to avoid
     // having multiple find files in progress that can cause performance slow-down issues.
-    const findFilesInProgressToken = findInProgressTokens.get(uri.path)
-    findFilesInProgressToken?.cancel()
-    findFilesInProgressToken?.dispose()
+    cancel()
 
     // Set a new cancellation token for the workspace.
     const newToken = new vscode.CancellationTokenSource()
     findInProgressTokens.set(uri.path, newToken)
 
-    // TODO (bee) Cancel the search after n minutes if it's taking too long.
-    // Get the codebase name from the git clone URL on each refresh
-    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time,
-    // we will need to map the name of the codebase to each workspace for us to map the embedding results
-    // returned for a specific codebase by the search API to the correct workspace later.
+    // Timeout after 3 minutes to avoid causing performance issues.
+    setTimeout(() => {
+        // The search is already completed / canceled.
+        if (!findInProgressTokens.get(uri.path)) {
+            return
+        }
+
+        cancel()
+        const title = 'Fail to setup Cody ignore files.'
+        const description = 'Try disable the `search.followSymlinks` setting in your editor.'
+        logDebug('CodyIgnore:refresh:workspace:timeout', title, { verbose: wf.uri.path })
+
+        StatusBar.addError({
+            title,
+            errorType: 'CodyIgnore',
+            description,
+            onSelect: () => {
+                // Bring up the sidebar view
+                void vscode.commands.executeCommand('cody.focus')
+            },
+        })
+    }, 180000)
+
+    // Look for .cody/ignore files within the workspace,
+    // exclude all dot files (except .cody) and common build files.
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB)
-    // exclude all dot files (except .cody) and node_modules files
-    const excludePattern = '.*, **/.* ,**/node_modules/**'
+    const excludePattern = '.*, **/.* ,**/{node_modules,out,build,dist}/**'
     const ignoreFiles = await vscode.workspace.findFiles(
         ignoreFilePattern,
         excludePattern,
@@ -102,6 +133,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
             content: await tryReadFile(fileUri),
         }))
     )
+
     ignores.setIgnoreFiles(wf.uri, filesWithContent)
 
     findInProgressTokens.delete(uri.path)
@@ -158,5 +190,4 @@ function onConfigChange(): void {
     const config = vscode.workspace.getConfiguration('cody')
     const isEnabled = config.get('internal.unstable') as boolean
     ignores.setActiveState(isEnabled)
-    logDebug('CodyIgnore:onConfigChange', 'isEnabled', { verbose: isEnabled })
 }
