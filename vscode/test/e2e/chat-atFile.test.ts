@@ -71,6 +71,8 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
+    await expect(chatInput).not.toHaveValue('Explain @Main.java ')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
 
     // Use history to re-send a message with context files
     await page.waitForTimeout(50)
@@ -142,9 +144,17 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await page.keyboard.type('!')
     await expect(chatInput).toHaveValue('Explain the @Main.java !file')
 
-    // Pressing "ArrowLeft" / "ArrowRight" will close the selection and will not alter current input
+    // Pressing "ArrowLeft" / "ArrowRight" will close the selection and will not alter current input.
+    // Submitting the message will close the selection and will clear the input area.
+    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
     await page.keyboard.type(' @abcdefg')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
     await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await chatInput.press('?')
+    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdef?gfile')
+    await expect(noMatches).toBeVisible()
+    await chatInput.press('Enter')
+    await expect(noMatches).not.toBeVisible()
+    await expect(chatInput).toBeEmpty()
 })

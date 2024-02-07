@@ -320,6 +320,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }, [postMessage, setEditMessageState])
 
     /**
+     * Resets the context selection and query state.
+     */
+    const resetContextSelection = useCallback(() => {
+        setSelectedChatContext(0)
+        setCurrentChatContextQuery(undefined)
+        setContextSelection(null)
+    }, [setContextSelection])
+
+    /**
      * Gets the display text for a context file to be completed into the chat when a user
      * selects a file.
      *
@@ -334,15 +343,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         const symbolName = isFileType ? '' : `#${contextFile.symbolName}`
         return `@${displayPath(contextFile.uri)}${range}${symbolName}`
     }
-
-    /**
-     * Resets the context selection and query state.
-     */
-    const resetContextSelection = useCallback(() => {
-        setSelectedChatContext(0)
-        setCurrentChatContextQuery(undefined)
-        setContextSelection(null)
-    }, [setContextSelection])
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -454,6 +454,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress && submitType !== 'edit') {
                 return
             }
+            resetContextSelection()
             onSubmit(input, submitType, chatContextFiles)
 
             // Record the chat history with (optional) context files.
@@ -477,8 +478,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory,
             setEditMessageState,
             setFormInput,
+            resetContextSelection,
         ]
     )
+
     const onChatInput = useCallback(
         (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
             const { value, selectionStart, selectionEnd } = event.currentTarget
