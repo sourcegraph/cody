@@ -2,17 +2,8 @@ import * as vscode from 'vscode'
 
 import { getSmartSelection } from '../../editor/utils'
 import { MAX_CURRENT_FILE_TOKENS, tokensToChars } from '@sourcegraph/cody-shared'
-
-/**
- * Checks if the current selection and editor represent a generate intent.
- * A generate intent means the user has an empty selection on an empty line.
- */
-export function isGenerateIntent(
-    document: vscode.TextDocument,
-    selection: vscode.Selection | vscode.Range
-): boolean {
-    return selection.isEmpty && document.lineAt(selection.start.line).isEmptyOrWhitespace
-}
+import type { EditIntent } from '../types'
+import { getEditIntent } from './edit-intent'
 
 interface SmartSelectionOptions {
     forceExpand?: boolean
@@ -33,7 +24,8 @@ interface SmartSelectionOptions {
 export async function getEditSmartSelection(
     document: vscode.TextDocument,
     selectionRange: vscode.Range,
-    { forceExpand }: SmartSelectionOptions = {}
+    { forceExpand }: SmartSelectionOptions = {},
+    intent?: EditIntent
 ): Promise<vscode.Range> {
     // Use selectionRange when it's available
     if (!forceExpand && selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
@@ -41,7 +33,7 @@ export async function getEditSmartSelection(
     }
 
     // Return original (empty) range if we will resolve to generate new code
-    if (!forceExpand && isGenerateIntent(document, selectionRange)) {
+    if (!forceExpand && getEditIntent(document, selectionRange, intent) === 'add') {
         return selectionRange
     }
 
