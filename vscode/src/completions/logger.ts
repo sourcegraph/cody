@@ -26,6 +26,7 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
+import { KeystrokeTracker } from './keystroke-tracker'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -127,6 +128,7 @@ interface SuggestedEventPayload extends SharedEventPayload {
     read: boolean
     accepted: boolean
     completionsStartedSinceLastSuggestion: number
+    keystrokesSinceLastSuggestion: number
 }
 
 /** Emitted when a completion was fully accepted by the user */
@@ -426,6 +428,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
 })
 
 let persistenceTracker: PersistenceTracker | null = null
+let keystrokeTracker: KeystrokeTracker | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -462,6 +465,10 @@ export function start(id: CompletionLogID): void {
     if (event && !event.startLoggedAt) {
         event.startLoggedAt = performance.now()
         completionsStartedSinceLastSuggestion++
+    }
+
+    if (keystrokeTracker === null) {
+        keystrokeTracker = new KeystrokeTracker()
     }
 }
 
@@ -715,6 +722,7 @@ function logSuggestionEvents(): void {
         const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
         const read = accepted || seen
+        const keystrokesSinceLastSuggestion = keystrokeTracker?.getKeystrokesSinceLastCall() ?? 0
 
         if (!suggestionAnalyticsLoggedAt) {
             completionEvent.suggestionAnalyticsLoggedAt = now
@@ -731,6 +739,7 @@ function logSuggestionEvents(): void {
             read,
             accepted,
             completionsStartedSinceLastSuggestion,
+            keystrokesSinceLastSuggestion,
         })
 
         completionsStartedSinceLastSuggestion = 0
