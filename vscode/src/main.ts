@@ -220,17 +220,14 @@ const register = async (
     )
 
     const ghostHintDecorator = new GhostHintDecorator()
-    disposables.push(
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        contextProvider,
         ghostHintDecorator,
-        new EditManager({
-            chat: chatClient,
-            editor,
-            contextProvider,
-            ghostHintDecorator,
-            authProvider,
-        }),
-        new CodeActionProvider({ contextProvider })
-    )
+        authProvider,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -287,6 +284,7 @@ const register = async (
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
