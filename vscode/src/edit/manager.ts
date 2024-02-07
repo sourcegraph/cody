@@ -13,7 +13,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { getEditSmartSelection } from './utils/edit-selection'
+import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 import { DEFAULT_EDIT_INTENT, DEFAULT_EDIT_MODE } from './constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { editModel } from '../models'
@@ -91,13 +91,8 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-<<<<<<< HEAD
-        const range = configuration.range || editor.active?.selection
-        if (!range) {
-=======
-        const proposedRange = args.range || editor.active?.selection
+        const proposedRange = configuration.range || editor.active?.selection
         if (!proposedRange) {
->>>>>>> main
             return
         }
 
@@ -107,17 +102,11 @@ export class EditManager implements vscode.Disposable {
         }
 
         // Set default edit configuration, if not provided
-<<<<<<< HEAD
+        // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
+        const range = getEditLineSelection(document, proposedRange)
         const mode = configuration.mode || DEFAULT_EDIT_MODE
         const model = configuration.model || editModel.get(this.options.authProvider, this.models)
         const intent = configuration.intent || DEFAULT_EDIT_INTENT
-=======
-        // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
-        const range = getEditLineSelection(document, proposedRange)
-        const mode = args.mode || DEFAULT_EDIT_MODE
-        const model = args.model || editModel.get(this.options.authProvider, this.models)
-        const intent = args.intent || DEFAULT_EDIT_INTENT
->>>>>>> main
 
         let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
