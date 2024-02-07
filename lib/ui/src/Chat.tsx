@@ -367,10 +367,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     // Updates contextConfig with the new added context file.
                     // We will use the newInput as key to check if the file still exists in formInput on submit
                     setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
-                    setFormInput(newInput.trimEnd())
+                    setFormInput(newInput)
                     // Move the caret to the end of the newly added file display text,
                     // including the length of text exisited before the lastAtIndex
-                    setInputCaretPosition(fileDisplayText.length + inputPrefix.length)
+                    // + 1 empty whitespace added after the fileDisplayText
+                    setInputCaretPosition(fileDisplayText.length + inputPrefix.length + 1)
                 }
             }
 
@@ -611,8 +612,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatContext(newMatchIndex)
                     return
                 }
-                if (event.key === 'Escape') {
-                    event.preventDefault()
+
+                // Left. right, escape, should hide the suggestion popover
+                if (event.key === 'Escape' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                    if (event.key === 'Escape') {
+                        event.preventDefault()
+                    }
                     resetContextSelection()
                     return
                 }

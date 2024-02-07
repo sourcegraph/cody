@@ -103,7 +103,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(cancelEditButton).not.toBeVisible()
     await expect(chatInput).toBeEmpty()
-    await expect(chatFrame.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatFrame.getByText('Explain @Main.java ')).toBeVisible()
     await chatInput.press('Escape')
 
     // Meta+/ also creates a new chat session
