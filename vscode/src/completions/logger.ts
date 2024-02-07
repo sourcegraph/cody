@@ -24,7 +24,7 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
-import { Span, trace } from '@opentelemetry/api'
+import type { Span } from '@opentelemetry/api'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
