@@ -57,12 +57,10 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain code').hover()
     await page.getByText('Explain code').click()
-    // Assistant should response to your command,
-    // but the current file is excluded (ignoredByCody.css) and not on the context list
-    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    // TODO bee update current behavior to following:
+    // Assistant should not response to your command, so you should still see the old message.
+    await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
-    // await expect(page.getByText(/^Current file is ignored/)).toBeVisible()
+    await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {

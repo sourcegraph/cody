@@ -40,8 +40,8 @@ export async function executeTestCaseEditCommand(
 
     return {
         type: 'edit',
-        task: await executeEdit(
-            {
+        task: await executeEdit({
+            configuration: {
                 instruction,
                 document,
                 range,
@@ -49,8 +49,8 @@ export async function executeTestCaseEditCommand(
                 mode: 'insert',
                 userContextFiles: contextFiles,
                 destinationFile: document.uri,
-            } satisfies ExecuteEditArguments,
-            DefaultEditCommands.Test
-        ),
+            },
+            source: DefaultEditCommands.Test,
+        } satisfies ExecuteEditArguments),
     }
 }

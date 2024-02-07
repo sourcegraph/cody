@@ -40,12 +40,14 @@ export class EditCodeAction implements vscode.CodeActionProvider {
             command: 'cody.command.edit-code',
             arguments: [
                 {
-                    range: new vscode.Range(selection.start, selection.end),
-                    intent: 'add',
-                    document,
-                    mode: 'insert',
+                    configuration: {
+                        range: new vscode.Range(selection.start, selection.end),
+                        intent: 'add',
+                        document,
+                        mode: 'insert',
+                    },
+                    source,
                 } satisfies ExecuteEditArguments,
-                source,
             ],
             title: displayText,
         }
@@ -63,11 +65,13 @@ export class EditCodeAction implements vscode.CodeActionProvider {
             command: 'cody.command.edit-code',
             arguments: [
                 {
-                    range: new vscode.Range(selection.start, selection.end),
-                    intent: 'edit',
-                    document,
+                    configuration: {
+                        range: new vscode.Range(selection.start, selection.end),
+                        intent: 'edit',
+                        document,
+                    },
+                    source,
                 } satisfies ExecuteEditArguments,
-                source,
             ],
             title: displayText,
         }

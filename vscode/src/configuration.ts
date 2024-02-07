@@ -99,6 +99,10 @@ export function getConfiguration(
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
+        autocompleteDisableInsideComments: config.get(
+            CONFIG_KEY.autocompleteDisableInsideComments,
+            false
+        ),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
