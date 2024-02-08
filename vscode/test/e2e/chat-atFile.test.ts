@@ -2,30 +2,18 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { assertEvents, test, type ExpectedEvents, withPlatformSlashes } from './helpers'
+import { assertEvents, test, withPlatformSlashes } from './helpers'
 
-// Creating new chats is slow, and setup is slow, so we collapse all these into one test
-
-test.beforeEach(() => {
-    void resetLoggedEvents()
-})
-
-test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:Auth:connected',
-    ],
-})('@-file empty state', async ({ page, sidebar, expectedEvents }) => {
+/**
+ * Tests for @-file & @#-symbol in chat
+ * See chat-atFile.test.md for the expected behavior for this feature.
+ *
+ * NOTE: Creating new chats is slow, and setup is slow, so we collapse all these into one test
+ */
+test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -33,7 +21,8 @@ test.extend<ExpectedEvents>({
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
-    await chatInput.fill('@')
+    await chatInput.click()
+    await page.keyboard.type('@')
     await expect(
         chatPanelFrame.getByRole('heading', {
             name: 'Search for a file to include, or type # to search symbols...',
@@ -41,7 +30,8 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // No results
-    await chatInput.fill('@definitelydoesntexist')
+    await chatInput.click()
+    await page.keyboard.type('@definitelydoesntexist')
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
@@ -53,7 +43,7 @@ test.extend<ExpectedEvents>({
     // TODO(dantup): After https://github.com/sourcegraph/cody/pull/2235 lands, add workspacedirectory to the test
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
-    await chatInput.fill('@fixtures') // fixture is in the test project folder name, but in the relative paths.
+    await page.keyboard.type('@fixtures') // fixture is in the test project folder name, but in the relative paths.
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
@@ -88,6 +78,8 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
+    await expect(chatInput).not.toHaveValue('Explain @Main.java ')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
 
     // Use history to re-send a message with context files
     await page.waitForTimeout(50)
@@ -141,7 +133,55 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
+    // Support @-file in mid-sentence
+    await chatInput.focus()
+    await chatInput.clear()
+    await chatInput.type('Explain the file', { delay: 50 })
+    await chatInput.press('ArrowLeft') // 'Explain the fil|e'
+    await chatInput.press('ArrowLeft') // 'Explain the fi|le'
+    await chatInput.press('ArrowLeft') // 'Explain the f|ile'
+    await chatInput.press('ArrowLeft') // 'Explain the |file'
+    await chatInput.press('ArrowLeft') // 'Explain the| file'
+    await chatInput.press('Space') // 'Explain the | file'
+    await chatInput.type('@Main', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('Explain the @Main.java file')
+    // Confirm the cursor is at the end of the newly added file name with space
+    await page.keyboard.type('!')
+    await expect(chatInput).toHaveValue('Explain the @Main.java !file')
+
+    //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
+    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
+    await page.keyboard.type(' @abcdefg')
+    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await expect(noMatches).toBeVisible()
+    await chatInput.press('ArrowLeft')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('ArrowRight')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('?')
+    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefg?file')
+    await expect(noMatches).toBeVisible()
+    // Selection close on submit
+    await chatInput.press('Enter')
+    await expect(noMatches).not.toBeVisible()
+    await expect(chatInput).toBeEmpty()
+
+    // Query ends with non-alphanumeric character
+    // with no results should not show selector.
+    await chatInput.focus()
+    await chatInput.fill('@unknown')
+    await expect(noMatches).toBeVisible()
+    await chatInput.press('?')
+    await expect(chatInput).toHaveValue('@unknown?')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('Backspace')
+    await expect(noMatches).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

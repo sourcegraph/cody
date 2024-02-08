@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test'
-
 import { loggedEvents, resetLoggedEvents, SERVER_URL } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
@@ -56,7 +55,6 @@ test('create a new user command via the custom commands menu', async ({
     await page.getByText('Custom commands').click()
 
     const commandName = 'ATestCommand'
-    const description = 'A test command added via menu'
     const prompt = 'The test command has been created'
 
     // Create a new command via menu
@@ -65,10 +63,6 @@ test('create a new user command via the custom commands menu', async ({
     // Enter command name
     await expect(page.getByText('New Custom Cody Command: Slash Name')).toBeVisible()
     await page.keyboard.type(commandName)
-    await page.keyboard.press('Enter')
-    // Enter description
-    await expect(page.getByText('New Custom Cody Command: Description')).toBeVisible()
-    await page.keyboard.type(description)
     await page.keyboard.press('Enter')
     // Enter prompt
     await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()
@@ -249,6 +243,12 @@ test('open and delete cody.json from the custom command menu', async ({
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
+
+    // Because we have turned off notification, we will need to check the notification center
+    // for the confirmation message.
+    await page.getByRole('button', { name: 'Do Not Disturb' }).click()
+    await page.getByRole('button', { name: /^Move to / }).click()
+
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 
