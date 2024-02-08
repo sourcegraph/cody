@@ -168,7 +168,7 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'win32' ? 'Alt+R' : '⌥R'
     lens.command = {
-        title: `Retry [${shortcut}]`,
+        title: `Edit & Retry [${shortcut}]`,
         command: 'cody.fixup.codelens.retry',
         arguments: [id],
     }
@@ -188,7 +188,7 @@ function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
 
 function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Alt+A' : '⌥⇧A'
+    const shortcut = process.platform === 'win32' ? 'Alt+A' : '⌥A'
     lens.command = {
         title: `Accept [${shortcut}]`,
         command: 'cody.fixup.codelens.accept',

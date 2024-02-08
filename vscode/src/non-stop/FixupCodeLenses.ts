@@ -4,6 +4,7 @@ import { ACTIONABLE_TASK_STATES, getLensesForTask } from './codelenses'
 import type { FixupTask } from './FixupTask'
 import type { FixupFileCollection } from './roles'
 import { CodyTaskState } from './utils'
+import type { FixupFile } from './FixupFile'
 
 export class FixupCodeLenses implements vscode.CodeLensProvider {
     private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
@@ -39,8 +40,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didUpdateTask(task: FixupTask): void {
-        this.updateKeyboardShortcutEnablement(task)
-
+        this.updateKeyboardShortcutEnablement([task.fixupFile])
         if (task.state === CodyTaskState.finished) {
             this.removeLensesFor(task)
             return
@@ -50,8 +50,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didDeleteTask(task: FixupTask): void {
-        this.updateKeyboardShortcutEnablement(task)
-
+        this.updateKeyboardShortcutEnablement([task.fixupFile])
         this.removeLensesFor(task)
     }
 
@@ -63,15 +62,17 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     /**
-     * Whenever a task updates, we may possibly want to enable specific code lens keyboard shortcuts for actioning the task.
-     * This method is called to update the keyboard shortcut enablement for all tasks.
+     * For a set of active files, check to see if any tasks within these files are currently actionable.
+     * If they are, enable the code lens keyboard shortcuts in the editor.
      */
-    private updateKeyboardShortcutEnablement(task: FixupTask): void {
-        const allTasks = this.files.tasksForFile(task.fixupFile)
-        const hasActionableEdit =
-            allTasks.some(task => ACTIONABLE_TASK_STATES.includes(task.state)) &&
-            vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+    public updateKeyboardShortcutEnablement(activeFiles: FixupFile[]): void {
+        const allTasks = activeFiles
+            .filter(file =>
+                vscode.window.visibleTextEditors.some(editor => editor.document.uri === file.uri)
+            )
+            .flatMap(file => this.files.tasksForFile(file))
 
+        const hasActionableEdit = allTasks.some(task => ACTIONABLE_TASK_STATES.includes(task.state))
         void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 

@@ -978,6 +978,9 @@ export class FixupController
         for (const [file, editors] of editorsByFile.entries()) {
             this.decorator.didChangeVisibleTextEditors(file, editors)
         }
+
+        // Update shortcut enablement for visible files
+        this.codelenses.updateKeyboardShortcutEnablement([...editorsByFile.keys()])
     }
 
     private updateDiffs(): void {
