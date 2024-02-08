@@ -13,6 +13,7 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import type { EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -974,6 +975,179 @@ describe('Agent', () => {
                 `)
             )
         })
+    })
+
+    describe('Custom Commands', () => {
+        it('commands/custom, chat command, open tabs as context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri)
+            await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
+            const id = await client.request('commands/custom', { key: '/countTabs' })
+
+            expect(id).not.toStrictEqual(freshChatID)
+
+            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " Based on the code snippets you have provided so far, it looks like you have shared codebase context from 2 files:
+
+              1. src/animal.ts
+              2. src/sum.ts
+
+              You shared an interface definition for Animal from src/animal.ts, and a sum function definition from src/sum.ts.
+
+              So in total, you have provided codebase context from 2 different TypeScript files."
+            `)
+        }, 30_000)
+
+        it('commands/custom - chat command that takes argument', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
+            const id = await client.request('commands/custom', { key: '/translate Python' })
+
+            expect(id).not.toStrictEqual(freshChatID)
+
+            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " Here is the TypeScript code translated to Python:
+
+              \`\`\`python
+              from abc import ABC, abstractmethod
+
+              class Animal(ABC):
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
+
+                  @abstractmethod
+                  def make_animal_sound(self) -> str:
+                      pass
+              \`\`\`
+
+              The key differences:
+
+              - Interfaces don't exist in Python, so Animal is made an abstract base class
+              - The interface properties become regular instance attributes on the Animal class
+              - The makeAnimalSound() method is made abstract using the ABC metaclass from the abc module
+              - Type annotations are added for name and is_mammal parameters in __init__ and the return type of make_animal_sound()
+
+              Let me know if you have any other questions!"
+            `)
+        }, 30_000)
+
+        it('commands/custom, chat command without context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
+            const id = await client.request('commands/custom', { key: '/none' })
+
+            expect(id).not.toStrictEqual(freshChatID)
+
+            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `" none"`
+            )
+        }, 30_000)
+
+        it('commands/custom, chat command, curret directory as context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
+            const id = await client.request('commands/custom', { key: '/countDirFiles' })
+
+            expect(id).not.toStrictEqual(freshChatID)
+
+            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " You have shared 8 file contexts with me so far:
+
+              1. src/trickyLogic.ts
+              2. src/sum.ts
+              3. src/squirrel.ts
+              4. src/multiple-selections.ts
+              5. src/example.test.ts
+              6. src/animal.ts
+              7. src/TestLogger.ts
+              8. src/TestClass.ts
+
+              So a total of 8 different file contexts."
+            `)
+        }, 30_000)
+
+        // TODO: insert mode result looks broken and should be re-updated once fixed.
+        it('commands/custom, inline edit command, insert mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri, { removeCursor: false })
+            const task = await client.request('commands/custom', { key: '/hello' })
+            await client.taskHasReachedAppliedPhase(task as EditTask)
+            const lenses = client.codeLenses.get(sumUri.toString()) ?? []
+            expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+            const acceptCommand = lenses.find(
+                ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+            )
+            if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                throw new Error(`Edit Failed: Lenses ${JSON.stringify(lenses, null, 2)}`)
+            }
+            await client.request('command/execute', acceptCommand.command)
+            expect(client.codeLenses.get(sumUri.toString()) ?? []).toHaveLength(0)
+            const newContent = client.workspace.getDocument(sumUri)?.content
+            expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
+              "export function sum(a: number, b: number): number {
+                  // hello
+                  /* CURSOR */
+              }
+              export function sum(a: number, b: number): number {
+                  /* CURSOR */
+              }
+              "
+            `)
+        }, 30_000)
+
+        it('commands/custom, inline edit command, edit mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const task = await client.request('commands/custom', { key: '/newField' })
+            await client.taskHasReachedAppliedPhase(task as EditTask)
+            const lenses = client.codeLenses.get(animalUri.toString()) ?? []
+            expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+            const acceptCommand = lenses.find(
+                ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+            )
+            if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                throw new Error(`Edit Failed: Lenses ${JSON.stringify(lenses, null, 2)}`)
+            }
+            await client.request('command/execute', acceptCommand.command)
+            expect(client.codeLenses.get(animalUri.toString()) ?? []).toHaveLength(0)
+            const newContent = client.workspace.getDocument(animalUri)?.content
+            expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
+              "/* SELECTION_START */
+              export interface Animal {
+                  name: string;
+                  makeAnimalSound(): string;
+                  isMammal: boolean;
+
+                  logName(): void {
+                      console.log(this.name);
+                  }
+              }
+              /* SELECTION_END */
+
+              "
+            `)
+        }, 30_000)
     })
 
     describe('Progress bars', () => {

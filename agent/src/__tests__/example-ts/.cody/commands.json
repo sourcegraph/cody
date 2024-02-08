@@ -1,0 +1,42 @@
+{
+    "commands": {
+        "translate": {
+            "prompt": "Translate the selected code into:",
+            "context": {
+                "selection": true
+            }
+        },
+        "hello": {
+            "prompt": "Add a 'hello' comment",
+            "context": {
+                "selection": true
+            },
+            "mode": "insert"
+        },
+        "newField": {
+            "prompt": "Add a new field to the class that console log the name of the animal when called.",
+            "context": {
+                "currentFile": true
+            },
+            "mode": "edit"
+        },
+        "none": {
+            "prompt": "Reply a single word 'none' if I did not share code context with you. Else 'yes'.",
+            "context": {
+                "none": true
+            }
+        },
+        "countDirFiles": {
+            "prompt": "How many file context have I shared with you?",
+            "context": {
+                "currentDir": true
+            }
+        },
+        "countTabs": {
+            "prompt": "How many file context have I shared with you?",
+            "context": {
+                "openTabs": true
+            }
+        }
+    }
+}

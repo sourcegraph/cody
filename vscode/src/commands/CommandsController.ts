@@ -33,8 +33,7 @@ class CommandsController implements vscode.Disposable {
     public async execute(text: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
         const commandSplit = text?.trim().split(' ')
         // The unique key for the command. e.g. /test
-        const commandKey = commandSplit?.shift() || text
-        const command = this.provider?.get(commandKey)
+        const commandKey = commandSplit[0] || text
 
         // Additional instruction that will be added to end of prompt in the custom command prompt
         // It's added at execution time to allow dynamic arguments
@@ -47,6 +46,7 @@ class CommandsController implements vscode.Disposable {
             return executeDefaultCommand(commandKey, additionalInstruction)
         }
 
+        const command = this.provider?.get(commandKey)
         if (!command) {
             logDebug('CommandsController:execute', 'command not found', { verbose: { commandKey } })
             return undefined

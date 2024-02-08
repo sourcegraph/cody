@@ -68,6 +68,8 @@ export type Requests = {
     'commands/test': [null, string]
     'commands/smell': [null, string]
 
+    'commands/custom': [{ key: string }, string | EditTask]
+
     // Trigger commands that edit the code.
     'editCommands/test': [null, EditTask]
     'commands/document': [null, EditTask] // TODO: rename to editCommands/test
