@@ -2,9 +2,8 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     ConfigFeaturesSingleton,
-    ContextWindowLimitError,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -14,8 +13,8 @@ import {
     reformatBotMessageForChat,
     Typewriter,
     type ChatClient,
+    type ChatInputHistory,
     type ChatMessage,
-    type CodyCommand,
     type ContextFile,
     type ContextMessage,
     type Editor,
@@ -27,14 +26,9 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { newCodyCommandArgs, type CodyCommandArgs } from '../../commands'
-import type { CommandsController } from '../../commands/CommandsController'
-import {
-    createDisplayTextWithFileLinks,
-    createDisplayTextWithFileSelection,
-} from '../../commands/prompt/display-text'
+import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
-import { executeEdit } from '../../edit/execute'
+import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -47,10 +41,8 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import type { TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -61,10 +53,8 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
-import type { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import type { MessageErrorType } from '../MessageProvider'
 import type {
-    AuthStatus,
     ChatSubmitType,
     ConfigurationSubsetForWebview,
     ExtensionMessage,
@@ -76,37 +66,37 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getCommandContext, getEnhancedContext } from './context'
+import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
-import { CommandPrompter, DefaultPrompter, type IPrompter } from './prompt'
-import {
-    SimpleChatModel,
-    toViewMessage,
-    type ContextItem,
-    type MessageWithContext,
-} from './SimpleChatModel'
+import { DefaultPrompter, type IPrompter } from './prompt'
+import { SimpleChatModel, toViewMessage, type MessageWithContext } from './SimpleChatModel'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { RemoteRepoPicker } from '../../context/repo-picker'
+import type { Repo } from '../../context/repo-fetcher'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { chatModel } from '../../models'
+import { getContextWindowForModel } from '../../models/utilts'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
-    embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
     symf: SymfRunner | null
+    enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    models: ChatModelProvider[]
+    models: ModelProvider[]
     guardrails: Guardrails
-    commandsController?: CommandsController
 }
 
 export interface ChatSession {
     webviewPanel?: vscode.WebviewPanel
     sessionID: string
 }
-
 /**
  * SimpleChatPanelProvider is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -140,7 +130,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private config: ChatPanelConfig
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
-    private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly symf: SymfRunner | null
@@ -148,7 +137,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly guardrails: Guardrails
-    private readonly commandsController?: CommandsController
+    private readonly remoteSearch: RemoteSearch | null
+    private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
@@ -164,29 +154,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         extensionUri,
         authProvider,
         chatClient,
-        embeddingsClient,
         localEmbeddings,
         symf,
         editor,
         treeView,
         models,
-        commandsController,
         guardrails,
+        enterpriseContext,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
-        this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
         this.symf = symf
-        this.commandsController = commandsController
+        this.repoPicker = enterpriseContext?.repoPicker || null
+        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
         this.treeView = treeView
-        this.chatModel = new SimpleChatModel(selectModel(authProvider, models))
+        this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
-
-        commandsController?.setEnableExperimentalCommands(config.internalUnstable)
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -205,10 +192,33 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         this.codebaseStatusProvider = new CodebaseStatusProvider(
             this.editor,
-            embeddingsClient,
-            this.config.experimentalSymfContext ? this.symf : null
+            this.config.experimentalSymfContext ? this.symf : null,
+            enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+
+        if (this.remoteSearch) {
+            this.disposables.push(
+                // Display enhanced context status from the remote search provider
+                this.contextStatusAggregator.addProvider(this.remoteSearch),
+
+                // When the codebase has a remote ID, include it automatically
+                this.codebaseStatusProvider.onDidChangeStatus(async () => {
+                    const codebase = await this.codebaseStatusProvider.currentCodebase()
+                    if (codebase?.remote && codebase.remoteRepoId) {
+                        this.remoteSearch?.setRepos(
+                            [
+                                {
+                                    name: codebase.remote,
+                                    id: codebase.remoteRepoId,
+                                },
+                            ],
+                            RepoInclusion.Automatic
+                        )
+                    }
+                })
+            )
+        }
     }
 
     /**
@@ -224,7 +234,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleInitialized()
                 break
             case 'submit': {
-                await this.handleNewUserMessage(
+                await this.handleUserMessageSubmission(
                     uuid.v4(),
                     message.text,
                     message.submitType,
@@ -234,7 +244,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             }
             case 'edit': {
-                await this.handleEdit(uuid.v4(), message.text)
+                await this.handleEdit(
+                    uuid.v4(),
+                    message.text,
+                    message.index,
+                    message.contextFiles ?? [],
+                    message.addEnhancedContext || false
+                )
                 break
             }
             case 'abort':
@@ -268,6 +284,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 handleCodeFromSaveToNewFile(message.text, message.metadata)
                 await this.editor.createWorkspaceFile(message.text)
                 break
+            case 'context/get-remote-search-repos': {
+                await this.postMessage({
+                    type: 'context/remote-repos',
+                    repos: this.chatModel.getSelectedRepos() ?? [],
+                })
+                break
+            }
+            case 'context/choose-remote-search-repo': {
+                await this.handleChooseRemoteSearchRepo(message.explicitRepos)
+                break
+            }
+            case 'context/remove-remote-search-repo':
+                void this.handleRemoveRemoteSearchRepo(message.repoId)
+                break
             case 'embeddings/index':
                 void this.localEmbeddings?.index()
                 break
@@ -279,7 +309,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                void this.handleAttributionSearch(message.snippet)
+                await this.handleAttributionSearch(message.snippet)
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'reset':
                 await this.clearAndRestartSession()
@@ -315,7 +348,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+            verbose: configForWebview,
+        })
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
@@ -334,35 +369,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.postChatModels()
         await this.saveSession()
-        await this.postCodyCommands()
         this.initDoer.signalInitialized()
     }
 
-    public async handleNewUserMessage(
+    /**
+     * Handles user input text for both new and edit submissions
+     */
+    public async handleUserMessageSubmission(
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
-        // DEPRECATED (remove after slash commands are removed)
-        // If this is a slash command, run it with custom command instead
-        if (inputText.startsWith('/')) {
-            if (inputText.match(/^\/r(eset)?$/)) {
-                return this.clearAndRestartSession()
-            }
-            if (inputText.match(/^\/edit(\s)?/)) {
-                return executeEdit({ instruction: inputText.replace(/^\/(edit)/, '').trim() }, 'chat')
-            }
-            if (inputText === '/commands-settings') {
-                // User has clicked the settings button for commands
-                return vscode.commands.executeCommand('cody.settings.commands')
-            }
-            const commandArgs = newCodyCommandArgs({ source: 'chat', requestID })
-            const command = await this.commandsController?.startCommand(inputText, commandArgs)
-            if (command) {
-                return this.handleCommand(command, commandArgs)
-            }
+        if (inputText.match(/^\/reset$/)) {
+            return this.clearAndRestartSession()
         }
 
         if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
@@ -374,7 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             : inputText
         const promptText = inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
+        await this.saveSession({ inputText, inputContextFiles: userContextFiles })
 
         this.postEmptyMessageInProgress()
 
@@ -386,16 +407,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const prompter = new DefaultPrompter(
             userContextItems,
             addEnhancedContext
-                ? query =>
-                      getEnhancedContext(
-                          this.config.useContext,
-                          this.editor,
-                          this.embeddingsClient,
-                          this.localEmbeddings,
-                          this.config.experimentalSymfContext ? this.symf : null,
-                          this.codebaseStatusProvider,
-                          query
-                      )
+                ? (text, maxChars) =>
+                      getEnhancedContext({
+                          strategy: this.config.useContext,
+                          editor: this.editor,
+                          text,
+                          providers: {
+                              localEmbeddings: this.localEmbeddings,
+                              symf: this.config.experimentalSymfContext ? this.symf : null,
+                              remoteSearch: this.remoteSearch,
+                          },
+                          featureFlags: this.config,
+                          hints: { maxChars },
+                      })
                 : undefined
         )
         const sendTelemetry = (contextSummary: any): void => {
@@ -442,81 +466,41 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleEdit(requestID: string, text: string): Promise<void> {
+    /**
+     * Handles editing a human chat message in current chat session.
+     *
+     * Removes any existing messages from the provided index,
+     * before submitting the replacement text as a new question.
+     * When no index is provided, default to the last human message.
+     */
+    private async handleEdit(
+        requestID: string,
+        text: string,
+        index?: number,
+        contextFiles: ContextFile[] = [],
+        addEnhancedContext = true
+    ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
 
-        this.chatModel.updateLastHumanMessage({ text })
-        this.postViewTranscript()
-
-        const prompter = new DefaultPrompter(
-            [], // TODO(beyang): support user context items in the edit input
-            (
-                query // TODO(beyang): get useEnhancedContext
-            ) =>
-                getEnhancedContext(
-                    this.config.useContext,
-                    this.editor,
-                    this.embeddingsClient,
-                    this.localEmbeddings,
-                    this.config.experimentalSymfContext ? this.symf : null,
-                    this.codebaseStatusProvider,
-                    query
-                )
-        )
-
         try {
-            const prompt = await this.buildPrompt(prompter)
-            this.streamAssistantResponse(requestID, prompt)
-        } catch (error) {
-            if (isRateLimitError(error)) {
-                this.postError(error, 'transcript')
-            } else {
-                this.postError(
-                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
-                )
+            const humanMessage = index ?? this.chatModel.getLastSpeakerMessageIndex('human')
+            if (humanMessage === undefined) {
+                return
             }
+            this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
+            return await this.handleUserMessageSubmission(
+                requestID,
+                text,
+                'user',
+                contextFiles,
+                addEnhancedContext
+            )
+        } catch {
+            this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
-    }
-
-    public async handleCommand(command: CodyCommand, args: CodyCommandArgs): Promise<void> {
-        // If it's not an ask command, it's a fixup command, so we can exit early.
-        // This is because startCommand will start the CommandRunner,
-        // which would send all fixup command requests to the FixupController
-        if (command.mode !== 'ask') {
-            return
-        }
-
-        if (!this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
-            if (
-                command.context?.selection ||
-                command.context?.currentFile ||
-                command.context?.currentDir
-            ) {
-                return this.postError(
-                    new Error('Command failed. Please open a file and try again.'),
-                    'transcript'
-                )
-            }
-        }
-
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
-        const displayText = createDisplayTextWithFileSelection(
-            inputText,
-            this.editor.getActiveTextEditorSelectionOrEntireFile()
-        )
-        const promptText = command.prompt
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(inputText)
-
-        this.postEmptyMessageInProgress()
-
-        const prompt = await this.buildPrompt(
-            new CommandPrompter(() => getCommandContext(this.editor, command))
-        )
-        this.streamAssistantResponse(args.requestID, prompt)
     }
 
     private handleAbort(): void {
@@ -531,8 +515,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.modelID = modelID
-        // Store the selected model in local storage to retrieve later
-        await localStorage.set('model', modelID)
+        await chatModel.set(modelID)
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
@@ -621,6 +604,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
+    private async handleChooseRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
+        if (!this.remoteSearch) {
+            return
+        }
+        const repos =
+            explicitRepos ??
+            (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
+        if (repos) {
+            this.chatModel.setSelectedRepos(repos)
+            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
+        }
+    }
+
+    private handleRemoveRemoteSearchRepo(repoId: string): void {
+        this.remoteSearch?.removeRepo(repoId)
+    }
+
     // #endregion
     // =======================================================================
     // #region view updaters
@@ -660,7 +660,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
             this.postViewTranscript()
-            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            void this.postMessage({
+                type: 'transcript-errors',
+                isTranscriptError: true,
+            })
             return
         }
 
@@ -673,35 +676,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',
             models,
         })
-    }
-
-    // Send a list of commands to webview that can be triggered via chat input box with slash
-    private async postCodyCommands(): Promise<void> {
-        const send = async (): Promise<void> => {
-            await this.commandsController?.refresh()
-            const allCommands = await this.commandsController?.getAllCommands(true)
-            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
-            const prompts =
-                allCommands?.filter(([id, { mode }]) => {
-                    // The /ask command is only useful outside of chat
-                    const isRedundantCommand = id === '/ask'
-                    return !isRedundantCommand
-                }) || []
-            void this.postMessage({
-                type: 'custom-prompts',
-                prompts,
-            })
-        }
-        this.commandsController?.setMessenger(send)
-        await send()
     }
 
     private postContextStatus(): void {
@@ -746,25 +734,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const { prompt, contextLimitWarnings, newContextUsed } = await prompter.makePrompt(
-            this.chatModel,
-            getContextWindowForModel(this.authProvider.getAuthStatus(), this.chatModel.modelID)
+        const maxChars = getContextWindowForModel(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.modelID
         )
+        const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction
         this.chatModel.setNewContextUsed(newContextUsed)
-        if (contextLimitWarnings.length > 0) {
-            const warningMsg = contextLimitWarnings
-                .map(w => {
-                    w = w.trim()
-                    if (!w.endsWith('.')) {
-                        w += '.'
-                    }
-                    return w
-                })
-                .join(' ')
-            this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
-        }
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -932,6 +909,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return this.chatModel.sessionID
     }
 
+    // Sets the provider up for a new chat that is not being restored from a
+    // saved session.
+    public async newSession(): Promise<void> {
+        // Set the remote search's selected repos to the workspace repo list
+        // by default.
+        this.remoteSearch?.setRepos(
+            (await this.repoPicker?.getDefaultRepos()) || [],
+            RepoInclusion.Manual
+        )
+    }
+
     // Attempts to restore the chat to the given sessionID, if it exists in
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
@@ -939,16 +927,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
-            return
+            return this.newSession()
         }
         this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
 
+        // Restore per-chat enhanced context settings
+        if (this.remoteSearch) {
+            const repos =
+                this.chatModel.getSelectedRepos() || (await this.repoPicker?.getDefaultRepos()) || []
+            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
+        }
+
         this.postViewTranscript()
     }
 
-    private async saveSession(humanInput?: string): Promise<void> {
+    private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toTranscriptJSON(),
@@ -960,7 +955,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
+        await this.treeView.updateTree(this.authProvider.getAuthStatus())
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -1069,6 +1064,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             panel.dispose()
         })
 
+        // Let the webview know if it is active
+        panel.onDidChangeViewState(event =>
+            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+        )
+
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
                 this.onDidReceiveMessage(
@@ -1093,6 +1093,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async setWebviewView(view: View): Promise<void> {
+        if (view !== 'chat') {
+            // Only chat view is supported in the webview panel.
+            // When a different view is requested,
+            // Set context to notifiy the webview panel to close.
+            // This should close the webview panel and open the login view in the sidebar.
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
+            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+            return
+        }
         if (!this.webviewPanel) {
             await this.createWebviewPanel()
         }
@@ -1155,7 +1164,8 @@ async function newChatModelfromTranscriptJSON(
         json.chatModel || modelID,
         (await Promise.all(messages)).flat(),
         json.id,
-        json.chatTitle
+        json.chatTitle,
+        json.enhancedContext?.selectedRepos
     )
 }
 
@@ -1216,67 +1226,13 @@ function deserializedContextFilesToContextItems(
             range,
             text: text || '',
             source: file.source,
+            repoName: file.repoName,
+            revision: file.revision,
+            title: file.title,
         }
     })
 }
 
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
-}
-
-function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
-    // In enterprise mode, we let the sg instance dictate the token limits and allow users to
-    // overwrite it locally (for debugging purposes).
-    //
-    // This is similiar to the behavior we had before introducing the new chat and allows BYOK
-    // customers to set a model of their choice without us having to map it to a known model on
-    // the client.
-    if (authStatus.endpoint && !isDotCom(authStatus.endpoint)) {
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        if (tokenLimit) {
-            return tokenLimit * 4 // bytes per token
-        }
-
-        if (authStatus.configOverwrites?.chatModelMaxTokens) {
-            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
-        }
-
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-
-    if (modelID.includes('openai/gpt-4-1106-preview')) {
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-    if (modelID.endsWith('openai/gpt-3.5-turbo')) {
-        return 10000 // 4,096 tokens * < 4 bytes per token
-    }
-    if (modelID.includes('mixtral-8x7b-instruct') && modelID.includes('fireworks')) {
-        return 28000 // 7000 tokens * 4 bytes per token
-    }
-    return 28000 // assume default to Claude-2-like model
-}
-
-// Select the chat model to use in Chat
-function selectModel(authProvider: AuthProvider, models: ChatModelProvider[]): string {
-    const authStatus = authProvider.getAuthStatus()
-    // Free user can only use the default model
-    if (authStatus.isDotCom && authStatus.userCanUpgrade) {
-        return models[0].model
-    }
-    // Check for the last selected model
-    const lastSelectedModelID = localStorage.get('model')
-    if (lastSelectedModelID) {
-        // If the last selected model exists in the list of models then we return it
-        const model = models.find(m => m.model === lastSelectedModelID)
-        if (model) {
-            return lastSelectedModelID
-        }
-    }
-    // If the user has not selected a model before then we return the default model
-    const defaultModel = models.find(m => m.default) || models[0]
-    if (!defaultModel) {
-        throw new Error('No chat model found in server-provided config')
-    }
-    return defaultModel.model
 }

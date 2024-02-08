@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import { runTests } from '@vscode/test-electron'
 
-import * as mockServer from '../fixtures/mock-server'
+import { MockServer } from '../fixtures/mock-server'
 
 async function main(): Promise<void> {
     // Set this environment variable so the extension exposes hooks to the test runner.
@@ -16,36 +16,38 @@ async function main(): Promise<void> {
     // __dirname is derived from that path, not this file's source path.
     const vscodeCodyRoot = path.resolve(__dirname, '..', '..', '..', '..')
 
-    // The test workspace is not copied to out/ during the TypeScript build, so we need to refer to
-    // it in the src/ dir.
-    const testWorkspacePath = path.resolve(vscodeCodyRoot, 'test', 'fixtures', 'workspace')
-
     // The directory containing the extension's package.json, passed to --extensionDevelopmentPath.
     const extensionDevelopmentPath = vscodeCodyRoot
 
-    // The path to the test runner script, passed to --extensionTestsPath.
-    const extensionTestsPath = path.resolve(
-        vscodeCodyRoot,
-        'dist',
-        'tsc',
-        'test',
-        'integration',
-        'index'
-    )
+    // The root folder for all integration test workspaces in the src/ dir.
+    const testFixturesPath = path.resolve(vscodeCodyRoot, 'test', 'fixtures')
+
+    /// The root folder containing the sets of integration tests to run.
+    const integrationTestsPath = path.resolve(vscodeCodyRoot, 'dist', 'tsc', 'test', 'integration')
+
+    // The set of tests and the workspaces they operate on.
+    const testConfigs = [
+        { testsFolder: 'single-root', workspace: 'workspace' },
+        { testsFolder: 'multi-root', workspace: 'multi-root.code-workspace' },
+    ]
 
     try {
         // Download VS Code, unzip it, and run the integration test.
-        await mockServer.run(() =>
-            runTests({
-                version: '1.81.1',
-                extensionDevelopmentPath,
-                extensionTestsPath,
-                launchArgs: [
-                    testWorkspacePath,
-                    '--disable-extensions', // disable other extensions
-                ],
-            })
-        )
+        await MockServer.run(async () => {
+            for (const testConfig of testConfigs) {
+                await runTests({
+                    version: '1.81.1',
+                    extensionDevelopmentPath,
+                    extensionTestsPath: path.normalize(
+                        path.resolve(integrationTestsPath, testConfig.testsFolder, 'index')
+                    ),
+                    launchArgs: [
+                        path.normalize(path.resolve(testFixturesPath, testConfig.workspace)),
+                        '--disable-extensions', // disable other extensions
+                    ],
+                })
+            }
+        })
     } catch (error) {
         console.error('Failed to run tests:', error)
         process.exit(1)

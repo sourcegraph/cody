@@ -1,13 +1,12 @@
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
-
 import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
 import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
 import { VSCodeDocumentHistory, type DocumentHistory } from './history'
+import { lastNLines } from '../../../text-processing'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -37,7 +36,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
         const matches: JaccardMatchWithFilename[] = []
         for (const { uri, contents } of files) {
             const match = bestJaccardMatch(targetText, contents, SNIPPET_WINDOW_SIZE)
-            if (!match || abortSignal?.aborted || isCodyIgnoredFile(uri)) {
+            if (!match || abortSignal?.aborted) {
                 continue
             }
 
@@ -95,11 +94,6 @@ async function getRelevantFiles(
 
         // Only add files and VSCode user settings.
         if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
-            return
-        }
-
-        // Do not add files that are on the codyignore list
-        if (isCodyIgnoredFile(document.uri)) {
             return
         }
 
@@ -188,9 +182,4 @@ async function getRelevantFiles(
         })
     )
     return files
-}
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }

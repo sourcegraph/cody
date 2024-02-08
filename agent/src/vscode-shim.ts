@@ -4,7 +4,7 @@ import path from 'path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug } from '@sourcegraph/cody-shared'
+import { logDebug, logError } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -29,8 +29,6 @@ import {
     CommentThreadCollapsibleState,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
-    emptyDisposable,
-    emptyEvent,
     ExtensionKind,
     FileType,
     LogLevel,
@@ -42,12 +40,17 @@ import {
     ViewColumn,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+
+import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import { AgentQuickPick } from './AgentQuickPick'
+import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -64,10 +67,10 @@ export {
     CommentMode,
     CommentThreadCollapsibleState,
     ConfigurationTarget,
+    TextEditorRevealType,
     DiagnosticSeverity,
+    FoldingRange,
     Disposable,
-    emptyDisposable,
-    emptyEvent,
     EndOfLine,
     ExtensionMode,
     FileType,
@@ -85,6 +88,7 @@ export {
     Selection,
     StatusBarAlignment,
     SymbolKind,
+    TextDocumentChangeReason,
     ThemeColor,
     ThemeIcon,
     TreeItem,
@@ -151,16 +155,23 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
     openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
+    newTextEditorFromStringUri: (uri: string) => Promise<vscode.TextEditor>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
     if (newWorkspaceDocuments.workspaceRootUri) {
-        workspaceFolders.push({
-            name: 'Workspace Root',
-            uri: newWorkspaceDocuments.workspaceRootUri,
-            index: 0,
-        })
+        if (
+            !workspaceFolders
+                .map(wf => wf.uri.toString())
+                .includes(newWorkspaceDocuments.workspaceRootUri.toString())
+        ) {
+            workspaceFolders.push({
+                name: 'Workspace Root',
+                uri: newWorkspaceDocuments.workspaceRootUri,
+                index: 0,
+            })
+        }
     }
 }
 
@@ -180,7 +191,13 @@ const _workspace: typeof vscode.workspace = {
     onWillRenameFiles: emptyEvent(),
     onWillSaveNotebookDocument: emptyEvent(),
     onWillSaveTextDocument: emptyEvent(),
-    applyEdit: () => Promise.resolve(false), // TODO: this API is used by Cody
+    applyEdit: (edit, metadata) => {
+        if (agent) {
+            return agent.applyWorkspaceEdit(edit, metadata)
+        }
+        logError('vscode.workspace.applyEdit', 'agent is undefined')
+        return Promise.resolve(false)
+    },
     isTrusted: false,
     name: undefined,
     notebookDocuments: [],
@@ -193,9 +210,27 @@ const _workspace: typeof vscode.workspace = {
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
     async findFiles(include, exclude, maxResults, token) {
-        if (typeof include !== 'string') {
-            throw new TypeError('workspaces.findFiles: include must be a string')
+        let searchFolders: vscode.WorkspaceFolder[]
+        let searchPattern: string
+
+        if (typeof include === 'string') {
+            searchFolders = workspaceFolders
+            searchPattern = include
+        } else {
+            const matchingWorkspaceFolder = workspaceFolders.find(
+                wf => wf.uri.toString() === include.baseUri.toString()
+            )
+            if (!matchingWorkspaceFolder) {
+                throw new TypeError(
+                    `workspaces.findFiles: RelativePattern must use a known WorkspaceFolder\n  Got: ${
+                        include.baseUri
+                    }\n  Known:\n${workspaceFolders.map(wf => `  - ${wf.uri.toString()}\n`).join()}`
+                )
+            }
+            searchFolders = [matchingWorkspaceFolder]
+            searchPattern = include.pattern
         }
+
         if (exclude !== undefined && typeof exclude !== 'string') {
             throw new TypeError('workspaces.findFiles: exclude must be a string')
         }
@@ -214,7 +249,7 @@ const _workspace: typeof vscode.workspace = {
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
                     if (
                         !matchesGlobPatterns(
-                            include ? [include] : [],
+                            searchPattern ? [searchPattern] : [],
                             exclude ? [exclude] : [],
                             relativePath
                         )
@@ -230,7 +265,7 @@ const _workspace: typeof vscode.workspace = {
         }
 
         await Promise.all(
-            workspaceFolders.map(async folder => {
+            searchFolders.map(async folder => {
                 try {
                     const stat = await workspaceFs.stat(folder.uri)
                     if (stat.type.valueOf() === FileType.Directory.valueOf()) {
@@ -246,15 +281,53 @@ const _workspace: typeof vscode.workspace = {
         )
         return result
     },
-    openTextDocument: uriOrString => {
+    openTextDocument: async uriOrString => {
         if (!workspaceDocuments) {
-            return Promise.reject(new Error('workspaceDocuments is uninitialized'))
+            throw new Error('workspaceDocuments is uninitialized')
         }
         if (typeof uriOrString === 'string') {
             return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
         }
         if (uriOrString instanceof Uri) {
             return workspaceDocuments.openTextDocument(uriOrString)
+        }
+
+        if (
+            typeof uriOrString === 'object' &&
+            ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
+            agent
+        ) {
+            const language: string = (uriOrString as any)?.language ?? ''
+            const content: string = (uriOrString as any)?.content ?? ''
+            const extension = extensionForLanguage(language) ?? language
+            const untitledUri = Uri.from({ scheme: 'untitled', path: `${uuid.v4()}.${extension}` })
+            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+                const errorMessage =
+                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+                throw new Error(errorMessage)
+            }
+            const result = await agent.request('textDocument/openUntitledDocument', {
+                uri: untitledUri.toString(),
+                content,
+                language,
+            })
+
+            if (!result) {
+                throw new Error(
+                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
+                        uriOrString
+                    )}`
+                )
+            }
+            const document = await workspaceDocuments.openTextDocument(untitledUri)
+            if (document.getText() !== content) {
+                throw new Error(
+                    'untitled document has mismatched content. ' +
+                        JSON.stringify({ expected: content, obtained: document.getText() }, null, 2)
+                )
+            }
+            return document
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -306,9 +379,17 @@ const _workspace: typeof vscode.workspace = {
         return relativePath
     },
     createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
-    getConfiguration: section => {
-        if (section) {
-            return configuration.withPrefix(section)
+    getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
+        if (section !== undefined) {
+            if (scope === undefined) {
+                return configuration.withPrefix(section)
+            }
+
+            // Ignore language-scoped configuration sections like
+            // '[jsonc].editor.insertSpaces', fallback to global scope instead.
+            if (section.startsWith('[')) {
+                return configuration
+            }
         }
         return configuration
     },
@@ -446,6 +527,27 @@ export function setCreateWebviewPanel(
 
 export const progressBars = new Map<string, CancellationTokenSource>()
 
+async function showWindowMessage(
+    severity: 'error' | 'warning' | 'information',
+    message: string,
+    options: vscode.MessageOptions | string,
+    items: string[]
+): Promise<string | undefined> {
+    if (agent) {
+        if (clientInfo?.capabilities?.showWindowMessage === 'request') {
+            const result = await agent.request('window/showMessage', {
+                severity,
+                message,
+                options: typeof options === 'object' ? options : undefined,
+                items: typeof options === 'object' ? items : [options, ...items],
+            })
+            return result ?? undefined
+        }
+        agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
+    }
+    return Promise.resolve(undefined)
+}
+
 const _window: typeof vscode.window = {
     createTreeView: () => defaultTreeView,
     tabGroups,
@@ -524,27 +626,37 @@ const _window: typeof vscode.window = {
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
-    showErrorMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
-    showWarningMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showWarningMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
-    showInformationMessage: (message: string, ...items: any[]) => {
-        if (agent) {
-            agent.notify('debug/message', { channel: 'window.showInformationMessage', message })
-        }
-        return Promise.resolve(undefined)
-    },
+    showErrorMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('error', message, options, items),
+    showWarningMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('warning', message, options, items),
+    showInformationMessage: (message: string, options: vscode.MessageOptions | any, ...items: any[]) =>
+        showWindowMessage('information', message, options, items),
     createOutputChannel: (name: string) => outputChannel(name),
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
-    showTextDocument: () => {
+    showTextDocument: async (params, options) => {
+        if (agent) {
+            if (clientInfo?.capabilities?.showDocument !== 'enabled') {
+                throw new Error(
+                    'vscode.window.showTextDocument: not supported by client. ' +
+                        'To fix this problem, enable `showDocument: "enabled"` in client capabilities'
+                )
+            }
+            const uri = params instanceof Uri ? params.toString() : (params as any)?.uri?.toString?.()
+            if (uri === undefined) {
+                throw new TypeError(
+                    `vscode.window.showTextDocument: unable to infer URI from argument ${params}`
+                )
+            }
+            const result = await agent.request('textDocument/show', { uri })
+            if (!result) {
+                throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
+            }
+            if (!workspaceDocuments) {
+                throw new Error('workspaceDocuments is undefined')
+            }
+            return workspaceDocuments.newTextEditorFromStringUri(uri)
+        }
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showTextDocument')
     },
@@ -574,9 +686,8 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showInputBox')
     },
-    createQuickPick: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.createQuickPick')
+    createQuickPick: <T extends vscode.QuickPickItem>() => {
+        return new AgentQuickPick<T>()
     },
     createInputBox: () => {
         console.log(new Error().stack)
@@ -729,7 +840,10 @@ const _commands: Partial<typeof vscode.commands> = {
         if (registered) {
             try {
                 if (args) {
-                    return promisify(registered.callback(...args))
+                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args))
+                    }
+                    return promisify(registered.callback(args))
                 }
                 return promisify(registered.callback())
             } catch (error) {
@@ -746,14 +860,36 @@ const _commands: Partial<typeof vscode.commands> = {
     },
 }
 
-// TODO: register 'vscode.executeFoldingRangeProvider' (high priority, influences commands)
-// TODO: register 'vscode.executeDocumentSymbolProvider' (low priority)
-
 _commands?.registerCommand?.('setContext', (key, value) => {
     if (typeof key !== 'string') {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
+})
+_commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
+    const promises: vscode.FoldingRange[] = []
+    const document = await _workspace.openTextDocument(uri)
+    const token = new CancellationTokenSource().token
+    for (const provider of foldingRangeProviders) {
+        const result = await provider.provideFoldingRanges(document, {}, token)
+        if (result) {
+            promises.push(...result)
+        }
+    }
+    return promises
+})
+_commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
+    // NOTE(olafurpg): unclear yet how important document symbols are. I asked
+    // in #wg-cody-vscode for test cases where symbols could influence the
+    // behavior of "Document code" and added those test cases to the test suite.
+    // Currently, we can reproduce the behavior of Cody in VSC without document
+    // symbols. However, the test cases show that we may want to incorporate
+    // document symbol data to improve the quality of the inferred selection
+    // location.
+    return Promise.resolve([])
+})
+_commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
+    return Promise.resolve([])
 })
 
 function promisify(value: any): Promise<any> {
@@ -774,6 +910,11 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
+const codeLensProviders = new Set<vscode.CodeLensProvider>()
+const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
+const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
+export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
+export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
 let latestCompletionProvider: InlineCompletionItemProvider | undefined
 let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
 const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
@@ -786,10 +927,18 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
     return firstCompletionProvider
 }
 
+const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
+    registerFoldingRangeProvider: (_scope, provider) => {
+        foldingRangeProviders.add(provider)
+        return { dispose: () => foldingRangeProviders.delete(provider) }
+    },
     registerCodeActionsProvider: () => emptyDisposable,
-    registerCodeLensProvider: () => emptyDisposable,
+    registerCodeLensProvider: (_selector, provider) => {
+        newCodeLensProvider.fire(provider)
+        return { dispose: () => codeLensProviders.delete(provider) }
+    },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any
         resolveFirstCompletionProvider(provider as any)

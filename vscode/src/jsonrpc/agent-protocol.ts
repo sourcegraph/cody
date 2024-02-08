@@ -1,8 +1,9 @@
+import type * as vscode from 'vscode'
 import type {
     BillingCategory,
     BillingProduct,
     ChatMessage,
-    ChatModelProvider,
+    ModelProvider,
     event,
 } from '@sourcegraph/cody-shared'
 import type {
@@ -14,6 +15,9 @@ import type {
 
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CodyTaskState } from '../non-stop/utils'
+import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
+import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -44,7 +48,8 @@ export type Requests = {
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
-    'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the
@@ -59,9 +64,13 @@ export type Requests = {
     // shortcuts to start a new chat with a templated question. The return value
     // of these commands is the same as `chat/new`, an ID to reference to the
     // webview panel where the reply from this command appears.
-    'commands/explain': [null, string]
+    'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
     'commands/test': [null, string]
     'commands/smell': [null, string]
+
+    // Trigger commands that edit the code.
+    'editCommands/test': [null, EditTask]
+    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -69,12 +78,15 @@ export type Requests = {
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
+    'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
+
     'graphql/currentUserId': [null, string]
 
     'graphql/currentUserIsPro': [null, boolean]
 
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
+    'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
@@ -86,6 +98,10 @@ export type Requests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
+    /**
+     * Checks if a given set of URLs includes a Cody ignored file.
+     */
+    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -102,6 +118,8 @@ export type Requests = {
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
+    'testing/networkRequests': [null, { requests: NetworkRequest[] }]
+    'testing/requestErrors': [null, { errors: NetworkRequest[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -120,9 +138,32 @@ export type Requests = {
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
 
+    // Run attribution search for a code snippet displayed in chat.
+    // Attribution is an enterprise feature which allows to look for code generated
+    // by Cody in an open source code corpus. User is notified if any such attribution
+    // is found.
+    // For more details, please see:
+    // *   PRD: https://docs.google.com/document/d/1c3CLC7ICDaG63NOWjO6zWm-UElwuXkFrKbCKTw-7H6Q/edit
+    // *   RFC: https://docs.google.com/document/d/1zSxFDQPxZcn5b6yKx40etpJayoibVzj_Gnugzln1weI/edit
+    'attribution/search': [
+        { id: string; snippet: string },
+        {
+            error: string | null
+            repoNames: string[]
+            limitHit: boolean
+        },
+    ]
+
     // ================
     // Server -> Client
     // ================
+
+    'window/showMessage': [ShowWindowMessageParams, string | null]
+
+    'textDocument/edit': [TextDocumentEditParams, boolean]
+    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/show': [{ uri: string; options?: vscode.TextDocumentShowOptions }, boolean]
+    'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
     // webview.  This endpoint should not be needed as long as you use
@@ -155,18 +196,23 @@ export type Notifications = {
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
-    'textDocument/didOpen': [TextDocument]
+    'textDocument/didOpen': [ProtocolTextDocument]
     // The 'textDocument/didChange' notification should be sent on almost every
     // keystroke, whether the text contents changed or the cursor/selection
     // changed.  Leave the `content` property undefined when the document's
     // content is unchanged.
-    'textDocument/didChange': [TextDocument]
+    'textDocument/didChange': [ProtocolTextDocument]
     // The user focused on a document without changing the document's content.
-    // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didFocus': [{ uri: string }]
+    // The user saved the file to disk.
+    'textDocument/didSave': [{ uri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didClose': [TextDocument]
+    'textDocument/didClose': [ProtocolTextDocument]
+
+    'workspace/didDeleteFiles': [DeleteFilesParams]
+    'workspace/didCreateFiles': [CreateFilesParams]
+    'workspace/didRenameFiles': [RenameFilesParams]
 
     '$/cancelRequest': [CancelParams]
     // The user no longer wishes to consider the last autocomplete candidate
@@ -188,6 +234,9 @@ export type Notifications = {
     // ================
 
     'debug/message': [DebugMessage]
+
+    'editTaskState/didChange': [EditTask]
+    'codeLenses/display': [DisplayCodeLensParams]
 
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
@@ -265,6 +314,12 @@ interface ClientCapabilities {
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
+    edit?: 'none' | 'enabled'
+    editWorkspace?: 'none' | 'enabled'
+    untitledDocuments?: 'none' | 'enabled'
+    showDocument?: 'none' | 'enabled'
+    codeLenses?: 'none' | 'enabled'
+    showWindowMessage?: 'notification' | 'request'
 }
 
 export interface ServerInfo {
@@ -378,7 +433,7 @@ export interface Range {
     end: Position
 }
 
-export interface TextDocument {
+export interface ProtocolTextDocument {
     // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
     uri: string
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
@@ -392,7 +447,7 @@ interface ExecuteCommandParams {
     arguments?: any[]
 }
 
-interface DebugMessage {
+export interface DebugMessage {
     channel: string
     message: string
 }
@@ -445,4 +500,133 @@ interface ProgressOptions {
 export interface WebviewPostMessageParams {
     id: string
     message: ExtensionMessage
+}
+
+export interface WorkspaceEditParams {
+    operations: WorkspaceEditOperation[]
+    metadata?: vscode.WorkspaceEditMetadata
+}
+
+export type WorkspaceEditOperation =
+    | CreateFileOperation
+    | RenameFileOperation
+    | DeleteFileOperation
+    | EditFileOperation
+
+export interface CreateFileOperation {
+    type: 'create-file'
+    uri: string
+    options?: {
+        readonly overwrite?: boolean
+        readonly ignoreIfExists?: boolean
+    }
+    textContents: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface RenameFileOperation {
+    type: 'rename-file'
+    oldUri: string
+    newUri: string
+    options?: {
+        readonly overwrite?: boolean
+        readonly ignoreIfExists?: boolean
+    }
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface DeleteFileOperation {
+    type: 'delete-file'
+    uri: string
+    options?: {
+        readonly recursive?: boolean
+        readonly ignoreIfNotExists?: boolean
+    }
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface EditFileOperation {
+    type: 'edit-file'
+    uri: string
+    edits: TextEdit[]
+}
+
+export interface UntitledTextDocument {
+    uri: string
+    content?: string
+    language?: string
+}
+
+export interface TextDocumentEditParams {
+    uri: string
+    edits: TextEdit[]
+    options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+}
+export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
+export interface ReplaceTextEdit {
+    type: 'replace'
+    range: Range
+    value: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface InsertTextEdit {
+    type: 'insert'
+    position: Position
+    value: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface DeleteTextEdit {
+    type: 'delete'
+    range: Range
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+
+export interface EditTask {
+    id: string
+    state: CodyTaskState
+    error?: CodyError
+}
+
+export interface CodyError {
+    message: string
+    cause?: CodyError
+    stack?: string
+}
+
+export interface DisplayCodeLensParams {
+    uri: string
+    codeLenses: ProtocolCodeLens[]
+}
+
+export interface ProtocolCodeLens {
+    range: Range
+    command?: ProtocolCommand
+    isResolved: boolean
+}
+
+export interface ProtocolCommand {
+    title: string
+    command: string
+    tooltip?: string
+    arguments?: any[]
+}
+
+export interface NetworkRequest {
+    url: string
+    body?: string
+    error?: string
+}
+
+export interface ShowWindowMessageParams {
+    severity: 'error' | 'warning' | 'information'
+    message: string
+    options?: vscode.MessageOptions
+    items?: string[]
+}
+
+export interface DeleteFilesParams {
+    files: { uri: string }[]
+}
+export interface CreateFilesParams {
+    files: { uri: string }[]
+}
+export interface RenameFilesParams {
+    files: { oldUri: string; newUri: string }[]
 }

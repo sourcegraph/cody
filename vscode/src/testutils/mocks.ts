@@ -12,13 +12,14 @@ import type {
 import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
-import { Disposable } from './Disposable'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
 
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+export { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 export { Disposable } from './Disposable'
+import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -118,6 +119,13 @@ export class MarkdownString implements vscode_types.MarkdownString {
     }
 }
 
+export enum TextEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3,
+}
+
 export enum CommentMode {
     Editing = 0,
     Preview = 1,
@@ -210,7 +218,9 @@ export class CodeActionKind {
 }
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = {
+        iconPath: Uri.parse('file://foobar'),
+    }
 }
 
 export class TreeItem {
@@ -221,12 +231,18 @@ export class TreeItem {
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri: Uri
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
+        this.baseUri =
+            typeof _base === 'string'
+                ? Uri.file(_base)
+                : 'uri' in _base
+                  ? Uri.from(_base.uri)
+                  : Uri.from(_base)
         this.base = _base.toString()
     }
 }
@@ -255,7 +271,10 @@ export class Position implements VSCodePosition {
     public isEqual(other: Position): boolean {
         return this.line === other.line && this.character === other.character
     }
-    public translate(change: { lineDelta?: number; characterDelta?: number }): VSCodePosition
+    public translate(change: {
+        lineDelta?: number
+        characterDelta?: number
+    }): VSCodePosition
     public translate(lineDelta?: number, characterDelta?: number): VSCodePosition
     public translate(
         arg?: number | { lineDelta?: number; characterDelta?: number },
@@ -324,7 +343,10 @@ export class Range implements VSCodeRange {
     }
 
     public with(start?: VSCodePosition, end?: VSCodePosition): VSCodeRange
-    public with(change: { start?: VSCodePosition; end?: VSCodePosition }): VSCodeRange
+    public with(change: {
+        start?: VSCodePosition
+        end?: VSCodePosition
+    }): VSCodeRange
     public with(
         arg?: VSCodePosition | { start?: VSCodePosition; end?: VSCodePosition },
         end?: VSCodePosition
@@ -438,17 +460,6 @@ export class InlineCompletionItem {
 }
 
 // TODO(abeatrix): Implement delete and insert mocks
-export class WorkspaceEdit {
-    public delete(uri: vscode_types.Uri, range: Range): Range {
-        return range
-    }
-    public insert(uri: vscode_types.Uri, position: Position, content: string): string {
-        return content
-    }
-}
-
-export const emptyDisposable = new Disposable(() => {})
-
 export enum EndOfLine {
     LF = 1,
     CRLF = 2,
@@ -503,7 +514,9 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         }
     },
     readDirectory: async uri => {
-        const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+        const entries = await fspromises.readdir(uri.fsPath, {
+            withFileTypes: true,
+        })
 
         return entries.map(entry => {
             const type = entry.isFile()
@@ -521,14 +534,20 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         await fspromises.mkdir(uri.fsPath, { recursive: true })
     },
     readFile: async uri => {
-        const content = await fspromises.readFile(uri.fsPath)
-        return new Uint8Array(content.buffer)
+        try {
+            const content = await fspromises.readFile(uri.fsPath)
+            return new Uint8Array(content.buffer)
+        } catch (error) {
+            throw new Error(`no such file: ${uri}`, { cause: error })
+        }
     },
     writeFile: async (uri, content) => {
         await fspromises.writeFile(uri.fsPath, content)
     },
     delete: async (uri, options) => {
-        await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+        await fspromises.rm(uri.fsPath, {
+            recursive: options?.recursive ?? false,
+        })
     },
     rename: async (source, target, options) => {
         if (options?.overwrite ?? false) {
@@ -652,6 +671,10 @@ const languages: Partial<typeof vscode_types.languages> = {
     },
 }
 
+export enum TextDocumentChangeReason {
+    Undo = 1,
+    Redo = 2,
+}
 export enum UIKind {
     Desktop = 1,
     Web = 2,
@@ -687,9 +710,15 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        activeTextEditor: {
+            document: { uri: { scheme: 'not-cody' } },
+            options: { tabSize: 4 },
+        },
         onDidChangeActiveTextEditor() {},
-        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+        createTextEditorDecorationType: () => ({
+            key: 'foo',
+            dispose: () => {},
+        }),
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -741,10 +770,6 @@ export const vsCodeMocks = {
     ViewColumn,
 } as const
 
-export function emptyEvent<T>(): vscode_types.Event<T> {
-    return () => emptyDisposable
-}
-
 export enum ProgressLocation {
     SourceControl = 1,
     Window = 10,
@@ -759,6 +784,11 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
+
+    public getFromCache(flag: FeatureFlag): boolean {
+        return this.enabledFlags.has(flag)
+    }
+
     public syncAuthStatus(): Promise<void> {
         return Promise.resolve()
     }
@@ -779,11 +809,11 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
+    commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
     debugEnable: false,
@@ -795,8 +825,10 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
+    autocompleteDisableInsideComments: false,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',

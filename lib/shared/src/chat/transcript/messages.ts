@@ -1,8 +1,8 @@
 import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
-import type { CodyDefaultCommands } from '../../commands'
 import type { Message } from '../../sourcegraph-api'
 
 import type { TranscriptJSON } from '.'
+import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatButton {
     label: string
@@ -53,22 +53,32 @@ interface ChatMetadata {
 
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: string[]
+    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
     [chatID: string]: TranscriptJSON
 }
 
+export interface ChatInputHistory {
+    inputText: string
+    inputContextFiles: ContextFile[]
+}
+
 export type ChatEventSource =
     | 'chat'
-    | 'editor'
-    | 'menu'
-    | 'code-action'
+    | 'editor' // e.g. shortcut, right-click menu or VS Code command palette
+    | 'menu' // Cody command palette
+    | 'sidebar'
+    | 'code-action:explain'
+    | 'code-action:document'
+    | 'code-action:edit'
+    | 'code-action:fix'
+    | 'code-action:generate'
     | 'custom-commands'
     | 'test'
     | 'code-lens'
-    | CodyDefaultCommands
+    | DefaultCodyCommands
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

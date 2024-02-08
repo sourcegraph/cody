@@ -129,6 +129,27 @@ for (const isTreeSitterEnabled of cases) {
             ).toEqual([])
         })
 
+        // c.f. https://github.com/sourcegraph/cody/issues/2912
+        it('removes prompt-continuations', async () => {
+            expect(
+                await getInlineCompletionsInsertText(
+                    params(
+                        dedent`
+                        function it() {
+                            █
+                    `,
+                        [
+                            // Anthropic-style prompts
+                            completion`\nHuman: Here is some more context code to provide`,
+                            // StarCoder style context snippet
+                            completion`// Path: foo.ts`,
+                            completion`# Path: foo.ts`,
+                        ]
+                    )
+                )
+            ).toEqual([])
+        })
+
         it('removes appends the injected prefix to the completion response since this is not sent to the LLM', async () => {
             expect(
                 await getInlineCompletionsInsertText(

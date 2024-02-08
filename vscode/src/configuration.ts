@@ -50,13 +50,18 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        null
-    )
-    // Handle the old `unstable-fireworks` option
-    if (autocompleteAdvancedProvider === 'unstable-fireworks') {
-        autocompleteAdvancedProvider = 'fireworks'
+    let autocompleteAdvancedProvider = config.get<
+        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, null)
+
+    // Handle deprecated provider identifiers
+    switch (autocompleteAdvancedProvider) {
+        case 'unstable-fireworks':
+            autocompleteAdvancedProvider = 'fireworks'
+            break
+        case 'unstable-ollama':
+            autocompleteAdvancedProvider = 'experimental-ollama'
+            break
     }
 
     // check if the configured enum values are valid
@@ -99,7 +104,12 @@ export function getConfiguration(
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
+        autocompleteDisableInsideComments: config.get(
+            CONFIG_KEY.autocompleteDisableInsideComments,
+            false
+        ),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
+        commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
         /**
          * Hidden settings for internal use only.
@@ -112,18 +122,17 @@ export function getConfiguration(
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
-        experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
         ),
-
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
         ),
+        autocompleteExperimentalFastPath: getHiddenSetting('autocomplete.experimental.fastPath', false),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {

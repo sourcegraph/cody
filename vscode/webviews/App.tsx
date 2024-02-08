@@ -5,9 +5,9 @@ import './App.css'
 import {
     GuardrailsPost,
     type ChatHistory,
+    type ChatInputHistory,
     type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
+    type ModelProvider,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
@@ -16,7 +16,7 @@ import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
-import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
+import { trailingNonAlphaNumericRegex } from '../src/commands/utils/test-commands'
 
 import { Chat } from './Chat'
 import {
@@ -36,8 +36,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
     >(null)
     const [view, setView] = useState<View | undefined>()
+    // If the current webview is active (vs user is working in another editor tab)
+    const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -47,18 +49,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     })
 
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+    const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<
-        [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
-    >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+    const [chatModels, setChatModels] = useState<ModelProvider[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
@@ -67,6 +67,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+    const onChooseRemoteSearchRepo = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
+    }, [vscodeAPI])
+    const onRemoveRemoteSearchRepo = useCallback(
+        (id: string): void => {
+            vscodeAPI.postMessage({ command: 'context/remove-remote-search-repo', repoId: id })
+        },
+        [vscodeAPI]
+    )
     const onConsentToEmbeddings = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'embeddings/index' })
     }, [vscodeAPI])
@@ -98,6 +107,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        setChatIDHistory([...chatIDHistory, message.chatID])
                         vscodeAPI.setState(message.chatID)
                         break
                     }
@@ -137,36 +147,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'view':
                         setView(message.messages)
                         break
-                    case 'custom-prompts': {
-                        let prompts: [
-                            string,
-                            CodyCommand & { isLastInGroup?: boolean; instruction?: string },
-                        ][] = message.prompts
-
-                        if (!prompts) {
-                            setMyPrompts(null)
-                            break
-                        }
-
-                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions).sort()
-
-                        // mark last prompts as last in group before adding another group
-                        const lastPrompt = prompts.at(-1)
-                        if (lastPrompt) {
-                            const [_, command] = lastPrompt
-                            command.isLastInGroup = true
-                        }
-
-                        setMyPrompts([
-                            ...prompts,
-                            // add another group
-                            [
-                                'reset',
-                                { prompt: '', slashCommand: '/reset', description: 'Clear the chat' },
-                            ],
-                        ])
+                    case 'webview-state':
+                        setIsWebviewActive(message.isActive)
                         break
-                    }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
@@ -274,13 +257,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
+                                onChooseRemoteSearchRepo,
                                 onConsentToEmbeddings,
-                                onShouldBuildSymfIndex,
                                 onEnabledChange: (enabled): void => {
                                     if (enabled !== enhancedContextEnabled) {
                                         setEnhancedContextEnabled(enabled)
                                     }
                                 },
+                                onRemoveRemoteSearchRepo,
+                                onShouldBuildSymfIndex,
                             }}
                         >
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
@@ -299,10 +284,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
-                                        chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
-                                        enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
@@ -310,6 +293,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                                 ? guardrails
                                                 : undefined
                                         }
+                                        chatIDHistory={chatIDHistory}
+                                        isWebviewActive={isWebviewActive}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
@@ -340,49 +325,10 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-/**
- * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
- */
-function groupPrompts(
-    acc: [string, CodyCommand & { isLastInGroup?: boolean }][],
-    [key, command]: [string, CodyCommand],
-    index: number,
-    array: [string, CodyCommand][]
-): [string, CodyCommand & { isLastInGroup?: boolean }][] {
-    if (key === 'separator') {
-        return acc
-    }
-
-    const nextItem = array[index + 1]
-    if (nextItem?.[0] === 'separator') {
-        acc.push([key, { ...command, isLastInGroup: true }])
-        return acc
-    }
-
-    acc.push([key, command])
-    return acc
-}
-
-const instructionLabels: Record<string, string> = {
-    '/ask': '[question]',
-    '/edit': '[instruction]',
-}
-
-/**
- * Adds `instruction` field to a prompt if it requires additional instruction.
- */
-function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [
-    string,
-    T & { instruction?: string },
-] {
-    const instruction = instructionLabels[command.slashCommand]
-    return [key, { ...command, instruction }]
-}
-
 function getWelcomeMessageByOS(os: string): string {
     const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
-To run [Cody Commands](command:cody.action.commands.menu) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
+To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
         os === 'darwin' ? '⌥' : 'Alt'
     }</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
 

@@ -12,6 +12,7 @@ import type { Message } from '../sourcegraph-api'
 // search: context file returned by symf search
 // selection: selected code from the current editor
 // terminal: output from shell terminal
+// unified: remote search
 export type ContextFileSource =
     | 'embeddings'
     | 'user'
@@ -53,7 +54,7 @@ export type ContextFileSymbol = ContextFileCommon & {
     kind: SymbolKind
 }
 
-export interface ContextMessage extends Message {
+export interface ContextMessage extends Required<Message> {
     file?: ContextFile
     preciseContext?: PreciseContext
 }

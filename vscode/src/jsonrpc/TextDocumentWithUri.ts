@@ -1,34 +1,46 @@
 import * as vscode from 'vscode'
 
-import type { Range, TextDocument } from './agent-protocol'
+import type { Range, ProtocolTextDocument } from './agent-protocol'
+import { logDebug } from '../log'
 
 /**
- * Wrapper around `TextDocument` that also contains a parsed vscode.Uri.
+ * Wrapper around `ProtocolTextDocument` that also contains a parsed vscode.Uri.
  *
- * We can't use `vscode.Uri` in `TextDocument` because we use that type in the
- * JSON-RPC protocol where URIs are string-encoded.
+ * We can't use `vscode.Uri` in `ProtocolTextDocument` because we use that type
+ * in the JSON-RPC protocol where URIs are string-encoded.
  */
-export class TextDocumentWithUri {
-    public underlying: TextDocument
-    constructor(
+export class ProtocolTextDocumentWithUri {
+    public underlying: ProtocolTextDocument
+    private constructor(
         public readonly uri: vscode.Uri,
-        underlying?: TextDocument
+        underlying?: ProtocolTextDocument
     ) {
         this.underlying = underlying ?? { uri: uri.toString() }
+        if (this.underlying.uri !== uri.toString()) {
+            logDebug(
+                'ProtocolTextDocumentWithUri',
+                'correcting invariant violation',
+                `${this.uri} (this.uri) !== ${this.underlying.uri} (this.underlying.uri)`
+            )
+            this.underlying.uri = uri.toString()
+        }
     }
 
-    public static fromDocument(document: TextDocument): TextDocumentWithUri {
+    public static fromDocument(document: ProtocolTextDocument): ProtocolTextDocumentWithUri {
         if (document?.uri === undefined && typeof document.filePath === 'string') {
             // TODO: remove support for `document.filePath` once the migration to URIs is complete
             const uri = vscode.Uri.file(document.filePath)
             document.uri = uri.toString()
-            return new TextDocumentWithUri(uri, document)
+            return new ProtocolTextDocumentWithUri(uri, document)
         }
-        return new TextDocumentWithUri(vscode.Uri.parse(document.uri), document)
+        return new ProtocolTextDocumentWithUri(vscode.Uri.parse(document.uri), document)
     }
 
-    public static from(uri: vscode.Uri, document: Partial<TextDocument>): TextDocumentWithUri {
-        return new TextDocumentWithUri(uri, { uri: uri.toString(), ...document })
+    public static from(
+        uri: vscode.Uri,
+        document?: Partial<ProtocolTextDocument>
+    ): ProtocolTextDocumentWithUri {
+        return new ProtocolTextDocumentWithUri(uri, { ...document, uri: uri.toString() })
     }
 
     public get content(): string | undefined {

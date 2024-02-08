@@ -1,17 +1,30 @@
 import * as vscode from 'vscode'
+import { SHA256, enc } from 'crypto-js'
 
 import {
     displayPath,
     tokensToChars,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
+    type CompletionResponseGenerator,
     type CodeCompletionsParams,
+    TracedError,
+    type CompletionResponse,
+    isRateLimitError,
+    isAbortError,
+    NetworkError,
+    isNodeResponse,
+    getActiveTraceAndSpanId,
+    addTraceparent,
+    type ConfigurationWithAccessToken,
+    CompletionStopReason,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
+import { fetch } from '../../fetch'
 
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
@@ -25,12 +38,16 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
+import { createRateLimitErrorFromResponse, createSSEIterator } from '../client'
+import type { AuthStatus } from '../../chat/protocol'
 
 export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
-    client: Pick<CodeCompletionsClient, 'complete'>
+    client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
+    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -91,18 +108,32 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
 class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
-    private client: Pick<CodeCompletionsClient, 'complete'>
+    private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
+    private fastPathAccessToken?: string
+    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>
+        { model, maxContextTokens, client, timeouts, config, authStatus }: Required<FireworksOptions>
     ) {
         super(options)
         this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
+        this.authStatus = authStatus
+
+        const isNode = typeof process !== 'undefined'
+        this.fastPathAccessToken =
+            this.options.fastPath &&
+            config.accessToken &&
+            // Require the upstream to be dotcom
+            this.authStatus.isDotCom &&
+            // The fast path client only supports Node.js style response streams
+            isNode
+                ? dotcomTokenToGatewayToken(config.accessToken)
+                : undefined
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -190,7 +221,9 @@ class FireworksProvider extends Provider {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
+                this.fastPathAccessToken
+                    ? this.createFastPathClient(requestParams, abortController)
+                    : this.createDefaultClient(requestParams, abortController),
                 requestParams.timeoutMs,
                 abortController
             )
@@ -263,13 +296,170 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         }
         return content
     }
+
+    private createDefaultClient(
+        requestParams: CodeCompletionsParams,
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        return this.client.complete(requestParams, abortController)
+    }
+
+    // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
+    // proxies to the upstream API, we have to first convert the request to a Fireworks API
+    // compatible payload. We also have to manually convert SSE response chunks.
+    //
+    // Note: This client assumes that it is run inside a Node.js environment and will always use
+    // streaming to simplify the logic. Environments that do not support that should fall back to
+    // the default client.
+    private async *createFastPathClient(
+        requestParams: CodeCompletionsParams,
+        abortController: AbortController
+    ): CompletionResponseGenerator {
+        const isLocalInstance =
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+            this.authStatus.endpoint?.includes('localhost')
+        const gatewayUrl = isLocalInstance
+            ? 'http://localhost:9992'
+            : 'https://cody-gateway.sourcegraph.com'
+
+        const url = `${gatewayUrl}/v1/completions/fireworks`
+        const log = this.client.logger?.startCompletion(requestParams, url)
+
+        // Convert the SG instance messages array back to the original prompt
+        const prompt = requestParams.messages[0]!.text!
+
+        // c.f. https://readme.fireworks.ai/reference/createcompletion
+        const fireworksRequest = {
+            model: requestParams.model?.replace(/^fireworks\//, ''),
+            prompt,
+            max_tokens: requestParams.maxTokensToSample,
+            echo: false,
+            temperature: requestParams.temperature,
+            top_p: requestParams.topP,
+            top_k: requestParams.topK,
+            stop: requestParams.stopSequences,
+            stream: true,
+        }
+
+        const headers = new Headers()
+        // Force HTTP connection reuse to reduce latency.
+        // c.f. https://github.com/microsoft/vscode/issues/173861
+        headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        headers.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
+        headers.set('X-Sourcegraph-Feature', 'code_completions')
+        addTraceparent(headers)
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(fireworksRequest),
+            headers,
+            signal: abortController.signal,
+        })
+
+        const traceId = getActiveTraceAndSpanId()?.traceId
+
+        // When rate-limiting occurs, the response is an error message The response here is almost
+        // identical to the SG instance response but does not contain information on whether a user
+        // is eligible to upgrade to the pro plan. We get this from the authState instead.
+        if (response.status === 429) {
+            const upgradeIsAvailable = this.authStatus.userCanUpgrade
+            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+        }
+
+        if (!response.ok) {
+            throw new NetworkError(
+                response,
+                (await response.text()) + (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                traceId
+            )
+        }
+
+        if (response.body === null) {
+            throw new TracedError('No response body', traceId)
+        }
+
+        const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
+        if (!isStreamingResponse || !isNodeResponse(response)) {
+            throw new TracedError('No streaming response given', traceId)
+        }
+
+        let lastResponse: CompletionResponse | undefined
+        try {
+            const iterator = createSSEIterator(response.body)
+            let chunkIndex = 0
+
+            for await (const { event, data } of iterator) {
+                if (event === 'error') {
+                    throw new TracedError(data, traceId)
+                }
+
+                if (abortController.signal.aborted) {
+                    if (lastResponse) {
+                        lastResponse.stopReason = CompletionStopReason.RequestAborted
+                    }
+                    break
+                }
+
+                // [DONE] is a special non-JSON message to indicate the end of the stream
+                if (data === '[DONE]') {
+                    break
+                }
+
+                const parsed = JSON.parse(data) as FireworksSSEData
+                const choice = parsed.choices[0]
+
+                if (!choice) {
+                    continue
+                }
+
+                lastResponse = {
+                    completion: (lastResponse ? lastResponse.completion : '') + choice.text,
+                    stopReason:
+                        choice.finish_reason ??
+                        (lastResponse ? lastResponse.stopReason : CompletionStopReason.StreamingChunk),
+                }
+
+                yield lastResponse
+
+                chunkIndex += 1
+            }
+
+            if (lastResponse === undefined) {
+                throw new TracedError('No completion response received', traceId)
+            }
+
+            if (!lastResponse.stopReason) {
+                lastResponse.stopReason = CompletionStopReason.RequestFinished
+            }
+
+            return lastResponse
+        } catch (error) {
+            if (isRateLimitError(error as Error)) {
+                throw error
+            }
+            if (isAbortError(error as Error) && lastResponse) {
+                lastResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
+                log?.onError(message, error)
+                throw new TracedError(message, traceId)
+            }
+        } finally {
+            if (lastResponse) {
+                log?.onComplete(lastResponse)
+            }
+        }
+    }
 }
 
 export function createProviderConfig({
     model,
     timeouts,
     ...otherOptions
-}: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
+}: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
+    model: string | null
+}): ProviderConfig {
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
@@ -287,12 +477,18 @@ export function createProviderConfig({
 
     return {
         create(options: ProviderOptions) {
-            return new FireworksProvider(options, {
-                model: resolvedModel,
-                maxContextTokens,
-                timeouts,
-                ...otherOptions,
-            })
+            return new FireworksProvider(
+                {
+                    ...options,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                {
+                    model: resolvedModel,
+                    maxContextTokens,
+                    timeouts,
+                    ...otherOptions,
+                }
+            )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
@@ -319,4 +515,28 @@ function isStarCoderFamily(model: string): boolean {
 
 function isLlamaCode(model: string): boolean {
     return model.startsWith('llama-code')
+}
+
+interface FireworksSSEData {
+    choices: [{ text: string; finish_reason: null }]
+}
+
+function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
+    const DOTCOM_TOKEN_REGEX: RegExp =
+        /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
+    const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
+
+    if (!match) {
+        throw new Error('Access token format is invalid.')
+    }
+
+    const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
+
+    if (!hexEncodedAccessTokenBytes) {
+        throw new Error('Access token not found.')
+    }
+
+    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
+    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
+    return 'sgd_' + gatewayTokenBytes
 }

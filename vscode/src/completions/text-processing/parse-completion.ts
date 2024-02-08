@@ -1,6 +1,7 @@
 import { Position, Range, type TextDocument } from 'vscode'
 import type { default as Parser, Point, Tree } from 'web-tree-sitter'
 
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { DocumentContext } from '../get-current-doc-context'
 import type { InlineCompletionItem } from '../types'
@@ -44,7 +45,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    // Do nothig if the syntactic post-processing is not enabled.
+    // Do nothing if the syntactic post-processing is not enabled.
     if (!parseTreeCache) {
         return completion
     }
@@ -112,31 +113,44 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         document,
         tree,
         parser,
-        docContext: { position, currentLineSuffix },
+        docContext: {
+            position,
+            currentLineSuffix,
+            // biome-ignore lint/nursery/noInvalidUseBeforeDeclaration: it's actually correct
+            positionWithoutInjectedCompletionText = position,
+            injectedCompletionText = '',
+        },
         completionEndPosition,
     } = params
 
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
 
     // Adjust suffix and prefix based on completion insert range.
-    const prefix = document.getText(new Range(new Position(0, 0), position))
-    const suffix = document.getText(new Range(position, document.positionAt(document.getText().length)))
+    const prefix =
+        document.getText(new Range(new Position(0, 0), positionWithoutInjectedCompletionText)) +
+        injectedCompletionText
+    const suffix = document.getText(
+        new Range(positionWithoutInjectedCompletionText, document.positionAt(document.getText().length))
+    )
 
-    const offset = document.offsetAt(position)
+    const offset = document.offsetAt(positionWithoutInjectedCompletionText)
 
     // Remove the characters that are being replaced by the completion to avoid having
     // them in the parse tree. It breaks the multiline truncation logic which looks for
     // the increased number of children in the tree.
     const textWithCompletion = prefix + insertText + suffix.slice(matchingSuffixLength)
+    addAutocompleteDebugEvent('paste-completion', {
+        text: textWithCompletion,
+    })
 
     const treeCopy = tree.copy()
 
     treeCopy.edit({
         startIndex: offset,
         oldEndIndex: offset,
-        newEndIndex: offset + insertText.length,
-        startPosition: asPoint(position),
-        oldEndPosition: asPoint(position),
+        newEndIndex: offset + injectedCompletionText.length + insertText.length,
+        startPosition: asPoint(positionWithoutInjectedCompletionText),
+        oldEndPosition: asPoint(positionWithoutInjectedCompletionText),
         newEndPosition: asPoint(completionEndPosition),
     })
 

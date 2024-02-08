@@ -1,11 +1,12 @@
 import type * as vscode from 'vscode'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import type { DocumentContext } from '../get-current-doc-context'
 import type { ContextSnippet } from '../types'
 
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
+import { fuseResults } from './reciprocal-rank-fusion'
 
 interface GetContextOptions {
     document: vscode.TextDocument
@@ -14,11 +15,6 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
 }
-
-// k parameter for the reciprocal rank fusion scoring. 60 is the default value in many places
-//
-// c.f. https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking#how-rrf-ranking-works
-const RRF_K = 60
 
 export interface ContextSummary {
     /** Name of the strategy being used */
@@ -84,7 +80,7 @@ export class ContextMixer implements vscode.Disposable {
         const results = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
-                const snippets = await wrapInActiveSpan(
+                const allSnippets = await wrapInActiveSpan(
                     `autocomplete.retrieve.${retriever.identifier}`,
                     () =>
                         retriever.retrieve({
@@ -95,67 +91,32 @@ export class ContextMixer implements vscode.Disposable {
                             },
                         })
                 )
+                const filteredSnippets = allSnippets.filter(snippet => !isCodyIgnoredFile(snippet.uri))
 
                 return {
                     identifier: retriever.identifier,
                     duration: performance.now() - retrieverStart,
-                    snippets,
+                    snippets: new Set(filteredSnippets),
                 }
             })
         )
 
-        // For every retrieval strategy, create a map of snippets by document.
-        const resultsByDocument = new Map<string, { [identifier: string]: ContextSnippet[] }>()
-        for (const { identifier, snippets } of results) {
-            for (const snippet of snippets) {
-                const documentId = snippet.uri.toString()
+        const fusedResults = fuseResults(
+            results.map(r => r.snippets),
+            result => {
+                // Ensure that context retrieved via BFG works where we do not have a startLine and
+                // endLine yet.
+                if (typeof result.startLine === 'undefined' || typeof result.endLine === 'undefined') {
+                    return [result.uri.toString()]
+                }
 
-                let document = resultsByDocument.get(documentId)
-                if (!document) {
-                    document = {}
-                    resultsByDocument.set(documentId, document)
+                const lineIds = []
+                for (let i = result.startLine; i <= result.endLine; i++) {
+                    lineIds.push(`${result.uri.toString()}:${i}`)
                 }
-                if (!document[identifier]) {
-                    document[identifier] = []
-                }
-                document[identifier].push(snippet)
+                return lineIds
             }
-        }
-
-        // Rank the order of documents using reciprocal rank fusion.
-        //
-        // For this, we take the top rank of every document from each retrieved set and compute a
-        // combined rank. The idea is that a document that ranks highly across multiple retrievers
-        // should be ranked higher overall.
-        const fusedDocumentScores: Map<string, number> = new Map()
-        for (const { identifier, snippets } of results) {
-            snippets.forEach((snippet, rank) => {
-                const documentId = snippet.uri.toString()
-
-                // Since every retriever can return many snippets for a given document, we need to
-                // only consider the best rank for each document.
-                // We can use the previous map by document to find the highest ranked snippet for a
-                // retriever
-                const isBestRankForRetriever =
-                    resultsByDocument.get(documentId)?.[identifier][0] === snippet
-                if (!isBestRankForRetriever) {
-                    return
-                }
-
-                const reciprocalRank = 1 / (RRF_K + rank)
-
-                const score = fusedDocumentScores.get(documentId)
-                if (score === undefined) {
-                    fusedDocumentScores.set(documentId, reciprocalRank)
-                } else {
-                    fusedDocumentScores.set(documentId, score + reciprocalRank)
-                }
-            })
-        }
-
-        const fusedDocuments = [...fusedDocumentScores.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map(e => e[0])
+        )
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
         // total chars with the prefix and suffix sizes.
@@ -164,54 +125,35 @@ export class ContextMixer implements vscode.Disposable {
         const mixedContext: ContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
         let position = 0
-        // Now that we have a sorted list of documents (with the first document being the highest
-        // ranked one), we use top-k to combine snippets from each retriever into a result set.
-        //
-        // We start with the highest ranked document and include all retrieved snippets from this
-        // document into the result set, starting with the top retrieved snippet from each retriever
-        // and adding entries greedily.
-        for (const documentId of fusedDocuments) {
-            const resultByDocument = resultsByDocument.get(documentId)
-            if (!resultByDocument) {
+        for (const snippet of fusedResults) {
+            if (totalChars + snippet.content.length > options.maxChars) {
                 continue
             }
 
-            // We want to start iterating over every retrievers first rank, then every retrievers
-            // second rank etc. The termination criteria is thus defined to be the length of the
-            // largest snippet list of any retriever.
-            const maxMatches = Math.max(...Object.values(resultByDocument).map(r => r.length))
+            mixedContext.push(snippet)
+            totalChars += snippet.content.length
 
-            for (let i = 0; i < maxMatches; i++) {
-                for (const [identifier, snippets] of Object.entries(resultByDocument)) {
-                    if (i >= snippets.length) {
-                        continue
+            // For analytics purposes, find out which retriever has yielded this result and
+            // summarize the stats in retrieverStats.
+            const retrieverId = results.find(r => r.snippets.has(snippet))?.identifier
+            if (retrieverId) {
+                if (!retrieverStats[retrieverId]) {
+                    retrieverStats[retrieverId] = {
+                        suggestedItems: 0,
+                        positionBitmap: 0,
+                        retrievedItems:
+                            results.find(r => r.identifier === retrieverId)?.snippets.size ?? 0,
+                        duration: results.find(r => r.identifier === retrieverId)?.duration ?? 0,
                     }
-                    const snippet = snippets[i]
-                    if (totalChars + snippet.content.length > options.maxChars) {
-                        continue
-                    }
-
-                    mixedContext.push(snippet)
-                    totalChars += snippet.content.length
-
-                    if (!retrieverStats[identifier]) {
-                        retrieverStats[identifier] = {
-                            suggestedItems: 0,
-                            positionBitmap: 0,
-                            retrievedItems:
-                                results.find(r => r.identifier === identifier)?.snippets.length ?? 0,
-                            duration: results.find(r => r.identifier === identifier)?.duration ?? 0,
-                        }
-                    }
-
-                    retrieverStats[identifier].suggestedItems++
-                    if (position < 32) {
-                        retrieverStats[identifier].positionBitmap |= 1 << position
-                    }
-
-                    position++
+                }
+                retrieverStats[retrieverId].suggestedItems++
+                // Only log the position for the first 32 results to avoid overflowing the bitmap
+                if (position < 32) {
+                    retrieverStats[retrieverId].positionBitmap |= 1 << position
                 }
             }
+
+            position++
         }
 
         const logSummary: ContextSummary = {

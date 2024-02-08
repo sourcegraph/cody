@@ -1,18 +1,21 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextFile, ContextMessage } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
 import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 
 export type taskID = string
 
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
+    private stateChanges = new vscode.EventEmitter<CodyTaskState>()
+    public onDidStateChange = this.stateChanges.event
     /**
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
@@ -55,25 +58,36 @@ export class FixupTask {
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
-        public mode: EditMode = 'edit',
+        public readonly mode: EditMode,
+        public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[]
+        public readonly contextMessages?: ContextMessage[],
+        /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
+        public destinationFile?: vscode.Uri
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
         this.originalRange = selectionRange
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        this.intent = selectionRange.isEmpty ? 'add' : intent
+        this.model = getOverridenModelForIntent(this.intent, this.model)
     }
 
     /**
      * Sets the task state. Checks the state transition is valid.
      */
     public set state(state: CodyTaskState) {
+        if (state === CodyTaskState.error) {
+            console.log(new Error().stack)
+        }
         this.state_ = state
+        this.stateChanges.fire(state)
     }
 
+    /**
+     * Gets the state of the fixup task.
+     *
+     * @returns The current state of the fixup task.
+     */
     public get state(): CodyTaskState {
         return this.state_
     }

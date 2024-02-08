@@ -24,7 +24,8 @@ const findWorkspaceFiles = async (
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
-    const fileExcludesPattern = '**/{*.env,.git,out/,dist/,snap,node_modules,__pycache__}**'
+    const fileExcludesPattern =
+        '**/{*.env,.git,.class,out/,dist/,build/,snap,node_modules,__pycache__}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }
@@ -85,20 +86,18 @@ export async function getFileContextFiles(
     })
 
     // Remove ignored files and apply a penalty for segments that are in the low scoring list.
-    const adjustedResults = [...results]
-        .filter(result => !isCodyIgnoredFile(result.obj.uri))
-        .map(result => {
-            const segments = result.obj.uri.fsPath.split(path.sep)
-            for (const lowScoringPathSegment of lowScoringPathSegments) {
-                if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
-                    return {
-                        ...result,
-                        score: result.score - 100000,
-                    }
+    const adjustedResults = [...results].map(result => {
+        const segments = result.obj.uri.fsPath.split(path.sep)
+        for (const lowScoringPathSegment of lowScoringPathSegments) {
+            if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
+                return {
+                    ...result,
+                    score: result.score - 100000,
                 }
             }
-            return result
-        })
+        }
+        return result
+    })
 
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
@@ -112,7 +111,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.map(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
+    return sortedResults.flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
 }
 
 export async function getSymbolContextFiles(
@@ -147,9 +146,7 @@ export async function getSymbolContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    const symbols = results
-        .map(result => result.obj)
-        .filter(symbol => !isCodyIgnoredFile(symbol.location.uri))
+    const symbols = results.map(result => result.obj)
 
     if (!symbols.length) {
         return []
@@ -157,36 +154,36 @@ export async function getSymbolContextFiles(
 
     const matches = []
     for (const symbol of symbols) {
-        if (!isCodyIgnoredFile(symbol?.location.uri)) {
-            const contextFile = createContextFileFromUri(
-                symbol.location.uri,
-                'user',
-                'symbol',
-                symbol.location.range,
-                // TODO(toolmantim): Update the kinds to match above
-                symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function',
-                symbol.name
-            )
-            matches.push(contextFile)
-        }
+        const contextFile = createContextFileFromUri(
+            symbol.location.uri,
+            'user',
+            'symbol',
+            symbol.location.range,
+            // TODO(toolmantim): Update the kinds to match above
+            symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function',
+            symbol.name
+        )
+        matches.push(contextFile)
     }
 
-    return matches
+    return matches.flatMap(match => match)
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
     // de-dupe by fspath in case if they have a file open in two tabs
     const fsPaths = new Set()
     return getOpenTabsUris()
-        ?.filter(uri => !isCodyIgnoredFile(uri))
         .filter(uri => {
-            if (!fsPaths.has(uri.fsPath)) {
-                fsPaths.add(uri.fsPath)
+            if (isCodyIgnoredFile(uri)) {
+                return false
+            }
+            if (!fsPaths.has(uri.path)) {
+                fsPaths.add(uri.path)
                 return true
             }
             return false
         })
-        .map(uri => createContextFileFromUri(uri, 'user', 'file'))
+        .flatMap(uri => createContextFileFromUri(uri, 'user', 'file'))
 }
 
 function createContextFileFromUri(
@@ -196,13 +193,13 @@ function createContextFileFromUri(
     selectionRange: vscode.Range,
     kind: SymbolKind,
     symbolName: string
-): ContextFileSymbol
+): ContextFileSymbol[]
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextFileSource,
     type: 'file',
     selectionRange?: vscode.Range
-): ContextFileFile
+): ContextFileFile[]
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextFileSource,
@@ -210,23 +207,29 @@ function createContextFileFromUri(
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
     symbolName?: string
-): ContextFile {
+): ContextFile[] {
+    if (isCodyIgnoredFile(uri)) {
+        return []
+    }
+
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
-    return type === 'file'
-        ? {
-              type,
-              uri,
-              range,
-              source,
-          }
-        : {
-              type,
-              symbolName: symbolName!,
-              uri,
-              range,
-              source,
-              kind: kind!,
-          }
+    return [
+        type === 'file'
+            ? {
+                  type,
+                  uri,
+                  range,
+                  source,
+              }
+            : {
+                  type,
+                  symbolName: symbolName!,
+                  uri,
+                  range,
+                  source,
+                  kind: kind!,
+              },
+    ]
 }
 
 function createContextFileRange(selectionRange: vscode.Range): ContextFile['range'] {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 
@@ -7,8 +7,6 @@ import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 import type {
     ApiPostMessage,
     ChatButtonProps,
-    ChatUISubmitButtonProps,
-    ChatUITextAreaProps,
     CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
@@ -33,7 +31,6 @@ export interface TranscriptItemClassNames {
     codeBlocksCopyButtonClassName?: string
     codeBlocksInsertButtonClassName?: string
     transcriptActionClassName?: string
-    chatInputClassName?: string
 }
 
 /**
@@ -41,22 +38,20 @@ export interface TranscriptItemClassNames {
  */
 export const TranscriptItem: React.FunctionComponent<
     {
+        index: number
         message: ChatMessage
         inProgress: boolean
-        beingEdited: boolean
-        setBeingEdited: (input: boolean) => void
+        beingEdited: number | undefined
+        setBeingEdited: (index?: number) => void
+        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+        showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
-        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        editButtonOnSubmit?: (text: string) => void
-        showEditButton: boolean
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         abortMessageInProgressComponent?: React.FunctionComponent<{
             onAbortMessageInProgress: () => void
         }>
@@ -67,6 +62,7 @@ export const TranscriptItem: React.FunctionComponent<
         guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
+    index,
     message,
     inProgress,
     beingEdited,
@@ -79,96 +75,67 @@ export const TranscriptItem: React.FunctionComponent<
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
     transcriptActionClassName,
-    textAreaComponent: TextArea,
     EditButtonContainer,
-    editButtonOnSubmit,
     showEditButton,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    submitButtonComponent: SubmitButton,
-    chatInputClassName,
     ChatButtonComponent,
     userInfo,
     postMessage,
     guardrails,
 }) {
-    const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const EditTextArea =
-        TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
-            <div className={styles.textAreaContainer}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={5}
-                    value={formInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={event => setFormInput((event.target as HTMLInputElement).value)}
-                    onKeyDown={event => {
-                        if (event.key === 'Escape') {
-                            setBeingEdited(false)
-                        }
+    // A boolean indicating whether the message was sent by a human speaker.
+    const isHumanMessage = message.speaker === 'human'
+    // A boolean that determines if any message is currently being edited.
+    const isInEditingMode = beingEdited !== undefined
+    // A boolean indicating whether the current transcript item is the one being edited.
+    const isItemBeingEdited = beingEdited === index
 
-                        if (
-                            event.key === 'Enter' &&
-                            !event.shiftKey &&
-                            !event.nativeEvent.isComposing &&
-                            formInput.trim()
-                        ) {
-                            event.preventDefault()
-                            setBeingEdited(false)
-                            editButtonOnSubmit(formInput)
-                        }
-                    }}
-                    chatEnabled={true}
-                />
-                <SubmitButton
-                    className={styles.submitButton}
-                    isFollowUp={false}
-                    onClick={() => {
-                        setBeingEdited(false)
-                        editButtonOnSubmit(formInput)
-                    }}
-                    disabled={formInput.length === 0}
-                />
-            </div>
-        ) : null
+    // TODO (bee) can be removed once we support editing command prompts.
+    // A boolean indicating whether the current message is a known command input.
+    const isCommandInput =
+        message?.displayText?.startsWith('/') || isDefaultCommandPrompts(message?.displayText)
 
     return (
         <div
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
+                isHumanMessage ? humanTranscriptItemClassName : styles.assistantRow,
+                // When editing a message, all other messages (both human and assistant messages) are blurred (unfocused)
+                // except for the current message (transcript item) that is being edited (focused)
+                isInEditingMode && (!isHumanMessage || !isItemBeingEdited) && styles.unfocused,
+                isItemBeingEdited && styles.focused
             )}
         >
-            {showEditButton &&
-                EditButtonContainer &&
-                editButtonOnSubmit &&
-                TextArea &&
-                message.speaker === 'human' && (
-                    <div
-                        className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}
+            {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
+            {showEditButton && EditButtonContainer && (
+                <div
+                    className={classNames(
+                        styles.editingButtonContainer,
+                        isInEditingMode && styles.editingButtonContainerIsEditingMode
+                    )}
+                    tabIndex={isInEditingMode ? -1 : undefined}
+                    aria-hidden={isInEditingMode}
+                >
+                    <header
+                        className={classNames(
+                            styles.transcriptItemHeader,
+                            transcriptItemParticipantClassName
+                        )}
                     >
-                        <header
-                            className={classNames(
-                                styles.transcriptItemHeader,
-                                transcriptItemParticipantClassName
-                            )}
-                        >
-                            {beingEdited && (
-                                <p className={classNames(styles.editingLabel)}>Editing...</p>
-                            )}
-                            <EditButtonContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                messageBeingEdited={beingEdited}
-                                setMessageBeingEdited={setBeingEdited}
-                            />
-                        </header>
-                    </div>
-                )}
+                        <EditButtonContainer
+                            className={styles.feedbackEditButtonsContainer}
+                            messageBeingEdited={index}
+                            setMessageBeingEdited={setBeingEdited}
+                            disabled={isCommandInput || isInEditingMode}
+                        />
+                    </header>
+                </div>
+            )}
             {message.preciseContext && message.preciseContext.length > 0 && (
                 <div className={styles.actions}>
                     <PreciseContexts
@@ -190,23 +157,17 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 )
             ) : null}
-            <div
-                className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}
-            >
+            <div className={classNames(styles.contentPadding, styles.content)}>
                 {message.displayText ? (
-                    EditTextArea ? (
-                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
-                    ) : (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            guardrails={guardrails}
-                        />
-                    )
+                    <CodeBlocks
+                        displayText={message.displayText}
+                        copyButtonClassName={codeBlocksCopyButtonClassName}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonClassName={codeBlocksInsertButtonClassName}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        metadata={message.metadata}
+                        guardrails={guardrails}
+                    />
                 ) : (
                     inProgress && <BlinkingCursor />
                 )}
@@ -214,23 +175,26 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {message.speaker === 'human' && (
+            {/* Enhanced Context list shows up on human message only */}
+            {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext
                             contextFiles={message.contextFiles}
                             fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
+                            isCommand={isCommandInput}
                         />
                     ) : (
                         inProgress && <LoadingContext />
                     )}
                 </div>
             )}
-            {showFeedbackButtons &&
+            {/* Display feedback buttons on assistant messages only */}
+            {!isHumanMessage &&
+                showFeedbackButtons &&
                 FeedbackButtonsContainer &&
-                feedbackButtonsOnSubmit &&
-                message.speaker === 'assistant' && (
+                feedbackButtonsOnSubmit && (
                     <footer
                         className={classNames(
                             styles.footerContainer,
@@ -238,8 +202,9 @@ export const TranscriptItem: React.FunctionComponent<
                         )}
                     >
                         {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                        {/* Hide the feedback buttons during editing mode */}
                         <FeedbackButtonsContainer
-                            className={styles.FeedbackEditButtonsContainer}
+                            className={styles.feedbackEditButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         />
                     </footer>
@@ -247,3 +212,17 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 })
+
+// A temporary workaround for disabling editing on the default chat commands.
+const commandPrompts = {
+    explain:
+        'Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.',
+    smell: `Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors'`,
+}
+
+export function isDefaultCommandPrompts(text?: string): boolean {
+    if (!text) {
+        return false
+    }
+    return Object.values(commandPrompts).includes(text)
+}

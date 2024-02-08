@@ -1,16 +1,12 @@
 import * as vscode from 'vscode'
 
 import { getSmartSelection } from '../../editor/utils'
+import { MAX_CURRENT_FILE_TOKENS, tokensToChars } from '@sourcegraph/cody-shared'
+import type { EditIntent } from '../types'
+import { getEditIntent } from './edit-intent'
 
-/**
- * Checks if the current selection and editor represent a generate intent.
- * A generate intent means the user has an empty selection on an empty line.
- */
-export function isGenerateIntent(
-    document: vscode.TextDocument,
-    selection: vscode.Selection | vscode.Range
-): boolean {
-    return selection.isEmpty && document.lineAt(selection.start.line).isEmptyOrWhitespace
+interface SmartSelectionOptions {
+    forceExpand?: boolean
 }
 
 /**
@@ -27,15 +23,17 @@ export function isGenerateIntent(
  */
 export async function getEditSmartSelection(
     document: vscode.TextDocument,
-    selectionRange: vscode.Range
+    selectionRange: vscode.Range,
+    { forceExpand }: SmartSelectionOptions = {},
+    intent?: EditIntent
 ): Promise<vscode.Range> {
     // Use selectionRange when it's available
-    if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
+    if (!forceExpand && selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
         return selectionRange
     }
 
     // Return original (empty) range if we will resolve to generate new code
-    if (isGenerateIntent(document, selectionRange)) {
+    if (!forceExpand && getEditIntent(document, selectionRange, intent) === 'add') {
         return selectionRange
     }
 
@@ -62,4 +60,63 @@ export async function getEditSmartSelection(
         newSelectionEndingPosition.line,
         newSelectionEndingPosition.character
     )
+}
+
+const MAXIMUM_EDIT_SELECTION_LENGTH = tokensToChars(MAX_CURRENT_FILE_TOKENS)
+
+/**
+ * Expands the selection to encompass as much of the document as we can include as context to the LLM.
+ */
+export function getEditMaximumSelection(
+    document: vscode.TextDocument,
+    selectionRange: vscode.Range
+): vscode.Range {
+    let expandedRange = selectionRange
+    let charCount = document.getText(expandedRange).length
+
+    while (charCount < MAXIMUM_EDIT_SELECTION_LENGTH) {
+        const newStartLine = expandedRange.start.line > 0 ? expandedRange.start.line - 1 : 0
+        const newEndLine =
+            expandedRange.end.line < document.lineCount - 1
+                ? expandedRange.end.line + 1
+                : document.lineCount - 1
+
+        const newRange = new vscode.Range(
+            newStartLine,
+            0,
+            newEndLine,
+            document.lineAt(newEndLine).text.length
+        )
+        const newCharCount = document.getText(newRange).length
+
+        if (
+            newCharCount > MAXIMUM_EDIT_SELECTION_LENGTH ||
+            (newStartLine === 0 && newEndLine === document.lineCount - 1)
+        ) {
+            break // Stop expanding if the next expansion goes over the limit or the entire document is selected
+        }
+
+        expandedRange = newRange
+        charCount = newCharCount
+    }
+
+    return expandedRange
+}
+
+/**
+ * Expands the selection to include all non-whitespace characters from the selected lines.
+ * This is to help produce consistent edits regardless of user behaviour.
+ */
+export function getEditLineSelection(
+    document: vscode.TextDocument,
+    selection: vscode.Range
+): vscode.Range {
+    if (selection.isEmpty) {
+        // No selection to expand, do nothing
+        return selection
+    }
+
+    const startChar = document.lineAt(selection.start.line).firstNonWhitespaceCharacterIndex
+    const endChar = document.lineAt(selection.end.line).text.length
+    return new vscode.Range(selection.start.line, startChar, selection.end.line, endChar)
 }

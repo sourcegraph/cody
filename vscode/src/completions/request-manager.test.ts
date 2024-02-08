@@ -4,48 +4,61 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { Provider } from './providers/provider'
-import { RequestManager, type RequestManagerResult, type RequestParams } from './request-manager'
-import { documentAndPosition } from './test-helpers'
-import type { ContextSnippet } from './types'
+import {
+    RequestManager,
+    computeIfRequestStillRelevant,
+    type RequestManagerResult,
+    type RequestParams,
+} from './request-manager'
+import { documentAndPosition, nextTick } from './test-helpers'
+import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
     public didAbort = false
-    protected resolve: (value?: unknown) => void = () => {}
-    protected mockedCompletions: FetchCompletionResult[] = []
+    protected next: () => void = () => {}
+    protected responseQueue: FetchCompletionResult[][] = []
 
-    public resolveRequest(completions: string[]): void {
-        this.didFinishNetworkRequest = true
+    public yield(completions: string[] | InlineCompletionItemWithAnalytics[], keepAlive = false) {
+        const result = completions.map(content =>
+            typeof content === 'string'
+                ? {
+                      completion: { insertText: content, stopReason: 'test' },
+                      docContext: this.options.docContext,
+                  }
+                : {
+                      completion: content,
+                      docContext: this.options.docContext,
+                  }
+        )
 
-        this.mockedCompletions = completions.map(content => ({
-            completion: { insertText: content, stopReason: 'test' },
-            docContext: this.options.docContext,
-        }))
-
-        this.resolve()
+        this.responseQueue.push(result)
+        this.didFinishNetworkRequest = !keepAlive
+        this.next()
     }
 
-    public generateCompletions(
-        abortSignal: AbortSignal,
-        snippets: ContextSnippet[]
+    public async *generateCompletions(
+        abortSignal: AbortSignal
     ): AsyncGenerator<FetchCompletionResult[]> {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
 
-        async function* generateMockedCompletions(this: MockProvider) {
-            while (true) {
-                if (this.mockedCompletions.length === 0) {
-                    // Wait for mock values to be enqueued
-                    await new Promise(resolve => {
-                        this.resolve = resolve
-                    })
-                }
-                yield [this.mockedCompletions.shift()]
+        //  generateMockedCompletions(this: MockProvider) {
+        while (!(this.didFinishNetworkRequest && this.responseQueue.length === 0)) {
+            while (this.responseQueue.length > 0) {
+                yield this.responseQueue.shift()!
+            }
+
+            // Wait for the next yield
+            this.responseQueue = []
+            if (!this.didFinishNetworkRequest) {
+                await new Promise<void>(resolve => {
+                    this.next = resolve
+                })
             }
         }
-
-        return generateMockedCompletions.bind(this)()
     }
 }
 
@@ -59,11 +72,12 @@ function createProvider(prefix: string) {
         position,
         multiline: false,
         n: 1,
+        firstCompletionTimeout: 1900,
     })
 }
 
-function docState(prefix: string, suffix = ';'): RequestParams {
-    const { document, position } = documentAndPosition(`${prefix}█${suffix}`)
+function docState(prefix: string, suffix = ';', uriString?: string): RequestParams {
+    const { document, position } = documentAndPosition(`${prefix}█${suffix}`, undefined, uriString)
     return {
         document,
         position,
@@ -100,7 +114,7 @@ describe('RequestManager', () => {
         const prefix = 'console.log('
         const provider = createProvider(prefix)
 
-        setTimeout(() => provider.resolveRequest(["'hello')"]), 0)
+        setTimeout(() => provider.yield(["'hello')"]), 0)
 
         const { completions, source } = await createRequest(prefix, provider)
 
@@ -111,7 +125,7 @@ describe('RequestManager', () => {
     it('resolves a single request', async () => {
         const prefix = 'console.log('
         const provider1 = createProvider(prefix)
-        setTimeout(() => provider1.resolveRequest(["'hello')"]), 0)
+        setTimeout(() => provider1.yield(["'hello')"]), 0)
         await createRequest(prefix, provider1)
 
         const provider2 = createProvider(prefix)
@@ -126,12 +140,12 @@ describe('RequestManager', () => {
         const prefix = 'console.log('
         const suffix1 = ')\nconsole.log(1)'
         const provider1 = createProvider(prefix)
-        setTimeout(() => provider1.resolveRequest(["'hello')"]), 0)
+        setTimeout(() => provider1.yield(["'hello')"]), 0)
         await createRequest(prefix, provider1, suffix1)
 
         const suffix2 = ')\nconsole.log(2)'
         const provider2 = createProvider(prefix)
-        setTimeout(() => provider2.resolveRequest(["'world')"]), 0)
+        setTimeout(() => provider2.yield(["'world')"]), 0)
 
         const { completions, source } = await createRequest(prefix, provider2, suffix2)
 
@@ -151,7 +165,7 @@ describe('RequestManager', () => {
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(false)
 
-        provider2.resolveRequest(["'hello')"])
+        provider2.yield(["'hello')"])
 
         expect((await promise2).completions[0].insertText).toBe("'hello')")
 
@@ -160,7 +174,7 @@ describe('RequestManager', () => {
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(true)
 
-        provider1.resolveRequest(['log();'])
+        provider1.yield(['log();'])
         expect((await promise1).completions[0].insertText).toBe('log();')
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
@@ -175,7 +189,7 @@ describe('RequestManager', () => {
         const provider2 = createProvider(prefix2)
         const promise2 = createRequest(prefix2, provider2)
 
-        provider1.resolveRequest(["log('hello')"])
+        provider1.yield(["log('hello')"])
 
         expect((await promise1).completions[0].insertText).toBe("log('hello')")
         const { completions, source } = await promise2
@@ -186,28 +200,176 @@ describe('RequestManager', () => {
         expect(provider2.didFinishNetworkRequest).toBe(false)
 
         // Ensure that the completed network request does not cause issues
-        provider2.resolveRequest(["'world')"])
+        provider2.yield(["'world')"])
     })
 
-    it('aborts a newer request if a prior request resolves it', async () => {
-        const prefix1 = 'console.'
-        const provider1 = createProvider(prefix1)
-        const promise1 = createRequest(prefix1, provider1)
+    describe('abort logic', () => {
+        it('aborts a newer request if a prior request resolves it', async () => {
+            const prefix1 = 'console.'
+            const provider1 = createProvider(prefix1)
+            const promise1 = createRequest(prefix1, provider1)
 
-        const prefix2 = 'console.log('
-        const provider2 = createProvider(prefix2)
-        const promise2 = createRequest(prefix2, provider2)
+            const prefix2 = 'console.log('
+            const provider2 = createProvider(prefix2)
+            const promise2 = createRequest(prefix2, provider2)
 
-        provider1.resolveRequest(["log('hello')"])
+            provider1.yield(["log('hello')"])
 
-        expect((await promise1).completions[0].insertText).toBe("log('hello')")
-        const [completion] = (await promise2).completions
-        expect(completion.insertText).toBe("'hello')")
+            expect((await promise1).completions[0].insertText).toBe("log('hello')")
+            const [completion] = (await promise2).completions
+            expect(completion.insertText).toBe("'hello')")
 
-        // Keeps completion meta-data on cache-hit
-        expect(completion).toHaveProperty('stopReason')
-        expect(completion).toHaveProperty('range')
+            // Keeps completion meta-data on cache-hit
+            expect(completion).toHaveProperty('stopReason')
+            expect(completion).toHaveProperty('range')
 
-        expect(provider2.didAbort).toBe(true)
+            expect(provider2.didAbort).toBe(true)
+        })
+
+        it('aborts requests that are no longer relevant', async () => {
+            const prefix1 = 'console.'
+            const provider1 = createProvider(prefix1)
+            createRequest(prefix1, provider1)
+
+            const prefix2 = 'table.'
+            const provider2 = createProvider(prefix2)
+            createRequest(prefix2, provider2)
+
+            expect(provider1.didAbort).toBe(true)
+        })
+
+        it('aborts hot-streak completions when the generation start to diverge from the document', async () => {
+            const prefix1 = 'console.'
+            const provider1 = createProvider(prefix1)
+            createRequest(prefix1, provider1)
+
+            const prefix2 = 'console.tabletop'
+            const provider2 = createProvider(prefix2)
+            createRequest(prefix2, provider2)
+
+            // we're still looking relevant
+            provider1.yield(['ta'], true)
+            expect(provider1.didAbort).toBe(false)
+
+            // ok now we diverted (note do don't update the docContext so we have to start the
+            // completion at the same prefix as the first request)
+            provider1.yield(
+                [
+                    {
+                        insertText: 'tabulatore',
+                        stopReason: STOP_REASON_HOT_STREAK,
+                    },
+                ],
+                true
+            )
+            await nextTick()
+            expect(provider1.didAbort).toBe(true)
+        })
+    })
+})
+
+describe('computeIfRequestStillRelevant', () => {
+    it('returns true if the latest insertion is a forward type of the latest document', async () => {
+        const currentRequest = docState('console.log')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('returns true if the latest document is a forward type of the latest insertion document', async () => {
+        const currentRequest = docState('console.log("Hello, world!")')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('handles cases on different lines', async () => {
+        const currentRequest = docState('if (true) {\n  console.')
+        const previousRequest = docState('if (true) {')
+        const completion = { insertText: '\n  console.log("wow")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('handles cases where the prefix is not starting at the same line', async () => {
+        let hundredLines = ''
+        for (let i = 0; i < 100; i++) {
+            hundredLines += `${i}\n`
+        }
+
+        const currentRequest = docState(`${hundredLines}if (true) {\n  console.log(`)
+        const previousRequest = docState(`${hundredLines}if (true) {`)
+        const completion = { insertText: '\n  console.log("wow")\n}' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('never matches for mismatched documents', async () => {
+        const currentRequest = docState('console.log', undefined, 'foo.ts')
+        const previousRequest = docState('console.', undefined, 'bar.ts')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeFalsy()
+    })
+
+    it('never matches for mismatching prefixes', async () => {
+        const hundredLines = 'WOW\n'.repeat(100)
+        const thousandLines = 'WOW\n'.repeat(1000)
+        const currentRequest = docState(`${hundredLines}console.log`)
+        const previousRequest = docState(`${thousandLines}console.`)
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        // Even though the prefix will look the same, it'll be on different lines and should thus
+        // not be reused
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeFalsy()
+    })
+
+    it('supports a change in indentation', async () => {
+        const currentRequest = docState('    console.log')
+        const previousRequest = docState('\tconsole.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('handles typos in the latest document', async () => {
+        const currentRequest = docState('console.dir')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'log("Hello, world!")' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    it('handles typos in the latest insertion', async () => {
+        const currentRequest = docState('console.log')
+        const previousRequest = docState('console.')
+        const completion = { insertText: 'dir' }
+
+        expect(computeIfRequestStillRelevant(currentRequest, previousRequest, [completion])).toBeTruthy()
+    })
+
+    describe('when the request has not yielded a completion yet', () => {
+        it('handles cases where the current document is ahead (as the user is typing forward)', async () => {
+            const currentRequest = docState('console.log')
+            const previousRequest = docState('con')
+
+            expect(computeIfRequestStillRelevant(currentRequest, previousRequest, null)).toBeTruthy()
+        })
+
+        it('detects still relevant completions', async () => {
+            const currentRequest = docState('console.dir')
+            const previousRequest = docState('console.log')
+
+            expect(computeIfRequestStillRelevant(currentRequest, previousRequest, null)).toBeTruthy()
+        })
+
+        it('detects irrelevant completions', async () => {
+            const currentRequest = docState('console.dir')
+            const previousRequest = docState('table.dir')
+
+            expect(computeIfRequestStillRelevant(currentRequest, previousRequest, null)).toBeFalsy()
+        })
     })
 })

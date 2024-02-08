@@ -7,7 +7,7 @@ import { test as base, expect, type Frame, type FrameLocator, type Page } from '
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
+import { MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -45,15 +45,25 @@ export const test = base
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
             'cody.experimental.symfContext': false,
+            // NOTE: Enable unstable features for testing.
+            'cody.internal.unstable': true,
         },
     })
     // By default, treat https://sourcegraph.com as "dotcom".
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<{ server: MockServer }>({
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+        server: async ({}, use) => {
+            MockServer.run(async server => {
+                await use(server)
+            })
+        },
+    })
     .extend({
         page: async (
-            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl },
+            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl, server: MockServer },
             use,
             testInfo
         ) => {
@@ -74,6 +84,7 @@ export const test = base
             )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
+            await buildCodyJson(workspaceDirectory)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
@@ -121,15 +132,13 @@ export const test = base
             // the signed-in and signed-out cases
             await new Promise(resolve => setTimeout(resolve, 500))
 
-            await run(async () => {
-                // Ensure we're signed out.
-                if (await page.isVisible('[aria-label="User Settings"]')) {
-                    await signOut(page)
-                }
+            // Ensure we're signed out.
+            if (await page.isVisible('[aria-label="User Settings"]')) {
+                await signOut(page)
+            }
 
-                resetLoggedEvents()
-                await use(page)
-            })
+            resetLoggedEvents()
+            await use(page)
 
             await app.close()
 
@@ -237,6 +246,58 @@ async function buildWorkSpaceSettings(
     })
 }
 
+// Build a cody.json file for testing custom commands and context fetching
+async function buildCodyJson(workspaceDirectory: string): Promise<void> {
+    const codyJson = {
+        currentDir: {
+            description:
+                "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
+            prompt: 'Add four context files from the current directory.',
+            context: {
+                selection: false,
+                currentDir: true,
+            },
+        },
+        filePath: {
+            prompt: 'Add lib/batches/env/var.go as context.',
+            context: {
+                filePath: 'lib/batches/env/var.go',
+            },
+        },
+        directoryPath: {
+            description: 'Get files from directory.',
+            prompt: 'Directory has one context file.',
+            context: {
+                directoryPath: 'lib/batches/env',
+            },
+        },
+        openTabs: {
+            description: 'Get files from open tabs.',
+            prompt: 'Open tabs as context.',
+            context: {
+                selection: false,
+                openTabs: true,
+            },
+        },
+        invalid: {
+            description: 'Command without prompt should not break the custom command menu.',
+            note: 'This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu.',
+        },
+    }
+
+    // add file to the .vscode directory created in the buildWorkSpaceSettings step
+    const codyJsonPath = path.join(workspaceDirectory, '.vscode', 'cody.json')
+    await new Promise<void>((resolve, reject) => {
+        writeFile(codyJsonPath, JSON.stringify(codyJson), error => {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+}
+
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
@@ -294,4 +355,8 @@ export async function openFile(page: Page, filename: string): Promise<void> {
 export async function newChat(page: Page): Promise<FrameLocator> {
     await page.getByRole('button', { name: 'New Chat' }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
+}
+
+export function withPlatformSlashes(input: string) {
+    return input.replaceAll(path.posix.sep, path.sep)
 }

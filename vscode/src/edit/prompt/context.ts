@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import {
     MAX_CURRENT_FILE_TOKENS,
@@ -9,7 +9,6 @@ import {
     populateCurrentEditorDiagnosticsTemplate,
     truncateText,
     truncateTextStart,
-    type CodebaseContext,
     type CodyCommand,
     type ContextFile,
     type ContextMessage,
@@ -19,6 +18,8 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
+import { extractContextItemsFromContextMessages } from './utils'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -28,17 +29,14 @@ interface GetContextFromIntentOptions {
     uri: vscode.Uri
     selectionRange: vscode.Range
     editor: VSCodeEditor
-    context: CodebaseContext
 }
 
 const getContextFromIntent = async ({
     intent,
-    selectedText,
     precedingText,
     followingText,
     uri,
     selectionRange,
-    context,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
     const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
@@ -52,7 +50,7 @@ const getContextFromIntent = async ({
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
-        case 'new':
+        case 'test':
         case 'add': {
             return [
                 ...getContextMessageWithResponse(
@@ -80,7 +78,7 @@ const getContextFromIntent = async ({
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedPrecedingText, uri),
+                        populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -91,7 +89,7 @@ const getContextFromIntent = async ({
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedFollowingText, uri),
+                        populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -112,15 +110,7 @@ const getContextFromIntent = async ({
             const errorsAndWarnings = diagnostics.filter(
                 ({ type }) => type === 'error' || type === 'warning'
             )
-            const selectionContext = await getContextMessagesFromSelection(
-                selectedText,
-                truncatedPrecedingText,
-                truncatedFollowingText,
-                { fileUri: uri },
-                context
-            )
             return [
-                ...selectionContext,
                 ...errorsAndWarnings.flatMap(diagnostic =>
                     getContextMessageWithResponse(
                         populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
@@ -130,6 +120,17 @@ const getContextFromIntent = async ({
                         }
                     )
                 ),
+                ...[truncatedPrecedingText, truncatedFollowingText]
+                    .filter(text => text.trim().length > 0)
+                    .flatMap(text =>
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, uri, undefined, 'edit'),
+                            {
+                                type: 'file',
+                                uri,
+                            }
+                        )
+                    ),
             ]
         }
     }
@@ -147,10 +148,9 @@ export const getContext = async ({
     editor,
     contextMessages,
     ...options
-}: GetContextOptions): Promise<ContextMessage[]> => {
-    // return contextMessages is already provided by the caller
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (contextMessages) {
-        return contextMessages
+        return extractContextItemsFromContextMessages(contextMessages)
     }
 
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
@@ -166,39 +166,8 @@ export const getContext = async ({
         }
     }
 
-    return [...derivedContextMessages, ...userProvidedContextMessages]
-}
-
-async function getContextMessagesFromSelection(
-    selectedText: string,
-    precedingText: string,
-    followingText: string,
-    { fileUri, repoName, revision }: { fileUri: vscode.Uri; repoName?: string; revision?: string },
-    codebaseContext: CodebaseContext
-): Promise<ContextMessage[]> {
-    const workspaceFolderUri = vscode.workspace.workspaceFolders?.at(0)?.uri
-    if (!workspaceFolderUri) {
-        return []
-    }
-    const selectedTextContext = await codebaseContext.getContextMessages(
-        workspaceFolderUri,
-        selectedText,
-        {
-            numCodeResults: 4,
-            numTextResults: 0,
-        }
-    )
-
-    return selectedTextContext.concat(
-        [precedingText, followingText]
-            .filter(text => text.trim().length > 0)
-            .flatMap(text =>
-                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
-                    type: 'file',
-                    uri: fileUri,
-                    repoName,
-                    revision,
-                })
-            )
-    )
+    return extractContextItemsFromContextMessages([
+        ...derivedContextMessages,
+        ...userProvidedContextMessages,
+    ])
 }

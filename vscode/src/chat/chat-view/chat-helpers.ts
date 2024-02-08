@@ -5,8 +5,7 @@ import type {
     ContextFile,
     ContextMessage,
 } from '@sourcegraph/cody-shared'
-
-import type { ContextItem } from './SimpleChatModel'
+import type { ContextItem } from '../../prompt-builder/types'
 
 export async function openFile(
     uri: vscode.Uri,
@@ -53,6 +52,9 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
                 range.end.line,
                 range.end.character
             ),
+        repoName: contextMessage.file.repoName,
+        revision: contextMessage.file.revision,
+        title: contextMessage.file.title,
     }
 }
 
@@ -95,6 +97,9 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
             source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
+            repoName: item.repoName,
+            revision: item.revision,
+            title: item.title,
         })
     }
     return contextFiles

@@ -25,13 +25,43 @@ interface DetectMultilineResult {
     multilineTriggerPosition: Position | null
 }
 
+export function endsWithBlockStart(text: string, languageId: string): string | null {
+    const blockStart = getLanguageConfig(languageId)?.blockStart
+    return blockStart && text.trimEnd().endsWith(blockStart) ? blockStart : null
+}
+
+// Languages with more than 100 multiline completions in the last month and CAR > 20%:
+// https://sourcegraph.looker.com/explore/sourcegraph/cody?qid=JBItVt6VFMlCtMa9KOBmjh&origin_space=562
+const LANGUAGES_WITH_MULTILINE_SUPPORT = [
+    'astro',
+    'c',
+    'cpp',
+    'csharp',
+    'css',
+    'dart',
+    'elixir',
+    'go',
+    'html',
+    'java',
+    'javascript',
+    'javascriptreact',
+    'php',
+    'python',
+    'rust',
+    'svelte',
+    'typescript',
+    'typescriptreact',
+    'vue',
+]
+
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, dynamicMultilineCompletions, position } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } =
         docContext
+    const isMultilineSupported = LANGUAGES_WITH_MULTILINE_SUPPORT.includes(languageId)
 
-    const blockStart = getLanguageConfig(languageId)?.blockStart
-    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
+    const blockStart = endsWithBlockStart(prefix, languageId)
+    const isBlockStartActive = Boolean(blockStart)
 
     const currentLineText =
         currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
@@ -42,8 +72,10 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
 
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
-    if (!dynamicMultilineCompletions && isMethodOrFunctionInvocation) {
+    // Don't fire multiline completion for unsupported languages.
+    if ((!dynamicMultilineCompletions && isMethodOrFunctionInvocation) || !isMultilineSupported) {
         addAutocompleteDebugEvent('detectMultiline', {
+            languageId,
             dynamicMultilineCompletions,
             isMethodOrFunctionInvocation,
         })
@@ -114,6 +146,14 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
         }
     }
+
+    addAutocompleteDebugEvent('detectMultiline', {
+        dynamicMultilineCompletions,
+        nonEmptyLineEndsWithBlockStart,
+        isEmptyLineAfterBlockStart,
+        isNewLineOpeningBracketMatch,
+        isSameLineOpeningBracketMatch,
+    })
 
     return {
         multilineTrigger: null,

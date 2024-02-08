@@ -35,11 +35,6 @@
     resize: none;
 }
 
-.chat-input-bottom-text {
-    padding-left: 0.25rem;
-    color: var(--vscode-tab-inactiveForeground);
-}
-
 .submit-button {
     border: none;
     cursor: pointer;

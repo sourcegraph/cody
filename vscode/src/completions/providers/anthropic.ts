@@ -261,17 +261,31 @@ class AnthropicProvider extends Provider {
     }
 }
 
+const PROVIDER_IDENTIFIER = 'anthropic'
+
 export function createProviderConfig({
     maxContextTokens = 2048,
     model,
+    /**
+     * Expose provider options here too to set the from the integration tests.
+     * TODO(valery): simplify this API and remove the need to expose it only for tests.
+     */
+    providerOptions,
     ...otherOptions
-}: AnthropicOptions): ProviderConfig {
+}: AnthropicOptions & { providerOptions?: Partial<ProviderOptions> }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, { maxContextTokens, model, ...otherOptions })
+            return new AnthropicProvider(
+                {
+                    ...options,
+                    ...providerOptions,
+                    id: PROVIDER_IDENTIFIER,
+                },
+                { maxContextTokens, model, ...otherOptions }
+            )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: 'anthropic',
+        identifier: PROVIDER_IDENTIFIER,
         model: model ?? 'claude-instant-1.2',
     }
 }

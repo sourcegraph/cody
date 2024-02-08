@@ -2,7 +2,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
-    STOP_REASON_STREAMING_CHUNK,
+    CompletionStopReason,
     TracedError,
     addTraceparent,
     featureFlagProvider,
@@ -16,6 +16,7 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     type CompletionsClientConfig,
+    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
@@ -33,6 +34,7 @@ export function createClient(
     ): CompletionResponseGenerator {
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
+        const { signal } = abortController
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteTracing
@@ -73,27 +75,22 @@ export function createClient(
                 stream: enableStreaming,
             }),
             headers,
-            signal: abortController.signal,
+            signal,
         })
 
         const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
-            // Check for explicit false, because if the header is not set, there
-            // is no upgrade available.
+            // Check for explicit false, because if the header is not set, there is no upgrade
+            // available.
+            //
+            // Note: This header is added only via the Sourcegraph instance and thus not added by
+            //       the helper function.
             const upgradeIsAvailable =
                 response.headers.get('x-is-cody-pro-user') === 'false' &&
                 typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-            const retryAfter = response.headers.get('retry-after')
-            const limit = response.headers.get('x-ratelimit-limit')
-            throw new RateLimitError(
-                'autocompletions',
-                await response.text(),
-                upgradeIsAvailable,
-                limit ? parseInt(limit, 10) : undefined,
-                retryAfter
-            )
+            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
         }
 
         if (!response.ok) {
@@ -108,74 +105,90 @@ export function createClient(
         // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-        if (isStreamingResponse && isNodeResponse(response)) {
-            let lastResponse: CompletionResponse | undefined
-            try {
-                const iterator = createSSEIterator(response.body)
+        let completionResponse: CompletionResponse | undefined = undefined
+
+        try {
+            if (isStreamingResponse && isNodeResponse(response)) {
+                const iterator = createSSEIterator(response.body, { aggregatedCompletionEvent: true })
                 let chunkIndex = 0
 
                 for await (const { event, data } of iterator) {
                     if (event === 'error') {
-                        throw new Error(data)
+                        throw new TracedError(data, traceId)
+                    }
+
+                    if (signal.aborted) {
+                        if (completionResponse) {
+                            completionResponse.stopReason = CompletionStopReason.RequestAborted
+                        }
+
+                        break
                     }
 
                     if (event === 'completion') {
-                        if (abortController.signal.aborted) {
-                            break // Stop processing the already received chunks.
+                        completionResponse = JSON.parse(data) as CompletionResponse
+
+                        yield {
+                            completion: completionResponse.completion,
+                            stopReason:
+                                completionResponse.stopReason || CompletionStopReason.StreamingChunk,
                         }
-
-                        lastResponse = JSON.parse(data) as CompletionResponse
-
-                        if (!lastResponse.stopReason) {
-                            lastResponse.stopReason = STOP_REASON_STREAMING_CHUNK
-                        }
-
-                        yield lastResponse
                     }
 
                     chunkIndex += 1
                 }
 
-                if (lastResponse === undefined) {
+                if (completionResponse === undefined) {
                     throw new TracedError('No completion response received', traceId)
                 }
-                log?.onComplete(lastResponse)
 
-                return lastResponse
-            } catch (error) {
-                if (isRateLimitError(error as Error)) {
-                    throw error
-                }
-                if (isAbortError(error as Error) && lastResponse) {
-                    log?.onComplete(lastResponse)
+                if (!completionResponse.stopReason) {
+                    completionResponse.stopReason = CompletionStopReason.RequestFinished
                 }
 
-                const message = `error parsing streaming CodeCompletionResponse: ${error}`
+                return completionResponse
+            }
+
+            // Handle non-streaming response
+            const result = await response.text()
+            completionResponse = JSON.parse(result) as CompletionResponse
+
+            if (
+                typeof completionResponse.completion !== 'string' ||
+                typeof completionResponse.stopReason !== 'string'
+            ) {
+                const message = `response does not satisfy CodeCompletionResponse: ${result}`
+                log?.onError(message)
+                throw new TracedError(message, traceId)
+            }
+
+            return completionResponse
+        } catch (error) {
+            // Shared error handling for both streaming and non-streaming requests.
+            if (isRateLimitError(error as Error)) {
+                throw error
+            }
+
+            // In case of the abort error and non-empty completion response, we can
+            // consider the completion partially completed and want to log it to
+            // the Cody output channel via `log.onComplete()` instead of erroring.
+            if (isAbortError(error as Error) && completionResponse) {
+                completionResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
                 log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
-        } else {
-            const result = await response.text()
-            try {
-                const response = JSON.parse(result) as CompletionResponse
-
-                if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
-                    const message = `response does not satisfy CodeCompletionResponse: ${result}`
-                    log?.onError(message)
-                    throw new TracedError(message, traceId)
-                }
-                log?.onComplete(response)
-                return response
-            } catch (error) {
-                const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-                log?.onError(message, error)
-                throw new TracedError(message, traceId)
+        } finally {
+            if (completionResponse) {
+                log?.onComplete(completionResponse)
             }
         }
     }
 
     return {
         complete,
+        logger,
         onConfigurationChange(newConfig) {
             config = newConfig
         },
@@ -188,7 +201,15 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(iterator: NodeJS.ReadableStream): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(
+    iterator: NodeJS.ReadableStream,
+    options: {
+        // This is an optimizations to avoid unnecessary work when a streaming chunk contains more
+        // than one completion event. Only use it when the completion repeats all generated tokens
+        // and you can afford to loose some individual chunks.
+        aggregatedCompletionEvent?: boolean
+    } = {}
+): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
@@ -203,16 +224,15 @@ export async function* createSSEIterator(iterator: NodeJS.ReadableStream): Async
             messages.push(parseSSEEvent(message))
         }
 
-        // This is a potential optimization because our current backend includes a repetition of the
-        // whole prior completion in each event. If more than one event is detected inside a chunk,
-        // we can skip all but the last completion events.
         for (let i = 0; i < messages.length; i++) {
-            if (
-                i + 1 < messages.length &&
-                messages[i].event === 'completion' &&
-                messages[i + 1].event === 'completion'
-            ) {
-                continue
+            if (options.aggregatedCompletionEvent) {
+                if (
+                    i + 1 < messages.length &&
+                    messages[i].event === 'completion' &&
+                    messages[i + 1].event === 'completion'
+                ) {
+                    continue
+                }
             }
 
             yield messages[i]
@@ -242,4 +262,19 @@ function parseSSEEvent(message: string): SSEMessage {
     }
 
     return { event, data }
+}
+
+export async function createRateLimitErrorFromResponse(
+    response: BrowserOrNodeResponse,
+    upgradeIsAvailable: boolean
+): Promise<RateLimitError> {
+    const retryAfter = response.headers.get('retry-after')
+    const limit = response.headers.get('x-ratelimit-limit')
+    return new RateLimitError(
+        'autocompletions',
+        await response.text(),
+        upgradeIsAvailable,
+        limit ? parseInt(limit, 10) : undefined,
+        retryAfter
+    )
 }

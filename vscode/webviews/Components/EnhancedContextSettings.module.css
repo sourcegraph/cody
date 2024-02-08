@@ -26,8 +26,62 @@
     display: block;
 }
 
-.folders-list {
-    margin: 1rem 0 0.25rem;
+.folders-list, .enterprise-repo-list {
+    margin: 1rem 0 0.5rem;
+}
+
+.enterprise-repo-list h1 {
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 11px;
+    opacity: 0.8;
+    margin-bottom: 0.25rem;
+}
+
+.enterprise-repo-list-item:first-of-type {
+    margin-top: 0.5rem;
+}
+
+.enterprise-repo-list-item {
+    display: flex;
+    margin: 4px 0;
+}
+
+.enterprise-repo-list-item .repo-name {
+    margin-left: 0.25rem;
+}
+
+.enterprise-repo-list-item .info-close {
+    margin-left: auto;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px;
+    color: var(--vscode-icon-foreground);
+}
+
+.enterprise-repo-list-item button {
+    all: unset;
+    display: flex;
+    cursor: pointer;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+.enterprise-repo-list-item button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+
+.choose-repositories-button {
+    margin-top: 0.75rem;
+    display: flex;
+    padding: 4px;
+    border-radius: 2px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    line-height: 18px;
 }
 
 .folders-list > dt {
@@ -176,7 +230,8 @@
         transform: scale(300%);
         opacity: 0;
     }
-    to {
+
+    100% {
         transform: scale(300%);
         opacity: 0;
     }
