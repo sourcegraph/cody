@@ -50,13 +50,18 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        null
-    )
-    // Handle the old `unstable-fireworks` option
-    if (autocompleteAdvancedProvider === 'unstable-fireworks') {
-        autocompleteAdvancedProvider = 'fireworks'
+    let autocompleteAdvancedProvider = config.get<
+        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, null)
+
+    // Handle deprecated provider identifiers
+    switch (autocompleteAdvancedProvider) {
+        case 'unstable-fireworks':
+            autocompleteAdvancedProvider = 'fireworks'
+            break
+        case 'unstable-ollama':
+            autocompleteAdvancedProvider = 'experimental-ollama'
+            break
     }
 
     // check if the configured enum values are valid

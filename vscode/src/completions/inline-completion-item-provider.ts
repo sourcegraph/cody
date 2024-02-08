@@ -44,7 +44,7 @@ import {
     type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isLocalCompletionsProvider } from './providers/unstable-ollama'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
 import { Span } from '@opentelemetry/api'
 import { version } from '../version'

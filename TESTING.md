@@ -243,15 +243,40 @@
 ### Enhanced Context
 - [ ] Open a chat window and select the "Enhanced Context" icon next to the chat input. 
 - [ ] Verify that "Enhanced Context" is enabled by default. 
-- [ ] Sign in as a Free or Pro user, open a project, and verify that you have the ability to generate embeddings for your project by clicking `Enable embeddings`.
-- [ ] Click `Enable embeddings` and verify that embeddings begin to index. 
+
+### Consumer
+Set up steps:
+1. Clone a git repository, for example `git clone git@github.com:react/react.git`
+2. Open VSCode in that folder: `cd react; code .`
+3. Sign in as a Free or Pro user.
+
+Tests:
+- [ ] Verify that you have the ability to generate embeddings: Start a new chat, click the Enhanced Context Selector, click `Enable embeddings`.
+- [ ] Verify that embeddings progress indicator appears and the process completes successfully.
 - [ ] In a new chat window, select the "Enhanced Context" icon, disable enhanced context, submit a question in the chat input, and verify that Cody did not use any code context to generate an answer. 
 - [ ] Enable "Enhanced Context" and verify that Cody used code files as context. 
 - [ ] At the top of the chat transcript, use the arrow dropdown to display the code that Cody used as context. 
-- [ ] From the list of files that Cody used as context, select one of the `@` files that *exists locally* and verify that the correct file opens in a new tab at the correct line number. 
-- [ ] From the list of files that Cody used as context, select one of the `@` files that *does not exist locally* and verify that Cody opens in the browser instead. 
+- [ ] From the list of files that Cody used as context, select one of the `@` files and verify that the correct file opens in a new tab at the correct line number.
 - [ ] In the chat input, verify that typing `@` suggests files to add as context, and typing `@#` suggests symbols to add as context. 
 - [ ] Verify that you can use a relative file path to choose a file to add as context (e.g., `src/util/my-file`).
+
+### Enterprise
+Prerequisites:
+- An Enterprise endpoint
+- Enterprise credentials
+- Some git repositories indexed by the enterprise.
+
+Set up steps:
+1. Clone two git repositories which are indexed by the enterprise.
+2. Open VSCode and add both repositories to your workspace. (File, Add Folder to Workspace)
+3. Sign in as an Enterprise user.
+
+Tests:
+- [ ] Start a chat and verify the repositories you cloned appear in the enhanced context selector.
+- [ ] Click Choose Repositories and verify that a repository list loads and you can select up to 9 repositories.
+- [ ] In the Enhanced Context Selector, verify that you can remove repositories by clicking on the X. (The first repository cannot be removed.)
+- [ ] Chat, expand the context sources list, and verify that multiple (10+) context items appear mentioning some of the chosen repositories.
+- [ ] Verify that clicking on the context sources open the web browser; the relevant code is highlighted.
 
 ### LLM Selection
 - [ ] Sign in as a Free user, open a new chat, and verify that the default LLM is Claude 2, and there is no option to switch LLMs (without upgrading to Pro).

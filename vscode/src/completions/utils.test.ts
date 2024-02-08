@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { zipGenerators } from './utils'
+import { generatorWithTimeout, zipGenerators } from './utils'
 
 async function* generatorFromArray<T>(array: T[]) {
     for (const item of array) {
@@ -9,7 +9,7 @@ async function* generatorFromArray<T>(array: T[]) {
 }
 
 describe('zipGenerators', () => {
-    test('should zip values from multiple generators', async () => {
+    it('should zip values from multiple generators', async () => {
         const gen1 = generatorFromArray([1, 2, 3])
         const gen2 = generatorFromArray([-1, -2, -3])
         const gen3 = generatorFromArray([100, 101, 102])
@@ -21,7 +21,7 @@ describe('zipGenerators', () => {
         expect(await zipped.next()).toEqual({ value: undefined, done: true })
     })
 
-    test('should handle empty generators', async () => {
+    it('should handle empty generators', async () => {
         const emptyGen = generatorFromArray([])
         const gen = generatorFromArray([1, 2, 3])
         const zipped = zipGenerators([emptyGen, gen])
@@ -32,7 +32,7 @@ describe('zipGenerators', () => {
         expect(await zipped.next()).toEqual({ value: undefined, done: true })
     })
 
-    test('should handle generators of different lengths', async () => {
+    it('should handle generators of different lengths', async () => {
         const gen1 = generatorFromArray([1, 2])
         const gen2 = generatorFromArray([-1, -2, -3])
         const zipped = zipGenerators([gen1, gen2])
@@ -43,11 +43,41 @@ describe('zipGenerators', () => {
         expect(await zipped.next()).toEqual({ value: undefined, done: true })
     })
 
-    test('should complete when all generators are empty', async () => {
+    it('should complete when all generators are empty', async () => {
         const gen1 = generatorFromArray([])
         const gen2 = generatorFromArray([])
         const zipped = zipGenerators([gen1, gen2])
 
         expect(await zipped.next()).toEqual({ value: undefined, done: true })
+    })
+})
+
+describe('generatorWithTimeout', () => {
+    it('finishes the internal generator if a consumer stops early', async () => {
+        let isFinished = false
+        const gen = (async function* () {
+            try {
+                yield 1
+                yield 2
+                yield 3
+            } finally {
+                isFinished = true
+            }
+        })()
+
+        const timeout = 1000
+        const controller = new AbortController()
+        const timeoutGenerator = generatorWithTimeout(gen, timeout, controller)
+
+        const result = []
+        for await (const value of timeoutGenerator) {
+            if (result.length === 2) {
+                break // Stop after consuming two values
+            }
+            result.push(value)
+        }
+
+        expect(result).to.deep.equal([1, 2])
+        expect(isFinished).to.be.true
     })
 })
