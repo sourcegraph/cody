@@ -377,15 +377,21 @@ tasks {
 
   publishPlugin {
     token.set(System.getenv("PUBLISH_TOKEN"))
+
     // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels,
     // like 2.1.7-nightly
     // Specify pre-release label to publish the plugin in a custom Release Channel automatically.
     // Read more:
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+    val channel = properties("pluginVersion").split('-').getOrElse(1) { "default" }
+    channels.set(listOf(channel))
 
-    channels.set(
-        listOf(
-            properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first()))
+    if (channel == "default") {
+      // The published version WILL NOT be available right after the JetBrains approval.
+      // Instead, we control if and when we want to make it available.
+      // (Note: there is ~48h waiting time for JetBrains approval).
+      hidden.set(true)
+    }
   }
 
   test { dependsOn(project.tasks.getByPath("buildCody")) }
