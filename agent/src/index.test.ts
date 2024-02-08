@@ -978,8 +978,7 @@ describe('Agent', () => {
     })
 
     describe('Custom Commands', () => {
-        // TODO (bee) fix test - only works when using .only else it returns all opened files
-        it.skip('commands/custom, chat command, open tabs as context', async () => {
+        it('commands/custom, chat command, open tabs as context', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -990,7 +989,21 @@ describe('Agent', () => {
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot()
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " Based on my memory, you have shared 7 file contexts with me:
+
+              1. src/example.test.ts
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/multiple-selections.ts
+              5. .cody/ignore
+              6. src/animal.ts
+              7. src/sum.ts
+
+              You also shared selected TypeScript code from src/squirrel.ts.
+
+              So in total, I have 8 codebase contexts that you have provided."
+            `)
         }, 30_000)
 
         it('commands/custom - chat command that takes argument', async () => {
@@ -1003,29 +1016,36 @@ describe('Agent', () => {
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " Here is the TypeScript code translated to Python:
+              " Here is the selected TypeScript code translated to Python:
 
               \`\`\`python
+              from __future__ import annotations
+
               from abc import ABC, abstractmethod
 
+
               class Animal(ABC):
-                  def __init__(self, name: str, is_mammal: bool):
-                      self.name = name
-                      self.is_mammal = is_mammal
+                  name: str
 
                   @abstractmethod
                   def make_animal_sound(self) -> str:
                       pass
+
+                  @property
+                  @abstractmethod
+                  def is_mammal(self) -> bool:
+                      pass
               \`\`\`
 
-              The key differences:
+              The key differences in the Python translation:
 
-              - Interfaces don't exist in Python, so Animal is made an abstract base class
-              - The interface properties become regular instance attributes on the Animal class
-              - The makeAnimalSound() method is made abstract using the ABC metaclass from the abc module
-              - Type annotations are added for name and is_mammal parameters in __init__ and the return type of make_animal_sound()
+              - Interfaces don't exist in Python, so the Animal interface is translated to an abstract base class
+              - Python properties are used for the is_mammal attribute instead of just a variable
+              - Abstract methods use Python abstract method syntax with @abstractmethod
+              - Type annotations are added for type hints
+              - Namespaced imports are used for clarity
 
-              Let me know if you have any other questions!"
+              Let me know if you would like any clarification or have additional questions!"
             `)
         }, 30_000)
 
@@ -1039,7 +1059,7 @@ describe('Agent', () => {
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `" none"`
+                `" yes"`
             )
         }, 30_000)
 
@@ -1055,7 +1075,7 @@ describe('Agent', () => {
 
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " You have shared 8 file contexts with me so far:
+              " You have shared 7 file contexts with me so far:
 
               1. src/trickyLogic.ts
               2. src/sum.ts
@@ -1063,10 +1083,7 @@ describe('Agent', () => {
               4. src/multiple-selections.ts
               5. src/example.test.ts
               6. src/animal.ts
-              7. src/TestLogger.ts
-              8. src/TestClass.ts
-
-              So a total of 8 different file contexts."
+              7. src/TestLogger.ts"
             `)
         }, 30_000)
 
@@ -1126,13 +1143,14 @@ describe('Agent', () => {
             expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
               "/* SELECTION_START */
               export interface Animal {
-                  name: string;
-                  makeAnimalSound(): string;
-                  isMammal: boolean;
+                name: string;
+                makeAnimalSound(): string;
+                isMammal: boolean;
 
-                  logName(): void {
-                      console.log(this.name);
-                  }
+                logName(): void {
+                  console.log(this.name);
+                }
+
               }
               /* SELECTION_END */
 
