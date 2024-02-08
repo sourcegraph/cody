@@ -109,7 +109,9 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await chatInput.press(`${osKey}+k`)
     await chatInput.type('and @vgo', { delay: 50 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue('Explain @Main.java and @lib/batches/env/var.go ')
+    await expect(chatInput).toHaveValue(
+        withPlatformSlashes('Explain @Main.java and @lib/batches/env/var.go ')
+    )
     await chatInput.press('Enter')
     // both main.java and var.go should be used
     await expect(chatFrame.getByText(/Context: 2 files/)).toBeVisible()
