@@ -9,7 +9,10 @@ import opentelemetry, {
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
 
-const tracer = opentelemetry.trace.getTracer(INSTRUMENTATION_SCOPE_NAME, INSTRUMENTATION_SCOPE_VERSION)
+export const tracer = opentelemetry.trace.getTracer(
+    INSTRUMENTATION_SCOPE_NAME,
+    INSTRUMENTATION_SCOPE_VERSION
+)
 
 export function getActiveTraceAndSpanId(): { traceId: string; spanId: string } | undefined {
     const activeSpan = opentelemetry.trace.getActiveSpan()

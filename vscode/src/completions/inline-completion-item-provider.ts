@@ -13,7 +13,7 @@ import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
-import { telemetryService } from '../services/telemetry'
+import { getExtensionDetails, telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
@@ -46,6 +46,9 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/unstable-ollama'
 import { completionProviderConfig } from './completion-provider-config'
+import { Span } from '@opentelemetry/api'
+import { version } from '../version'
+import { getConfiguration } from '../configuration'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -300,9 +303,10 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await userLatencyPromise,
-            }
+            const [latencyFeatureFlags, tracingFlagEnabled] = await Promise.all([
+                userLatencyPromise.then(user => ({ user }) as LatencyFeatureFlags),
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+            ])
 
             const artificialDelay = getArtificialDelay(
                 latencyFeatureFlags,
@@ -433,6 +437,12 @@ export class InlineCompletionItemProvider
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
+
+                // If the completion callbacks makes it this far, it is going to be displayed on the
+                // client (for VS Code we have already run the did show handler). However, since we
+                // are still inside the callback, we can add some final data to the span and decide
+                // wether to sample it or not.
+                markSpanAsSampled(span, result.source, tracingFlagEnabled)
 
                 return autocompleteResult
             } catch (error) {
@@ -774,4 +784,20 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+function markSpanAsSampled(
+    span: Span,
+    source: InlineCompletionsResultSource,
+    tracingFlagEnabled: boolean
+): void {
+    // Add exposed experiments at the very end to make sure we include experiments that the user is
+    // being exposed to while the completion was generated
+    span.setAttributes(featureFlagProvider.getExposedExperiments())
+    span.setAttributes(getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())) as any)
+
+    const shouldSample = tracingFlagEnabled && source !== InlineCompletionsResultSource.HotStreak
+    if (shouldSample) {
+        span.setAttribute('sampled', true)
+    }
 }

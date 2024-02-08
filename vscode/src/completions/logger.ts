@@ -525,9 +525,6 @@ export function suggested(id: CompletionLogID, span?: Span): void {
     if (!event.suggestedAt) {
         event.suggestedAt = performance.now()
 
-        // Add exposed experiments at the very end to make sure we include experiments that the user
-        // is being exposed to while the completion was generated
-        span?.setAttributes(featureFlagProvider.getExposedExperiments())
         span?.setAttributes(getSharedParams(event) as any)
         span?.addEvent('suggested')
 

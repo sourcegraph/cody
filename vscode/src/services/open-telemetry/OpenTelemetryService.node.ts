@@ -64,6 +64,9 @@ export class OpenTelemetryService {
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({ url: traceUrl }),
 
+            // Disable default process logging. We do not care about the VS Code extension process
+            autoDetectResources: false,
+
             ...(process.env.NODE_ENV === 'development' && {
                 spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
             }),
