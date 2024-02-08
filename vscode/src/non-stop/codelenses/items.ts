@@ -205,17 +205,3 @@ function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
     }
     return lens
 }
-
-/**
- * The task states where there is a direct command that the users is likely to action.
- * This is used to help enable/disable keyboard shortcuts depending on the states in the document
- */
-export const ACTIONABLE_TASK_STATES = [
-    // User can Accept, Undo, Retry, etc
-    CodyTaskState.applied,
-    // User can Cancel
-    CodyTaskState.pending,
-    CodyTaskState.working,
-    CodyTaskState.inserting,
-    CodyTaskState.applying,
-]
