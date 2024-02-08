@@ -827,7 +827,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 formInput={'@' + currentChatContextQuery}
                                 onSubmit={onSubmit}
                                 setSelectedChatContext={setSelectedChatContext}
-                                contextQuery={currentChatContextQuery}
+                                contextQuery={currentChatContextQuery ?? ''}
                             />
                         )}
                     <div className={styles.chatInputContainer}>

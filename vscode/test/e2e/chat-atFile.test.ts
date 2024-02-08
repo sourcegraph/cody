@@ -5,8 +5,13 @@ import { isWindows } from '@sourcegraph/cody-shared'
 import { sidebarSignin } from './common'
 import { test, withPlatformSlashes } from './helpers'
 
-// Creating new chats is slow, and setup is slow, so we collapse all these into one test
-test('@-file empty state', async ({ page, sidebar }) => {
+/**
+ * Tests for @-file & @#-symbol in chat
+ * See chat-atFile.test.md for the expected behavior for this feature.
+ *
+ * NOTE: Creating new chats is slow, and setup is slow, so we collapse all these into one test
+ */
+test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()

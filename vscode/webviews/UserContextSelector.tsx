@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -6,6 +6,12 @@ import { displayPath } from '@sourcegraph/cody-shared'
 import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
+
+const STARTER = 'Search for a file to include, or type # to search symbols...'
+const FILE_ON_RESULT = 'Search for a file to include...'
+const FILE_NO_RESULT = 'No matching files found'
+const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
+const SYMBOL_NO_RESULT = 'No matching symbols found'
 
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
@@ -27,6 +33,22 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         }
     }, [contextSelection?.length, setSelectedChatContext])
 
+    const headingTitle = useMemo(() => {
+        if (!contextQuery.length) {
+            return STARTER // for empty query
+        }
+        const noResult = !contextSelection?.length
+        const isSymbolQuery = contextQuery.startsWith('#')
+        if (!isSymbolQuery) {
+            return noResult ? FILE_NO_RESULT : FILE_ON_RESULT
+        }
+        // for empty symbol query or with symbol results
+        if (contextQuery.endsWith('#') || !noResult) {
+            return SYMBOL_ON_RESULT
+        }
+        return SYMBOL_NO_RESULT
+    }, [contextQuery, contextSelection?.length])
+
     if (contextSelection === null || selected === -1) {
         return null
     }
@@ -35,25 +57,10 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
     // and there is no contextSelection to display,
     // don't display the selector.
-    if (/[^a-zA-Z0-9#]$/.test(contextQuery.trim())) {
+    if (/[^a-zA-Z0-9#]$/.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null
         }
-    }
-
-    let headingTitle: string | undefined
-    if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols...'
-    } else if (formInput.endsWith('@#')) {
-        headingTitle = 'Search for a symbol to include...'
-    } else if (formInput.match(/@[^ #]+$/)) {
-        headingTitle = contextSelection?.length
-            ? 'Search for a file to include...'
-            : 'No matching files found'
-    } else if (formInput.match(/@#[^ ]+$/)) {
-        headingTitle = contextSelection?.length
-            ? 'Search for a symbol to include...'
-            : 'No matching symbols found'
     }
 
     return (
