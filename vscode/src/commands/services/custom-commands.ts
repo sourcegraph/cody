@@ -57,6 +57,7 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     /**
+     // TODO (bee) Migrate to use .cody/commands.json
      * Create file watchers for cody.json files.
      * Automatically update the command map when the cody.json files are changed
      */
@@ -66,13 +67,6 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (!config.isRunningInsideAgent) {
             this.configFileName = ConfigFiles.VSCODE
         }
-
-        // TODO (bee) Migrate to use .cody/commands.json
-        // Start the migration of the command files to the new location
-        // migrateCommandFiles().then(
-        //     () => this.refresh(),
-        //     error => console.log('custom commands config file migration failed', error)
-        // )
 
         const userConfigWatcher = createFileWatchers(this.userConfigFile)
         if (userConfigWatcher) {
@@ -306,6 +300,7 @@ export async function openCustomCommandDocsLink(): Promise<void> {
     await vscode.env.openExternal(vscode.Uri.parse(uri))
 }
 
+// TODO (bee) Migrate cody.json to new config file location
 // Rename the old config files to the new location
 export async function migrateCommandFiles(): Promise<void> {
     // WORKSPACE
