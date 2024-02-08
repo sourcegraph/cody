@@ -167,6 +167,7 @@ export interface UserContextSelectorProps {
     selected?: number
     onSubmit: (input: string, inputType: 'user') => void
     setSelectedChatContext: (arg: number) => void
+    contextQuery: string
 }
 
 export type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'
@@ -826,6 +827,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 formInput={'@' + currentChatContextQuery}
                                 onSubmit={onSubmit}
                                 setSelectedChatContext={setSelectedChatContext}
+                                contextQuery={currentChatContextQuery}
                             />
                         )}
                     <div className={styles.chatInputContainer}>

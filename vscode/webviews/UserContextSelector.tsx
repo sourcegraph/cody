@@ -9,7 +9,7 @@ import styles from './UserContextSelector.module.css'
 
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
-> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext }) => {
+> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext, contextQuery }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
@@ -29,6 +29,16 @@ export const UserContextSelectorComponent: React.FunctionComponent<
 
     if (contextSelection === null || selected === -1) {
         return null
+    }
+
+    // If the query ENDS with a non-alphanumeric character (except #),
+    // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
+    // and there is no contextSelection to display,
+    // don't display the selector.
+    if (/[^a-zA-Z0-9#]$/.test(contextQuery.trim())) {
+        if (!contextSelection?.length) {
+            return null
+        }
     }
 
     let headingTitle: string | undefined

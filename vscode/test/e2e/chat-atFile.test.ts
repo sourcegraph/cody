@@ -159,4 +159,15 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(noMatches).not.toBeVisible()
     await expect(chatInput).toBeEmpty()
+
+    // Query ends with non-alphanumeric character
+    // with no results should not show selector.
+    await chatInput.focus()
+    await chatInput.fill('@unknown')
+    await expect(noMatches).toBeVisible()
+    await chatInput.press('?')
+    await expect(chatInput).toHaveValue('@unknown?')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('Backspace')
+    await expect(noMatches).toBeVisible()
 })
