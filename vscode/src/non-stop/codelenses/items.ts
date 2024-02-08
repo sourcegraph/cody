@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared'
 
-import type { FixupTask } from './FixupTask'
-import { CodyTaskState } from './utils'
+import type { FixupTask } from '../FixupTask'
+import { CodyTaskState } from '../utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {

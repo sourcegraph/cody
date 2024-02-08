@@ -17,7 +17,7 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { computeDiff, type Diff } from './diff'
-import { FixupCodeLenses } from './FixupCodeLenses'
+import { FixupCodeLenses } from './codelenses/provider'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
@@ -26,9 +26,10 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState } from './utils'
+import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
 import { getInput } from '../edit/input/get-input'
 import type { AuthProvider } from '../services/AuthProvider'
+import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -106,32 +107,28 @@ export class FixupController
                 return this.skipFormatting(id)
             }),
             vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
-                const nearestTask = this.getNearestTask({
-                    filter: {
-                        states: [CodyTaskState.pending, CodyTaskState.working, CodyTaskState.applying],
-                    },
-                })
+                const nearestTask = this.getNearestTask({ filter: { states: CANCELABLE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
                 return vscode.commands.executeCommand('cody.fixup.codelens.cancel', nearestTask.id)
             }),
             vscode.commands.registerCommand('cody.fixup.acceptNearest', () => {
-                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
                 return vscode.commands.executeCommand('cody.fixup.codelens.accept', nearestTask.id)
             }),
             vscode.commands.registerCommand('cody.fixup.retryNearest', () => {
-                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
                 return vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
             }),
             vscode.commands.registerCommand('cody.fixup.undoNearest', () => {
-                const nearestTask = this.getNearestTask({ filter: { states: [CodyTaskState.applied] } })
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
@@ -1179,18 +1176,15 @@ export class FixupController
         const position = editor.selection.active
 
         /**
-         * Gets the task closest to the current cursor position from the tasks associated with the current file.
-         * Sorts by distance between task selection range start line and current cursor line.
+         * Get the task closest to the current cursor position from the tasks associated with the current file.
          */
         const closestTask = this.tasksForFile(fixupFile)
             .filter(({ state }) => filter.states.includes(state))
-            .sort((a, b) => {
-                return (
-                    position.line -
-                    a.selectionRange.start.line -
-                    (position.line - b.selectionRange.start.line)
-                )
-            })[0]
+            .sort(
+                (a, b) =>
+                    getMinimumDistanceToRangeBoundary(position, a.selectionRange) -
+                    getMinimumDistanceToRangeBoundary(position, b.selectionRange)
+            )[0]
 
         return closestTask
     }

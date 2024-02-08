@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ACTIONABLE_TASK_STATES, getLensesForTask } from './codelenses'
-import type { FixupTask } from './FixupTask'
-import type { FixupFileCollection } from './roles'
-import { CodyTaskState } from './utils'
-import type { FixupFile } from './FixupFile'
+import { getLensesForTask } from './items'
+import type { FixupTask } from '../FixupTask'
+import type { FixupFileCollection } from '../roles'
+import { CodyTaskState } from '../utils'
+import type { FixupFile } from '../FixupFile'
+import { ACTIONABLE_TASK_STATES } from './constants'
 
 export class FixupCodeLenses implements vscode.CodeLensProvider {
     private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
