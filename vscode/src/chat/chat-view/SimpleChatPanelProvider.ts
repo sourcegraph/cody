@@ -519,13 +519,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+        const source = 'chat'
         if (!query.length) {
+            telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
+            telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
+
             const tabs = getOpenTabsContextFile()
-            await this.postMessage({
+            void this.postMessage({
                 type: 'userContextFiles',
                 context: tabs,
             })
             return
+        }
+
+        // Log when query only has 1 char to avoid logging the same query repeatedly
+        if (query.length === 1) {
+            const type = query.startsWith('#') ? 'symbol' : 'file'
+            telemetryService.log(`CodyVSCodeExtension:at-mention:${type}:executed`, { source })
+            telemetryRecorder.recordEvent(`cody.at-mention.${type}`, 'executed', {
+                privateMetadata: { source },
+            })
         }
 
         const cancellation = new vscode.CancellationTokenSource()
