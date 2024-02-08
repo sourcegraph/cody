@@ -31,9 +31,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable'> & LocalEnv) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -255,11 +253,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        guardrails={
-                                            attributionEnabled
-                                                ? guardrails
-                                                : undefined
-                                        }
+                                        guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
                                     />
