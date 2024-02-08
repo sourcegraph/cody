@@ -303,13 +303,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 : messageAtIndex?.text
             if (inputText) {
                 setFormInput(inputText)
-                // Add the old context files from the transcript to the map
                 if (messageAtIndex.contextFiles) {
-                    const contextFilesMap = new Map<string, ContextFile>()
-                    for (const file of messageAtIndex.contextFiles) {
-                        contextFilesMap.set(getContextFileDisplayText(file), file)
-                    }
-                    setChatContextFiles(contextFilesMap)
+                    useOldChatMessageContext(messageAtIndex.contextFiles)
                 }
             }
             // move focus back to chatbox
@@ -352,6 +347,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             : ''
         const symbolName = isFileType ? '' : `#${contextFile.symbolName}`
         return `@${displayPath(contextFile.uri)}${range}${symbolName}`
+    }
+
+    // Add old context files from the transcript to the map
+    const useOldChatMessageContext = (oldContextFiles: ContextFile[]) => {
+        const contextFilesMap = new Map<string, ContextFile>()
+        for (const file of oldContextFiles) {
+            contextFilesMap.set(getContextFileDisplayText(file), file)
+        }
+        setChatContextFiles(contextFilesMap)
     }
 
     /**
@@ -702,11 +706,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     } else {
                         setFormInput(newHistoryInput.inputText)
                         // chatContextFiles uses a map but history only stores a simple array.
-                        const contextFilesMap = new Map<string, ContextFile>()
-                        for (const file of newHistoryInput.inputContextFiles) {
-                            contextFilesMap.set(getContextFileDisplayText(file), file)
-                        }
-                        setChatContextFiles(contextFilesMap)
+                        useOldChatMessageContext(newHistoryInput.inputContextFiles)
                     }
                 }
             }
@@ -727,6 +727,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatContextSelected,
             enableNewChatMode,
             resetContextSelection,
+            useOldChatMessageContext,
         ]
     )
 
