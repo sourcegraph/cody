@@ -110,3 +110,21 @@ export function getEditMaximumSelection(
 
     return expandedRange
 }
+
+/**
+ * Expands the selection to include all non-whitespace characters from the selected lines.
+ * This is to help produce consistent edits regardless of user behaviour.
+ */
+export function getEditLineSelection(
+    document: vscode.TextDocument,
+    selection: vscode.Range
+): vscode.Range {
+    if (selection.isEmpty) {
+        // No selection to expand, do nothing
+        return selection
+    }
+
+    const startChar = document.lineAt(selection.start.line).firstNonWhitespaceCharacterIndex
+    const endChar = document.lineAt(selection.end.line).text.length
+    return new vscode.Range(selection.start.line, startChar, selection.end.line, endChar)
+}

@@ -65,7 +65,7 @@
       // ${relativeFile} will guarantee the "current" file, but fileBaseNameNoExtension
       // can be convenient because running with a file like "graph-section-observer.ts"
       // (the implementation, not the test) will run the correct tests.
-      "args": ["run", "${fileBasenameNoExtension}"],
+      "args": ["run", "${fileBasenameNoExtension}", "--disable-console-intercept"],
       "smartStep": true
     }
   ]

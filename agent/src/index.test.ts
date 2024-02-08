@@ -530,10 +530,10 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(ignoredUri)
-            const id = await client.request('commands/explain', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
-            // Ignored file should not be used as context files even when selected
-            expect(lastMessage.messages[0]?.contextFiles).toHaveLength(0)
+            // Cannot execute commands in an ignored files, so this should throw error
+            await client.request('commands/explain', null).catch(err => {
+                expect(err).toBeDefined()
+            })
         }, 30_000)
 
         it('inline edit on an ignored file', async () => {

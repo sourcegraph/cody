@@ -178,6 +178,10 @@ export function trimUntilSuffix(
     for (let i = insertionLines.length - 1; i >= 0; i--) {
         let line = insertionLines[i]
 
+        if (line.length === 0) {
+            continue
+        }
+
         // Include the current indentation of the prefix in the first line
         if (i === 0) {
             line = prefixIndentationWithFirstCompletionLine + line
@@ -197,7 +201,11 @@ export function trimUntilSuffix(
             break
         }
 
-        if (isSameIndentation && isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
+        if (
+            isSameIndentation &&
+            (isAlmostTheSameString(line, firstNonEmptySuffixLine) ||
+                firstNonEmptySuffixLine.startsWith(line))
+        ) {
             cutOffIndex = i
             break
         }
