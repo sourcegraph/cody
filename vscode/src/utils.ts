@@ -22,12 +22,6 @@ export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
     return insertSpaces
 }
 
-/**
- * Gets the tab size configuration for the editor showing the given URI.
- *
- * This checks the language specific tab size setting first,
- * falling back the the editor instance's config if unset.
- */
 export function getEditorTabSize(uri: vscode.Uri): number {
     const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
     if (!editor) {
