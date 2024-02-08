@@ -1,13 +1,9 @@
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, test as baseTest, assertEvents, type ExpectedEvents } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-
-test.beforeEach(() => {
-    mockServer.resetLoggedEvents()
-})
 
 const ERROR_DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="squiggly-error"]'
 
@@ -16,7 +12,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
     ],
-})('code action: explain', async ({ page, sidebar, expectedEvents }) => {
+})('code action: explain', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -40,8 +36,6 @@ test.extend<ExpectedEvents>({
     // Get by text takes a very long time, it's faster to type and let the quick fix item be focused
     await page.keyboard.type('Explain')
     await page.keyboard.press('Enter')
-
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
 test.extend<ExpectedEvents>({
@@ -50,7 +44,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
     ],
-})('code action: fix', async ({ page, sidebar, expectedEvents }) => {
+})('code action: fix', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -74,6 +68,4 @@ test.extend<ExpectedEvents>({
     // Get by text takes a very long time, it's faster to type and let the quick fix item be focused
     await page.keyboard.type('Fix')
     await page.keyboard.press('Enter')
-
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

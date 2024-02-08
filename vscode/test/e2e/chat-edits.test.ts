@@ -1,29 +1,24 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { type ExpectedEvents, assertEvents, test } from './helpers'
-import { resetLoggedEvents, loggedEvents } from '../fixtures/mock-server'
+import { type ExpectedEvents, test } from './helpers'
 
 const isPlatform = (platform: string) => process.platform === platform
 const isMac = isPlatform('darwin')
 const osKey = isMac ? 'Meta' : 'Control'
 
-test.beforeEach(() => {
-    void resetLoggedEvents()
-})
-
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
+        'CodyInstalled',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:hasCode',
     ],
-})('editing follow-up messages in chat view', async ({ page, sidebar, expectedEvents }) => {
+})('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -150,8 +145,4 @@ test.extend<ExpectedEvents>({
     // // Meta+/ also creates a new chat session
     // await chatInput.press(`${osKey}+/`)
     // await expect(chatFrame.getByText('The End')).not.toBeVisible()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    assertEvents(loggedEvents, expectedEvents)
 })

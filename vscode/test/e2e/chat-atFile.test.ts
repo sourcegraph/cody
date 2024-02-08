@@ -2,10 +2,8 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import * as mockServer from '../fixtures/mock-server'
-
 import { sidebarSignin } from './common'
-import { assertEvents, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 /**
  * Tests for @-file & @#-symbol in chat
@@ -13,7 +11,15 @@ import { assertEvents, test, withPlatformSlashes } from './helpers'
  *
  * NOTE: Creating new chats is slow, and setup is slow, so we collapse all these into one test
  */
-test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+    ],
+})('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -177,11 +183,4 @@ test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

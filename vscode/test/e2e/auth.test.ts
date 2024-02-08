@@ -1,16 +1,14 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { assertEvents, type ExpectedEvents, signOut, test } from './helpers'
-
-test.beforeEach(() => {
-    void resetLoggedEvents()
-})
+import { type ExpectedEvents, signOut, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -25,7 +23,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:Auth:disconnected',
     ],
-})('requires a valid auth token and allows logouts', async ({ page, sidebar, expectedEvents }) => {
+})('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
@@ -62,8 +60,4 @@ test.extend<ExpectedEvents>({
     // instead of the chat panel.
     await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
     await page.getByRole('heading', { name: 'Cody: Chat' }).click()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
 })

@@ -1,12 +1,8 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { newChat, test, assertEvents, type ExpectedEvents } from './helpers'
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { newChat, test, type ExpectedEvents } from './helpers'
 
-test.beforeEach(() => {
-    void resetLoggedEvents()
-})
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 test.extend<ExpectedEvents>({
@@ -19,7 +15,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
     ],
-})('enhanced context selector is keyboard accessible', async ({ page, sidebar, expectedEvents }) => {
+})('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
@@ -43,10 +39,6 @@ test.extend<ExpectedEvents>({
     await expect(enhancedContextCheckbox).not.toBeVisible()
     // ... and focus the button which re-opens it.
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
 })
 
 test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
@@ -121,8 +113,4 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
 
     // The chosen repo should appear in the picker.
     await expect(chatFrame.getByTitle('repo/foo').getByText(/^foo$/)).toBeVisible()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
 })

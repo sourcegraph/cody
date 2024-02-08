@@ -1,13 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
-
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, type ExpectedEvents, test } from './helpers'
-
-test.beforeEach(() => {
-    resetLoggedEvents()
-})
+import { type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     expectedEvents: [
@@ -23,7 +17,6 @@ test.extend<ExpectedEvents>({
     .skip('shows chat sidebar completion onboarding notice on first completion accept', async ({
         page,
         sidebar,
-        expectedEvents,
     }) => {
         const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
         const editor = page.locator('[id="workbench\\.parts\\.editor"]')
@@ -64,7 +57,6 @@ test.extend<ExpectedEvents>({
         await acceptInlineCompletion(page)
         await expect(otherAcceptedCompletion).toBeVisible()
         await expect(notice).not.toBeVisible()
-        await assertEvents(loggedEvents, expectedEvents)
     })
 
 test.extend<ExpectedEvents>({
@@ -80,7 +72,6 @@ test.extend<ExpectedEvents>({
     .skip('inline completion onboarding notice on first completion accept', async ({
         page,
         sidebar,
-        expectedEvents,
     }) => {
         const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
         const editor = page.locator('[id="workbench\\.parts\\.editor"]')
@@ -129,8 +120,6 @@ test.extend<ExpectedEvents>({
         await page.keyboard.press(';')
         await expect(otherAcceptedCompletion).toBeVisible()
         await expect(decoration).not.toBeVisible()
-
-        await assertEvents(loggedEvents, expectedEvents)
     })
 
 async function triggerInlineCompletionAfter(

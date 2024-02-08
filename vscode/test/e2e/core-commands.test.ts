@@ -1,12 +1,35 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, assertEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from './helpers'
 import * as mockServer from '../fixtures/mock-server'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:command:explain:clicked',
+        'CodyVSCodeExtension:command:explain:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:command:explain:clicked',
+        'CodyVSCodeExtension:command:explain:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:command:smell:executed',
+        'CodyVSCodeExtension:command:smell:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -72,15 +95,22 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     await page.getByLabel('/ask, Ask a question').locator('a').click()
     // the question should show up in the chat panel on submit
     await chatPanel.getByText('hello cody').click()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:explain:executed',
-        'CodyVSCodeExtension:command:smell:executed',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
-test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:command:test:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ],
+})('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -100,16 +130,23 @@ test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     // Code lens should be visible
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:test:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:applied',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
-test('Document Command (Edit)', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:command:doc:clicked',
+        'CodyVSCodeExtension:command:doc:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ],
+})('Document Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -140,11 +177,4 @@ test('Document Command (Edit)', async ({ page, sidebar }) => {
             '<title>Goodbye Cody < /title>export function fizzbuzz() {const fizzbuzz = []for '
         )
     ).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:doc:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:applied',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

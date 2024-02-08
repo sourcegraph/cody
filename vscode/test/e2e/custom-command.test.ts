@@ -1,9 +1,8 @@
 import { expect } from '@playwright/test'
-import { loggedEvents, resetLoggedEvents, SERVER_URL } from '../fixtures/mock-server'
+import { SERVER_URL } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
-    assertEvents,
     type DotcomUrlOverride,
     test as baseTest,
     withPlatformSlashes,
@@ -20,15 +19,7 @@ const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: SERVER_URL }).exten
         'CodyVSCodeExtension:Auth:connected',
     ],
 })
-test.beforeEach(() => {
-    resetLoggedEvents()
-})
-
-test('create a new user command via the custom commands menu', async ({
-    page,
-    sidebar,
-    expectedEvents,
-}) => {
+test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -100,19 +91,11 @@ test('create a new user command via the custom commands menu', async ({
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might
 // indicate a breaking change during the custom command building step.
-test('execute custom commands with context defined in cody.json', async ({
-    page,
-    sidebar,
-    expectedEvents,
-}) => {
+test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -181,9 +164,6 @@ test('execute custom commands with context defined in cody.json', async ({
         .click()
     await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
 
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
     /* Test: context.openTabs with /openTabs command */
@@ -202,11 +182,7 @@ test('execute custom commands with context defined in cody.json', async ({
     ).toBeVisible()
 })
 
-test('open and delete cody.json from the custom command menu', async ({
-    page,
-    sidebar,
-    expectedEvents,
-}) => {
+test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -251,8 +227,4 @@ test('open and delete cody.json from the custom command menu', async ({
 
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
-
-    // Critical test to prevent event logging regressions.
-    // Do not remove without consulting data analytics team.
-    await assertEvents(loggedEvents, expectedEvents)
 })

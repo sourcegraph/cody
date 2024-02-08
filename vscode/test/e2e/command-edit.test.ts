@@ -3,13 +3,9 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, assertEvents, test as baseTest, type ExpectedEvents } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-
-test.beforeEach(() => {
-    mockServer.resetLoggedEvents()
-})
 
 test.extend<ExpectedEvents>({
     expectedEvents: [
@@ -104,6 +100,4 @@ test.extend<ExpectedEvents>({
     await undoLens.click()
     await expect(page.getByText('>Hello Cody</')).toBeVisible()
     await expect(page.getByText('>Goodbye Cody</')).not.toBeVisible()
-
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
