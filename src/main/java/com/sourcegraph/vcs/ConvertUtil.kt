@@ -1,42 +1,56 @@
 package com.sourcegraph.vcs
 
+import com.sourcegraph.cody.config.SourcegraphParseException
 import java.net.URL
+import java.util.regex.Pattern
 
 fun convertGitCloneURLToCodebaseNameOrError(cloneURL: String): String {
 
   // Handle common Git SSH URL format
-  val matchResult = Regex("""^[\w-]+@([^:]+):([\w-]+)/([\w-]+)(\.git)?$""").find(cloneURL)
-  if (matchResult != null) {
-    val (host, owner, repo) = matchResult.destructured
+  val sshUrlRegexMatchResult =
+      Regex("""^[\w-]+@([^:]+):([\w-]+)/([\w-]+)(\.git)?$""").find(cloneURL)
+  if (sshUrlRegexMatchResult != null) {
+    val (host, owner, repo) = sshUrlRegexMatchResult.destructured
     return "$host/$owner/$repo"
   }
-
-  val uri = URL(cloneURL)
+  val url = addSchemaIfNeededAndConvertURL(cloneURL)
 
   // Handle Azure DevOps URLs
-  if (uri.host?.contains("dev.azure") == true && uri.path.isNotEmpty()) {
-    return "${uri.host}${uri.path.replace("/_git", "")}"
+  if (url.host?.contains("dev.azure") == true && url.path.isNotEmpty()) {
+    return "${url.host}${url.path.replace("/_git", "")}"
   }
 
   // Handle GitHub URLs
-  if (uri.protocol?.startsWith("github") == true || uri.toString().startsWith("github")) {
-    return "github.com/${uri.path.replace(".git", "")}"
+  if (url.protocol?.startsWith("github") == true || url.toString().startsWith("github")) {
+    return "github.com/${url.path.replace(".git", "")}"
   }
 
   // Handle GitLab URLs
-  if (uri.protocol?.startsWith("gitlab") == true || uri.toString().startsWith("gitlab")) {
-    return "gitlab.com/${uri.path.replace(".git", "")}"
+  if (url.protocol?.startsWith("gitlab") == true || url.toString().startsWith("gitlab")) {
+    return "gitlab.com/${url.path.replace(".git", "")}"
   }
 
   // Handle HTTPS URLs
-  if (uri.protocol?.startsWith("http") == true && uri.host != null && uri.path.isNotEmpty()) {
-    return "${uri.host}${uri.path.replace(".git", "")}"
+  if (url.protocol?.startsWith("http") == true && url.host != null && url.path.isNotEmpty()) {
+    return "${url.host}${url.path.replace(".git", "")}"
   }
 
   // Generic URL
-  if (uri.host != null && uri.path.isNotEmpty()) {
-    return "${uri.host}${uri.path.replace(".git", "")}"
+  if (url.host != null && url.path.isNotEmpty()) {
+    return "${url.host}${url.path.replace(".git", "")}"
   }
 
   return ""
+}
+
+private fun addSchemaIfNeededAndConvertURL(cloneURL: String): URL {
+  // 1 - schema, 2 - host, 4 - port, 5 - path
+  val urlRegex =
+      Pattern.compile("^(https?://)?([^/?:]+)(:(\\d+))?((/[^/?#]+)*)?/?", Pattern.CASE_INSENSITIVE)
+
+  val matcher = urlRegex.matcher(cloneURL)
+  if (!matcher.matches()) throw SourcegraphParseException("Not a valid URL")
+  val extractedSchema = matcher.group(1)
+  val url = if (extractedSchema.isNullOrEmpty()) URL("http://$cloneURL") else URL(cloneURL)
+  return url
 }

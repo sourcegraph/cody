@@ -21,15 +21,11 @@ class ContextTreeRootNode(
   }
 }
 
-class ContextTreeRemoteRepoNode(
+class ContextTreeRemoteRepoCodebaseNameNode(
     val repoUrl: String,
-    isChecked: Boolean,
+    val codebaseName: String,
     onSetChecked: (Boolean) -> Unit
-) : ContextTreeNode<String>(repoUrl, onSetChecked) {
-  init {
-    this.isChecked = isChecked
-  }
-}
+) : ContextTreeNode<String>(repoUrl, onSetChecked)
 
 class ContextTreeLocalRepoNode(val project: Project) : ContextTreeNode<Project>(project, {}) {
   init {

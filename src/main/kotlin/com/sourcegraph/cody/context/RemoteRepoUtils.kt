@@ -7,11 +7,11 @@ import com.sourcegraph.cody.agent.protocol.Repo
 import java.util.concurrent.CompletableFuture
 
 object RemoteRepoUtils {
-  fun getRepository(project: Project, url: String): CompletableFuture<Repo?> {
+  fun getRepository(project: Project, codebaseName: String): CompletableFuture<Repo?> {
     val result = CompletableFuture<List<Repo>>()
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       try {
-        agent.server.getRepoIds(GetRepoIdsParam(listOf(url), 1)).thenApply {
+        agent.server.getRepoIds(GetRepoIdsParam(listOf(codebaseName), 1)).thenApply {
           result.complete(it?.repos)
         }
       } catch (e: Exception) {

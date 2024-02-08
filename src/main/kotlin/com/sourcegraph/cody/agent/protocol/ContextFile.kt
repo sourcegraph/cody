@@ -1,13 +1,8 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonSerializer
+import com.google.gson.*
 import java.lang.reflect.Type
 import java.net.URI
-import kotlinx.serialization.json.jsonObject
 
 sealed class ContextFile() {
   abstract val type: String
@@ -27,12 +22,14 @@ data class ContextFileFile(
 val contextFileDeserializer =
     JsonDeserializer { jsonElement: JsonElement, typ: Type, context: JsonDeserializationContext ->
       val jsonObject = jsonElement.asJsonObject
-      val uri = context.deserialize<URI>(jsonObject["uri"], URI::class.java)
-      val repoName = jsonObject["repoName"]?.asString
-      val revision = jsonObject["revision"]?.asString
-
       when (jsonObject["type"]?.asString) {
-        "file" -> ContextFileFile(uri, repoName, revision)
+        "file" -> {
+          val uri = context.deserialize<URI>(jsonObject["uri"], URI::class.java)
+          val repoName = jsonObject["repoName"]?.asString
+          val revision = jsonObject["revision"]?.asString
+
+          ContextFileFile(uri, repoName, revision)
+        }
 
         // TODO(beyang): should throw an exception here, but we don't because the context field is
         // overloaded in the protocol

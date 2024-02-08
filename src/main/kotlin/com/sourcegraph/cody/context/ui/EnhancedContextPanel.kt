@@ -19,7 +19,9 @@ import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.RemoteRepositoryState
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.vcs.convertGitCloneURLToCodebaseNameOrError
 import java.awt.Dimension
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import javax.swing.BorderFactory
@@ -80,8 +82,15 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
           repo.remoteUrl?.let { remoteUrl -> addRemoteRepository(remoteUrl, repo.isEnabled) }
         }
       } else {
-        CodyAgentCodebase.getInstance(project).getUrl().thenApply { repo ->
-          addRemoteRepository(repo)
+        CodyAgentCodebase.getInstance(project).getUrl().thenApply { repoUrl ->
+          val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrl)
+          RemoteRepoUtils.getRepository(project, codebaseName)
+              .completeOnTimeout(null, 15, TimeUnit.SECONDS)
+              .thenApply { repo ->
+                if (repo != null) {
+                  addRemoteRepository(repoUrl)
+                }
+              }
         }
       }
     }
@@ -107,41 +116,42 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   private fun isDotComAccount() =
       CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() ?: false
 
-  private fun getRepoByUrlAndRun(repoUrl: String, consumer: Consumer<Repo>) {
-    RemoteRepoUtils.getRepository(project, repoUrl).thenApply {
+  private fun getRepoByUrlAndRun(codebaseName: String, consumer: Consumer<Repo>) {
+    RemoteRepoUtils.getRepository(project, codebaseName).thenApply {
       it?.let { repo -> consumer.accept(repo) }
     }
   }
 
-  private fun enableRemote(repoUrl: String) {
+  private fun enableRemote(codebaseName: String) {
     updateContextState { contextState ->
-      contextState.remoteRepositories.find { it.remoteUrl == repoUrl }?.isEnabled = true
+      contextState.remoteRepositories.find { it.remoteUrl == codebaseName }?.isEnabled = true
     }
-    getRepoByUrlAndRun(repoUrl) { repo ->
+    getRepoByUrlAndRun(codebaseName) { repo ->
       chatSession.sendWebviewMessage(
           WebviewMessage(
               command = "context/choose-remote-search-repo", explicitRepos = listOf(repo)))
     }
   }
 
-  private fun disableRemote(repoUrl: String) {
+  private fun disableRemote(codebaseName: String) {
     updateContextState { contextState ->
-      contextState.remoteRepositories.find { it.remoteUrl == repoUrl }?.isEnabled = false
+      contextState.remoteRepositories.find { it.remoteUrl == codebaseName }?.isEnabled = false
     }
-    getRepoByUrlAndRun(repoUrl) { repo ->
+    getRepoByUrlAndRun(codebaseName) { repo ->
       chatSession.sendWebviewMessage(
           WebviewMessage(command = "context/remove-remote-search-repo", repoId = repo.id))
     }
   }
 
   @RequiresEdt
-  private fun removeRemoteRepository(node: ContextTreeRemoteRepoNode) {
+  private fun removeRemoteRepository(node: ContextTreeRemoteRepoCodebaseNameNode) {
     updateContextState { contextState ->
       contextState.remoteRepositories.removeIf { it.remoteUrl == node.repoUrl }
     }
     remoteContextNode.remove(node)
     treeModel.reload()
-    disableRemote(node.repoUrl)
+    val codebaseName = convertGitCloneURLToCodebaseNameOrError(node.repoUrl)
+    disableRemote(codebaseName)
   }
 
   @RequiresEdt
@@ -157,11 +167,13 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       existingRemote.remoteUrl = repoUrl
     }
 
+    val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrl)
     val remoteRepoNode =
-        ContextTreeRemoteRepoNode(repoUrl, isChecked = isCheckedInitially) { isChecked ->
-          if (isChecked) enableRemote(repoUrl) else disableRemote(repoUrl)
+        ContextTreeRemoteRepoCodebaseNameNode(repoUrl, codebaseName) { isChecked ->
+          if (isChecked) enableRemote(codebaseName) else disableRemote(codebaseName)
         }
 
+    remoteRepoNode.isChecked = isCheckedInitially
     remoteContextNode.add(remoteRepoNode)
     treeModel.reload()
   }
@@ -200,10 +212,11 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       toolbarDecorator.setRemoveActionName(
           CodyBundle.getString("context-panel.button.remove-remote-repo"))
       toolbarDecorator.setRemoveActionUpdater {
-        tree.selectionPath?.lastPathComponent is ContextTreeRemoteRepoNode
+        tree.selectionPath?.lastPathComponent is ContextTreeRemoteRepoCodebaseNameNode
       }
       toolbarDecorator.setRemoveAction {
-        (tree.selectionPath?.lastPathComponent as? ContextTreeRemoteRepoNode)?.let { node ->
+        (tree.selectionPath?.lastPathComponent as? ContextTreeRemoteRepoCodebaseNameNode)?.let {
+            node ->
           removeRemoteRepository(node)
           expandAllNodes()
         }
@@ -225,6 +238,8 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
               HistoryService.getInstance(project)
                   .updateContextState(chatSession.getInternalId(), contextState = null)
               treeRoot.removeAllChildren()
+              localContextNode.removeAllChildren()
+              remoteContextNode.removeAllChildren()
               prepareTree()
             })
 

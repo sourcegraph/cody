@@ -36,12 +36,20 @@ class HistoryService(private val project: Project) :
   @Synchronized
   fun updateContextState(internalId: String, contextState: EnhancedContextState?) {
     val found = getOrCreateChat(internalId)
-    found.enhancedContext = contextState
+    if (found.enhancedContext == null || contextState == null) {
+      found.enhancedContext = EnhancedContextState()
+    }
+    if (contextState != null) {
+      found.enhancedContext?.copyFrom(contextState)
+    }
   }
 
   @Synchronized
   fun updateDefaultContextState(contextState: EnhancedContextState) {
-    state.defaultEnhancedContext = contextState
+    if (state.defaultEnhancedContext == null) {
+      state.defaultEnhancedContext = EnhancedContextState()
+    }
+    state.defaultEnhancedContext?.copyFrom(contextState)
   }
 
   @Synchronized
