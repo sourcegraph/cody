@@ -32,7 +32,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
+        (Pick<Configuration, 'debugEnable'> & LocalEnv) | null
     >(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
@@ -256,7 +256,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                         guardrails={
-                                            config.experimentalGuardrails && attributionEnabled
+                                            attributionEnabled
                                                 ? guardrails
                                                 : undefined
                                         }
