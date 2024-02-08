@@ -18,7 +18,7 @@ import {
     addTraceparent,
     type ConfigurationWithAccessToken,
     CompletionStopReason,
-    BrowserOrNodeResponse,
+    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'

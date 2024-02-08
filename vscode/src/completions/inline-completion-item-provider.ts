@@ -46,8 +46,7 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
-import { Span } from '@opentelemetry/api'
-import { version } from '../version'
+import type { Span } from '@opentelemetry/api'
 import { getConfiguration } from '../configuration'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {

@@ -2,12 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import {
-    isNetworkError,
-    type BillingCategory,
-    type BillingProduct,
-    featureFlagProvider,
-} from '@sourcegraph/cody-shared'
+import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
