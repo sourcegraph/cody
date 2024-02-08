@@ -1058,9 +1058,7 @@ describe('Agent', () => {
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `" yes"`
-            )
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
         }, 30_000)
 
         it('commands/custom, chat command, curret directory as context', async () => {
@@ -1143,14 +1141,13 @@ describe('Agent', () => {
             expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
               "/* SELECTION_START */
               export interface Animal {
-                name: string;
-                makeAnimalSound(): string;
-                isMammal: boolean;
+                  name: string;
+                  makeAnimalSound(): string;
+                  isMammal: boolean;
 
-                logName(): void {
-                  console.log(this.name);
-                }
-
+                  logName() {
+                      console.log(this.name);
+                  }
               }
               /* SELECTION_END */
 

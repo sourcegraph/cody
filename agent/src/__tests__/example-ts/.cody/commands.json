@@ -7,21 +7,22 @@
             }
         },
         "hello": {
-            "prompt": "Add a 'hello' comment",
+            "prompt": "Add a 'hello' comment for the selected code.",
             "context": {
                 "selection": true
             },
             "mode": "insert"
         },
         "newField": {
-            "prompt": "Add a new field to the class that console log the name of the animal when called.",
+            "prompt": "Add a new field to the class that console log the name of the animal.",
             "context": {
-                "currentFile": true
+                "currentFile": true,
+                "selection": false
             },
             "mode": "edit"
         },
         "none": {
-            "prompt": "Reply a single word 'none' if I did not share code context with you. Else 'yes'.",
+            "prompt": "If you see any file content from our current conversation, reply a single word 'yes'. If none, reply 'no'.",
             "context": {
                 "none": true
             }
