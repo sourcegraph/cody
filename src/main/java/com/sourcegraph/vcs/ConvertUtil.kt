@@ -1,6 +1,5 @@
 package com.sourcegraph.vcs
 
-import com.sourcegraph.cody.config.SourcegraphParseException
 import java.net.URL
 import java.util.regex.Pattern
 
@@ -13,7 +12,7 @@ fun convertGitCloneURLToCodebaseNameOrError(cloneURL: String): String {
     val (host, owner, repo) = sshUrlRegexMatchResult.destructured
     return "$host/$owner/$repo"
   }
-  val url = addSchemaIfNeededAndConvertURL(cloneURL)
+  val url = addSchemaIfNeededAndConvertURL(cloneURL) ?: return ""
 
   // Handle Azure DevOps URLs
   if (url.host?.contains("dev.azure") == true && url.path.isNotEmpty()) {
@@ -43,13 +42,13 @@ fun convertGitCloneURLToCodebaseNameOrError(cloneURL: String): String {
   return ""
 }
 
-private fun addSchemaIfNeededAndConvertURL(cloneURL: String): URL {
+private fun addSchemaIfNeededAndConvertURL(cloneURL: String): URL? {
   // 1 - schema, 2 - host, 4 - port, 5 - path
   val urlRegex =
       Pattern.compile("^(https?://)?([^/?:]+)(:(\\d+))?((/[^/?#]+)*)?/?", Pattern.CASE_INSENSITIVE)
 
   val matcher = urlRegex.matcher(cloneURL)
-  if (!matcher.matches()) throw SourcegraphParseException("Not a valid URL")
+  if (!matcher.matches()) return null
   val extractedSchema = matcher.group(1)
   val url = if (extractedSchema.isNullOrEmpty()) URL("http://$cloneURL") else URL(cloneURL)
   return url
