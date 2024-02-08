@@ -27,7 +27,6 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState } from './utils'
-import { ACTIONABLE_TASK_STATES } from './codelenses'
 import { getInput } from '../edit/input/get-input'
 import type { AuthProvider } from '../services/AuthProvider'
 
@@ -1142,16 +1141,6 @@ export class FixupController
         if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++
         }
-
-        /**
-         * Check if the new state is something
-         * Checks if there is an actionable edit task in the current visible text editor.
-         * Used to set a context for enabling commands.
-         */
-        const hasActionableEdit =
-            ACTIONABLE_TASK_STATES.includes(task.state) &&
-            vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
-        void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
 
         if (task.state === CodyTaskState.finished) {
             this.discard(task)

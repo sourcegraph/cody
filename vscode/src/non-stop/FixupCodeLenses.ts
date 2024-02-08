@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getLensesForTask } from './codelenses'
+import { ACTIONABLE_TASK_STATES, getLensesForTask } from './codelenses'
 import type { FixupTask } from './FixupTask'
 import type { FixupFileCollection } from './roles'
 import { CodyTaskState } from './utils'
@@ -39,6 +39,8 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didUpdateTask(task: FixupTask): void {
+        this.updateKeyboardShortcutEnablement(task)
+
         if (task.state === CodyTaskState.finished) {
             this.removeLensesFor(task)
             return
@@ -48,6 +50,8 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didDeleteTask(task: FixupTask): void {
+        this.updateKeyboardShortcutEnablement(task)
+
         this.removeLensesFor(task)
     }
 
@@ -56,6 +60,19 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
             // TODO: Clean up the fixup file when there are no remaining code lenses
             this.notifyCodeLensesChanged()
         }
+    }
+
+    /**
+     * Whenever a task updates, we may possibly want to enable specific code lens keyboard shortcuts for actioning the task.
+     * This method is called to update the keyboard shortcut enablement for all tasks.
+     */
+    private updateKeyboardShortcutEnablement(task: FixupTask): void {
+        const allTasks = this.files.tasksForFile(task.fixupFile)
+        const hasActionableEdit =
+            allTasks.some(task => ACTIONABLE_TASK_STATES.includes(task.state)) &&
+            vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+
+        void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 
     private notifyCodeLensesChanged(): void {
