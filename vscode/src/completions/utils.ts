@@ -91,24 +91,31 @@ export async function* generatorWithTimeout<T>(
     timeoutMs: number,
     abortController: AbortController
 ): AsyncGenerator<T> {
-    if (timeoutMs === 0) {
-        return
-    }
-
-    const timeoutPromise = createTimeout(timeoutMs).finally(() => {
-        abortController.abort()
-    })
-
-    while (true) {
-        const { value, done } = await Promise.race([generator.next(), timeoutPromise])
-
-        if (value) {
-            yield value
+    try {
+        if (timeoutMs === 0) {
+            return
         }
 
-        if (done) {
-            break
+        const timeoutPromise = createTimeout(timeoutMs).finally(() => {
+            abortController.abort()
+        })
+
+        while (true) {
+            const { value, done } = await Promise.race([generator.next(), timeoutPromise])
+
+            if (value) {
+                yield value
+            }
+
+            if (done) {
+                break
+            }
         }
+    } finally {
+        // The return value is optional according to MDN
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/return
+        // @ts-ignore
+        generator.return()
     }
 }
 

@@ -433,20 +433,22 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 lastResponse.stopReason = CompletionStopReason.RequestFinished
             }
 
-            log?.onComplete(lastResponse)
-
             return lastResponse
         } catch (error) {
             if (isRateLimitError(error as Error)) {
                 throw error
             }
             if (isAbortError(error as Error) && lastResponse) {
+                lastResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
+                log?.onError(message, error)
+                throw new TracedError(message, traceId)
+            }
+        } finally {
+            if (lastResponse) {
                 log?.onComplete(lastResponse)
             }
-
-            const message = `error parsing streaming CodeCompletionResponse: ${error}`
-            log?.onError(message, error)
-            throw new TracedError(message, traceId)
         }
     }
 }
