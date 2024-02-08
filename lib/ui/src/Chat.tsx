@@ -303,7 +303,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 : messageAtIndex?.text
             if (inputText) {
                 setFormInput(inputText)
+                // Add the old context files from the transcript to the map
+                if (messageAtIndex.contextFiles) {
+                    const contextFilesMap = new Map<string, ContextFile>()
+                    for (const file of messageAtIndex.contextFiles) {
+                        contextFilesMap.set(getContextFileDisplayText(file), file)
+                    }
+                    setChatContextFiles(contextFilesMap)
+                }
             }
+            // move focus back to chatbox
             setInputFocus(true)
         },
         [messageBeingEdited, setFormInput, setMessageBeingEdited, transcript]
