@@ -2,8 +2,10 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
+import * as mockServer from '../fixtures/mock-server'
+
 import { sidebarSignin } from './common'
-import { test, withPlatformSlashes } from './helpers'
+import { assertEvents, test, withPlatformSlashes } from './helpers'
 
 /**
  * Tests for @-file & @#-symbol in chat
@@ -175,4 +177,11 @@ test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
