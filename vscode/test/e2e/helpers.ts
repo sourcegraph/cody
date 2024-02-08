@@ -172,8 +172,6 @@ export const test = base
                 console.log('Logged:', loggedEvents)
                 throw error
             }
-
-            await assertEvents(loggedEvents, expectedEvents)
             resetLoggedEvents()
 
             await app.close()
