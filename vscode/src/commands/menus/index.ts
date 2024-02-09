@@ -9,6 +9,8 @@ import { openCustomCommandDocsLink } from '../services/custom-commands'
 import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
 import { CodyCommandMenuItems } from '..'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -17,6 +19,9 @@ export async function showCommandMenu(
     const items: CommandMenuItem[] = []
     const configOption = CommandMenuOption.config
     const addOption = CommandMenuOption.add
+
+    telemetryService.log(`CodyVSCodeExtension:menu:command:${type}:clicked`)
+    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked')
 
     // Add items to menu
     if (type === 'config') {
@@ -181,11 +186,15 @@ function normalize(input: string): string {
 export async function showNewCustomCommandMenu(
     commands: string[]
 ): Promise<CustomCommandsBuilder | null> {
+    telemetryService.log('CodyVSCodeExtension:menu:custom:build:clicked')
+    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
 }
 
 async function showChatInputBox(): Promise<void> {
+    telemetryService.log('CodyVSCodeExtension:menu:command:chat:clicked')
+    telemetryRecorder.recordEvent('cody.menu:command:chat', 'clicked')
     const input = await window.showInputBox({
         title: 'ask Cody',
         placeHolder: 'Enter your question for Cody.',
@@ -193,5 +202,7 @@ async function showChatInputBox(): Promise<void> {
     if (!input) {
         return
     }
+    telemetryService.log('CodyVSCodeExtension:menu:command:chat:executed')
+    telemetryRecorder.recordEvent('cody.menu:command:chat', 'executed')
     void executeChat({ text: input, submitType: 'user-newchat', source: 'menu' })
 }

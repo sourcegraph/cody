@@ -5,6 +5,8 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { customPromptsContextOptions } from './items'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { fromSlashCommand } from '../utils/common'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 export interface CustomCommandsBuilder {
     key: string
@@ -28,6 +30,9 @@ export class CustomCommandsBuilderMenu {
         if (!type) {
             return null
         }
+
+        telemetryService.log('CodyVSCodeExtension:command:custom:build:executed')
+        telemetryRecorder.recordEvent('cody.command.custom.build', 'executed')
         return { key, prompt: { ...prompt, key }, type }
     }
 

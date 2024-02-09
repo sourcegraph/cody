@@ -77,7 +77,7 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     // create another edit from the sidebar Edit button
     await page.getByText('7', { exact: true }).click()
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByText('Edit code with instructions').click()
+    await page.getByText('Edit Code').click()
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)

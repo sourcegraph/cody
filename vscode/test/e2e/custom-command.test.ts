@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, test as baseTest, withPlatformSlashes } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, withPlatformSlashes, assertEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -85,6 +85,14 @@ test('create a new user command via the custom commands menu', async ({ page, si
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:menu:custom:build:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:command:custom:executed',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might
@@ -175,6 +183,14 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await expect(
         chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-0') })
     ).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:menu:command:custom:clicked',
+        'CodyVSCodeExtension:command:custom:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
 test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
@@ -197,9 +213,13 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await page.getByLabel('Chats Section').click()
 
     // Check button click to open the cody.json file in the editor
+    const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'
+    const configMenuItem = page.getByLabel(label).locator('a')
+    const customCommandSidebar = page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a')
 
-    await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
-    await page.getByLabel(/Configure Custom Commands.../).click()
+    // Able to open the cody.json file in the editor from the command menu
+    await customCommandSidebar.click()
+    await configMenuItem.click()
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await expect(page.getByRole('button', { name: 'Open or Create Settings File' })).toBeVisible()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
@@ -207,11 +227,8 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await expect(page.getByRole('tab', { name: 'cody.json' })).toBeVisible()
 
     // Check button click to delete the cody.json file from the workspace tree view
-    await page.getByText('Custom commands', { exact: true }).click()
-    await page
-        .getByLabel(/Configure Custom Commands.../)
-        .locator('a')
-        .click()
+    await customCommandSidebar.click()
+    await configMenuItem.click()
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
@@ -223,4 +240,10 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
 
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:menu:command:custom:clicked',
+        'CodyVSCodeExtension:menu:command:config:clicked',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
