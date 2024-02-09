@@ -18,7 +18,6 @@ import {
     addTraceparent,
     type ConfigurationWithAccessToken,
     CompletionStopReason,
-    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
@@ -41,7 +40,7 @@ import {
 } from './provider'
 import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { AuthStatus } from '../../chat/protocol'
-import { type Span, SpanStatusCode } from '@opentelemetry/api'
+import { SpanStatusCode } from '@opentelemetry/api'
 import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {

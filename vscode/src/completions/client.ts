@@ -21,7 +21,7 @@ import {
 
 import { fetch } from '../fetch'
 import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import { Span, SpanStatusCode } from '@opentelemetry/api'
+import { type Span, SpanStatusCode } from '@opentelemetry/api'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
