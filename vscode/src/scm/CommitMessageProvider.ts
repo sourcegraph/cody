@@ -19,6 +19,7 @@ import type {
     CommitMessageProvider as VSCodeCommitMessageProvider,
 } from '../repository/builtinGitExtension'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { telemetryService } from '../services/telemetry'
 
 const execFile = promisify(_execFile)
 
@@ -62,7 +63,10 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         changes: string[],
         cancellationToken?: vscode.CancellationToken
     ): Promise<string | undefined> {
-        telemetryRecorder.recordEvent('cody.generateCommitMessage', 'clicked')
+        telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:clicked', {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'clicked')
         const humanPrompt = await this.getHumanPrompt(changes)
         if (!humanPrompt) {
             return Promise.reject()
@@ -70,6 +74,10 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
 
         const { isEmpty, prompt, isTruncated } = humanPrompt
         if (isEmpty) {
+            telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:empty', {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'empty')
             return repository.inputBox.value
         }
 
@@ -96,6 +104,10 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         const preamble = `Here is a suggested commit message for the diff:\n\n<${COMMIT_MESSAGE_TOPIC}>${prefix}`
         multiplexer.publish(preamble)
 
+        telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:executed', {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'executed')
         try {
             const abortController = new AbortController()
             const stream = this.options.chatClient.chat(
