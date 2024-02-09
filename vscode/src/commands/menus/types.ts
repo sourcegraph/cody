@@ -28,7 +28,7 @@ export interface CommandMenuItem extends QuickPickItem {
     /**
      * key of the command, e.g. 'smell' for Code Smell
      */
-    commandKey?: string
+    key?: string
 }
 
 export interface ContextOption {

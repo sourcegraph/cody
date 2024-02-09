@@ -1,30 +1,13 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from '../menus/items'
 import { CustomCommandsManager } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
 import { getDefaultCommandsMap } from '../utils/get-commands'
+import { CodyCommandMenuItems } from '..'
 
-const editorCommands: CodyCommand[] = [
-    {
-        description: ASK_QUESTION_COMMAND.description,
-        prompt: ASK_QUESTION_COMMAND.key,
-        key: ASK_QUESTION_COMMAND.key,
-        mode: 'ask',
-        type: 'default',
-    },
-    {
-        description: EDIT_COMMAND.description,
-        prompt: EDIT_COMMAND.key,
-        key: EDIT_COMMAND.key,
-        mode: 'edit',
-        type: 'default',
-    },
-]
-
-export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
+export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.

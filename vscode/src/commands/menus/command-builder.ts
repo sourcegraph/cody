@@ -28,7 +28,6 @@ export class CustomCommandsBuilderMenu {
         if (!type) {
             return null
         }
-
         return { key, prompt: { ...prompt, key }, type }
     }
 

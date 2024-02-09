@@ -180,14 +180,13 @@ export class CustomCommandsManager implements vscode.Disposable {
         type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
         this.customCommandsMap.set(id, command)
-        let updated: Omit<CodyCommand, 'slashCommand'> | undefined = omit(command, 'slashCommand')
+        const updated: Omit<CodyCommand, 'key'> | undefined = omit(command, ['key', 'type'])
 
         // Filter map to remove commands with non-match type
-        const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
+        const filtered = new Map<string, Omit<CodyCommand, 'key'>>()
         for (const [key, _command] of this.customCommandsMap) {
             if (_command.type === type) {
-                updated = omit(updated, 'type')
-                filtered.set(key, updated)
+                filtered.set(key, omit(_command, ['key', 'type']))
             }
         }
 
