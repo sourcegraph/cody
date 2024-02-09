@@ -572,6 +572,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     event.stopPropagation()
                     onChatResetClick()
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
+                        properties: { source: 'chat' },
+                    })
                     return
                 }
                 // Ctrl/Cmd + K - When not already editing, edits the last human message
@@ -579,6 +585,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     event.stopPropagation()
                     setEditMessageState(lastHumanMessageIndex)
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
+                        properties: { source: 'chat' },
+                    })
                     return
                 }
             }
@@ -708,6 +720,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         // chatContextFiles uses a map but history only stores a simple array.
                         useOldChatMessageContext(newHistoryInput.inputContextFiles)
                     }
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatInputHistory:executed',
+                        properties: { source: 'chat' },
+                    })
                 }
             }
         },
@@ -728,6 +746,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             enableNewChatMode,
             resetContextSelection,
             useOldChatMessageContext,
+            postMessage,
         ]
     )
 
