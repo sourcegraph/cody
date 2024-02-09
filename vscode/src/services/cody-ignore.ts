@@ -3,11 +3,12 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
+import { findFiles } from '../search/find-files'
 
 const utf8 = new TextDecoder('utf-8')
 
 /**
- * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
+ * Parses `.cody/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
  * NOTE: This is only called once at git extension start up time (gitAPIinit)
@@ -63,16 +64,34 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    // Get the codebase name from the git clone URL on each refresh
-    // NOTE: This is needed because the ignore rules are mapped to workspace addresses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
     const ignoreFilePattern = new vscode.RelativePattern(wf.uri, CODY_IGNORE_POSIX_GLOB)
-    const ignoreFiles = await vscode.workspace.findFiles(ignoreFilePattern)
+    const ignoreFiles = await findFiles(ignoreFilePattern)
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
-        ignoreFiles.map(async fileUri => ({
+        ignoreFiles.matches.map(async fileUri => ({
             uri: fileUri,
             content: await tryReadFile(fileUri),
         }))
     )
+
+    // Now, ensure any folders we skipped (symlinks) are ignored. Add them to the top-level ignore for the workspace.
+    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
+    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
+    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
+    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
+    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
+    if (ignoreFiles.skipped.length) {
+        const rootIgnoreFileUri = vscode.Uri.joinPath(wf.uri, '.cody/ignore');
+        let ignoreFile = filesWithContent.find((f) => f.uri.toString() === rootIgnoreFileUri.toString())
+        if (!ignoreFile) {
+            ignoreFile = { uri: rootIgnoreFileUri, content: '' }
+            filesWithContent.push(ignoreFile);
+        }
+
+        ignoreFile.content += '\n'
+        ignoreFile.content += ignoreFiles.skipped.map(ignored =>  ignores.relativePath(wf.uri, ignored)).join('\n')
+    }
+
+    console.log(JSON.stringify(filesWithContent))
 
     logDebug('CodyIgnore:refresh:workspace', wf.uri.toString())
     ignores.setIgnoreFiles(wf.uri, filesWithContent)

@@ -320,6 +320,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      minimatch:
+        specifier: ^9.0.3
+        version: 9.0.3
       mkdirp:
         specifier: ^3.0.1
         version: 3.0.1
@@ -396,6 +399,9 @@ importers:
       '@types/lodash':
         specifier: ^4.14.195
         version: 4.14.195
+      '@types/minimatch':
+        specifier: ^5.1.2
+        version: 5.1.2
       '@types/mocha':
         specifier: ^10.0.1
         version: 10.0.1

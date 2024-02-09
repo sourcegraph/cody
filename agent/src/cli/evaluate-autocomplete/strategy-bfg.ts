@@ -11,11 +11,11 @@ import { getLanguageForFileName } from '../../language'
 import { AutocompleteMatcher, type AutocompleteMatchKind } from './AutocompleteMatcher'
 import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { Queries } from './Queries'
 import { SnapshotWriter } from './SnapshotWriter'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
+import { matchesGlobPatterns } from '../../../../vscode/src/search/matchesGlobPatterns'
 
 /**
  * Runs autocomplete evaluation. The current logic is specifically optimized

@@ -47,7 +47,7 @@ export class IgnoreHelper {
     /**
      * Computes the relative path `from` to `to`.
      */
-    private relativePath(from: URI, to: URI) {
+    public relativePath(from: URI, to: URI) {
         // HACK(dantup): It's possible we got here with two URIs that have a Windows drive letter cased
         // differently. This will cause relative() to produce an incorrect path. As a workaround,
         // re-create the URIs from fsPath which VS Code normalizes.
