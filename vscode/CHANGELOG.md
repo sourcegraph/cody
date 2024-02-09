@@ -7,14 +7,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Cody can now generate commit messages from your changes. Triggered through the input field in the VS Code "Source Control" sidebar. [pull/2306](https://github.com/sourcegraph/cody/pull/2306)
-- Chat: Display Cody icon in the editor title of the chat panels when `cody.editorTitleCommandIcon` is enabled. [pull/2937](https://github.com/sourcegraph/cody/pull/2937)
-- Edit: Improved the input UX. You can now adjust the range of the Edit, select from available symbols in the document, and get quick access to the "Document" and "Test" commands. [pull/2884](https://github.com/sourcegraph/cody/pull/2884)
-- Edit: Added new keyboard shortcuts for Edit (`Alt+K`) and Chat (`Alt+L`). [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
-- Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. Enable it by setting `cody.commandHints.enabled` to true. [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
-- Command: The `Generate Unit Tests` command now functions as an inline edit command. When executed, the new tests will be automatically appended to the test file. If no existing test file is found, a temporary one will be created. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
-- [Internal] Command: Added new code lenses for generating additional unit tests. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
-- Edit: Added Cody Pro support for models: GPT-4, GPT-3.5, Claude 2.1 and Claude Instant. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
-- Edit: Added a multi-model selector to the Edit input, allowing quick access to change the Edit LLM. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
 - Chat: Added support for `@-mentioned files` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
 
 ### Fixed
