@@ -466,6 +466,12 @@ describe('Agent', () => {
             expect(result).toBeTruthy()
         }, 10_000)
 
+        it('ignore rule is not case sensitive', async () => {
+            const notIgnoredPath = path.join(workspaceRootPath, 'src/alsoignored.ts')
+            const result2 = await client.request('check/isCodyIgnoredFile', { urls: [notIgnoredPath] })
+            expect(result2).toBeFalsy()
+        })
+
         it('autocomplete/execute on ignored file', async () => {
             await client.openFile(ignoredUri)
             const completions = await client.request('autocomplete/execute', {
