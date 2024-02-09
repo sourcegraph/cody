@@ -2,17 +2,16 @@ import { readFile } from 'fs/promises'
 import { execFile as _execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-
 import * as vscode from 'vscode'
+import parseDiff from 'parse-diff'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile, isRateLimitError } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import type { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type {
     Repository,
     API as ScmAPI,
@@ -36,9 +35,6 @@ export interface CommitMessageGuide {
 const COMMIT_MESSAGE_TOPIC = 'commit-message'
 //Used to split a full diff into individual file diffs
 const DIFF_SPLIT_REGEX = /(^diff --git)/gm
-// Is used to get the affected names (a and b) of the files in the diff. A & B are captured separately in case
-// they have some semantic meaning in the future
-const DIFF_FILE_REGEX = /^diff --git a\/(?<a>.*?)\s*(?:b\/(?<b>.*?)|\/dev\/null)?$/m
 
 export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscode.Disposable {
     public icon = new vscode.ThemeIcon('cody-logo')
@@ -213,14 +209,11 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         }
 
         const allowedDiffs = diffs.filter(diff => {
-            const diffHeader = DIFF_FILE_REGEX.exec(diff)
-            const affectedFiles = [diffHeader?.groups?.a, diffHeader?.groups?.b].filter(
-                Boolean
-            ) as unknown as string[]
-            const affectedFileURIs = affectedFiles.map(file =>
-                vscode.Uri.file(path.join(workspaceUri.fsPath, file))
-            )
-            if (affectedFileURIs.some(isCodyIgnoredFile)) {
+            const files = parseDiff(diff)
+            const affectedFileUris = files
+                .filter(file => file.to)
+                .map(file => vscode.Uri.file(path.join(workspaceUri.fsPath, file.to!)))
+            if (affectedFileUris.some(isCodyIgnoredFile)) {
                 return false
             }
             return true

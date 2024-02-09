@@ -123,9 +123,9 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Set codyignore list on git extension startup
-    const gitAPI = await gitAPIinit()
-    if (gitAPI) {
-        disposables.push(gitAPI)
+    const gitApiDisposable = await gitAPIinit()
+    if (gitApiDisposable) {
+        disposables.push(gitApiDisposable)
     }
 
     const isExtensionModeDevOrTest =
