@@ -698,58 +698,60 @@ describe('Agent', () => {
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                    `
-                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+                  " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
-                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
+                  Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
 
                   \`\`\`typescript
-                  // src/animal.test.ts
+                  import { expect } from 'vitest'
 
-                  import { Animal } from './animal';
+                  import { describe, it } from 'vitest'
 
-                  describe('Animal interface', () => {
+                  import { Animal } from './animal'
 
-                    it('should have a name property', () => {
+                  describe('Animal', () => {
+
+                    it('has name property', () => {
                       const animal: Animal = {
                         name: 'Cat',
-                        makeAnimalSound: () => '',
+                        makeAnimalSound() {
+                          return 'Meow'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.name).toBeDefined();
-                    });
+                      expect(animal.name).toEqual('Cat')
+                    })
 
-                    it('should have a makeAnimalSound method', () => {
+                    it('has makeAnimalSound method', () => {
                       const animal: Animal = {
                         name: 'Dog',
-                        makeAnimalSound: () => 'Woof',
+                        makeAnimalSound() {
+                          return 'Woof'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.makeAnimalSound).toBeDefined();
-                      expect(typeof animal.makeAnimalSound).toBe('function');
-                    });
+                      expect(animal.makeAnimalSound()).toEqual('Woof')
+                    })
 
-                    it('should have an isMammal property', () => {
+                    it('has isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound: () => 'Hiss',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
                         isMammal: false
-                      };
+                      }
 
-                      expect(animal.isMammal).toBeDefined();
-                      expect(typeof animal.isMammal).toBe('boolean');
-                    });
-
-                  });
+                      expect(animal.isMammal).toEqual(false)
+                    })
+                  })
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
-                `,
-                    explainPollyError
-                )
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
+                `)
             },
             30_000
         )
@@ -1001,17 +1003,17 @@ describe('Agent', () => {
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " Based on the codebase context you have shared with me so far, these are the file paths:
+              " So far you have shared code context from these files:
 
               - src/trickyLogic.ts
-              - src/example.test.ts
               - src/TestLogger.ts
               - src/TestClass.ts
-              - src/multiple-selections.ts
-              - .cody/ignore
+              - src/sum.ts
               - src/squirrel.ts
+              - src/multiple-selections.ts
+              - src/example.test.ts
               - src/animal.ts
-              - src/sum.ts"
+              - .cody/ignore"
             `)
         }, 30_000)
 
@@ -1062,33 +1064,31 @@ describe('Agent', () => {
 
         // The context files are presented in an order in the CI that is different
         // than the order shown in recordings when on Windows, causing it to fail.
-        it.skipIf(isWindows())(
-            'commands/custom, chat command, current directory context',
-            async () => {
-                await client.request('command/execute', {
-                    command: 'cody.search.index-update',
-                })
-                await client.openFile(animalUri)
-                const freshChatID = await client.request('chat/new', null)
-                const id = await client.request('commands/custom', { key: '/countDirFiles' })
+        it('commands/custom, chat command, current directory context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const freshChatID = await client.request('chat/new', null)
+            const id = await client.request('commands/custom', { key: '/countDirFiles' })
 
-                expect(id).not.toStrictEqual(freshChatID)
+            expect(id).not.toStrictEqual(freshChatID)
 
-                const lastMessage = await client.firstNonEmptyTranscript(id as string)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
+            expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
+            expect(reply).toMatchInlineSnapshot(`
               " You have shared 7 file contexts with me so far:
 
               1. src/trickyLogic.ts
-              2. src/sum.ts
-              3. src/squirrel.ts
-              4. src/multiple-selections.ts
-              5. src/example.test.ts
-              6. src/animal.ts
-              7. src/TestLogger.ts"
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/sum.ts
+              5. src/squirrel.ts
+              6. src/multiple-selections.ts
+              7. src/example.test.ts"
             `)
-            },
-            30_000
-        )
+        }, 30_000)
 
         it('commands/custom, edit command, insert mode', async () => {
             await client.request('command/execute', {
