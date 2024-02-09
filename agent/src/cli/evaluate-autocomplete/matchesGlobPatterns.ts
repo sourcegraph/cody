@@ -13,8 +13,6 @@ export function matchesGlobPatterns(
         return false
     }
 
-    const matchingExcludePatttern = excludeGlobs.find(excludePattern =>
-        minimatch(value, excludePattern, { dot: true })
-    )
+    const matchingExcludePatttern = excludeGlobs.find(excludePattern => minimatch(value, excludePattern))
     return !matchingExcludePatttern
 }

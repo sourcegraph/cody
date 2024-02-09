@@ -2,25 +2,33 @@ import { describe, it, expect } from 'vitest'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 
 describe('matchesGlobPatterns', () => {
-    it('should return true when value matches include globs', () => {
-        const includeGlobs = ['*.ts']
-        const excludeGlobs = ['*.test.ts']
-        const value = 'index.ts'
+    function formatGlobs(globs: string[], kind: 'includes' | 'excludes'): string {
+        if (globs.length === 0) {
+            return ''
+        }
+        const result = '{' + globs.join(',') + '}'
+        const maxExcludeWidth = 30
+        const truncated = result.length < maxExcludeWidth ? result : result.slice(maxExcludeWidth)
+        return ` with ${kind} ${truncated}`
+    }
 
-        const result = matchesGlobPatterns(includeGlobs, excludeGlobs, value)
+    function testMatches(
+        include: string[],
+        exclude: string[],
+        value: string,
+        params?: { negativeMatch: boolean }
+    ): void {
+        const includeFormat = formatGlobs(include, 'includes')
+        const excludeFormat = formatGlobs(exclude, 'excludes')
+        const not = params?.negativeMatch ? ' not' : ''
+        it(`should${not} match '${value}'${includeFormat}${excludeFormat}`, () => {
+            const result = matchesGlobPatterns(include, exclude, value)
+            expect(result).toBe(Boolean(params?.negativeMatch))
+        })
+    }
 
-        expect(result).toBe(true)
-    })
-
-    it('should return false when value matches exclude globs', () => {
-        const includeGlobs = ['*.ts']
-        const excludeGlobs = ['index.*']
-        const value = 'index.ts'
-
-        const result = matchesGlobPatterns(includeGlobs, excludeGlobs, value)
-
-        expect(result).toBe(false)
-    })
+    testMatches(['*.ts'], ['*.test.ts'], 'index.ts')
+    testMatches(['*.ts'], ['index.*'], 'index.ts', { negativeMatch: true })
 
     it('should work on complex exclusions', () => {
         const includeGlobs: string[] = []
@@ -50,34 +58,18 @@ describe('matchesGlobPatterns', () => {
         }
     })
 
-    function testMatches(include: string[], value: string): void {
-        it(`should match ${include.join(',')} '${value}'`, () => {
-            const result = matchesGlobPatterns(include, [], value)
-            expect(result).toBe(true)
-        })
-    }
-    function testNotMatches(include: string[], value: string): void {
-        it(`should not match ${include.join(',')} '${value}'`, () => {
-            const result = matchesGlobPatterns(include, [], value)
-            expect(result).toBe(false)
-        })
-    }
     const includeGlobs: string[] = ['ignore', '.codyignore']
     const cases: {
         value: string
         expected: boolean
     }[] = [
         { value: '.codyignore', expected: true },
-        { value: '.cody/ignore', expected: false /* TODO: make this true */ },
+        { value: '.cody/ignore', expected: true /* TODO: make this true */ },
         { value: '.git/index', expected: false },
         { value: 'node_modules/foo', expected: false },
     ]
 
     for (const { value, expected } of cases) {
-        if (expected) {
-            testMatches(includeGlobs, value)
-        } else {
-            testNotMatches(includeGlobs, value)
-        }
+        testMatches(includeGlobs, [], value, { negativeMatch: !expected })
     }
 })
