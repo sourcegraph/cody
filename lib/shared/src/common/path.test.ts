@@ -81,8 +81,8 @@ describe('pathFunctions', () => {
         })
     })
 
-    describe.only('windows', () => {
-        describe.only('paths', () => {
+    describe('windows', () => {
+        describe('paths', () => {
             test('dirname', () => {
                 expect(windowsFilePaths.dirname('C:\\a\\b\\c')).toBe('C:\\a\\b')
                 expect(windowsFilePaths.dirname('C:\\a\\b')).toBe('C:\\a')

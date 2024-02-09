@@ -68,10 +68,17 @@ export function displayPathDirname(location: URI): string {
  */
 export function displayPathBasename(location: URI): string {
     const envInfo = checkEnvInfo()
-    const displayPath = _displayPath(location, envInfo)
-    return pathFunctionsForURI(location, envInfo.isWindows).basename(
-        typeof displayPath === 'string' ? displayPath : displayPath.path
-    )
+    const result = _displayPath(location, envInfo)
+
+    // File path.
+    if (typeof result === 'string') {
+        // If the result is a string, it is a path (not a URI), so we must
+        // use the correct path functions.
+        return envInfo.isWindows ? windowsFilePaths.basename(result) : posixFilePaths.basename(result)
+    }
+
+    // Otherwise, URI.
+    return posixFilePaths.basename(result.path)
 }
 
 /**
