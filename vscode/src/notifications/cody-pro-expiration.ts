@@ -22,7 +22,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     public static readonly nearlyExpiredMessageText = `
                 Your Cody Pro Trial is ending soon.
 
-                Setup your payment information to continue using Cody Pro, you won't be charged until February 15.
+                Setup your payment information to continue using Cody Pro, you won't be charged until February 21.
             `
     public static readonly localStorageSuppressionKey = 'extension.codyPro.suppressExpirationNotices'
 
