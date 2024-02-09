@@ -8,8 +8,6 @@ import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
-import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
@@ -20,6 +18,8 @@ import { editModel } from '../models'
 import type { AuthStatus } from '../chat/protocol'
 import { getEditModelsForUser } from './utils/edit-models'
 import { getEditIntent } from './utils/edit-intent'
+import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -67,19 +67,6 @@ export class EditManager implements vscode.Disposable {
             )
             return
         }
-
-        // Log the default edit command name for doc intent or test mode
-        const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
-        const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
-        const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
-        telemetryService.log(
-            `CodyVSCodeExtension:command:${eventName}:executed`,
-            { source },
-            { hasV2Event: true }
-        )
-        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            privateMetadata: { source },
-        })
 
         const editor = getEditor()
         if (editor.ignored) {
@@ -150,6 +137,19 @@ export class EditManager implements vscode.Disposable {
         if (!task) {
             return
         }
+
+        // Log the default edit command name for doc intent or test mode
+        const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
+        const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
+        const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
+        telemetryService.log(
+            `CodyVSCodeExtension:command:${eventName}:executed`,
+            { source },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
+            privateMetadata: { source },
+        })
 
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
