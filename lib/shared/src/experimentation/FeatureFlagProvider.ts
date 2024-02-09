@@ -1,4 +1,5 @@
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -73,23 +74,29 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint]?.[flagName]
     }
 
+    public getExposedExperiments(endpoint: string = this.apiClient.endpoint): Record<string, boolean> {
+        return this.featureFlags[endpoint] || {}
+    }
+
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = this.apiClient.endpoint
-        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
-            return false
-        }
+        return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
+            const endpoint = this.apiClient.endpoint
+            if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+                return false
+            }
 
-        const cachedValue = this.getFromCache(flagName, endpoint)
-        if (cachedValue !== undefined) {
-            return cachedValue
-        }
+            const cachedValue = this.getFromCache(flagName, endpoint)
+            if (cachedValue !== undefined) {
+                return cachedValue
+            }
 
-        const value = await this.apiClient.evaluateFeatureFlag(flagName)
-        if (!this.featureFlags[endpoint]) {
-            this.featureFlags[endpoint] = {}
-        }
-        this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
-        return this.featureFlags[endpoint][flagName]
+            const value = await this.apiClient.evaluateFeatureFlag(flagName)
+            if (!this.featureFlags[endpoint]) {
+                this.featureFlags[endpoint] = {}
+            }
+            this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
+            return this.featureFlags[endpoint][flagName]
+        })
     }
 
     public async syncAuthStatus(): Promise<void> {
@@ -98,10 +105,12 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        const endpoint = this.apiClient.endpoint
-        const data = await this.apiClient.getEvaluatedFeatureFlags()
-        this.featureFlags[endpoint] = isError(data) ? {} : data
-        this.lastUpdated = Date.now()
+        return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
+            const endpoint = this.apiClient.endpoint
+            const data = await this.apiClient.getEvaluatedFeatureFlags()
+            this.featureFlags[endpoint] = isError(data) ? {} : data
+            this.lastUpdated = Date.now()
+        })
     }
 }
 
