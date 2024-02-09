@@ -25,11 +25,11 @@ jobs:
         with:
           repository: sourcegraph/security-semgrep-rules
           token: ${{ secrets.GH_SEMGREP_SAST_TOKEN }}
-          path: semgrep-rules
+          path: ../semgrep-rules
 
       - name: Run Semgrep SAST Scan
         run: |
-          semgrep ci -f semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules'
+          semgrep ci -f ../semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules'
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
