@@ -98,20 +98,26 @@ export async function getFileContextFiles(
         }
         return result
     })
-
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same.
-    const sortedResults = adjustedResults.sort((a, b) => {
-        return (
-            b.score - a.score ||
-            new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.fsPath, b.obj.uri.fsPath)
-        )
-    })
+    const sortedResults = adjustedResults
+        .sort((a, b) => {
+            return (
+                b.score - a.score ||
+                new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.path, b.obj.uri.path)
+            )
+        })
+        .flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
+    await Promise.all(
+        sortedResults.map(async sorted => {
+            sorted.content = await getFileContent(sorted.uri)
+        })
+    )
+    return sortedResults
 }
 
 export async function getSymbolContextFiles(
@@ -243,4 +249,11 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
             character: selectionRange.end.character,
         },
     }
+}
+
+async function getFileContent(uri: vscode.Uri): Promise<string> {
+    return vscode.workspace.fs.readFile(uri).then(
+        content => new TextDecoder('utf-8').decode(content),
+        error => {} // invalid files
+    )
 }

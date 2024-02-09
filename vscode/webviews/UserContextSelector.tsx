@@ -6,6 +6,7 @@ import { displayPath } from '@sourcegraph/cody-shared'
 import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
+import { CHARS_PER_TOKEN, MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 const STARTER = 'Search for a file to include, or type # to search symbols...'
 const FILE_ON_RESULT = 'Search for a file to include...'
@@ -96,7 +97,12 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                             ? `:${match.range.start.line + 1}-${match.range.end.line + 1}`
                             : ''
                         const description =
-                            match.type === 'file' ? undefined : displayPath(match.uri) + range
+                            match.type === 'file'
+                                ? match.content &&
+                                  estimateTokenCount(match.content) > MAX_CURRENT_FILE_TOKENS
+                                    ? 'Large file will be truncated.'
+                                    : undefined
+                                : displayPath(match.uri) + range
                         return (
                             <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
@@ -132,4 +138,8 @@ export const UserContextSelectorComponent: React.FunctionComponent<
             ) : null}
         </div>
     )
+}
+
+function estimateTokenCount(content: string) {
+    return Math.round(content.length / CHARS_PER_TOKEN)
 }
