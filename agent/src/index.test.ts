@@ -1021,36 +1021,26 @@ describe('Agent', () => {
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " Here is the selected TypeScript code translated to Python:
+              " Here is the TypeScript code translated to Python:
 
               \`\`\`python
-              from __future__ import annotations
+              class Animal:
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
 
-              from abc import ABC, abstractmethod
-
-
-              class Animal(ABC):
-                  name: str
-
-                  @abstractmethod
                   def make_animal_sound(self) -> str:
-                      pass
-
-                  @property
-                  @abstractmethod
-                  def is_mammal(self) -> bool:
                       pass
               \`\`\`
 
-              The key differences in the Python translation:
+              The key differences:
 
-              - Interfaces don't exist in Python, so the Animal interface is translated to an abstract base class
-              - Python properties are used for the is_mammal attribute instead of just a variable
-              - Abstract methods use Python abstract method syntax with @abstractmethod
-              - Type annotations are added for type hints
-              - Namespaced imports are used for clarity
+              - Interfaces don't exist in Python, so Animal is translated to a class
+              - The interface properties become initialized attributes in the __init__ method
+              - The interface method becomes a method in the class
+              - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
 
-              Let me know if you would like any clarification or have additional questions!"
+              Let me know if you have any other questions!"
             `)
         }, 30_000)
 
@@ -1063,7 +1053,7 @@ describe('Agent', () => {
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" I do not have access to view any files or file contents. I am an AI assistant without direct access to computer files or systems."`)
         }, 30_000)
 
         it('commands/custom, chat command, curret directory as context', async () => {
@@ -1125,11 +1115,10 @@ describe('Agent', () => {
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
               "/* SELECTION_START */
               export interface Animal {
-                  name: string;
-                  makeAnimalSound(): string;
-                  isMammal: boolean;
-
-                  logName() {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void {
                       console.log(this.name);
                   }
               }
