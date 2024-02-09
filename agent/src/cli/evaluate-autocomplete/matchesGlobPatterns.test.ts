@@ -49,4 +49,35 @@ describe('matchesGlobPatterns', () => {
             expect(result).toBe(expected)
         }
     })
+
+    function testMatches(include: string[], value: string): void {
+        it(`should match ${include.join(',')} '${value}'`, () => {
+            const result = matchesGlobPatterns(include, [], value)
+            expect(result).toBe(true)
+        })
+    }
+    function testNotMatches(include: string[], value: string): void {
+        it(`should not match ${include.join(',')} '${value}'`, () => {
+            const result = matchesGlobPatterns(include, [], value)
+            expect(result).toBe(false)
+        })
+    }
+    const includeGlobs: string[] = ['ignore', '.codyignore']
+    const cases: {
+        value: string
+        expected: boolean
+    }[] = [
+        { value: '.codyignore', expected: true },
+        { value: '.cody/ignore', expected: false /* TODO: make this true */ },
+        { value: '.git/index', expected: false },
+        { value: 'node_modules/foo', expected: false },
+    ]
+
+    for (const { value, expected } of cases) {
+        if (expected) {
+            testMatches(includeGlobs, value)
+        } else {
+            testNotMatches(includeGlobs, value)
+        }
+    }
 })
