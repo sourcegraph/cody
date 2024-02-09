@@ -12,6 +12,8 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 type OpenTelemetryServiceConfig = Pick<
     ConfigurationWithAccessToken,
