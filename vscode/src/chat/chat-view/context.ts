@@ -19,6 +19,7 @@ import { logDebug, logError } from '../../log'
 import { viewRangeToRange } from './chat-helpers'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { ContextItem } from '../../prompt-builder/types'
+import { ContextRankingController } from '../../local-context/context-ranking'
 
 export interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -35,6 +36,7 @@ export interface GetEnhancedContextOptions {
     hints: {
         maxChars: number
     }
+    contextRanking: ContextRankingController | null
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
 export async function getEnhancedContext({
@@ -44,6 +46,7 @@ export async function getEnhancedContext({
     providers,
     featureFlags,
     hints,
+    contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     if (featureFlags.fusedContext) {
         return getEnhancedContextFused({
@@ -53,6 +56,7 @@ export async function getEnhancedContext({
             providers,
             featureFlags,
             hints,
+            contextRanking
         })
     }
 
@@ -113,6 +117,7 @@ async function getEnhancedContextFused({
     text,
     providers,
     hints,
+    contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.enhancedContextFused', async () => {
         // use user attention context only if config is set to none

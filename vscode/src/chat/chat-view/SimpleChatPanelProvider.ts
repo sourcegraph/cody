@@ -80,9 +80,13 @@ import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { chatModel } from '../../models'
 import { getContextWindowForModel } from '../../models/utilts'
 import type { ContextItem } from '../../prompt-builder/types'
+<<<<<<< HEAD
 import type { Span } from '@opentelemetry/api'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
+=======
+import { ContextRankingController } from '../../local-context/context-ranking'
+>>>>>>> af602235 (context-ranking support)
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -90,6 +94,7 @@ interface SimpleChatPanelProviderOptions {
     authProvider: AuthProvider
     chatClient: ChatClient
     localEmbeddings: LocalEmbeddingsController | null
+    contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
@@ -138,6 +143,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
+    private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -161,6 +167,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         authProvider,
         chatClient,
         localEmbeddings,
+        contextRanking,
         symf,
         editor,
         treeView,
@@ -173,6 +180,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
+        this.contextRanking = contextRanking
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
@@ -187,6 +195,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
+
+        // Start the context Ranking module
+        void this.contextRanking?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(
@@ -395,6 +406,34 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 FeatureFlag.CodyChatFusedContext
             )
 
+<<<<<<< HEAD
+=======
+        const userContextItems = await contextFilesToContextItems(
+            this.editor,
+            userContextFiles || [],
+            true
+        )
+        const prompter = new DefaultPrompter(
+            userContextItems,
+            addEnhancedContext
+                ? (text, maxChars) =>
+                      getEnhancedContext({
+                          strategy: this.config.useContext,
+                          editor: this.editor,
+                          text,
+                          providers: {
+                              localEmbeddings: this.localEmbeddings,
+                              symf: this.config.experimentalSymfContext ? this.symf : null,
+                              remoteSearch: this.remoteSearch,
+                          },
+                          featureFlags: this.config,
+                          hints: { maxChars },
+                          contextRanking: this.contextRanking,
+                      })
+                : undefined
+        )
+        const sendTelemetry = (contextSummary: any): void => {
+>>>>>>> af602235 (context-ranking support)
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,

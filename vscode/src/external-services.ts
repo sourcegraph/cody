@@ -17,12 +17,14 @@ import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
+import { ContextRankingController } from './local-context/context-ranking'
 
 interface ExternalServices {
     intentDetector: IntentDetector
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
 
@@ -53,6 +55,7 @@ export async function configureExternalServices(
         | 'createSentryService'
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
+        | 'createContextRankingController'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
@@ -74,6 +77,7 @@ export async function configureExternalServices(
         )
     }
 
+    const contextRanking = platform.createContextRankingController?.()
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
@@ -86,6 +90,7 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         symfRunner,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)

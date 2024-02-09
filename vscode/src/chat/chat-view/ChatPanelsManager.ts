@@ -25,6 +25,7 @@ import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { ContextRankingController } from '../../local-context/context-ranking'
 
 type ChatID = string
 
@@ -67,6 +68,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
+        private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
         private readonly enterpriseContext: EnterpriseContextFactory | null,
         private readonly guardrails: Guardrails
@@ -234,6 +236,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
             enterpriseContext: isConsumer ? null : this.enterpriseContext,
             models,
