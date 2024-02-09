@@ -32,7 +32,7 @@ import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -427,7 +427,14 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
         title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
         type="button"
         disabled={disabled}
-        onClick={() => setMessageBeingEdited(messageBeingEdited)}
+        onClick={() => {
+            setMessageBeingEdited(messageBeingEdited)
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
+                properties: { source: 'chat' },
+            })
+        }}
     >
         <i className="codicon codicon-edit" />
     </VSCodeButton>

@@ -6,7 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Added support for `@-mentioned files` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
+- Chat: Support `@-mentioned` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
+- Chat: Support `@-mentioned` in editing mode. [pull/3091](https://github.com/sourcegraph/cody/pull/3091)
 
 ### Fixed
 
