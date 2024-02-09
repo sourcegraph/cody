@@ -29,5 +29,8 @@ export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', si
 
 async function disableNotifications(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Notifications' }).click()
-    await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
+
+    // These clicks can be flaky without delays (possibly because of the animations?)
+    await page.getByLabel('Configure Do Not Disturb...').click({ delay: 50 })
+    await page.getByRole('menuitemcheckbox', { name: 'Enable Do Not Disturb Mode' }).click({ delay: 50 })
 }

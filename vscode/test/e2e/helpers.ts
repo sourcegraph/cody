@@ -123,8 +123,10 @@ export const test = base
 
             const page = await app.firstWindow()
 
-            // Bring the cody sidebar to the foreground
-            await page.click('[aria-label="Cody"]')
+            // Bring the cody sidebar to the foreground if not already visible
+            if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
+                await page.click('[aria-label="Cody"]')
+            }
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
