@@ -848,6 +848,12 @@
                     "markdownDescription": "Enable OpenTelemetry tracing",
                     "default": false
                 },
+                "cody.experimental.commitMessage": {
+                  "order": 99,
+                  "type": "boolean",
+                  "default": true,
+                  "markdownDescription": "Adds a button to the SCM input field to generate a relevant commit message for the current changes."
+                },
                 "cody.debug.enable": {
                     "order": 99,
                     "type": "boolean",
