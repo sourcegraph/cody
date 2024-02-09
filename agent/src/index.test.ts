@@ -1058,7 +1058,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it('commands/custom, chat command, curret directory as context', async () => {
+        it('commands/custom, chat command, current directory as context', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })

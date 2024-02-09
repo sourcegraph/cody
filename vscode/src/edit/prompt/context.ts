@@ -136,6 +136,8 @@ const getContextFromIntent = async ({
     }
 }
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
     contextMessages?: ContextMessage[]
@@ -156,6 +158,12 @@ export const getContext = async ({
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
+
+    if (isAgentTesting) {
+        // Need deterministic ordering of context files for the tests to pass
+        // consistently across different file systems.
+        userContextFiles.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+    }
     for (const file of userContextFiles) {
         if (file.uri) {
             const content = await editor.getTextEditorContentForFile(file.uri, file.range)
