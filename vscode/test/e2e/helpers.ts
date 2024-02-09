@@ -302,8 +302,13 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
 
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+    await executeCommandInPalette(page, 'cody sign out')
+}
+
+export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
+    // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill('>cody sign out')
+    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 
