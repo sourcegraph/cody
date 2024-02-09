@@ -18746,6 +18746,2236 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 96f775876c6586f508bc5513d4d1f37d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 923
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  "My selected TypeScript code from file `src/squirrel.ts`:
+
+                  <selected>
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 4156
+        content:
+          mimeType: text/event-stream
+          size: 4156
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you have provided, I am aware of these file paths:\n\n- src/sum.ts\n- src/squirrel.ts","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 17:56:10 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T17:56:08.460Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fc26d19295524678917be2842dfe5258
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2946
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/multiple-selections.ts:
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path .cody/ignore: # NOTE: For
+                  agent integration test only
+
+                  **/*Ignored.ts
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  "My selected TypeScript code from file `src/squirrel.ts`:
+
+                  <selected>
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 14738
+        content:
+          mimeType: text/event-stream
+          size: 14738
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have provided so far, the file paths are:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/animal.ts\n- src/sum.ts\n- src/squirrel.ts","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 17:56:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T17:56:55.661Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aefb52bd9fcdf8a2c45200f7c80ce616
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2922
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/multiple-selections.ts:
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path .cody/ignore: # NOTE: For
+                  agent integration test only
+
+                  **/*Ignored.ts
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/squirrel.ts: /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 15078
+        content:
+          mimeType: text/event-stream
+          size: 15078
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared so far, these are the file paths:\n\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.ts","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 18:01:10 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T18:01:07.550Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 33c804026a3f55d6bfe4dfe04b0512e2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3552
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/trickyLogic.ts: export
+                  function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/multiple-selections.ts:
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path .cody/ignore: # NOTE: For
+                  agent integration test only
+
+                  **/*Ignored.ts
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/squirrel.ts: /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/trickyLogic.ts`:
+                  <selected>
+                  export function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 18408
+        content:
+          mimeType: text/event-stream
+          size: 18408
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/tr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the codebase context you have shared with me so far, these are the file paths:\n\n- src/trickyLogic.ts\n- src/example.test.ts\n- src/TestLogger.ts \n- src/TestClass.ts\n- src/multiple-selections.ts\n- .cody/ignore\n- src/squirrel.ts\n- src/animal.ts\n- src/sum.ts","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 18:01:42 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T18:01:39.491Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2c6d350030c453cff8578d77927ccbc4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 413
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
+                  reply 'no'.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 159
+        content:
+          mimeType: text/event-stream
+          size: 159
+          text: |+
+            event: completion
+            data: {"completion":" no","stopReason":""}
+
+            event: completion
+            data: {"completion":" no","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 18:03:25 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1289
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T18:03:24.435Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: bfad5b67838879153a80da52e1758aaf
       _order: 0
       cache: {}

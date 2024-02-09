@@ -978,13 +978,16 @@ describe('Agent', () => {
     })
 
     describe('Custom Commands', () => {
-        // TODO (bee) will need to close all the files before running this test
-        it.skip('commands/custom, chat command, open tabs as context', async () => {
+        it('commands/custom, chat command, open tabs context', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
-            await client.openFile(sumUri)
-            await client.openFile(squirrelUri)
+            // Note: The test editor has all the files opened from previous tests as open tabs,
+            // so we will need to open a new file that has not been opened before,
+            // to make sure this context type is working.
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            await client.openFile(trickyLogicUri)
 
             const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/custom', { key: '/countTabs' })
@@ -998,20 +1001,21 @@ describe('Agent', () => {
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " Based on the codebase context you have provided so far, these are the file paths:
+              " Based on the codebase context you have shared with me so far, these are the file paths:
 
+              - src/trickyLogic.ts
               - src/example.test.ts
               - src/TestLogger.ts
               - src/TestClass.ts
               - src/multiple-selections.ts
               - .cody/ignore
+              - src/squirrel.ts
               - src/animal.ts
-              - src/sum.ts
-              - src/squirrel.ts"
+              - src/sum.ts"
             `)
         }, 30_000)
 
-        it('commands/custom, chat command that takes argument', async () => {
+        it('commands/custom, chat command, adds argument', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -1044,7 +1048,7 @@ describe('Agent', () => {
             `)
         }, 30_000)
 
-        it('commands/custom, chat command without context', async () => {
+        it('commands/custom, chat command, no context', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -1053,23 +1057,25 @@ describe('Agent', () => {
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `" I do not have access to view any files or file contents. I am an AI assistant without direct access to computer files or systems."`
-            )
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
         }, 30_000)
 
-        it('commands/custom, chat command, current directory as context', async () => {
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
-            await client.openFile(animalUri)
-            const freshChatID = await client.request('chat/new', null)
-            const id = await client.request('commands/custom', { key: '/countDirFiles' })
+        // The context files are presented in an order in the CI that is different
+        // than the order shown in recordings when on Windows, causing it to fail.
+        it.skipIf(isWindows())(
+            'commands/custom, chat command, current directory context',
+            async () => {
+                await client.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                await client.openFile(animalUri)
+                const freshChatID = await client.request('chat/new', null)
+                const id = await client.request('commands/custom', { key: '/countDirFiles' })
 
-            expect(id).not.toStrictEqual(freshChatID)
+                expect(id).not.toStrictEqual(freshChatID)
 
-            const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+                const lastMessage = await client.firstNonEmptyTranscript(id as string)
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
               " You have shared 7 file contexts with me so far:
 
               1. src/trickyLogic.ts
@@ -1080,9 +1086,11 @@ describe('Agent', () => {
               6. src/animal.ts
               7. src/TestLogger.ts"
             `)
-        }, 30_000)
+            },
+            30_000
+        )
 
-        it('commands/custom, inline edit command, insert mode', async () => {
+        it('commands/custom, edit command, insert mode', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -1102,7 +1110,7 @@ describe('Agent', () => {
             `)
         }, 30_000)
 
-        it('commands/custom, inline edit command, edit mode', async () => {
+        it('commands/custom, edit command, edit mode', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })

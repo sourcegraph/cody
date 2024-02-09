@@ -22,7 +22,7 @@
             "mode": "edit"
         },
         "none": {
-            "prompt": "If you see any file content from our current conversation, reply a single word 'yes'. If none, reply 'no'.",
+            "prompt": "Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.",
             "context": {
                 "none": true
             }
