@@ -584,6 +584,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
+            // Allow navigation/selection with Ctrl(+Shift?)+Arrows
+            const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+            if (event.ctrlKey && arrowKeys.has(event.key)) {
+                return
+            }
+
             // Handles keyboard shortcuts with Ctrl key.
             // Checks if the Ctrl key is pressed with a key not in the allow list
             // to avoid triggering default browser shortcuts and bubbling the event.
