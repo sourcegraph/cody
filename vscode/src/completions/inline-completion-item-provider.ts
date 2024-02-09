@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
+    featureFlagProvider,
     isCodyIgnoredFile,
     RateLimitError,
     wrapInActiveSpan,
