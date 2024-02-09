@@ -33,7 +33,12 @@ class PromptPanelTest : TestCase() {
                         "foo ".length + "@file\\ with\\ spaces".length,
                         "@file\\ with\\ spaces",
                         "file with spaces"),
-                )))
+                )),
+            Case("@", listOf(AtExpression(0, 1, "@", ""))),
+            Case("foo @", listOf(AtExpression("foo ".length, "foo @".length, "@", ""))),
+            Case("@ foo", listOf(AtExpression(0, 1, "@", ""))),
+            Case("foo@email.com", listOf()),
+        )
 
     for (case in cases) {
       assertEquals(case.expected, findAtExpressions(case.text))

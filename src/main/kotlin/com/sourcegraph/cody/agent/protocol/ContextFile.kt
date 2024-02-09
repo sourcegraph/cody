@@ -39,24 +39,34 @@ val contextFileDeserializer =
 
 val uriDeserializer =
     JsonDeserializer { jsonElement: JsonElement, typ: Type, context: JsonDeserializationContext ->
-      val j = jsonElement.asJsonObject
-      URI(
-          j["scheme"]?.asString,
-          j["authority"]?.asString,
-          j["path"]?.asString,
-          j["query"]?.asString,
-          j["fragment"]?.asString,
-      )
+      val j = jsonElement?.asJsonObject
+      if (j == null || j.isJsonNull) {
+        null
+      } else if (j.isJsonPrimitive) {
+        j.asString
+      } else {
+        URI(
+            j["scheme"]?.asString,
+            j["authority"]?.asString,
+            j["path"]?.asString,
+            j["query"]?.asString,
+            j["fragment"]?.asString,
+        )
+      }
     }
 
 val uriSerializer = JsonSerializer { uri: URI, type, context ->
-  val obj = JsonObject()
-  obj.addProperty("scheme", uri.scheme)
-  obj.addProperty("authority", uri.authority)
-  obj.addProperty("path", uri.path)
-  obj.addProperty("query", uri.query)
-  obj.addProperty("fragment", uri.fragment)
-  obj
+  if (uri == null) {
+    JsonNull.INSTANCE
+  } else {
+    val obj = JsonObject()
+    obj.addProperty("scheme", uri.scheme)
+    obj.addProperty("authority", uri.authority)
+    obj.addProperty("path", uri.path)
+    obj.addProperty("query", uri.query)
+    obj.addProperty("fragment", uri.fragment)
+    obj
+  }
 }
 
 fun contextFilesFromList(list: List<Any>): List<String> {

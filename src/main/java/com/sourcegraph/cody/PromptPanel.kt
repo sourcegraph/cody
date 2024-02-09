@@ -269,13 +269,18 @@ data class AtExpression(
     val value: String
 )
 
-val atExpressionPattern = """(@(?:\\\s|[^\s])+)(?:\s|$)""".toRegex()
+val atExpressionPattern = """(@(?:\\\s|\S)*)(?:\s|$)""".toRegex()
 
 fun findAtExpressions(text: String): List<AtExpression> {
   val matches = atExpressionPattern.findAll(text)
   val expressions = ArrayList<AtExpression>()
   for (match in matches) {
-    val subMatch = match.groups.get(1)
+    val mainMatch = match.groups[0] ?: continue
+    val prevIndex = mainMatch.range.first - 1
+    // filter out things like email addresses
+    if (prevIndex >= 0 && !text[prevIndex].isWhitespace()) continue
+
+    val subMatch = match.groups[1]
     if (subMatch != null) {
       val value = subMatch.value.substring(1).replace("\\ ", " ")
       expressions.add(
