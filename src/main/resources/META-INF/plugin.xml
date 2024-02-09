@@ -17,6 +17,8 @@
     -->
     <idea-version since-build="221.5080.210"/>
 
+    <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
+
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
