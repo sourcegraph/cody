@@ -68,6 +68,7 @@ export type Requests = {
     'commands/test': [null, string]
     'commands/smell': [null, string]
 
+    // Trigger custom commands that could be a chat-based command or an edit command.
     'commands/custom': [{ key: string }, string | EditTask]
 
     // Trigger commands that edit the code.

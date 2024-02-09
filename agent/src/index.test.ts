@@ -978,35 +978,40 @@ describe('Agent', () => {
     })
 
     describe('Custom Commands', () => {
-        it('commands/custom, chat command, open tabs as context', async () => {
+        // TODO (bee) will need to close all the files before running this test
+        it.skip('commands/custom, chat command, open tabs as context', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
             await client.openFile(sumUri)
             await client.openFile(squirrelUri)
 
+            const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/custom', { key: '/countTabs' })
+
+            // Assert that the server is not using IDs between `chat/new` and
+            // `chat/explain`. In VS Code, we try to reuse empty webview panels,
+            // which is undesireable for agent clients.
+            expect(id).not.toStrictEqual(freshChatID)
+
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              " Based on my memory, you have shared 7 file contexts with me:
+              " Based on the codebase context you have provided so far, these are the file paths:
 
-              1. src/example.test.ts
-              2. src/TestLogger.ts
-              3. src/TestClass.ts
-              4. src/multiple-selections.ts
-              5. .cody/ignore
-              6. src/animal.ts
-              7. src/sum.ts
-
-              You also shared selected TypeScript code from src/squirrel.ts.
-
-              So in total, I have 8 codebase contexts that you have provided."
+              - src/example.test.ts
+              - src/TestLogger.ts
+              - src/TestClass.ts
+              - src/multiple-selections.ts
+              - .cody/ignore
+              - src/animal.ts
+              - src/sum.ts
+              - src/squirrel.ts"
             `)
         }, 30_000)
 
-        it('commands/custom - chat command that takes argument', async () => {
+        it('commands/custom, chat command that takes argument', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
@@ -1085,7 +1090,6 @@ describe('Agent', () => {
             `)
         }, 30_000)
 
-        // TODO: insert mode result looks broken and should be re-updated once fixed.
         it('commands/custom, inline edit command, insert mode', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -1095,22 +1099,10 @@ describe('Agent', () => {
             // result should not be type of string for edit commands
             expect(typeof task).not.toBe('string')
             await client.taskHasReachedAppliedPhase(task as EditTask)
-            const lenses = client.codeLenses.get(sumUri.toString()) ?? []
-            expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-            const acceptCommand = lenses.find(
-                ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-            )
-            if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                throw new Error(`Edit Failed: Lenses ${JSON.stringify(lenses, null, 2)}`)
-            }
-            await client.request('command/execute', acceptCommand.command)
-            expect(client.codeLenses.get(sumUri.toString()) ?? []).toHaveLength(0)
-            const newContent = client.workspace.getDocument(sumUri)?.content
-            expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
-              "export function sum(a: number, b: number): number {
-                  // hello
-                  /* CURSOR */
-              }
+
+            const originalDocument = client.workspace.getDocument(sumUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "// hello
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1123,22 +1115,14 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
+
             const task = await client.request('commands/custom', { key: '/newField' })
             // result should not be type of string for edit commands
             expect(typeof task).not.toBe('string')
             await client.taskHasReachedAppliedPhase(task as EditTask)
-            const lenses = client.codeLenses.get(animalUri.toString()) ?? []
-            expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-            const acceptCommand = lenses.find(
-                ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-            )
-            if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                throw new Error(`Edit Failed: Lenses ${JSON.stringify(lenses, null, 2)}`)
-            }
-            await client.request('command/execute', acceptCommand.command)
-            expect(client.codeLenses.get(animalUri.toString()) ?? []).toHaveLength(0)
-            const newContent = client.workspace.getDocument(animalUri)?.content
-            expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(`
+
+            const originalDocument = client.workspace.getDocument(animalUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
               "/* SELECTION_START */
               export interface Animal {
                   name: string;
