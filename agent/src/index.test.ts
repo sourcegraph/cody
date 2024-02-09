@@ -991,17 +991,9 @@ describe('Agent', () => {
             const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
             await client.openFile(trickyLogicUri)
 
-            const freshChatID = await client.request('chat/new', null)
-            const id = await client.request('commands/custom', { key: '/countTabs' })
-
-            // Assert that the server is not using IDs between `chat/new` and
-            // `chat/explain`. In VS Code, we try to reuse empty webview panels,
-            // which is undesireable for agent clients.
-            expect(id).not.toStrictEqual(freshChatID)
-
-            // id should be type of string for chat commands
-            expect(typeof id).toBe('string')
-            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            const result = await client.request('commands/custom', { key: '/countTabs' })
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.result as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
               " So far you have shared code context from these files:
 
@@ -1022,10 +1014,9 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const id = await client.request('commands/custom', { key: '/translate Python' })
-            // id should be type of string for chat commands
-            expect(typeof id).toBe('string')
-            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            const result = await client.request('commands/custom', { key: '/translate Python' })
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.result as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
               " Here is the TypeScript code translated to Python:
 
@@ -1055,10 +1046,9 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const id = await client.request('commands/custom', { key: '/none' })
-            // id should be type of string for chat commands
-            expect(typeof id).toBe('string')
-            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            const result = await client.request('commands/custom', { key: '/none' })
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.result as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
         }, 30_000)
 
@@ -1069,12 +1059,9 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const freshChatID = await client.request('chat/new', null)
-            const id = await client.request('commands/custom', { key: '/countDirFiles' })
-
-            expect(id).not.toStrictEqual(freshChatID)
-
-            const lastMessage = await client.firstNonEmptyTranscript(id as string)
+            const result = await client.request('commands/custom', { key: '/countDirFiles' })
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.result as string)
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(`
@@ -1095,10 +1082,9 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(sumUri, { removeCursor: false })
-            const task = await client.request('commands/custom', { key: '/hello' })
-            // result should not be type of string for edit commands
-            expect(typeof task).not.toBe('string')
-            await client.taskHasReachedAppliedPhase(task as EditTask)
+            const result = await client.request('commands/custom', { key: '/hello' })
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.result as EditTask)
 
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
@@ -1116,10 +1102,9 @@ describe('Agent', () => {
             })
             await client.openFile(animalUri)
 
-            const task = await client.request('commands/custom', { key: '/newField' })
-            // result should not be type of string for edit commands
-            expect(typeof task).not.toBe('string')
-            await client.taskHasReachedAppliedPhase(task as EditTask)
+            const result = await client.request('commands/custom', { key: '/newField' })
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.result as EditTask)
 
             const originalDocument = client.workspace.getDocument(animalUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`

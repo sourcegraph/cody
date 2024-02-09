@@ -635,5 +635,11 @@ export interface RenameFilesParams {
 }
 
 export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandResult
-export type CustomChatCommandResult = string
-export type CustomEditCommandResult = EditTask
+export interface CustomChatCommandResult {
+    type: 'chat'
+    result: string
+}
+export interface CustomEditCommandResult {
+    type: 'edit'
+    result: EditTask
+}
