@@ -13,6 +13,7 @@ import {
 import { documentAndPosition, nextTick } from './test-helpers'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -98,7 +99,8 @@ describe('RequestManager', () => {
         provider: Provider,
         suffix?: string
     ) => Promise<RequestManagerResult>
-    beforeEach(() => {
+    beforeEach(async () => {
+        await initCompletionProviderConfig({})
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) =>
