@@ -25,7 +25,7 @@ const findWorkspaceFiles = async (
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
     const fileExcludesPattern =
-        '**/{*.env,.git,.class,out/,dist/,build/,snap,node_modules,__pycache__}**'
+        '**/{*.env,.git/,.class,out/,dist/,build/,snap,node_modules/,__pycache__/}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }

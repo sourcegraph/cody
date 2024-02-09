@@ -14,6 +14,9 @@ import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { fromSlashCommand } from '../utils/common'
 
+const isTesting = process.env.CODY_TESTING === 'true'
+const isMac = os.platform() === 'darwin'
+
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
  */
@@ -174,22 +177,23 @@ export class CustomCommandsManager implements vscode.Disposable {
      */
     private async save(
         id: string,
-        prompt: CodyCommand,
+        command: CodyCommand,
         type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
-        this.customCommandsMap.set(id, prompt)
+        this.customCommandsMap.set(id, command)
+        let updated: Omit<CodyCommand, 'slashCommand'> | undefined = omit(command, 'slashCommand')
 
         // Filter map to remove commands with non-match type
         const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
-        for (const [key, command] of this.customCommandsMap) {
-            if (command.type === type) {
-                command.type = undefined
-                filtered.set(fromSlashCommand(key), omit(command, 'slashCommand'))
+        for (const [key, _command] of this.customCommandsMap) {
+            if (_command.type === type) {
+                updated = omit(updated, 'type')
+                filtered.set(fromSlashCommand(key), updated)
             }
         }
 
         // Add the new command to the filtered map
-        filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
+        filtered.set(fromSlashCommand(id), updated)
 
         // turn map into json
         const jsonContext = { ...this.userJSON }
@@ -217,9 +221,29 @@ export class CustomCommandsManager implements vscode.Disposable {
             case 'open':
                 void vscode.commands.executeCommand('vscode.open', uri)
                 break
-            case 'delete':
-                void vscode.workspace.fs.delete(uri)
+            case 'delete': {
+                let fileType = 'user settings file (~/.vscode/cody.json)'
+                if (type === CustomCommandType.Workspace) {
+                    fileType = 'workspace settings file (.vscode/cody.json)'
+                }
+                const bin = isMac ? 'Trash' : 'Recycle Bin'
+                const confirmationKey = `Move to ${bin}`
+                // Playwright cannot capture and interact with pop-up modal in VS Code,
+                // so we need to turn off modal mode for the display message during tests.
+                const modal = !isTesting
+                vscode.window
+                    .showInformationMessage(
+                        `Are you sure you want to delete your Cody ${fileType}?`,
+                        { detail: `You can restore this file from the ${bin}.`, modal },
+                        confirmationKey
+                    )
+                    .then(async choice => {
+                        if (choice === confirmationKey) {
+                            void vscode.workspace.fs.delete(uri)
+                        }
+                    })
                 break
+            }
             case 'create':
                 await createJSONFile(uri)
                     .then(() => {

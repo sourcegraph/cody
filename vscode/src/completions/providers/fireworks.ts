@@ -88,7 +88,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case 'llama-code-7b':
         case 'llama-code-13b':
         case 'llama-code-13b-instruct':
-            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
         case 'mistral-7b-instruct-4k':
@@ -433,20 +433,22 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 lastResponse.stopReason = CompletionStopReason.RequestFinished
             }
 
-            log?.onComplete(lastResponse)
-
             return lastResponse
         } catch (error) {
             if (isRateLimitError(error as Error)) {
                 throw error
             }
             if (isAbortError(error as Error) && lastResponse) {
+                lastResponse.stopReason = CompletionStopReason.RequestAborted
+            } else {
+                const message = `error parsing CodeCompletionResponse: ${error}`
+                log?.onError(message, error)
+                throw new TracedError(message, traceId)
+            }
+        } finally {
+            if (lastResponse) {
                 log?.onComplete(lastResponse)
             }
-
-            const message = `error parsing streaming CodeCompletionResponse: ${error}`
-            log?.onError(message, error)
-            throw new TracedError(message, traceId)
         }
     }
 }
