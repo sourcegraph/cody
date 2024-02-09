@@ -79,7 +79,7 @@ export class CommandsProvider implements vscode.Disposable {
      */
     protected groupCommands(customCommands = new Map<string, CodyCommand>()): void {
         const defaultCommands = [...this.defaultCommands]
-        const combinedMap = new Map([...defaultCommands])
+        const combinedMap = new Map([...defaultCommands])gi
         // Add the custom commands to the all commands map
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())
     }
