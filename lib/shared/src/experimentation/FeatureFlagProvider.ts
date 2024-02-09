@@ -14,6 +14,8 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
     // Force all StarCoder traffic (controlled by the above flag) to point to the 16b model.
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
+    // Enable Llama Code 13b as the default model via Fireworks
+    CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
@@ -24,6 +26,9 @@ export enum FeatureFlag {
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     // Dynamically decide wether to show a single line or multiple lines for completions.
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
+    // Completion requests will be cancelled as soon as a new request comes in and the debounce time
+    // will be reduced to try and counter the latency impact.
+    CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',

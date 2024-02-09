@@ -91,7 +91,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case 'llama-code-7b':
         case 'llama-code-13b':
         case 'llama-code-13b-instruct':
-            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
         case 'mistral-7b-instruct-4k':

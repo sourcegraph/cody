@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
-    featureFlagProvider,
     isCodyIgnoredFile,
     RateLimitError,
     wrapInActiveSpan,
@@ -175,6 +174,10 @@ export class InlineCompletionItemProvider
                 }
             )
         )
+
+        // Warm caches for the config feature configuration to avoid the first completion call
+        // having to block on this.
+        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -221,11 +224,6 @@ export class InlineCompletionItemProvider
                 this.lastCompletionRequestTimestamp = start
             }
 
-            // We start feature flag requests early so that we have a high chance of getting a response
-            // before we need it.
-            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteUserLatency
-            )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
             let stopLoading: (() => void) | undefined
@@ -302,10 +300,11 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const [latencyFeatureFlags, tracingFlagEnabled] = await Promise.all([
-                userLatencyPromise.then(user => ({ user }) as LatencyFeatureFlags),
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
-            ])
+            const latencyFeatureFlags: LatencyFeatureFlags = {
+                user: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteUserLatency
+                ),
+            }
 
             const artificialDelay = getArtificialDelay(
                 latencyFeatureFlags,
@@ -315,6 +314,10 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
+            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteEagerCancellation
+            )
+            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -328,8 +331,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: isLocalProvider ? 75 : 125,
-                        multiLine: 125,
+                        singleLine: debounceInterval,
+                        multiLine: debounceInterval,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
@@ -441,7 +444,11 @@ export class InlineCompletionItemProvider
                 // client (for VS Code we have already run the did show handler). However, since we
                 // are still inside the callback, we can add some final data to the span and decide
                 // wether to sample it or not.
-                markSpanAsSampled(span, result.source, tracingFlagEnabled)
+                markSpanAsSampled(
+                    span,
+                    result.source,
+                    completionProviderConfig.getPrefetchedFlag(FeatureFlag.CodyAutocompleteTracing)
+                )
 
                 return autocompleteResult
             } catch (error) {

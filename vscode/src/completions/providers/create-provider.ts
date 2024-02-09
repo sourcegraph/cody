@@ -132,10 +132,15 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoderHybrid, starCoder16B] = await Promise.all([
+    const [starCoderHybrid, starCoder16B, llamaCode13B] = await Promise.all([
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
     ])
+
+    if (llamaCode13B) {
+        return { provider: 'fireworks', model: 'llama-code-13b' }
+    }
 
     if (starCoderHybrid) {
         return { provider: 'fireworks', model: starCoder16B ? 'starcoder-16b' : 'starcoder-hybrid' }
