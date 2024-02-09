@@ -69,7 +69,7 @@ export type Requests = {
     'commands/smell': [null, string]
 
     // Trigger custom commands that could be a chat-based command or an edit command.
-    'commands/custom': [{ key: string }, string | EditTask]
+    'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
     'editCommands/test': [null, EditTask]
@@ -633,3 +633,7 @@ export interface CreateFilesParams {
 export interface RenameFilesParams {
     files: { oldUri: string; newUri: string }[]
 }
+
+export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandResult
+export type CustomChatCommandResult = string
+export type CustomEditCommandResult = EditTask

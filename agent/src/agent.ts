@@ -37,6 +37,7 @@ import type {
     AutocompleteItem,
     ClientInfo,
     CodyError,
+    CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
     TextEdit,
@@ -1022,7 +1023,7 @@ export class Agent extends MessageHandler {
 
     private async executeCustomCommand(
         commandResult: Thenable<CommandResult | undefined>
-    ): Promise<string | EditTask> {
+    ): Promise<CustomCommandResult> {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
         if (result?.type === 'chat') {
             return this.createChatPanel(commandResult)
