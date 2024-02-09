@@ -319,19 +319,30 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      * Calls setEditMessageState() to reset any in-progress edit state.
      * Sends a 'reset' command to postMessage to reset the chat on the server.
      */
-    const onChatResetClick = useCallback(() => {
-        setEditMessageState()
-        postMessage?.({ command: 'reset' })
-    }, [postMessage, setEditMessageState])
+    const onChatResetClick = useCallback(
+        (eventType: 'keyDown' | 'click' = 'click') => {
+            setEditMessageState()
+            postMessage?.({ command: 'reset' })
+            postMessage?.({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
+                properties: { source: 'chat', eventType },
+            })
+        },
+        [postMessage, setEditMessageState]
+    )
 
     /**
      * Resets the context selection and query state.
      */
-    const resetContextSelection = useCallback(() => {
-        setSelectedChatContext(0)
-        setCurrentChatContextQuery(undefined)
-        setContextSelection(null)
-    }, [setContextSelection])
+    const resetContextSelection = useCallback(
+        (eventType?: 'keyDown' | 'click') => {
+            setSelectedChatContext(0)
+            setCurrentChatContextQuery(undefined)
+            setContextSelection(null)
+        },
+        [setContextSelection]
+    )
 
     /**
      * Gets the display text for a context file to be completed into the chat when a user
@@ -571,13 +582,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === '/') {
                     event.preventDefault()
                     event.stopPropagation()
-                    onChatResetClick()
-
-                    postMessage?.({
-                        command: 'event',
-                        eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
-                        properties: { source: 'chat' },
-                    })
+                    onChatResetClick('keyDown')
                     return
                 }
                 // Ctrl/Cmd + K - When not already editing, edits the last human message
@@ -589,7 +594,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     postMessage?.({
                         command: 'event',
                         eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
-                        properties: { source: 'chat' },
+                        properties: { source: 'chat', eventType: 'keyDown' },
                     })
                     return
                 }
