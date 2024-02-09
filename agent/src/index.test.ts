@@ -1053,7 +1053,9 @@ describe('Agent', () => {
             // id should be type of string for chat commands
             expect(typeof id).toBe('string')
             const lastMessage = await client.firstNonEmptyTranscript(id as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" I do not have access to view any files or file contents. I am an AI assistant without direct access to computer files or systems."`)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `" I do not have access to view any files or file contents. I am an AI assistant without direct access to computer files or systems."`
+            )
         }, 30_000)
 
         it('commands/custom, chat command, curret directory as context', async () => {
@@ -1092,7 +1094,7 @@ describe('Agent', () => {
 
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
-              "// hello
+              "/** hello */
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1119,7 +1121,7 @@ describe('Agent', () => {
                   makeAnimalSound(): string
                   isMammal: boolean
                   logName(): void {
-                      console.log(this.name);
+                      console.log(this.name)
                   }
               }
               /* SELECTION_END */

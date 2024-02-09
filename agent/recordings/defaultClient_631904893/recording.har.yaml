@@ -18163,11 +18163,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 41ff167c2b4fd0a89f65f5169933d9af
+    - _id: 4d28fe9147b851eaac5a45db378d43b5
       _order: 0
       cache: {}
       request:
-        bodySize: 2426
+        bodySize: 2355
         cookies: []
         headers:
           - name: content-type
@@ -18195,17 +18195,13 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: >-
+                text: |-
                   "My selected TypeScript code from file `src/sum.ts`:
-
                   <selected>
-
-                  Context from file path @/var/folders/6l/bq1gqxk532564klg4cjhp50c0000gn/T/cody-vscode-shim-test/src/sum.ts:
-
+                  Context from file path @src/sum.ts:
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
-
 
                   </selected>
               - speaker: assistant
@@ -18265,22 +18261,25 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 301
+        bodySize: 382
         content:
           mimeType: text/event-stream
-          size: 301
+          size: 382
           text: |+
             event: completion
-            data: {"completion":"//","stopReason":""}
+            data: {"completion":"/**","stopReason":""}
 
             event: completion
-            data: {"completion":"// hello","stopReason":""}
+            data: {"completion":"/** hello","stopReason":""}
 
             event: completion
-            data: {"completion":"// hello\n","stopReason":""}
+            data: {"completion":"/** hello */","stopReason":""}
 
             event: completion
-            data: {"completion":"// hello\n","stopReason":"stop_sequence"}
+            data: {"completion":"/** hello */\n","stopReason":""}
+
+            event: completion
+            data: {"completion":"/** hello */\n","stopReason":"stop_sequence"}
 
             event: done
             data: {}
@@ -18288,7 +18287,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 09:40:39 GMT
+            value: Fri, 09 Feb 2024 10:10:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18317,7 +18316,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T09:40:37.217Z
+      startedDateTime: 2024-02-09T10:10:15.234Z
       time: 0
       timings:
         blocked: -1
@@ -18327,11 +18326,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: eaede9c3d9958200045d7e2d9c2fabe3
+    - _id: 02b0b30c10fc2b81b17a2e7935274887
       _order: 0
       cache: {}
       request:
-        bodySize: 2506
+        bodySize: 2435
         cookies: []
         headers:
           - name: content-type
@@ -18361,8 +18360,7 @@ log:
               - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: Context from
-                  file path
-                  @/var/folders/6l/bq1gqxk532564klg4cjhp50c0000gn/T/cody-vscode-shim-test/src/animal.ts:
+                  file path @src/animal.ts:
 
                   export interface Animal {
                       name: string
@@ -18432,10 +18430,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 9611
+        bodySize: 9380
         content:
           mimeType: text/event-stream
-          size: 9611
+          size: 9380
           text: >+
             event: completion
 
@@ -18539,172 +18537,167 @@ log:
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n   ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n   ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    is","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    is","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isM","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isM","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMam","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMam","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal:","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n   ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n   ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    log","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    log","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName():","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName():","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n       ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n       ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n   ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n   ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/*","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SE","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SE","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION_","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION_","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION_END","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION_END","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION_END */","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION_END */","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION_END */\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION_END */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    } \n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18714,7 +18707,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 09:40:41 GMT
+            value: Fri, 09 Feb 2024 10:10:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18743,7 +18736,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T09:40:39.355Z
+      startedDateTime: 2024-02-09T10:10:43.723Z
       time: 0
       timings:
         blocked: -1
