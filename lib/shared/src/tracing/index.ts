@@ -67,3 +67,10 @@ export function addTraceparent(headers: Headers): void {
         },
     })
 }
+
+export function recordSpanWithError(span: Span, error: Error): Error {
+    span.recordException(error)
+    span.setStatus({ code: SpanStatusCode.ERROR })
+    span.end()
+    return error
+}

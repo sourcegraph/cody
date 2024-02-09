@@ -39,10 +39,10 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
-import { createRateLimitErrorFromResponse, createSSEIterator } from '../client'
+import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { AuthStatus } from '../../chat/protocol'
 import { type Span, SpanStatusCode } from '@opentelemetry/api'
-import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {
     model: FireworksModel
@@ -366,7 +366,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                     signal: abortController.signal,
                 })
 
-                logResponse(span, response)
+                logResponseHeadersToSpan(span, response)
 
                 const traceId = getActiveTraceAndSpanId()?.traceId
 
@@ -375,27 +375,37 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 // is eligible to upgrade to the pro plan. We get this from the authState instead.
                 if (response.status === 429) {
                     const upgradeIsAvailable = self.authStatus.userCanUpgrade
-                    throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+
+                    throw recordSpanWithError(
+                        span,
+                        await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                    )
                 }
 
                 if (!response.ok) {
-                    throw new NetworkError(
-                        response,
-                        (await response.text()) +
-                            (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
-                        traceId
+                    throw recordSpanWithError(
+                        span,
+                        new NetworkError(
+                            response,
+                            (await response.text()) +
+                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                            traceId
+                        )
                     )
                 }
 
                 if (response.body === null) {
-                    throw new TracedError('No response body', traceId)
+                    throw recordSpanWithError(span, new TracedError('No response body', traceId))
                 }
 
                 const isStreamingResponse = response.headers
                     .get('content-type')
                     ?.startsWith('text/event-stream')
                 if (!isStreamingResponse || !isNodeResponse(response)) {
-                    throw new TracedError('No streaming response given', traceId)
+                    throw recordSpanWithError(
+                        span,
+                        new TracedError('No streaming response given', traceId)
+                    )
                 }
 
                 let lastResponse: CompletionResponse | undefined
@@ -450,21 +460,17 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                         lastResponse.stopReason = CompletionStopReason.RequestFinished
                     }
 
-                    log?.onComplete(lastResponse)
-                    span.addEvent('return', { stopReason: lastResponse.stopReason })
-                    span.setStatus({ code: SpanStatusCode.OK })
-                    span.end()
-
                     return lastResponse
                 } catch (error) {
+                    // In case of the abort error and non-empty completion response, we can
+                    // consider the completion partially completed and want to log it to
+                    // the Cody output channel via `log.onComplete()` instead of erroring.
                     if (isAbortError(error as Error) && lastResponse) {
-                        log?.onComplete(lastResponse)
+                        lastResponse.stopReason = CompletionStopReason.RequestAborted
                         return
                     }
 
-                    span.recordException(error as Error)
-                    span.setStatus({ code: SpanStatusCode.ERROR })
-                    span.end()
+                    recordSpanWithError(span, error as Error)
 
                     if (isRateLimitError(error as Error)) {
                         throw error
@@ -475,6 +481,9 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                     throw new TracedError(message, traceId)
                 } finally {
                     if (lastResponse) {
+                        span.addEvent('return', { stopReason: lastResponse.stopReason })
+                        span.setStatus({ code: SpanStatusCode.OK })
+                        span.end()
                         log?.onComplete(lastResponse)
                     }
                 }
@@ -569,14 +578,4 @@ function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
     const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
     const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
     return 'sgd_' + gatewayTokenBytes
-}
-function logResponse(span: Span, response: BrowserOrNodeResponse) {
-    const responseHeaders: Record<string, string> = {}
-    response.headers.forEach((value, key) => {
-        responseHeaders[key] = value
-    })
-    span.addEvent('response', {
-        ...responseHeaders,
-        status: response.status,
-    })
 }
