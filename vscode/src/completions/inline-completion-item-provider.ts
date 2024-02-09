@@ -173,6 +173,10 @@ export class InlineCompletionItemProvider
                 }
             )
         )
+
+        // Warm caches for the config feature configuration to avoid the first completion call
+        // having to block on this.
+        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -222,11 +226,6 @@ export class InlineCompletionItemProvider
                 this.lastCompletionRequestTimestamp = start
             }
 
-            // We start feature flag requests early so that we have a high chance of getting a response
-            // before we need it.
-            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteUserLatency
-            )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
             let stopLoading: (() => void) | undefined
@@ -304,7 +303,9 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await userLatencyPromise,
+                user: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteUserLatency
+                ),
             }
 
             const artificialDelay = getArtificialDelay(
@@ -315,6 +316,10 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
+            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteEagerCancellation
+            )
+            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -328,8 +333,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: isLocalProvider ? 75 : 125,
-                        multiLine: 125,
+                        singleLine: debounceInterval,
+                        multiLine: debounceInterval,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
