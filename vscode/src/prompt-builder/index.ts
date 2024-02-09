@@ -50,6 +50,10 @@ export class PromptBuilder {
     /**
      * Tries to add context items to the prompt, tracking characters used.
      * Returns info about which items were used vs. ignored.
+     *
+     * If charLimit is specified, then imposes an additional limit on the
+     * amount of context added from contextItems. This does not affect the
+     * overall character limit, which is still enforced.
      */
     public tryAddContext(
         contextItems: ContextItem[],
@@ -60,7 +64,11 @@ export class PromptBuilder {
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
-        const effectiveCharLimit = charLimit ? this.charsUsed + charLimit : this.charLimit
+        let effectiveCharLimit = this.charLimit - this.charsUsed
+        if (charLimit && charLimit < effectiveCharLimit) {
+            effectiveCharLimit = charLimit
+        }
+
         let limitReached = false
         const used: ContextItem[] = []
         const ignored: ContextItem[] = []
