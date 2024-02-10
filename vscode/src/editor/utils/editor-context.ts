@@ -14,9 +14,11 @@ import {
     type ContextFileSymbol,
     type ContextFileType,
     type SymbolKind,
+    MAX_CURRENT_FILE_TOKENS,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
@@ -85,7 +87,7 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Remove ignored files and apply a penalty for segments that are in the low scoring list.
+    // Apply a penalty for segments that are in the low scoring list.
     const adjustedResults = [...results].map(result => {
         const segments = result.obj.uri.fsPath.split(path.sep)
         for (const lowScoringPathSegment of lowScoringPathSegments) {
@@ -112,12 +114,24 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    await Promise.all(
-        sortedResults.map(async sorted => {
-            sorted.content = await getFileContent(sorted.uri)
-        })
-    )
-    return sortedResults
+    const filtered = []
+    for (const sorted of sortedResults) {
+        // Remove file larger than 1MB and non-text files
+        // NOTE: Sourcegraph search only includes files up to 1MB
+        const fileStat = await vscode.workspace.fs.stat(sorted.uri)
+        if (fileStat.size > 1000000 || !fileStat.size || fileStat.type !== vscode.FileType.File) {
+            continue
+        }
+        // Check if file contains more characters than the token limit based on fileStat.size
+        // and set the title of the result as 'large-file' for webview to display file size
+        // warning.
+        if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
+            sorted.title = 'large-file'
+        }
+        filtered.push(sorted)
+    }
+
+    return filtered
 }
 
 export async function getSymbolContextFiles(
@@ -249,11 +263,4 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
             character: selectionRange.end.character,
         },
     }
-}
-
-async function getFileContent(uri: vscode.Uri): Promise<string> {
-    return vscode.workspace.fs.readFile(uri).then(
-        content => new TextDecoder('utf-8').decode(content),
-        error => {} // invalid files
-    )
 }
