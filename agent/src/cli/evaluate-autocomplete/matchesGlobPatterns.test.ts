@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
+import { matchesGlobPatterns } from '../../../../vscode/src/search/matchesGlobPatterns'
 
 describe('matchesGlobPatterns', () => {
     it('should return true when value matches include globs', () => {
