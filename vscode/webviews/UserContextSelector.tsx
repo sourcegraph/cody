@@ -6,7 +6,6 @@ import { displayPath } from '@sourcegraph/cody-shared'
 import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
-import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 const STARTER = 'Search for a file to include, or type # to search symbols...'
 const FILE_ON_RESULT = 'Search for a file to include...'
@@ -137,8 +136,4 @@ export const UserContextSelectorComponent: React.FunctionComponent<
             ) : null}
         </div>
     )
-}
-
-function estimateTokenCount(content: string) {
-    return Math.round(content.length / CHARS_PER_TOKEN)
 }
