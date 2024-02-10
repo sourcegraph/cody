@@ -50,7 +50,7 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore') })
+        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore'), exact: true })
     ).toBeVisible()
     await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
