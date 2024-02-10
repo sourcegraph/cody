@@ -80,15 +80,17 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
     // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
     if (ignoreFiles.skipped.length) {
-        const rootIgnoreFileUri = vscode.Uri.joinPath(wf.uri, '.cody/ignore');
-        let ignoreFile = filesWithContent.find((f) => f.uri.toString() === rootIgnoreFileUri.toString())
+        const rootIgnoreFileUri = vscode.Uri.joinPath(wf.uri, '.cody/ignore')
+        let ignoreFile = filesWithContent.find(f => f.uri.toString() === rootIgnoreFileUri.toString())
         if (!ignoreFile) {
             ignoreFile = { uri: rootIgnoreFileUri, content: '' }
-            filesWithContent.push(ignoreFile);
+            filesWithContent.push(ignoreFile)
         }
 
         ignoreFile.content += '\n'
-        ignoreFile.content += ignoreFiles.skipped.map(ignored =>  ignores.relativePath(wf.uri, ignored)).join('\n')
+        ignoreFile.content += ignoreFiles.skipped
+            .map(ignored => ignores.relativePath(wf.uri, ignored))
+            .join('\n')
     }
 
     console.log(JSON.stringify(filesWithContent))
