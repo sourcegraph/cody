@@ -1952,7 +1952,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e2c37258055d8088e70f48fc054199d6
+    - _id: ebbdc691ee5f4abccd8dbbade48a880c
       _order: 0
       cache: {}
       request:
@@ -2008,7 +2008,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2029,7 +2029,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:49 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2060,7 +2060,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.750Z
+      startedDateTime: 2024-02-10T00:59:10.708Z
       time: 0
       timings:
         blocked: -1
@@ -2070,7 +2070,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 60f09eba823fd3dd74bd4e728e7aca87
+    - _id: b106f60deed39a36c74dca346e47a427
       _order: 0
       cache: {}
       request:
@@ -2126,7 +2126,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2147,7 +2147,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:49 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2178,7 +2178,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.770Z
+      startedDateTime: 2024-02-10T00:59:10.727Z
       time: 0
       timings:
         blocked: -1
@@ -2188,7 +2188,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2a4274b13c2e38bdce99ec3ad9487004
+    - _id: ea214c086617994bba36727814faa3ad
       _order: 0
       cache: {}
       request:
@@ -2244,7 +2244,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2265,7 +2265,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:50 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2296,7 +2296,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.904Z
+      startedDateTime: 2024-02-10T00:59:10.850Z
       time: 0
       timings:
         blocked: -1
@@ -2306,7 +2306,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 773aec362f4545af54229e399ed74178
+    - _id: 760e5c66342c0178bd6595f332e70a6a
       _order: 0
       cache: {}
       request:
@@ -2362,7 +2362,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2383,7 +2383,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:50 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2414,7 +2414,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.918Z
+      startedDateTime: 2024-02-10T00:59:10.861Z
       time: 0
       timings:
         blocked: -1
@@ -2424,7 +2424,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f4e905002211a855dc933f414da9a715
+    - _id: 88bbe3718480236e2063075ed8c41b99
       _order: 0
       cache: {}
       request:
@@ -2480,7 +2480,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2501,7 +2501,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:50 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2532,7 +2532,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.921Z
+      startedDateTime: 2024-02-10T00:59:10.864Z
       time: 0
       timings:
         blocked: -1
@@ -2542,7 +2542,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: dca1c6a15cfdda33583cec1b367b8797
+    - _id: f637f3c0e2a6e56addbd777b141ecc5d
       _order: 0
       cache: {}
       request:
@@ -2598,7 +2598,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.1
+                    clientVersion: 1.4.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2619,7 +2619,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 09 Feb 2024 18:50:50 GMT
+            value: Sat, 10 Feb 2024 00:59:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2650,7 +2650,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-09T18:50:49.922Z
+      startedDateTime: 2024-02-10T00:59:10.865Z
       time: 0
       timings:
         blocked: -1
