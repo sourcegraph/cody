@@ -17,6 +17,10 @@
         // "TSS_DEBUG": "5859"
         // Let extension behave like you're on dotcom when connected locally:
         // "TESTING_DOTCOM_URL": "https://sourcegraph.test:3443"
+      },
+      "presentation": {
+        "group": "Extension",
+        "order": 1
       }
     },
     {
@@ -37,6 +41,10 @@
         "NODE_ENV": "development",
         "CODY_PROFILE_TEMP": "true",
         "CODY_DEBUG_ENABLE": "true"
+      },
+      "presentation": {
+        "group": "Extension",
+        "order": 1
       }
     },
     {
@@ -46,7 +54,11 @@
       "preLaunchTask": "Build VS Code Extension (Web)",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["-C", "${workspaceFolder}/vscode", "run", "--silent", "_dev:vscode-test-web"],
-      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"]
+      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+      "presentation": {
+        "group": "Extension",
+        "order": 1
+      }
     },
     {
       "name": "Launch VS Code Extension (Web Extension Host)",
@@ -55,7 +67,11 @@
       "request": "launch",
       "preLaunchTask": "Build VS Code Extension (Web)",
       "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
-      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"],
+      "presentation": {
+        "group": "Extension",
+        "order": 1
+      }
     },
     {
       "type": "node",
@@ -68,7 +84,112 @@
       // can be convenient because running with a file like "graph-section-observer.ts"
       // (the implementation, not the test) will run the correct tests.
       "args": ["run", "${fileBasenameNoExtension}", "--disable-console-intercept"],
-      "smartStep": true
+      "smartStep": true,
+      "presentation": {
+        "group": "Test",
+        "order": 1
+      }
+    },
+    {
+      // This config runs the integration tests in debug mode.
+      // This config itself is hidden and should not be used directly because the integration
+      // tests depend on the MockServer. The "Debug Integration Tests" compound config
+      // will launch both this and the mock server together (and allow debugging both).
+			"type": "extensionHost",
+			"request": "launch",
+			"name": "Debug Current Integration Test (Single-root impl)",
+			"preLaunchTask": "Build Tests",
+			"runtimeExecutable": "${execPath}",
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+			"args": [
+				"${workspaceFolder}/vscode/test/fixtures/workspace",
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode",
+				"--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/single-root",
+				"--profile-temp"
+			],
+			"outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+			"smartStep": true,
+      "env": {
+        "CODY_TESTING": "true",
+        "MOCK_RG_PATH": "true",
+        "RUN_TEST_PATH": "${fileBasenameNoExtension}",
+      },
+      "presentation": {
+        "hidden": true,
+      }
+		},
+    {
+      // This config runs the integration tests in debug mode.
+      // This config itself is hidden and should not be used directly because the integration
+      // tests depend on the MockServer. The "Debug Integration Tests" compound config
+      // will launch both this and the mock server together (and allow debugging both).
+			"type": "extensionHost",
+			"request": "launch",
+			"name": "Debug Current Integration Test (Multi-root impl)",
+			"preLaunchTask": "Build Tests",
+			"runtimeExecutable": "${execPath}",
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+			"args": [
+				"${workspaceFolder}/vscode/test/fixtures/multi-root.code-workspace",
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode",
+				"--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/multi-root",
+				"--profile-temp"
+			],
+			"outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+			"smartStep": true,
+      "env": {
+        "CODY_TESTING": "true",
+        "MOCK_RG_PATH": "true",
+        "RUN_TEST_PATH": "${fileBasenameNoExtension}",
+      },
+      "presentation": {
+        "hidden": true,
+      }
+		},
+    {
+      // This config runs the mock server in debug mode.
+      // This config itself is hidden and is not so useful on its own (unless you intend to
+      // run another process to interact with the server). The "Debug Integration Tests"
+      // compound config will launch both this and the mock server together (and allow
+      // debugging both).
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Mock Server",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/vscode/dist/tsc/test/fixtures/mock-server.js",
+      "args": ["--server-mode"],
+      "smartStep": true,
+      "presentation": {
+        "hidden": true,
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Current Integration Test (Single-root)",
+      "configurations": [
+        "Debug Mock Server",
+        "Debug Current Integration Test (Single-root impl)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "group": "Test",
+        "order": 1
+      }
+    },
+    {
+      "name": "Debug Current Integration Test (Multi-root)",
+      "configurations": [
+        "Debug Mock Server",
+        "Debug Current Integration Test (Multi-root impl)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "group": "Test",
+        "order": 1
+      }
     }
   ]
+
 }

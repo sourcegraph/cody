@@ -12,7 +12,11 @@ export function run(testsRoot: string): Promise<void> {
     })
 
     return new Promise((resolve, reject) => {
-        glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+        // The VS Code launch.json may pass a specific file to run just
+        // that suite.
+        const testSuitePath = process.env.RUN_TEST_PATH
+        const pattern = testSuitePath ? `**/${testSuitePath}.js` : '**/**.test.js'
+        glob(pattern, { cwd: testsRoot }, (err, files) => {
             if (err) {
                 return reject(err)
             }

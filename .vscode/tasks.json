@@ -33,6 +33,14 @@
       "problemMatcher": "$tsc-watch",
       "options": { "cwd": "vscode" },
       "isBackground": true
+    },
+    {
+      "label": "Build Tests",
+      "type": "npm",
+      "path": "vscode",
+      "script": "_build:with-tests",
+      "options": { "cwd": "vscode" },
+      "isBackground": false
     }
   ]
 }

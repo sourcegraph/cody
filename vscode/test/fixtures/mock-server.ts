@@ -486,3 +486,10 @@ function storeLoggedEvents(event: string): void {
     const name = parsedEvent.event
     loggedEvents.push(name)
 }
+
+if (process.argv.includes('--server-mode')) {
+    // Run the server forever. Used by a VS Code launch config
+    // for running (and debugging) the server for e2e/integration
+    // test runs.
+    MockServer.run(() => new Promise(() => {}))
+}
