@@ -10,6 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.4.2]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed an issue where Cody would sometimes exceed the context window limit for shorter context OpenAI models. [pull/3121](https://github.com/sourcegraph/cody/pull/3121)
+
+### Changed
+
 ## [1.4.1]
 
 ### Added
