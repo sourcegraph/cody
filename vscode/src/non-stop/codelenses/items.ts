@@ -177,7 +177,7 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
 
 function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Alt+X' : '⌥X'
+    const shortcut = process.platform === 'darwin' ? '⌥X' : 'Alt+X'
     lens.command = {
         title: `Undo [${shortcut}]`,
         command: 'cody.fixup.codelens.undo',
