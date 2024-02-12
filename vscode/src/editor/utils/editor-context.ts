@@ -20,6 +20,8 @@ import {
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+const isTesting = process.env.CODY_TESTING === 'true'
+
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
 ): Promise<vscode.Uri[]> => {
@@ -114,21 +116,30 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
+    if (isTesting) {
+        return sortedResults
+    }
+
     const filtered = []
-    for (const sorted of sortedResults) {
-        // Remove file larger than 1MB and non-text files
-        // NOTE: Sourcegraph search only includes files up to 1MB
-        const fileStat = await vscode.workspace.fs.stat(sorted.uri)
-        if (fileStat.size > 1000000 || !fileStat.size || fileStat.type !== vscode.FileType.File) {
-            continue
+
+    try {
+        for (const sorted of sortedResults) {
+            // Remove file larger than 1MB and non-text files
+            // NOTE: Sourcegraph search only includes files up to 1MB
+            const fileStat = await vscode.workspace.fs.stat(sorted.uri)
+            if (fileStat.size > 1000000 || fileStat.type !== vscode.FileType.File) {
+                continue
+            }
+            // Check if file contains more characters than the token limit based on fileStat.size
+            // and set the title of the result as 'large-file' for webview to display file size
+            // warning.
+            if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
+                sorted.title = 'large-file'
+            }
+            filtered.push(sorted)
         }
-        // Check if file contains more characters than the token limit based on fileStat.size
-        // and set the title of the result as 'large-file' for webview to display file size
-        // warning.
-        if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
-            sorted.title = 'large-file'
-        }
-        filtered.push(sorted)
+    } catch (error) {
+        console.error('getFileContextFiles:failed', error)
     }
 
     return filtered
