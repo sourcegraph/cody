@@ -115,6 +115,7 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
+    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     /* Test: context.currentDir with /currentDir command */
     await page.getByLabel('Custom Custom commands').locator('a').click()
@@ -196,6 +197,7 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
+    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     // Check button click to open the cody.json file in the editor
     await page.getByLabel('Custom Custom commands').locator('a').click()
