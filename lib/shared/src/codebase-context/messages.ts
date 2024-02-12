@@ -106,15 +106,14 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
     if (!code) {
         return []
     }
+    const filepath = displayPath(file.uri)
     return [
         {
             speaker: 'human',
             text:
                 file.type === 'file'
-                    ? `Context from file path @${file.uri?.path}:\n${code}`
-                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${displayPath(
-                          file.uri
-                      )}:\n${code}`,
+                    ? `Context from file path @${filepath}:\n${code}`
+                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${filepath}:\n${code}`,
             file,
         },
         { speaker: 'assistant', text: 'OK.' },

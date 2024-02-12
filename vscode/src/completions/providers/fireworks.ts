@@ -38,8 +38,10 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
-import { createRateLimitErrorFromResponse, createSSEIterator } from '../client'
+import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { AuthStatus } from '../../chat/protocol'
+import { SpanStatusCode } from '@opentelemetry/api'
+import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {
     model: FireworksModel
@@ -88,7 +90,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case 'llama-code-7b':
         case 'llama-code-13b':
         case 'llama-code-13b-instruct':
-            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
         case 'mistral-7b-instruct-4k':
@@ -311,7 +313,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
     // Note: This client assumes that it is run inside a Node.js environment and will always use
     // streaming to simplify the logic. Environments that do not support that should fall back to
     // the default client.
-    private async *createFastPathClient(
+    private createFastPathClient(
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
@@ -325,129 +327,167 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         const url = `${gatewayUrl}/v1/completions/fireworks`
         const log = this.client.logger?.startCompletion(requestParams, url)
 
-        // Convert the SG instance messages array back to the original prompt
-        const prompt = requestParams.messages[0]!.text!
+        // The async generator can not use arrow function syntax so we close over the context
+        const self = this
 
-        // c.f. https://readme.fireworks.ai/reference/createcompletion
-        const fireworksRequest = {
-            model: requestParams.model?.replace(/^fireworks\//, ''),
-            prompt,
-            max_tokens: requestParams.maxTokensToSample,
-            echo: false,
-            temperature: requestParams.temperature,
-            top_p: requestParams.topP,
-            top_k: requestParams.topK,
-            stop: requestParams.stopSequences,
-            stream: true,
-        }
+        return tracer.startActiveSpan(
+            `POST ${url}`,
+            async function* (span): CompletionResponseGenerator {
+                // Convert the SG instance messages array back to the original prompt
+                const prompt = requestParams.messages[0]!.text!
 
-        const headers = new Headers()
-        // Force HTTP connection reuse to reduce latency.
-        // c.f. https://github.com/microsoft/vscode/issues/173861
-        headers.set('Connection', 'keep-alive')
-        headers.set('Content-Type', 'application/json; charset=utf-8')
-        headers.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
-        headers.set('X-Sourcegraph-Feature', 'code_completions')
-        addTraceparent(headers)
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: JSON.stringify(fireworksRequest),
-            headers,
-            signal: abortController.signal,
-        })
-
-        const traceId = getActiveTraceAndSpanId()?.traceId
-
-        // When rate-limiting occurs, the response is an error message The response here is almost
-        // identical to the SG instance response but does not contain information on whether a user
-        // is eligible to upgrade to the pro plan. We get this from the authState instead.
-        if (response.status === 429) {
-            const upgradeIsAvailable = this.authStatus.userCanUpgrade
-            throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-        }
-
-        if (!response.ok) {
-            throw new NetworkError(
-                response,
-                (await response.text()) + (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
-                traceId
-            )
-        }
-
-        if (response.body === null) {
-            throw new TracedError('No response body', traceId)
-        }
-
-        const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
-        if (!isStreamingResponse || !isNodeResponse(response)) {
-            throw new TracedError('No streaming response given', traceId)
-        }
-
-        let lastResponse: CompletionResponse | undefined
-        try {
-            const iterator = createSSEIterator(response.body)
-            let chunkIndex = 0
-
-            for await (const { event, data } of iterator) {
-                if (event === 'error') {
-                    throw new TracedError(data, traceId)
+                // c.f. https://readme.fireworks.ai/reference/createcompletion
+                const fireworksRequest = {
+                    model: requestParams.model?.replace(/^fireworks\//, ''),
+                    prompt,
+                    max_tokens: requestParams.maxTokensToSample,
+                    echo: false,
+                    temperature: requestParams.temperature,
+                    top_p: requestParams.topP,
+                    top_k: requestParams.topK,
+                    stop: requestParams.stopSequences,
+                    stream: true,
                 }
 
-                if (abortController.signal.aborted) {
-                    if (lastResponse) {
-                        lastResponse.stopReason = CompletionStopReason.RequestAborted
+                const headers = new Headers()
+                // Force HTTP connection reuse to reduce latency.
+                // c.f. https://github.com/microsoft/vscode/issues/173861
+                headers.set('Connection', 'keep-alive')
+                headers.set('Content-Type', 'application/json; charset=utf-8')
+                headers.set('Authorization', `Bearer ${self.fastPathAccessToken}`)
+                headers.set('X-Sourcegraph-Feature', 'code_completions')
+                addTraceparent(headers)
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify(fireworksRequest),
+                    headers,
+                    signal: abortController.signal,
+                })
+
+                logResponseHeadersToSpan(span, response)
+
+                const traceId = getActiveTraceAndSpanId()?.traceId
+
+                // When rate-limiting occurs, the response is an error message The response here is almost
+                // identical to the SG instance response but does not contain information on whether a user
+                // is eligible to upgrade to the pro plan. We get this from the authState instead.
+                if (response.status === 429) {
+                    const upgradeIsAvailable = self.authStatus.userCanUpgrade
+
+                    throw recordSpanWithError(
+                        span,
+                        await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                    )
+                }
+
+                if (!response.ok) {
+                    throw recordSpanWithError(
+                        span,
+                        new NetworkError(
+                            response,
+                            (await response.text()) +
+                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                            traceId
+                        )
+                    )
+                }
+
+                if (response.body === null) {
+                    throw recordSpanWithError(span, new TracedError('No response body', traceId))
+                }
+
+                const isStreamingResponse = response.headers
+                    .get('content-type')
+                    ?.startsWith('text/event-stream')
+                if (!isStreamingResponse || !isNodeResponse(response)) {
+                    throw recordSpanWithError(
+                        span,
+                        new TracedError('No streaming response given', traceId)
+                    )
+                }
+
+                let lastResponse: CompletionResponse | undefined
+                try {
+                    const iterator = createSSEIterator(response.body)
+                    let chunkIndex = 0
+
+                    for await (const { event, data } of iterator) {
+                        if (event === 'error') {
+                            throw new TracedError(data, traceId)
+                        }
+
+                        if (abortController.signal.aborted) {
+                            if (lastResponse) {
+                                lastResponse.stopReason = CompletionStopReason.RequestAborted
+                            }
+                            break
+                        }
+
+                        // [DONE] is a special non-JSON message to indicate the end of the stream
+                        if (data === '[DONE]') {
+                            break
+                        }
+
+                        const parsed = JSON.parse(data) as FireworksSSEData
+                        const choice = parsed.choices[0]
+
+                        if (!choice) {
+                            continue
+                        }
+
+                        lastResponse = {
+                            completion: (lastResponse ? lastResponse.completion : '') + choice.text,
+                            stopReason:
+                                choice.finish_reason ??
+                                (lastResponse
+                                    ? lastResponse.stopReason
+                                    : CompletionStopReason.StreamingChunk),
+                        }
+
+                        span.addEvent('yield', { stopReason: lastResponse.stopReason })
+                        yield lastResponse
+
+                        chunkIndex += 1
                     }
-                    break
+
+                    if (lastResponse === undefined) {
+                        throw new TracedError('No completion response received', traceId)
+                    }
+
+                    if (!lastResponse.stopReason) {
+                        lastResponse.stopReason = CompletionStopReason.RequestFinished
+                    }
+
+                    return lastResponse
+                } catch (error) {
+                    // In case of the abort error and non-empty completion response, we can
+                    // consider the completion partially completed and want to log it to
+                    // the Cody output channel via `log.onComplete()` instead of erroring.
+                    if (isAbortError(error as Error) && lastResponse) {
+                        lastResponse.stopReason = CompletionStopReason.RequestAborted
+                        return
+                    }
+
+                    recordSpanWithError(span, error as Error)
+
+                    if (isRateLimitError(error as Error)) {
+                        throw error
+                    }
+
+                    const message = `error parsing streaming CodeCompletionResponse: ${error}`
+                    log?.onError(message, error)
+                    throw new TracedError(message, traceId)
+                } finally {
+                    if (lastResponse) {
+                        span.addEvent('return', { stopReason: lastResponse.stopReason })
+                        span.setStatus({ code: SpanStatusCode.OK })
+                        span.end()
+                        log?.onComplete(lastResponse)
+                    }
                 }
-
-                // [DONE] is a special non-JSON message to indicate the end of the stream
-                if (data === '[DONE]') {
-                    break
-                }
-
-                const parsed = JSON.parse(data) as FireworksSSEData
-                const choice = parsed.choices[0]
-
-                if (!choice) {
-                    continue
-                }
-
-                lastResponse = {
-                    completion: (lastResponse ? lastResponse.completion : '') + choice.text,
-                    stopReason:
-                        choice.finish_reason ??
-                        (lastResponse ? lastResponse.stopReason : CompletionStopReason.StreamingChunk),
-                }
-
-                yield lastResponse
-
-                chunkIndex += 1
             }
-
-            if (lastResponse === undefined) {
-                throw new TracedError('No completion response received', traceId)
-            }
-
-            if (!lastResponse.stopReason) {
-                lastResponse.stopReason = CompletionStopReason.RequestFinished
-            }
-
-            log?.onComplete(lastResponse)
-
-            return lastResponse
-        } catch (error) {
-            if (isRateLimitError(error as Error)) {
-                throw error
-            }
-            if (isAbortError(error as Error) && lastResponse) {
-                log?.onComplete(lastResponse)
-            }
-
-            const message = `error parsing streaming CodeCompletionResponse: ${error}`
-            log?.onError(message, error)
-            throw new TracedError(message, traceId)
-        }
+        )
     }
 }
 

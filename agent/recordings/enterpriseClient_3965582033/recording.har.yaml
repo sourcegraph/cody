@@ -627,6 +627,928 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 282c1ec78b202e69765ae92eb9d210ff
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3164
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - name: user-agent
+            value: enterpriseClient / v1
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 265
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/example.test.ts: Use the
+                  following code snippet from file: src/example.test.ts:
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 8260
+        content:
+          mimeType: text/event-stream
+          size: 8260
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vit","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 08 Feb 2024 10:57:24 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1204
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-08T10:57:20.992Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 46e5fea04316142c2df11930c54b1ebd
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 6208
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - name: user-agent
+            value: enterpriseClient / v1
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 265
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/internal/usagestats/codehost_integration.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	return fmt.Sprintf(`FILTER (WHERE %s = current_%s AND argument->>'%s' %s %s)`, period, period, argument, inQueryFragment, nameQueryFragment)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/internal/oobmigration/downgrade_test.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	}
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/internal/download/download.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	return os.Remove(src)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/internal/codeintel/sentinel/internal/store/observability.go`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	}
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file
+                  `/internal/authz/providers/perforce/cmd/scanprotects/README.md`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+                      "**/base/foo/config/labels/**"
+                    ]
+                  }
+
+                  ...
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `/go.mod` in
+                  repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```mod
+                  	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
+                  )
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file
+                  `/doc/admin/config/webhooks/outgoing.md` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+                    "owning_batch_change_id": "QmF0Y2hDaGFuZ2U6MTcz"
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/dev/sg/ci/command.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	},
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/dev/release/src/release.ts` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      },
+                  ]
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file
+                  `/cmd/symbols/squirrel/README.md` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  # Squirrel
+
+
+                  Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/frontend/internal/dotcom/productsubscription/licenses_db_test.go`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	autogold.Expect("/nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:/n/n• *License version*: 123/n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (3.0 days remaining)/n• *Expiration (PT)*: Feb 24, 2023 6:48am PST/n• *User count*: 0/n• *License tags*: ``/n• *Salesforce subscription ID*: unknown/n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown/view|unknown>/n/nReply with a :approved_stamp: when this is approved/nReply with a :white_check_mark: when this has been sent to the customer/n").Equal(t, message)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/frontend/graphqlbackend/repository_text_search_index.go`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", regexp.QuoteMeta(r.repo.Name()), r.branch)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/executor/internal/worker/runtime/kubernetes.go` in
+                  repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	return fmt.Sprintf("step.kubernetes.%d", index)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/wildcard/src/global-styles/input-group.scss` in
+                  repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```scss
+                      border-bottom-left-radius: 0;
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/wildcard/src/global-styles/GlobalStylesStory/FormFieldVariants/FormFieldVariants.tsx`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      </div>
+                  )
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/web/src/enterprise/repo/enterpriseRepoContainerRoutes.tsx`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      },
+                  ]
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/web-sveltekit/src/routes/[...repo=reporev]/(validrev)/(code)/+layout.ts`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      }
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/branded/src/search-ui/input/experimental/suggestionsExtension.ts`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      return state.field(suggestionsStateField)
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/branded/src/search-ui/input/BaseCodeMirrorQueryInput.tsx`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                      return useMemo(() => searchInputEventHandlers.init(() => handlers), [])
+                  }
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is Squirrel?
+              - speaker: assistant
+            model: anthropic/claude-2
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 4519
+        content:
+          mimeType: text/event-stream
+          size: 4519
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-s","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 09 Feb 2024 18:16:08 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1204
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-09T18:16:04.647Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 402b7b5009f7d08b7aa1506bda51149c
       _order: 0
       cache: {}
@@ -1545,7 +2467,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bb5cb3a6396174175799535fec314c00
+    - _id: 22bfac6468642e6ea4a80d046b71519e
       _order: 0
       cache: {}
       request:
@@ -1601,7 +2523,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.0
+                    clientVersion: 1.4.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1622,7 +2544,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 07 Feb 2024 17:48:33 GMT
+            value: Mon, 12 Feb 2024 10:27:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1653,7 +2575,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-07T17:48:32.900Z
+      startedDateTime: 2024-02-12T10:27:14.462Z
       time: 0
       timings:
         blocked: -1
@@ -1663,7 +2585,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bb06d37420e53d61d9bbb7034ef2632b
+    - _id: 6baac4ceb586fe7ece45a6db0d4a256d
       _order: 0
       cache: {}
       request:
@@ -1719,7 +2641,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.0
+                    clientVersion: 1.4.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1740,7 +2662,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 07 Feb 2024 17:48:33 GMT
+            value: Mon, 12 Feb 2024 10:27:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1771,7 +2693,479 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-07T17:48:32.942Z
+      startedDateTime: 2024-02-12T10:27:14.486Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 74a1eb75571636606b039b07e736f21e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 348
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "348"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.command.doc
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.4.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 12 Feb 2024 10:27:15 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-12T10:27:14.624Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ca52bab04e3e4158157ed47138dbc40b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasCode
+                  feature: cody.fixup.response
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.4.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 12 Feb 2024 10:27:15 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-12T10:27:14.637Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d8a18a8747e36a00575b12ff2910b9d5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: succeeded
+                  feature: cody.fixup.apply
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.4.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 12 Feb 2024 10:27:15 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-12T10:27:14.640Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 40bd5700e633e784c85363874569c956
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: accept
+                  feature: cody.fixup.codeLens
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.4.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 12 Feb 2024 10:27:15 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1233
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-12T10:27:14.642Z
       time: 0
       timings:
         blocked: -1

@@ -12,9 +12,11 @@ import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { getConfiguration } from '../../configuration'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 const isMac = os.platform() === 'darwin'
+const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
 /**
  * Handles loading, building, and maintaining Custom Commands retrieved from cody.json files
@@ -27,19 +29,17 @@ export class CustomCommandsManager implements vscode.Disposable {
     public customCommandsMap = new Map<string, CodyCommand>()
     public userJSON: Record<string, unknown> | null = null
 
-    private userConfigFile: vscode.Uri | undefined
+    protected configFileName = ConfigFiles.COMMAND
+    private userConfigFile = Utils.joinPath(URI.file(userHomePath), this.configFileName)
     private get workspaceConfigFile(): vscode.Uri | undefined {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
         if (!workspaceRoot) {
             return undefined
         }
-        return Utils.joinPath(workspaceRoot, ConfigFiles.VSCODE)
+        return Utils.joinPath(workspaceRoot, this.configFileName)
     }
 
     constructor() {
-        const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
-        this.userConfigFile = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.custom.build', () =>
                 this.newCustomCommandQuickPick()
@@ -58,11 +58,16 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     /**
+     // TODO (bee) Migrate to use .cody/commands.json
      * Create file watchers for cody.json files.
      * Automatically update the command map when the cody.json files are changed
      */
     public init(): void {
-        this.disposeWatchers()
+        const workspaceConfig = vscode.workspace.getConfiguration()
+        const config = getConfiguration(workspaceConfig)
+        if (!config.isRunningInsideAgent) {
+            this.configFileName = ConfigFiles.VSCODE
+        }
 
         const userConfigWatcher = createFileWatchers(this.userConfigFile)
         if (userConfigWatcher) {
@@ -293,4 +298,52 @@ export class CustomCommandsManager implements vscode.Disposable {
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
     await vscode.env.openExternal(vscode.Uri.parse(uri))
+}
+
+// TODO (bee) Migrate cody.json to new config file location
+// Rename the old config files to the new location
+export async function migrateCommandFiles(): Promise<void> {
+    // WORKSPACE
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
+    if (workspaceRoot) {
+        const oldWsPath = Utils.joinPath(workspaceRoot, ConfigFiles.VSCODE)
+        const newWSPath = Utils.joinPath(workspaceRoot, ConfigFiles.COMMAND)
+        await migrateContent(oldWsPath, newWSPath).then(
+            () => {},
+            error => undefined
+        )
+    }
+
+    // USER
+    if (userHomePath) {
+        const oldUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
+        const newUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.COMMAND)
+        await migrateContent(oldUserPath, newUserPath).then(
+            () => {},
+            error => undefined
+        )
+    }
+}
+
+async function migrateContent(oldFile: vscode.Uri, newFile: vscode.Uri): Promise<void> {
+    const oldUserContent = await tryReadFile(newFile)
+    if (!oldUserContent) {
+        return
+    }
+
+    const oldContent = await tryReadFile(oldFile)
+    const workspaceEditor = new vscode.WorkspaceEdit()
+    workspaceEditor.createFile(newFile, { ignoreIfExists: true })
+    workspaceEditor.insert(newFile, new vscode.Position(0, 0), JSON.stringify(oldContent, null, 2))
+    await vscode.workspace.applyEdit(workspaceEditor)
+    const doc = await vscode.workspace.openTextDocument(newFile)
+    await doc.save()
+    workspaceEditor.deleteFile(oldFile, { ignoreIfNotExists: true })
+}
+
+async function tryReadFile(fileUri: vscode.Uri): Promise<string | undefined> {
+    return vscode.workspace.fs.readFile(fileUri).then(
+        content => new TextDecoder('utf-8').decode(content),
+        error => undefined
+    )
 }

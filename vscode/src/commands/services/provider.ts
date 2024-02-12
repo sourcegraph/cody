@@ -37,6 +37,7 @@ export class CommandsProvider implements vscode.Disposable {
         )
 
         this.customCommandsStore.init()
+        this.refresh()
     }
 
     private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {

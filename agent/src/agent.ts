@@ -37,6 +37,7 @@ import type {
     AutocompleteItem,
     ClientInfo,
     CodyError,
+    CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
     TextEdit,
@@ -683,6 +684,16 @@ export class Agent extends MessageHandler {
             )
         })
 
+        this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
+            return this.executeCustomCommand(
+                vscode.commands.executeCommand<CommandResult | undefined>(
+                    'cody.action.command',
+                    key,
+                    commandArgs
+                )
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/document', () => {
             return this.createEditTask(
                 vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
@@ -1008,6 +1019,22 @@ export class Agent extends MessageHandler {
         }
         webviewPanel.initialize()
         return webviewPanel.panelID
+    }
+
+    private async executeCustomCommand(
+        commandResult: Thenable<CommandResult | undefined>
+    ): Promise<CustomCommandResult> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+
+        if (result?.type === 'chat') {
+            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
+        }
+
+        if (result?.type === 'edit') {
+            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
+        }
+
+        throw new Error('Invalid custom command result')
     }
 
     // Alternative to `registerRequest` that awaits on authentication changes to

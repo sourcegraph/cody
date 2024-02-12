@@ -7,7 +7,6 @@ import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
-import { fromSlashCommand } from './utils/common'
 
 /**
  * Handles commands execution with commands from CommandsProvider
@@ -34,9 +33,7 @@ class CommandsController implements vscode.Disposable {
     public async execute(text: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
         const commandSplit = text?.trim().split(' ')
         // The unique key for the command. e.g. /test
-        const commandKey = commandSplit?.shift() || text
-        // Provide backward compatibility for old commands that starts with slashes
-        const command = this.provider?.get(fromSlashCommand(commandKey))
+        const commandKey = commandSplit[0] || text
 
         // Additional instruction that will be added to end of prompt in the custom command prompt
         // It's added at execution time to allow dynamic arguments
@@ -49,6 +46,7 @@ class CommandsController implements vscode.Disposable {
             return executeDefaultCommand(commandKey, additionalInstruction)
         }
 
+        const command = this.provider?.get(commandKey)
         if (!command) {
             logDebug('CommandsController:execute', 'command not found', { verbose: { commandKey } })
             return undefined
