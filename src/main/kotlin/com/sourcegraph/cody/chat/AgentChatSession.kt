@@ -10,6 +10,7 @@ import com.sourcegraph.cody.agent.*
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.commands.CommandId
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
@@ -239,9 +240,15 @@ private constructor(
   private fun setCustomModelForAgentSession(model: ChatModel): CompletableFuture<Void> {
     return sessionId.get().thenAccept { sessionId ->
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        agent.server.webviewReceiveMessage(
-            WebviewReceiveMessageParams(
-                sessionId, WebviewMessage(command = "chatModel", model = model.agentName)))
+        val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+        if (activeAccountType != null && !activeAccountType.isDotcomAccount()) {
+          agent.server.webviewReceiveMessage(
+              WebviewReceiveMessageParams(sessionId, WebviewMessage(command = "chatModel")))
+        } else {
+          agent.server.webviewReceiveMessage(
+              WebviewReceiveMessageParams(
+                  sessionId, WebviewMessage(command = "chatModel", model = model.agentName)))
+        }
       }
     }
   }
