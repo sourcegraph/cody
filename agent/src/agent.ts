@@ -1027,11 +1027,11 @@ export class Agent extends MessageHandler {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
 
         if (result?.type === 'chat') {
-            return { type: 'chat', result: await this.createChatPanel(commandResult) }
+            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
         }
 
         if (result?.type === 'edit') {
-            return { type: 'edit', result: await this.createEditTask(commandResult) }
+            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
         }
 
         throw new Error('Invalid custom command result')

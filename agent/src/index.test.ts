@@ -13,7 +13,7 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
-import type { EditTask } from './protocol-alias'
+import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -991,9 +991,11 @@ describe('Agent', () => {
             const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
             await client.openFile(trickyLogicUri)
 
-            const result = await client.request('commands/custom', { key: '/countTabs' })
+            const result = (await client.request('commands/custom', {
+                key: '/countTabs',
+            })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
-            const lastMessage = await client.firstNonEmptyTranscript(result?.result as string)
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
               " So far you have shared code context from these files:
 
@@ -1014,9 +1016,11 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const result = await client.request('commands/custom', { key: '/translate Python' })
+            const result = (await client.request('commands/custom', {
+                key: '/translate Python',
+            })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
-            const lastMessage = await client.firstNonEmptyTranscript(result?.result as string)
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
               " Here is the TypeScript code translated to Python:
 
@@ -1046,9 +1050,11 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const result = await client.request('commands/custom', { key: '/none' })
+            const result = (await client.request('commands/custom', {
+                key: '/none',
+            })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
-            const lastMessage = await client.firstNonEmptyTranscript(result.result as string)
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
         }, 30_000)
 
@@ -1059,9 +1065,11 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(animalUri)
-            const result = await client.request('commands/custom', { key: '/countDirFiles' })
+            const result = (await client.request('commands/custom', {
+                key: '/countDirFiles',
+            })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
-            const lastMessage = await client.firstNonEmptyTranscript(result.result as string)
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(`
@@ -1082,9 +1090,11 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(sumUri, { removeCursor: false })
-            const result = await client.request('commands/custom', { key: '/hello' })
+            const result = (await client.request('commands/custom', {
+                key: '/hello',
+            })) as CustomEditCommandResult
             expect(result.type).toBe('edit')
-            await client.taskHasReachedAppliedPhase(result.result as EditTask)
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
 
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
@@ -1102,9 +1112,11 @@ describe('Agent', () => {
             })
             await client.openFile(animalUri)
 
-            const result = await client.request('commands/custom', { key: '/newField' })
+            const result = (await client.request('commands/custom', {
+                key: '/newField',
+            })) as CustomEditCommandResult
             expect(result.type).toBe('edit')
-            await client.taskHasReachedAppliedPhase(result.result as EditTask)
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
 
             const originalDocument = client.workspace.getDocument(animalUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
