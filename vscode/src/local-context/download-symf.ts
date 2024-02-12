@@ -11,7 +11,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
-const symfVersion = 'v0.0.5'
+const symfVersion = 'v0.0.6'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.

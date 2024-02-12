@@ -244,7 +244,11 @@ const _workspace: typeof vscode.workspace = {
             for (const [name, fileType] of files) {
                 const uri = Uri.file(path.join(dir.fsPath, name))
                 const relativePath = path.relative(workspaceRoot.fsPath, uri.fsPath)
+
                 if (fileType.valueOf() === FileType.Directory.valueOf()) {
+                    if (!matchesGlobPatterns([], exclude ? [exclude] : [], relativePath)) {
+                        continue
+                    }
                     await loop(workspaceRoot, uri)
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
                     if (
@@ -256,6 +260,7 @@ const _workspace: typeof vscode.workspace = {
                     ) {
                         continue
                     }
+
                     result.push(uri)
                     if (maxResults !== undefined && result.length >= maxResults) {
                         return

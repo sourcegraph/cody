@@ -393,3 +393,8 @@ export async function newChat(page: Page): Promise<FrameLocator> {
 export function withPlatformSlashes(input: string) {
     return input.replaceAll(path.posix.sep, path.sep)
 }
+
+const isPlatform = (platform: string) => process.platform === platform
+export function getMetaKeyByOS(): string {
+    return isPlatform('darwin') ? 'Meta' : 'Control'
+}

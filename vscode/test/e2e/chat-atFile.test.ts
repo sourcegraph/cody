@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { sidebarSignin } from './common'
-import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 /**
  * Tests for @-file & @#-symbol in chat
@@ -183,4 +183,16 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
+
+    // Typing out the whole file path without pressing tab/enter should still include the
+    // file as context
+    const osKey = getMetaKeyByOS()
+    await chatInput.press(`${osKey}+/`) // start a new chat
+    await chatInput.fill('@index.htm')
+    await chatInput.press('l')
+    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
+    await chatInput.press('Space')
+    await page.keyboard.type('explain.', { delay: 50 })
+    await chatInput.press('Enter')
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 })

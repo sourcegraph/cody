@@ -13,7 +13,7 @@ import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
-import { telemetryService } from '../services/telemetry'
+import { getExtensionDetails, telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
@@ -46,6 +46,8 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
+import type { Span } from '@opentelemetry/api'
+import { getConfiguration } from '../configuration'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -173,6 +175,10 @@ export class InlineCompletionItemProvider
                 }
             )
         )
+
+        // Warm caches for the config feature configuration to avoid the first completion call
+        // having to block on this.
+        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -194,7 +200,7 @@ export class InlineCompletionItemProvider
             return null
         }
 
-        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
+        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -206,14 +212,11 @@ export class InlineCompletionItemProvider
 
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
-            try {
-                if (!configFeatures.autoComplete) {
-                    // If Configfeatures exists and autocomplete is disabled then raise
-                    // the error banner for autocomplete config turned off
-                    throw new Error('AutocompleteConfigTurnedOff')
-                }
-            } catch (error) {
-                this.onError(error as Error)
+            if (!configFeatures.autoComplete) {
+                // If Configfeatures exists and autocomplete is disabled then raise
+                // the error banner for autocomplete config turned off
+                const error = new Error('AutocompleteConfigTurnedOff')
+                this.onError(error)
                 throw error
             }
             const start = performance.now()
@@ -222,11 +225,6 @@ export class InlineCompletionItemProvider
                 this.lastCompletionRequestTimestamp = start
             }
 
-            // We start feature flag requests early so that we have a high chance of getting a response
-            // before we need it.
-            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteUserLatency
-            )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
             let stopLoading: (() => void) | undefined
@@ -304,7 +302,9 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await userLatencyPromise,
+                user: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteUserLatency
+                ),
             }
 
             const artificialDelay = getArtificialDelay(
@@ -315,6 +315,10 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
+            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteEagerCancellation
+            )
+            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -328,8 +332,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: isLocalProvider ? 75 : 125,
-                        multiLine: 125,
+                        singleLine: debounceInterval,
+                        multiLine: debounceInterval,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
@@ -413,7 +417,8 @@ export class InlineCompletionItemProvider
                     docContext,
                     position,
                     visibleItems,
-                    context
+                    context,
+                    span
                 )
 
                 // Store the log ID for each completion item so that we can later map to the selected
@@ -435,6 +440,16 @@ export class InlineCompletionItemProvider
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
+
+                // If the completion callbacks makes it this far, it is going to be displayed on the
+                // client (for VS Code we have already run the did show handler). However, since we
+                // are still inside the callback, we can add some final data to the span and decide
+                // wether to sample it or not.
+                markSpanAsSampled(
+                    span,
+                    result.source,
+                    completionProviderConfig.getPrefetchedFlag(FeatureFlag.CodyAutocompleteTracing)
+                )
 
                 return autocompleteResult
             } catch (error) {
@@ -521,14 +536,14 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem'> | CompletionItemID
+        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem' | 'span'> | CompletionItemID
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
 
-        CompletionLogger.suggested(completion.logId)
+        CompletionLogger.suggested(completion.logId, completion.span)
     }
 
     /**
@@ -776,4 +791,20 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+function markSpanAsSampled(
+    span: Span,
+    source: InlineCompletionsResultSource,
+    tracingFlagEnabled: boolean
+): void {
+    // Add exposed experiments at the very end to make sure we include experiments that the user is
+    // being exposed to while the completion was generated
+    span.setAttributes(featureFlagProvider.getExposedExperiments())
+    span.setAttributes(getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())) as any)
+
+    const shouldSample = tracingFlagEnabled && source !== InlineCompletionsResultSource.HotStreak
+    if (shouldSample) {
+        span.setAttribute('sampled', true)
+    }
 }
