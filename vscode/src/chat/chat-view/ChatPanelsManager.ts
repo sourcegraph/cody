@@ -37,6 +37,8 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
+export const ignoreSidebar = new TreeViewProvider('ignore', featureFlagProvider)
+
 interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
@@ -57,6 +59,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
     public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
+    public ignoreTreeViewProvider = ignoreSidebar
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
@@ -97,6 +100,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 'cody.commands.tree.view',
                 this.commandTreeViewProvider
             ),
+            vscode.window.registerTreeDataProvider('cody.ignore.tree.view', this.ignoreTreeViewProvider),
             vscode.workspace.onDidChangeConfiguration(async event => {
                 if (event.affectsConfiguration('cody')) {
                     await this.commandTreeViewProvider.refresh()

@@ -94,6 +94,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * that do not meet the required criteria to show.
      */
     public async refresh(): Promise<void> {
+        if (this.type === 'ignore') {
+            this.treeItems = getCodyTreeItems(this.type)
+        }
+
         // TODO(dantup): This method can be made not-async again when we don't need to call evaluateFeatureFlag
         const updatedTree: vscode.TreeItem[] = []
         this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.

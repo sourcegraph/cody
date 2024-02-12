@@ -4,8 +4,13 @@ import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@source
 
 import { logDebug } from '../log'
 import { StatusBar } from './StatusBar'
+import type { CodySidebarTreeItem } from './treeViewItems'
+import { ignoreSidebar } from '../chat/chat-view/ChatPanelsManager'
 
 const utf8 = new TextDecoder('utf-8')
+
+let ignoreSidebarItems: CodySidebarTreeItem[] = []
+export const getIgnoreSidebarItems = () => ignoreSidebarItems.reverse()
 
 /**
  * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
@@ -55,6 +60,8 @@ const findInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
 async function refresh(uri: vscode.Uri): Promise<void> {
+    ignoreSidebarItems = []
+
     // Skip refresh if .cody/ignore is not enabled
     if (!ignores.isEnabled) {
         return
@@ -126,6 +133,16 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         undefined,
         newToken.token
     )
+
+    // Create a sidebar item for each found ignore file.
+    for (const ignoreFile of ignoreFiles) {
+        ignoreSidebarItems.push({
+            title: vscode.workspace.asRelativePath(ignoreFile),
+            icon: 'file',
+            command: { command: 'vscode.open', args: [ignoreFile.path] },
+        })
+    }
+    ignoreSidebar.refresh()
 
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
