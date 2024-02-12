@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.ui.UIUtil
 import com.jetbrains.rd.util.AtomicReference
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.chat.AgentChatSession
@@ -45,9 +46,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   private val commandsPanel =
       CommandsTabPanel(project) { commandId: CommandId ->
-        ApplicationManager.getApplication().invokeLater {
-          switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
-        }
+        switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
       }
 
   private val myAccountPanel = MyAccountTabPanel()
@@ -56,7 +55,6 @@ class CodyToolWindowContent(private val project: Project) {
     tabbedPane.insertSimpleTab("Chat", chatContainerPanel, CHAT_TAB_INDEX)
     tabbedPane.insertSimpleTab("Chat History", historyTree, HISTORY_TAB_INDEX)
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
-    tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
 
     allContentPanel.add(tabbedPane, MAIN_PANEL, CHAT_PANEL_INDEX)
     allContentPanel.add(signInWithSourcegraphPanel, SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
@@ -69,13 +67,11 @@ class CodyToolWindowContent(private val project: Project) {
 
   fun removeAllChatSessions() {
     AgentChatSessionService.getInstance(project).removeAllSessions()
-    ApplicationManager.getApplication().invokeLater {
-      switchToChatSession(AgentChatSession.createNew(project))
-    }
+    switchToChatSession(AgentChatSession.createNew(project))
   }
 
   fun switchToChatSession(chatSession: AgentChatSession, showChatWindow: Boolean = true) {
-    ApplicationManager.getApplication().invokeLater {
+    UIUtil.invokeLaterIfNeeded {
       currentChatSession.getAndSet(chatSession)
       chatContainerPanel.removeAll()
       chatContainerPanel.add(chatSession.getPanel())
@@ -183,9 +179,11 @@ class CodyToolWindowContent(private val project: Project) {
         project: Project,
         myAction: CodyToolWindowContent.() -> Unit
     ) {
-      if (!project.isDisposed) {
-        val codyToolWindowContent = project.getService(CodyToolWindowContent::class.java)
-        codyToolWindowContent.myAction()
+      UIUtil.invokeLaterIfNeeded {
+        if (!project.isDisposed) {
+          val codyToolWindowContent = project.getService(CodyToolWindowContent::class.java)
+          codyToolWindowContent.myAction()
+        }
       }
     }
 

@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.commands.ui
 
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBPanelWithEmptyText
@@ -27,7 +26,7 @@ class CommandsTabPanel(
   private fun executeCommandWithContext(commandId: CommandId) {
     FileEditorManager.getInstance(project).selectedTextEditor?.let {
       CodyEditorFactoryListener.Util.informAgentAboutEditorChange(it, hasFileChanged = false) {
-        ApplicationManager.getApplication().invokeLater { executeCommand(commandId) }
+        executeCommand(commandId)
       }
     }
   }

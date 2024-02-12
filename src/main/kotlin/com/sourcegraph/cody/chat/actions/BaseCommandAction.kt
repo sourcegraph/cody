@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.chat.actions
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -17,9 +16,7 @@ abstract class BaseCommandAction : BaseChatAction() {
     FileEditorManager.getInstance(project).selectedTextEditor?.let {
       CodyEditorFactoryListener.Util.informAgentAboutEditorChange(it, hasFileChanged = false) {
         CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-          ApplicationManager.getApplication().invokeLater {
-            switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId))
-          }
+          switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId))
         }
       }
     }
