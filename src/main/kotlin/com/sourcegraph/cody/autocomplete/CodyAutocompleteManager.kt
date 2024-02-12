@@ -157,10 +157,8 @@ class CodyAutocompleteManager {
     val caretPositionInLine = offset - editor.document.getLineStartOffset(lineNumber)
     val originalText = editor.document.getText(TextRange(offset - caretPositionInLine, offset))
 
-    val prefixStartPosition = maxOf(originalText.lastIndexOf("."), originalText.lastIndexOf(" "), 0)
-    if (!lookupString.isNullOrEmpty() &&
-        !lookupString.startsWith(
-            originalText.subSequence(prefixStartPosition + 1, originalText.length))) {
+    val originalTextTrimmed = originalText.takeLastWhile { c -> c != '.' && !c.isWhitespace() }
+    if (!lookupString.isNullOrEmpty() && !lookupString.startsWith(originalTextTrimmed)) {
       logger.debug("Skipping autocompletion for lookup element due to not matching prefix")
       return
     }
