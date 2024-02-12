@@ -12,6 +12,7 @@ import {
 } from './helpers'
 import { expect } from 'playwright/test'
 import path from 'path'
+import { URI } from 'vscode-uri'
 
 // Reconfigured test to enable features within the Git extension (initialise a Git repo)
 const test = baseTest
@@ -26,13 +27,13 @@ const test = baseTest
                 await spawn('git', ['init'], { cwd: dir })
 
                 // Add Cody ignore
-                await fs.mkdir(path.join(dir, '.cody'), { recursive: true })
-                await fs.writeFile(path.join(dir, '.cody', 'ignore'), 'ignored.js')
+                await fs.mkdir(URI.file(path.join(dir, '.cody')).path, { recursive: true })
+                await fs.writeFile(URI.file(path.join(dir, '.cody', 'ignore')).path, 'ignored.js')
 
                 // Add some content
                 await Promise.all([
-                    fs.writeFile(path.join(dir, 'index.js'), '// Hello World'),
-                    fs.writeFile(path.join(dir, 'ignored.js'), '// Ignore me!'),
+                    fs.writeFile(URI.file(path.join(dir, 'index.js')).path, '// Hello World'),
+                    fs.writeFile(URI.file(path.join(dir, 'ignored.js')).path, '// Ignore me!'),
                 ])
 
                 await use(dir)
