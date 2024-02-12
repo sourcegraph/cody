@@ -28,13 +28,15 @@ const configOption: CommandMenuItem = {
     label: '$(gear) Configure Custom Commands...',
     description: 'Manage your custom reusable commands',
     key: '',
+    command: 'cody.menu.commands-settings',
 }
+
 const addOption: CommandMenuItem = {
     label: '$(diff-added) New Custom Command...',
     alwaysShow: true,
     description: 'Create a new reusable command',
     key: '',
-    command: 'cody.commands.add',
+    command: 'cody.menu.custom.build',
 }
 
 export const CommandMenuOption = {

@@ -105,7 +105,6 @@ export async function showCommandMenu(
         quickPick.onDidAccept(async () => {
             const selection = quickPick.activeItems[0] as CommandMenuItem
             const value = normalize(quickPick.value)
-            const selected = selection?.label || value
             const source = 'menu'
 
             // On item button click
@@ -113,21 +112,15 @@ export async function showCommandMenu(
                 void commands.executeCommand(selection.command, selection.type)
             }
 
-            // Option to create a new custom command
-            if (selected === addOption.label && addOption.command) {
-                void commands.executeCommand(addOption.command, selected)
+            // Option to create a new custom command // config menu
+            const commandOptions = [addOption.command, configOption.command]
+            if (selection?.command && commandOptions.includes(selection.command)) {
+                void commands.executeCommand(selection.command)
                 quickPick.hide()
                 return
             }
 
-            // On config option click
-            if (selected === configOption.label) {
-                void commands.executeCommand('cody.menu.commands-settings')
-                quickPick.hide()
-                return
-            }
-
-            // On selecting a command
+            // On selecting a default command
             if (selection.type === 'default' && selection.command) {
                 // Check if it's an ask command
                 if (selection.key === 'ask') {

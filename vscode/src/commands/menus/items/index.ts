@@ -36,6 +36,7 @@ export const CustomCommandConfigMenuItems = [
         kind: 0,
         label: 'New Custom Command...',
         id: CommandMenuAction.Add,
+        command: 'cody.menu.custom.build',
     },
     { kind: -1, id: 'separator', label: '' },
     {
@@ -59,7 +60,13 @@ export const CustomCommandConfigMenuItems = [
         command: 'cody.commands.open.json',
     },
     { kind: -1, id: 'separator', label: '' },
-    { kind: 0, label: 'Open Custom Commands Documentation', id: 'docs' },
+    {
+        kind: 0,
+        label: 'Open Custom Commands Documentation',
+        id: 'docs',
+        type: CustomCommandType.User,
+        command: 'cody.commands.open.doc',
+    },
 ] as CommandMenuItem[]
 
 // List of context types to include with the prompt

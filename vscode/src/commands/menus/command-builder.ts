@@ -40,7 +40,7 @@ export class CustomCommandsBuilderMenu {
         const commandSet = new Set(commands)
         const value = await window.showInputBox({
             title: 'New Custom Cody Command: Command Name',
-            prompt: 'Enter the name of the custom command',
+            prompt: 'Enter the name of the custom command.',
             placeHolder: 'e.g. hello',
             ignoreFocusOut: true,
             validateInput: (input: string) => {

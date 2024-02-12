@@ -1,7 +1,7 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { CustomCommandsManager } from './custom-commands'
+import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
 import { getDefaultCommandsMap } from '../utils/get-commands'
@@ -32,7 +32,8 @@ export class CommandsProvider implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
-            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config'))
+            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
         )
 
         this.customCommandsStore.init()

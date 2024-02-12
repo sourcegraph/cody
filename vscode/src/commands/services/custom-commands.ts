@@ -41,7 +41,9 @@ export class CustomCommandsManager implements vscode.Disposable {
         this.userConfigFile = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
 
         this.disposables.push(
-            vscode.commands.registerCommand('cody.commands.add', () => this.newCustomCommandQuickPick()),
+            vscode.commands.registerCommand('cody.menu.custom.build', () =>
+                this.newCustomCommandQuickPick()
+            ),
             vscode.commands.registerCommand('cody.commands.open.json', type =>
                 this.configFileActions(type, 'open')
             ),
