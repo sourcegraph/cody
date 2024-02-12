@@ -12,10 +12,37 @@ afterEach(() => {
 })
 
 describe('getFileContextFiles', () => {
+    /**
+     * Mocks the fs.stat function to return a fake stat object for the given URI.
+     * This allows tests to mock filesystem access for specific files.
+     */
+    function setFileStat(uri: vscode.Uri, isFile = true) {
+        vscode.workspace.fs.stat = vi.fn().mockImplementation(() => {
+            const relativePath = uriBasename(uri)
+            return {
+                type: isFile ? vscode.FileType.File : vscode.FileType.SymbolicLink,
+                ctime: 1,
+                mtime: 1,
+                size: 1,
+                isDirectory: () => !isFile,
+                isFile: () => isFile,
+                isSymbolicLink: () => !isFile,
+                uri,
+                with: vi.fn(),
+                toString: vi.fn().mockReturnValue(relativePath),
+            }
+        })
+    }
+
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi
             .fn()
             .mockResolvedValueOnce(relativePaths.map(f => testFileUri(f)))
+
+        for (const relativePath of relativePaths) {
+            const uri = testFileUri(relativePath)
+            setFileStat(uri)
+        }
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {

@@ -20,8 +20,6 @@ import {
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-const isTesting = process.env.CODY_TESTING === 'true'
-
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
 ): Promise<vscode.Uri[]> => {
@@ -116,18 +114,13 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    if (isTesting) {
-        return sortedResults
-    }
-
     const filtered = []
-
     try {
         for (const sorted of sortedResults) {
             // Remove file larger than 1MB and non-text files
             // NOTE: Sourcegraph search only includes files up to 1MB
             const fileStat = await vscode.workspace.fs.stat(sorted.uri)
-            if (fileStat.size > 1000000 || fileStat.type !== vscode.FileType.File) {
+            if (fileStat.type !== vscode.FileType.File || fileStat.size > 1000000) {
                 continue
             }
             // Check if file contains more characters than the token limit based on fileStat.size
@@ -139,7 +132,7 @@ export async function getFileContextFiles(
             filtered.push(sorted)
         }
     } catch (error) {
-        console.error('getFileContextFiles:failed', error)
+        console.log('atMention:getFileContextFiles:failed', error)
     }
 
     return filtered
