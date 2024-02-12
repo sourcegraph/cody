@@ -170,6 +170,11 @@ function clear(wf: vscode.WorkspaceFolder): void {
     }
     findInProgressTokens.clear()
 
+    // Clear sidebar
+    ignoreSidebarItems = []
+    ignoreSidebar?.refresh()
+
+    void vscode.commands.executeCommand('setContext', loadingStateContext, true)
     logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.toString() })
 }
 

@@ -27,8 +27,16 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
-    // Open Cody sidebar to start a new chat
     await page.click('.badge[aria-label="Cody"]')
+
+    // Wait for '.cody/ignore' file to show up in sidebar
+    await expect(page.getByLabel('Cody Ignore Files (Experimental) Section')).toBeVisible()
+    await page.waitForSelector('div[id*="list_id_6_0"]')
+    await expect(
+        page.getByRole('treeitem', { name: withPlatformSlashes('.cody/ignore') }).locator('a')
+    ).toBeVisible()
+
+    // Start new chat
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     /* TEST: Chat Context - Ignored file do not show up with context */
