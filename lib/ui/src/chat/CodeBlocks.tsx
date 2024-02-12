@@ -219,9 +219,9 @@ class GuardrailsStatusController {
      * on the right-hand side of shield icon. It indicates that attribution
      * search is unavailable.
      */
-    public setUnavailable() {
+    public setUnavailable(error: Error) {
         this.container.classList.add(styles.attributionIconUnavailable)
-        this.container.title = 'Guardrails service unavailable'
+        this.container.title = `Guardrails API error: ${error.message}`
         this.status.innerHTML = this.statusUnavailable
     }
 
@@ -290,7 +290,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                             .searchAttribution(preText)
                             .then(attribution => {
                                 if (isError(attribution)) {
-                                    g.setUnavailable()
+                                    g.setUnavailable(attribution)
                                 } else if (attribution.repositories.length === 0) {
                                     g.setSuccess()
                                 } else {
@@ -300,8 +300,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                                     )
                                 }
                             })
-                            .catch(() => {
-                                g.setUnavailable()
+                            .catch(error => {
+                                g.setUnavailable(error)
                                 return
                             })
                     }
