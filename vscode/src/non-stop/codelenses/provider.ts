@@ -5,7 +5,7 @@ import type { FixupTask } from '../FixupTask'
 import type { FixupFileCollection } from '../roles'
 import { CodyTaskState } from '../utils'
 import type { FixupFile } from '../FixupFile'
-import { ACTIONABLE_TASK_STATES } from './constants'
+import { ALL_ACTIONABLE_TASK_STATES } from './constants'
 
 export class FixupCodeLenses implements vscode.CodeLensProvider {
     private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
@@ -73,7 +73,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
             )
             .flatMap(file => this.files.tasksForFile(file))
 
-        const hasActionableEdit = allTasks.some(task => ACTIONABLE_TASK_STATES.includes(task.state))
+        const hasActionableEdit = allTasks.some(task => ALL_ACTIONABLE_TASK_STATES.includes(task.state))
         void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 

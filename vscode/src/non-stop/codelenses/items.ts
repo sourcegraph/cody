@@ -157,7 +157,7 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
 function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(cody-logo) Show Diff',
+        title: 'Show Diff',
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
@@ -190,7 +190,7 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'darwin' ? '⌥A' : 'Alt+A'
     lens.command = {
-        title: `Accept (${shortcut})`,
+        title: `$(cody-logo) Accept (${shortcut})`,
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
