@@ -2,6 +2,7 @@ import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { AuthStatus } from '../chat/protocol'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -32,6 +33,15 @@ function isEmptyOrIncompleteSelection(
         line.firstNonWhitespaceCharacterIndex < selection.start.character ||
         line.range.end.character > selection.end.character
     )
+}
+
+export async function getGhostHintEnablement(): Promise<boolean> {
+    const config = vscode.workspace.getConfiguration('cody')
+    const configSettings = config.inspect<boolean>('commandHints.enabled')
+    const enabledAsFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
+
+    // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
+    return configSettings?.workspaceValue ?? configSettings?.globalValue ?? enabledAsFlag
 }
 
 /**
@@ -142,12 +152,10 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [])
     }
 
-    private updateEnablement(authStatus: AuthStatus): void {
-        const config = vscode.workspace.getConfiguration('cody')
-        const isEnabledInConfig = config.get('commandHints.enabled') as boolean
-        const isEnabled = isEnabledInConfig && authStatus.isLoggedIn
+    private async updateEnablement(authStatus: AuthStatus): Promise<void> {
+        const featureEnabled = await getGhostHintEnablement()
 
-        if (!isEnabled) {
+        if (!authStatus.isLoggedIn || !featureEnabled) {
             this.dispose()
             return
         }
