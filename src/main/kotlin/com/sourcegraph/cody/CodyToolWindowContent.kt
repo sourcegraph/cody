@@ -46,7 +46,9 @@ class CodyToolWindowContent(private val project: Project) {
 
   private val commandsPanel =
       CommandsTabPanel(project) { commandId: CommandId ->
-        switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
+        executeOnInstanceIfNotDisposed(project) {
+          switchToChatSession(AgentChatSession.createFromCommand(project, commandId))
+        }
       }
 
   private val myAccountPanel = MyAccountTabPanel()
