@@ -38,10 +38,13 @@ function isEmptyOrIncompleteSelection(
 export async function getGhostHintEnablement(): Promise<boolean> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
-    const enabledAsFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
-    return configSettings?.workspaceValue ?? configSettings?.globalValue ?? enabledAsFlag
+    return (
+        configSettings?.workspaceValue ??
+        configSettings?.globalValue ??
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
+    )
 }
 
 /**
