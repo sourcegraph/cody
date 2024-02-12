@@ -49,6 +49,9 @@ export enum FeatureFlag {
 
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
+
+    // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
+    CodyCommandHints = 'cody-command-hints',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
