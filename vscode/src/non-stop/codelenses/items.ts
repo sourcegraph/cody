@@ -33,14 +33,14 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, skip]
         }
         case CodyTaskState.applied: {
-            const title = getAppliedLens(codeLensRange, task.id)
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
+            const showDiff = getDiffLens(codeLensRange, task.id)
             if (isTest) {
                 return [accept, undo]
             }
-            return [title, accept, retry, undo]
+            return [accept, retry, undo, showDiff]
         }
         case CodyTaskState.error: {
             const title = getErrorLens(codeLensRange, task)
@@ -135,7 +135,7 @@ function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.
 
 function getCancelLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'darwin' ? '⌥Z' : 'Alt+C'
+    const shortcut = process.platform === 'darwin' ? '⌥Z' : 'Alt+Z'
     lens.command = {
         title: `Cancel [${shortcut}]`,
         command: 'cody.fixup.codelens.cancel',
@@ -154,7 +154,7 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     return lens
 }
 
-function getAppliedLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(cody-logo) Show Diff',
@@ -168,7 +168,7 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'darwin' ? '⌥R' : 'Alt+R'
     lens.command = {
-        title: `Edit & Retry [${shortcut}]`,
+        title: `Edit & Retry (${shortcut})`,
         command: 'cody.fixup.codelens.retry',
         arguments: [id],
     }
@@ -179,7 +179,7 @@ function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'darwin' ? '⌥X' : 'Alt+X'
     lens.command = {
-        title: `Undo [${shortcut}]`,
+        title: `Undo (${shortcut})`,
         command: 'cody.fixup.codelens.undo',
         arguments: [id],
     }
@@ -190,7 +190,7 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'darwin' ? '⌥A' : 'Alt+A'
     lens.command = {
-        title: `Accept [${shortcut}]`,
+        title: `Accept (${shortcut})`,
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
