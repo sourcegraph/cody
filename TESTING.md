@@ -289,6 +289,15 @@ These two chats should be isolated between different accounts. Both accounts sho
 
 You should also be able to switch between accounts while tokens are still being generated.
 
+### `@-file` tagging
+
+1. Open Cody chat
+2. Type `@` in the chat input and verify that a list of available local files appears.
+3. Select one of the files from the list for Cody to use as chat context.
+4. Ask Cody a question about that file and verify that the answer is correct.
+
+Note: It's important to test performance on large repos here. 
+
 ## Multi-repo context
 
 ### Free/pro accounts:
