@@ -153,12 +153,13 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
     public initialize(): void {
         this.disposables.push(
             vscode.commands.registerCommand('cody.search.index-update', async () => {
-                const scopeDirs = getScopeDirs()
-                if (scopeDirs.length === 0) {
-                    void vscode.window.showWarningMessage('Open a workspace folder to index')
-                    return
-                }
-                await this.indexManager.refreshIndex(scopeDirs[0])
+                // const scopeDirs = getScopeDirs()
+                throw new Error('symf faked error')
+                // if (scopeDirs.length === 0) {
+                //     void vscode.window.showWarningMessage('Open a workspace folder to index')
+                //     return
+                // }
+                // await this.indexManager.refreshIndex(scopeDirs[0])
             }),
             vscode.commands.registerCommand('cody.search.index-update-all', async () => {
                 const folders = vscode.workspace.workspaceFolders
