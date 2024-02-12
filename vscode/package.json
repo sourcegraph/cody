@@ -252,12 +252,12 @@
             },
             {
                 "view": "cody.ignore.tree.view",
-                "contents": "No .cody/ignore file was found.",
+                "contents": "No .cody/ignore file is found.",
                 "when": "cody.activated && config.cody.internal.unstable && !config.search.followSymlinks"
             },
             {
                 "view": "cody.ignore.tree.view",
-                "contents": "No .cody/ignore file was found.\nTry disable `search.followSymlinks`.",
+                "contents": "No .cody/ignore file is found.\n[Try disable 'Follow Symlinks'](command:cody.sidebar.ignore.settings)",
                 "when": "cody.activated && config.cody.internal.unstable && config.search.followSymlinks"
             }
         ],
