@@ -162,8 +162,8 @@ function createCodeBlockActionButton(
 class GuardrailsStatusController {
     readonly statusSpinning = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`
     readonly statusPass = '<i class="codicon codicon-pass"></i>'
-    readonly statusFailed = 'Guard Rails Check Failed'
-    readonly statusUnavailable = 'Guard Rails API Error'
+    readonly statusFailed = 'Guardrails Check Failed'
+    readonly statusUnavailable = 'Guardrails API Error'
 
     readonly iconClass = 'guardrails-icon'
     readonly statusClass = 'guardrails-status'
@@ -190,7 +190,7 @@ class GuardrailsStatusController {
      * to the attribution shield icon.
      */
     public setPending() {
-        this.container.title = 'Guard Rails: Running Code Attribution Check…'
+        this.container.title = 'Guardrails: Running code attribution check…'
         this.status.innerHTML = this.statusSpinning
     }
 
@@ -199,7 +199,7 @@ class GuardrailsStatusController {
      * of shield icon to a checkmark.
      */
     public setSuccess() {
-        this.container.title = 'Guard Rails Check Passed'
+        this.container.title = 'Guardrails check passed'
         this.status.innerHTML = this.statusPass
     }
 
@@ -219,9 +219,9 @@ class GuardrailsStatusController {
      * on the right-hand side of shield icon. It indicates that attribution
      * search is unavailable.
      */
-    public setUnavailable() {
+    public setUnavailable(error: Error) {
         this.container.classList.add(styles.attributionIconUnavailable)
-        this.container.title = 'Attribution search unavailable.'
+        this.container.title = `Guardrails API error: ${error.message}`
         this.status.innerHTML = this.statusUnavailable
     }
 
@@ -236,7 +236,7 @@ class GuardrailsStatusController {
     }
 
     private tooltip(repos: string[], limitHit: boolean) {
-        const prefix = 'Guard Rails Check Failed. Code found in'
+        const prefix = 'Guardrails check failed. Code found in'
         if (repos.length === 1) {
             return `${prefix} ${repos[0]}.`
         }
@@ -290,7 +290,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                             .searchAttribution(preText)
                             .then(attribution => {
                                 if (isError(attribution)) {
-                                    g.setUnavailable()
+                                    g.setUnavailable(attribution)
                                 } else if (attribution.repositories.length === 0) {
                                     g.setSuccess()
                                 } else {
@@ -300,8 +300,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                                     )
                                 }
                             })
-                            .catch(() => {
-                                g.setUnavailable()
+                            .catch(error => {
+                                g.setUnavailable(error)
                                 return
                             })
                     }

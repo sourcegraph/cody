@@ -2,7 +2,7 @@ import { partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { FeatureFlag, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
@@ -23,6 +23,8 @@ import type { ContextSnippet } from './types'
 import { lines, removeIndentation } from './text-processing'
 import { logDebug } from '../log'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
+import { completionProviderConfig } from './completion-provider-config'
+import { forkSignal } from './utils'
 
 export interface RequestParams {
     /** The request's document */
@@ -72,6 +74,9 @@ export class RequestManager {
     private latestRequestParams: null | RequestsManagerParams = null
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
+        const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteEagerCancellation
+        )
         this.latestRequestParams = params
 
         const { requestParams, provider, context, isCacheEnabled, tracer } = params
@@ -89,7 +94,10 @@ export class RequestManager {
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
-        const abortController: AbortController = new AbortController()
+        const abortController: AbortController =
+            eagerCancellation && params.requestParams.abortSignal
+                ? forkSignal(params.requestParams.abortSignal)
+                : new AbortController()
 
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
@@ -135,7 +143,13 @@ export class RequestManager {
                         })
 
                         request.lastCompletions = processedCompletions
-                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+
+                        if (!eagerCancellation) {
+                            this.testIfResultCanBeRecycledForInflightRequests(
+                                request,
+                                processedCompletions
+                            )
+                        }
                     }
 
                     // Save hot streak completions for later use.
@@ -154,7 +168,9 @@ export class RequestManager {
                         )
                     }
 
-                    this.cancelIrrelevantRequests()
+                    if (!eagerCancellation) {
+                        this.cancelIrrelevantRequests()
+                    }
                 }
             } catch (error) {
                 request.reject(error as Error)
@@ -163,7 +179,9 @@ export class RequestManager {
             }
         }
 
-        this.cancelIrrelevantRequests()
+        if (!eagerCancellation) {
+            this.cancelIrrelevantRequests()
+        }
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
