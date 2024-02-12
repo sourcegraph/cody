@@ -123,6 +123,7 @@ class ChatPanel(project: Project, chatSession: ChatSession) :
     if (messagesPanel.componentCount == 1) {
       modelDropdown.isEnabled = false
     }
+    promptPanel.updateEmptyTextAfterFirstMessage()
     messagesPanel.addOrUpdateMessage(message, index, shouldAddBlinkingCursor)
   }
 

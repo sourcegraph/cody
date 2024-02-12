@@ -19,6 +19,7 @@ import com.sourcegraph.cody.chat.CodyChatMessageHistory
 import com.sourcegraph.cody.chat.ui.SendButton
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
 import com.sourcegraph.cody.vscode.CancellationToken
+import com.sourcegraph.common.CodyBundle
 import java.awt.Dimension
 import java.awt.event.*
 import java.io.File
@@ -48,7 +49,7 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
 
   init {
     /** Initialize view */
-    textArea.emptyText.text = "Ask a question about this code..."
+    textArea.emptyText.text = CodyBundle.getString("PromptPanel.ask-cody.message")
     scrollPane.border = EmptyBorder(JBUI.emptyInsets())
     scrollPane.background = UIUtil.getPanelBackground()
 
@@ -240,6 +241,10 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
       }
       refreshViewLayout()
     }
+  }
+
+  fun updateEmptyTextAfterFirstMessage() {
+    textArea.emptyText.text = CodyBundle.getString("PromptPanel.ask-cody.follow-up-message")
   }
 
   companion object {
