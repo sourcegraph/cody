@@ -33,6 +33,7 @@ test('create a new user command via the custom commands menu', async ({ page, si
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
+    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     // Click the Custom Commands button in the Command view
     await page.getByText('Custom commands').click()
