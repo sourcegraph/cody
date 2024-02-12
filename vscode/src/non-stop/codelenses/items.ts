@@ -135,7 +135,7 @@ function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.
 
 function getCancelLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Alt+C' : '⌥Z'
+    const shortcut = process.platform === 'darwin' ? '⌥Z' : 'Alt+C'
     lens.command = {
         title: `Cancel [${shortcut}]`,
         command: 'cody.fixup.codelens.cancel',
