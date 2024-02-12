@@ -22,8 +22,8 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
       return;
     }
 
-    CodyAgentService.withAgent(source.getProject())
-        .thenAccept(agent -> fileOpened(source.getProject(), agent, file));
+    CodyAgentService.withAgent(
+        source.getProject(), agent -> fileOpened(source.getProject(), agent, file));
   }
 
   @Override
@@ -32,9 +32,9 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
       return;
     }
 
-    CodyAgentService.withAgent(source.getProject())
-        .thenAccept(
-            agent -> agent.getServer().textDocumentDidClose(TextDocument.fromPath(file.getPath())));
+    CodyAgentService.withAgent(
+        source.getProject(),
+        agent -> agent.getServer().textDocumentDidClose(TextDocument.fromPath(file.getPath())));
   }
 
   public static void fileOpened(Project project, CodyAgent codyAgent, @NotNull VirtualFile file) {

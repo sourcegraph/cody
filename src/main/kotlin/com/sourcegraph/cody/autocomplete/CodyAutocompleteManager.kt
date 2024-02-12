@@ -124,7 +124,7 @@ class CodyAutocompleteManager {
       return
     }
 
-    if (isTriggeredExplicitly) CodyAgentService.withAgentRestartIfNeeded(project)
+    if (isTriggeredExplicitly) CodyAgentService.withAgentRestartIfNeeded(project) {}
 
     val isTriggeredImplicitly = !isTriggeredExplicitly
     if (!isCodyEnabled()) {
@@ -223,7 +223,7 @@ class CodyAutocompleteManager {
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<Void?>()
-    CodyAgentService.withAgent(project).thenAccept { agent ->
+    CodyAgentService.withAgent(project) { agent ->
       val completions = agent.server.autocompleteExecute(params)
 
       // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
@@ -367,7 +367,7 @@ class CodyAutocompleteManager {
     }
 
     project?.let {
-      CodyAgentService.withAgent(project).thenAccept { agent ->
+      CodyAgentService.withAgent(project) { agent ->
         agent.server.completionSuggested(CompletionItemParams(defaultItem.id))
       }
     }

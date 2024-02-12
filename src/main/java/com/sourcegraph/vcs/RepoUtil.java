@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -152,14 +153,20 @@ public class RepoUtil {
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
       if (ConfigUtil.isCodyEnabled()) {
-        String codebaseName =
-            CodyAgentService.withAgent(project)
-                .thenCompose(
-                    agent ->
-                        agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
-                .completeOnTimeout(null, 15, TimeUnit.SECONDS)
-                .get();
+        CompletableFuture<String> repoNameFuture = new CompletableFuture<>();
+        CodyAgentService.withAgent(
+            project,
+            agent -> {
+              try {
+                agent
+                    .getServer()
+                    .convertGitCloneURLToCodebaseName(new CloneURL(cloneURL))
+                    .thenAccept(repoNameFuture::complete);
+              } catch (Exception ignored) {
+              }
+            });
 
+        String codebaseName = repoNameFuture.completeOnTimeout(null, 15, TimeUnit.SECONDS).get();
         if (codebaseName != null) {
           return codebaseName;
         } else {

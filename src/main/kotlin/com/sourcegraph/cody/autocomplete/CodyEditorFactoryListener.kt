@@ -98,7 +98,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
 
         // This notification must be sent after the above, see tracker comment for more details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-          CodyAgentService.withAgent(editor.project!!).thenAccept { agent ->
+          CodyAgentService.withAgent(editor.project!!) { agent ->
             agent.server.completionAccepted(CompletionItemParams(completionID))
             agent.server.autocompleteClearLastCandidate()
           }
@@ -170,7 +170,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         CodyAgentCodebase.getInstance(project).onFileOpened(project, file)
       }
 
-      CodyAgentService.withAgent(project).thenAccept {
+      CodyAgentService.withAgent(project) {
         it.server.textDocumentDidOpen(document)
         afterUpdate()
       }

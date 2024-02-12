@@ -24,7 +24,7 @@ class AttributionSearchCommand(private val project: Project) {
    */
   fun onSnippetFinished(snippet: String, sessionId: SessionId, listener: AttributionListener) {
     if (attributionEnabled()) {
-      CodyAgentService.withAgent(project).thenAccept { agent ->
+      CodyAgentService.withAgent(project) { agent ->
         ApplicationManager.getApplication().invokeLater { listener.onAttributionSearchStart() }
         val params = AttributionSearchParams(id = sessionId, snippet = snippet)
         agent.server.attributionSearch(params).handle(updateEditor(listener))

@@ -61,7 +61,7 @@ class ChatPanel(project: Project, chatSession: ChatSession) :
   }
 
   fun addModelDropdown(project: Project, sessionId: String, selectedModel: ChatModel?) {
-    CodyAgentService.withAgent(project).thenApply { agent ->
+    CodyAgentService.withAgent(project) { agent ->
       val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
       // Display available model for Enterprise user without possibility to change
       if (activeAccountType != null && !activeAccountType.isDotcomAccount()) {

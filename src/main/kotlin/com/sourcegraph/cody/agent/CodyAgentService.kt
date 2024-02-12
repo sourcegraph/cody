@@ -115,29 +115,25 @@ class CodyAgentService(project: Project) : Disposable {
     }
 
     @JvmStatic
-    fun withAgent(project: Project): CompletableFuture<CodyAgent> {
-      val result = CompletableFuture<CodyAgent>()
+    fun withAgent(project: Project, callback: Consumer<CodyAgent>) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         ApplicationManager.getApplication().executeOnPooledThread {
-          getInstance(project).getInitializedAgent(project, restartIfNeeded = false).thenAccept {
-            result.complete(it)
-          }
+          val agent =
+              getInstance(project).getInitializedAgent(project, restartIfNeeded = false).get()
+          callback.accept(agent)
         }
       }
-      return result
     }
 
     @JvmStatic
-    fun withAgentRestartIfNeeded(project: Project): CompletableFuture<CodyAgent> {
-      val result = CompletableFuture<CodyAgent>()
+    fun withAgentRestartIfNeeded(project: Project, callback: Consumer<CodyAgent>) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         ApplicationManager.getApplication().executeOnPooledThread {
-          getInstance(project).getInitializedAgent(project, restartIfNeeded = true).thenAccept {
-            result.complete(it)
-          }
+          val agent =
+              getInstance(project).getInitializedAgent(project, restartIfNeeded = true).get()
+          callback.accept(agent)
         }
       }
-      return result
     }
 
     @JvmStatic

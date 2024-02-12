@@ -31,7 +31,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
             }
 
             // Notify Cody Agent about config changes.
-            CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+            CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
               if (ConfigUtil.isCodyEnabled()) {
                 agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
               }

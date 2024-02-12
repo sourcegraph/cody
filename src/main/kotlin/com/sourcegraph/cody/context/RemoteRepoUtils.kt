@@ -8,14 +8,15 @@ import java.util.concurrent.CompletableFuture
 
 object RemoteRepoUtils {
   fun getRepository(project: Project, codebaseName: String): CompletableFuture<Repo?> {
-    return CodyAgentService.withAgent(project).thenCompose { agent ->
+    val result = CompletableFuture<Repo?>()
+    CodyAgentService.withAgent(project) { agent ->
       try {
-        agent.server.getRepoIds(GetRepoIdsParam(listOf(codebaseName), 1)).thenApply {
-          it?.repos?.firstOrNull()
-        }
+        val repos = agent.server.getRepoIds(GetRepoIdsParam(listOf(codebaseName), 1)).get()
+        result.complete(repos?.repos?.firstOrNull())
       } catch (e: Exception) {
-        null
+        result.complete(null)
       }
     }
+    return result
   }
 }

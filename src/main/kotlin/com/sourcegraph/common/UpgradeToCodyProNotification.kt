@@ -79,14 +79,18 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
     }
 
     fun isCodyProJetbrains(project: Project): CompletableFuture<Boolean> {
+      val result = CompletableFuture<Boolean>()
       val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
       if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-        return CodyAgentService.withAgent(project).thenCompose { agent ->
-          agent.server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).thenApply { it == true }
+        CodyAgentService.withAgent(project) { agent ->
+          agent.server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).thenApply {
+            result.complete(it == true)
+          }
         }
       } else {
-        return CompletableFuture.completedFuture(false)
+        result.complete(false)
       }
+      return result
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

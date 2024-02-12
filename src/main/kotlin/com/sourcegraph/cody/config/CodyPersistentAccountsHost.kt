@@ -19,7 +19,7 @@ class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHo
     if (project != null) {
       CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)
       // Notify Cody Agent about config changes.
-      CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
       }
 

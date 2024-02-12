@@ -119,7 +119,7 @@ private constructor(
   }
 
   private fun submitMessageToAgent(humanMessage: ChatMessage, contextFiles: List<ContextFile>) {
-    CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
       val message =
           WebviewMessage(
               command = "submit",
@@ -206,7 +206,7 @@ private constructor(
   }
 
   override fun sendWebviewMessage(message: WebviewMessage) {
-    CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
       agent.server.webviewReceiveMessage(
           WebviewReceiveMessageParams(this.sessionId.get().get(), message))
     }
@@ -238,7 +238,7 @@ private constructor(
 
   private fun setCustomModelForAgentSession(model: ChatModel): CompletableFuture<Void> {
     return sessionId.get().thenAccept { sessionId ->
-      CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         agent.server.webviewReceiveMessage(
             WebviewReceiveMessageParams(
                 sessionId, WebviewMessage(command = "chatModel", model = model.agentName)))
@@ -347,7 +347,7 @@ private constructor(
             chatMessage, index, shouldAddBlinkingCursor = false)
       }
 
-      CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         chatSession.restoreAgentSession(agent)
       }
 
@@ -359,18 +359,20 @@ private constructor(
         project: Project,
         newPanelAction: (CodyAgent) -> CompletableFuture<String>
     ): CompletableFuture<SessionId> {
-      return CodyAgentService.withAgentRestartIfNeeded(project).thenCompose { agent ->
+      val result = CompletableFuture<SessionId>()
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         try {
-          newPanelAction(agent)
+          newPanelAction(agent).thenAccept(result::complete)
         } catch (e: ExecutionException) {
           // Agent cannot gracefully recover when connection is lost, we need to restart it
           // TODO https://github.com/sourcegraph/jetbrains/issues/306
           logger.warn("Failed to load new chat, restarting agent", e)
           CodyAgentService.getInstance(project).restartAgent(project)
           Thread.sleep(5000)
-          createNewPanel(project, newPanelAction)
+          createNewPanel(project, newPanelAction).thenAccept(result::complete)
         }
       }
+      return result
     }
   }
 }
