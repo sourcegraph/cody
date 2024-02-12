@@ -516,6 +516,11 @@
                 "when": "cody.activated"
             },
             {
+                "command": "cody.menu.custom-commands",
+                "key": "alt+c+shift",
+                "when": "cody.activated"
+            },
+            {
                 "command": "-github.copilot.generate",
                 "key": "ctrl+enter"
             },

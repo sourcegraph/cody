@@ -1,4 +1,8 @@
+import os from 'os'
 import type { CodySidebarTreeItem } from '../services/treeViewItems'
+
+const isMac = os.platform() === 'darwin'
+const osIcon = isMac ? '⌥' : 'Alt+'
 
 export const CodyCommandMenuItems = [
     {
@@ -7,7 +11,7 @@ export const CodyCommandMenuItems = [
         prompt: 'Start a new chat',
         icon: 'comment',
         command: { command: 'cody.chat.panel.new' },
-        keybinding: '',
+        keybinding: `${osIcon}L`,
         mode: 'ask',
         type: 'default',
     },
@@ -17,7 +21,7 @@ export const CodyCommandMenuItems = [
         prompt: 'Start a code edit',
         icon: 'wand',
         command: { command: 'cody.command.edit-code' },
-        keybinding: '',
+        keybinding: `${osIcon}K`,
         mode: 'edit',
         type: 'default',
     },
@@ -62,7 +66,7 @@ export const CodyCommandMenuItems = [
         description: 'Custom Commands',
         icon: 'tools',
         command: { command: 'cody.menu.custom-commands' },
-        keybinding: '',
+        keybinding: `${osIcon}⇧C`,
         type: 'default',
     },
 ]

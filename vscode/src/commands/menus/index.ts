@@ -33,7 +33,9 @@ export async function showCommandMenu(
                 const key = _command.key
                 const label = `$(${_command.icon}) ${_command.description}`
                 const command = _command.command.command
-                items.push({ label, command, type, key })
+                // Show keybind as description if present
+                const description = _command.keybinding ? _command.keybinding : ''
+                items.push({ label, command, description, type, key })
             }
         }
 
@@ -131,7 +133,7 @@ export async function showCommandMenu(
                 if (selection.key === 'ask') {
                     // show input box if no value
                     if (!value) {
-                        void showChatInputBox()
+                        void commands.executeCommand('cody.chat.panel.new')
                     } else {
                         void executeChat({
                             text: value.trim(),
@@ -190,19 +192,4 @@ export async function showNewCustomCommandMenu(
     telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
-}
-
-async function showChatInputBox(): Promise<void> {
-    telemetryService.log('CodyVSCodeExtension:menu:command:chat:clicked')
-    telemetryRecorder.recordEvent('cody.menu:command:chat', 'clicked')
-    const input = await window.showInputBox({
-        title: 'ask Cody',
-        placeHolder: 'Enter your question for Cody.',
-    })
-    if (!input) {
-        return
-    }
-    telemetryService.log('CodyVSCodeExtension:menu:command:chat:executed')
-    telemetryRecorder.recordEvent('cody.menu:command:chat', 'executed')
-    void executeChat({ text: input, submitType: 'user-newchat', source: 'menu' })
 }
