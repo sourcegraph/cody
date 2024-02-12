@@ -40,10 +40,19 @@ export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable[] 
         e.removed.map(wf => clear(wf))
     })
 
-    // NOTE This can be removed once cody ignore is stable.
     const onDidChangeConfig = vscode.workspace.onDidChangeConfiguration(e => {
+        // NOTE This can be removed once cody ignore is stable.
         if (e.affectsConfiguration('cody')) {
             onConfigChange()
+        }
+        // NOTE This allows us to search for the ignore files again
+        // if the user changes the search.symlinks setting.
+        if (e.affectsConfiguration('search')) {
+            // Only refresh if the ignore sidebar is empty,
+            // which means the setup step has initially failed.
+            if (!ignoreSidebarItems) {
+                onConfigChange()
+            }
         }
     })
 
@@ -101,18 +110,23 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     const newToken = new vscode.CancellationTokenSource()
     findInProgressTokens.set(uri.path, newToken)
 
-    // Timeout after 3 minutes to avoid causing performance issues.
-    setTimeout(() => {
-        // The search is already completed / canceled.
-        if (!findInProgressTokens.get(uri.path)) {
-            return
-        }
-        void vscode.commands.executeCommand('setContext', loadingStateContext, true)
-        cancel()
-        const title = 'Fail to find Cody ignore files.'
-        const description = ' Try disable the `search.followSymlinks` setting in your editor.'
-        logDebug('CodyIgnore:refresh:workspace:timeout', title + description, { verbose: wf.uri.path })
-    }, 180000)
+    // Timeout after 1 minutes to avoid causing performance issues.
+    setTimeout(
+        () => {
+            // The search is already completed / canceled.
+            if (!findInProgressTokens.get(uri.path)) {
+                return
+            }
+            void vscode.commands.executeCommand('setContext', loadingStateContext, true)
+            cancel()
+            const title = 'Fail to find Cody ignore files.'
+            const description = ' Try disable the `search.followSymlinks` setting in your editor.'
+            logDebug('CodyIgnore:refresh:workspace:timeout', title + description, {
+                verbose: wf.uri.path,
+            })
+        },
+        1 * 60 * 1000
+    )
 
     // Look for .cody/ignore files within the workspace,
     // exclude all dot files (except .cody) and common build files.
