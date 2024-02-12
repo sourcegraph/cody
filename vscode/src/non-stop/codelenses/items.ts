@@ -166,7 +166,7 @@ function getAppliedLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
 
 function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = process.platform === 'win32' ? 'Alt+R' : '⌥R'
+    const shortcut = process.platform === 'darwin' ? '⌥R' : 'Alt+R'
     lens.command = {
         title: `Edit & Retry [${shortcut}]`,
         command: 'cody.fixup.codelens.retry',
