@@ -227,7 +227,7 @@
                 },
                 {
                     "id": "cody.ignore.tree.view",
-                    "name": "Cody Ignore Files",
+                    "name": "Cody Ignore Files (Experimental)",
                     "when": "cody.activated && config.cody.internal.unstable"
                 },
                 {
