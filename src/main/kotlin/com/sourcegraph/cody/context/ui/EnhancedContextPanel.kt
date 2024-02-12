@@ -88,7 +88,7 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
               .completeOnTimeout(null, 15, TimeUnit.SECONDS)
               .thenApply { repo ->
                 if (repo != null) {
-                  addRemoteRepository(repoUrl)
+                  ApplicationManager.getApplication().invokeLater { addRemoteRepository(repoUrl) }
                 }
               }
         }
