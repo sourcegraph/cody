@@ -47,4 +47,10 @@ public interface Icons {
   interface Chat {
     Icon ChatLeaf = IconLoader.getIcon("/icons/chat/chatLeaf.svg", Icons.class);
   }
+
+  interface LLM {
+    Icon Anthropic = IconLoader.getIcon("/icons/chat/llm/anthropic.svg", Icons.class);
+    Icon OpenAI = IconLoader.getIcon("/icons/chat/llm/openai.svg", Icons.class);
+    Icon Mistral = IconLoader.getIcon("/icons/chat/llm/mistral.svg", Icons.class);
+  }
 }

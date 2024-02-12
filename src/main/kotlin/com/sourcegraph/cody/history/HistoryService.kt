@@ -24,6 +24,19 @@ class HistoryService(private val project: Project) :
   }
 
   @Synchronized
+  fun updateChatMessages(
+      internalId: String,
+      chatMessages: List<ChatMessage>,
+      selectedModel: String?
+  ) {
+    selectedModel?.let {
+      val found = getOrCreateChat(internalId)
+      found.model = selectedModel
+    }
+    updateChatMessages(internalId, chatMessages)
+  }
+
+  @Synchronized
   fun updateChatMessages(internalId: String, chatMessages: List<ChatMessage>) {
     val found = getOrCreateChat(internalId)
     found.messages = chatMessages.map(::convertToMessageState).toMutableList()

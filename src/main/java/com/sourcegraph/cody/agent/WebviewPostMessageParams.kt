@@ -17,6 +17,7 @@ data class WebviewMessage(
     val contextFiles: List<ContextFile>? = null,
     val error: ChatError? = null,
     val query: String? = null,
+    val model: String? = null,
     val explicitRepos: List<Repo>? = null,
     val repoId: String? = null
 )

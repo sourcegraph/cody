@@ -26,10 +26,10 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
                 agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
               }
+              CodyAgentService.getInstance(project).restartAgent(project)
               CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
                 removeAllChatSessions()
               }
-              CodyAgentService.getInstance(project).restartAgent(project)
             }
 
             UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
