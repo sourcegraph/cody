@@ -162,8 +162,8 @@ function createCodeBlockActionButton(
 class GuardrailsStatusController {
     readonly statusSpinning = `<i class="codicon codicon-loading ${styles.codiconLoading}"></i>`
     readonly statusPass = '<i class="codicon codicon-pass"></i>'
-    readonly statusFailed = 'Guard Rails Check Failed'
-    readonly statusUnavailable = 'Guard Rails API Error'
+    readonly statusFailed = 'Guardrails Check Failed'
+    readonly statusUnavailable = 'Guardrails API Error'
 
     readonly iconClass = 'guardrails-icon'
     readonly statusClass = 'guardrails-status'
@@ -190,7 +190,7 @@ class GuardrailsStatusController {
      * to the attribution shield icon.
      */
     public setPending() {
-        this.container.title = 'Guard Rails: Running Code Attribution Check…'
+        this.container.title = 'Guardrails: Running code attribution check…'
         this.status.innerHTML = this.statusSpinning
     }
 
@@ -199,7 +199,7 @@ class GuardrailsStatusController {
      * of shield icon to a checkmark.
      */
     public setSuccess() {
-        this.container.title = 'Guard Rails Check Passed'
+        this.container.title = 'Guardrails check passed'
         this.status.innerHTML = this.statusPass
     }
 
@@ -221,7 +221,7 @@ class GuardrailsStatusController {
      */
     public setUnavailable() {
         this.container.classList.add(styles.attributionIconUnavailable)
-        this.container.title = 'Attribution search unavailable.'
+        this.container.title = 'Guardrails service unavailable'
         this.status.innerHTML = this.statusUnavailable
     }
 
@@ -236,7 +236,7 @@ class GuardrailsStatusController {
     }
 
     private tooltip(repos: string[], limitHit: boolean) {
-        const prefix = 'Guard Rails Check Failed. Code found in'
+        const prefix = 'Guardrails check failed. Code found in'
         if (repos.length === 1) {
             return `${prefix} ${repos[0]}.`
         }
