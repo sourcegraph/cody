@@ -117,6 +117,15 @@ class CodyAutocompleteManager {
       lookupString: String? = null
   ) {
     val isTriggeredExplicitly = triggerKind == InlineCompletionTriggerKind.INVOKE
+
+    val project = editor.project
+    if (project == null) {
+      logger.warn("triggered autocomplete with null project")
+      return
+    }
+
+    if (isTriggeredExplicitly) CodyAgentService.withAgentRestartIfNeeded(project)
+
     val isTriggeredImplicitly = !isTriggeredExplicitly
     if (!isCodyEnabled()) {
       if (isTriggeredExplicitly) {
@@ -139,11 +148,7 @@ class CodyAutocompleteManager {
         isCommandExcluded(currentCommand)) {
       return
     }
-    val project = editor.project
-    if (project == null) {
-      logger.warn("triggered autocomplete with null project")
-      return
-    }
+
     val textDocument: TextDocument = IntelliJTextDocument(editor, project)
 
     if (isTriggeredExplicitly && CodyAuthenticationManager.instance.hasNoActiveAccount(project)) {
@@ -218,7 +223,7 @@ class CodyAutocompleteManager {
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<Void?>()
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+    CodyAgentService.withAgent(project).thenAccept { agent ->
       val completions = agent.server.autocompleteExecute(params)
 
       // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
@@ -362,7 +367,7 @@ class CodyAutocompleteManager {
     }
 
     project?.let {
-      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+      CodyAgentService.withAgent(project).thenAccept { agent ->
         agent.server.completionSuggested(CompletionItemParams(defaultItem.id))
       }
     }

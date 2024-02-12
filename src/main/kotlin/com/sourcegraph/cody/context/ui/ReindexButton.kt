@@ -20,7 +20,7 @@ class ReindexButton(private val project: Project) :
   override fun isEnabled() = !isReindexingInProgress.get()
 
   override fun actionPerformed(p0: AnActionEvent) {
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+    CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
       ProgressManager.getInstance()
           .run(
               object :

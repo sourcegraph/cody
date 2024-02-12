@@ -45,17 +45,17 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
       return;
     }
 
-    CodyAgentService.applyAgentOnBackgroundThread(
-        project,
-        agent -> {
-          try {
-            // TODO: This is bad but needed to avoid race with file context of commands executed
-            // through context menu
-            Thread.sleep(100);
-          } catch (InterruptedException ignored) {
-          }
-          agent.getServer().textDocumentDidFocus(TextDocument.fromPath(file.getPath()));
-        });
+    CodyAgentService.withAgent(project)
+        .thenAccept(
+            agent -> {
+              try {
+                // TODO: This is bad but needed to avoid race with file context of commands executed
+                // through context menu
+                Thread.sleep(100);
+              } catch (InterruptedException ignored) {
+              }
+              agent.getServer().textDocumentDidFocus(TextDocument.fromPath(file.getPath()));
+            });
 
     CodyAgentCodebase.getInstance(project).onFileOpened(project, file);
   }

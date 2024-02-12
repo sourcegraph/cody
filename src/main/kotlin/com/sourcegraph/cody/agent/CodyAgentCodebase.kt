@@ -30,7 +30,7 @@ class CodyAgentCodebase(val project: Project) {
       val repositoryName = RepoUtil.findRepositoryName(project, file)
       if (repositoryName != null && inferredUrl.getNow(null) != repositoryName) {
         inferredUrl.complete(repositoryName)
-        CodyAgentService.applyAgentOnBackgroundThread(project) {
+        CodyAgentService.withAgent(project).thenAccept {
           it.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
         }
       }

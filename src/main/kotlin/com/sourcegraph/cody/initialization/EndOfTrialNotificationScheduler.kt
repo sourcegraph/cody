@@ -36,7 +36,7 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
             return@scheduleAtFixedRate
           }
 
-          CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+          CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
             val currentUserCodySubscription =
                 agent.server
                     .getCurrentUserCodySubscription()
@@ -45,7 +45,7 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
 
             if (currentUserCodySubscription == null) {
               logger.debug("currentUserCodySubscription is null")
-              return@applyAgentOnBackgroundThread
+              return@thenAccept
             }
 
             val codyProTrialEnded =

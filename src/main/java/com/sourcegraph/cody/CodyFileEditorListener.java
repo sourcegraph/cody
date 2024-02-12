@@ -5,8 +5,10 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentCodebase;
 import com.sourcegraph.cody.agent.CodyAgentService;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
@@ -20,21 +22,8 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
       return;
     }
 
-    CodyAgentService.applyAgentOnBackgroundThread(
-        source.getProject(),
-        agent -> {
-          Document document =
-              ApplicationManager.getApplication()
-                  .runReadAction(
-                      (Computable<Document>)
-                          () -> FileDocumentManager.getInstance().getDocument(file));
-          if (document != null) {
-            TextDocument textDocument = TextDocument.fromPath(file.getPath(), document.getText());
-            agent.getServer().textDocumentDidOpen(textDocument);
-          }
-        });
-
-    CodyAgentCodebase.getInstance(source.getProject()).onFileOpened(source.getProject(), file);
+    CodyAgentService.withAgent(source.getProject())
+        .thenAccept(agent -> fileOpened(source.getProject(), agent, file));
   }
 
   @Override
@@ -43,8 +32,21 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
       return;
     }
 
-    CodyAgentService.applyAgentOnBackgroundThread(
-        source.getProject(),
-        agent -> agent.getServer().textDocumentDidClose(TextDocument.fromPath(file.getPath())));
+    CodyAgentService.withAgent(source.getProject())
+        .thenAccept(
+            agent -> agent.getServer().textDocumentDidClose(TextDocument.fromPath(file.getPath())));
+  }
+
+  public static void fileOpened(Project project, CodyAgent codyAgent, @NotNull VirtualFile file) {
+    Document document =
+        ApplicationManager.getApplication()
+            .runReadAction(
+                (Computable<Document>) () -> FileDocumentManager.getInstance().getDocument(file));
+    if (document != null) {
+      TextDocument textDocument = TextDocument.fromPath(file.getPath(), document.getText());
+      codyAgent.getServer().textDocumentDidOpen(textDocument);
+    }
+
+    CodyAgentCodebase.getInstance(project).onFileOpened(project, file);
   }
 }

@@ -65,9 +65,13 @@ public class GraphQlLogger {
   // This could be exposed later (as public), but currently, we don't use it externally.
   private static CompletableFuture<Boolean> logEvent(
       @NotNull Project project, @NotNull Event event) {
-    return CodyAgentService.getAgent(project)
-        .thenApply(agent -> agent.getServer().logEvent(event))
-        .thenApply((ignored) -> true)
-        .exceptionally((ignored) -> false);
+    return CodyAgentService.withAgent(project)
+        .thenCompose(
+            agent ->
+                agent
+                    .getServer()
+                    .logEvent(event)
+                    .thenApply((ignored) -> true)
+                    .exceptionally((ignored) -> false));
   }
 }

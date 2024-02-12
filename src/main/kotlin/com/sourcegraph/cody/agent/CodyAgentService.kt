@@ -5,8 +5,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.CodyFileEditorListener
 import com.sourcegraph.cody.chat.AgentChatSessionService
+import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -16,7 +19,7 @@ import java.util.function.Consumer
 class CodyAgentService(project: Project) : Disposable {
 
   private val logger = Logger.getInstance(CodyAgent::class.java)
-  private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
+  @Volatile private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
 
   private val startupActions: MutableList<(CodyAgent) -> Unit> = mutableListOf()
 
@@ -37,56 +40,60 @@ class CodyAgentService(project: Project) : Disposable {
               ?.receiveWebviewExtensionMessage(params.message)
         }
       }
+
+      FileEditorManager.getInstance(project).openFiles.forEach { file ->
+        CodyFileEditorListener.fileOpened(project, agent, file)
+      }
     }
   }
 
-  fun onStartup(action: (CodyAgent) -> Unit) {
+  private fun onStartup(action: (CodyAgent) -> Unit) {
     synchronized(startupActions) { startupActions.add(action) }
   }
 
-  private fun getInitializedAgent(project: Project): CompletableFuture<CodyAgent> {
-    synchronized(this) {
-      return if (codyAgent.isDone) {
-        if (codyAgent.get().isConnected()) codyAgent else restartAgent(project)
-      } else {
-        codyAgent
-      }
+  private fun getInitializedAgent(
+      project: Project,
+      restartIfNeeded: Boolean
+  ): CompletableFuture<CodyAgent> {
+    return try {
+      val isReadyButNotFunctional = codyAgent.getNow(null)?.isConnected() == false
+      if (isReadyButNotFunctional && restartIfNeeded) restartAgent(project) else codyAgent
+    } catch (e: Exception) {
+      if (restartIfNeeded) restartAgent(project) else codyAgent
     }
   }
 
   fun startAgent(project: Project): CompletableFuture<CodyAgent> {
-    synchronized(this) {
-      ApplicationManager.getApplication().executeOnPooledThread {
-        var agent: CodyAgent? = null
-        while (agent == null || !agent.isConnected()) {
-          try {
-            agent = CodyAgent.create(project).get(15, TimeUnit.SECONDS)
-          } catch (e: Exception) {
-            logger.warn("Failed to start Cody agent, retrying...", e)
-          }
+    ApplicationManager.getApplication().executeOnPooledThread {
+      try {
+        val agent = CodyAgent.create(project).get(15, TimeUnit.SECONDS)
+        if (!agent.isConnected()) {
+          val msg = "Failed to connect to agent Cody agent"
+          logger.error(msg)
+          codyAgent.completeExceptionally(Exception(msg))
+        } else {
+          synchronized(startupActions) { startupActions.forEach { action -> action(agent) } }
+          codyAgent.complete(agent)
+          CodyAutocompleteStatusService.resetApplication(project)
         }
-        synchronized(startupActions) { startupActions.forEach { action -> action(agent) } }
-        codyAgent.complete(agent)
-        CodyAutocompleteStatusService.resetApplication(project)
+      } catch (e: Exception) {
+        val msg = "Failed to start Cody agent"
+        logger.error(msg, e)
+        codyAgent.completeExceptionally(Exception(msg, e))
       }
-
-      return codyAgent
     }
+
+    return codyAgent
   }
 
-  fun stopAgent(project: Project?): CompletableFuture<Void?> {
-    synchronized(this) {
-      codyAgent.cancel(true)
-
-      val res =
-          codyAgent.thenCompose {
-            project?.let { CodyAutocompleteStatusService.resetApplication(it) }
-            it.shutdown()
-          }
-
+  fun stopAgent(project: Project?) {
+    try {
+      codyAgent.getNow(null)?.shutdown()
+    } catch (e: Exception) {
+      logger.warn("Failed to stop Cody agent gracefully", e)
+    } finally {
       codyAgent = CompletableFuture()
-
-      return res
+      project?.let { CodyAutocompleteStatusService.resetApplication(it) }
     }
   }
 
@@ -108,27 +115,37 @@ class CodyAgentService(project: Project) : Disposable {
     }
 
     @JvmStatic
-    fun applyAgentOnBackgroundThread(project: Project, block: Consumer<CodyAgent>) {
-      getInstance(project).getInitializedAgent(project).thenAccept { agent ->
-        ApplicationManager.getApplication().executeOnPooledThread { block.accept(agent) }
+    fun withAgent(project: Project): CompletableFuture<CodyAgent> {
+      val result = CompletableFuture<CodyAgent>()
+      if (CodyApplicationSettings.instance.isCodyEnabled) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+          getInstance(project).getInitializedAgent(project, restartIfNeeded = false).thenAccept {
+            result.complete(it)
+          }
+        }
       }
+      return result
     }
 
     @JvmStatic
-    fun withAgentOnUIThread(project: Project, block: Consumer<CodyAgent>) {
-      getInstance(project).getInitializedAgent(project).thenAccept { agent ->
-        ApplicationManager.getApplication().invokeLater { block.accept(agent) }
+    fun withAgentRestartIfNeeded(project: Project): CompletableFuture<CodyAgent> {
+      val result = CompletableFuture<CodyAgent>()
+      if (CodyApplicationSettings.instance.isCodyEnabled) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+          getInstance(project).getInitializedAgent(project, restartIfNeeded = true).thenAccept {
+            result.complete(it)
+          }
+        }
       }
-    }
-
-    @JvmStatic
-    fun getAgent(project: Project): CompletableFuture<CodyAgent> {
-      return getInstance(project).getInitializedAgent(project)
+      return result
     }
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {
-      return getAgent(project).getNow(null)?.isConnected() == true
+      return getInstance(project)
+          .getInitializedAgent(project, restartIfNeeded = false)
+          .getNow(null)
+          ?.isConnected() == true
     }
   }
 }

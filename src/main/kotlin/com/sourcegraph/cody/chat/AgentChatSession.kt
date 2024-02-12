@@ -20,10 +20,10 @@ import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
 import com.sourcegraph.telemetry.GraphQlLogger
+import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
-import org.slf4j.LoggerFactory
 
 class AgentChatSession
 private constructor(
@@ -119,7 +119,7 @@ private constructor(
   }
 
   private fun submitMessageToAgent(humanMessage: ChatMessage, contextFiles: List<ContextFile>) {
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+    CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
       val message =
           WebviewMessage(
               command = "submit",
@@ -206,7 +206,7 @@ private constructor(
   }
 
   override fun sendWebviewMessage(message: WebviewMessage) {
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+    CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
       agent.server.webviewReceiveMessage(
           WebviewReceiveMessageParams(this.sessionId.get().get(), message))
     }
@@ -238,7 +238,7 @@ private constructor(
 
   private fun setCustomModelForAgentSession(model: ChatModel): CompletableFuture<Void> {
     return sessionId.get().thenAccept { sessionId ->
-      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+      CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
         agent.server.webviewReceiveMessage(
             WebviewReceiveMessageParams(
                 sessionId, WebviewMessage(command = "chatModel", model = model.agentName)))
@@ -346,9 +346,11 @@ private constructor(
         chatSession.chatPanel.addOrUpdateMessage(
             chatMessage, index, shouldAddBlinkingCursor = false)
       }
-      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
-        chatSession.restoreAgentSession(agent, state.model)
+
+      CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
+        chatSession.restoreAgentSession(agent)
       }
+
       AgentChatSessionService.getInstance(project).addSession(chatSession)
       return chatSession
     }
@@ -357,10 +359,9 @@ private constructor(
         project: Project,
         newPanelAction: (CodyAgent) -> CompletableFuture<String>
     ): CompletableFuture<SessionId> {
-      val sessionId = CompletableFuture<SessionId>()
-      CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+      return CodyAgentService.withAgentRestartIfNeeded(project).thenCompose { agent ->
         try {
-          sessionId.complete(newPanelAction(agent).get())
+          newPanelAction(agent)
         } catch (e: ExecutionException) {
           // Agent cannot gracefully recover when connection is lost, we need to restart it
           // TODO https://github.com/sourcegraph/jetbrains/issues/306
@@ -370,7 +371,6 @@ private constructor(
           createNewPanel(project, newPanelAction)
         }
       }
-      return sessionId
     }
   }
 }

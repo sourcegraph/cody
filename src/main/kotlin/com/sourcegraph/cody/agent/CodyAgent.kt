@@ -32,10 +32,11 @@ private constructor(
     private val listeningToJsonRpc: Future<Void?>
 ) {
 
-  fun shutdown(): CompletableFuture<Void> {
-    return server.shutdown().thenAccept {
+  fun shutdown(): CompletableFuture<Unit> {
+    return server.shutdown().completeOnTimeout(null, 15, TimeUnit.SECONDS).handle { _, throwable ->
+      if (throwable != null) logger.warn("Graceful shutdown of Cody agent server failed", throwable)
       server.exit()
-      logger.warn("Cody Agent shut down")
+      logger.info("Cody Agent shut down gracefully")
       listeningToJsonRpc.cancel(true)
       connection.close()
     }
@@ -234,6 +235,7 @@ private constructor(
       }
       val binaryTarget = Files.createTempFile("cody-agent", binarySuffix())
       return try {
+        binaryTarget?.toFile()?.deleteOnExit()
         token.onFinished {
           // Important: delete the file from disk after the process exists
           // Ideally, we should eventually replace this temporary file with a permanent location
@@ -244,7 +246,6 @@ private constructor(
         Files.copy(binarySource, binaryTarget, StandardCopyOption.REPLACE_EXISTING)
         val binary = binaryTarget.toFile()
         if (binary.setExecutable(true)) {
-          binary.deleteOnExit()
           binary
         } else {
           throw CodyAgentException("failed to make executable " + binary.absolutePath)

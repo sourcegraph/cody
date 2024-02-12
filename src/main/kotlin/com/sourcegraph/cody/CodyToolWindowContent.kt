@@ -89,7 +89,7 @@ class CodyToolWindowContent(private val project: Project) {
   }
 
   fun refreshMyAccountTab() {
-    CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+    CodyAgentService.withAgent(project).thenAccept { agent ->
       fetchMyAccountPanelData(project, agent.server).thenApply { data ->
         if (data != null) {
           ApplicationManager.getApplication().invokeLater {

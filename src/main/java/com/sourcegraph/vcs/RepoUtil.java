@@ -151,27 +151,25 @@ public class RepoUtil {
 
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
-      String codebaseName = null;
-
       if (ConfigUtil.isCodyEnabled()) {
-        codebaseName =
-            CodyAgentService.getAgent(project)
+        String codebaseName =
+            CodyAgentService.withAgent(project)
                 .thenCompose(
                     agent ->
                         agent.getServer().convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
                 .completeOnTimeout(null, 15, TimeUnit.SECONDS)
                 .get();
 
-        if (codebaseName == null) {
+        if (codebaseName != null) {
+          return codebaseName;
+        } else {
           logger.warn(
               "Failed to convert git clone URL to codebase name for cloneURL via agent for cloneUrl="
                   + cloneURL);
         }
       }
 
-      return codebaseName != null
-          ? codebaseName
-          : convertGitCloneURLToCodebaseNameOrError(cloneURL);
+      return convertGitCloneURLToCodebaseNameOrError(cloneURL);
     }
 
     if (vcsType == VCSType.PERFORCE) {

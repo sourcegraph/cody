@@ -23,7 +23,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
 
             // Notify Cody Agent about config changes.
             if (ConfigUtil.isCodyEnabled()) {
-              CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
+              CodyAgentService.withAgentRestartIfNeeded(project).thenAccept { agent ->
                 agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
               }
               CodyAgentService.getInstance(project).restartAgent(project)
