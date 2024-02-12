@@ -540,6 +540,9 @@ export function suggested(id: CompletionLogID, span?: Span): void {
                 event.suggestionAnalyticsLoggedAt = performance.now()
             }
         }, READ_TIMEOUT_MS)
+    } else {
+        span?.setAttributes(getSharedParams(event) as any)
+        span?.addEvent('suggested-again')
     }
 }
 
