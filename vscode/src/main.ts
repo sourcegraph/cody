@@ -63,7 +63,6 @@ import {
     executeExplainOutput,
 } from './commands/execute'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { setUpCodyIgnore } from './services/cody-ignore'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -123,7 +122,6 @@ const register = async (
 
     // Set codyignore list after git extension startup
     disposables.push(await gitAPIinit())
-    disposables.push(setUpCodyIgnore())
 
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||

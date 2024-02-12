@@ -25,6 +25,7 @@ import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { setUpCodyIgnore } from '../../services/cody-ignore'
 
 type ChatID = string
 
@@ -36,8 +37,6 @@ export type ChatPanelConfig = Pick<
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
-
-export const ignoreSidebar = new TreeViewProvider('ignore', featureFlagProvider)
 
 interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
@@ -59,7 +58,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
     public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
-    public ignoreTreeViewProvider = ignoreSidebar
+    public ignoreTreeViewProvider = new TreeViewProvider('ignore', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
@@ -107,6 +106,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 }
             })
         )
+        this.disposables.push(setUpCodyIgnore(this.ignoreTreeViewProvider))
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {

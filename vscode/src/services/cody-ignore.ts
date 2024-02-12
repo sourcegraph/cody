@@ -3,12 +3,12 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import { StatusBar } from './StatusBar'
 import type { CodySidebarTreeItem } from './treeViewItems'
-import { ignoreSidebar } from '../chat/chat-view/ChatPanelsManager'
+import type { TreeViewProvider } from './TreeViewProvider'
 
 const utf8 = new TextDecoder('utf-8')
 
+let ignoreSidebar: TreeViewProvider | undefined = undefined
 let ignoreSidebarItems: CodySidebarTreeItem[] = []
 export const getIgnoreSidebarItems = () => ignoreSidebarItems.reverse()
 
@@ -18,7 +18,8 @@ export const getIgnoreSidebarItems = () => ignoreSidebarItems.reverse()
  *
  * NOTE: This is only called once at git extension start up time (gitAPIinit)
  */
-export function setUpCodyIgnore(): vscode.Disposable {
+export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable {
+    ignoreSidebar = sidebar
     // Enable ignore and then handle existing workspace folders.
     onConfigChange()
     vscode.workspace.workspaceFolders?.map(async wf => await refresh(wf.uri))
@@ -64,6 +65,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 
     // Skip refresh if .cody/ignore is not enabled
     if (!ignores.isEnabled) {
+        ignoreSidebar = undefined
         return
     }
 
@@ -108,19 +110,9 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         }
 
         cancel()
-        const title = 'Fail to setup Cody ignore files.'
-        const description = 'Try disable the `search.followSymlinks` setting in your editor.'
-        logDebug('CodyIgnore:refresh:workspace:timeout', title, { verbose: wf.uri.path })
-
-        StatusBar.addError({
-            title,
-            errorType: 'CodyIgnore',
-            description,
-            onSelect: () => {
-                // Bring up the sidebar view
-                void vscode.commands.executeCommand('cody.focus')
-            },
-        })
+        const title = 'Fail to find Cody ignore files.'
+        const description = ' Try disable the `search.followSymlinks` setting in your editor.'
+        logDebug('CodyIgnore:refresh:workspace:timeout', title + description, { verbose: wf.uri.path })
     }, 180000)
 
     // Look for .cody/ignore files within the workspace,
@@ -142,7 +134,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
             command: { command: 'vscode.open', args: [ignoreFile.path] },
         })
     }
-    ignoreSidebar.refresh()
+    ignoreSidebar?.refresh()
 
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
