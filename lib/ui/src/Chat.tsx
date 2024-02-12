@@ -424,7 +424,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // At mention should start with @ and contains no whitespaces
-            const isAtMention = (word: string) => /^@/.test(word) && !word.includes(' ')
+            const isAtMention = (word: string) => /^@[^ ]*$/.test(word)
 
             // Extract mention query by splitting input value into before/after caret sections.
             const extractMentionQuery = (input: string, caretPos: number) => {
@@ -442,6 +442,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const mentionQuery = extractMentionQuery(inputValue, caretPosition)
             const query = mentionQuery.replace(/^@/, '')
 
+            // Cover cases where user prefer to type the file without tabbing the selection
+            if (contextSelection?.length) {
+                if (currentChatContextQuery === query.trimEnd()) {
+                    onChatContextSelected(contextSelection[0])
+                    return
+                }
+            }
+
             // Filters invalid queries and sets context query state accordingly:
             // Sets the current chat context query state if a valid mention is detected.
             // Otherwise resets the context selection and query state.
@@ -454,7 +462,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setCurrentChatContextQuery(query)
             postMessage({ command: 'getUserContext', query })
         },
-        [postMessage, resetContextSelection]
+        [
+            postMessage,
+            resetContextSelection,
+            contextSelection,
+            currentChatContextQuery,
+            onChatContextSelected,
+        ]
     )
 
     const inputHandler = useCallback(
