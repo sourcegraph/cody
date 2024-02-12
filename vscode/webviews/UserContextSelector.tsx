@@ -96,11 +96,11 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                             ? `:${match.range.start.line + 1}-${match.range.end.line + 1}`
                             : ''
                         const description =
-                            match.type === 'file'
-                                ? match.title === 'large-file'
-                                    ? 'Large file will be truncated.'
-                                    : undefined
-                                : displayPath(match.uri) + range
+                            match.type === 'file' ? undefined : displayPath(match.uri) + range
+                        const warning =
+                            match.type === 'file' && match.title === 'large-file'
+                                ? 'File too large. Type @# to choose a symbol'
+                                : undefined
                         return (
                             <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
@@ -109,6 +109,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                         styles.selectionItem,
                                         selected === i && styles.selected
                                     )}
+                                    title={title}
                                     onClick={() => onSelected(match, formInput)}
                                     type="button"
                                 >
@@ -128,6 +129,18 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                             </span>
                                         )}
                                     </span>
+                                    {warning && (
+                                        <p
+                                            className={classNames(
+                                                styles.titleAndDescriptionContainer,
+                                                styles.warningContainer
+                                            )}
+                                        >
+                                            <span className={styles.selectionDescription}>
+                                                {warning}
+                                            </span>
+                                        </p>
+                                    )}
                                 </button>
                             </React.Fragment>
                         )
