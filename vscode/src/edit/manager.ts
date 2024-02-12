@@ -85,11 +85,6 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        if (editor.active) {
-            // Clear out any active ghost text
-            this.options.ghostHintDecorator.clearGhostText(editor.active)
-        }
-
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
