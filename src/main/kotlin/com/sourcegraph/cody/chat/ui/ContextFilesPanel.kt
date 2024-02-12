@@ -13,7 +13,10 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.cody.agent.protocol.ContextMessage
+import com.intellij.util.withFragment
+import com.intellij.util.withQuery
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ContextFile
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH
 import com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN
@@ -25,24 +28,15 @@ import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 import kotlin.io.path.absolutePathString
 
-class ContextFilesMessage(val project: Project, contextMessages: List<ContextMessage>) :
-    PanelWithGradientBorder(ASSISTANT_MESSAGE_GRADIENT_WIDTH, Speaker.ASSISTANT) {
+class ContextFilesPanel(
+    val project: Project,
+    chatMessage: ChatMessage,
+) : PanelWithGradientBorder(ASSISTANT_MESSAGE_GRADIENT_WIDTH, Speaker.ASSISTANT) {
   init {
     this.layout = BorderLayout()
+    isVisible = false
 
-    val contextFileNames =
-        contextMessages
-            .mapNotNull(ContextMessage::file)
-            .map {
-              if (it.repoName != null) {
-                "${project.basePath}/${it.uri.path}"
-              } else {
-                Paths.get(it.uri).absolutePathString()
-              }
-            }
-            .toSet()
-
-    ApplicationManager.getApplication().executeOnPooledThread { updateFileList(contextFileNames) }
+    updateContentWith(chatMessage.contextFiles)
   }
 
   @RequiresBackgroundThread
@@ -54,6 +48,8 @@ class ContextFilesMessage(val project: Project, contextMessages: List<ContextMes
             .toList()
 
     ApplicationManager.getApplication().invokeLater {
+      this.isVisible = filesAvailableInEditor.isNotEmpty()
+
       val margin = JBInsets.create(Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN))
       val accordionSection = AccordionSection("Read ${filesAvailableInEditor.size} files")
       accordionSection.isOpaque = false
@@ -85,7 +81,26 @@ class ContextFilesMessage(val project: Project, contextMessages: List<ContextMes
     return panel
   }
 
+  fun updateContentWith(contextFiles: List<ContextFile>?) {
+    if (contextFiles.isNullOrEmpty()) {
+      return
+    }
+
+    val contextFileNames =
+        contextFiles
+            .map {
+              if (it.repoName != null) {
+                "${project.basePath}/${it.uri.path}"
+              } else {
+                Paths.get(it.uri.withFragment(null).withQuery(null)).absolutePathString()
+              }
+            }
+            .toSet()
+
+    ApplicationManager.getApplication().executeOnPooledThread { updateFileList(contextFileNames) }
+  }
+
   companion object {
-    private val logger = Logger.getInstance(ContextFilesMessage::class.java)
+    private val logger = Logger.getInstance(ContextFilesPanel::class.java)
   }
 }

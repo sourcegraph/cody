@@ -37,10 +37,6 @@ class CodyAgentService(project: Project) : Disposable {
               ?.receiveWebviewExtensionMessage(params.message)
         }
       }
-
-      if (!project.isDisposed) {
-        AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
-      }
     }
   }
 

@@ -4,5 +4,5 @@ import com.sourcegraph.cody.commands.CommandId
 
 class ExplainCommand : BaseCommandAction() {
 
-  override fun myCommandId() = CommandId.Explain
+  override val myCommandId = CommandId.Explain
 }

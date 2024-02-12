@@ -4,5 +4,5 @@ import com.sourcegraph.cody.commands.CommandId
 
 class SmellCommand : BaseCommandAction() {
 
-  override fun myCommandId() = CommandId.Smell
+  override val myCommandId = CommandId.Smell
 }

@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.history.state.ChatState
-import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
 @Service(Service.Level.PROJECT)
@@ -34,9 +33,6 @@ class AgentChatSessionService(private val project: Project) {
 
   fun getSession(sessionId: SessionId): AgentChatSession? =
       chatSessions.find { it.hasSessionId(sessionId) }
-
-  fun findByMessage(messageId: UUID): AgentChatSession? =
-      chatSessions.find { it.hasMessageId(messageId) }
 
   fun restoreAllSessions(agent: CodyAgent) {
     chatSessions.forEach { it.restoreAgentSession(agent) }

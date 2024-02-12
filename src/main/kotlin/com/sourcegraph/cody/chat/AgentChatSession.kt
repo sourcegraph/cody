@@ -3,6 +3,7 @@ package com.sourcegraph.cody.chat
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.ui.UIUtil
 import com.intellij.xml.util.XmlStringUtil
 import com.jetbrains.rd.util.AtomicReference
 import com.sourcegraph.cody.agent.*
@@ -15,8 +16,7 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
-import com.sourcegraph.common.CodyBundle.fmt
-import com.sourcegraph.common.UpgradeToCodyProNotification
+import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -27,7 +27,7 @@ class AgentChatSession
 private constructor(
     private val project: Project,
     newSessionId: CompletableFuture<SessionId>,
-    private val internalId: String = UUID.randomUUID().toString(),
+    private val internalId: String = UUID.randomUUID().toString()
 ) : ChatSession {
 
   /**
@@ -66,17 +66,29 @@ private constructor(
 
   fun hasSessionId(thatSessionId: SessionId): Boolean = getSessionId() == thatSessionId
 
-  fun hasMessageId(messageId: UUID): Boolean = messages.any { it.id == messageId }
-
   override fun getInternalId(): String = internalId
 
   override fun getCancellationToken(): CancellationToken = cancellationToken.get()
 
+  private val logger = LoggerFactory.getLogger(ChatSession::class.java)
+
   @RequiresEdt
   override fun sendMessage(text: String, contextFiles: List<ContextFile>) {
     val displayText = XmlStringUtil.escapeString(text)
-    val humanMessage = ChatMessage(Speaker.HUMAN, text, displayText)
-    addMessage(humanMessage)
+    val humanMessage =
+        ChatMessage(
+            Speaker.HUMAN,
+            text,
+            displayText,
+        )
+    addMessageAtIndex(humanMessage, index = messages.count())
+    val responsePlaceholder =
+        ChatMessage(
+            Speaker.ASSISTANT,
+            text = "",
+            displayText = "",
+        )
+    addMessageAtIndex(responsePlaceholder, index = messages.count(), shouldAddBlinkingCursor = true)
 
     CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
       val message =
@@ -102,17 +114,10 @@ private constructor(
 
   @Throws(ExecutionException::class, InterruptedException::class)
   override fun receiveMessage(extensionMessage: ExtensionMessage) {
-    fun addAssistantResponseToChat(text: String, displayText: String? = null) {
-      // Updates of the given message will always have the same UUID
-      val messageId =
-          UUID.nameUUIDFromBytes(extensionMessage.messages?.count().toString().toByteArray())
-      ApplicationManager.getApplication().invokeLater {
-        addMessage(ChatMessage(Speaker.ASSISTANT, text, displayText, id = messageId))
-      }
-    }
 
     try {
       val lastMessage = extensionMessage.messages?.lastOrNull()
+      val prevLastMessage = extensionMessage.messages?.dropLast(1)?.lastOrNull()
 
       if (lastMessage?.error != null && extensionMessage.isMessageInProgress == false) {
 
@@ -120,16 +125,15 @@ private constructor(
         val rateLimitError = lastMessage.error.toRateLimitError()
         if (rateLimitError != null) {
           RateLimitStateManager.reportForChat(project, rateLimitError)
-          UpgradeToCodyProNotification.isCodyProJetbrains(project).thenApply { isCodyPro ->
+          isCodyProJetbrains(project).thenApply { isCodyPro ->
             val text =
                 when {
                   rateLimitError.upgradeIsAvailable && isCodyPro ->
                       CodyBundle.getString("chat.rate-limit-error.upgrade")
-                          .fmt(rateLimitError.limit?.let { " $it" } ?: "")
                   else -> CodyBundle.getString("chat.rate-limit-error.explain")
                 }
 
-            addAssistantResponseToChat(text)
+            addErrorMessageAsAssistantMessage(text, index = extensionMessage.messages.count() - 1)
           }
         } else {
           // Currently we ignore other kind of errors like context window limit reached
@@ -140,15 +144,35 @@ private constructor(
             extensionMessage.isMessageInProgress == false) {
           getCancellationToken().dispose()
         } else {
-          if (lastMessage?.text != null && extensionMessage.chatID != null) {
-            addAssistantResponseToChat(lastMessage.text, lastMessage.displayText)
+
+          if (extensionMessage.chatID != null) {
+            if (prevLastMessage != null) {
+              if (lastMessage?.contextFiles != messages.lastOrNull()?.contextFiles) {
+                val index = extensionMessage.messages.count() - 2
+                ApplicationManager.getApplication().invokeLater {
+                  addMessageAtIndex(prevLastMessage, index)
+                }
+              }
+            }
+
+            if (lastMessage?.text != null) {
+              val index = extensionMessage.messages.count() - 1
+              ApplicationManager.getApplication().invokeLater {
+                addMessageAtIndex(lastMessage, index)
+              }
+            }
           }
         }
       }
     } catch (error: Exception) {
-      getCancellationToken().dispose()
+      getCancellationToken().abort()
       logger.error(CodyBundle.getString("chat-session.error-title"), error)
-      addAssistantResponseToChat(CodyBundle.getString("chat-session.error-title"))
+    }
+  }
+
+  private fun addErrorMessageAsAssistantMessage(stringMessage: String, index: Int) {
+    UIUtil.invokeLaterIfNeeded {
+      addMessageAtIndex(ChatMessage(Speaker.ASSISTANT, stringMessage), index)
     }
   }
 
@@ -173,12 +197,21 @@ private constructor(
   }
 
   @RequiresEdt
-  private fun addMessage(message: ChatMessage) {
-    if (messages.lastOrNull()?.id == message.id) {
-      messages.removeLast()
+  private fun addMessageAtIndex(
+      message: ChatMessage,
+      index: Int,
+      shouldAddBlinkingCursor: Boolean? = null
+  ) {
+    val messageToUpdate = messages.getOrNull(index)
+    if (messageToUpdate != null) {
+      messages[index] = message
+    } else {
+      messages.add(message)
     }
-    messages.add(message)
-    chatPanel.addOrUpdateMessage(message)
+    chatPanel.addOrUpdateMessage(
+        message,
+        index,
+        shouldAddBlinkingCursor = shouldAddBlinkingCursor ?: message.actualMessage().isBlank())
     HistoryService.getInstance(project).updateChatMessages(internalId, messages)
   }
 
@@ -225,7 +258,19 @@ private constructor(
             GraphQlLogger.logCodyEvent(project, "command:${commandId.displayName}", "executed")
           })
 
-      chatSession.addMessage(ChatMessage(Speaker.HUMAN, commandId.displayName))
+      chatSession.addMessageAtIndex(
+          ChatMessage(
+              Speaker.HUMAN,
+              commandId.displayName,
+          ),
+          chatSession.messages.count())
+      chatSession.addMessageAtIndex(
+          ChatMessage(
+              Speaker.ASSISTANT,
+              text = "",
+              displayText = "",
+          ),
+          chatSession.messages.count())
       AgentChatSessionService.getInstance(project).addSession(chatSession)
       return chatSession
     }
@@ -234,16 +279,17 @@ private constructor(
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
       val sessionId = createNewPanel(project) { it.server.chatNew() }
       val chatSession = AgentChatSession(project, sessionId, state.internalId!!)
-      for (message in state.messages) {
+      state.messages.forEachIndexed { index, message ->
         val parsed =
             when (val speaker = message.speaker) {
               MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
               MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
               else -> error("unrecognized speaker $speaker")
             }
-        val chatMessage = ChatMessage(parsed, message.text)
+        val chatMessage = ChatMessage(speaker = parsed, message.text)
         chatSession.messages.add(chatMessage)
-        chatSession.chatPanel.addOrUpdateMessage(chatMessage, shouldAddBlinkingCursor = false)
+        chatSession.chatPanel.addOrUpdateMessage(
+            chatMessage, index, shouldAddBlinkingCursor = false)
       }
       CodyAgentService.applyAgentOnBackgroundThread(project) { agent ->
         chatSession.restoreAgentSession(agent)

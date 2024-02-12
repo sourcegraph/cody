@@ -6,8 +6,6 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
 import com.sourcegraph.cody.agent.protocol.AttributionSearchResponse
-import com.sourcegraph.cody.chat.AgentChatSession
-import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.chat.SessionId
 import com.sourcegraph.cody.chat.ui.CodeEditorPart
 import java.util.*
@@ -51,7 +49,4 @@ class AttributionSearchCommand(private val project: Project) {
 
   private fun attributionEnabled(): Boolean =
       project.getService(CurrentConfigFeatures::class.java).get().attribution
-
-  private fun findChatSessionFor(messageId: UUID): AgentChatSession? =
-      AgentChatSessionService.getInstance(project).findByMessage(messageId)
 }

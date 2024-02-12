@@ -52,8 +52,12 @@ class ChatPanel(project: Project, chatSession: ChatSession) :
   fun isEnhancedContextEnabled(): Boolean = contextView.isEnhancedContextEnabled.get()
 
   @RequiresEdt
-  fun addOrUpdateMessage(message: ChatMessage, shouldAddBlinkingCursor: Boolean = true) {
-    messagesPanel.addOrUpdateMessage(message, shouldAddBlinkingCursor)
+  fun addOrUpdateMessage(
+      message: ChatMessage,
+      index: Int,
+      shouldAddBlinkingCursor: Boolean = true
+  ) {
+    messagesPanel.addOrUpdateMessage(message, index, shouldAddBlinkingCursor)
   }
 
   @RequiresEdt

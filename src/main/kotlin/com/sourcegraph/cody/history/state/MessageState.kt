@@ -15,7 +15,6 @@ class MessageState : BaseState() {
   // todo var contextFiles by list<String>()
 
   enum class SpeakerState {
-
     HUMAN,
     ASSISTANT
   }

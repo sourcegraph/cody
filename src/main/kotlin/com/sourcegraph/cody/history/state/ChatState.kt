@@ -21,7 +21,7 @@ class ChatState : BaseState() {
   @get:OptionTag(tag = "enhancedContext", nameAttribute = "")
   var enhancedContext: EnhancedContextState? by property()
 
-  fun title(): String? = messages.firstOrNull()?.text
+  fun title(): String? = messages.firstOrNull()?.text?.take(48)
 
   fun setUpdatedTimeAt(date: LocalDateTime) {
     updatedAt = date.format(DATE_FORMAT)
