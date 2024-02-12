@@ -65,6 +65,7 @@ test('commit message generation - happy path', async ({ page, sidebar }) => {
     // Activate the Cody commit message feature
     const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
     expect(generateCommitMessageCta).toBeVisible()
+    await generateCommitMessageCta.hover()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
