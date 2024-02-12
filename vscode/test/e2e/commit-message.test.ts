@@ -12,7 +12,6 @@ import {
 } from './helpers'
 import { expect } from 'playwright/test'
 import path from 'path'
-import { URI } from 'vscode-uri'
 
 // Reconfigured test to enable features within the Git extension (initialise a Git repo)
 const test = baseTest
@@ -27,13 +26,13 @@ const test = baseTest
                 await spawn('git', ['init'], { cwd: dir })
 
                 // Add Cody ignore
-                await fs.mkdir(URI.file(path.join(dir, '.cody')).path, { recursive: true })
-                await fs.writeFile(URI.file(path.join(dir, '.cody', 'ignore')).path, 'ignored.js')
+                await fs.mkdir(path.join(dir, '.cody'), { recursive: true })
+                await fs.writeFile(path.join(dir, '.cody', 'ignore'), 'ignored.js')
 
                 // Add some content
                 await Promise.all([
-                    fs.writeFile(URI.file(path.join(dir, 'index.js')).path, '// Hello World'),
-                    fs.writeFile(URI.file(path.join(dir, 'ignored.js')).path, '// Ignore me!'),
+                    fs.writeFile(path.join(dir, 'index.js'), '// Hello World'),
+                    fs.writeFile(path.join(dir, 'ignored.js'), '// Ignore me!'),
                 ])
 
                 await use(dir)
@@ -64,8 +63,8 @@ test('commit message generation - happy path', async ({ page, sidebar }) => {
     await gitChange.getByLabel('Stage Changes').click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
@@ -99,8 +98,8 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
     await gitChange.getByLabel('Stage Changes').click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
