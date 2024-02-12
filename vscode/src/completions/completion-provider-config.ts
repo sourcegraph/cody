@@ -16,6 +16,9 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteSingleMultilineRequest,
         FeatureFlag.CodyAutocompleteFastPath,
+        FeatureFlag.CodyAutocompleteUserLatency,
+        FeatureFlag.CodyAutocompleteEagerCancellation,
+        FeatureFlag.CodyAutocompleteTracing,
     ] as const
 
     private get config() {

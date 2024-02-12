@@ -10,10 +10,37 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [1.4.3]
+
+### Changed
+
+- Autocomplete: Updated the BFG binary version. [pull/3130](https://github.com/sourcegraph/cody/pull/3130)
+
+### Changed
+
+## [1.4.2]
+
+### Fixed
+
+- Chat: Fixed an issue where Cody would sometimes exceed the context window limit for shorter context OpenAI models. [pull/3121](https://github.com/sourcegraph/cody/pull/3121)
+
+## [1.4.1]
+
+### Added
+
+- Chat: Support `@-mentioned` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
+- Chat: Support `@-mentioned` in editing mode. [pull/3091](https://github.com/sourcegraph/cody/pull/3091)
+
+### Fixed
+
 - Autocomplete: Fixed the completion partial removal upon acceptance caused by `cody.autocomplete.formatOnAccept`. [pull/3083](https://github.com/sourcegraph/cody/pull/3083)
 
 ### Changed
 
+- Autocomplete: Improve client side tracing to get a better understanding of the E2E latency. [pull/3034](https://github.com/sourcegraph/cody/pull/3034)
+- Autocomplete: Move some work off the critical path in an attempt to further reduce latency. [pull/3096](https://github.com/sourcegraph/cody/pull/3096)
 - Custom Command: The `description` field is now optional and will default to use the command prompt. [pull/3025](https://github.com/sourcegraph/cody/pull/3025)
 
 ## [1.4.0]

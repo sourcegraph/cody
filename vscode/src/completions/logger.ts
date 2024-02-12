@@ -19,6 +19,7 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
+import type { Span } from '@opentelemetry/api'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -505,7 +506,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID): void {
+export function suggested(id: CompletionLogID, span?: Span): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -518,6 +519,9 @@ export function suggested(id: CompletionLogID): void {
 
     if (!event.suggestedAt) {
         event.suggestedAt = performance.now()
+
+        span?.setAttributes(getSharedParams(event) as any)
+        span?.addEvent('suggested')
 
         setTimeout(() => {
             const event = activeSuggestionRequests.get(id)
@@ -536,6 +540,9 @@ export function suggested(id: CompletionLogID): void {
                 event.suggestionAnalyticsLoggedAt = performance.now()
             }
         }, READ_TIMEOUT_MS)
+    } else {
+        span?.setAttributes(getSharedParams(event) as any)
+        span?.addEvent('suggested-again')
     }
 }
 

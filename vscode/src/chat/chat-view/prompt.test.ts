@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
+import { PromptBuilder } from '../../prompt-builder'
 
 describe('DefaultPrompter', () => {
     afterEach(() => {
@@ -68,5 +69,28 @@ describe('DefaultPrompter', () => {
           ]
         `)
         expect(newContextUsed).toMatchInlineSnapshot('[]')
+    })
+
+    it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
+        const overallLimit = 1
+        const promptBuilder = new PromptBuilder(overallLimit)
+        const contextItems = [
+            {
+                uri: vscode.Uri.file('/foo/bar'),
+                text: 'foobar',
+            },
+        ]
+
+        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
+            contextItems,
+            10_000_000
+        )
+        expect(limitReached).toBeTruthy()
+        expect(ignored).toEqual(contextItems)
+        expect(duplicate).toEqual([])
+        expect(used).toEqual([])
+
+        const prompt = promptBuilder.build()
+        expect(prompt).toMatchInlineSnapshot('[]')
     })
 })

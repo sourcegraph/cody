@@ -5,7 +5,7 @@ import { isWindows } from '@sourcegraph/cody-shared'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { assertEvents, test, withPlatformSlashes } from './helpers'
+import { assertEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 /**
  * Tests for @-file & @#-symbol in chat
@@ -177,6 +177,18 @@ test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
+
+    // Typing out the whole file path without pressing tab/enter should still include the
+    // file as context
+    const osKey = getMetaKeyByOS()
+    await chatInput.press(`${osKey}+/`) // start a new chat
+    await chatInput.fill('@index.htm')
+    await chatInput.press('l')
+    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
+    await chatInput.press('Space')
+    await page.keyboard.type('explain.', { delay: 50 })
+    await chatInput.press('Enter')
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 
     const expectedEvents = [
         'CodyVSCodeExtension:at-mention:executed',

@@ -1,4 +1,5 @@
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -25,6 +26,9 @@ export enum FeatureFlag {
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     // Dynamically decide wether to show a single line or multiple lines for completions.
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
+    // Completion requests will be cancelled as soon as a new request comes in and the debounce time
+    // will be reduced to try and counter the latency impact.
+    CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
@@ -45,6 +49,9 @@ export enum FeatureFlag {
 
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
+
+    // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
+    CodyCommandHints = 'cody-command-hints',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -70,23 +77,29 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint]?.[flagName]
     }
 
+    public getExposedExperiments(endpoint: string = this.apiClient.endpoint): Record<string, boolean> {
+        return this.featureFlags[endpoint] || {}
+    }
+
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = this.apiClient.endpoint
-        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
-            return false
-        }
+        return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
+            const endpoint = this.apiClient.endpoint
+            if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+                return false
+            }
 
-        const cachedValue = this.getFromCache(flagName, endpoint)
-        if (cachedValue !== undefined) {
-            return cachedValue
-        }
+            const cachedValue = this.getFromCache(flagName, endpoint)
+            if (cachedValue !== undefined) {
+                return cachedValue
+            }
 
-        const value = await this.apiClient.evaluateFeatureFlag(flagName)
-        if (!this.featureFlags[endpoint]) {
-            this.featureFlags[endpoint] = {}
-        }
-        this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
-        return this.featureFlags[endpoint][flagName]
+            const value = await this.apiClient.evaluateFeatureFlag(flagName)
+            if (!this.featureFlags[endpoint]) {
+                this.featureFlags[endpoint] = {}
+            }
+            this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
+            return this.featureFlags[endpoint][flagName]
+        })
     }
 
     public async syncAuthStatus(): Promise<void> {
@@ -95,10 +108,12 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        const endpoint = this.apiClient.endpoint
-        const data = await this.apiClient.getEvaluatedFeatureFlags()
-        this.featureFlags[endpoint] = isError(data) ? {} : data
-        this.lastUpdated = Date.now()
+        return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
+            const endpoint = this.apiClient.endpoint
+            const data = await this.apiClient.getEvaluatedFeatureFlags()
+            this.featureFlags[endpoint] = isError(data) ? {} : data
+            this.lastUpdated = Date.now()
+        })
     }
 }
 
