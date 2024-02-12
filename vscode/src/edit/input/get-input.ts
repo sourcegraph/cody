@@ -57,6 +57,11 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
     borderStyle: 'solid',
 })
 
+const EDIT_SETTINGS_CTA: vscode.QuickInputButton = {
+    iconPath: new vscode.ThemeIcon('gear'),
+    tooltip: 'Configure Edit settings...',
+}
+
 export const getInput = async (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
@@ -149,6 +154,12 @@ export const getInput = async (
     }
     previewActiveRange(activeRange)
 
+    const showEditSettings = () => {
+        void vscode.commands.executeCommand('workbench.action.openSettings', {
+            query: '@ext:sourcegraph.cody-ai Edit',
+        })
+    }
+
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
 
@@ -159,7 +170,14 @@ export const getInput = async (
             getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidTriggerButton: (target) => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+                if (target === EDIT_SETTINGS_CTA) {
+                    showEditSettings()
+                }
+            },
             onDidAccept: async item => {
                 const acceptedItem = item as EditModelItem
                 if (!acceptedItem) {
@@ -210,7 +228,14 @@ export const getInput = async (
                     symbolsPromise
                 ),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidTriggerButton: (target) => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+                if (target === EDIT_SETTINGS_CTA) {
+                    showEditSettings()
+                }
+            },
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
@@ -242,7 +267,14 @@ export const getInput = async (
             placeHolder: 'Select a symbol to document',
             getItems: () => getDocumentInputItems(document, initialValues, activeRange, symbolsPromise),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidTriggerButton: (target) => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+                if (target === EDIT_SETTINGS_CTA) {
+                    showEditSettings()
+                }
+            },
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
@@ -291,8 +323,15 @@ export const getInput = async (
             placeHolder: 'Select a symbol to generate tests',
             getItems: () =>
                 getTestInputItems(editor.document, initialValues, activeRange, symbolsPromise),
-            buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            buttons: [vscode.QuickInputButtons.Back, EDIT_SETTINGS_CTA],
+            onDidTriggerButton: (target) => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    editInput.render(activeTitle, editInput.input.value)
+                }
+                if (target === EDIT_SETTINGS_CTA) {
+                    showEditSettings()
+                }
+            },
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
@@ -333,17 +372,16 @@ export const getInput = async (
                     showModelSelector
                 ),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            ...(source === 'menu'
-                ? {
-                      buttons: [vscode.QuickInputButtons.Back],
-                      onDidTriggerButton: target => {
-                          if (target === vscode.QuickInputButtons.Back) {
-                              void vscode.commands.executeCommand('cody.menu.commands')
-                              editInput.input.hide()
-                          }
-                      },
-                  }
-                : {}),
+            buttons: source === 'menu' ? [vscode.QuickInputButtons.Back, EDIT_SETTINGS_CTA] : [EDIT_SETTINGS_CTA],
+            onDidTriggerButton: target => {
+                if (target === vscode.QuickInputButtons.Back) {
+                    void vscode.commands.executeCommand('cody.menu.commands')
+                    editInput.input.hide()
+                }
+                if (target === EDIT_SETTINGS_CTA) {
+                    showEditSettings()
+                }
+            },
             onDidChangeValue: async value => {
                 const input = editInput.input
                 if (
