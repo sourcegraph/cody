@@ -115,7 +115,6 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     const disposables: vscode.Disposable[] = []
-
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())

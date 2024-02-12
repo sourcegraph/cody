@@ -106,7 +106,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 }
             })
         )
-        this.disposables.push(setUpCodyIgnore(this.ignoreTreeViewProvider))
+        this.disposables.push(...setUpCodyIgnore(this.ignoreTreeViewProvider))
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {

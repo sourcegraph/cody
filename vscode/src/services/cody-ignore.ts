@@ -12,13 +12,17 @@ let ignoreSidebar: TreeViewProvider | undefined = undefined
 let ignoreSidebarItems: CodySidebarTreeItem[] = []
 export const getIgnoreSidebarItems = () => ignoreSidebarItems.reverse()
 
+// Used for setting context for the sidebar to display the current welcome view.
+const loadingStateContext = 'cody.ignoreSyncCompleted'
+
 /**
  * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
- * NOTE: This is only called once at git extension start up time (gitAPIinit)
+ * NOTE: This is only called ONCE at ChatPanelsManager initialization where all sidebars are registered.
  */
-export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable {
+export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable[] {
+    const disposables: vscode.Disposable[] = []
     ignoreSidebar = sidebar
     // Enable ignore and then handle existing workspace folders.
     onConfigChange()
@@ -43,13 +47,8 @@ export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable {
         }
     })
 
-    return {
-        dispose() {
-            watcher.dispose()
-            didChangeSubscription.dispose()
-            onDidChangeConfig.dispose()
-        },
-    }
+    disposables.push(...[watcher, didChangeSubscription, onDidChangeConfig])
+    return disposables
 }
 
 /**
@@ -70,6 +69,13 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     }
 
     const wf = vscode.workspace.getWorkspaceFolder(uri)
+    const cancel = () => {
+        const tokenFound = findInProgressTokens.get(uri.path)
+        tokenFound?.cancel()
+        tokenFound?.dispose()
+        findInProgressTokens.delete(uri.path)
+    }
+
     if (!wf) {
         // If this happens, we either have no workspace folder or it was removed before we started
         // processing the watch event.
@@ -82,13 +88,6 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     if (wf.uri.scheme !== 'file') {
         logDebug('CodyIgnore:refresh', 'failed', { verbose: 'not a file' })
         return
-    }
-
-    const cancel = () => {
-        const tokenFound = findInProgressTokens.get(uri.path)
-        tokenFound?.cancel()
-        tokenFound?.dispose()
-        findInProgressTokens.delete(uri.path)
     }
 
     const startTime = performance.now()
@@ -108,7 +107,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         if (!findInProgressTokens.get(uri.path)) {
             return
         }
-
+        void vscode.commands.executeCommand('setContext', loadingStateContext, true)
         cancel()
         const title = 'Fail to find Cody ignore files.'
         const description = ' Try disable the `search.followSymlinks` setting in your editor.'
@@ -126,6 +125,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         newToken.token
     )
 
+    void vscode.commands.executeCommand('setContext', loadingStateContext, true)
     // Create a sidebar item for each found ignore file.
     for (const ignoreFile of ignoreFiles) {
         ignoreSidebarItems.push({
