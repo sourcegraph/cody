@@ -122,7 +122,7 @@ export async function showCommandMenu(
 
             // On config option click
             if (selected === configOption.label) {
-                await showCommandMenu('config', customCommands)
+                void commands.executeCommand('cody.menu.commands-settings')
                 quickPick.hide()
                 return
             }

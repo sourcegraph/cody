@@ -41,6 +41,10 @@ export class CommandsProvider implements vscode.Disposable {
     private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
         const customCommands = await this.getCustomCommands()
         const commandArray = [...customCommands].map(command => command[1])
+        if (type === 'custom' && !commandArray.length) {
+            return showCommandMenu('config', commandArray)
+        }
+
         await showCommandMenu(type, commandArray)
     }
 
