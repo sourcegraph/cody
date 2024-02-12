@@ -37,6 +37,11 @@
     - [ ] [Colour scheme changes](#colour-scheme-changes)
 - Context
     - [ ] [PLG / SYMF / Local Keyword search](#local-keyword-search)
+- Model dropdown
+    - [ ] [Pro Account](#pro-account)
+    - [ ] [Free Account](#free-account)
+    - [ ] [Pro Account after trial](#pro-account-after-trial)
+    - [ ] [Enterprise account](#enterprise-account)
 
 ## Onboarding
 
@@ -430,6 +435,52 @@ To open the context menu:
 11. **Type**: "what is squirrel?"
 12. **Verify**: You get an answer similar to:
     > Squirrels are small, bushy-tailed rodents that are found all over the world. Here are some key facts about squirrels...
+
+## Model dropdown
+
+### Pro account
+
+#### Chat
+1. Login to Cody Pro account
+2. Create new chat
+3. User is able to change default LLM
+4. Change model to ChatGPT 4
+5. Send message 
+    > What model are you?
+6. User should get the response that model is ChatGPT
+7. Change account to different one and then back to your pro account
+8. Open `What model are you?` chat from the history
+9. Send again message
+    > What model are you?
+10. User should again get the response that model is ChatGPT
+
+#### Commands
+1. Login to Cody Pro account
+2. Go to commands panel
+3. Trigger command
+4. Command should be executed with default model
+
+### Free account
+1. Login to Cody Free account
+2. Create new chat
+3. User doesn't see model dropdown
+
+### Pro account after trial
+1. Login to Cody Pro account that has trial expired
+2. Create new chat
+3. User doesn't see model dropdown
+
+### Enterprise account
+
+#### Chat
+1. Login to Cody Enterprise account
+2. Create new chat
+3. User should see the default model in the dropdown but is unable to change it
+#### Commands
+1. Login to Cody Enterprise account
+2. Go to commands panel
+3. Trigger command
+4. Command should be executed with default model
 
 ## Other
 
