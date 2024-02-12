@@ -99,6 +99,7 @@ describe('RequestManager', () => {
         provider: Provider,
         suffix?: string
     ) => Promise<RequestManagerResult>
+    let checkCache: (prefix: string, suffix?: string) => RequestManagerResult | null
     beforeEach(async () => {
         await initCompletionProviderConfig({})
         const requestManager = new RequestManager()
@@ -110,6 +111,8 @@ describe('RequestManager', () => {
                 context: [],
                 isCacheEnabled: true,
             })
+        checkCache = (prefix: string, suffix?: string) =>
+            requestManager.checkCache({ requestParams: docState(prefix, suffix), isCacheEnabled: true })
     })
 
     it('resolves a single request', async () => {
@@ -122,20 +125,6 @@ describe('RequestManager', () => {
 
         expect(completions[0].insertText).toBe("'hello')")
         expect(source).toBe(InlineCompletionsResultSource.Network)
-    })
-
-    it('resolves a single request', async () => {
-        const prefix = 'console.log('
-        const provider1 = createProvider(prefix)
-        setTimeout(() => provider1.yield(["'hello')"]), 0)
-        await createRequest(prefix, provider1)
-
-        const provider2 = createProvider(prefix)
-
-        const { completions, source } = await createRequest(prefix, provider2)
-
-        expect(source).toBe(InlineCompletionsResultSource.Cache)
-        expect(completions[0].insertText).toBe("'hello')")
     })
 
     it('does not resolve from cache if the suffix has changed', async () => {
@@ -203,6 +192,20 @@ describe('RequestManager', () => {
 
         // Ensure that the completed network request does not cause issues
         provider2.yield(["'world')"])
+    })
+
+    describe('cache', () => {
+        it('resolves a single request with a cached value', async () => {
+            const prefix = 'console.log('
+            const provider1 = createProvider(prefix)
+            setTimeout(() => provider1.yield(["'hello')"]), 0)
+            await createRequest(prefix, provider1)
+
+            const { completions, source } = checkCache(prefix)!
+
+            expect(source).toBe(InlineCompletionsResultSource.Cache)
+            expect(completions[0].insertText).toBe("'hello')")
+        })
     })
 
     describe('abort logic', () => {
