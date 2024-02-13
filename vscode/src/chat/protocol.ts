@@ -319,5 +319,14 @@ export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 // Provide backward compatibility for the old token regex
 // Details: https://docs.sourcegraph.com/dev/security/secret_formats
 const sourcegraphTokenRegex =
-    /^(sgp_(?:[a-fA-F0-9]{16}|local)_[a-fA-F0-9]{40}|sgp_[a-fA-F0-9]{40}|[a-fA-F0-9]{40}|sgd_[a-fA-F0-9]{64}|slk_[a-fA-F0-9]{64}|sgs_[a-fA-F0-9]{64})$/
-export const isSourcegraphToken = (text: string): boolean => sourcegraphTokenRegex.test(text)
+    /(sgp_(?:[a-fA-F0-9]{16}|local)|sgp_)?[a-fA-F0-9]{40}|(sgd|slk|sgs)_[a-fA-F0-9]{64}/
+
+/**
+ * Checks if the given text matches the regex for a Sourcegraph access token.
+ *
+ * @param text - The text to check against the regex.
+ * @returns Whether the text matches the Sourcegraph token regex.
+ */
+export function isSourcegraphToken(text: string): boolean {
+    return sourcegraphTokenRegex.test(text)
+}
