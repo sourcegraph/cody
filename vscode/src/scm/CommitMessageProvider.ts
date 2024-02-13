@@ -206,16 +206,12 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         }
 
         if (!diffs?.length) {
-            console.log('Getting from cli')
             diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
         }
 
         if (diffs.length === 0) {
-            console.log('No diffs, even from the cli')
             return { isEmpty: true, isTruncated: false, prompt: '' }
         }
-
-        console.log('Got diffs', diffs)
 
         const allowedDiffs = diffs.filter(diff => {
             const files = parseDiff(diff)
