@@ -23,11 +23,11 @@ const test = baseTest
         workspaceDirectory: async ({}, use) => {
             await withTempDir(async dir => {
                 // Initialize a git repository there
-                await spawn('git', ['init'], { cwd: dir })
-                await spawn('git', ['config', 'user.name', 'Test User'], {
+                await runGit(['init'], { cwd: dir })
+                await runGit(['config', 'user.name', 'Test User'], {
                     cwd: dir,
                 })
-                await spawn('git', ['config', 'user.email', 'test@example.host'], { cwd: dir })
+                await runGit(['config', 'user.email', 'test@example.host'], { cwd: dir })
 
                 // Add Cody ignore
                 await fs.mkdir(path.join(dir, '.cody'), { recursive: true })
@@ -40,8 +40,8 @@ const test = baseTest
                 ])
 
                 // Commit initial files
-                await spawn('git', ['add', '.'], { cwd: dir })
-                await spawn('git', ['commit', '-m', 'Initial commit'], {
+                await runGit(['add', '.'], { cwd: dir })
+                await runGit(['commit', '-m', 'Initial commit'], {
                     cwd: dir,
                 })
 
@@ -71,17 +71,19 @@ test('commit message generation - happy path with staged changes', async ({ page
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel('index.js • Modified')
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
+    const gitChange = page.getByLabel(/index.js/).getByLabel('Stage Changes')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
-    await gitChange.hover()
-    await gitChange.getByLabel('Stage Changes').click()
+    await gitChange.click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
     await generateCommitMessageCta.hover()
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
@@ -107,13 +109,16 @@ test('commit message generation - happy path with no staged changes', async ({ p
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel('index.js • Modified')
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
+    const gitChange = page.getByLabel(/index.js/).getByLabel('Stage Changes')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
     await generateCommitMessageCta.hover()
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
@@ -139,16 +144,19 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel('ignored.js • Modified')
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('ignored.js').hover()
+    const gitChange = page.getByLabel(/ignored.js/).getByLabel('Stage Changes')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
-    await gitChange.hover()
-    await gitChange.getByLabel('Stage Changes').click()
+    await gitChange.click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await generateCommitMessageCta.hover()
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
@@ -162,3 +170,9 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
         page.getByLabel('Source Control Input').getByText('hello from the assistant')
     ).not.toBeVisible()
 })
+
+/** Run 'git' and wait for the process to exit. */
+async function runGit(args: string[], options?: any) {
+    const proc = spawn('git', args, options)
+    return new Promise(resolve => proc.on('close', resolve))
+}
