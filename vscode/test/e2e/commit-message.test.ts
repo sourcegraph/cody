@@ -71,7 +71,7 @@ test('commit message generation - happy path with staged changes', async ({ page
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel(/index.js • Modified$/)
+    const gitChange = page.getByRole('treeitem', { name: /index.js/ })
     await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
@@ -108,7 +108,7 @@ test('commit message generation - happy path with no staged changes', async ({ p
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel(/index.js • Modified$/)
+    const gitChange = page.getByRole('treeitem', { name: /index.js/ })
     await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
@@ -141,8 +141,7 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel(/ignored.js • Modified$/)
-    await gitChange.hover()
+    const gitChange = page.getByRole('treeitem', { name: /ignored.js/ })
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
