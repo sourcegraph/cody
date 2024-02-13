@@ -315,3 +315,6 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+const sourcegraphTokenRegex = /sgp_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
+export const isSourcegraphToken = (text: string): boolean => sourcegraphTokenRegex.test(text)

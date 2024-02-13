@@ -17,6 +17,7 @@ import {
     networkErrorAuthStatus,
     unauthenticatedStatus,
     type AuthStatus,
+    isSourcegraphToken,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -30,9 +31,6 @@ import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
-
-const sourcegraphTokenRegex = /sgp_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
-export const isSourcegraphToken = (text: string): boolean => sourcegraphTokenRegex.test(text)
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -457,9 +455,7 @@ function formatURL(uri: string): string | null {
 
         // Check if the URI is a sourcegraph token
         if (isSourcegraphToken(uri)) {
-            const errorMsg = 'Token is not a valid URL'
-            void vscode.window.showErrorMessage(errorMsg)
-            throw new Error(errorMsg)
+            throw new Error('Access Token is not a valid URL')
         }
 
         // Check if the URI is in the correct URL format

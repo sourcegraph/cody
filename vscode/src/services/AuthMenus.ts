@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared'
-import { isSourcegraphToken } from './AuthProvider'
+import { isSourcegraphToken } from '../chat/protocol'
 
 interface LoginMenuItem {
     id: string
