@@ -52,7 +52,7 @@ private constructor(
     }
   }
 
-  fun restoreAgentSession(agent: CodyAgent, model: String? = null) {
+  fun restoreAgentSession(agent: CodyAgent, model: ChatModel? = null) {
     val messagesToReload =
         messages
             .toList()
@@ -61,8 +61,6 @@ private constructor(
               if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
             }
 
-    val modelFromState = model?.let { ChatModel.fromDisplayNameNullable(it) }
-
     val selectedItem =
         chatPanel.modelDropdown.selectedItem?.let {
           ChatModel.fromDisplayNameNullable(it.toString())
@@ -70,7 +68,7 @@ private constructor(
     val restoreParams =
         ChatRestoreParams(
             //        TODO: Change in the agent handling chat restore with null model
-            modelFromState?.agentName ?: selectedItem?.agentName ?: DEFAULT_MODEL.agentName,
+            model?.agentName ?: selectedItem?.agentName ?: DEFAULT_MODEL.agentName,
             messagesToReload,
             UUID.randomUUID().toString())
     val newSessionId = agent.server.chatRestore(restoreParams)
@@ -355,7 +353,7 @@ private constructor(
       }
 
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        chatSession.restoreAgentSession(agent)
+        chatSession.restoreAgentSession(agent, selectedModel)
       }
 
       AgentChatSessionService.getInstance(project).addSession(chatSession)
