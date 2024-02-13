@@ -72,6 +72,7 @@ test('commit message generation - happy path with staged changes', async ({ page
 
     // Check the change is showing as a Git change
     const gitChange = page.getByLabel('index.js • Modified')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
@@ -108,6 +109,7 @@ test('commit message generation - happy path with no staged changes', async ({ p
 
     // Check the change is showing as a Git change
     const gitChange = page.getByLabel('index.js • Modified')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Activate the Cody commit message feature
@@ -140,6 +142,7 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
 
     // Check the change is showing as a Git change
     const gitChange = page.getByLabel('ignored.js • Modified')
+    await gitChange.hover()
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
