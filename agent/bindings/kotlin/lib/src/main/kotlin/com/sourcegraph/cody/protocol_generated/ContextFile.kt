@@ -9,7 +9,7 @@ data class ContextFile(
   var title: String? = null,
   var source: ContextFileSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal
   var content: String? = null,
-  var type: String? = null, // Oneof: file
+  var type: String? = null, // Oneof: symbol, file
   var symbolName: String? = null,
   var kind: SymbolKind? = null, // Oneof: class, function, method
 )

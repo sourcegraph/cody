@@ -2,6 +2,7 @@ import { scip } from './scip'
 
 export class SymbolTable {
     public table = new Map<string, scip.SymbolInformation>()
+    public simplifiedTable = new Map<string, scip.SymbolInformation>()
     public debuggingInfo: { line: string; info: scip.SymbolInformation }[] = []
     public pushDebug(info: scip.SymbolInformation): void {
         const line = new Error().stack!.split('\n')[2]
@@ -20,7 +21,22 @@ export class SymbolTable {
                 continue
             }
             this.table.set(info.symbol, info)
+            this.simplifiedTable.set(this.simplifiedSymbolSyntax(info.symbol), info)
         }
+    }
+    public canonicalSymbol(simplifiedSymbol: string): string {
+        return this.simplifiedTable.get(simplifiedSymbol)?.symbol ?? simplifiedSymbol
+    }
+
+    // Converts a global symbol like "scip-typescript npm package-name
+    // package-version descriptor" into "package-name descriptor". The motivation to do this
+    // is so that we can load
+    private simplifiedSymbolSyntax(symbol: string): string {
+        const [scipTypescript, npm, packageName, , descriptor] = symbol.split(' ')
+        if (scipTypescript !== 'scip-typescript' || npm !== 'npm') {
+            throw new TypeError(`invalid symbol: ${symbol}`)
+        }
+        return `${packageName} ${descriptor}`
     }
 
     public info(symbol: string): scip.SymbolInformation {

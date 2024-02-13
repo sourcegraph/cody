@@ -22,6 +22,7 @@ export class KotlinCodegen {
     private f: KotlinFormatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
+    public siblingDiscriminatedUnionProperties = new Map<string, string[]>()
 
     constructor(
         private readonly options: CodegenOptions,
@@ -43,13 +44,13 @@ export class KotlinCodegen {
         // TODO: infer package version from package.json
         await this.writeProtocolInterface(
             'CodyAgentServer',
-            'scip-typescript npm cody-ai 1.4.3 src/jsonrpc/`agent-protocol.ts`/ClientRequests#',
-            'scip-typescript npm cody-ai 1.4.3 src/jsonrpc/`agent-protocol.ts`/ClientNotifications#'
+            'cody-ai src/jsonrpc/`agent-protocol.ts`/ClientRequests#',
+            'cody-ai src/jsonrpc/`agent-protocol.ts`/ClientNotifications#'
         )
         await this.writeProtocolInterface(
             'CodyAgentClient',
-            'scip-typescript npm cody-ai 1.4.3 src/jsonrpc/`agent-protocol.ts`/ServerRequests#',
-            'scip-typescript npm cody-ai 1.4.3 src/jsonrpc/`agent-protocol.ts`/ServerNotifications#'
+            'cody-ai src/jsonrpc/`agent-protocol.ts`/ServerRequests#',
+            'cody-ai src/jsonrpc/`agent-protocol.ts`/ServerNotifications#'
         )
         let info = this.queue.pop()
         while (info !== undefined) {
@@ -209,7 +210,7 @@ export class KotlinCodegen {
 
         p.block(() => {
             p.sectionComment('Requests')
-            for (const request of symtab.structuralType(requests)) {
+            for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
                 // Process a JSON-RPC request signature. For example:
                 // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
                 let resultType = request.signature.value_signature.tpe.type_ref.type_arguments[1]
@@ -239,7 +240,7 @@ export class KotlinCodegen {
 
             p.line()
             p.sectionComment('Notifications')
-            for (const notification of symtab.structuralType(notifications)) {
+            for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
                 // Process a JSON-RPC request signature. For example:
                 // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
@@ -340,7 +341,15 @@ export class KotlinCodegen {
     }
     private stringConstantsFromInfo(info: scip.SymbolInformation): string[] {
         const result: string[] = []
+        const isVisited = new Set<string>()
         const visitInfo = (info: scip.SymbolInformation) => {
+            if (isVisited.has(info.symbol)) {
+                return
+            }
+            isVisited.add(info.symbol)
+            for (const sibling of this.siblingDiscriminatedUnionProperties.get(info.symbol) ?? []) {
+                visitInfo(this.symtab.info(sibling))
+            }
             if (info.signature.has_value_signature) {
                 visitType(info.signature.value_signature.tpe)
                 return
@@ -501,8 +510,16 @@ export class KotlinCodegen {
                 // types. In some cases, we are exposing VS Code  APIs that have
                 // unions like `string | MarkdownString` where we just assume
                 // the type will always be `string`.
-                const exceptionIndex = this.f.unionTypeExceptionIndex[jsonrpcMethod.symbol]
+                const exceptionIndex = this.f.unionTypeExceptionIndex.find(({ prefix }) =>
+                    jsonrpcMethod.symbol.startsWith(prefix)
+                )?.index
                 if (exceptionIndex !== undefined) {
+                    this.reporter.warn(
+                        jsonrpcMethod.symbol,
+                        `resolving unsupported union by picking type ${exceptionIndex}. ${this.debug(
+                            jsonrpcMethod
+                        )}`
+                    )
                     this.queueClassLikeType(nonNullTypes[exceptionIndex], jsonrpcMethod, kind)
                 } else {
                     throw new Error(
@@ -552,13 +569,12 @@ export class KotlinCodegen {
 
             const declarations = new Map<
                 string,
-                { info: scip.SymbolInformation; diagnostic: Diagnostic }
+                { info: scip.SymbolInformation; diagnostic: Diagnostic; siblings: string[] }
             >()
             for (const property of this.properties(jsonrpcMethod.signature.type_signature.lower_bound)) {
                 const propertyInfo = this.symtab.info(property)
-                const { info: siblingProperty, diagnostic } =
-                    declarations.get(propertyInfo.display_name) ?? {}
-                if (!siblingProperty) {
+                const sibling = declarations.get(propertyInfo.display_name)
+                if (!sibling) {
                     declarations.set(propertyInfo.display_name, {
                         info: propertyInfo,
                         diagnostic: {
@@ -570,20 +586,26 @@ export class KotlinCodegen {
                                    following properties a unique name and try running the code generator again.`,
                             additionalInformation: [],
                         },
+                        siblings: [],
                     })
-                } else if (
-                    siblingProperty &&
-                    !this.compatibleSignatures(siblingProperty, propertyInfo)
-                ) {
-                    diagnostic?.additionalInformation?.push({
+                    continue
+                }
+                const { info: siblingProperty, diagnostic, siblings } = sibling
+
+                if (!this.compatibleSignatures(siblingProperty, propertyInfo)) {
+                    diagnostic.additionalInformation?.push({
                         severity: Severity.Error,
                         symbol: property,
                         message: 'conflict here',
                     })
+                } else {
+                    siblings.push(property)
                 }
             }
+
             if (declarations.size > 0) {
-                for (const { diagnostic } of declarations.values()) {
+                for (const { info, diagnostic, siblings } of declarations.values()) {
+                    this.siblingDiscriminatedUnionProperties.set(info.symbol, siblings)
                     if (
                         diagnostic.additionalInformation &&
                         diagnostic.additionalInformation.length > 0
@@ -591,6 +613,7 @@ export class KotlinCodegen {
                         this.reporter.report(diagnostic)
                     }
                 }
+
                 this.queue.push(
                     new scip.SymbolInformation({
                         display_name: jsonrpcMethod.display_name,

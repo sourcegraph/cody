@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class WebviewMessage(
-  var command: String? = null, // Oneof: ready
+  var command: String? = null, // Oneof: initialized, event, submit, history, restoreHistory, deleteHistory, links, show-page, chatModel, get-chat-models, openFile, openLocalFileWithRange, edit, context/get-remote-search-repos, context/choose-remote-search-repo, context/remove-remote-search-repo, embeddings/index, symf/index, insert, newFile, copy, auth, abort, reload, simplified-onboarding, getUserContext, search, show-search-result, reset, attribution-search, ready
   var eventName: String? = null,
   var properties: TelemetryEventProperties? = null,
   var text: String? = null,

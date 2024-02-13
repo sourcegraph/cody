@@ -95,7 +95,9 @@ export class KotlinFormatter {
                 return this.jsonrpcTypeName(jsonrpcMethod, nonNullTypes[0], kind)
             }
 
-            const exceptionIndex = this.unionTypeExceptionIndex[jsonrpcMethod.symbol]
+            const exceptionIndex = this.unionTypeExceptionIndex.find(({ prefix }) =>
+                jsonrpcMethod.symbol.startsWith(prefix)
+            )?.index
             if (exceptionIndex !== undefined) {
                 return this.jsonrpcTypeName(jsonrpcMethod, nonNullTypes[exceptionIndex], kind)
             }
@@ -117,19 +119,13 @@ export class KotlinFormatter {
         ' src/jsonrpc/`agent-protocol.ts`/parameters0:',
         'marketingTracking0:', // Too complicated signature
     ]
-    public readonly ignoredSymbols = new Set<string>([
-        'scip-typescript npm cody-ai 1.4.3 src/jsonrpc/`agent-protocol.ts`/marketingTracking0:',
-        'scip-typescript npm @sourcegraph/telemetry 0.16.0 dist/api/`index.d.ts`/Maybe#',
-        'scip-typescript npm @sourcegraph/telemetry 0.16.0 dist/`index.d.ts`/TelemetryEventParameters#',
-        'scip-typescript npm cody-ai 1.4.3 src/completions/`logger.ts`/_opaque1:',
-        'scip-typescript npm cody-ai 1.4.3 src/completions/`logger.ts`/_opaque2:',
-        'scip-typescript npm typescript 5.3.3 lib/`lib.es5.d.ts`/Record#', // TODO
-    ])
 
-    public readonly unionTypeExceptionIndex: Record<string, number> = {
-        'scip-typescript npm @types/vscode 1.80.0 `index.d.ts`/description0:': 0,
-        'scip-typescript npm @types/vscode 1.80.0 `index.d.ts`/iconPath0:': 0,
-    }
+    // Hacky workaround: we are exposing a few tricky union types in the
+    // protocol that don't have a clean encoding in other languages. We use this
+    // list to manually pick one of the types in the union type.
+    public readonly unionTypeExceptionIndex: { prefix: string; index: number }[] = [
+        { prefix: 'scip-typescript npm @types/vscode ', index: 0 },
+    ]
 
     public isRecord(symbol: string): boolean {
         return (
