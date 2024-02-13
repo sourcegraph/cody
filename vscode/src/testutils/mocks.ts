@@ -13,13 +13,13 @@ import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sour
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Uri } from './uri'
+import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 export { Uri } from './uri'
 
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 export { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 export { Disposable } from './Disposable'
-import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -809,6 +809,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
+    experimentalCommitMessage: true,
     experimentalSimpleChatContext: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
