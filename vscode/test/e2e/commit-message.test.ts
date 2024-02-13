@@ -79,8 +79,8 @@ test('commit message generation - happy path with staged changes', async ({ page
     await gitChange.getByLabel('Stage Changes').click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.hover()
     await generateCommitMessageCta.click()
 
@@ -111,8 +111,8 @@ test('commit message generation - happy path with no staged changes', async ({ p
     await expect(gitChange).toBeVisible()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.hover()
     await generateCommitMessageCta.click()
 
@@ -147,8 +147,8 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
     await gitChange.getByLabel('Stage Changes').click()
 
     // Activate the Cody commit message feature
-    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
-    expect(generateCommitMessageCta).toBeVisible()
+    const generateCommitMessageCta = page.getByLabel('Generate Commit Message (Cody)')
+    await expect(generateCommitMessageCta).toBeVisible()
     await generateCommitMessageCta.click()
 
     const expectedEvents = [
