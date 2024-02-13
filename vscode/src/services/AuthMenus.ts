@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared'
+import { isSourcegraphToken } from './AuthProvider'
 
 interface LoginMenuItem {
     id: string
@@ -60,6 +61,13 @@ export async function showInstanceURLInputBox(title: string): Promise<string | u
         placeHolder: 'https://sourcegraph.example.com',
         password: false,
         ignoreFocusOut: true,
+        // valide input to ensure the user is not entering a token as URL
+        validateInput: (value: string) => {
+            if (isSourcegraphToken(value)) {
+                return 'Invalid input. Please enter a valid URL'
+            }
+            return null
+        },
     })
 
     if (typeof result === 'string') {

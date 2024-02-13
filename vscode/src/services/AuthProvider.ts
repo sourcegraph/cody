@@ -31,6 +31,9 @@ import { telemetryRecorder } from './telemetry-v2'
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
 
+const sourcegraphTokenRegex = /sgp_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
+export const isSourcegraphToken = (text: string): boolean => sourcegraphTokenRegex.test(text)
+
 export class AuthProvider {
     private endpointHistory: string[] = []
 
@@ -447,21 +450,30 @@ export function isNetworkError(error: Error): boolean {
 }
 
 function formatURL(uri: string): string | null {
-    if (!uri) {
-        return null
-    }
-    // Check if the URI is in the correct URL format
-    // Add missing https:// if needed
-    if (!uri.startsWith('http')) {
-        uri = `https://${uri}`
-    }
     try {
+        if (!uri) {
+            return null
+        }
+
+        // Check if the URI is a sourcegraph token
+        if (isSourcegraphToken(uri)) {
+            const errorMsg = 'Token is not a valid URL'
+            void vscode.window.showErrorMessage(errorMsg)
+            throw new Error(errorMsg)
+        }
+
+        // Check if the URI is in the correct URL format
+        // Add missing https:// if needed
+        if (!uri.startsWith('http')) {
+            uri = `https://${uri}`
+        }
+
         const endpointUri = new URL(uri)
         return endpointUri.href
-    } catch {
-        console.error('Invalid URL')
+    } catch (error) {
+        console.error('Invalid URL: ', error)
+        return null
     }
-    return null
 }
 
 async function showAuthResultMessage(

@@ -4,6 +4,7 @@ import type { Memento } from 'vscode'
 import type { ChatHistory, ChatInputHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import type { AuthStatus } from '../chat/protocol'
+import { isSourcegraphToken } from './AuthProvider'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
@@ -60,6 +61,12 @@ class LocalStorage {
 
     public async saveEndpoint(endpoint: string): Promise<void> {
         if (!endpoint) {
+            return
+        }
+        // Do not save sourcegraph tokens as the last used endpoint
+        // Clear last used endpoint if it is a sourcegraph token
+        if (isSourcegraphToken(endpoint)) {
+            this.deleteEndpoint()
             return
         }
         try {
