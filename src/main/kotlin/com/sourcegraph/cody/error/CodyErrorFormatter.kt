@@ -7,7 +7,6 @@ object CodyErrorFormatter {
               "Plugin version" to error.pluginVersion,
               "IDE version" to error.ideVersion,
               "Additional information" to error.additionalInfo,
-              "Exception" to error.title,
               "Stacktrace" to error.stacktrace)
           .filterValues { it != null }
           .map { toLabeledCodeBlock(it.key, it.value!!) }

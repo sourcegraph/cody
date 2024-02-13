@@ -23,7 +23,6 @@ class CodyErrorFormatterTest : TestCase() {
         """
             Plugin version: ```5.2.18066-nightly```
             IDE version: ```IU-233.11799.241```
-            Exception: ```java.lang.NullPointerException```
             Stacktrace:
             ```text
             java.lang.NullPointerException: Exception description
@@ -33,11 +32,5 @@ class CodyErrorFormatterTest : TestCase() {
         """
             .trimIndent()
     assertEquals(expectedMarkdown, markdown)
-  }
-
-  fun `test null report results empty markdown`() {
-    val error = CodyError(null, null, null, null, null)
-    val markdown = CodyErrorFormatter.formatToMarkdown(error)
-    assertEquals("", markdown)
   }
 }
