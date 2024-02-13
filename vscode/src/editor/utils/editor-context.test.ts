@@ -24,7 +24,7 @@ describe('getFileContextFiles', () => {
                 ctime: 1,
                 mtime: 1,
                 size: 1,
-                isDirectory: () => !isFile,
+                isDirectory: () => false,
                 isFile: () => isFile,
                 isSymbolicLink: () => !isFile,
                 uri,
@@ -40,8 +40,8 @@ describe('getFileContextFiles', () => {
             .mockResolvedValueOnce(relativePaths.map(f => testFileUri(f)))
 
         for (const relativePath of relativePaths) {
-            const uri = testFileUri(relativePath)
-            setFileStat(uri)
+            const isFile = relativePath !== 'symlink'
+            setFileStat(testFileUri(relativePath), isFile)
         }
     }
 
@@ -89,6 +89,16 @@ describe('getFileContextFiles', () => {
             "main.dart",
             "abcdefghijbklmn.dart",
           ]
+        `)
+
+        expect(vscode.workspace.findFiles).toBeCalledTimes(1)
+    })
+
+    it('do not return non-file (e.g. symlinks) result', async () => {
+        setFiles(['symlink'])
+
+        expect(await runSearch('symlink', 5)).toMatchInlineSnapshot(`
+          []
         `)
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
