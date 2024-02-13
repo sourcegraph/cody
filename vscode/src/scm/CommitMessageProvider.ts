@@ -63,7 +63,12 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'clicked')
-        const humanPrompt = await this.getHumanPrompt(changes)
+
+        // Filter out any empty changes.
+        // The Git extension seems to provide empty strings for unstaged changes.
+        const diffs = changes.filter(diff => diff.trim().length > 0)
+
+        const humanPrompt = await this.getHumanPrompt(diffs)
         if (!humanPrompt) {
             return Promise.reject()
         }
