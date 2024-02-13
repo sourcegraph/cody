@@ -28,6 +28,7 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { completionProviderConfig } from './completion-provider-config'
+import { sleep } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -447,8 +448,4 @@ function createCompletionProviderTracer(
             result: data => tracer({ completionProviderCallResult: data }),
         }
     )
-}
-
-async function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
 }
