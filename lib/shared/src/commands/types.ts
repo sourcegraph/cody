@@ -17,7 +17,14 @@ export enum DefaultEditCommands {
 
 // The blueprint of a Cody Custom Command
 export interface CodyCommand {
-    slashCommand: string
+    /**
+     * @deprecated Use 'commandKey' instead.
+     */
+    slashCommand?: string
+    /**
+     * key of the command, e.g. 'smell' for Code Smell
+     */
+    key: string
     prompt: string
     description?: string
     context?: CodyCommandContext

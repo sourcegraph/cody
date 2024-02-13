@@ -11,7 +11,8 @@ import {
  *  - e.g. command:cody.welcome: VS Code command scheme exception we add to support directly linking to the welcome guide from within the chat.
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}
  */
-const ALLOWED_URI_REGEXP = /^((https?|vscode):\/\/[^\s#$./?].\S*|command:(_cody.vscode.open\?.*))$/i
+const ALLOWED_URI_REGEXP =
+    /^((https?|vscode):\/\/[^\s#$./?].\S*|command:cody.*|command:(_cody.vscode.open\?.*))$/i
 
 const DOMPURIFY_CONFIG = {
     ALLOWED_TAGS: [

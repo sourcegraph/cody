@@ -1,30 +1,13 @@
 import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from '../menus/items'
-import { CustomCommandsManager } from './custom-commands'
+import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
 import { getDefaultCommandsMap } from '../utils/get-commands'
+import { CodyCommandMenuItems } from '..'
 
-const editorCommands: CodyCommand[] = [
-    {
-        description: ASK_QUESTION_COMMAND.description,
-        prompt: ASK_QUESTION_COMMAND.slashCommand,
-        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
-        mode: 'ask',
-        type: 'default',
-    },
-    {
-        description: EDIT_COMMAND.description,
-        prompt: EDIT_COMMAND.slashCommand,
-        slashCommand: EDIT_COMMAND.slashCommand,
-        mode: 'edit',
-        type: 'default',
-    },
-]
-
-export const vscodeDefaultCommands = getDefaultCommandsMap(editorCommands)
+export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.
@@ -49,7 +32,8 @@ export class CommandsProvider implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
-            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config'))
+            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
         )
 
         this.customCommandsStore.init()
@@ -59,6 +43,10 @@ export class CommandsProvider implements vscode.Disposable {
     private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
         const customCommands = await this.getCustomCommands()
         const commandArray = [...customCommands].map(command => command[1])
+        if (type === 'custom' && !commandArray.length) {
+            return showCommandMenu('config', commandArray)
+        }
+
         await showCommandMenu(type, commandArray)
     }
 

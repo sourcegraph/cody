@@ -3,6 +3,7 @@ import type { FeatureFlag } from '@sourcegraph/cody-shared'
 import { releaseType } from '../release'
 import { version } from '../version'
 import { getIgnoreSidebarItems } from './cody-ignore'
+import { getCommandTreeItems } from '../commands'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat' | 'ignore'
 
@@ -27,7 +28,7 @@ export interface CodySidebarTreeItem {
 export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] {
     switch (type) {
         case 'command':
-            return commandsItems
+            return getCommandTreeItems()
         case 'support':
             return supportItems
         case 'ignore':
@@ -87,50 +88,5 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Account',
         icon: 'account',
         command: { command: 'cody.sidebar.account' },
-    },
-]
-
-const commandsItems: CodySidebarTreeItem[] = [
-    {
-        title: 'Chat',
-        icon: 'comment',
-        description: 'Ask Cody a question',
-        command: { command: 'cody.sidebar.click', args: ['ask', 'cody.chat.panel.new'] },
-    },
-    {
-        title: 'Document',
-        icon: 'book',
-        description: 'Add code documentation',
-        command: { command: 'cody.sidebar.click', args: ['doc', 'cody.command.document-code'] },
-    },
-    {
-        title: 'Edit',
-        icon: 'wand',
-        command: { command: 'cody.sidebar.click', args: ['edit', 'cody.command.edit-code'] },
-        description: 'Edit code with instructions',
-    },
-    {
-        title: 'Explain',
-        icon: 'file-binary',
-        command: { command: 'cody.sidebar.click', args: ['explain', 'cody.command.explain-code'] },
-        description: 'Explain code',
-    },
-    {
-        title: 'Smell',
-        icon: 'checklist',
-        command: { command: 'cody.sidebar.click', args: ['smell', 'cody.command.smell-code'] },
-        description: 'Identify code smells',
-    },
-    {
-        title: 'Test',
-        icon: 'package',
-        command: { command: 'cody.sidebar.click', args: ['test', 'cody.command.unit-tests'] },
-        description: 'Generate unit tests',
-    },
-    {
-        title: 'Custom',
-        icon: 'tools',
-        command: { command: 'cody.sidebar.click', args: ['custom', 'cody.menu.custom-commands'] },
-        description: 'Custom commands',
     },
 ]
