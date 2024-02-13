@@ -55,7 +55,13 @@ class LocalStorage {
     }
 
     public getEndpoint(): string | null {
-        return this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
+        const endpoint = this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
+        // Clear last used endpoint if it is a Sourcegraph token
+        if (endpoint && isSourcegraphToken(endpoint)) {
+            this.deleteEndpoint()
+            return null
+        }
+        return endpoint
     }
 
     public async saveEndpoint(endpoint: string): Promise<void> {
@@ -64,9 +70,7 @@ class LocalStorage {
         }
         try {
             // Do not save sourcegraph tokens as the last used endpoint
-            // Clear last used endpoint if it is a sourcegraph token
             if (isSourcegraphToken(endpoint)) {
-                this.deleteEndpoint()
                 return
             }
 
@@ -91,6 +95,11 @@ class LocalStorage {
     }
 
     private async addEndpointHistory(endpoint: string): Promise<void> {
+        // Do not save sourcegraph tokens as endpoint
+        if (isSourcegraphToken(endpoint)) {
+            return
+        }
+
         const history = this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
         const historySet = new Set(history)
         historySet.delete(endpoint)
