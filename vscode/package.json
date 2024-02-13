@@ -821,8 +821,8 @@
                     "order": 12,
                     "title": "Cody Command Hints",
                     "type": "boolean",
-                    "markdownDescription": "Enable hints for Edit and Chat shortcuts, displayed alongside editor selections.",
-                    "default": false
+                    "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+                    "default": true
                 },
                 "cody.experimental.simpleChatContext": {
                     "order": 99,

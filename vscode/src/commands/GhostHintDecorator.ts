@@ -39,12 +39,16 @@ export async function getGhostHintEnablement(): Promise<boolean> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
 
-    // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
-    return (
-        configSettings?.workspaceValue ??
-        configSettings?.globalValue ??
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
-    )
+    const userSetConfigValue = configSettings?.workspaceValue ?? configSettings?.globalValue
+
+    if (userSetConfigValue !== undefined) {
+        // Always prefer any value that has been explicitly set by the user.
+        // This ensures users can still override the default behaviour regardless of any A/B test.
+        return userSetConfigValue
+    }
+
+    // Return the default value as determined by the A/B test.
+    return featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
 }
 
 /**
