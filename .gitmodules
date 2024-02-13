@@ -1,4 +1,0 @@
-[submodule "agent/bindings/scip-typescript"]
-	path = agent/bindings/scip-typescript
-	url = https://github.com/sourcegraph/scip-typescript
-	branch = olafurpg/signatures
