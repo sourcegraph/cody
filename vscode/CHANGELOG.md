@@ -7,6 +7,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Cody can now generate commit messages from your changes. Triggered through the input field in the VS Code "Source Control" sidebar. [pull/2306](https://github.com/sourcegraph/cody/pull/2306)
+
+### Fixed
+
+### Changed
+
+## [1.4.4]
+
+### Added
+
 - Chat: Displays warnings for large @-mentioned files during selection. [pull/3118](https://github.com/sourcegraph/cody/pull/3118)
 
 ### Fixed
