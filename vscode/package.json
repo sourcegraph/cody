@@ -852,7 +852,7 @@
                     "order": 99,
                     "type": "boolean",
                     "default": true,
-                    "markdownDescription": "Adds a button to the SCM input field to generate a relevant commit message for the current changes."
+                    "markdownDescription": "Enable Cody to appear in the Source Control input field, to generate a relevant commit message from your changes."
                 },
                 "cody.debug.enable": {
                     "order": 99,

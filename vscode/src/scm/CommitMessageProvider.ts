@@ -63,7 +63,12 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'clicked')
-        const humanPrompt = await this.getHumanPrompt(changes)
+
+        // Filter out any empty changes.
+        // The Git extension seems to provide empty strings for unstaged changes.
+        const diffs = changes.filter(diff => diff.trim().length > 0)
+
+        const humanPrompt = await this.getHumanPrompt(diffs)
         if (!humanPrompt) {
             return Promise.reject()
         }
@@ -201,12 +206,16 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         }
 
         if (!diffs?.length) {
+            console.log('Getting from cli')
             diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
         }
 
         if (diffs.length === 0) {
+            console.log('No diffs, even from the cli')
             return { isEmpty: true, isTruncated: false, prompt: '' }
         }
+
+        console.log('Got diffs', diffs)
 
         const allowedDiffs = diffs.filter(diff => {
             const files = parseDiff(diff)

@@ -24,12 +24,28 @@ const test = baseTest
             await withTempDir(async dir => {
                 // Initialize a git repository there
                 await spawn('git', ['init'], { cwd: dir })
+                await spawn('git', ['config', 'user.name', 'Test User'], {
+                    cwd: dir,
+                })
+                await spawn('git', ['config', 'user.email', 'test@example.host'], { cwd: dir })
 
                 // Add Cody ignore
                 await fs.mkdir(path.join(dir, '.cody'), { recursive: true })
                 await fs.writeFile(path.join(dir, '.cody', 'ignore'), 'ignored.js')
 
-                // Add some content
+                // Add empty files to change later
+                await Promise.all([
+                    fs.writeFile(path.join(dir, 'index.js'), ''),
+                    fs.writeFile(path.join(dir, 'ignored.js'), ''),
+                ])
+
+                // Commit initial files
+                await spawn('git', ['add', '.'], { cwd: dir })
+                await spawn('git', ['commit', '-m', 'Initial commit'], {
+                    cwd: dir,
+                })
+
+                // Add some content to try to commit in our tests
                 await Promise.all([
                     fs.writeFile(path.join(dir, 'index.js'), '// Hello World'),
                     fs.writeFile(path.join(dir, 'ignored.js'), '// Ignore me!'),
@@ -44,7 +60,7 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-test('commit message generation - happy path', async ({ page, sidebar }) => {
+test('commit message generation - happy path with staged changes', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -55,12 +71,44 @@ test('commit message generation - happy path', async ({ page, sidebar }) => {
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel('index.js, Untracked')
+    const gitChange = page.getByLabel('index.js • Modified')
     await expect(gitChange).toBeVisible()
 
     // Stage Git change
     await gitChange.hover()
     await gitChange.getByLabel('Stage Changes').click()
+
+    // Activate the Cody commit message feature
+    const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
+    expect(generateCommitMessageCta).toBeVisible()
+    await generateCommitMessageCta.hover()
+    await generateCommitMessageCta.click()
+
+    const expectedEvents = [
+        'CodyVSCodeExtension:command:generateCommitMessage:clicked',
+        'CodyVSCodeExtension:command:generateCommitMessage:executed',
+    ]
+    await assertEvents(mockServer.loggedEvents, expectedEvents)
+
+    // Check generated content is displayed in the source control input
+    await expect(
+        page.getByLabel('Source Control Input').getByText('hello from the assistant')
+    ).toBeVisible()
+})
+
+test('commit message generation - happy path with no staged changes', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the Source Control view
+    await page
+        .getByLabel(/Source Control/)
+        .nth(2)
+        .click()
+
+    // Check the change is showing as a Git change
+    const gitChange = page.getByLabel('index.js • Modified')
+    await expect(gitChange).toBeVisible()
 
     // Activate the Cody commit message feature
     const generateCommitMessageCta = await page.getByLabel('Generate Commit Message (Cody)')
@@ -91,7 +139,7 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
         .click()
 
     // Check the change is showing as a Git change
-    const gitChange = page.getByLabel('ignored.js, Untracked')
+    const gitChange = page.getByLabel('ignored.js • Modified')
     await expect(gitChange).toBeVisible()
 
     // Stage Git change

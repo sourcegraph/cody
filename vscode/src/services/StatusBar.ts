@@ -158,6 +158,13 @@ export function createStatusBar(): CodyStatusBar {
                 c => c.experimentalSymfContext,
                 false
             ),
+            await createFeatureToggle(
+                'Commit Messages',
+                'Experimental',
+                'Enable Cody to appear in the Source Control input field, to generate a relevant commit message from your changes.',
+                'cody.experimental.commitMessage',
+                c => c.experimentalCommitMessage
+            ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
                 label: '$(gear) Cody Extension Settings',
