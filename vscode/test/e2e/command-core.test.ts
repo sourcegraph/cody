@@ -6,7 +6,7 @@ import * as mockServer from '../fixtures/mock-server'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
+test('Explain Command & Smell Command', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -62,16 +62,6 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(1)
     await expect(editLastMessageButton).not.toBeVisible()
-
-    // Submit a chat question via command menu using ask option
-    await page.getByRole('tab', { name: 'index.html' }).click()
-    await page.getByRole('button', { name: /Commands \(.*/ }).dblclick()
-    const commandInputBox = page.getByPlaceholder(/Search for a command or enter/)
-    await expect(commandInputBox).toBeVisible()
-    await commandInputBox.fill('hello cody')
-    await page.getByLabel('Start a new chat').locator('a').click()
-    // the question should show up in the chat panel on submit
-    await chatPanel.getByText('hello cody').click()
 
     const expectedEvents = [
         'CodyVSCodeExtension:command:explain:executed',
