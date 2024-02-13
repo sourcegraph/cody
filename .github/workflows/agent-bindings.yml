@@ -1,5 +1,10 @@
 name: agent-bindings
 on:
+  pull_request:
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
   push:
     paths:
       - '**.ts'
