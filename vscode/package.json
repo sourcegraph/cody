@@ -517,7 +517,7 @@
             },
             {
                 "command": "cody.menu.custom-commands",
-                "key": "alt+c+shift",
+                "key": "shift+alt+c",
                 "when": "cody.activated"
             },
             {

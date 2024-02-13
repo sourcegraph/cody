@@ -87,18 +87,24 @@ export async function showCommandMenu(
         })
 
         quickPick.onDidChangeValue(value => {
-            const commandKey = value.split(' ')[0]
-            const isCommand = items.find(item => item.label === commandKey)
-            if (commandKey && isCommand) {
-                isCommand.alwaysShow = true
-                quickPick.items = [isCommand]
-                return
-            }
+            if (type === 'default') {
+                const commandKey = value.split(' ')[0]
+                const isCommand = items.find(item => item.label === commandKey)
+                if (commandKey && isCommand) {
+                    isCommand.alwaysShow = true
+                    quickPick.items = [isCommand]
+                    return
+                }
 
-            if (value) {
-                quickPick.items = [CommandMenuOption.chat, CommandMenuOption.edit, ...items]
-            } else {
-                quickPick.items = items
+                if (value) {
+                    quickPick.items = [
+                        CommandMenuOption.chat,
+                        CommandMenuOption.edit,
+                        ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
+                    ]
+                } else {
+                    quickPick.items = items
+                }
             }
         })
 
