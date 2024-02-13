@@ -316,5 +316,8 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
-const sourcegraphTokenRegex = /sgp_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
+// Provide backward compatibility for the old token regex
+// Details: https://docs.sourcegraph.com/dev/security/secret_formats
+const sourcegraphTokenRegex =
+    /^(sgp_(?:[a-fA-F0-9]{16}|local)_[a-fA-F0-9]{40}|sgp_[a-fA-F0-9]{40}|[a-fA-F0-9]{40}|sgd_[a-fA-F0-9]{64}|slk_[a-fA-F0-9]{64}|sgs_[a-fA-F0-9]{64})$/
 export const isSourcegraphToken = (text: string): boolean => sourcegraphTokenRegex.test(text)
