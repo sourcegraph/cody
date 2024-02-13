@@ -889,7 +889,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             className={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            isFocusd={inputFocus}
+                            isFocusd={isWebviewActive && inputFocus}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
@@ -901,7 +901,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             chatModels={chatModels}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
-                            inputCaretPosition={inputCaretPosition}
+                            inputCaretPosition={isWebviewActive ? inputCaretPosition : undefined}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>
