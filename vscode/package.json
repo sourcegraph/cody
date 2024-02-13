@@ -848,6 +848,12 @@
                     "markdownDescription": "Enable OpenTelemetry tracing",
                     "default": false
                 },
+                "cody.experimental.commitMessage": {
+                    "order": 99,
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Adds a button to the SCM input field to generate a relevant commit message for the current changes."
+                },
                 "cody.debug.enable": {
                     "order": 99,
                     "type": "boolean",
@@ -1074,6 +1080,7 @@
         "lru-cache": "^10.0.0",
         "mkdirp": "^3.0.1",
         "os-browserify": "^0.3.0",
+        "parse-diff": "^0.11.1",
         "socks-proxy-agent": "^8.0.1",
         "unzipper": "^0.10.14",
         "uuid": "^9.0.0",

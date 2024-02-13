@@ -13,6 +13,7 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -697,58 +698,60 @@ describe('Agent', () => {
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                    `
-                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+                  " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
-                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
+                  Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
 
                   \`\`\`typescript
-                  // src/animal.test.ts
+                  import { expect } from 'vitest'
 
-                  import { Animal } from './animal';
+                  import { describe, it } from 'vitest'
 
-                  describe('Animal interface', () => {
+                  import { Animal } from './animal'
 
-                    it('should have a name property', () => {
+                  describe('Animal', () => {
+
+                    it('has name property', () => {
                       const animal: Animal = {
                         name: 'Cat',
-                        makeAnimalSound: () => '',
+                        makeAnimalSound() {
+                          return 'Meow'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.name).toBeDefined();
-                    });
+                      expect(animal.name).toEqual('Cat')
+                    })
 
-                    it('should have a makeAnimalSound method', () => {
+                    it('has makeAnimalSound method', () => {
                       const animal: Animal = {
                         name: 'Dog',
-                        makeAnimalSound: () => 'Woof',
+                        makeAnimalSound() {
+                          return 'Woof'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.makeAnimalSound).toBeDefined();
-                      expect(typeof animal.makeAnimalSound).toBe('function');
-                    });
+                      expect(animal.makeAnimalSound()).toEqual('Woof')
+                    })
 
-                    it('should have an isMammal property', () => {
+                    it('has isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound: () => 'Hiss',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
                         isMammal: false
-                      };
+                      }
 
-                      expect(animal.isMammal).toBeDefined();
-                      expect(typeof animal.isMammal).toBe('boolean');
-                    });
-
-                  });
+                      expect(animal.isMammal).toEqual(false)
+                    })
+                  })
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
-                `,
-                    explainPollyError
-                )
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
+                `)
             },
             30_000
         )
@@ -974,6 +977,163 @@ describe('Agent', () => {
                 `)
             )
         })
+    })
+
+    describe('Custom Commands', () => {
+        it('commands/custom, chat command, open tabs context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            // Note: The test editor has all the files opened from previous tests as open tabs,
+            // so we will need to open a new file that has not been opened before,
+            // to make sure this context type is working.
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            await client.openFile(trickyLogicUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/countTabs',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " So far you have shared code context from these files:
+
+              - src/trickyLogic.ts
+              - src/TestLogger.ts
+              - src/TestClass.ts
+              - src/sum.ts
+              - src/squirrel.ts
+              - src/multiple-selections.ts
+              - src/example.test.ts
+              - src/animal.ts
+              - .cody/ignore"
+            `)
+        }, 30_000)
+
+        it('commands/custom, chat command, adds argument', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/translate Python',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " Here is the TypeScript code translated to Python:
+
+              \`\`\`python
+              class Animal:
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
+
+                  def make_animal_sound(self) -> str:
+                      pass
+              \`\`\`
+
+              The key differences:
+
+              - Interfaces don't exist in Python, so Animal is translated to a class
+              - The interface properties become initialized attributes in the __init__ method
+              - The interface method becomes a method in the class
+              - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
+
+              Let me know if you have any other questions!"
+            `)
+        }, 30_000)
+
+        it('commands/custom, chat command, no context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/none',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
+        }, 30_000)
+
+        // The context files are presented in an order in the CI that is different
+        // than the order shown in recordings when on Windows, causing it to fail.
+        it('commands/custom, chat command, current directory context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/countDirFiles',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
+            expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
+            expect(reply).toMatchInlineSnapshot(`
+              " You have shared 7 file contexts with me so far:
+
+              1. src/trickyLogic.ts
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/sum.ts
+              5. src/squirrel.ts
+              6. src/multiple-selections.ts
+              7. src/example.test.ts"
+            `)
+        }, 30_000)
+
+        it('commands/custom, edit command, insert mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri, { removeCursor: false })
+            const result = (await client.request('commands/custom', {
+                key: '/hello',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(sumUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "/** hello */
+              export function sum(a: number, b: number): number {
+                  /* CURSOR */
+              }
+              "
+            `)
+        }, 30_000)
+
+        it('commands/custom, edit command, edit mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/newField',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(animalUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "/* SELECTION_START */
+              export interface Animal {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void {
+                      console.log(this.name)
+                  }
+              }
+              /* SELECTION_END */
+
+              "
+            `)
+        }, 30_000)
     })
 
     describe('Progress bars', () => {

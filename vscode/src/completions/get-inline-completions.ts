@@ -282,6 +282,30 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
+    const requestParams: RequestParams = {
+        document,
+        docContext,
+        position,
+        selectedCompletionInfo,
+        abortSignal,
+    }
+
+    const cachedResult = requestManager.checkCache({
+        requestParams,
+        isCacheEnabled: triggerKind !== TriggerKind.Manual,
+    })
+    if (cachedResult) {
+        const { completions, source } = cachedResult
+
+        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+
+        return {
+            logId,
+            items: completions,
+            source,
+        }
+    }
+
     const debounceTime =
         triggerKind !== TriggerKind.Automatic
             ? 0
@@ -296,6 +320,16 @@ async function doGetInlineCompletions(
     if (waitInterval > 0) {
         await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
     }
+
+    // Debounce to avoid firing off too many network requests as the user is still typing.
+    await wrapInActiveSpan('autocomplete.debounce', async () => {
+        const interval =
+            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+            (artificialDelay ?? 0)
+        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
+            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        }
+    })
 
     // We don't need to make a request at all if the signal is already aborted after the debounce.
     if (abortSignal?.aborted) {
@@ -345,14 +379,6 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
-
-    const requestParams: RequestParams = {
-        document,
-        docContext,
-        position,
-        selectedCompletionInfo,
-        abortSignal,
-    }
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({

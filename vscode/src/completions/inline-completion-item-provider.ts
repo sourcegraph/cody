@@ -441,15 +441,7 @@ export class InlineCompletionItemProvider
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
-                // If the completion callbacks makes it this far, it is going to be displayed on the
-                // client (for VS Code we have already run the did show handler). However, since we
-                // are still inside the callback, we can add some final data to the span and decide
-                // wether to sample it or not.
-                markSpanAsSampled(
-                    span,
-                    result.source,
-                    completionProviderConfig.getPrefetchedFlag(FeatureFlag.CodyAutocompleteTracing)
-                )
+                addExposedExperimentsToSpan(span, result.source)
 
                 return autocompleteResult
             } catch (error) {
@@ -793,18 +785,9 @@ function onlyCompletionWidgetSelectionChanged(
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
 }
 
-function markSpanAsSampled(
-    span: Span,
-    source: InlineCompletionsResultSource,
-    tracingFlagEnabled: boolean
-): void {
+function addExposedExperimentsToSpan(span: Span, source: InlineCompletionsResultSource): void {
     // Add exposed experiments at the very end to make sure we include experiments that the user is
     // being exposed to while the completion was generated
     span.setAttributes(featureFlagProvider.getExposedExperiments())
     span.setAttributes(getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())) as any)
-
-    const shouldSample = tracingFlagEnabled && source !== InlineCompletionsResultSource.HotStreak
-    if (shouldSample) {
-        span.setAttribute('sampled', true)
-    }
 }

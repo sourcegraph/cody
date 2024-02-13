@@ -10,6 +10,7 @@ import { InlineCompletionsResultSource, TriggerKind } from './get-inline-complet
 import * as CompletionLogger from './logger'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 
 const defaultArgs = {
     multiline: false,
@@ -46,7 +47,8 @@ const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItem
 describe('logger', () => {
     let logSpy: MockInstance
     let recordSpy: MockInstance
-    beforeEach(() => {
+    beforeEach(async () => {
+        await initCompletionProviderConfig({})
         logSpy = vi.spyOn(telemetryService, 'log')
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
