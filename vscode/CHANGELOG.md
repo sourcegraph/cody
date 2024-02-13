@@ -12,6 +12,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Autocomplete: Removes the latency for cached completions. [https://github.com/sourcegraph/cody/pull/3138](https://github.com/sourcegraph/cody/pull/3138)
 - Autocomplete: Enable the recent jaccard similarity improvements by default. [pull/3135](https://github.com/sourcegraph/cody/pull/3135)
 
 ## [1.4.3]

@@ -282,6 +282,30 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
+    const requestParams: RequestParams = {
+        document,
+        docContext,
+        position,
+        selectedCompletionInfo,
+        abortSignal,
+    }
+
+    const cachedResult = requestManager.checkCache({
+        requestParams,
+        isCacheEnabled: triggerKind !== TriggerKind.Manual,
+    })
+    if (cachedResult) {
+        const { completions, source } = cachedResult
+
+        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+
+        return {
+            logId,
+            items: completions,
+            source,
+        }
+    }
+
     // Debounce to avoid firing off too many network requests as the user is still typing.
     await wrapInActiveSpan('autocomplete.debounce', async () => {
         const interval =
@@ -333,14 +357,6 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
-
-    const requestParams: RequestParams = {
-        document,
-        docContext,
-        position,
-        selectedCompletionInfo,
-        abortSignal,
-    }
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({
