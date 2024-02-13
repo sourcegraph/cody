@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { getContextRange } from '../../../doc-context-getters'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
-
-import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
 import { VSCodeDocumentHistory, type DocumentHistory } from './history'
+
+import { bestJaccardMatches, type JaccardMatch } from './bestJaccardMatch'
 import { lastNLines } from '../../../text-processing'
 
 /**
@@ -17,11 +18,23 @@ import { lastNLines } from '../../../text-processing'
 const SNIPPET_WINDOW_SIZE = 50
 
 /**
+ * Limits the number of jaccard windows that are fetched for a single file. This is mostly added to
+ * avoid large files taking up too much compute time and to avoid a single file to take up too much
+ * of the whole context window.
+ */
+const MAX_MATCHES_PER_FILE = 20
+
+/**
  * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local
  * editor content (open tabs and file history) to find relevant code snippets based on the current
  * editor prefix.
  */
 export class JaccardSimilarityRetriever implements ContextRetriever {
+    constructor(
+        private snippetWindowSize: number = SNIPPET_WINDOW_SIZE,
+        private maxMatchesPerFile: number = MAX_MATCHES_PER_FILE
+    ) {}
+
     public identifier = 'jaccard-similarity'
     private history = new VSCodeDocumentHistory()
 
@@ -29,18 +42,43 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
         document,
         docContext,
         abortSignal,
-    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
-        const targetText = lastNLines(docContext.prefix, SNIPPET_WINDOW_SIZE)
+    }: ContextRetrieverOptions): Promise<JaccardMatchWithFilename[]> {
+        const targetText = lastNLines(docContext.prefix, this.snippetWindowSize)
         const files = await getRelevantFiles(document, this.history)
+
+        const contextRange = getContextRange(document, docContext)
+        const contextLineRange = { start: contextRange.start.line, end: contextRange.end.line }
 
         const matches: JaccardMatchWithFilename[] = []
         for (const { uri, contents } of files) {
-            const match = bestJaccardMatch(targetText, contents, SNIPPET_WINDOW_SIZE)
-            if (!match || abortSignal?.aborted) {
+            if (abortSignal?.aborted) {
                 continue
             }
+            const fileMatches = bestJaccardMatches(
+                targetText,
+                contents,
+                this.snippetWindowSize,
+                this.maxMatchesPerFile
+            )
 
-            matches.push({ ...match, uri })
+            // Ignore matches with 0 overlap to our source file
+            const relatedMatches = fileMatches.filter(match => match.score > 0)
+
+            for (const match of relatedMatches) {
+                if (
+                    uri.toString() === document.uri.toString() &&
+                    startOrEndOverlapsLineRange(
+                        uri,
+                        { start: match.startLine, end: match.endLine },
+                        document.uri,
+                        contextLineRange
+                    )
+                ) {
+                    continue
+                }
+
+                matches.push({ ...match, uri })
+            }
         }
 
         matches.sort((a, b) => b.score - a.score)
@@ -87,11 +125,6 @@ async function getRelevantFiles(
     }
 
     function addDocument(document: vscode.TextDocument): void {
-        if (document.uri.toString() === currentDocument.uri.toString()) {
-            // omit current file
-            return
-        }
-
         // Only add files and VSCode user settings.
         if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
             return
@@ -182,4 +215,22 @@ async function getRelevantFiles(
         })
     )
     return files
+}
+
+/**
+ * @returns true if range A overlaps range B
+ */
+function startOrEndOverlapsLineRange(
+    uriA: vscode.Uri,
+    lineRangeA: { start: number; end: number },
+    uriB: vscode.Uri,
+    lineRangeB: { start: number; end: number }
+): boolean {
+    if (uriA.toString() !== uriB.toString()) {
+        return false
+    }
+    return (
+        (lineRangeA.start >= lineRangeB.start && lineRangeA.start <= lineRangeB.end) ||
+        (lineRangeA.end >= lineRangeB.start && lineRangeA.end <= lineRangeB.end)
+    )
 }
