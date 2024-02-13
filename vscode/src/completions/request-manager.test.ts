@@ -195,7 +195,7 @@ describe('RequestManager', () => {
     })
 
     describe('cache', () => {
-        it('resolves a single request with a cached value', async () => {
+        it('resolves a single request with a cached value without waiting for the debounce timeout', async () => {
             const prefix = 'console.log('
             const provider1 = createProvider(prefix)
             setTimeout(() => provider1.yield(["'hello')"]), 0)
