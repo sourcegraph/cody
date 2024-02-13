@@ -13,9 +13,10 @@ import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { getConfiguration } from '../../configuration'
+import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
 const isTesting = process.env.CODY_TESTING === 'true'
-const isMac = os.platform() === 'darwin'
+const isMacOS = isMac()
 const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
 /**
@@ -231,7 +232,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 if (type === CustomCommandType.Workspace) {
                     fileType = 'workspace settings file (.vscode/cody.json)'
                 }
-                const bin = isMac ? 'Trash' : 'Recycle Bin'
+                const bin = isMacOS ? 'Trash' : 'Recycle Bin'
                 const confirmationKey = `Move to ${bin}`
                 // Playwright cannot capture and interact with pop-up modal in VS Code,
                 // so we need to turn off modal mode for the display message during tests.

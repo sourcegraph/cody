@@ -1,8 +1,7 @@
-import os from 'os'
 import type { CodySidebarTreeItem } from '../services/treeViewItems'
+import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
-const isMac = os.platform() === 'darwin'
-const osIcon = isMac ? '⌥' : 'Alt+'
+const osIcon = isMac() ? '⌥' : 'Alt+'
 
 export const CodyCommandMenuItems = [
     {
