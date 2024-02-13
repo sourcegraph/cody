@@ -50,13 +50,18 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        null
-    )
-    // Handle the old `unstable-fireworks` option
-    if (autocompleteAdvancedProvider === 'unstable-fireworks') {
-        autocompleteAdvancedProvider = 'fireworks'
+    let autocompleteAdvancedProvider = config.get<
+        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, null)
+
+    // Handle deprecated provider identifiers
+    switch (autocompleteAdvancedProvider) {
+        case 'unstable-fireworks':
+            autocompleteAdvancedProvider = 'fireworks'
+            break
+        case 'unstable-ollama':
+            autocompleteAdvancedProvider = 'experimental-ollama'
+            break
     }
 
     // check if the configured enum values are valid
@@ -99,6 +104,10 @@ export function getConfiguration(
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
+        autocompleteDisableInsideComments: config.get(
+            CONFIG_KEY.autocompleteDisableInsideComments,
+            false
+        ),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
@@ -109,6 +118,7 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
+        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 

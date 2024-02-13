@@ -41,6 +41,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.guardrails':
                         return true
+                    case 'cody.experimental.commitMessage':
+                        return true
                     case 'cody.codeActions.enabled':
                         return true
                     case 'cody.commandHints.enabled':
@@ -77,6 +79,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.formatOnAccept':
                         return true
+                    case 'cody.autocomplete.disableInsideComments':
+                        return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
@@ -121,6 +125,7 @@ describe('getConfiguration', () => {
             experimentalSymfContext: true,
             experimentalTracing: true,
             editorTitleCommandIcon: true,
+            experimentalCommitMessage: true,
             experimentalGuardrails: true,
             codeActions: true,
             commandHints: true,
@@ -135,6 +140,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
+            autocompleteDisableInsideComments: false,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalFastPath: false,

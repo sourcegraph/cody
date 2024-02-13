@@ -797,17 +797,6 @@ export class FixupController
         if (state === 'complete') {
             task.inProgressReplacement = undefined
             task.replacement = replacementText
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                ...countCode(replacementText),
-                source: task.source,
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                metadata: countCode(replacementText),
-                privateMetadata: {
-                    source: task.source,
-                },
-            })
             return this.streamTask(task, state)
         }
 
@@ -844,17 +833,6 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.applying)
-                telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                    ...countCode(text),
-                    source: task.source,
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                    metadata: countCode(text),
-                    privateMetadata: {
-                        source: task.source,
-                    },
-                })
                 break
         }
         this.textDidChange(task)
@@ -1099,8 +1077,8 @@ export class FixupController
         // Revert and remove the previous task
         await this.undoTask(task)
 
-        void executeEdit(
-            {
+        void executeEdit({
+            configuration: {
                 range: updatedRange,
                 instruction: input.instruction,
                 userContextFiles: input.userContextFiles,
@@ -1109,8 +1087,8 @@ export class FixupController
                 mode: task.mode,
                 model: input.model,
             },
-            'code-lens'
-        )
+            source: 'code-lens',
+        })
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {

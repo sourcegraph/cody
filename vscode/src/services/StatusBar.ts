@@ -5,6 +5,7 @@ import { isCodyIgnoredFile, type Configuration } from '@sourcegraph/cody-shared'
 import { getConfiguration } from '../configuration'
 
 import { FeedbackOptionItems } from './FeedbackOptions'
+import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 
 interface StatusBarError {
     title: string
@@ -46,16 +47,16 @@ export function createStatusBar(): CodyStatusBar {
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
-        function createFeatureToggle(
+        async function createFeatureToggle(
             name: string,
             description: string | undefined,
             detail: string,
             setting: string,
-            getValue: (config: Configuration) => boolean,
+            getValue: (config: Configuration) => boolean | Promise<boolean>,
             requiresReload = false,
             buttons: readonly vscode.QuickInputButton[] | undefined = undefined
-        ): StatusBarItem {
-            const isEnabled = getValue(config)
+        ): Promise<StatusBarItem> {
+            const isEnabled = await getValue(config)
             return {
                 label:
                     (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) +
@@ -103,7 +104,7 @@ export function createStatusBar(): CodyStatusBar {
                   ]
                 : []),
             { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Code Autocomplete',
                 undefined,
                 'Enable Cody-powered code autocompletions',
@@ -121,41 +122,48 @@ export function createStatusBar(): CodyStatusBar {
                     } as vscode.QuickInputButton,
                 ]
             ),
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Code Actions',
                 undefined,
                 'Enable Cody fix and explain options in the Quick Fix menu',
                 'cody.codeActions.enabled',
                 c => c.codeActions
             ),
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Editor Title Icon',
                 undefined,
                 'Enable Cody to appear in editor title menu for quick access to Cody commands',
                 'cody.editorTitleCommandIcon',
                 c => c.editorTitleCommandIcon
             ),
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Code Lenses',
                 undefined,
                 'Enable Code Lenses in documents for quick access to Cody commands',
                 'cody.commandCodeLenses',
                 c => c.commandCodeLenses
             ),
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Command Hints',
                 undefined,
                 'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
                 'cody.commandHints.enabled',
-                c => c.commandHints
+                getGhostHintEnablement
             ),
-            createFeatureToggle(
+            await createFeatureToggle(
                 'Search Context',
                 'Beta',
                 'Enable using the natural language search index as an Enhanced Context chat source',
                 'cody.experimental.symfContext',
                 c => c.experimentalSymfContext,
                 false
+            ),
+            await createFeatureToggle(
+                'Commit Messages',
+                'Experimental',
+                'Enable Cody to appear in the Source Control input field, to generate a relevant commit message from your changes.',
+                'cody.experimental.commitMessage',
+                c => c.experimentalCommitMessage
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {

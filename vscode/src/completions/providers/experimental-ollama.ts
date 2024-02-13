@@ -49,7 +49,7 @@ function fileNameLine(uri: vscode.Uri, commentStart: string): string {
  * The provider communicates with an Ollama server's [REST
  * API](https://github.com/jmorganca/ollama#rest-api).
  */
-class UnstableOllamaProvider extends Provider {
+class ExperimentalOllamaProvider extends Provider {
     constructor(
         options: ProviderOptions,
         private readonly ollamaOptions: OllamaOptions
@@ -167,7 +167,7 @@ class UnstableOllamaProvider extends Provider {
     }
 }
 
-const PROVIDER_IDENTIFIER = 'unstable-ollama'
+const PROVIDER_IDENTIFIER = 'experimental-ollama'
 
 export function isLocalCompletionsProvider(providerId: string): boolean {
     return providerId === PROVIDER_IDENTIFIER
@@ -176,7 +176,7 @@ export function isLocalCompletionsProvider(providerId: string): boolean {
 export function createProviderConfig(ollamaOptions: OllamaOptions): ProviderConfig {
     return {
         create(options: Omit<ProviderOptions, 'id'>) {
-            return new UnstableOllamaProvider(
+            return new ExperimentalOllamaProvider(
                 {
                     ...options,
                     // Always generate just one completion for a better perf.

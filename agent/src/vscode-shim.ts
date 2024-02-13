@@ -198,7 +198,7 @@ const _workspace: typeof vscode.workspace = {
         logError('vscode.workspace.applyEdit', 'agent is undefined')
         return Promise.resolve(false)
     },
-    isTrusted: false,
+    isTrusted: true,
     name: undefined,
     notebookDocuments: [],
     openNotebookDocument: (() => {}) as any,
@@ -244,7 +244,11 @@ const _workspace: typeof vscode.workspace = {
             for (const [name, fileType] of files) {
                 const uri = Uri.file(path.join(dir.fsPath, name))
                 const relativePath = path.relative(workspaceRoot.fsPath, uri.fsPath)
+
                 if (fileType.valueOf() === FileType.Directory.valueOf()) {
+                    if (!matchesGlobPatterns([], exclude ? [exclude] : [], relativePath)) {
+                        continue
+                    }
                     await loop(workspaceRoot, uri)
                 } else if (fileType.valueOf() === FileType.File.valueOf()) {
                     if (
@@ -256,6 +260,7 @@ const _workspace: typeof vscode.workspace = {
                     ) {
                         continue
                     }
+
                     result.push(uri)
                     if (maxResults !== undefined && result.length >= maxResults) {
                         return
@@ -944,7 +949,14 @@ const _languages: Partial<typeof vscode.languages> = {
         resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
+    getDiagnostics: ((resource: vscode.Uri) => {
+        if (resource) {
+            return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
+        }
+        return [[resource, []]] // return diagnostics for all resources
+    }) as { (resource: vscode.Uri): vscode.Diagnostic[]; (): [vscode.Uri, vscode.Diagnostic[]][] },
 }
+
 export const languages = _languages as typeof vscode.languages
 
 const commentController: vscode.CommentController = {

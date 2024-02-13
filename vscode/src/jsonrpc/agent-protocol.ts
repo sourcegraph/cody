@@ -68,6 +68,9 @@ export type Requests = {
     'commands/test': [null, string]
     'commands/smell': [null, string]
 
+    // Trigger custom commands that could be a chat-based command or an edit command.
+    'commands/custom': [{ key: string }, CustomCommandResult]
+
     // Trigger commands that edit the code.
     'editCommands/test': [null, EditTask]
     'commands/document': [null, EditTask] // TODO: rename to editCommands/test
@@ -629,4 +632,14 @@ export interface CreateFilesParams {
 }
 export interface RenameFilesParams {
     files: { oldUri: string; newUri: string }[]
+}
+
+export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandResult
+export interface CustomChatCommandResult {
+    type: 'chat'
+    chatResult: string
+}
+export interface CustomEditCommandResult {
+    type: 'edit'
+    editResult: EditTask
 }

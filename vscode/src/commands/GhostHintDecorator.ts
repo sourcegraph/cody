@@ -1,5 +1,8 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
+import type { AuthProvider } from '../services/AuthProvider'
+import type { AuthStatus } from '../chat/protocol'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -32,6 +35,18 @@ function isEmptyOrIncompleteSelection(
     )
 }
 
+export async function getGhostHintEnablement(): Promise<boolean> {
+    const config = vscode.workspace.getConfiguration('cody')
+    const configSettings = config.inspect<boolean>('commandHints.enabled')
+
+    // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
+    return (
+        configSettings?.workspaceValue ??
+        configSettings?.globalValue ??
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
+    )
+}
+
 /**
  * Creates a new decoration for showing a "ghost" hint to the user.
  *
@@ -55,15 +70,23 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecoration: vscode.DecorationOptions | null = null
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
-    constructor() {
+    constructor(authProvider: AuthProvider) {
         this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
             leading: false,
             trailing: true,
         })
-        this.updateConfig()
+
+        // Set initial state, based on the configuration and authentication status
+        const initialAuth = authProvider.getAuthStatus()
+        this.updateEnablement(initialAuth)
+
+        // Listen to authentication changes
+        authProvider.addChangeListener(authStatus => this.updateEnablement(authStatus))
+
+        // Listen to configuration changes (e.g. if the setting is disabled)
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
-                this.updateConfig()
+                this.updateEnablement(authProvider.getAuthStatus())
             }
         })
     }
@@ -132,16 +155,15 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [])
     }
 
-    private updateConfig(): void {
-        const config = vscode.workspace.getConfiguration('cody')
-        const isEnabled = config.get('commandHints.enabled') as boolean
+    private async updateEnablement(authStatus: AuthStatus): Promise<void> {
+        const featureEnabled = await getGhostHintEnablement()
 
-        if (!isEnabled) {
+        if (!authStatus.isLoggedIn || !featureEnabled) {
             this.dispose()
             return
         }
 
-        if (isEnabled && !this.isActive) {
+        if (!this.isActive) {
             this.isActive = true
             this.init()
             return

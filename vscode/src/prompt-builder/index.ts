@@ -2,6 +2,8 @@ import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
  * The final prompt is constructed by concatenating the following fields:
@@ -50,6 +52,10 @@ export class PromptBuilder {
     /**
      * Tries to add context items to the prompt, tracking characters used.
      * Returns info about which items were used vs. ignored.
+     *
+     * If charLimit is specified, then imposes an additional limit on the
+     * amount of context added from contextItems. This does not affect the
+     * overall character limit, which is still enforced.
      */
     public tryAddContext(
         contextItems: ContextItem[],
@@ -60,11 +66,28 @@ export class PromptBuilder {
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
-        const effectiveCharLimit = charLimit ? this.charsUsed + charLimit : this.charLimit
+        let effectiveCharLimit = this.charLimit - this.charsUsed
+        if (charLimit && charLimit < effectiveCharLimit) {
+            effectiveCharLimit = charLimit
+        }
+
         let limitReached = false
         const used: ContextItem[] = []
         const ignored: ContextItem[] = []
         const duplicate: ContextItem[] = []
+        if (isAgentTesting) {
+            // Need deterministic ordering of context files for the tests to pass
+            // consistently across different file systems.
+            contextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+            // Move the selectionContext to the first position so that it'd be
+            // the last context item to be read by the LLM to avoid confusions where
+            // other files also include the selection text in test files.
+            const selectionContext = contextItems.find(item => item.source === 'selection')
+            if (selectionContext) {
+                contextItems.splice(contextItems.indexOf(selectionContext), 1)
+                contextItems.unshift(selectionContext)
+            }
+        }
         for (const contextItem of contextItems) {
             if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
                 ignored.push(contextItem)

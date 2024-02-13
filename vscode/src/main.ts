@@ -10,6 +10,7 @@ import {
     setLogger,
     type ConfigurationWithAccessToken,
     ConfigFeaturesSingleton,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -34,7 +35,8 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit } from './repository/repositoryHelpers'
+import type { CommitMessageProvider } from './scm/CommitMessageProvider'
+import { gitAPIinit, gitAPI as getGitAPI } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -214,18 +216,23 @@ const register = async (
         guardrails
     )
 
-    const ghostHintDecorator = new GhostHintDecorator()
-    disposables.push(
+    const gitApi = getGitAPI()
+    let commitMessageProvider: CommitMessageProvider | null = null
+    if (gitApi && platform.createCommitMessageProvider) {
+        commitMessageProvider = platform.createCommitMessageProvider({ chatClient, editor, gitApi })
+        commitMessageProvider.onConfigurationChange(initialConfig)
+        disposables.push(commitMessageProvider)
+    }
+
+    const ghostHintDecorator = new GhostHintDecorator(authProvider)
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        contextProvider,
         ghostHintDecorator,
-        new EditManager({
-            chat: chatClient,
-            editor,
-            contextProvider,
-            ghostHintDecorator,
-            authProvider,
-        }),
-        new CodeActionProvider({ contextProvider })
-    )
+        authProvider,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -241,6 +248,7 @@ const register = async (
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
         platform.onConfigurationChange?.(newConfig)
+        commitMessageProvider?.onConfigurationChange(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         enterpriseContextFactory.clientConfigurationDidChange()
         promises.push(
@@ -282,6 +290,7 @@ const register = async (
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
@@ -508,7 +517,16 @@ const register = async (
             featureFlagProvider,
             vscode.window.showInformationMessage,
             vscode.env.openExternal
-        )
+        ),
+        // For register sidebar clicks
+        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
+            const source: ChatEventSource = 'sidebar'
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
+                privateMetadata: { source },
+            })
+            void vscode.commands.executeCommand(command, [source])
+        })
     )
 
     /**

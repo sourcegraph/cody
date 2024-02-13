@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -7,9 +7,15 @@ import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
 
+const STARTER = 'Search for a file to include, or type # to search symbols...'
+const FILE_ON_RESULT = 'Search for a file to include...'
+const FILE_NO_RESULT = 'No matching files found'
+const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
+const SYMBOL_NO_RESULT = 'No matching symbols found'
+
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
-> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext }) => {
+> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext, contextQuery }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
@@ -27,26 +33,34 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         }
     }, [contextSelection?.length, setSelectedChatContext])
 
+    const headingTitle = useMemo(() => {
+        if (!contextQuery.length) {
+            return STARTER // for empty query
+        }
+        const noResult = !contextSelection?.length
+        const isSymbolQuery = contextQuery.startsWith('#')
+        if (!isSymbolQuery) {
+            return noResult ? FILE_NO_RESULT : FILE_ON_RESULT
+        }
+        // for empty symbol query or with symbol results
+        if (contextQuery.endsWith('#') || !noResult) {
+            return SYMBOL_ON_RESULT
+        }
+        return SYMBOL_NO_RESULT
+    }, [contextQuery, contextSelection?.length])
+
     if (contextSelection === null || selected === -1) {
         return null
     }
 
-    // TODO(toolmantim): Would be nicer to have a Search data type to use
-    // instead of recreating string regex logic
-
-    let headingTitle: string | undefined
-    if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols...'
-    } else if (formInput.endsWith('@#')) {
-        headingTitle = 'Search for a symbol to include...'
-    } else if (formInput.match(/@[^ #]+$/)) {
-        headingTitle = contextSelection?.length
-            ? 'Search for a file to include...'
-            : 'No matching files found'
-    } else if (formInput.match(/@#[^ ]+$/)) {
-        headingTitle = contextSelection?.length
-            ? 'Search for a symbol to include...'
-            : 'No matching symbols found'
+    // If the query ENDS with a non-alphanumeric character (except #),
+    // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
+    // and there is no contextSelection to display,
+    // don't display the selector.
+    if (/[^a-zA-Z0-9#]$/.test(contextQuery)) {
+        if (!contextSelection?.length) {
+            return null
+        }
     }
 
     return (
@@ -83,6 +97,10 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                             : ''
                         const description =
                             match.type === 'file' ? undefined : displayPath(match.uri) + range
+                        const warning =
+                            match.type === 'file' && match.title === 'large-file'
+                                ? 'File too large. Type @# to choose a symbol'
+                                : undefined
                         return (
                             <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
@@ -91,6 +109,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                         styles.selectionItem,
                                         selected === i && styles.selected
                                     )}
+                                    title={title}
                                     onClick={() => onSelected(match, formInput)}
                                     type="button"
                                 >
@@ -110,6 +129,18 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                             </span>
                                         )}
                                     </span>
+                                    {warning && (
+                                        <p
+                                            className={classNames(
+                                                styles.titleAndDescriptionContainer,
+                                                styles.warningContainer
+                                            )}
+                                        >
+                                            <span className={styles.selectionDescription}>
+                                                {warning}
+                                            </span>
+                                        </p>
+                                    )}
                                 </button>
                             </React.Fragment>
                         )

@@ -2,7 +2,7 @@
     "name": "cody-ai",
     "private": true,
     "displayName": "Cody AI",
-    "version": "1.2.2",
+    "version": "1.4.3",
     "publisher": "sourcegraph",
     "license": "Apache-2.0",
     "icon": "resources/cody.png",
@@ -868,6 +868,12 @@
                     "markdownDescription": "Enable OpenTelemetry tracing",
                     "default": false
                 },
+                "cody.experimental.commitMessage": {
+                    "order": 99,
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Enable Cody to appear in the Source Control input field, to generate a relevant commit message from your changes."
+                },
                 "cody.debug.enable": {
                     "order": 99,
                     "type": "boolean",
@@ -897,7 +903,7 @@
                 "cody.autocomplete.advanced.provider": {
                     "type": "string",
                     "default": null,
-                    "enum": [null, "anthropic", "fireworks", "unstable-openai", "unstable-ollama"],
+                    "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
                     "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
                 },
                 "cody.autocomplete.advanced.serverEndpoint": {
@@ -933,6 +939,11 @@
                     "type": "boolean",
                     "default": false,
                     "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
+                },
+                "cody.autocomplete.disableInsideComments": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Prevent autocomplete requests while inside code comments."
                 },
                 "cody.experimental.foldingRanges": {
                     "type": "string",
@@ -1089,6 +1100,7 @@
         "lru-cache": "^10.0.0",
         "mkdirp": "^3.0.1",
         "os-browserify": "^0.3.0",
+        "parse-diff": "^0.11.1",
         "socks-proxy-agent": "^8.0.1",
         "unzipper": "^0.10.14",
         "uuid": "^9.0.0",

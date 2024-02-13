@@ -55,8 +55,10 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [
-                { instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments,
-                source,
+                {
+                    configuration: { instruction, range, intent: 'fix', document },
+                    source,
+                } satisfies ExecuteEditArguments,
             ],
             title: 'Ask Cody to Fix',
         }

@@ -145,15 +145,15 @@ export class CommandRunner implements vscode.Disposable {
 
         return {
             type: 'edit',
-            task: await executeEdit(
-                {
+            task: await executeEdit({
+                configuration: {
                     instruction,
                     intent: 'edit',
                     mode: this.command.mode as EditMode,
                     userContextFiles,
-                } satisfies ExecuteEditArguments,
-                source as ChatEventSource
-            ),
+                },
+                source: source as ChatEventSource,
+            } satisfies ExecuteEditArguments),
         }
     }
 

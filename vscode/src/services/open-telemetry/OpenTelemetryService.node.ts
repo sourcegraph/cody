@@ -3,7 +3,6 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
@@ -13,7 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
-
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 type OpenTelemetryServiceConfig = Pick<
@@ -62,9 +61,10 @@ export class OpenTelemetryService {
                 [SemanticResourceAttributes.SERVICE_VERSION]: version,
             }),
             instrumentations: [new HttpInstrumentation()],
-            traceExporter: new OTLPTraceExporter({
-                url: traceUrl,
-            }),
+            traceExporter: new OTLPTraceExporter({ url: traceUrl }),
+
+            // Disable default process logging. We do not care about the VS Code extension process
+            autoDetectResources: false,
 
             ...(process.env.NODE_ENV === 'development' && {
                 spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
