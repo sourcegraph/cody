@@ -55,8 +55,8 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
-    await page.getByText('Explain code').hover()
-    await page.getByText('Explain code').click()
+    await page.getByText('Explain Code').hover()
+    await page.getByText('Explain Code').click()
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
