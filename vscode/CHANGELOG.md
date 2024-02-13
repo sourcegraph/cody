@@ -2,11 +2,13 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
-## [Unreleased]
+## [1.4.4]
 
 ### Added
 
 ### Fixed
+
+- The signin menu now displays a warning for invalid URL input. [pull/3156](https://github.com/sourcegraph/cody/pull/3156)
 
 ### Changed
 

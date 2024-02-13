@@ -754,7 +754,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 50c303eea037fead89578fb7bbfc3d24
+    - _id: e839439e4c885b3017b24fb952ea040b
       _order: 0
       cache: {}
       request:
@@ -810,7 +810,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.4.3
+                    clientVersion: 1.4.4
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -831,7 +831,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 12 Feb 2024 10:27:16 GMT
+            value: Tue, 13 Feb 2024 23:37:13 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -862,7 +862,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-12T10:27:15.915Z
+      startedDateTime: 2024-02-13T23:37:13.391Z
       time: 0
       timings:
         blocked: -1
