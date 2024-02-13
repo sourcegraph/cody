@@ -5,7 +5,7 @@ import javax.swing.Icon
 
 enum class ChatModel(val icon: Icon, val displayName: String, val agentName: String) {
   UNKNOWN_MODEL(Icons.CodyLogo, "", ""),
-  ANTHROPIC_CLAUDE_2(Icons.LLM.Anthropic, "Claude 2.0 by Anthropic", "anthropic/claude-2"),
+  ANTHROPIC_CLAUDE_2(Icons.LLM.Anthropic, "Claude 2 by Anthropic", "anthropic/claude-2"),
   ANTHROPIC_CLAUDE_2_0(Icons.LLM.Anthropic, "Claude 2.0 by Anthropic", "anthropic/claude-2.0"),
   ANTHROPIC_CLAUDE_2_1(Icons.LLM.Anthropic, "Claude 2.1 by Anthropic", "anthropic/claude-2.1"),
   ANTHROPIC_CLAUDE_INSTANT(
