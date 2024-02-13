@@ -32,5 +32,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: ./agent/scripts/generate-agent-kotlin-bindings.sh
       - run: ./agent/scripts/error-if-diff.sh
-      - run: ./gradlew compileKotlin
-        working-directory: ./agent/src/main/kotlin
+      - run: ./agent/scripts/compile-bindings-if-diff.sh
