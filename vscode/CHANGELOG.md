@@ -4,10 +4,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ## [Unreleased]
 
-### Added
-
-- Cody can now generate commit messages from your changes. Triggered through the input field in the VS Code "Source Control" sidebar. [pull/2306](https://github.com/sourcegraph/cody/pull/2306)
-
 ### Fixed
 
 ### Changed
