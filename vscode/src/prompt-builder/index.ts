@@ -1,11 +1,6 @@
 import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
-import { truncatePrompt } from '@sourcegraph/cody-shared/src/chat/transcript'
-import {
-    MAX_AVAILABLE_PROMPT_LENGTH,
-    MAX_HUMAN_INPUT_TOKENS,
-} from '@sourcegraph/cody-shared/src/prompt/constants'
 
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
@@ -80,10 +75,7 @@ export class PromptBuilder {
                 duplicate.push(contextItem)
                 continue
             }
-            const contextMessages = truncatePrompt(
-                renderContextItem(contextItem).reverse(),
-                MAX_AVAILABLE_PROMPT_LENGTH - MAX_HUMAN_INPUT_TOKENS
-            )
+            const contextMessages = renderContextItem(contextItem).reverse()
             const contextLen = contextMessages.reduce(
                 (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
                 0

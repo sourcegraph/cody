@@ -166,7 +166,7 @@ export class Transcript {
  * The truncation is done by removing the oldest pairs of messages first.
  * No individual message will be truncated. We just remove pairs of messages if they exceed the available tokens budget.
  */
-export function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
+function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     const newPromptMessages = []
     let availablePromptTokensBudget = maxTokens
     for (let i = messages.length - 1; i >= 1; i -= 2) {
