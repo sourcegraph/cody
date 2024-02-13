@@ -309,7 +309,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 inputRef.current?.setSelectionRange(value.length, value.length)
             }
         }
-    }, [isFocusd, value, messageBeingEdited, chatModels])
+    }, [value, messageBeingEdited, chatModels])
 
     useEffect(() => {
         if (inputCaretPosition) {
