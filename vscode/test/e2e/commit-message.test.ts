@@ -110,6 +110,7 @@ test('commit message generation - happy path with no staged changes', async ({ p
 
     // Check the change is showing as a Git change
     await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
     const gitChange = page.getByLabel(/index.js/).getByLabel('Stage Changes')
     await gitChange.hover()
     await expect(gitChange).toBeVisible()
@@ -144,6 +145,7 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
 
     // Check the change is showing as a Git change
     await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('ignored.js').hover()
     const gitChange = page.getByLabel(/ignored.js/).getByLabel('Stage Changes')
     await gitChange.hover()
     await expect(gitChange).toBeVisible()
