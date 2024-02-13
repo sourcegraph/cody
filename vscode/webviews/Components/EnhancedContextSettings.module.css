@@ -236,3 +236,11 @@
         opacity: 0;
     }
 }
+
+.popup .hint {
+    font-size: 11px;
+    line-height: 1.3;
+    opacity: 0.8;
+    margin-bottom: 0;
+    font-style: italic;
+}

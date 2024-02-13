@@ -16,6 +16,7 @@ import { ExtensionApi } from './extension-api'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
+import type { CommitMessageProvider } from './scm/CommitMessageProvider'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
 import type { CommandsProvider } from './commands/services/provider'
@@ -38,6 +39,7 @@ export interface PlatformContext {
     createOpenTelemetryService?: (
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
     ) => OpenTelemetryService
+    createCommitMessageProvider?: Constructor<typeof CommitMessageProvider>
     onConfigurationChange?: (configuration: Configuration) => void
 }
 
