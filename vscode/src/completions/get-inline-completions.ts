@@ -282,15 +282,20 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    // Debounce to avoid firing off too many network requests as the user is still typing.
-    await wrapInActiveSpan('autocomplete.debounce', async () => {
-        const interval =
-            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
-        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-            await new Promise<void>(resolve => setTimeout(resolve, interval))
-        }
-    })
+    const debounceTime =
+        triggerKind !== TriggerKind.Automatic
+            ? 0
+            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+              (artificialDelay ?? 0)
+
+    // We split the desired debounceTime into two chunks. One that is at most 25ms where every
+    // further execution is halted...
+    const waitInterval = Math.min(debounceTime, 25)
+    // ...and one for the remaining time where we can already start retrieving context in parallel.
+    const remainingInterval = debounceTime - waitInterval
+    if (waitInterval > 0) {
+        await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
+    }
 
     // We don't need to make a request at all if the signal is already aborted after the debounce.
     if (abortSignal?.aborted) {
@@ -300,19 +305,28 @@ async function doGetInlineCompletions(
     setIsLoading?.(true)
     CompletionLogger.start(logId)
 
-    // Fetch context
-    const contextResult = await wrapInActiveSpan('autocomplete.retrieve', async () => {
-        return contextMixer.getContext({
-            document,
-            position,
-            docContext,
-            abortSignal,
-            maxChars: providerConfig.contextSizeHints.totalChars,
-        })
-    })
+    // Fetch context and apply remaining debounce time
+    const [contextResult] = await Promise.all([
+        await wrapInActiveSpan('autocomplete.retrieve', async () => {
+            return contextMixer.getContext({
+                document,
+                position,
+                docContext,
+                abortSignal,
+                maxChars: providerConfig.contextSizeHints.totalChars,
+            })
+        }),
+        remainingInterval > 0
+            ? await wrapInActiveSpan('autocomplete.debounce.remaining', async () => {
+                  sleep(remainingInterval)
+              })
+            : null,
+    ])
+
     if (abortSignal?.aborted) {
         return null
     }
+
     tracer?.({ context: contextResult })
 
     const completionProvider = getCompletionProvider({
@@ -409,4 +423,8 @@ function createCompletionProviderTracer(
             result: data => tracer({ completionProviderCallResult: data }),
         }
     )
+}
+
+async function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
 }
