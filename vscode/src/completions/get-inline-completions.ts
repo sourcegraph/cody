@@ -307,19 +307,17 @@ async function doGetInlineCompletions(
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
-        await wrapInActiveSpan('autocomplete.retrieve', async () => {
-            return contextMixer.getContext({
+        wrapInActiveSpan('autocomplete.retrieve', () =>
+            contextMixer.getContext({
                 document,
                 position,
                 docContext,
                 abortSignal,
                 maxChars: providerConfig.contextSizeHints.totalChars,
             })
-        }),
+        ),
         remainingInterval > 0
-            ? await wrapInActiveSpan('autocomplete.debounce.remaining', async () => {
-                  sleep(remainingInterval)
-              })
+            ? wrapInActiveSpan('autocomplete.debounce.remaining', () => sleep(remainingInterval))
             : null,
     ])
 
