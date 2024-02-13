@@ -544,7 +544,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const cancellation = new vscode.CancellationTokenSource()
 
         try {
-            const MAX_RESULTS = 10
+            const MAX_RESULTS = 20
             if (query.startsWith('#')) {
                 // It would be nice if the VS Code symbols API supports
                 // cancellation, but it doesn't
