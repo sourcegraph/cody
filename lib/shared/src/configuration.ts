@@ -46,7 +46,6 @@ export interface Configuration {
     /**
      * Experimental
      */
-    experimentalCommitMessage: boolean
     experimentalGuardrails: boolean
     experimentalSymfContext: boolean
     experimentalTracing: boolean
