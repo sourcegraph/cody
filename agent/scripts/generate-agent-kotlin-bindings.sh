@@ -2,7 +2,7 @@
 set -eux
 git submodule update --init --recursive
 pushd agent/bindings/scip-typescript
-pnpm install
+yarn install
 popd
 pnpm build
 # TODO: invoke @sourcegraph/scip-typescript npm package instead
