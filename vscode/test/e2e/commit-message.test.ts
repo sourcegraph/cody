@@ -23,11 +23,11 @@ const test = baseTest
         workspaceDirectory: async ({}, use) => {
             await withTempDir(async dir => {
                 // Initialize a git repository there
-                await spawn('git', ['init'], { cwd: dir })
-                await spawn('git', ['config', 'user.name', 'Test User'], {
+                await runGit(['init'], { cwd: dir })
+                await runGit(['config', 'user.name', 'Test User'], {
                     cwd: dir,
                 })
-                await spawn('git', ['config', 'user.email', 'test@example.host'], { cwd: dir })
+                await runGit(['config', 'user.email', 'test@example.host'], { cwd: dir })
 
                 // Add Cody ignore
                 await fs.mkdir(path.join(dir, '.cody'), { recursive: true })
@@ -40,8 +40,8 @@ const test = baseTest
                 ])
 
                 // Commit initial files
-                await spawn('git', ['add', '.'], { cwd: dir })
-                await spawn('git', ['commit', '-m', 'Initial commit'], {
+                await runGit(['add', '.'], { cwd: dir })
+                await runGit(['commit', '-m', 'Initial commit'], {
                     cwd: dir,
                 })
 
@@ -170,3 +170,9 @@ test('commit message generation - cody ignore', async ({ page, sidebar }) => {
         page.getByLabel('Source Control Input').getByText('hello from the assistant')
     ).not.toBeVisible()
 })
+
+/** Run 'git' and wait for the process to exit. */
+async function runGit(args: string[], options?: any) {
+    const proc = spawn('git', args, options)
+    return new Promise(resolve => proc.on('close', resolve))
+}
