@@ -124,6 +124,7 @@ export interface ChatUITextAreaProps {
     chatModels?: ModelProvider[]
     messageBeingEdited: number | undefined
     inputCaretPosition?: number
+    isWebviewActive: boolean
 }
 
 export interface ChatUISubmitButtonProps {
@@ -889,7 +890,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             className={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            isFocusd={isWebviewActive && inputFocus}
+                            isFocusd={inputFocus}
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
@@ -902,6 +903,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
                             inputCaretPosition={isWebviewActive ? inputCaretPosition : undefined}
+                            isWebviewActive={isWebviewActive}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>

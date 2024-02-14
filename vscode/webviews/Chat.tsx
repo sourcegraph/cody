@@ -289,6 +289,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     messageBeingEdited,
     isNewChat,
     inputCaretPosition,
+    isWebviewActive,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const tips = '(@ to include files or symbols)'
@@ -298,7 +299,9 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
         if (isFocusd) {
-            inputRef.current?.focus()
+            if (isWebviewActive) {
+                inputRef.current?.focus()
+            }
 
             if (inputCaretPosition) {
                 return
@@ -309,7 +312,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 inputRef.current?.setSelectionRange(value.length, value.length)
             }
         }
-    }, [value, messageBeingEdited, chatModels])
+    }, [isFocusd, value, messageBeingEdited, chatModels])
 
     useEffect(() => {
         if (inputCaretPosition) {
