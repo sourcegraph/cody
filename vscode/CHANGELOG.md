@@ -19,9 +19,19 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Start retrieval phase earlier to improve latency. [pull/3149](https://github.com/sourcegraph/cody/pull/3149)
 - Command: Leading slashes are removed from command names in the command menu. [pull/3061](https://github.com/sourcegraph/cody/pull/3061)
 
-## [1.4.3]
+## [1.4.4]
+
+### Added
+
+### Fixed
+
+- The signin menu now displays a warning for invalid URL input. [pull/3156](https://github.com/sourcegraph/cody/pull/3156)
 
 ### Changed
+
+## [1.4.3]
+
+### Added
 
 - Autocomplete: Updated the BFG binary version. [pull/3130](https://github.com/sourcegraph/cody/pull/3130)
 
