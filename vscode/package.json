@@ -528,6 +528,26 @@
                 "command": "cody.autocomplete.manual-trigger",
                 "key": "alt+\\",
                 "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+            },
+            {
+                "command": "cody.fixup.acceptNearest",
+                "key": "alt+a",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.retryNearest",
+                "key": "alt+r",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.undoNearest",
+                "key": "alt+x",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.cancelNearest",
+                "key": "alt+z",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
             }
         ],
         "submenus": [

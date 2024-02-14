@@ -1,9 +1,11 @@
 import * as vscode from 'vscode'
 
-import { getLensesForTask } from './codelenses'
-import type { FixupTask } from './FixupTask'
-import type { FixupFileCollection } from './roles'
-import { CodyTaskState } from './utils'
+import { getLensesForTask } from './items'
+import type { FixupTask } from '../FixupTask'
+import type { FixupFileCollection } from '../roles'
+import { CodyTaskState } from '../utils'
+import type { FixupFile } from '../FixupFile'
+import { ALL_ACTIONABLE_TASK_STATES } from './constants'
 
 export class FixupCodeLenses implements vscode.CodeLensProvider {
     private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
@@ -39,6 +41,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didUpdateTask(task: FixupTask): void {
+        this.updateKeyboardShortcutEnablement([task.fixupFile])
         if (task.state === CodyTaskState.finished) {
             this.removeLensesFor(task)
             return
@@ -48,6 +51,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didDeleteTask(task: FixupTask): void {
+        this.updateKeyboardShortcutEnablement([task.fixupFile])
         this.removeLensesFor(task)
     }
 
@@ -56,6 +60,21 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
             // TODO: Clean up the fixup file when there are no remaining code lenses
             this.notifyCodeLensesChanged()
         }
+    }
+
+    /**
+     * For a set of active files, check to see if any tasks within these files are currently actionable.
+     * If they are, enable the code lens keyboard shortcuts in the editor.
+     */
+    public updateKeyboardShortcutEnablement(activeFiles: FixupFile[]): void {
+        const allTasks = activeFiles
+            .filter(file =>
+                vscode.window.visibleTextEditors.some(editor => editor.document.uri === file.uri)
+            )
+            .flatMap(file => this.files.tasksForFile(file))
+
+        const hasActionableEdit = allTasks.some(task => ALL_ACTIONABLE_TASK_STATES.includes(task.state))
+        void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 
     private notifyCodeLensesChanged(): void {
