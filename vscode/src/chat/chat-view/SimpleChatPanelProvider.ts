@@ -23,7 +23,6 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
-    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'

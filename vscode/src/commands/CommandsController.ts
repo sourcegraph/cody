@@ -34,7 +34,7 @@ class CommandsController implements vscode.Disposable {
      */
     public async execute(input: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
         return tracer.startActiveSpan(
-            'command.explain',
+            'command.custom',
             async (span): Promise<CommandResult | undefined> => {
                 // Split the input by space to extract the command key and additional input (if any)
                 const commandSplit = input?.trim().split(' ')
