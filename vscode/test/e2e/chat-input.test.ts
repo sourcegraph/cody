@@ -64,18 +64,17 @@ test('chat input focus', async ({ page, sidebar }) => {
     const panel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = panel.getByRole('textbox', { name: 'Chat message' })
     await page.getByText("fizzbuzz.push('Buzz')").click()
+
     // TODO (bee) fix flanky test
+    // Because this test is flanky, especially on windows, we will only run it once on linux
+    // as it's faster and the behavior is the same on all platforms.
     if (!isPlatform('linux')) {
-        // Because this test is flanky, especially on windows, we will only run it once on linux
-        // as it's faster and the behavior is the same on all platforms.
         await expect(panel.getByText('Done')).not.toBeVisible()
+        // once the response is 'Done', check the input focus
+        await chatInput.hover()
+        await expect(panel.getByText('Done')).toBeVisible()
+        await expect(chatInput).not.toBeFocused()
     }
-
-    // once the response is 'Done', check the input focus
-    await chatInput.hover()
-    await expect(panel.getByText('Done')).toBeVisible()
-    await expect(chatInput).not.toBeFocused()
-
     // Click on the chat input box to make sure it now has the focus, before submitting
     // a new chat question. The original focus area which is the chat input should still
     // have the focus after the response is received.
