@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class RenameFile(
-  var oldUri: String? = null,
-  var newUri: String? = null,
+  val oldUri: String? = null,
+  val newUri: String? = null,
 )
 

@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class TelemetryEvent(
-  var feature: String? = null,
-  var action: String? = null,
+  val feature: String? = null,
+  val action: String? = null,
 )
 

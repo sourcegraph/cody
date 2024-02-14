@@ -1,7 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class Chat_RemoteReposParams(
-  var id: String? = null,
+  val id: String? = null,
 )
 

@@ -1,9 +1,9 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class UntitledTextDocument(
-  var uri: String? = null,
-  var content: String? = null,
-  var language: String? = null,
+  val uri: String? = null,
+  val content: String? = null,
+  val language: String? = null,
 )
 
