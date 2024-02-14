@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { AuthStatus } from '../chat/protocol'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { isGenerateIntent } from '../edit/utils/edit-intent'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -61,8 +62,12 @@ export const ghostHintDecoration = vscode.window.createTextEditorDecorationType(
     after: {
         color: new vscode.ThemeColor('editorGhostText.foreground'),
         margin: '0 0 0 1em',
+        textDecoration: 'none; opacity: 0.5;',
     },
 })
+
+// Adjust as needed
+const GHOST_TEXT_DEBOUNCE = 250
 
 export class GhostHintDecorator implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -70,8 +75,11 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecoration: vscode.DecorationOptions | null = null
     private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
+    /** Store the last line that the user typed on, we want to avoid showing the text here */
+    private lastLineTyped: number | null = null
+
     constructor(authProvider: AuthProvider) {
-        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
+        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_DEBOUNCE, {
             leading: false,
             trailing: true,
         })
@@ -88,6 +96,18 @@ export class GhostHintDecorator implements vscode.Disposable {
             if (e.affectsConfiguration('cody')) {
                 this.updateEnablement(authProvider.getAuthStatus())
             }
+        })
+
+        vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document !== vscode.window.activeTextEditor?.document) {
+                // TODO: Handle this better
+                return
+            }
+
+            // TODO: Should we track multiple lines if there's multiple changes?
+            const firstChange = event.contentChanges[0]
+
+            this.lastLineTyped = firstChange ? firstChange.range.end.line : null
         })
     }
 
@@ -110,11 +130,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     const selection = event.selections[0]
-                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                        return this.clearGhostText(editor)
-                    }
 
                     /**
                      * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
@@ -124,6 +139,11 @@ export class GhostHintDecorator implements vscode.Disposable {
                         ? selection.active
                         : selection.active.translate(selection.end.character === 0 ? -1 : 0)
 
+                    if (targetPosition.line === this.lastLineTyped) {
+                        // We are targeting the line where the user is typing, do nothing here.
+                        return this.clearGhostText(editor)
+                    }
+
                     if (
                         this.activeDecoration &&
                         this.activeDecoration.range.start.line !== targetPosition.line
@@ -132,18 +152,30 @@ export class GhostHintDecorator implements vscode.Disposable {
                         this.clearGhostText(editor)
                     }
 
-                    // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                    return this.throttledSetGhostText(editor, targetPosition)
+                    if (isGenerateIntent(editor.document, selection)) {
+                        this.clearGhostText(editor)
+                        return this.setGhostText(editor, targetPosition, 'Generate')
+                    }
+
+                    if (selection.start.line !== selection.end.line) {
+                        // Multi line selection, so let's use the throttled function here so the user might be actively adjusting the selection
+                        return this.throttledSetGhostText(editor, targetPosition)
+                    }
+
+                    // Not generate, not a multi-line selection, show "Edit" hint immediately
+                    return this.setGhostText(editor, targetPosition)
                 }
             )
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, position: vscode.Position): void {
+    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, editVerb = 'Edit'): void {
         this.activeDecoration = {
             range: new vscode.Range(position, position),
             renderOptions: {
-                after: { contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat` },
+                after: {
+                    contentText: `\u00a0\u00a0\u00a0${EDIT_SHORTCUT_LABEL} to ${editVerb}, ${CHAT_SHORTCUT_LABEL} to Chat`,
+                },
             },
         }
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
