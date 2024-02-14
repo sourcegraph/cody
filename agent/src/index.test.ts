@@ -13,6 +13,7 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -163,27 +164,29 @@ describe('Agent', () => {
         expect(valid?.username).toStrictEqual('olafurpg-testing')
     }, 10_000)
 
-    it('autocomplete/execute (non-empty result)', async () => {
-        await client.openFile(sumUri)
-        const completions = await client.request('autocomplete/execute', {
-            uri: sumUri.toString(),
-            position: { line: 1, character: 3 },
-            triggerKind: 'Invoke',
-        })
-        const texts = completions.items.map(item => item.insertText)
-        expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(
-            `
+    describe('Autocomplete', () => {
+        it('autocomplete/execute (non-empty result)', async () => {
+            await client.openFile(sumUri)
+            const completions = await client.request('autocomplete/execute', {
+                uri: sumUri.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBeGreaterThan(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
           [
             "   return a + b;",
           ]
         `,
-            explainPollyError
-        )
-        client.notify('autocomplete/completionAccepted', {
-            completionID: completions.items[0].id,
-        })
-    }, 10_000)
+                explainPollyError
+            )
+            client.notify('autocomplete/completionAccepted', {
+                completionID: completions.items[0].id,
+            })
+        }, 10_000)
+    })
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         const currentUserCodySubscription = await client.request(
@@ -609,6 +612,41 @@ describe('Agent', () => {
         }, 20_000)
     })
 
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        it(
+            name,
+            async () => {
+                await documentClient.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
+                await documentClient.openFile(uri, { removeCursor: false })
+                const task = await documentClient.request('commands/document', null)
+                await documentClient.taskHasReachedAppliedPhase(task)
+                const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
+                expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+                const acceptCommand = lenses.find(
+                    ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+                )
+                if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                    throw new Error(
+                        `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
+                    )
+                }
+                await documentClient.request('command/execute', acceptCommand.command)
+                expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+                const newContent = documentClient.workspace.getDocument(uri)?.content
+                assertion(trimEndOfLine(newContent))
+            },
+            20_000
+        )
+    }
+
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.request('command/execute', {
@@ -662,58 +700,60 @@ describe('Agent', () => {
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                    `
-                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+                  " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
-                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
+                  Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
 
                   \`\`\`typescript
-                  // src/animal.test.ts
+                  import { expect } from 'vitest'
 
-                  import { Animal } from './animal';
+                  import { describe, it } from 'vitest'
 
-                  describe('Animal interface', () => {
+                  import { Animal } from './animal'
 
-                    it('should have a name property', () => {
+                  describe('Animal', () => {
+
+                    it('has name property', () => {
                       const animal: Animal = {
                         name: 'Cat',
-                        makeAnimalSound: () => '',
+                        makeAnimalSound() {
+                          return 'Meow'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.name).toBeDefined();
-                    });
+                      expect(animal.name).toEqual('Cat')
+                    })
 
-                    it('should have a makeAnimalSound method', () => {
+                    it('has makeAnimalSound method', () => {
                       const animal: Animal = {
                         name: 'Dog',
-                        makeAnimalSound: () => 'Woof',
+                        makeAnimalSound() {
+                          return 'Woof'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.makeAnimalSound).toBeDefined();
-                      expect(typeof animal.makeAnimalSound).toBe('function');
-                    });
+                      expect(animal.makeAnimalSound()).toEqual('Woof')
+                    })
 
-                    it('should have an isMammal property', () => {
+                    it('has isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound: () => 'Hiss',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
                         isMammal: false
-                      };
+                      }
 
-                      expect(animal.isMammal).toBeDefined();
-                      expect(typeof animal.isMammal).toBe('boolean');
-                    });
-
-                  });
+                      expect(animal.isMammal).toEqual(false)
+                    })
+                  })
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
-                `,
-                    explainPollyError
-                )
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
+                `)
             },
             30_000
         )
@@ -842,37 +882,7 @@ describe('Agent', () => {
         }, 30_000)
 
         describe('Document code', () => {
-            function check(name: string, filename: string, assertion: (obtained: string) => void): void {
-                it(name, async () => {
-                    await client.request('command/execute', {
-                        command: 'cody.search.index-update',
-                    })
-                    const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
-                    await client.openFile(uri, { removeCursor: false })
-                    const task = await client.request('commands/document', null)
-                    await client.taskHasReachedAppliedPhase(task)
-                    const lenses = client.codeLenses.get(uri.toString()) ?? []
-                    expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-                    const acceptCommand = lenses.find(
-                        ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-                    )
-                    if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                        throw new Error(
-                            `Expected accept command, found none. Lenses ${JSON.stringify(
-                                lenses,
-                                null,
-                                2
-                            )}`
-                        )
-                    }
-                    await client.request('command/execute', acceptCommand.command)
-                    expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
-                    const newContent = client.workspace.getDocument(uri)?.content
-                    assertion(trimEndOfLine(newContent))
-                })
-            }
-
-            check('commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
                    * Sums two numbers and returns the result.
@@ -884,8 +894,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Method as part of a class)', 'TestClass.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Method as part of a class)',
+                'TestClass.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
 
                   export class TestClass {
@@ -904,8 +918,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Function within a property)', 'TestLogger.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Function within a property)',
+                'TestLogger.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
                    * Starts logging by initializing some internal state,
@@ -927,8 +945,12 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (nested test case)', 'example.test.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (nested test case)',
+                'example.test.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "import { expect } from 'vitest'
                   import { it } from 'vitest'
                   import { describe } from 'vitest'
@@ -957,6 +979,163 @@ describe('Agent', () => {
                 `)
             )
         })
+    })
+
+    describe('Custom Commands', () => {
+        it('commands/custom, chat command, open tabs context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            // Note: The test editor has all the files opened from previous tests as open tabs,
+            // so we will need to open a new file that has not been opened before,
+            // to make sure this context type is working.
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            await client.openFile(trickyLogicUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/countTabs',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " So far you have shared code context from these files:
+
+              - src/trickyLogic.ts
+              - src/TestLogger.ts
+              - src/TestClass.ts
+              - src/sum.ts
+              - src/squirrel.ts
+              - src/multiple-selections.ts
+              - src/example.test.ts
+              - src/animal.ts
+              - .cody/ignore"
+            `)
+        }, 30_000)
+
+        it('commands/custom, chat command, adds argument', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/translate Python',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              " Here is the TypeScript code translated to Python:
+
+              \`\`\`python
+              class Animal:
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
+
+                  def make_animal_sound(self) -> str:
+                      pass
+              \`\`\`
+
+              The key differences:
+
+              - Interfaces don't exist in Python, so Animal is translated to a class
+              - The interface properties become initialized attributes in the __init__ method
+              - The interface method becomes a method in the class
+              - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
+
+              Let me know if you have any other questions!"
+            `)
+        }, 30_000)
+
+        it('commands/custom, chat command, no context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/none',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
+        }, 30_000)
+
+        // The context files are presented in an order in the CI that is different
+        // than the order shown in recordings when on Windows, causing it to fail.
+        it('commands/custom, chat command, current directory context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/countDirFiles',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
+            expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
+            expect(reply).toMatchInlineSnapshot(`
+              " You have shared 7 file contexts with me so far:
+
+              1. src/trickyLogic.ts
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/sum.ts
+              5. src/squirrel.ts
+              6. src/multiple-selections.ts
+              7. src/example.test.ts"
+            `)
+        }, 30_000)
+
+        it('commands/custom, edit command, insert mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri, { removeCursor: false })
+            const result = (await client.request('commands/custom', {
+                key: '/hello',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(sumUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "/** hello */
+              export function sum(a: number, b: number): number {
+                  /* CURSOR */
+              }
+              "
+            `)
+        }, 30_000)
+
+        it('commands/custom, edit command, edit mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/newField',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(animalUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "/* SELECTION_START */
+              export interface Animal {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void {
+                      console.log(this.name)
+                  }
+              }
+              /* SELECTION_END */
+
+              "
+            `)
+        }, 30_000)
     })
 
     describe('Progress bars', () => {
@@ -1092,6 +1271,40 @@ describe('Agent', () => {
             const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
+
+        checkDocumentCommand(
+            enterpriseClient,
+            'commands/document (enterprise client)',
+            'example.test.ts',
+            obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
+
+                  /**
+                   * Defines a test block with 3 test cases using Vitest:
+                   * - does 1 - asserts true equals true
+                   * - does 2 - asserts true equals true
+                   * - does something else - attempts to call performance.now incorrectly
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `)
+        )
 
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword
         // query is not replaying on Windows due to some platform-dependency on

@@ -519,13 +519,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+        const source = 'chat'
         if (!query.length) {
+            telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
+            telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
+
             const tabs = getOpenTabsContextFile()
-            await this.postMessage({
+            void this.postMessage({
                 type: 'userContextFiles',
-                context: tabs,
+                userContextFiles: tabs,
             })
             return
+        }
+
+        // Log when query only has 1 char to avoid logging the same query repeatedly
+        if (query.length === 1) {
+            const type = query.startsWith('#') ? 'symbol' : 'file'
+            telemetryService.log(`CodyVSCodeExtension:at-mention:${type}:executed`, { source })
+            telemetryRecorder.recordEvent(`cody.at-mention.${type}`, 'executed', {
+                privateMetadata: { source },
+            })
         }
 
         const cancellation = new vscode.CancellationTokenSource()
@@ -543,7 +556,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 if (!cancellation.token.isCancellationRequested) {
                     await this.postMessage({
                         type: 'userContextFiles',
-                        context: symbolResults,
+                        userContextFiles: symbolResults,
                     })
                 }
             } else {
@@ -555,7 +568,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 if (!cancellation.token.isCancellationRequested) {
                     await this.postMessage({
                         type: 'userContextFiles',
-                        context: fileResults,
+                        userContextFiles: fileResults,
                     })
                 }
             }
@@ -700,7 +713,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         )
         void this.postMessage({
             type: 'enhanced-context',
-            context: {
+            enhancedContextStatus: {
                 groups: this.contextStatusAggregator.status,
             },
         })
@@ -952,7 +965,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (allHistory) {
             void this.postMessage({
                 type: 'history',
-                messages: allHistory,
+                localHistory: allHistory,
             })
         }
         await this.treeView.updateTree(this.authProvider.getAuthStatus())
@@ -1109,7 +1122,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         await this.postMessage({
             type: 'view',
-            messages: view,
+            view: view,
         })
     }
 

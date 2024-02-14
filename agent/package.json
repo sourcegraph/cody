@@ -37,6 +37,8 @@
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
+    "google-protobuf": "^3.21.2",
+    "@types/google-protobuf": "3.15.12",
     "@types/dedent": "^0.7.0",
     "@types/minimatch": "^5.1.2",
     "@types/uuid": "^9.0.2",
