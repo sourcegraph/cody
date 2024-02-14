@@ -19,9 +19,6 @@ export enum FeatureFlag {
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
-    // Enables the new-jaccard-similarity context strategy that can find more than one match per
-    // open file and includes matches from the same file.
-    CodyAutocompleteContextNewJaccardSimilarity = 'cody-autocomplete-new-jaccard-similarity',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     // Dynamically decide wether to show a single line or multiple lines for completions.

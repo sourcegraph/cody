@@ -97,6 +97,7 @@ export class CodyPersister extends FSPersister {
             // Remove any headers and cookies we don't need at all.
             entry.request.headers = this.filterHeaders(entry.request.headers)
             entry.response.headers = this.filterHeaders(entry.response.headers)
+            entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
 

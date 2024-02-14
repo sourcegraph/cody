@@ -14,7 +14,7 @@ describe('buildCodyCommandMap', () => {
             bye: {
                 description: 'Say Good-bye',
                 type: 'user',
-                slashCommand: 'bye',
+                key: 'bye',
                 prompt: 'Bye!',
             },
             missing: {
@@ -27,18 +27,18 @@ describe('buildCodyCommandMap', () => {
         const commandMap = buildCodyCommandMap(CustomCommandType.Workspace, JSON.stringify(file))
 
         expect(commandMap.size).toBe(2)
-        expect(commandMap.get('/hello')).toStrictEqual({
+        expect(commandMap.get('hello')).toStrictEqual({
             description: 'Say Hello World',
             type: 'workspace',
-            slashCommand: '/hello',
+            key: 'hello',
             prompt: 'Hello world',
             mode: 'ask',
         })
 
-        // All keys should start with '/'
-        expect(commandMap.get('bye')?.type).toBe(undefined)
+        // No longer support slash commands
+        expect(commandMap.get('/bye')?.type).toBe(undefined)
         // Command type set up by user should be replaced on build
-        expect(commandMap.get('/bye')?.type).toBe('workspace')
+        expect(commandMap.get('bye')?.type).toBe('workspace')
         // the /missing command will not be available due to the missing prompt
         // but it shouldn't break the map building process.
         expect(commandMap.get('/missing')?.type).toBe(undefined)
@@ -47,23 +47,24 @@ describe('buildCodyCommandMap', () => {
     it('sets edit mode for edit commands correctly', () => {
         const file = {
             hello: {
-                slashCommand: 'hello',
-                prompt: '/edit Add hello world',
+                key: 'hello',
+                prompt: 'Add hello world',
             },
             bye: {
-                slashCommand: '/bye',
-                prompt: 'Add hello world',
+                key: 'bye',
+                prompt: 'Say good-bye',
             },
         }
 
         const commandMap = buildCodyCommandMap(CustomCommandType.User, JSON.stringify(file))
 
-        expect(commandMap.get('hello')?.mode).toBe(undefined)
-        expect(commandMap.get('/hello')?.mode).toBe('edit')
-        expect(commandMap.get('/hello')?.type).toBe('user')
+        // No longer support slash commands
+        expect(commandMap.get('/hello')?.mode).toBe(undefined)
+        expect(commandMap.get('hello')?.mode).toBe('ask')
+        expect(commandMap.get('hello')?.type).toBe('user')
 
         // All slash commands should be prefixed with '/'
-        expect(commandMap.get('/bye')?.slashCommand).toBe('/bye')
-        expect(commandMap.get('/hello')?.slashCommand).toBe('/hello')
+        expect(commandMap.get('bye')?.key).toBe('bye')
+        expect(commandMap.get('hello')?.key).toBe('hello')
     })
 })

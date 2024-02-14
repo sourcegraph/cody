@@ -869,8 +869,10 @@ export class ConfigFeaturesSingleton {
     private refreshConfigFeatures(): void {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
-            // Ignore a fetcherror as older SG instances will always face this because their GQL is outdated
-            if (!error.message.includes('FetchError')) {
+            // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
+            if (
+                !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
+            ) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value

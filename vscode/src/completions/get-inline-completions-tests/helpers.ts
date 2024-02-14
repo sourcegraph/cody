@@ -32,10 +32,11 @@ import {
 } from '../providers/anthropic'
 import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
-import { documentAndPosition, sleep } from '../test-helpers'
+import { documentAndPosition } from '../test-helpers'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import { completionProviderConfig } from '../completion-provider-config'
 import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
+import { sleep } from '../utils'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,

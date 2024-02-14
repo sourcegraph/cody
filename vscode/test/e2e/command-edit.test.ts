@@ -38,9 +38,9 @@ test.extend<ExpectedEvents>({
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'replace hello with goodbye'
     const inputTitle = /^Edit index.html:(\d+).* with Cody$/
-    const showDiffLens = page.getByRole('button', { name: 'A Show Diff' })
+    const showDiffLens = page.getByRole('button', { name: 'Show Diff' })
     const acceptLens = page.getByRole('button', { name: 'Accept' })
-    const retryLens = page.getByRole('button', { name: 'Retry' })
+    const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
     const undoLens = page.getByRole('button', { name: 'Undo' })
 
     // Wait for the input box to appear with the document name in title
@@ -81,7 +81,7 @@ test.extend<ExpectedEvents>({
     // create another edit from the sidebar Edit button
     await page.getByText('7', { exact: true }).click()
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByText('Edit code with instructions').click()
+    await page.getByText('Edit Code').click()
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)

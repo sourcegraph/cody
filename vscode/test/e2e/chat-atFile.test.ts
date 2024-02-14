@@ -158,15 +158,17 @@ test.extend<ExpectedEvents>({
 
     //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
-    await page.keyboard.type(' @abcdefg')
+    await chatInput.type(' @abcdefg', { delay: 50 })
     await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('ArrowRight')
     await expect(noMatches).not.toBeVisible()
-    await chatInput.press('?')
+    await chatInput.type('?', { delay: 50 })
     await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefg?file')
+    await noMatches.hover()
     await expect(noMatches).toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
