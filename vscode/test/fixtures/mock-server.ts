@@ -446,6 +446,8 @@ export class MockServer {
     }
 }
 
+const loggedTestRun: Record<string, boolean> = {}
+
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
@@ -464,10 +466,15 @@ async function logTestingData(type: 'legacy' | 'new', data: string): Promise<voi
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
+    await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
+    if (!loggedTestRun[currentTestRunID]) {
+        console.log(
+            `Messages published - TestRunId: ${currentTestRunID}, TestName: ${currentTestName}, TestID: ${currentTestID}`
+        )
+        loggedTestRun[currentTestRunID] = true
+    }
 }
 
 let currentTestName: string
