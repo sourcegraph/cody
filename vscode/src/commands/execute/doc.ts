@@ -6,7 +6,7 @@ import { defaultCommands } from '.'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * The command that generates a new docstring for the selected code.
@@ -17,37 +17,33 @@ import { tracer } from '@sourcegraph/cody-shared/src/tracing'
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
-    return tracer.startActiveSpan(
-        'command.doc',
-        async (span): Promise<EditCommandResult | undefined> => {
-            span.setAttribute('sampled', true)
-            logDebug('executeDocCommand', 'executing', { args })
-            let prompt = defaultCommands.doc.prompt
+    return wrapInActiveSpan('command.doc', async span => {
+        span.setAttribute('sampled', true)
+        logDebug('executeDocCommand', 'executing', { args })
+        let prompt = defaultCommands.doc.prompt
 
-            if (args?.additionalInstruction) {
-                span.addEvent('additionalInstruction')
-                prompt = `${prompt} ${args.additionalInstruction}`
-            }
-
-            const editor = getEditor()?.active
-            const document = editor?.document
-
-            if (!document) {
-                span.end()
-                return undefined
-            }
-
-            return {
-                type: 'edit',
-                task: await executeEdit({
-                    configuration: {
-                        instruction: prompt,
-                        intent: 'doc',
-                        mode: 'insert',
-                    },
-                    source: DefaultEditCommands.Doc,
-                } satisfies ExecuteEditArguments),
-            }
+        if (args?.additionalInstruction) {
+            span.addEvent('additionalInstruction')
+            prompt = `${prompt} ${args.additionalInstruction}`
         }
-    )
+
+        const editor = getEditor()?.active
+        const document = editor?.document
+
+        if (!document) {
+            return undefined
+        }
+
+        return {
+            type: 'edit',
+            task: await executeEdit({
+                configuration: {
+                    instruction: prompt,
+                    intent: 'doc',
+                    mode: 'insert',
+                },
+                source: DefaultEditCommands.Doc,
+            } satisfies ExecuteEditArguments),
+        }
+    })
 }

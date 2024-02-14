@@ -8,7 +8,7 @@ import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
 
 /**
@@ -61,33 +61,30 @@ async function unitTestCommand(
 export async function executeTestChatCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    return tracer.startActiveSpan(
-        'command.test-chat',
-        async (span): Promise<ChatCommandResult | undefined> => {
-            span.setAttribute('sampled', true)
-            logDebug('executeTestEditCommand', 'executing', { args })
-            telemetryService.log('CodyVSCodeExtension:command:test:executed', {
-                useCodebaseContex: false,
+    return wrapInActiveSpan('command.test-chat', async span => {
+        span.setAttribute('sampled', true)
+        logDebug('executeTestEditCommand', 'executing', { args })
+        telemetryService.log('CodyVSCodeExtension:command:test:executed', {
+            useCodebaseContex: false,
+            requestID: args?.requestID,
+            source: args?.source,
+            traceId: span.spanContext().traceId,
+        })
+        telemetryRecorder.recordEvent('cody.command.test', 'executed', {
+            metadata: {
+                useCodebaseContex: 0,
+            },
+            interactionID: args?.requestID,
+            privateMetadata: {
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
-            })
-            telemetryRecorder.recordEvent('cody.command.test', 'executed', {
-                metadata: {
-                    useCodebaseContex: 0,
-                },
-                interactionID: args?.requestID,
-                privateMetadata: {
-                    requestID: args?.requestID,
-                    source: args?.source,
-                    traceId: span.spanContext().traceId,
-                },
-            })
+            },
+        })
 
-            return {
-                type: 'chat',
-                session: await executeChat(await unitTestCommand(span, args)),
-            }
+        return {
+            type: 'chat',
+            session: await executeChat(await unitTestCommand(span, args)),
         }
-    )
+    })
 }

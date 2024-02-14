@@ -8,7 +8,7 @@ import type { CodyCommandArgs } from '../types'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
 
 /**
@@ -49,33 +49,30 @@ export async function smellCommand(
 export async function executeSmellCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    return tracer.startActiveSpan(
-        'command.smell',
-        async (span): Promise<ChatCommandResult | undefined> => {
-            span.setAttribute('sampled', true)
-            logDebug('executeSmellCommand', 'executing', { args })
-            telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
-                useCodebaseContex: false,
+    return wrapInActiveSpan('command.smell', async span => {
+        span.setAttribute('sampled', true)
+        logDebug('executeSmellCommand', 'executing', { args })
+        telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
+            useCodebaseContex: false,
+            requestID: args?.requestID,
+            source: args?.source,
+            traceId: span.spanContext().traceId,
+        })
+        telemetryRecorder.recordEvent('cody.command.smell', 'executed', {
+            metadata: {
+                useCodebaseContex: 0,
+            },
+            interactionID: args?.requestID,
+            privateMetadata: {
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
-            })
-            telemetryRecorder.recordEvent('cody.command.smell', 'executed', {
-                metadata: {
-                    useCodebaseContex: 0,
-                },
-                interactionID: args?.requestID,
-                privateMetadata: {
-                    requestID: args?.requestID,
-                    source: args?.source,
-                    traceId: span.spanContext().traceId,
-                },
-            })
+            },
+        })
 
-            return {
-                type: 'chat',
-                session: await executeChat(await smellCommand(span, args)),
-            }
+        return {
+            type: 'chat',
+            session: await executeChat(await smellCommand(span, args)),
         }
-    )
+    })
 }
