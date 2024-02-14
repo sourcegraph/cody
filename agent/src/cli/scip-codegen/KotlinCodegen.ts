@@ -23,6 +23,7 @@ export class KotlinCodegen extends BaseCodegen {
     private f: KotlinFormatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
+    public stringLiteralConstants = new Set<string>()
 
     constructor(options: CodegenOptions, symtab: SymbolTable, reporter: ConsoleReporter) {
         super(options, symtab, reporter)
@@ -51,6 +52,8 @@ export class KotlinCodegen extends BaseCodegen {
             info = this.queue.pop()
         }
 
+        await this.writeStringLiteralConstants()
+
         await fspromises.mkdir(this.options.output, { recursive: true })
     }
 
@@ -59,6 +62,24 @@ export class KotlinCodegen extends BaseCodegen {
     } {
         const context: DocumentContext = { f: this.f, p: new CodePrinter(), symtab: this.symtab }
         return { ...context, c: context }
+    }
+
+    private async writeStringLiteralConstants(): Promise<void> {
+        if (this.stringLiteralConstants.size === 0) {
+            return
+        }
+        const { p } = this.startDocument()
+        p.line('@file:Suppress("unused", "ConstPropertyName")')
+        p.line(`package ${this.options.kotlinPackage}`)
+        p.line()
+        p.line('object Constants {')
+        p.block(() => {
+            for (const constant of this.stringLiteralConstants.values()) {
+                p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
+            }
+        })
+        p.line('}')
+        await fspromises.writeFile(path.join(this.options.output, 'Constants.kt'), p.build())
     }
 
     private async writeNullAlias(): Promise<void> {
@@ -80,9 +101,10 @@ export class KotlinCodegen extends BaseCodegen {
                 `classes should not be exposed in the agent protocol because they don't serialize to JSON.`
             )
         }
+        const generatedName = new Set<string>()
         p.line(`data class ${name}(`)
         p.block(() => {
-            for (const memberSymbol of info.signature.class_signature.declarations.symlinks) {
+            for (const memberSymbol of this.infoProperties(info)) {
                 if (
                     this.f.ignoredProperties.find(ignoredProperty =>
                         memberSymbol.endsWith(ignoredProperty)
@@ -98,6 +120,12 @@ export class KotlinCodegen extends BaseCodegen {
                     continue
                 }
                 const member = symtab.info(memberSymbol)
+
+                if (generatedName.has(member.display_name)) {
+                    continue
+                }
+                generatedName.add(member.display_name)
+
                 if (!member.signature.has_value_signature) {
                     throw new TypeError(
                         `not a value signature: ${JSON.stringify(member.toObject(), null, 2)}`
@@ -127,6 +155,10 @@ export class KotlinCodegen extends BaseCodegen {
                 this.queueClassLikeType(memberType, member, 'parameter')
                 const memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
                 const constants = this.stringConstantsFromInfo(member)
+                for (const constant of constants) {
+                    // HACK: merge this duplicate code with the same logic in this file
+                    this.stringLiteralConstants.add(constant)
+                }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
                 p.line(`var ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
             }
@@ -144,6 +176,9 @@ export class KotlinCodegen extends BaseCodegen {
 
         if (this.isStringTypeInfo(info)) {
             const constants = this.stringConstantsFromInfo(info)
+            for (const constant of constants) {
+                this.stringLiteralConstants.add(constant)
+            }
             return `String // One of: ${constants.join(', ')}`
         }
 

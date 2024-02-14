@@ -133,4 +133,23 @@ export class KotlinFormatter {
             symbol.endsWith(' lib/`lib.es2015.collection.d.ts`/Map#')
         )
     }
+
+    // Incomplete, but useful list of keywords. Thank you Cody!
+    private kotlinKeywords = new Set([
+        'class',
+        'interface',
+        'object',
+        'package',
+        'typealias',
+        'val',
+        'var',
+        'fun',
+    ])
+
+    public formatFieldName(name: string): string {
+        const escaped = name.replace(':', '_').replace('/', '_')
+        const isKeyword = this.kotlinKeywords.has(escaped)
+        const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
+        return needsBacktick ? `\`${escaped}\`` : escaped
+    }
 }

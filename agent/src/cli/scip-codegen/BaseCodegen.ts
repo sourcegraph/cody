@@ -144,10 +144,10 @@ export abstract class BaseCodegen {
     protected infoProperties(info: scip.SymbolInformation): string[] {
         if (info.signature.has_class_signature) {
             const result: string[] = []
-            result.push(...info.signature.class_signature.declarations.symlinks)
             for (const parent of info.signature.class_signature.parents) {
                 result.push(...this.properties(parent))
             }
+            result.push(...info.signature.class_signature.declarations.symlinks)
             return result
         }
 
