@@ -38,7 +38,6 @@ export type Config = Pick<
     | 'useContext'
     | 'codeActions'
     | 'experimentalGuardrails'
-    | 'experimentalCommitMessage'
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'experimentalSymfContext'

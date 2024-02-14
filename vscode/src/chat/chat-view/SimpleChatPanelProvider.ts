@@ -546,7 +546,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const tabs = getOpenTabsContextFile()
             void this.postMessage({
                 type: 'userContextFiles',
-                context: tabs,
+                userContextFiles: tabs,
             })
             return
         }
@@ -575,7 +575,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 if (!cancellation.token.isCancellationRequested) {
                     await this.postMessage({
                         type: 'userContextFiles',
-                        context: symbolResults,
+                        userContextFiles: symbolResults,
                     })
                 }
             } else {
@@ -587,7 +587,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 if (!cancellation.token.isCancellationRequested) {
                     await this.postMessage({
                         type: 'userContextFiles',
-                        context: fileResults,
+                        userContextFiles: fileResults,
                     })
                 }
             }
@@ -732,7 +732,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         )
         void this.postMessage({
             type: 'enhanced-context',
-            context: {
+            enhancedContextStatus: {
                 groups: this.contextStatusAggregator.status,
             },
         })
@@ -988,7 +988,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (allHistory) {
             void this.postMessage({
                 type: 'history',
-                messages: allHistory,
+                localHistory: allHistory,
             })
         }
         await this.treeView.updateTree(this.authProvider.getAuthStatus())
@@ -1145,7 +1145,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         await this.postMessage({
             type: 'view',
-            messages: view,
+            view: view,
         })
     }
 

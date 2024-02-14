@@ -129,20 +129,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.messages?.input ?? [])
-                        setUserHistory(message.messages?.chat ?? null)
+                        setInputHistory(message.localHistory?.input ?? [])
+                        setUserHistory(message.localHistory?.chat ?? null)
                         break
                     case 'enhanced-context':
-                        setEnhancedContextStatus(message.context)
+                        setEnhancedContextStatus(message.enhancedContextStatus)
                         break
                     case 'userContextFiles':
-                        setContextSelection(message.context)
+                        setContextSelection(message.userContextFiles)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
                         break
                     case 'view':
-                        setView(message.messages)
+                        setView(message.view)
                         break
                     case 'webview-state':
                         setIsWebviewActive(message.isActive)
@@ -190,7 +190,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             // We do not change the view here. We want to keep presenting the
             // login buttons until we get a token so users don't get stuck if
             // they close the browser during an auth flow.
-            vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
+            vscodeAPI.postMessage({
+                command: 'auth',
+                authKind: 'simplified-onboarding',
+                authMethod: method,
+            })
         },
         [vscodeAPI]
     )

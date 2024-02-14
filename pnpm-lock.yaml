@@ -133,6 +133,9 @@ importers:
       '@types/dedent':
         specifier: ^0.7.0
         version: 0.7.0
+      '@types/google-protobuf':
+        specifier: 3.15.12
+        version: 3.15.12
       '@types/minimatch':
         specifier: ^5.1.2
         version: 5.1.2
@@ -145,6 +148,9 @@ importers:
       esbuild:
         specifier: ^0.18.19
         version: 0.18.19
+      google-protobuf:
+        specifier: ^3.21.2
+        version: 3.21.2
       parse-git-diff:
         specifier: ^0.0.14
         version: 0.0.14
@@ -326,9 +332,6 @@ importers:
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
-      parse-diff:
-        specifier: ^0.11.1
-        version: 0.11.1
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
@@ -5921,6 +5924,10 @@ packages:
       '@types/node': 20.4.0
     dev: true
 
+  /@types/google-protobuf@3.15.12:
+    resolution: {integrity: sha512-40um9QqwHjRS92qnOaDpL7RmDK15NuZYo9HihiJRbYkMQZlWnuH8AdvbMy8/o6lgLmKbDUKa+OALCltHdbOTpQ==}
+    dev: true
+
   /@types/graceful-fs@4.1.5:
     resolution: {integrity: sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==}
     dependencies:
@@ -9135,6 +9142,10 @@ packages:
       node-forge: 1.3.1
     dev: true
 
+  /google-protobuf@3.21.2:
+    resolution: {integrity: sha512-3MSOYFO5U9mPGikIYCzK0SaThypfGgS6bHqrUGXG3DPHCrb+txNqeEcns1W0lkGfk0rCyNXm7xB9rMxnCiZOoA==}
+    dev: true
+
   /gopd@1.0.1:
     resolution: {integrity: sha512-d65bNlIadxvpb/A2abVdlqKqV563juRnZ1Wtk6s1sIR8uNsXR70xqIzVqxVf1eTqDunwT2MkczEeaezCKTZhwA==}
     dependencies:
@@ -11623,10 +11634,6 @@ packages:
     dependencies:
       callsites: 3.1.0
     dev: true
-
-  /parse-diff@0.11.1:
-    resolution: {integrity: sha512-Oq4j8LAOPOcssanQkIjxosjATBIEJhCxMCxPhMu+Ci4wdNmAEdx0O+a7gzbR2PyKXgKPvRLIN5g224+dJAsKHA==}
-    dev: false
 
   /parse-git-diff@0.0.14:
     resolution: {integrity: sha512-UHNB4IWZ0dae4Z9aKgQTAm1gTBqBpmqKwoLx2/iEaVY9hQlqstDnvdWsq5fJjF2iC6368OvAB6LWUJab5wk9VQ==}

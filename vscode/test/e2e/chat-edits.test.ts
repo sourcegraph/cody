@@ -2,10 +2,9 @@ import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
 import { test, withPlatformSlashes } from './helpers'
+import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
-const isPlatform = (platform: string) => process.platform === platform
-const isMac = isPlatform('darwin')
-const osKey = isMac ? 'Meta' : 'Control'
+const osKey = isMac() ? 'Meta' : 'Control'
 
 test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
