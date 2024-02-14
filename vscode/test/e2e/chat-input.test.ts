@@ -31,13 +31,6 @@ test('editing messages in the chat input', async ({ page, sidebar }) => {
 })
 
 test('chat input focus', async ({ page, sidebar }) => {
-    // TODO (bee) fix flanky test
-    // Because this test is flanky, especially on windows, we will only run it once on linux
-    // as it's faster and the behavior is the same on all platforms.
-    if (!isPlatform('linux')) {
-        return
-    }
-
     await sidebarSignin(page, sidebar)
     // Open the buzz.ts file from the tree view,
     // and then submit a chat question from the command menu.
@@ -71,9 +64,15 @@ test('chat input focus', async ({ page, sidebar }) => {
     const panel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = panel.getByRole('textbox', { name: 'Chat message' })
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await expect(panel.getByText('Done')).not.toBeVisible()
-    await chatInput.hover()
+    // TODO (bee) fix flanky test
+    if (!isPlatform('linux')) {
+        // Because this test is flanky, especially on windows, we will only run it once on linux
+        // as it's faster and the behavior is the same on all platforms.
+        await expect(panel.getByText('Done')).not.toBeVisible()
+    }
+
     // once the response is 'Done', check the input focus
+    await chatInput.hover()
     await expect(panel.getByText('Done')).toBeVisible()
     await expect(chatInput).not.toBeFocused()
 
