@@ -68,7 +68,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     // TODO (bee) fix flanky test
     // Because this test is flanky, especially on windows, we will only run it once on linux
     // as it's faster and the behavior is the same on all platforms.
-    if (!isPlatform('linux')) {
+    if (isPlatform('linux')) {
         await expect(panel.getByText('Done')).not.toBeVisible()
         // once the response is 'Done', check the input focus
         await chatInput.hover()
