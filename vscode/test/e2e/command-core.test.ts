@@ -48,6 +48,7 @@ test('Explain Command & Smell Command', async ({ page, sidebar }) => {
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
     await chatPanel.getByText('Context: 9 lines from 1 file').click()
+    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
     // Edit button should shows as disabled for all command messages.
@@ -60,6 +61,8 @@ test('Explain Command & Smell Command', async ({ page, sidebar }) => {
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
     await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
+    await chatPanel.getByText('Context: 9 lines from 1 file').click()
+    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(1)
     await expect(editLastMessageButton).not.toBeVisible()
 
