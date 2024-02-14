@@ -664,27 +664,21 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " Here is an explanation of the selected TypeScript code in simple terms:
+              " Animal Interface
 
-              The Animal interface
+              The selected code defines an interface called Animal. An interface in TypeScript is like a blueprint or contract that defines the structure of an object. Specifically:
 
-              The Animal interface defines the shape of an Animal object. It does not contain any actual implementation, just declarations for what properties and methods an Animal object should have.
+              1. The purpose of this Animal interface is to define the shape of Animal objects - that is, to specify what properties and methods any object implementing the Animal interface must have.
 
-              The interface has three members:
+              2. The Animal interface itself does not take any inputs. However, any concrete classes that implement the Animal interface would take inputs to instantiate an object (for example, constructor arguments).
 
-              1. name - This is a string property to store the animal's name.
+              3. Similarly, the Animal interface does not directly produce any outputs. Its role is to define the shape of objects. Any class implementing Animal would be responsible for producing outputs through its concrete methods and properties.
 
-              2. makeAnimalSound() - This is a method that should return a string representing the sound the animal makes.
+              4. The interface achieves its purpose by declaring a name property of type string, a makeAnimalSound method that returns a string, and an isMammal property of type boolean.
 
-              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
+              5. By defining this structure, the interface ensures that any class implementing Animal will have these required members with the specified types. This allows TypeScript to enforce that objects adhere to the Animal contract.
 
-              The purpose of this interface is to define a consistent structure for Animal objects. Any class that implements the Animal interface will be required to have these three members with these types.
-
-              This allows code dealing with Animal objects to know it can call animal.makeAnimalSound() and access animal.name and animal.isMammal, regardless of the specific class. The interface defines the contract between the implementation and usage of Animals, without caring about specific details.
-
-              Interfaces like this are useful for writing reusable code that can handle different types of objects in a consistent way. The code using the interface doesn't need to know about the specifics of each class, just that it implements the Animal interface. This allows easily extending the code to handle new types of animals by simply creating a new class implementing Animal.
-
-              So in summary, the Animal interface defines the input expectations and output guarantees for objects representing animals in the system, allowing code to work with any animal in a generic way based on this contract."
+              So in summary, the Animal interface defines a blueprint for Animal objects by specifying required properties and methods. This allows TypeScript to statically analyze objects based on their fulfillment of the interface contract. The interface itself does not contain logic - it simply defines the shape of objects. Any consuming code can then rely on objects implementing the Animal interface having the defined structure."
             `,
                 explainPollyError
             )
@@ -700,7 +694,8 @@ describe('Agent', () => {
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                    `
                   " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
                   Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
@@ -753,7 +748,9 @@ describe('Agent', () => {
                   \`\`\`
 
                   This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
-                `)
+                `,
+                    explainPollyError
+                )
             },
             30_000
         )
@@ -998,7 +995,8 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
               " So far you have shared code context from these files:
 
               - src/trickyLogic.ts
@@ -1010,7 +1008,9 @@ describe('Agent', () => {
               - src/example.test.ts
               - src/animal.ts
               - .cody/ignore"
-            `)
+            `,
+                explainPollyError
+            )
         }, 30_000)
 
         it('commands/custom, chat command, adds argument', async () => {
@@ -1023,7 +1023,8 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
               " Here is the TypeScript code translated to Python:
 
               \`\`\`python
@@ -1044,7 +1045,9 @@ describe('Agent', () => {
               - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
 
               Let me know if you have any other questions!"
-            `)
+            `,
+                explainPollyError
+            )
         }, 30_000)
 
         it('commands/custom, chat command, no context', async () => {
@@ -1057,7 +1060,10 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`" no"`)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `" no"`,
+                explainPollyError
+            )
         }, 30_000)
 
         // The context files are presented in an order in the CI that is different
@@ -1074,7 +1080,8 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
-            expect(reply).toMatchInlineSnapshot(`
+            expect(reply).toMatchInlineSnapshot(
+                `
               " You have shared 7 file contexts with me so far:
 
               1. src/trickyLogic.ts
@@ -1084,7 +1091,9 @@ describe('Agent', () => {
               5. src/squirrel.ts
               6. src/multiple-selections.ts
               7. src/example.test.ts"
-            `)
+            `,
+                explainPollyError
+            )
         }, 30_000)
 
         it('commands/custom, edit command, insert mode', async () => {
@@ -1099,13 +1108,16 @@ describe('Agent', () => {
             await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
 
             const originalDocument = client.workspace.getDocument(sumUri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
               "/** hello */
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
               "
-            `)
+            `,
+                explainPollyError
+            )
         }, 30_000)
 
         it('commands/custom, edit command, edit mode', async () => {
@@ -1121,20 +1133,22 @@ describe('Agent', () => {
             await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
 
             const originalDocument = client.workspace.getDocument(animalUri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
               "/* SELECTION_START */
               export interface Animal {
                   name: string
                   makeAnimalSound(): string
                   isMammal: boolean
-                  logName(): void {
-                      console.log(this.name)
-                  }
+                  logName(): void
               }
+
               /* SELECTION_END */
 
               "
-            `)
+            `,
+                explainPollyError
+            )
         }, 30_000)
     })
 

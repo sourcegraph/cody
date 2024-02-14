@@ -55,7 +55,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             const bytes = await vscode.workspace.fs.readFile(fileUri)
             const decoded = new TextDecoder('utf-8').decode(bytes)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
-            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length - 1 || 0, 0)
 
             const contextFile = {
                 type: 'file',

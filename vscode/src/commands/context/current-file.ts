@@ -16,9 +16,9 @@ export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
         }
 
         const selection = new vscode.Selection(
-            1,
             0,
-            document.lineCount,
+            0,
+            document.lineCount - 1,
             document.lineAt(document.lineCount - 1).text.length
         )
 

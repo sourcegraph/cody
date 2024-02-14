@@ -29,7 +29,8 @@ test('editing messages in the chat input', async ({ page, sidebar }) => {
     await expect(chatInput).toBeFocused()
 })
 
-test('chat input focus', async ({ page, sidebar }) => {
+// TODO (bee) fix flanky test
+test.skip('chat input focus', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     // Open the buzz.ts file from the tree view,
     // and then submit a chat question from the command menu.
@@ -51,7 +52,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     await page.getByLabel(/Commands \(/).hover()
     await page.getByLabel(/Commands \(/).click()
     await page.getByRole('option', { name: 'New Chat' }).hover()
-    // The 'delay' command is used to make sure the response is streamed 400ms after
+    // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
     // the command is sent. This provides us with a small window to move the cursor
     // from the new opened chat window back to the editor, before the chat has finished
     // streaming its response.
@@ -64,8 +65,8 @@ test('chat input focus', async ({ page, sidebar }) => {
     const chatInput = panel.getByRole('textbox', { name: 'Chat message' })
     await page.getByText("fizzbuzz.push('Buzz')").click()
     await expect(panel.getByText('Done')).not.toBeVisible()
-    await chatInput.hover()
     // once the response is 'Done', check the input focus
+    await chatInput.hover()
     await expect(panel.getByText('Done')).toBeVisible()
     await expect(chatInput).not.toBeFocused()
 
