@@ -53,11 +53,13 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return null
     }
 
-    // If the query ENDS with a non-alphanumeric character (except #),
-    // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
-    // and there is no contextSelection to display,
-    // don't display the selector.
-    if (/[^a-zA-Z0-9#]$/.test(contextQuery)) {
+    // Don't display the selector when there is no contextSelection to display AND:
+    // 1. query ends with optional ':{digit}-{digit}'.
+    // e.g. '@foo:12-' -> true || '@bar.go:1' -> true || '@foo.ts:1-15' -> true || '@foo.py:12-file' -> false
+    // 2. or query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
+    // e.g. '@abcdefg?' -> false || '@abcdefg?file' -> false
+    const endRegex = /:([0-9]+)(-[0-9]+)?|[^a-zA-Z0-9#]$/
+    if (endRegex.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null
         }

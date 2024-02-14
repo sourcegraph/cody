@@ -29,10 +29,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'What is @foo.ts:2-2?',
                 URI.file('/foo.ts'),
-                new vscode.Range(2, 0, 2, 0)
+                new vscode.Range(1, 0, 2, 0)
             )
         ).toEqual(
-            'What is [_@foo.ts:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
+            'What is [_@foo.ts:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
         )
     })
 
@@ -41,11 +41,11 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'What is @e2e/cody.ts:2-2#codySymbol?',
                 URI.file('/e2e/cody.ts'),
-                new vscode.Range(2, 0, 2, 0),
+                new vscode.Range(1, 0, 2, 0),
                 'codySymbol'
             )
         ).toEqual(
-            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Fe2e%2Fcody.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
+            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Fe2e%2Fcody.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
         )
     })
 
@@ -101,10 +101,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'Error in @test.js:2-2',
                 URI.file('/test.js'),
-                new vscode.Range(2, 0, 2, 0)
+                new vscode.Range(1, 0, 2, 0)
             )
         ).toEqual(
-            'Error in [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
+            'Error in [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)'
         )
     })
 
@@ -113,10 +113,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'What is @test.js:2-2?',
                 URI.file('/test.js'),
-                new vscode.Range(2, 0, 2, 0)
+                new vscode.Range(1, 0, 2, 0)
             )
         ).toEqual(
-            'What is [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
+            'What is [_@test.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ftest.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D)?'
         )
     })
 
@@ -137,10 +137,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'Compare and explain @foo.js:2-2 and @bar.js. What does @foo.js:2-2 do?',
                 URI.file('/foo.js'),
-                new vscode.Range(2, 0, 2, 0)
+                new vscode.Range(1, 0, 2, 0)
             )
         ).toEqual(
-            'Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) and @bar.js. What does [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) do?'
+            'Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) and @bar.js. What does [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) do?'
         )
     })
 
@@ -149,10 +149,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'Compare and explain @foo.js:2-2 and @bar.js. What does @foo.js:2-2#FooBar() do?',
                 URI.file('/foo.js'),
-                new vscode.Range(2, 0, 2, 0)
+                new vscode.Range(1, 0, 2, 0)
             )
         ).toEqual(
-            'Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) and @bar.js. What does @foo.js:2-2#FooBar() do?'
+            'Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Ffoo.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A1%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A2%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) and @bar.js. What does @foo.js:2-2#FooBar() do?'
         )
     })
 
@@ -162,12 +162,12 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(
             text,
             URI.file('/vscode/src/logged-rerank.ts'),
-            new vscode.Range(7, 0, 23, 0),
+            new vscode.Range(6, 0, 23, 0),
             'getRerankWithLog()'
         )
 
         expect(result).toEqual(
-            '[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Fvscode%2Fsrc%2Flogged-rerank.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A7%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A23%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) what does this do'
+            '[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](command:_cody.vscode.open?%5B%7B%22%24mid%22%3A1%2C%22path%22%3A%22%2Fvscode%2Fsrc%2Flogged-rerank.ts%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22selection%22%3A%7B%22start%22%3A%7B%22line%22%3A6%2C%22character%22%3A0%7D%2C%22end%22%3A%7B%22line%22%3A23%2C%22character%22%3A0%7D%7D%2C%22preserveFocus%22%3Atrue%2C%22background%22%3Atrue%2C%22preview%22%3Atrue%2C%22viewColumn%22%3A-2%7D%5D) what does this do'
         )
     })
 })

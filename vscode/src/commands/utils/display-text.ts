@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { displayPath, type ActiveTextEditorSelection, type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { trailingNonAlphaNumericRegex } from './test-commands'
 
@@ -10,54 +10,18 @@ import { trailingNonAlphaNumericRegex } from './test-commands'
 export function createDisplayTextWithFileLinks(humanInput: string, files: ContextFile[]): string {
     let formattedText = humanInput
     for (const file of files) {
-        if (file.uri) {
-            const range = file.range
-                ? new vscode.Range(
-                      file.range.start.line,
-                      file.range.start.character,
-                      file.range.end.line,
-                      file.range.end.character
-                  )
-                : undefined
-            formattedText = replaceFileNameWithMarkdownLink(
-                formattedText,
-                file.uri,
-                range,
-                file.type === 'symbol' ? file.symbolName : undefined
-            )
-        }
+        // +1 on the end line numbers because we want to make sure to include everything on the end line by
+        // including the next line at position 0.
+        const range =
+            file.range && new vscode.Range(file.range.start.line, 0, file.range.end.line + 1, 0)
+        formattedText = replaceFileNameWithMarkdownLink(
+            formattedText,
+            file.uri,
+            range,
+            file.type === 'symbol' ? file.symbolName : undefined
+        )
     }
     return formattedText
-}
-
-/**
- * Gets the display text to show for the human's input.
- *
- * If there is a selection, display the file name + range alongside with human input
- * If the workspace root is available, it generates a markdown link to the file.
- */
-export function createDisplayTextWithFileSelection(
-    humanInput: string,
-    selection?: ActiveTextEditorSelection | null
-): string {
-    if (!selection) {
-        return humanInput
-    }
-
-    const range = selection.selectionRange
-        ? new vscode.Range(
-              selection.selectionRange.start.line,
-              selection.selectionRange.start.character,
-              selection.selectionRange.end.line,
-              selection.selectionRange.end.character
-          )
-        : undefined
-
-    const displayText = `${humanInput} @${inputRepresentation(selection.fileUri, range)}`
-
-    // Create markdown link to the file
-
-    return replaceFileNameWithMarkdownLink(displayText, selection.fileUri, range)
 }
 
 /**
@@ -107,12 +71,19 @@ export function replaceFileNameWithMarkdownLink(
     return (text + lastChar).trim()
 }
 
+/**
+ * Generates a string representation of the given file, range, and symbol name
+ * to use when linking to locations in code.
+ */
 function inputRepresentation(file: vscode.Uri, range?: vscode.Range, symbolName?: string): string {
+    // Joins the file path, line range, and symbol name with delimiters.
     return [
         displayPath(file),
-        range && !(range.start.line === 0 && range.end.line === 0)
-            ? `:${range.start.line}-${range.end.line}`
-            : '',
+        // +1 on start line because VS Code line numbers start at 1 in the editor UI,
+        // and is zero-based in the API for position used in VS Code selection/range.
+        // Since createDisplayTextWithFileLinks added 1 to end line, we don't need to add it again here.
+        // But add it for start line because this is for displaying the line number to user, which is +1-based.
+        range?.end.line ? `:${range.start.line + 1}-${range.end.line}` : '',
         symbolName ? `#${symbolName}` : '',
     ]
         .join('')
