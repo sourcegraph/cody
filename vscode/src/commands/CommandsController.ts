@@ -65,7 +65,6 @@ class CommandsController implements vscode.Disposable {
             // Add shell output as context if any before passing to the runner
             const shell = command.context?.command
             if (shell) {
-                span.addEvent('getShellContext')
                 const contextFile = await this.provider?.runShell(shell)
                 args.userContextFiles = contextFile
             }

@@ -168,14 +168,11 @@ export class CommandRunner implements vscode.Disposable {
      * Combine userContextFiles and context fetched for the command
      */
     private async getContextFiles(): Promise<ContextFile[]> {
-        this.span.addEvent('getContextFiles')
-
         const contextConfig = this.command.context
         this.span.setAttribute('contextConfig', JSON.stringify(contextConfig))
 
         const userContextFiles = this.args.userContextFiles ?? []
         if (contextConfig) {
-            this.span.addEvent('getCommandContextFiles')
             const commandContext = await getCommandContextFiles(contextConfig)
             userContextFiles.push(...commandContext)
         }
