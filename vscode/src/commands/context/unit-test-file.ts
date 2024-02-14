@@ -18,7 +18,6 @@ import type { URI } from 'vscode-uri'
  */
 export async function getContextFilesForUnitTestCommand(file: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.test', async span => {
-
         const contextFiles: ContextFile[] = []
 
         // exclude any files in the path with e2e, integration, node_modules, or dist
