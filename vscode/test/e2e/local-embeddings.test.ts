@@ -19,6 +19,7 @@ const test = helpers.test
         dotcomUrl: SERVER_URL,
     })
     .extend<helpers.ExpectedEvents>({
+        // list of events we expect this test to log, add to this list as needed
         expectedEvents: [
             'CodyInstalled',
             'CodyVSCodeExtension:auth:clickOtherSignInOptions',

@@ -4,6 +4,7 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',

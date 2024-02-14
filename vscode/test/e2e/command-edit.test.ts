@@ -8,6 +8,7 @@ import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from '.
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyVSCodeExtension:command:edit:executed',
         'CodyVSCodeExtension:fixupResponse:hasCode',

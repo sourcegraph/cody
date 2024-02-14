@@ -8,6 +8,7 @@ const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_U
 const ERROR_DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="squiggly-error"]'
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
@@ -39,6 +40,7 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyVSCodeExtension:command:edit:executed',
         'CodyVSCodeExtension:fixupResponse:hasCode',

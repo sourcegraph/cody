@@ -7,6 +7,7 @@ const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyVSCodeExtension:command:edit:executed',
         'CodyVSCodeExtension:keywordContext:searchDuration',

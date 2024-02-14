@@ -12,6 +12,7 @@ import { type ExpectedEvents, test } from './helpers'
  * and ignored files are not included in chat context.
  */
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:Auth:failed',
