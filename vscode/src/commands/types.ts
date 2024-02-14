@@ -23,7 +23,7 @@ export interface CodyCommandsFile {
 
 // JSON format of the CodyCommandsFile
 export interface CodyCommandsFileJSON {
-    commands: { [id: string]: Omit<CodyCommand, 'slashCommand'> }
+    commands: { [id: string]: Omit<CodyCommand, 'key'> }
 }
 
 export interface CodyCommandArgs {

@@ -7,6 +7,7 @@ import { CommandRunner } from './services/runner'
 import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
+import { fromSlashCommand } from './utils/common'
 
 /**
  * Handles commands execution with commands from CommandsProvider
@@ -30,16 +31,17 @@ class CommandsController implements vscode.Disposable {
      *
      * Handles prompt building and context fetching for commands.
      */
-    public async execute(text: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
-        const commandSplit = text?.trim().split(' ')
-        // The unique key for the command. e.g. /test
-        const commandKey = commandSplit[0] || text
-
+    public async execute(input: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
+        // Split the input by space to extract the command key and additional input (if any)
+        const commandSplit = input?.trim().split(' ')
+        // The unique key for the command. e.g. test, smell, explain
+        // Using fromSlashCommand to support backward compatibility with old slash commands
+        const commandKey = fromSlashCommand(commandSplit[0] || input)
         // Additional instruction that will be added to end of prompt in the custom command prompt
         // It's added at execution time to allow dynamic arguments
-        // E.g. if the command is `/edit replace dash with period`,
+        // E.g. if the command is `edit replace dash with period`,
         // the additionalInput is `replace dash with period`
-        const additionalInstruction = commandKey === text ? '' : commandSplit.slice(1).join(' ')
+        const additionalInstruction = commandKey === input ? '' : commandSplit.slice(1).join(' ')
 
         // Process default commands
         if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {

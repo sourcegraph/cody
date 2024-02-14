@@ -2,13 +2,15 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { window, commands } from 'vscode'
 import { CustomCommandConfigMenuItems, CommandMenuOption } from './items'
 
-import { vscodeDefaultCommands } from '../services/provider'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import type { CommandMenuItem } from './types'
 import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import { executeChat } from '../execute/ask'
 import { executeEdit } from '../../edit/execute'
+import { CodyCommandMenuItems } from '..'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -18,35 +20,38 @@ export async function showCommandMenu(
     const configOption = CommandMenuOption.config
     const addOption = CommandMenuOption.add
 
+    telemetryService.log(`CodyVSCodeExtension:menu:command:${type}:clicked`)
+    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked')
+
     // Add items to menu
     if (type === 'config') {
         items.push(...CustomCommandConfigMenuItems)
     } else {
         if (type === 'default') {
             items.push(CommandMenuSeperator.commands)
-            for (const [_name, _command] of vscodeDefaultCommands) {
-                const label = _command.slashCommand
-                const description = _command.description ?? _command.prompt
-                const command = _command.slashCommand
-                items.push({ label, description, command })
+            for (const _command of CodyCommandMenuItems) {
+                const key = _command.key
+                const label = `$(${_command.icon}) ${_command.description}`
+                const command = _command.command.command
+                // Show keybind as description if present
+                const description = _command.keybinding ? _command.keybinding : ''
+                items.push({ label, command, description, type, key })
             }
         }
 
-        // Add custom commands
-        items.push(CommandMenuSeperator.custom)
-        for (const customCommand of customCommands) {
-            const label = customCommand.slashCommand
-            const description = customCommand.description ?? customCommand.prompt
-            const command = customCommand.slashCommand
-            items.push({ label, description, command })
-        }
-
-        // Extra options
-        items.push(CommandMenuSeperator.settings, configOption)
-
         // The Create New Command option should show up in custom command menu only
         if (type === 'custom') {
-            items.push(addOption)
+            // Add custom commands
+            items.push(CommandMenuSeperator.custom)
+            for (const customCommand of customCommands) {
+                const label = `$(tools) ${customCommand.key}`
+                const description = customCommand.description ?? customCommand.prompt
+                const command = customCommand.key
+                const key = customCommand.key
+                items.push({ label, description, command, key })
+            }
+            // Extra options
+            items.push(CommandMenuSeperator.settings, configOption, addOption)
         }
     }
 
@@ -82,7 +87,7 @@ export async function showCommandMenu(
         })
 
         quickPick.onDidChangeValue(value => {
-            if (value?.startsWith('/')) {
+            if (type === 'default') {
                 const commandKey = value.split(' ')[0]
                 const isCommand = items.find(item => item.label === commandKey)
                 if (commandKey && isCommand) {
@@ -90,35 +95,70 @@ export async function showCommandMenu(
                     quickPick.items = [isCommand]
                     return
                 }
-            }
 
-            if (value && !value.startsWith('/')) {
-                quickPick.items = [CommandMenuOption.edit, CommandMenuOption.chat, ...items]
-            } else {
-                quickPick.items = items
+                if (value) {
+                    quickPick.items = [
+                        CommandMenuOption.chat,
+                        CommandMenuOption.edit,
+                        ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
+                    ]
+                } else {
+                    quickPick.items = items
+                }
             }
         })
 
         quickPick.onDidAccept(async () => {
             const selection = quickPick.activeItems[0] as CommandMenuItem
             const value = normalize(quickPick.value)
-            const selected = selection?.label || value
+            const source = 'menu'
 
             // On item button click
             if (selection.buttons && selection.type && selection.command) {
                 void commands.executeCommand(selection.command, selection.type)
             }
 
-            // Option to create a new custom command
-            if (selected === addOption.label && addOption.command) {
-                void commands.executeCommand(addOption.command, selected)
+            // Option to create a new custom command // config menu
+            const commandOptions = [addOption.command, configOption.command]
+            if (selection?.command && commandOptions.includes(selection.command)) {
+                void commands.executeCommand(selection.command)
                 quickPick.hide()
                 return
             }
 
-            // On config option click
-            if (selected === configOption.label) {
-                await showCommandMenu('config', customCommands)
+            // On selecting a default command
+            if (selection.type === 'default' && selection.command) {
+                // Check if it's an ask command
+                if (selection.key === 'ask') {
+                    // show input box if no value
+                    if (!value) {
+                        void commands.executeCommand('cody.chat.panel.new')
+                    } else {
+                        void executeChat({
+                            text: value.trim(),
+                            submitType: 'user-newchat',
+                            source,
+                        })
+                    }
+                    quickPick.hide()
+                    return
+                }
+
+                // Check if it's an edit command
+                if (selection.key === 'edit') {
+                    void executeEdit({ configuration: { instruction: value }, source })
+                    quickPick.hide()
+                    return
+                }
+
+                void commands.executeCommand(selection.command, selection.type)
+                quickPick.hide()
+                return
+            }
+
+            // On selecting a custom command
+            if (selection.key === selection.command) {
+                void commands.executeCommand('cody.action.command', selection.key + ' ' + value)
                 quickPick.hide()
                 return
             }
@@ -127,31 +167,6 @@ export async function showCommandMenu(
             const selectionHasIdField = Object.prototype.hasOwnProperty.call(selection, 'id')
             if (selectionHasIdField && (selection as CommandMenuItem).id === 'docs') {
                 return openCustomCommandDocsLink()
-            }
-
-            // Check if it's an ask command
-            if (selected.startsWith('/ask')) {
-                const inputValue = value.replace(/^\/ask/, '').trim()
-                // show input box if no value
-                if (!inputValue) {
-                    void showChatInputBox()
-                } else {
-                    void executeChat({ text: inputValue, submitType: 'user-newchat', source: 'menu' })
-                }
-                quickPick.hide()
-                return
-            }
-
-            // Check if it's an edit command
-            if (selected.startsWith('/edit')) {
-                void executeEdit({ configuration: { instruction: value }, source: 'menu' })
-                quickPick.hide()
-                return
-            }
-
-            // Else, process the selection as custom command
-            if (selected.startsWith('/')) {
-                void commands.executeCommand('cody.action.command', selected + ' ' + value)
             }
 
             resolve()
@@ -172,17 +187,8 @@ function normalize(input: string): string {
 export async function showNewCustomCommandMenu(
     commands: string[]
 ): Promise<CustomCommandsBuilder | null> {
+    telemetryService.log('CodyVSCodeExtension:menu:custom:build:clicked')
+    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
-}
-
-async function showChatInputBox(): Promise<void> {
-    const input = await window.showInputBox({
-        title: '/ask Cody',
-        placeHolder: 'Enter your question for Cody.',
-    })
-    if (!input) {
-        return
-    }
-    void executeChat({ text: input, submitType: 'user-newchat', source: 'menu' })
 }

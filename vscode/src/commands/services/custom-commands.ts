@@ -12,11 +12,11 @@ import { showNewCustomCommandMenu } from '../menus'
 import { URI, Utils } from 'vscode-uri'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { fromSlashCommand } from '../utils/common'
 import { getConfiguration } from '../../configuration'
+import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
 const isTesting = process.env.CODY_TESTING === 'true'
-const isMac = os.platform() === 'darwin'
+const isMacOS = isMac()
 const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
 /**
@@ -42,7 +42,9 @@ export class CustomCommandsManager implements vscode.Disposable {
 
     constructor() {
         this.disposables.push(
-            vscode.commands.registerCommand('cody.commands.add', () => this.newCustomCommandQuickPick()),
+            vscode.commands.registerCommand('cody.menu.custom.build', () =>
+                this.newCustomCommandQuickPick()
+            ),
             vscode.commands.registerCommand('cody.commands.open.json', type =>
                 this.configFileActions(type, 'open')
             ),
@@ -148,14 +150,14 @@ export class CustomCommandsManager implements vscode.Disposable {
      * Quick pick for creating a new custom command
      */
     private async newCustomCommandQuickPick(): Promise<void> {
-        const commands = [...this.customCommandsMap.values()].map(c => c.slashCommand)
+        const commands = [...this.customCommandsMap.values()].map(c => c.key)
         const newCommand = await showNewCustomCommandMenu(commands)
         if (!newCommand) {
             return
         }
 
         // Save the prompt to the current Map and Extension storage
-        await this.save(newCommand.slashCommand, newCommand.prompt, newCommand.type)
+        await this.save(newCommand.key, newCommand.prompt, newCommand.type)
         await this.refresh()
 
         // Notify user
@@ -163,7 +165,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         const buttonTitle = `Open ${isUserCommand ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
             .showInformationMessage(
-                `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
+                `New ${newCommand.key} command saved to ${newCommand.type} settings`,
                 buttonTitle
             )
             .then(async choice => {
@@ -186,19 +188,18 @@ export class CustomCommandsManager implements vscode.Disposable {
         type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
         this.customCommandsMap.set(id, command)
-        let updated: Omit<CodyCommand, 'slashCommand'> | undefined = omit(command, 'slashCommand')
+        const updated: Omit<CodyCommand, 'key'> | undefined = omit(command, ['key', 'type'])
 
         // Filter map to remove commands with non-match type
-        const filtered = new Map<string, Omit<CodyCommand, 'slashCommand'>>()
+        const filtered = new Map<string, Omit<CodyCommand, 'key'>>()
         for (const [key, _command] of this.customCommandsMap) {
             if (_command.type === type) {
-                updated = omit(updated, 'type')
-                filtered.set(fromSlashCommand(key), updated)
+                filtered.set(key, omit(_command, ['key', 'type']))
             }
         }
 
         // Add the new command to the filtered map
-        filtered.set(fromSlashCommand(id), updated)
+        filtered.set(id, updated)
 
         // turn map into json
         const jsonContext = { ...this.userJSON }
@@ -231,7 +232,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 if (type === CustomCommandType.Workspace) {
                     fileType = 'workspace settings file (.vscode/cody.json)'
                 }
-                const bin = isMac ? 'Trash' : 'Recycle Bin'
+                const bin = isMacOS ? 'Trash' : 'Recycle Bin'
                 const confirmationKey = `Move to ${bin}`
                 // Playwright cannot capture and interact with pop-up modal in VS Code,
                 // so we need to turn off modal mode for the display message during tests.
