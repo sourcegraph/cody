@@ -32,7 +32,7 @@ if ! command -v gh &>/dev/null; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/sourcegraph --limit 20 --exclude-drafts --exclude-pre-releases | awk '$3 ~ /v[0-9]+\.[0-9]+\.0$/ { print $3, $4; exit }')
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/sourcegraph --limit 20 --exclude-drafts --exclude-pre-releases | sed 's/Latest//' | awk '$3 ~ /v[0-9]+\.[0-9]+\.0$/ { print $3, $4; exit }')
 MAJOR_MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1,2)
 LAST_RELEASE_TIMESTAMP=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $2 }')
 
