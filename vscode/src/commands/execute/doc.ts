@@ -20,6 +20,7 @@ export async function executeDocCommand(
     return tracer.startActiveSpan(
         'command.doc',
         async (span): Promise<EditCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             logDebug('executeDocCommand', 'executing', { args })
             let prompt = defaultCommands.doc.prompt
 

@@ -24,6 +24,7 @@ export async function executeTestEditCommand(
     return tracer.startActiveSpan(
         'command.test',
         async (span): Promise<EditCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             // The prompt for generating tests in a new test file
             const newTestFilePrompt = defaultCommands.test.prompt
             // The prompt for adding new test suite to an existing test file

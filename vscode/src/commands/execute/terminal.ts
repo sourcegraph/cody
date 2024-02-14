@@ -27,6 +27,7 @@ export async function executeExplainOutput(
     return tracer.startActiveSpan(
         'command.terminal',
         async (span): Promise<ChatCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             logDebug('executeExplainOutput', 'executing', { args })
             const requestID = uuid.v4()
             const addEnhancedContext = false

@@ -64,6 +64,7 @@ export async function executeTestChatCommand(
     return tracer.startActiveSpan(
         'command.test-chat',
         async (span): Promise<ChatCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             logDebug('executeTestEditCommand', 'executing', { args })
             telemetryService.log('CodyVSCodeExtension:command:test:executed', {
                 useCodebaseContex: false,

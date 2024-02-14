@@ -52,6 +52,7 @@ export async function executeSmellCommand(
     return tracer.startActiveSpan(
         'command.smell',
         async (span): Promise<ChatCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             logDebug('executeSmellCommand', 'executing', { args })
             telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
                 useCodebaseContex: false,

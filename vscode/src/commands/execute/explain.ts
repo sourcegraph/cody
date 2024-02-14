@@ -58,6 +58,7 @@ export async function executeExplainCommand(
     return tracer.startActiveSpan(
         'command.explain',
         async (span): Promise<ChatCommandResult | undefined> => {
+            span.setAttribute('sampled', true)
             logDebug('executeExplainCommand', 'executing', { args })
             telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
                 useCodebaseContex: false,

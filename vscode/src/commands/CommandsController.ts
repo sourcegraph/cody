@@ -62,6 +62,8 @@ class CommandsController implements vscode.Disposable {
                     return undefined
                 }
 
+                span.setAttribute('sampled', true)
+
                 command.prompt = [command.prompt, additionalInstruction].join(' ')?.trim()
 
                 // Add shell output as context if any before passing to the runner
