@@ -125,4 +125,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(chatFrame.getByText('The End')).not.toBeVisible()
 
     await expect(startNewChatButton).not.toBeVisible()
+
+    // Chat input should still have focus.
+    await expect(chatInput).toBeFocused()
 })
