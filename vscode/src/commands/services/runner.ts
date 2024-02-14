@@ -6,6 +6,7 @@ import {
     type CodyCommand,
     type ContextFile,
 } from '@sourcegraph/cody-shared'
+import type { Span } from '@opentelemetry/api'
 
 import { executeEdit, type ExecuteEditArguments } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
@@ -33,6 +34,7 @@ export class CommandRunner implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     constructor(
+        private span: Span,
         private readonly command: CodyCommand,
         private readonly args: CodyCommandArgs
     ) {
@@ -61,6 +63,7 @@ export class CommandRunner implements vscode.Disposable {
                 useShellCommand: !!this.command.context?.command,
                 requestID: this.args.requestID,
                 source: this.args.source,
+                traceId: this.span.spanContext().traceId,
             })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'executed', {
                 metadata: {
@@ -72,6 +75,7 @@ export class CommandRunner implements vscode.Disposable {
                     mode: this.command.mode,
                     requestID: this.args.requestID,
                     source: this.args.source,
+                    traceId: this.span.spanContext().traceId,
                 },
             })
         }
@@ -81,6 +85,7 @@ export class CommandRunner implements vscode.Disposable {
         if (!configFeatures.commands) {
             const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
             void vscode.window.showErrorMessage(disabledMsg)
+            this.span.end()
             return
         }
         const editor = getEditor()
@@ -89,6 +94,7 @@ export class CommandRunner implements vscode.Disposable {
                 ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
                 : 'No editor is active. Please open a file and try again.'
             void vscode.window.showErrorMessage(message)
+            this.span.end()
             return
         }
 
@@ -106,6 +112,7 @@ export class CommandRunner implements vscode.Disposable {
      * Executes the chat request with the prompt and context files
      */
     private async handleChatRequest(): Promise<ChatCommandResult | undefined> {
+        this.span.setAttribute('mode', 'chat')
         logDebug('CommandRunner:handleChatRequest', 'chat request detecte')
 
         const prompt = this.command.prompt
@@ -131,6 +138,7 @@ export class CommandRunner implements vscode.Disposable {
      * Creates range and instruction, calls fixup command.
      */
     private async handleEditRequest(): Promise<EditCommandResult | undefined> {
+        this.span.setAttribute('mode', 'edit')
         logDebug('CommandRunner:handleEditRequest', 'fixup request detected')
 
         // Conditions for categorizing an edit command
@@ -160,8 +168,10 @@ export class CommandRunner implements vscode.Disposable {
      * Combine userContextFiles and context fetched for the command
      */
     private async getContextFiles(): Promise<ContextFile[]> {
-        const userContextFiles = this.args.userContextFiles ?? []
         const contextConfig = this.command.context
+        this.span.setAttribute('contextConfig', JSON.stringify(contextConfig))
+
+        const userContextFiles = this.args.userContextFiles ?? []
         if (contextConfig) {
             const commandContext = await getCommandContextFiles(contextConfig)
             userContextFiles.push(...commandContext)
