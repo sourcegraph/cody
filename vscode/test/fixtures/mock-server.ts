@@ -210,6 +210,19 @@ export class MockServer {
             if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
                 response = responses.chatWithSnippet
             }
+            // Delay by 400ms to allow the client to perform a small action before receiving the response.
+            // e.g. clicking on a file or move the cursor around.
+            if (request.body.messages[lastHumanMessageIndex].text.startsWith('delay')) {
+                const r1 = responses.chatWithSnippet
+                const r2 = r1 + '\n\nDone'
+                res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r1)}}\n\n`)
+                setTimeout(() => {
+                    res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r2)}}\n\n`)
+                    res.write('event: done\ndata: {}\n\n')
+                    res.end() // End the response after sending the events
+                }, 400)
+                return
+            }
             res.send(
                 `event: completion\ndata: {"completion": ${JSON.stringify(
                     response
