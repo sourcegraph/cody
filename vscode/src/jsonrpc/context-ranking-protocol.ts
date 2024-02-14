@@ -4,7 +4,7 @@ interface InitializeParams {
 
 interface ComputeFeaturesParams {
     repoPath: string
-    BM25ChunkingStrategy: 'file-level-chunking'
+    bm25ChunkingStrategy: 'full-file-chunks'
 }
 
 export interface RankContextItem {
@@ -15,16 +15,18 @@ export interface RankContextItem {
 }
 
 interface RankItemsParams {
-    rankContextItem: RankContextItem[],
-    query: string
+    repoPath: string,
+    bm25ChunkingStrategy: 'full-file-chunks',
+    query: string,
+    contextItems: RankContextItem[],
+    
 }
 
 export type Requests = {
     'context-ranking/echo': [string, string],
     'context-ranking/initialize': [InitializeParams, string],
-    // try to load the features and if features does not exist, return false. 
-    'context-ranking/load-features': [string, boolean],
-    'context-ranking/compute-features': [ComputeFeaturesParams, string],
-    'context-ranking/rank-items': [RankItemsParams, RankItemsParams]
+    // try to load the features and if features does not exist, return false.
+    'context-ranking/compute-features': [ComputeFeaturesParams, boolean],
+    'context-ranking/rank-items': [RankItemsParams, RankContextItem[] ]
 }
 

@@ -77,7 +77,7 @@ export async function configureExternalServices(
         )
     }
 
-    const contextRanking = platform.createContextRankingController?.()
+    const contextRanking = platform.createContextRankingController?.(initialConfig)
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)

@@ -15,11 +15,11 @@ import {
     type LocalEmbeddingsProvider,
 } from '@sourcegraph/cody-shared'
 
-import { spawnBfg } from '../graph/bfg/spawn-bfg'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
+import { CodyEngineService } from './cody-engine'
 
 export function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
@@ -167,21 +167,14 @@ export class LocalEmbeddingsController
 
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
-            this.service = this.spawnAndBindService(this.context)
+            const instance = CodyEngineService.getInstance(this.context)
+            this.service = instance.getService()
+            instance.setupServiceHandler(this.setupLocalEmbeddingsService)
         }
         return this.service
     }
 
-    private async spawnAndBindService(context: vscode.ExtensionContext): Promise<MessageHandler> {
-        const service = await new Promise<MessageHandler>((resolve, reject) => {
-            spawnBfg(context, reject).then(
-                bfg => resolve(bfg),
-                error => {
-                    captureException(error)
-                    reject(error)
-                }
-            )
-        })
+    private setupLocalEmbeddingsService = async (service: MessageHandler): Promise<void> => {
         // TODO: Add more states for cody-engine fetching and trigger status updates here
         service.registerNotification('embeddings/progress', obj => {
             if (typeof obj === 'object') {
@@ -243,7 +236,6 @@ export class LocalEmbeddingsController
         }
         this.serviceStarted = true
         this.changeEmitter.fire(this)
-        return service
     }
 
     // After indexing succeeds or fails, try to load the index. Update state

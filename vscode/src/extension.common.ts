@@ -22,7 +22,7 @@ import type {
 } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
 import type { CommandsProvider } from './commands/services/provider'
-import { ContextRankingController } from './local-context/context-ranking'
+import { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -33,7 +33,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
-    createContextRankingController?: () => ContextRankingController
+    createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
     createCompletionsClient:
