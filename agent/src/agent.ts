@@ -52,6 +52,7 @@ import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -539,12 +540,12 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID)
+            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {

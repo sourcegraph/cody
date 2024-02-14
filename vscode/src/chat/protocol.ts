@@ -50,12 +50,7 @@ export type WebviewMessage =
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends to munge the type in a weird way (nested fields become array indices).
-          range?: {
-              startLine: number
-              startCharacter: number
-              endLine: number
-              endCharacter: number
-          }
+          range?: ActiveTextEditorSelectionRange
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
@@ -73,7 +68,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          type:
+          authKind:
               | 'signin'
               | 'signout'
               | 'support'
@@ -88,17 +83,14 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'web-sign-in-token'
+          onboardingKind: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
           uri: URI
-          range: {
-              start: { line: number; character: number }
-              end: { line: number; character: number }
-          }
+          range: ActiveTextEditorSelectionRange
       }
     | {
           command: 'reset'
@@ -122,15 +114,15 @@ export type ExtensionMessage =
           type: 'search:config'
           workspaceFolderUris: string[]
       }
-    | { type: 'history'; messages: UserLocalHistory | null }
+    | { type: 'history'; localHistory: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
-    | { type: 'view'; messages: View }
+    | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'
-          context: ContextFile[] | null
+          userContextFiles: ContextFile[] | null
           kind?: ContextFileType
       }
     | { type: 'chatModels'; models: ModelProvider[] }
@@ -140,7 +132,7 @@ export type ExtensionMessage =
           query: string
       }
     | { type: 'index-updated'; scopeDir: string }
-    | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'webview-state'; isActive: boolean }

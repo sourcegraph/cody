@@ -45,7 +45,7 @@ const WebLogin: React.FunctionComponent<
                         telemetryService.log('CodyVSCodeExtension:auth:clickSignInWeb')
                         vscodeAPI.postMessage({
                             command: 'simplified-onboarding',
-                            type: 'web-sign-in-token',
+                            onboardingKind: 'web-sign-in-token',
                         })
                         event.preventDefault()
                         event.stopPropagation()
@@ -67,7 +67,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
 }) => {
     const otherSignInClick = (): void => {
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
     return (
         <div className={styles.container}>
