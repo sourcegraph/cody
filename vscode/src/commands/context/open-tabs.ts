@@ -10,7 +10,6 @@ import { getContextFileFromUri } from './file-path'
  */
 export async function getContextFileFromTabs(): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.openTabs', async span => {
-        span.setAttribute('sampled', true)
         const contextFiles: ContextFile[] = []
         try {
             // Get open tabs from the current editor

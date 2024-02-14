@@ -32,7 +32,6 @@ export async function executeTestCaseEditCommand(
         const contextFiles: ContextFile[] = []
 
         try {
-            span.addEvent('getContextFilesForAddingUnitTestCases')
             const files = await getContextFilesForAddingUnitTestCases(document.uri)
             contextFiles.push(...files)
         } catch (error) {

@@ -44,7 +44,6 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
-            span.setAttribute('sampled', true)
 
             const model = this.config.task.model
             const contextWindow = getContextWindowForModel(

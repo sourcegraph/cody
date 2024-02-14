@@ -24,7 +24,6 @@ const _exec = promisify(exec)
  */
 export async function getContextFileFromShell(command: string): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.command', async span => {
-        span.setAttribute('sampled', true)
         const rootDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
         if (!vscode.env.shell) {

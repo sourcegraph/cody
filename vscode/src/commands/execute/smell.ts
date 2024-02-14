@@ -30,7 +30,6 @@ export async function smellCommand(
 
     const contextFiles: ContextFile[] = []
 
-    span.addEvent('getContextFileFromCursor')
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)
 

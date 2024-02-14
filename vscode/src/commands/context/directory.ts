@@ -19,7 +19,6 @@ import { type URI, Utils } from 'vscode-uri'
  */
 export async function getContextFileFromDirectory(directory?: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.directory', async span => {
-        span.setAttribute('sampled', true)
         const contextFiles: ContextFile[] = []
 
         const editor = getEditor()

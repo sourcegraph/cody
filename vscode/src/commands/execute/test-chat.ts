@@ -33,11 +33,9 @@ async function unitTestCommand(
 
     if (document) {
         try {
-            span.addEvent('getContextFileFromCursor')
             const cursorContext = await getContextFileFromCursor()
             contextFiles.push(...cursorContext)
 
-            span.addEvent('getContextFilesForTestCommand')
             contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
         } catch (error) {
             logError('testCommand', 'failed to fetch context', { verbose: error })

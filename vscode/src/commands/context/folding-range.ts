@@ -19,7 +19,6 @@ export async function getFoldingRanges(
     getLastItem?: boolean
 ): Promise<vscode.FoldingRange[] | undefined> {
     return wrapInActiveSpan('commands.context.foldingRange', async span => {
-        span.setAttribute('sampled', true)
         // Run built-in command to get folding ranges
         const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
             'vscode.executeFoldingRangeProvider',

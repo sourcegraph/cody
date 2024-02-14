@@ -18,7 +18,6 @@ import type { URI } from 'vscode-uri'
  */
 export async function getContextFilesForUnitTestCommand(file: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.test', async span => {
-        span.setAttribute('sampled', true)
 
         const contextFiles: ContextFile[] = []
 

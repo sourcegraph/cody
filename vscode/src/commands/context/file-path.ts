@@ -13,7 +13,6 @@ import type { URI } from 'vscode-uri'
  */
 export async function getContextFileFromUri(file: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
-        span.setAttribute('sampled', true)
         try {
             const doc = await vscode.workspace.openTextDocument(file)
             const decoded = doc?.getText()

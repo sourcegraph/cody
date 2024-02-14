@@ -40,7 +40,6 @@ export async function executeTestEditCommand(
         const contextFiles: ContextFile[] = []
 
         try {
-            span.addEvent('getContextFilesForUnitTestCommand')
 
             const files = await getContextFilesForUnitTestCommand(document.uri)
             contextFiles.push(...files)

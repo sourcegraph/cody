@@ -32,11 +32,9 @@ export async function explainCommand(
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextFile[] = []
 
-    span.addEvent('getContextFileFromCursor')
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)
 
-    span.addEvent('getContextFileFromCurrentFile')
     const currentFile = await getContextFileFromCurrentFile()
     contextFiles.push(...currentFile)
 

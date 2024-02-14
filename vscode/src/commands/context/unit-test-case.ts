@@ -8,7 +8,6 @@ import { getContextFileFromDirectory } from './directory'
 
 export async function getContextFilesForAddingUnitTestCases(testFile: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.testCase', async span => {
-        span.setAttribute('sampled', true)
         // Get the context from the current directory
         // and then find the original file of the test file in the returned context
         // If the original file is found, return it

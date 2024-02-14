@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 
 export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.file', async span => {
-        span.setAttribute('sampled', true)
         try {
             const editor = getEditor()
             const document = editor?.active?.document
