@@ -6,7 +6,7 @@ import * as mockServer from '../fixtures/mock-server'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
+test('Explain Command & Smell Command', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -20,8 +20,8 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
 
-    await page.getByText('Explain code').hover()
-    await page.getByText('Explain code').click()
+    await page.getByText('Explain Code').hover()
+    await page.getByText('Explain Code').click()
 
     // Find the chat iframe
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -45,8 +45,8 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
     // Click on the 4th line of the file before running Explain
     // to check if smart selection and the explain command works.
     await page.getByText('<title>Hello Cody</title>').click()
-    await expect(page.getByText('Explain code')).toBeVisible()
-    await page.getByText('Explain code').click()
+    await expect(page.getByText('Explain Code')).toBeVisible()
+    await page.getByText('Explain Code').click()
     await chatPanel.getByText('Context: 9 lines from 1 file').click()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
@@ -57,21 +57,11 @@ test('Explain Command & Smell Command & Chat from Command Menu', async ({ page, 
 
     // Smell Command
     // Running a command again should reuse the current cursor position
-    await expect(page.getByText('Identify code smells')).toBeVisible()
-    await page.getByText('Identify code smells').click()
+    await expect(page.getByText('Find Code Smells')).toBeVisible()
+    await page.getByText('Find Code Smells').click()
     await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(1)
     await expect(editLastMessageButton).not.toBeVisible()
-
-    // Submit a chat question via command menu using /ask option
-    await page.getByRole('tab', { name: 'index.html' }).click()
-    await page.getByRole('button', { name: /Commands \(.*/ }).dblclick()
-    const commandInputBox = page.getByPlaceholder(/Search for a command or enter/)
-    await expect(commandInputBox).toBeVisible()
-    await commandInputBox.fill('hello cody')
-    await page.getByLabel('/ask, Ask a question').locator('a').click()
-    // the question should show up in the chat panel on submit
-    await chatPanel.getByText('hello cody').click()
 
     const expectedEvents = [
         'CodyVSCodeExtension:command:explain:executed',
@@ -92,7 +82,7 @@ test('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
 
     // Click on the Cody command code lenses to execute the unit test command
     await page.getByRole('button', { name: 'A Cody' }).click()
-    await page.getByText('/test').click()
+    await page.getByText('Generate Unit Tests').click()
 
     // The test file for the buzz.ts file should be opened automatically
     await page.getByText('buzz.test.ts').hover()
@@ -127,8 +117,8 @@ test('Document Command (Edit)', async ({ page, sidebar }) => {
     await page.click('.badge[aria-label="Cody"]')
 
     // Trigger the documentaton command
-    await page.getByText('Add code documentation').hover()
-    await page.getByText('Add code documentation').click()
+    await page.getByText('Document Code').hover()
+    await page.getByText('Document Code').click()
 
     // Code lens should be visible
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
