@@ -35,9 +35,7 @@ export function wrapInActiveSpan<R>(name: string, fn: (span: Span) => R): R {
         }
 
         const handleError = (error: unknown): never => {
-            span.recordException(error as Exception)
-            span.setStatus({ code: SpanStatusCode.ERROR })
-            span.end()
+            recordErrorToSpan(span, error as Error)
             throw error
         }
 
@@ -68,7 +66,17 @@ export function addTraceparent(headers: Headers): void {
     })
 }
 
-export function recordSpanWithError(span: Span, error: Error): Error {
+export function getTraceparentHeaders(): { [key: string]: string } {
+    const headers: { [key: string]: string } = {}
+    propagation.inject(context.active(), headers, {
+        set(carrier, key, value) {
+            carrier[key] = value
+        },
+    })
+    return headers
+}
+
+export function recordErrorToSpan(span: Span, error: Error): Error {
     span.recordException(error)
     span.setStatus({ code: SpanStatusCode.ERROR })
     span.end()

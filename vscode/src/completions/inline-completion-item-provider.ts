@@ -46,8 +46,7 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
-import type { Span } from '@opentelemetry/api'
-import { getConfiguration } from '../configuration'
+import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -441,7 +440,7 @@ export class InlineCompletionItemProvider
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
-                addExposedExperimentsToSpan(span, result.source)
+                recordExposedExperimentsToSpan(span)
 
                 return autocompleteResult
             } catch (error) {
@@ -783,11 +782,4 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
-}
-
-function addExposedExperimentsToSpan(span: Span, source: InlineCompletionsResultSource): void {
-    // Add exposed experiments at the very end to make sure we include experiments that the user is
-    // being exposed to while the completion was generated
-    span.setAttributes(featureFlagProvider.getExposedExperiments())
-    span.setAttributes(getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())) as any)
 }
