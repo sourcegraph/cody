@@ -2,7 +2,12 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, test as baseTest, withPlatformSlashes, assertEvents } from './helpers'
+import {
+    type DotcomUrlOverride,
+    test as baseTest,
+    withPlatformSlashes,
+    type ExpectedEvents,
+} from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -10,7 +15,20 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-test('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:custom:build:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:command:custom:executed',
+    ],
+})('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -85,19 +103,24 @@ test('create a new user command via the custom commands menu', async ({ page, si
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:menu:custom:build:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:command:custom:executed',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might
 // indicate a breaking change during the custom command building step.
-test('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
+        'CodyVSCodeExtension:command:custom:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -185,17 +208,20 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await expect(
         chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-2') })
     ).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:command:custom:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
 
-test('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
+        'CodyVSCodeExtension:menu:command:config:clicked',
+    ],
+})('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -242,10 +268,4 @@ test('open and delete cody.json from the custom command menu', async ({ page, si
 
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:menu:command:config:clicked',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })
