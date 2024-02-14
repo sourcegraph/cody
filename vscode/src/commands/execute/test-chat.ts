@@ -7,12 +7,19 @@ import type { ChatCommandResult } from '../../main'
 import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+
+import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import type { Span } from '@opentelemetry/api'
+
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.
  *
  * Context: Test files, current selection, and current file
  */
-async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+async function unitTestCommand(
+    span: Span,
+    args?: Partial<CodyCommandArgs>
+): Promise<ExecuteChatArguments> {
     let prompt =
         "Review the shared code context and configurations to identify the test framework and libraries in use. Then, generate a suite of multiple unit tests for the functions in <selected> using the detected test framework and libraries. Be sure to import the function being tested. Follow the same patterns as any shared context. Only add packages, imports, dependencies, and assertions if they are used in the shared code. Pay attention to the file path of each shared context to see if test for <selected> already exists. If one exists, focus on generating new unit tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Only include mocks if one is detected in the shared code. Before writing the tests, identify which test libraries and frameworks to import, e.g. 'No new imports needed - using existing libs' or 'Importing test framework that matches shared context usage' or 'Importing the defined framework', etc. Then briefly summarize test coverage and any limitations. At the end, enclose the full completed code for the new unit tests, including all necessary imports, in a single markdown codeblock. No fragments or TODO. The new tests should validate expected functionality and cover edge cases for <selected> with all required imports, including importing the function being tested. Do not repeat existing tests."
 
@@ -26,9 +33,11 @@ async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<Execute
 
     if (document) {
         try {
+            span.addEvent('getContextFileFromCursor')
             const cursorContext = await getContextFileFromCursor()
             contextFiles.push(...cursorContext)
 
+            span.addEvent('getContextFilesForTestCommand')
             contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
         } catch (error) {
             logError('testCommand', 'failed to fetch context', { verbose: error })
@@ -52,25 +61,32 @@ async function unitTestCommand(args?: Partial<CodyCommandArgs>): Promise<Execute
 export async function executeTestChatCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    logDebug('executeTestEditCommand', 'executing', { args })
-    telemetryService.log('CodyVSCodeExtension:command:test:executed', {
-        useCodebaseContex: false,
-        requestID: args?.requestID,
-        source: args?.source,
-    })
-    telemetryRecorder.recordEvent('cody.command.test', 'executed', {
-        metadata: {
-            useCodebaseContex: 0,
-        },
-        interactionID: args?.requestID,
-        privateMetadata: {
-            requestID: args?.requestID,
-            source: args?.source,
-        },
-    })
+    return tracer.startActiveSpan(
+        'command.test-chat',
+        async (span): Promise<ChatCommandResult | undefined> => {
+            logDebug('executeTestEditCommand', 'executing', { args })
+            telemetryService.log('CodyVSCodeExtension:command:test:executed', {
+                useCodebaseContex: false,
+                requestID: args?.requestID,
+                source: args?.source,
+                traceId: span.spanContext().traceId,
+            })
+            telemetryRecorder.recordEvent('cody.command.test', 'executed', {
+                metadata: {
+                    useCodebaseContex: 0,
+                },
+                interactionID: args?.requestID,
+                privateMetadata: {
+                    requestID: args?.requestID,
+                    source: args?.source,
+                    traceId: span.spanContext().traceId,
+                },
+            })
 
-    return {
-        type: 'chat',
-        session: await executeChat(await unitTestCommand(args)),
-    }
+            return {
+                type: 'chat',
+                session: await executeChat(await unitTestCommand(span, args)),
+            }
+        }
+    )
 }

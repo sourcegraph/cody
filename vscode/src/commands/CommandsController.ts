@@ -9,6 +9,7 @@ import type { CommandResult } from '../main'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
 import { fromSlashCommand } from './utils/common'
 
+import { tracer } from '@sourcegraph/cody-shared/src/tracing'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -32,38 +33,48 @@ class CommandsController implements vscode.Disposable {
      * Handles prompt building and context fetching for commands.
      */
     public async execute(input: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
-        // Split the input by space to extract the command key and additional input (if any)
-        const commandSplit = input?.trim().split(' ')
-        // The unique key for the command. e.g. test, smell, explain
-        // Using fromSlashCommand to support backward compatibility with old slash commands
-        const commandKey = fromSlashCommand(commandSplit[0] || input)
-        // Additional instruction that will be added to end of prompt in the custom command prompt
-        // It's added at execution time to allow dynamic arguments
-        // E.g. if the command is `edit replace dash with period`,
-        // the additionalInput is `replace dash with period`
-        const additionalInstruction = commandKey === input ? '' : commandSplit.slice(1).join(' ')
+        return tracer.startActiveSpan(
+            'command.explain',
+            async (span): Promise<CommandResult | undefined> => {
+                // Split the input by space to extract the command key and additional input (if any)
+                const commandSplit = input?.trim().split(' ')
+                // The unique key for the command. e.g. test, smell, explain
+                // Using fromSlashCommand to support backward compatibility with old slash commands
+                const commandKey = fromSlashCommand(commandSplit[0] || input)
+                // Additional instruction that will be added to end of prompt in the custom command prompt
+                // It's added at execution time to allow dynamic arguments
+                // E.g. if the command is `edit replace dash with period`,
+                // the additionalInput is `replace dash with period`
+                const additionalInstruction = commandKey === input ? '' : commandSplit.slice(1).join(' ')
 
-        // Process default commands
-        if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
-            return executeDefaultCommand(commandKey, additionalInstruction)
-        }
+                // Process default commands
+                if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
+                    span.end()
+                    return executeDefaultCommand(commandKey, additionalInstruction)
+                }
 
-        const command = this.provider?.get(commandKey)
-        if (!command) {
-            logDebug('CommandsController:execute', 'command not found', { verbose: { commandKey } })
-            return undefined
-        }
+                const command = this.provider?.get(commandKey)
+                if (!command) {
+                    logDebug('CommandsController:execute', 'command not found', {
+                        verbose: { commandKey },
+                    })
+                    span.end()
+                    return undefined
+                }
 
-        command.prompt = [command.prompt, additionalInstruction].join(' ')?.trim()
+                command.prompt = [command.prompt, additionalInstruction].join(' ')?.trim()
 
-        // Add shell output as context if any before passing to the runner
-        const shell = command.context?.command
-        if (shell) {
-            const contextFile = await this.provider?.runShell(shell)
-            args.userContextFiles = contextFile
-        }
+                // Add shell output as context if any before passing to the runner
+                const shell = command.context?.command
+                if (shell) {
+                    span.addEvent('getShellContext')
+                    const contextFile = await this.provider?.runShell(shell)
+                    args.userContextFiles = contextFile
+                }
 
-        return new CommandRunner(command, args).start()
+                return new CommandRunner(span, command, args).start()
+            }
+        )
     }
 
     public dispose(): void {

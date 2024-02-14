@@ -9,25 +9,34 @@ import type { CodyCommandArgs } from '../types'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
+import { tracer } from '@sourcegraph/cody-shared/src/tracing'
+import type { Span } from '@opentelemetry/api'
+
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
  *
  * Context: Current selection and current file
  */
-export async function explainCommand(args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+export async function explainCommand(
+    span: Span,
+    args?: Partial<CodyCommandArgs>
+): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
     let prompt = defaultCommands.explain.prompt
 
     if (args?.additionalInstruction) {
+        span.addEvent('additionalInstruction')
         prompt = `${prompt} ${args.additionalInstruction}`
     }
 
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextFile[] = []
 
+    span.addEvent('getContextFileFromCursor')
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)
 
+    span.addEvent('getContextFileFromCurrentFile')
     const currentFile = await getContextFileFromCurrentFile()
     contextFiles.push(...currentFile)
 
@@ -46,25 +55,32 @@ export async function explainCommand(args?: Partial<CodyCommandArgs>): Promise<E
 export async function executeExplainCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
-    logDebug('executeExplainCommand', 'executing', { args })
-    telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
-        useCodebaseContex: false,
-        requestID: args?.requestID,
-        source: args?.source,
-    })
-    telemetryRecorder.recordEvent('cody.command.explain', 'executed', {
-        metadata: {
-            useCodebaseContex: 0,
-        },
-        interactionID: args?.requestID,
-        privateMetadata: {
-            requestID: args?.requestID,
-            source: args?.source,
-        },
-    })
+    return tracer.startActiveSpan(
+        'command.explain',
+        async (span): Promise<ChatCommandResult | undefined> => {
+            logDebug('executeExplainCommand', 'executing', { args })
+            telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
+                useCodebaseContex: false,
+                requestID: args?.requestID,
+                source: args?.source,
+                traceId: span.spanContext().traceId,
+            })
+            telemetryRecorder.recordEvent('cody.command.explain', 'executed', {
+                metadata: {
+                    useCodebaseContex: 0,
+                },
+                interactionID: args?.requestID,
+                privateMetadata: {
+                    requestID: args?.requestID,
+                    source: args?.source,
+                    traceId: span.spanContext().traceId,
+                },
+            })
 
-    return {
-        type: 'chat',
-        session: await executeChat(await explainCommand(args)),
-    }
+            return {
+                type: 'chat',
+                session: await executeChat(await explainCommand(span, args)),
+            }
+        }
+    )
 }

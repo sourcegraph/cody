@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
-    featureFlagProvider,
     isCodyIgnoredFile,
     RateLimitError,
     wrapInActiveSpan,
@@ -13,7 +12,7 @@ import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
-import { getExtensionDetails, telemetryService } from '../services/telemetry'
+import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
