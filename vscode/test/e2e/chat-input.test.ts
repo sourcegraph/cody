@@ -24,4 +24,7 @@ test('editing messages in the chat input', async ({ page, sidebar }) => {
     await chatInput.press('Control+Shift+ArrowLeft')
     await chatInput.press('Delete')
     await expect(chatInput).toHaveValue('')
+
+    // Chat input should have focused after sending a message.
+    await expect(chatInput).toBeFocused()
 })
