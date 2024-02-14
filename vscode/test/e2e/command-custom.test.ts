@@ -133,6 +133,8 @@ test('execute custom commands with context defined in cody.json', async ({ page,
     await expect(chatPanel.getByText('✨ Context: 61 lines from 5 files')).toBeVisible()
     await chatPanel.getByText('✨ Context: 61 lines from 5 files').click()
     // Display the context files to confirm no hidden files are included
+    await expect(chatPanel.locator('span').filter({ hasText: '@.mydotfile:1-2' })).not.toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@error.ts:1-10' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@Main.java:1-10' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.test.ts:1-13' })).toBeVisible()
     await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-16' })).toBeVisible()
