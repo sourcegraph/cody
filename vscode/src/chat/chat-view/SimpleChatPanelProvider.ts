@@ -389,10 +389,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         source?: ChatEventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
-            telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, source })
+            const sharedProperties = {
+                requestID,
+                chatModel: this.chatModel.modelID,
+                source,
+                traceId: span.spanContext().traceId,
+            }
+            telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
-                privateMetadata: { requestID, source },
+                privateMetadata: sharedProperties,
             })
+
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 span.setAttribute('sampled', true)
 
@@ -443,8 +450,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const sendTelemetry = (contextSummary: any): void => {
                     const authStatus = this.authProvider.getAuthStatus()
                     const properties = {
-                        requestID,
-                        chatModel: this.chatModel.modelID,
+                        ...sharedProperties,
                         contextSummary,
                         traceId: span.spanContext().traceId,
                     }
