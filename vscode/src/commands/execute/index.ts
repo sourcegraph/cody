@@ -18,6 +18,7 @@ export { executeTestChatCommand } from './test-chat'
 export { executeDocCommand } from './doc'
 export { executeTestEditCommand } from './test-edit'
 export { executeTestCaseEditCommand } from './test-case'
+export { executeExplainOutput } from './terminal'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any

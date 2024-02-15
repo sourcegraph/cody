@@ -10,6 +10,7 @@ import {
     setLogger,
     type ConfigurationWithAccessToken,
     ConfigFeaturesSingleton,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -19,7 +20,6 @@ import type { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
-    ACCOUNT_USAGE_URL,
     CODY_FEEDBACK_URL,
     type AuthStatus,
 } from './chat/protocol'
@@ -53,6 +53,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import type { FixupTask } from './non-stop/FixupTask'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import {
     executeExplainCommand,
     executeTestEditCommand,
@@ -60,7 +61,9 @@ import {
     executeDocCommand,
     executeTestChatCommand,
     executeTestCaseEditCommand,
+    executeExplainOutput,
 } from './commands/execute'
+import { registerSidebarCommands } from './services/SidebarCommands'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -216,17 +219,15 @@ const register = async (
         guardrails
     )
 
-    const ghostHintDecorator = new GhostHintDecorator()
-    disposables.push(
+    const ghostHintDecorator = new GhostHintDecorator(authProvider)
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        contextProvider,
         ghostHintDecorator,
-        new EditManager({
-            chat: chatClient,
-            editor,
-            contextProvider,
-            ghostHintDecorator,
-        }),
-        new CodeActionProvider({ contextProvider })
-    )
+        authProvider,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -283,6 +284,7 @@ const register = async (
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
@@ -346,7 +348,8 @@ const register = async (
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
 
     const statusBar = createStatusBar()
@@ -394,24 +397,7 @@ const register = async (
         ),
 
         // Account links
-        vscode.commands.registerCommand('cody.show-page', (page: string) => {
-            let url: URL
-            switch (page) {
-                case 'upgrade':
-                    url = ACCOUNT_UPGRADE_URL
-                    break
-                case 'usage':
-                    url = ACCOUNT_USAGE_URL
-                    break
-                case 'rate-limits':
-                    url = ACCOUNT_LIMITS_INFO_URL
-                    break
-                default:
-                    console.warn(`Unable to show unknown page: "${page}"`)
-                    return
-            }
-            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
-        }),
+        ...registerSidebarCommands(),
 
         // Account links
         vscode.commands.registerCommand(
@@ -449,7 +435,7 @@ const register = async (
             }
         ),
 
-        // Register URI Handler (vscode://sourcegraph.cody-ai)
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {
@@ -518,6 +504,22 @@ const register = async (
                 authStatus.userCanUpgrade = !res.codyProEnabled
                 void chatManager.syncAuthStatus(authStatus)
             }
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
+        ),
+        // For register sidebar clicks
+        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
+            const source: ChatEventSource = 'sidebar'
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
+                privateMetadata: { source },
+            })
+            void vscode.commands.executeCommand(command, [source])
         })
     )
 

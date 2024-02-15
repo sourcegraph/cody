@@ -25,6 +25,7 @@
         "test:unit": "vitest run",
         "test:integration": "pnpm -C vscode test:integration",
         "test:e2e": "pnpm -C vscode test:e2e",
+        "generate-agent-kotlin-bindings": "pnpm build && pnpm dlx ts-node agent/src/cli/scip-codegen/command.ts --output ../jetbrains/src/main/kotlin/com/sourcegraph/cody/protocol_generated",
         "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
         "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
     },

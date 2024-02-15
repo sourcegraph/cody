@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
-    ChatModelProvider,
+    ModelProvider,
     featureFlagProvider,
     type ChatClient,
     type ConfigurationWithAccessToken,
@@ -24,6 +24,7 @@ import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 type ChatID = string
 
@@ -217,9 +218,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+            ModelProvider.add(
+                new ModelProvider(authStatus.configOverwrites.chatModel, [
+                    ModelUsage.Chat,
+                    // TODO: Add configOverwrites.editModel for separate edit support
+                    ModelUsage.Edit,
+                ])
+            )
         }
-        const models = ChatModelProvider.get(authStatus.endpoint)
+        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({

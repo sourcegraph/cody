@@ -4,23 +4,20 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { customPromptsContextOptions } from './items'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { toSlashCommand } from '../utils/common'
+import { fromSlashCommand } from '../utils/common'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 export interface CustomCommandsBuilder {
-    slashCommand: string
+    key: string
     prompt: CodyCommand
     type: CustomCommandType
 }
 
 export class CustomCommandsBuilderMenu {
     public async start(commands: string[]): Promise<CustomCommandsBuilder | null> {
-        const slashCommand = await this.makeSlashCommand(commands)
-        if (!slashCommand) {
-            return null
-        }
-
-        const description = await this.makeDescription()
-        if (!description) {
+        const key = await this.makeCommandKey(commands)
+        if (!key) {
             return null
         }
 
@@ -34,52 +31,37 @@ export class CustomCommandsBuilderMenu {
             return null
         }
 
-        return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
+        telemetryService.log('CodyVSCodeExtension:command:custom:build:executed')
+        telemetryRecorder.recordEvent('cody.command.custom.build', 'executed')
+        return { key, prompt: { ...prompt, key }, type }
     }
 
-    private async makeSlashCommand(commands: string[]): Promise<string | undefined> {
+    private async makeCommandKey(commands: string[]): Promise<string | undefined> {
         const commandSet = new Set(commands)
-        let value = await window.showInputBox({
-            title: 'New Custom Cody Command: Slash Name',
-            prompt: 'Enter the slash name of the custom command',
-            placeHolder: 'e.g. /my-custom-command',
+        const value = await window.showInputBox({
+            title: 'New Custom Cody Command: Command Name',
+            prompt: 'Enter the name of the custom command.',
+            placeHolder: 'e.g. hello',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
-                    return 'Slash name cannot be empty.'
+                    return 'Command name cannot be empty.'
                 }
                 if (input.split(' ').length > 1) {
-                    return 'Slash name cannot contain spaces. Use dashes, underscores, or camelCase.'
+                    return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
-                if (commandSet.has(toSlashCommand(input))) {
-                    return 'A command with the slash name already exists.'
+                // Remove leading slash before checking if command already exists
+                if (commandSet.has(fromSlashCommand(input))) {
+                    return 'A command with the same name already exists.'
                 }
                 return
             },
         })
-        if (value) {
-            value = toSlashCommand(value)
-        }
+
         return value
     }
 
-    private async makeDescription(): Promise<string | undefined> {
-        const description = await window.showInputBox({
-            title: 'New Custom Cody Command: Description',
-            prompt: 'Enter a description for the command in sentence case.',
-            placeHolder: 'e.g. Scan for vulnerabilities',
-            ignoreFocusOut: true,
-            validateInput: (input: string) => {
-                if (!input) {
-                    return 'Command description cannot be empty.'
-                }
-                return
-            },
-        })
-        return description
-    }
-
-    private async makePrompt(): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
+    private async makePrompt(): Promise<Omit<CodyCommand, 'key'> | null> {
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
@@ -98,9 +80,7 @@ export class CustomCommandsBuilderMenu {
         return this.addContext({ prompt })
     }
 
-    private async addContext(
-        newPrompt?: Omit<CodyCommand, 'slashCommand'>
-    ): Promise<Omit<CodyCommand, 'slashCommand'> | null> {
+    private async addContext(newPrompt?: Partial<CodyCommand>): Promise<CodyCommand | null> {
         if (!newPrompt) {
             return null
         }
@@ -117,7 +97,7 @@ export class CustomCommandsBuilderMenu {
         })
 
         if (!promptContext?.length) {
-            return newPrompt
+            return newPrompt as CodyCommand
         }
 
         for (const context of promptContext) {
@@ -135,7 +115,7 @@ export class CustomCommandsBuilderMenu {
             }
         }
 
-        return newPrompt
+        return newPrompt as CodyCommand
     }
 
     private async makeType(): Promise<CustomCommandType> {

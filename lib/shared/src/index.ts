@@ -1,6 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ChatModelProvider } from './chat-models'
+export { ModelProvider } from './models'
+export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
@@ -137,7 +138,11 @@ export {
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
-export { truncateText, truncateTextNearestLine, truncateTextStart } from './prompt/truncation'
+export {
+    truncateText,
+    truncateTextNearestLine,
+    truncateTextStart,
+} from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
@@ -191,3 +196,4 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
+export { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'

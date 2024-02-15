@@ -1,13 +1,23 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test, withPlatformSlashes, type ExpectedEvents } from './helpers'
+import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
-const isPlatform = (platform: string) => process.platform === platform
-const isMac = isPlatform('darwin')
-const osKey = isMac ? 'Meta' : 'Control'
+const osKey = isMac() ? 'Meta' : 'Control'
 
-test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -104,34 +114,29 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(cancelEditButton).not.toBeVisible()
     await expect(chatInput).toBeEmpty()
     await expect(chatFrame.getByText('Explain @Main.java')).toBeVisible()
-    await chatInput.press('Escape')
+
+    // Add a new at-file to an old messages
+    await chatInput.press(`${osKey}+k`)
+    await chatInput.type('and @vgo', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue(
+        withPlatformSlashes('Explain @Main.java and @lib/batches/env/var.go ')
+    )
+    await chatInput.press('Enter')
+    // both main.java and var.go should be used
+    await expect(chatFrame.getByText(/Context: 2 files/)).toBeVisible()
+    await chatFrame.getByText(/Context: 2 files/).click()
+    await expect(chatFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await expect(
+        chatFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
+    ).toBeVisible()
 
     // Meta+/ also creates a new chat session
     await chatInput.press(`${osKey}+/`)
     await expect(chatFrame.getByText('The End')).not.toBeVisible()
 
-    // TODO (bee) - update after switching to the new keybinding for toggling "New Chat Mode"
     await expect(startNewChatButton).not.toBeVisible()
-    // // "MetaKey(MacOS)/Control" + "Shift" to toggle "New Chat Mode" on and off
-    // // When it's on, the submit button will be replaced with "Start New Chat" button
-    // await expect(submitMessageButton).toBeVisible()
-    // await chatInput.press(`${osKey}+Shift`)
-    // await expect(submitMessageButton).not.toBeVisible()
-    // await expect(startNewChatButton).toBeVisible()
-    // await chatInput.press(`${osKey}+Shift`)
-    // await expect(startNewChatButton).not.toBeVisible()
-    // await chatInput.press(`${osKey}+Shift`)
-    // await expect(startNewChatButton).toBeVisible()
 
-    // // With "New Chat Mode" enabled, submit a new message to start a new chat
-    // // The new message should be "The End"
-    // // And the last message should not be visible anymore
-    // await chatInput.fill('The End')
-    // await chatInput.press('Enter')
-    // await expect(chatFrame.getByText('The End')).toBeVisible()
-    // await expect(chatFrame.getByText('Explain @Main.java')).not.toBeVisible()
-
-    // // Meta+/ also creates a new chat session
-    // await chatInput.press(`${osKey}+/`)
-    // await expect(chatFrame.getByText('The End')).not.toBeVisible()
+    // Chat input should still have focus.
+    await expect(chatInput).toBeFocused()
 })

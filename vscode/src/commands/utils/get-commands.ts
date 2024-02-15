@@ -5,15 +5,14 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '../execute'
 import type { CodyCommandArgs } from '../types'
 import type { CodyCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { toSlashCommand } from './common'
 
 export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
     const map = new Map<string, CodyCommand>()
 
     // Add editor specific commands
     for (const command of editorCommands) {
-        if (command.slashCommand) {
-            map.set(command.slashCommand, command)
+        if (command.key) {
+            map.set(command.key, command)
         }
     }
 
@@ -40,12 +39,17 @@ export function buildCodyCommandMap(
     // If it doesn't, use the root as the root
     const commands = parsed.commands ?? parsed
     for (const key in commands) {
-        const command = commands[key] as CodyCommand
+        const command = commands[key] as Partial<CodyCommand>
+        // Skip adding the command if it doesn't have a prompt
+        if (!command.prompt) {
+            continue
+        }
         command.type = type
-        command.slashCommand = toSlashCommand(key)
+        // NOTE: we no longer support slash commands, this is for backward compatibility
+        command.key = key
         // Set default mode to ask unless it's an edit command
-        command.mode = command.mode ?? (command.prompt.startsWith('/edit ') ? 'edit' : 'ask')
-        map.set(command.slashCommand, command as CodyCommand)
+        command.mode = command.mode ?? 'ask'
+        map.set(command.key, command as CodyCommand)
     }
 
     return map

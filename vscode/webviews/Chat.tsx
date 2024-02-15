@@ -7,8 +7,7 @@ import classNames from 'classnames'
 import type {
     ChatInputHistory,
     ChatMessage,
-    ChatModelProvider,
-    CodyCommand,
+    ModelProvider,
     ContextFile,
     Guardrails,
     TelemetryService,
@@ -28,13 +27,12 @@ import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/compone
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
-import { ChatCommandsComponent } from './ChatCommands'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -51,11 +49,11 @@ interface ChatboxProps {
     setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
-    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelProvider[]) => void
-    chatModels?: ChatModelProvider[]
+    setContextSelection: (context: ContextFile[] | null) => void
+    setChatModels?: (models: ModelProvider[]) => void
+    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
@@ -73,9 +71,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
-    chatCommands,
     isTranscriptError,
     contextSelection,
+    setContextSelection,
     setChatModels,
     chatModels,
     chatEnabled,
@@ -137,7 +135,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ChatModelProvider): void => {
+        (selected: ModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
@@ -243,10 +241,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             afterMarkdown={welcomeMessage}
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
-            chatCommands={chatCommands}
-            filterChatCommands={filterChatCommands}
-            ChatCommandsComponent={ChatCommandsComponent}
             contextSelection={contextSelection}
+            setContextSelection={setContextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
@@ -292,6 +288,8 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
     messageBeingEdited,
     isNewChat,
+    inputCaretPosition,
+    isWebviewActive,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const tips = '(@ to include files or symbols)'
@@ -301,7 +299,13 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
         if (isFocusd) {
-            inputRef.current?.focus()
+            if (isWebviewActive) {
+                inputRef.current?.focus()
+            }
+
+            if (inputCaretPosition) {
+                return
+            }
 
             // move cursor to end of line if current cursor position is at the beginning
             if (inputRef.current?.selectionStart === 0 && value.length > 0) {
@@ -309,6 +313,13 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             }
         }
     }, [isFocusd, value, messageBeingEdited, chatModels])
+
+    useEffect(() => {
+        if (inputCaretPosition) {
+            inputRef.current?.setSelectionRange(inputCaretPosition, inputCaretPosition)
+            return
+        }
+    }, [inputCaretPosition])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -365,6 +376,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onKeyDown={onTextAreaKeyDown}
                 onKeyUp={onTextAreaKeyUp}
                 onFocus={onFocus}
+                onPaste={onInput}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
@@ -418,7 +430,14 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
         title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
         type="button"
         disabled={disabled}
-        onClick={() => setMessageBeingEdited(messageBeingEdited)}
+        onClick={() => {
+            setMessageBeingEdited(messageBeingEdited)
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
+                properties: { source: 'chat' },
+            })
+        }}
     >
         <i className="codicon codicon-edit" />
     </VSCodeButton>
@@ -495,31 +514,4 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             )}
         </div>
     )
-}
-
-const slashCommandRegex = /^\/[A-Za-z]+/
-function isSlashCommand(value: string): boolean {
-    return slashCommandRegex.test(value)
-}
-
-function normalize(input: string): string {
-    return input.trim().toLowerCase()
-}
-
-function filterChatCommands(
-    chatCommands: [string, CodyCommand][],
-    query: string
-): [string, CodyCommand][] {
-    const normalizedQuery = normalize(query)
-
-    if (!isSlashCommand(normalizedQuery)) {
-        return []
-    }
-
-    const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
-        ([key, command]) =>
-            key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
-    )
-    return matchingCommands.sort()
 }

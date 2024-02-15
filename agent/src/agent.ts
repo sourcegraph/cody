@@ -19,6 +19,7 @@ import {
     type BillingProduct,
     logDebug,
     isError,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -32,7 +33,15 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
-import type { AutocompleteItem, ClientInfo, ExtensionConfiguration, TextEdit } from './protocol-alias'
+import type {
+    AutocompleteItem,
+    ClientInfo,
+    CodyError,
+    CustomCommandResult,
+    EditTask,
+    ExtensionConfiguration,
+    TextEdit,
+} from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 import type { CommandResult } from '../../vscode/src/main'
@@ -42,6 +51,8 @@ import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldi
 import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
+import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -378,7 +389,9 @@ export class Agent extends MessageHandler {
 
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params?.networkRequests ?? []
-            return { requests: requests.map(req => ({ url: req.url })) }
+            return {
+                requests: requests.map(req => ({ url: req.url, body: req.body })),
+            }
         })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
@@ -527,12 +540,12 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID)
+            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -622,6 +635,11 @@ export class Agent extends MessageHandler {
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
+        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
+            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
+            return Promise.resolve(result.length > 0)
+        })
+
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
@@ -655,34 +673,32 @@ export class Agent extends MessageHandler {
             )
         })
 
+        this.registerAuthenticatedRequest('editCommands/test', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
             )
         })
 
-        this.registerAuthenticatedRequest('commands/document', async () => {
-            const result = await vscode.commands.executeCommand<CommandResult | undefined>(
-                'cody.command.document-code'
-            )
-            if (result?.type !== 'edit' || result.task === undefined) {
-                throw new TypeError(
-                    `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+        this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
+            return this.executeCustomCommand(
+                vscode.commands.executeCommand<CommandResult | undefined>(
+                    'cody.action.command',
+                    key,
+                    commandArgs
                 )
-            }
-            this.tasks.set(result.task.id, result.task)
-            const { id } = result.task
-            const disposable = result.task.onDidStateChange(newState => {
-                this.notify('editTaskState/didChange', { id, state: newState })
-                switch (newState) {
-                    // TODO: confirm these are the only "terminal" states.
-                    case CodyTaskState.finished:
-                    case CodyTaskState.error:
-                        disposable.dispose()
-                        break
-                }
-            })
-            return { id, state: result.task?.state }
+            )
+        })
+
+        this.registerAuthenticatedRequest('commands/document', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
+            )
         })
 
         this.registerAuthenticatedRequest('chat/new', async () => {
@@ -941,6 +957,45 @@ export class Agent extends MessageHandler {
         await panel.receiveMessage.cody_fireAsync(message)
     }
 
+    private async createEditTask(commandResult: Thenable<CommandResult | undefined>): Promise<EditTask> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        if (result?.type !== 'edit' || result.task === undefined) {
+            throw new TypeError(
+                `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+            )
+        }
+        this.tasks.set(result.task.id, result.task)
+        const { id } = result.task
+        const disposable = result.task.onDidStateChange(newState => {
+            this.notify('editTaskState/didChange', {
+                id,
+                state: newState,
+                error: this.codyError(result.task?.error),
+            })
+            switch (newState) {
+                case CodyTaskState.finished:
+                case CodyTaskState.error:
+                    disposable.dispose()
+                    break
+            }
+        })
+        return {
+            id,
+            state: result.task?.state,
+            error: this.codyError(result.task?.error),
+        }
+    }
+
+    private codyError(error?: Error): CodyError | undefined {
+        return error
+            ? {
+                  message: error.message,
+                  stack: error.stack,
+                  cause: error.cause instanceof Error ? this.codyError(error.cause) : undefined,
+              }
+            : undefined
+    }
+
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
         if (result?.type !== 'chat') {
@@ -967,6 +1022,22 @@ export class Agent extends MessageHandler {
         return webviewPanel.panelID
     }
 
+    private async executeCustomCommand(
+        commandResult: Thenable<CommandResult | undefined>
+    ): Promise<CustomCommandResult> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+
+        if (result?.type === 'chat') {
+            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
+        }
+
+        if (result?.type === 'edit') {
+            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
+        }
+
+        throw new Error('Invalid custom command result')
+    }
+
     // Alternative to `registerRequest` that awaits on authentication changes to
     // propagate before calling the method handler.
     public registerAuthenticatedRequest<M extends RequestMethodName>(
@@ -977,5 +1048,26 @@ export class Agent extends MessageHandler {
             await this.authenticationPromise
             return callback(params, token)
         })
+    }
+
+    public applyWorkspaceEdit(
+        edit: vscode.WorkspaceEdit,
+        metadata: vscode.WorkspaceEditMetadata | undefined
+    ): Promise<boolean> {
+        if (edit instanceof AgentWorkspaceEdit) {
+            if (this.clientInfo?.capabilities?.editWorkspace === 'enabled') {
+                return this.request('workspace/edit', { operations: edit.operations, metadata })
+            }
+            logError(
+                'Agent',
+                'client does not support vscode.workspace.applyEdit() yet. ' +
+                    'If you are a client author, enable this operation by setting ' +
+                    'the client capability `editWorkspace: "enabled"`',
+                new Error().stack // adding the stack trace to help debugging by this method is being called
+            )
+            return Promise.resolve(false)
+        }
+
+        throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
 }

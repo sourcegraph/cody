@@ -7,7 +7,7 @@ import { test as base, expect, type Frame, type FrameLocator, type Page } from '
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
+import { loggedEvents, MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -29,6 +29,11 @@ export interface ExtraWorkspaceSettings {
 // Playwright test extension: Treat this URL as if it is "dotcom".
 export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
+}
+
+// playwright test extension: Add expectedEvents to each test to compare against
+export interface ExpectedEvents {
+    expectedEvents: string[]
 }
 
 export const test = base
@@ -53,6 +58,17 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    // By default, these events should always fire for each test
+    .extend<ExpectedEvents>({
+        expectedEvents: [
+            'CodyInstalled',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ],
+    })
     .extend<{ server: MockServer }>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
         server: async ({}, use) => {
@@ -63,7 +79,14 @@ export const test = base
     })
     .extend({
         page: async (
-            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl, server: MockServer },
+            {
+                page: _page,
+                workspaceDirectory,
+                extraWorkspaceSettings,
+                dotcomUrl,
+                server: MockServer,
+                expectedEvents,
+            },
             use,
             testInfo
         ) => {
@@ -137,8 +160,19 @@ export const test = base
                 await signOut(page)
             }
 
-            resetLoggedEvents()
             await use(page)
+
+            // Critical test to prevent event logging regressions.
+            // Do not remove without consulting data analytics team.
+            try {
+                await assertEvents(loggedEvents, expectedEvents)
+            } catch (error) {
+                console.error('Expected events do not match actual events!')
+                console.log('Expected:', expectedEvents)
+                console.log('Logged:', loggedEvents)
+                throw error
+            }
+            resetLoggedEvents()
 
             await app.close()
 
@@ -157,7 +191,6 @@ export const test = base
             await use(sidebar)
         },
     })
-
 /**
  * Calls rmSync(path, options) and retries a few times if it fails before throwing.
  *
@@ -279,6 +312,10 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
                 openTabs: true,
             },
         },
+        invalid: {
+            description: 'Command without prompt should not break the custom command menu.',
+            note: 'This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu.',
+        },
     }
 
     // add file to the .vscode directory created in the buildWorkSpaceSettings step
@@ -355,4 +392,9 @@ export async function newChat(page: Page): Promise<FrameLocator> {
 
 export function withPlatformSlashes(input: string) {
     return input.replaceAll(path.posix.sep, path.sep)
+}
+
+const isPlatform = (platform: string) => process.platform === platform
+export function getMetaKeyByOS(): string {
+    return isPlatform('darwin') ? 'Meta' : 'Control'
 }

@@ -7,6 +7,6 @@
     "types": ["mocha", "node"],
   },
   "references": [{ "path": "../../" }],
-  "include": ["*.ts"],
+  "include": ["**/*.ts"],
   "exclude": ["testdata"],
 }

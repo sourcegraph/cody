@@ -7,8 +7,7 @@ import {
     type ChatHistory,
     type ChatInputHistory,
     type ChatMessage,
-    type ChatModelProvider,
-    type CodyCommand,
+    type ModelProvider,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
@@ -17,7 +16,6 @@ import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
-import { trailingNonAlphaNumericRegex } from '../src/commands/utils/test-commands'
 
 import { Chat } from './Chat'
 import {
@@ -33,9 +31,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -57,12 +53,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<
-        [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
-    >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+    const [chatModels, setChatModels] = useState<ModelProvider[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
@@ -136,54 +129,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.messages?.input ?? [])
-                        setUserHistory(message.messages?.chat ?? null)
+                        setInputHistory(message.localHistory?.input ?? [])
+                        setUserHistory(message.localHistory?.chat ?? null)
                         break
                     case 'enhanced-context':
-                        setEnhancedContextStatus(message.context)
+                        setEnhancedContextStatus(message.enhancedContextStatus)
                         break
                     case 'userContextFiles':
-                        setContextSelection(message.context)
+                        setContextSelection(message.userContextFiles)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
                         break
                     case 'view':
-                        setView(message.messages)
+                        setView(message.view)
                         break
                     case 'webview-state':
                         setIsWebviewActive(message.isActive)
                         break
-                    case 'custom-prompts': {
-                        let prompts: [
-                            string,
-                            CodyCommand & { isLastInGroup?: boolean; instruction?: string },
-                        ][] = message.prompts
-
-                        if (!prompts) {
-                            setMyPrompts(null)
-                            break
-                        }
-
-                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions).sort()
-
-                        // mark last prompts as last in group before adding another group
-                        const lastPrompt = prompts.at(-1)
-                        if (lastPrompt) {
-                            const [_, command] = lastPrompt
-                            command.isLastInGroup = true
-                        }
-
-                        setMyPrompts([
-                            ...prompts,
-                            // add another group
-                            [
-                                'reset',
-                                { prompt: '', slashCommand: '/reset', description: 'Clear the chat' },
-                            ],
-                        ])
-                        break
-                    }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
@@ -222,45 +185,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    useEffect(() => {
-        if (formInput.endsWith(' ')) {
-            setContextSelection(null)
-        }
-
-        // TODO(toolmantim): Allow using @ mid-message by using cursor position not endsWith
-
-        // Regex to check if input ends with the '@' tag format, always get the last @tag
-        // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
-        // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
-        const addFileRegex = /@\S+$/
-        // Get the string after the last '@' symbol
-        const addFileInput = formInput.match(addFileRegex)?.[0]
-
-        if (
-            !formInput.endsWith('@') &&
-            !formInput.endsWith('.') &&
-            trailingNonAlphaNumericRegex.test(formInput) &&
-            !contextSelection?.length
-        ) {
-            setContextSelection(null)
-            return
-        }
-
-        if (formInput.endsWith('@') || addFileInput) {
-            const query = addFileInput?.slice(1) || ''
-            vscodeAPI.postMessage({ command: 'getUserContext', query })
-            return
-        }
-
-        setContextSelection(null)
-    }, [formInput, contextSelection?.length, vscodeAPI])
-
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
             // We do not change the view here. We want to keep presenting the
             // login buttons until we get a token so users don't get stuck if
             // they close the browser during an auth flow.
-            vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
+            vscodeAPI.postMessage({
+                command: 'auth',
+                authKind: 'simplified-onboarding',
+                authMethod: method,
+            })
         },
         [vscodeAPI]
     )
@@ -283,7 +217,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             ) : (
                 <>
                     <Notices
-                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                        probablyNewInstall={
+                            !!userHistory &&
+                            [...Object.values(userHistory)].every(chat => chat.interactions.length === 0)
+                        }
                     />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
@@ -312,22 +249,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
                                         contextSelection={contextSelection}
+                                        setContextSelection={setContextSelection}
                                         formInput={formInput}
                                         setFormInput={setFormInput}
                                         inputHistory={inputHistory}
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
-                                        chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        guardrails={
-                                            config.experimentalGuardrails && attributionEnabled
-                                                ? guardrails
-                                                : undefined
-                                        }
+                                        guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
                                     />
@@ -359,45 +292,6 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
-
-/**
- * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
- */
-function groupPrompts(
-    acc: [string, CodyCommand & { isLastInGroup?: boolean }][],
-    [key, command]: [string, CodyCommand],
-    index: number,
-    array: [string, CodyCommand][]
-): [string, CodyCommand & { isLastInGroup?: boolean }][] {
-    if (key === 'separator') {
-        return acc
-    }
-
-    const nextItem = array[index + 1]
-    if (nextItem?.[0] === 'separator') {
-        acc.push([key, { ...command, isLastInGroup: true }])
-        return acc
-    }
-
-    acc.push([key, command])
-    return acc
-}
-
-const instructionLabels: Record<string, string> = {
-    '/ask': '[question]',
-    '/edit': '[instruction]',
-}
-
-/**
- * Adds `instruction` field to a prompt if it requires additional instruction.
- */
-function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [
-    string,
-    T & { instruction?: string },
-] {
-    const instruction = instructionLabels[command.slashCommand]
-    return [key, { ...command, instruction }]
-}
 
 function getWelcomeMessageByOS(os: string): string {
     const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.

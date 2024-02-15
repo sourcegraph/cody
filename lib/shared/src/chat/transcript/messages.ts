@@ -67,9 +67,14 @@ export interface ChatInputHistory {
 
 export type ChatEventSource =
     | 'chat'
-    | 'editor'
-    | 'menu'
-    | 'code-action'
+    | 'editor' // e.g. shortcut, right-click menu or VS Code command palette
+    | 'menu' // Cody command palette
+    | 'sidebar'
+    | 'code-action:explain'
+    | 'code-action:document'
+    | 'code-action:edit'
+    | 'code-action:fix'
+    | 'code-action:generate'
     | 'custom-commands'
     | 'test'
     | 'code-lens'

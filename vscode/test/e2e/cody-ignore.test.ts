@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import path from 'path'
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { type ExpectedEvents, test } from './helpers'
 
 /**
  * NOTE: .cody/ignore current supports behind 'cody.internal.unstable' flag
@@ -11,7 +11,21 @@ import { test } from './helpers'
  * Tests that Cody commands and chat do not work on ignored files,
  * and ignored files are not included in chat context.
  */
-test('chat and command do not work in .cody/ignore file', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:command:explain:clicked',
+        'CodyVSCodeExtension:command:explain:executed',
+    ],
+})('chat and command do not work in .cody/ignore file', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -55,14 +69,12 @@ test('chat and command do not work in .cody/ignore file', async ({ page, sidebar
     await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
-    await page.getByText('Explain code').hover()
-    await page.getByText('Explain code').click()
-    // Assistant should response to your command,
-    // but the current file is excluded (ignoredByCody.css) and not on the context list
-    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    // TODO bee update current behavior to following:
+    await page.getByText('Explain Code').hover()
+    await page.getByText('Explain Code').click()
+    // Assistant should not response to your command, so you should still see the old message.
+    await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
-    // await expect(page.getByText(/^Current file is ignored/)).toBeVisible()
+    await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {

@@ -437,6 +437,10 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                                 handleRemove={handleRemoveRemoteSearchRepo}
                             />
                         )}
+                        <p className={styles.hint}>
+                            Tip: To include a specific file or symbol as context, type @ in the message
+                            input.
+                        </p>
                     </div>
                 </div>
             </PopupFrame>

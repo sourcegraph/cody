@@ -3,8 +3,9 @@ import type {
     BillingCategory,
     BillingProduct,
     ChatMessage,
-    ChatModelProvider,
+    ModelProvider,
     event,
+    CurrentUserCodySubscription,
 } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
@@ -14,9 +15,8 @@ import type {
 } from '@sourcegraph/telemetry'
 
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
-import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
-import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
 import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -25,11 +25,12 @@ import type { Repo } from '../context/repo-fetcher'
 
 // The JSON-RPC requests of the Cody Agent protocol. Requests are async
 // functions that return some (possibly null) value.
-export type Requests = {
-    // ================
-    // Client -> Server
-    // ================
+export type Requests = ClientRequests & ServerRequests
 
+// ================
+// Client -> Server
+// ================
+export type ClientRequests = {
     // The 'initialize' request must be sent at the start of the connection
     // before any other request/notification is sent.
     initialize: [ClientInfo, ServerInfo]
@@ -48,7 +49,7 @@ export type Requests = {
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
 
-    'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
+    'chat/models': [{ id: string }, { models: ModelProvider[] }]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -64,12 +65,16 @@ export type Requests = {
     // shortcuts to start a new chat with a templated question. The return value
     // of these commands is the same as `chat/new`, an ID to reference to the
     // webview panel where the reply from this command appears.
-    'commands/explain': [null, string]
+    'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
     'commands/test': [null, string]
     'commands/smell': [null, string]
 
+    // Trigger custom commands that could be a chat-based command or an edit command.
+    'commands/custom': [{ key: string }, CustomCommandResult]
+
     // Trigger commands that edit the code.
-    'commands/document': [null, EditTask]
+    'editCommands/test': [null, EditTask]
+    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -97,6 +102,10 @@ export type Requests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
+    /**
+     * Checks if a given set of URLs includes a Cody ignored file.
+     */
+    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -148,14 +157,18 @@ export type Requests = {
             limitHit: boolean
         },
     ]
+}
 
-    // ================
-    // Server -> Client
-    // ================
-
+// ================
+// Server -> Client
+// ================
+export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
+    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/show': [{ uri: string; options?: vscode.TextDocumentShowOptions }, boolean]
+    'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
     // webview.  This endpoint should not be needed as long as you use
@@ -167,11 +180,12 @@ export type Requests = {
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
 // synchronous fire-and-forget messages that have no return value. Notifications are
 // conventionally used to represent streams of values.
-export type Notifications = {
-    // ================
-    // Client -> Server
-    // ================
+export type Notifications = ClientNotifications & ServerNotifications
 
+// ================
+// Client -> Server
+// ================
+export type ClientNotifications = {
     // The 'initalized' notification must be sent after receiving the 'initialize' response.
     initialized: [null]
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
@@ -202,6 +216,10 @@ export type Notifications = {
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [ProtocolTextDocument]
 
+    'workspace/didDeleteFiles': [DeleteFilesParams]
+    'workspace/didCreateFiles': [CreateFilesParams]
+    'workspace/didRenameFiles': [RenameFilesParams]
+
     '$/cancelRequest': [CancelParams]
     // The user no longer wishes to consider the last autocomplete candidate
     // and the current autocomplete id should not be reused.
@@ -216,11 +234,12 @@ export type Notifications = {
     // User requested to cancel this progress bar. Only supported for progress
     // bars with `cancelable: true`.
     'progress/cancel': [{ id: string }]
+}
 
-    // ================
-    // Server -> Client
-    // ================
-
+// ================
+// Server -> Client
+// ================
+export type ServerNotifications = {
     'debug/message': [DebugMessage]
 
     'editTaskState/didChange': [EditTask]
@@ -242,11 +261,11 @@ export type Notifications = {
 }
 
 interface CancelParams {
-    id: string | number
+    id: string // actuall: string | number
 }
 
 interface CompletionItemParams {
-    completionID: CompletionItemID
+    completionID: string
 }
 
 interface AutocompleteParams {
@@ -271,7 +290,7 @@ export interface AutocompleteResult {
 }
 
 export interface AutocompleteItem {
-    id: CompletionItemID
+    id: string
     insertText: string
     range: Range
 }
@@ -303,6 +322,9 @@ interface ClientCapabilities {
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
     edit?: 'none' | 'enabled'
+    editWorkspace?: 'none' | 'enabled'
+    untitledDocuments?: 'none' | 'enabled'
+    showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
 }
@@ -312,10 +334,8 @@ export interface ServerInfo {
     authenticated?: boolean
     codyEnabled?: boolean
     codyVersion?: string | null
-    capabilities?: ServerCapabilities
     authStatus?: AuthStatus
 }
-type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -487,6 +507,57 @@ export interface WebviewPostMessageParams {
     message: ExtensionMessage
 }
 
+export interface WorkspaceEditParams {
+    operations: WorkspaceEditOperation[]
+    metadata?: vscode.WorkspaceEditMetadata
+}
+
+export type WorkspaceEditOperation =
+    | CreateFileOperation
+    | RenameFileOperation
+    | DeleteFileOperation
+    | EditFileOperation
+
+export interface WriteFileOptions {
+    overwrite?: boolean
+    ignoreIfExists?: boolean
+}
+
+export interface CreateFileOperation {
+    type: 'create-file'
+    uri: string
+    options?: WriteFileOptions
+    textContents: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface RenameFileOperation {
+    type: 'rename-file'
+    oldUri: string
+    newUri: string
+    options?: WriteFileOptions
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface DeleteFileOperation {
+    type: 'delete-file'
+    uri: string
+    deleteOptions?: {
+        readonly recursive?: boolean
+        readonly ignoreIfNotExists?: boolean
+    }
+    metadata?: vscode.WorkspaceEditEntryMetadata
+}
+export interface EditFileOperation {
+    type: 'edit-file'
+    uri: string
+    edits: TextEdit[]
+}
+
+export interface UntitledTextDocument {
+    uri: string
+    content?: string
+    language?: string
+}
+
 export interface TextDocumentEditParams {
     uri: string
     edits: TextEdit[]
@@ -497,20 +568,30 @@ export interface ReplaceTextEdit {
     type: 'replace'
     range: Range
     value: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
 }
 export interface InsertTextEdit {
     type: 'insert'
     position: Position
     value: string
+    metadata?: vscode.WorkspaceEditEntryMetadata
 }
 export interface DeleteTextEdit {
     type: 'delete'
     range: Range
+    metadata?: vscode.WorkspaceEditEntryMetadata
 }
 
 export interface EditTask {
     id: string
     state: CodyTaskState
+    error?: CodyError
+}
+
+export interface CodyError {
+    message: string
+    cause?: CodyError
+    stack?: string
 }
 
 export interface DisplayCodeLensParams {
@@ -533,6 +614,7 @@ export interface ProtocolCommand {
 
 export interface NetworkRequest {
     url: string
+    body?: string
     error?: string
 }
 
@@ -541,4 +623,32 @@ export interface ShowWindowMessageParams {
     message: string
     options?: vscode.MessageOptions
     items?: string[]
+}
+
+interface FileIdentifier {
+    uri: string
+}
+
+export interface DeleteFilesParams {
+    files: FileIdentifier[]
+}
+export interface CreateFilesParams {
+    files: FileIdentifier[]
+}
+interface RenameFile {
+    oldUri: string
+    newUri: string
+}
+export interface RenameFilesParams {
+    files: RenameFile[]
+}
+
+export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandResult
+export interface CustomChatCommandResult {
+    type: 'chat'
+    chatResult: string
+}
+export interface CustomEditCommandResult {
+    type: 'edit'
+    editResult: EditTask
 }

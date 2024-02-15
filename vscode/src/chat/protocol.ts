@@ -3,8 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
-    ChatModelProvider,
-    CodyCommand,
+    ModelProvider,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
@@ -51,12 +50,7 @@ export type WebviewMessage =
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends to munge the type in a weird way (nested fields become array indices).
-          range?: {
-              startLine: number
-              startCharacter: number
-              endLine: number
-              endCharacter: number
-          }
+          range?: ActiveTextEditorSelectionRange
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
@@ -74,7 +68,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          type:
+          authKind:
               | 'signin'
               | 'signout'
               | 'support'
@@ -89,17 +83,14 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'web-sign-in-token'
+          onboardingKind: 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
           uri: URI
-          range: {
-              start: { line: number; character: number }
-              end: { line: number; character: number }
-          }
+          range: ActiveTextEditorSelectionRange
       }
     | {
           command: 'reset'
@@ -123,26 +114,25 @@ export type ExtensionMessage =
           type: 'search:config'
           workspaceFolderUris: string[]
       }
-    | { type: 'history'; messages: UserLocalHistory | null }
+    | { type: 'history'; localHistory: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
-    | { type: 'view'; messages: View }
+    | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'
-          context: ContextFile[] | null
+          userContextFiles: ContextFile[] | null
           kind?: ContextFileType
       }
-    | { type: 'chatModels'; models: ChatModelProvider[] }
+    | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
           results: SearchPanelFile[]
           query: string
       }
     | { type: 'index-updated'; scopeDir: string }
-    | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'webview-state'; isActive: boolean }
@@ -317,3 +307,18 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+// Provide backward compatibility for the old token regex
+// Details: https://docs.sourcegraph.com/dev/security/secret_formats
+const sourcegraphTokenRegex =
+    /(sgp_(?:[a-fA-F0-9]{16}|local)|sgp_)?[a-fA-F0-9]{40}|(sgd|slk|sgs)_[a-fA-F0-9]{64}/
+
+/**
+ * Checks if the given text matches the regex for a Sourcegraph access token.
+ *
+ * @param text - The text to check against the regex.
+ * @returns Whether the text matches the Sourcegraph token regex.
+ */
+export function isSourcegraphToken(text: string): boolean {
+    return sourcegraphTokenRegex.test(text)
+}

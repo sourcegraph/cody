@@ -1,28 +1,57 @@
+import * as vscode from 'vscode'
+
 import type { GetItemsResult } from '../quick-pick'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import type { EditModelItem } from './types'
+import type { EditModel, ModelProvider } from '@sourcegraph/cody-shared'
 
-export const DEFAULT_MODEL_ITEM: EditModelItem = {
-    label: '$(anthropic-logo) Claude 2.1',
-    description: 'by Anthropic',
-    alwaysShow: true,
-    model: 'anthropic/claude-2.1',
+export const getModelProviderIcon = (provider: string): string => {
+    switch (provider) {
+        case 'Anthropic':
+            return '$(anthropic-logo)'
+        case 'OpenAI':
+            return '$(openai-logo)'
+        case 'Mistral':
+            return '$(mistral-logo)'
+        default:
+            return ''
+    }
 }
 
-export const FAST_MODEL_ITEM: EditModelItem = {
-    label: '$(anthropic-logo) Claude Instant',
-    description: 'by Anthropic',
-    alwaysShow: true,
-    model: 'anthropic/claude-instant-1.2',
+export const getModelOptionItems = (
+    modelOptions: ModelProvider[],
+    isCodyPro: boolean
+): EditModelItem[] => {
+    const allOptions = modelOptions.map(modelOption => {
+        const icon = getModelProviderIcon(modelOption.provider)
+        return {
+            label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,
+            description: `by ${modelOption.provider}`,
+            alwaysShow: true,
+            model: modelOption.model,
+            modelTitle: modelOption.title,
+            codyProOnly: modelOption.codyProOnly,
+        }
+    })
+
+    if (!isCodyPro) {
+        return [
+            ...allOptions.filter(option => !option.codyProOnly),
+            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as EditModelItem,
+            ...allOptions.filter(option => option.codyProOnly),
+        ]
+    }
+
+    return allOptions
 }
 
-export const getModelInputItems = (activeModelItem: EditModelItem): GetItemsResult => {
-    const items = [DEFAULT_MODEL_ITEM, FAST_MODEL_ITEM].map(item => ({
-        ...item,
-        label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${item.label}`,
-    }))
-
-    const activeItem = items.find(item => item.model === activeModelItem.model)
+export const getModelInputItems = (
+    modelOptions: ModelProvider[],
+    activeModel: EditModel,
+    isCodyPro: boolean
+): GetItemsResult => {
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro)
+    const activeItem = modelItems.find(item => item.model === activeModel)
 
     if (activeItem) {
         // Update the label of the active item
@@ -33,7 +62,7 @@ export const getModelInputItems = (activeModelItem: EditModelItem): GetItemsResu
     }
 
     return {
-        items,
+        items: modelItems,
         activeItem,
     }
 }

@@ -17,6 +17,7 @@ import {
     networkErrorAuthStatus,
     unauthenticatedStatus,
     type AuthStatus,
+    isSourcegraphToken,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -185,7 +186,7 @@ export class AuthProvider {
         const displayName = this.authStatus.displayName || this.authStatus.username
         const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(
-            `Signed in as ${displayName} (${email})}`,
+            `Signed in as ${displayName} (${email})`,
             { modal: true, detail },
             ...options
         )
@@ -447,21 +448,28 @@ export function isNetworkError(error: Error): boolean {
 }
 
 function formatURL(uri: string): string | null {
-    if (!uri) {
-        return null
-    }
-    // Check if the URI is in the correct URL format
-    // Add missing https:// if needed
-    if (!uri.startsWith('http')) {
-        uri = `https://${uri}`
-    }
     try {
+        if (!uri) {
+            return null
+        }
+
+        // Check if the URI is a sourcegraph token
+        if (isSourcegraphToken(uri)) {
+            throw new Error('Access Token is not a valid URL')
+        }
+
+        // Check if the URI is in the correct URL format
+        // Add missing https:// if needed
+        if (!uri.startsWith('http')) {
+            uri = `https://${uri}`
+        }
+
         const endpointUri = new URL(uri)
         return endpointUri.href
-    } catch {
-        console.error('Invalid URL')
+    } catch (error) {
+        console.error('Invalid URL: ', error)
+        return null
     }
-    return null
 }
 
 async function showAuthResultMessage(

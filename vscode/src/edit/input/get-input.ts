@@ -1,29 +1,28 @@
 import * as vscode from 'vscode'
-import type { ChatEventSource, ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextFile, EditModel } from '@sourcegraph/cody-shared'
 
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
-import type { EditSupportedModels } from '../prompt'
 import { getEditor } from '../../editor/active-editor'
 import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import { createQuickPick } from './quick-pick'
-import {
-    EDIT_CHANGE_MODEL_ENABLED,
-    FILE_HELP_LABEL,
-    NO_MATCHES_LABEL,
-    SYMBOL_HELP_LABEL,
-} from './constants'
+import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { getMatchingContext } from './get-matching-context'
 import type { EditIntent } from '../types'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
-import { DEFAULT_MODEL_ITEM, getModelInputItems } from './get-items/model'
+import { getModelInputItems, getModelOptionItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
 import { getDocumentInputItems } from './get-items/document'
 import { getTestInputItems } from './get-items/test'
 import { executeEdit } from '../execute'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
-import { isGenerateIntent } from '../utils/edit-selection'
+import { editModel } from '../../models'
+import type { AuthProvider } from '../../services/AuthProvider'
+import { getEditModelsForUser } from '../utils/edit-models'
+import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { isGenerateIntent } from '../utils/edit-intent'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -31,7 +30,7 @@ interface QuickPickInput {
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextFile[]
     /** The LLM that the user has selected */
-    model: EditSupportedModels
+    model: EditModel
     /** The range that the user has selected */
     range: vscode.Range
     /**
@@ -45,7 +44,7 @@ interface QuickPickInput {
 export interface EditInputInitialValues {
     initialRange: vscode.Range
     initialExpandedRange?: vscode.Range
-    initialModel: EditSupportedModels
+    initialModel: EditModel
     initialIntent: EditIntent
     initialInputValue?: string
     initialSelectedContextFiles?: ContextFile[]
@@ -60,6 +59,7 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
+    authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
     source: ChatEventSource
 ): Promise<QuickPickInput | null> => {
@@ -76,8 +76,15 @@ export const getInput = async (
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
-    /** TODO: Support changing the default model. E.g. users can set this in settings */
-    let activeModelItem = DEFAULT_MODEL_ITEM
+
+    const authStatus = authProvider.getAuthStatus()
+    const isCodyPro = !authStatus.userCanUpgrade
+    const modelOptions = getEditModelsForUser(authStatus)
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro)
+    const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
+
+    let activeModel = initialValues.initialModel
+    let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextFile>()
@@ -140,10 +147,7 @@ export const getInput = async (
         editor.setDecorations(PREVIEW_RANGE_DECORATION, [range])
         editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
     }
-
-    if (initialValues.initialExpandedRange) {
-        previewActiveRange(initialValues.initialExpandedRange)
-    }
+    previewActiveRange(activeRange)
 
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
@@ -152,17 +156,45 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(activeModelItem),
+            getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidAccept: item => {
+            onDidAccept: async item => {
                 const acceptedItem = item as EditModelItem
                 if (!acceptedItem) {
                     return
                 }
+                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
 
+                if (acceptedItem.codyProOnly && !isCodyPro) {
+                    // Temporarily ignore focus out, so that the user can return to the quick pick if desired.
+                    modelInput.input.ignoreFocusOut = true
+
+                    const option = await vscode.window.showInformationMessage(
+                        'Upgrade to Cody Pro',
+                        {
+                            modal: true,
+                            detail: `Upgrade to Cody Pro to use ${acceptedItem.modelTitle} for Edit`,
+                        },
+                        'Upgrade',
+                        'See Plans'
+                    )
+
+                    // Both options go to the same URL
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                    }
+
+                    // Restore the default focus behaviour
+                    modelInput.input.ignoreFocusOut = false
+                    return
+                }
+
+                editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
+                activeModel = acceptedItem.model
+
                 editInput.render(activeTitle, editInput.input.value)
             },
         })
@@ -192,6 +224,7 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
+                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected')
 
                 activeRangeItem = acceptedItem
                 const range =
@@ -238,8 +271,8 @@ export const getInput = async (
 
                 // Hide the input and execute a new edit for 'Document'
                 documentInput.input.hide()
-                return executeEdit(
-                    {
+                return executeEdit({
+                    configuration: {
                         document,
                         instruction: defaultCommands.doc.prompt,
                         range: activeRange,
@@ -248,8 +281,8 @@ export const getInput = async (
                         contextMessages: [],
                         userContextFiles: [],
                     },
-                    'menu'
-                )
+                    source: 'menu',
+                })
             },
         })
 
@@ -292,7 +325,13 @@ export const getInput = async (
         const editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
-            getItems: () => getEditInputItems(editInput.input.value, activeRangeItem, activeModelItem),
+            getItems: () =>
+                getEditInputItems(
+                    editInput.input.value,
+                    activeRangeItem,
+                    activeModelItem,
+                    showModelSelector
+                ),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
@@ -332,7 +371,12 @@ export const getInput = async (
                 if (matchingContext === null) {
                     // Nothing to match, re-render existing items
                     // eslint-disable-next-line no-self-assign
-                    input.items = getEditInputItems(input.value, activeRangeItem, activeModelItem).items
+                    input.items = getEditInputItems(
+                        input.value,
+                        activeRangeItem,
+                        activeModelItem,
+                        showModelSelector
+                    ).items
                     return
                 }
 
@@ -400,9 +444,7 @@ export const getInput = async (
                     userContextFiles: Array.from(selectedContextItems)
                         .filter(([key]) => instruction.includes(`@${key}`))
                         .map(([, value]) => value),
-                    model: EDIT_CHANGE_MODEL_ENABLED
-                        ? activeModelItem.model
-                        : initialValues.initialModel,
+                    model: activeModel,
                     range: activeRange,
                     intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
                 })

@@ -3,9 +3,11 @@ import { Utils } from 'vscode-uri'
 import {
     BotResponseMultiplexer,
     isAbortError,
+    isDotCom,
     posixAndURIPaths,
     Typewriter,
     uriBasename,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
@@ -21,6 +23,10 @@ import { contentSanitizer } from './utils'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { workspace } from 'vscode'
 import { CodyTaskState } from '../non-stop/utils'
+import { getContextWindowForModel } from '../models/utilts'
+import { telemetryService } from '../services/telemetry'
+import { countCode } from '../services/utils/code-count'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -37,94 +43,105 @@ export class EditProvider {
     constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
-        const model = this.config.task.model
-        const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
-            model,
-            task: this.config.task,
-            editor: this.config.editor,
-        })
+        return wrapInActiveSpan('command.edit.start', async span => {
+            const model = this.config.task.model
+            const contextWindow = getContextWindowForModel(
+                this.config.authProvider.getAuthStatus(),
+                model
+            )
+            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+                model,
+                contextWindow,
+                task: this.config.task,
+                editor: this.config.editor,
+            })
 
-        const multiplexer = new BotResponseMultiplexer()
+            const multiplexer = new BotResponseMultiplexer()
 
-        const typewriter = new Typewriter({
-            update: content => {
-                void this.handleResponse(content, true)
-            },
-            close: () => {},
-        })
+            const typewriter = new Typewriter({
+                update: content => {
+                    void this.handleResponse(content, true)
+                },
+                close: () => {},
+            })
 
-        let text = ''
-        multiplexer.sub(responseTopic, {
-            onResponse: async (content: string) => {
-                text += content
-                typewriter.update(responsePrefix + text)
-                return Promise.resolve()
-            },
-            onTurnComplete: async () => {
-                typewriter.close()
-                typewriter.stop()
-                void this.handleResponse(text, false)
-                return Promise.resolve()
-            },
-        })
-
-        // Listen to test file name suggestion from responses
-        // Allows Cody to let us know which test file we should add the new content to
-        if (this.config.task.intent === 'test') {
-            let filepath = ''
-            multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+            let text = ''
+            multiplexer.sub(responseTopic, {
                 onResponse: async (content: string) => {
-                    filepath += content
-                    void this.handleFileCreationResponse(filepath, true)
+                    text += content
+                    typewriter.update(responsePrefix + text)
                     return Promise.resolve()
                 },
                 onTurnComplete: async () => {
+                    typewriter.close()
+                    typewriter.stop()
+                    void this.handleResponse(text, false)
                     return Promise.resolve()
                 },
             })
-        }
 
-        const abortController = new AbortController()
-        this.cancelCompletionCallback = () => abortController.abort()
-        const stream = this.config.chat.chat(messages, { model, stopSequences }, abortController.signal)
+            // Listen to test file name suggestion from responses
+            // Allows Cody to let us know which test file we should add the new content to
+            if (this.config.task.intent === 'test') {
+                let filepath = ''
+                multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                    onResponse: async (content: string) => {
+                        filepath += content
+                        void this.handleFileCreationResponse(filepath, true)
+                        return Promise.resolve()
+                    },
+                    onTurnComplete: async () => {
+                        return Promise.resolve()
+                    },
+                })
+            }
 
-        let textConsumed = 0
-        for await (const message of stream) {
-            switch (message.type) {
-                case 'change': {
-                    if (textConsumed === 0 && responsePrefix) {
-                        void multiplexer.publish(responsePrefix)
+            const abortController = new AbortController()
+            this.cancelCompletionCallback = () => abortController.abort()
+            const stream = this.config.chat.chat(
+                messages,
+                { model, stopSequences },
+                abortController.signal
+            )
+
+            let textConsumed = 0
+            for await (const message of stream) {
+                switch (message.type) {
+                    case 'change': {
+                        if (textConsumed === 0 && responsePrefix) {
+                            void multiplexer.publish(responsePrefix)
+                        }
+                        const text = message.text.slice(textConsumed)
+                        textConsumed += text.length
+                        void multiplexer.publish(text)
+                        break
                     }
-                    const text = message.text.slice(textConsumed)
-                    textConsumed += text.length
-                    void multiplexer.publish(text)
-                    break
-                }
-                case 'complete': {
-                    void multiplexer.notifyTurnComplete()
-                    break
-                }
-                case 'error': {
-                    let err = message.error
-                    logError('EditProvider:onError', err.message)
-
-                    if (isAbortError(err)) {
-                        void this.handleResponse(text, false)
-                        return
+                    case 'complete': {
+                        void multiplexer.notifyTurnComplete()
+                        break
                     }
+                    case 'error': {
+                        let err = message.error
+                        logError('EditProvider:onError', err.message)
 
-                    if (isNetworkError(err)) {
-                        err = new Error('Cody could not respond due to network error.')
+                        if (isAbortError(err)) {
+                            void this.handleResponse(text, false)
+                            return
+                        }
+
+                        if (isNetworkError(err)) {
+                            err = new Error('Cody could not respond due to network error.')
+                        }
+
+                        // Display error message as assistant response
+                        this.handleError(err)
+                        console.error(`Completion request failed: ${err.message}`)
+
+                        break
                     }
-
-                    // Display error message as assistant response
-                    this.handleError(err)
-                    console.error(`Completion request failed: ${err.message}`)
-
-                    break
                 }
             }
-        }
+        })
     }
 
     public abortEdit(): void {
@@ -148,6 +165,23 @@ export class EditProvider {
                 return
             }
             await this.handleFileCreationResponse('', isMessageInProgress)
+        }
+
+        if (!isMessageInProgress) {
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                ...countCode(response),
+                source: this.config.task.source,
+                hasV2Event: true,
+            })
+            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
+            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata: countCode(response),
+                privateMetadata: {
+                    source: this.config.task.source,
+                    responseText,
+                },
+            })
         }
 
         const intentsForInsert = ['add', 'test']
@@ -256,8 +290,8 @@ export class EditProvider {
             this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
                 await this.insertionPromise
-            } catch {
-                this.handleError(new Error('Cody failed to generate unit tests'))
+            } catch (error) {
+                this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
             } finally {
                 this.insertionPromise = null
             }

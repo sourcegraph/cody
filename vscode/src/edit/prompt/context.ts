@@ -18,6 +18,8 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
+import { extractContextItemsFromContextMessages } from './utils'
+import type { ContextItem } from '../../prompt-builder/types'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -76,7 +78,7 @@ const getContextFromIntent = async ({
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedPrecedingText, uri),
+                        populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -87,7 +89,7 @@ const getContextFromIntent = async ({
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push(
                     ...getContextMessageWithResponse(
-                        populateCodeContextTemplate(truncatedFollowingText, uri),
+                        populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                         {
                             type: 'file',
                             uri,
@@ -121,15 +123,20 @@ const getContextFromIntent = async ({
                 ...[truncatedPrecedingText, truncatedFollowingText]
                     .filter(text => text.trim().length > 0)
                     .flatMap(text =>
-                        getContextMessageWithResponse(populateCodeContextTemplate(text, uri), {
-                            type: 'file',
-                            uri,
-                        })
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, uri, undefined, 'edit'),
+                            {
+                                type: 'file',
+                                uri,
+                            }
+                        )
                     ),
             ]
         }
     }
 }
+
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
@@ -143,15 +150,20 @@ export const getContext = async ({
     editor,
     contextMessages,
     ...options
-}: GetContextOptions): Promise<ContextMessage[]> => {
-    // return contextMessages is already provided by the caller
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (contextMessages) {
-        return contextMessages
+        return extractContextItemsFromContextMessages(contextMessages)
     }
 
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
+
+    if (isAgentTesting) {
+        // Need deterministic ordering of context files for the tests to pass
+        // consistently across different file systems.
+        userContextFiles.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+    }
     for (const file of userContextFiles) {
         if (file.uri) {
             const content = await editor.getTextEditorContentForFile(file.uri, file.range)
@@ -162,5 +174,8 @@ export const getContext = async ({
         }
     }
 
-    return [...derivedContextMessages, ...userProvidedContextMessages]
+    return extractContextItemsFromContextMessages([
+        ...derivedContextMessages,
+        ...userProvidedContextMessages,
+    ])
 }

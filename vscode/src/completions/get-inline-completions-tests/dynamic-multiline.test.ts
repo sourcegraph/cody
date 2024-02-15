@@ -129,4 +129,23 @@ describe('[getInlineCompletions] dynamic multiline', () => {
 
         expect(items[0]?.insertText).toMatchInlineSnapshot('"Test {"')
     })
+
+    it('does not use dynamic multiline completions for certain languages', async () => {
+        const { items } = await getInlineCompletionsWithInlinedChunks(
+            `
+- Autocomplete: Improved the new jaccard similarity retriever
+- Edit: Added a multi-model selector. [pull/2951](█https://github.com/sourcegraph/cody/pull/2951)
+- Edit: █Added Cody Pro support for models: █GPT-4. [█pull/2951](https://github.com/sourcegraph/cody/pull/2951)█
+- Autocomplete: Remove obvious prompt-continuations. [pull/2974](https://github.com/sourcegraph/cody/pull/2974)`,
+            {
+                delayBetweenChunks: 50,
+                languageId: 'markdown',
+                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
+            }
+        )
+
+        expect(items[0].insertText).toMatchInlineSnapshot(
+            `"https://github.com/sourcegraph/cody/pull/2951)"`
+        )
+    })
 })

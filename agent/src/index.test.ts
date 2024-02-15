@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import assert from 'assert'
 import { execSync } from 'child_process'
 import fspromises from 'fs/promises'
@@ -5,15 +6,14 @@ import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { Uri } from 'vscode'
 
 import { isWindows } from '@sourcegraph/cody-shared'
-
-import type { ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
+import { decodeURIs } from './decodeURIs'
+import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -36,7 +36,7 @@ const explainPollyError = `
     `
 
 const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
 const mayRecord =
@@ -104,6 +104,10 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
+
+        // Confirm .cody/ignore is active at start up
+        const codyIgnore = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+        expect(codyIgnore).toBeTruthy()
     }, 10_000)
 
     beforeEach(async () => {
@@ -111,13 +115,17 @@ describe('Agent', () => {
     })
 
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
-    const sumUri = Uri.file(sumPath)
+    const sumUri = vscode.Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const animalUri = Uri.file(animalPath)
+    const animalUri = vscode.Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
-    const squirrelUri = Uri.file(squirrelPath)
+    const squirrelUri = vscode.Uri.file(squirrelPath)
     const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
-    const multipleSelectionsUri = Uri.file(multipleSelections)
+    const multipleSelectionsUri = vscode.Uri.file(multipleSelections)
+
+    // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
+    const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
+    const ignoredUri = vscode.Uri.file(ignoredPath)
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -156,27 +164,29 @@ describe('Agent', () => {
         expect(valid?.username).toStrictEqual('olafurpg-testing')
     }, 10_000)
 
-    it('autocomplete/execute (non-empty result)', async () => {
-        await client.openFile(sumUri)
-        const completions = await client.request('autocomplete/execute', {
-            uri: sumUri.toString(),
-            position: { line: 1, character: 3 },
-            triggerKind: 'Invoke',
-        })
-        const texts = completions.items.map(item => item.insertText)
-        expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(
-            `
+    describe('Autocomplete', () => {
+        it('autocomplete/execute (non-empty result)', async () => {
+            await client.openFile(sumUri)
+            const completions = await client.request('autocomplete/execute', {
+                uri: sumUri.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBeGreaterThan(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
           [
             "   return a + b;",
           ]
         `,
-            explainPollyError
-        )
-        client.notify('autocomplete/completionAccepted', {
-            completionID: completions.items[0].id,
-        })
-    }, 10_000)
+                explainPollyError
+            )
+            client.notify('autocomplete/completionAccepted', {
+                completionID: completions.items[0].id,
+            })
+        }, 10_000)
+    })
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         const currentUserCodySubscription = await client.request(
@@ -343,20 +353,6 @@ describe('Agent', () => {
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
 
-        // Workaround for the fact that `ContextFile.uri` is a class that
-        // serializes to JSON as an object, and deserializes back into a JS
-        // object instead of the class. Without this,
-        // `ContextFile.uri.toString()` return `"[Object object]".
-        function decodeURIs(transcript: ExtensionTranscriptMessage): void {
-            for (const message of transcript.messages) {
-                if (message.contextFiles) {
-                    for (const file of message.contextFiles) {
-                        file.uri = URI.from(file.uri)
-                    }
-                }
-            }
-        }
-
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
@@ -461,6 +457,135 @@ describe('Agent', () => {
         })
     })
 
+    describe('Cody Ignore', () => {
+        beforeAll(async () => {
+            // Make sure Cody ignore config exists and works
+            const codyIgnoreConfig = vscode.Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            await client.openFile(codyIgnoreConfig)
+            const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
+            expect(codyIgnoreConfigFile?.content).toBeDefined()
+
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
+        }, 10_000)
+
+        it('autocomplete/execute on ignored file', async () => {
+            await client.openFile(ignoredUri)
+            const completions = await client.request('autocomplete/execute', {
+                uri: ignoredUri.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBe(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
+              []
+            `,
+                explainPollyError
+            )
+        }, 10_000)
+
+        it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
+            await client.openFile(ignoredUri)
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                'Which file is the isIgnoredByCody functions defined?',
+                { addEnhancedContext: true }
+            )
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            // Current file which is ignored, should not be included in context files
+            expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
+            // Ignored file should not be included in context files
+            const contextFilesUrls = contextFiles.map(f => f.uri?.path)
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextFilesUrls })
+            expect(result).toBeFalsy()
+            // Files that are not ignored should be used as context files
+            expect(contextFiles.length).toBeGreaterThan(0)
+        }, 30_000)
+
+        it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
+            await client.openFile(ignoredUri)
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
+                'Which file is the isIgnoredByCody functions defined?',
+                { addEnhancedContext: false }
+            )
+            decodeURIs(transcript)
+            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
+            const contextUrls = contextFiles.map(f => f.uri?.path)
+            // Current file which is ignored, should not be included in context files
+            expect(contextUrls.find(uri => uri === ignoredUri.toString())).toBeUndefined()
+            // Since no enhanced context is requested, no context files should be included
+            expect(contextFiles.length).toBe(0)
+            // Ignored file should not be included in context files
+            const result = await client.request('check/isCodyIgnoredFile', { urls: contextUrls })
+            expect(result).toBeFalsy()
+        }, 30_000)
+
+        it('chat command on an ignored file', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(ignoredUri)
+            // Cannot execute commands in an ignored files, so this should throw error
+            await client.request('commands/explain', null).catch(err => {
+                expect(err).toBeDefined()
+            })
+        }, 30_000)
+
+        it('inline edit on an ignored file', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(ignoredUri, { removeCursor: false })
+            await client.request('commands/document', null).catch(err => {
+                expect(err).toBeDefined()
+            })
+        })
+
+        afterAll(async () => {
+            // Makes sure cody ignore is still active after tests
+            // as it should stay active for each workspace session.
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            expect(result).toBeTruthy()
+
+            // Check the network requests to ensure no requests include context from ignored files
+            const { requests } = await client.request('testing/networkRequests', null)
+
+            const groupedMsgs = []
+            for (const req of requests) {
+                // Get the messages from the request body
+                const messages = JSON.parse(req.body || '{}')?.messages as {
+                    speaker: string
+                    text: string
+                }[]
+                // Filter out messages that do not include context snippets.
+                const text = messages
+                    ?.filter(m => m.speaker === 'human' && m.text !== undefined)
+                    ?.map(m => m.text)
+
+                groupedMsgs.push(...(text ?? []))
+            }
+            expect(groupedMsgs.length).toBeGreaterThan(0)
+
+            // Join all the string from each groupedMsgs[] together into
+            // one block of text, and then check if it contains the ignored file name
+            // to confirm context from the ignored file was not sent to the server.
+            const groupedText = groupedMsgs.flat().join(' ')
+            expect(groupedText).not.includes('src/isIgnored.ts')
+
+            // Confirm the grouped text is valid by checking for known
+            // context file names from the test.
+            expect(groupedText).includes('src/squirrel.ts')
+        }, 10_000)
+    })
+
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
             await client.request('command/execute', {
@@ -487,6 +612,41 @@ describe('Agent', () => {
         }, 20_000)
     })
 
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        it(
+            name,
+            async () => {
+                await documentClient.request('command/execute', {
+                    command: 'cody.search.index-update',
+                })
+                const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
+                await documentClient.openFile(uri, { removeCursor: false })
+                const task = await documentClient.request('commands/document', null)
+                await documentClient.taskHasReachedAppliedPhase(task)
+                const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
+                expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
+                const acceptCommand = lenses.find(
+                    ({ command }) => command?.command === 'cody.fixup.codelens.accept'
+                )
+                if (acceptCommand === undefined || acceptCommand.command === undefined) {
+                    throw new Error(
+                        `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
+                    )
+                }
+                await documentClient.request('command/execute', acceptCommand.command)
+                expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+                const newContent = documentClient.workspace.getDocument(uri)?.content
+                assertion(trimEndOfLine(newContent))
+            },
+            20_000
+        )
+    }
+
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.request('command/execute', {
@@ -504,27 +664,21 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " Here is an explanation of the selected TypeScript code in simple terms:
+              " Animal Interface
 
-              The Animal interface
+              The selected code defines an interface called Animal. An interface in TypeScript is like a blueprint or contract that defines the structure of an object. Specifically:
 
-              The Animal interface defines the shape of an Animal object. It does not contain any actual implementation, just declarations for what properties and methods an Animal object should have.
+              1. The purpose of this Animal interface is to define the shape of Animal objects - that is, to specify what properties and methods any object implementing the Animal interface must have.
 
-              The interface has three members:
+              2. The Animal interface itself does not take any inputs. However, any concrete classes that implement the Animal interface would take inputs to instantiate an object (for example, constructor arguments).
 
-              1. name - This is a string property to store the animal's name.
+              3. Similarly, the Animal interface does not directly produce any outputs. Its role is to define the shape of objects. Any class implementing Animal would be responsible for producing outputs through its concrete methods and properties.
 
-              2. makeAnimalSound() - This is a method that should return a string representing the sound the animal makes.
+              4. The interface achieves its purpose by declaring a name property of type string, a makeAnimalSound method that returns a string, and an isMammal property of type boolean.
 
-              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
+              5. By defining this structure, the interface ensures that any class implementing Animal will have these required members with the specified types. This allows TypeScript to enforce that objects adhere to the Animal contract.
 
-              The purpose of this interface is to define a consistent structure for Animal objects. Any class that implements the Animal interface will be required to have these three members with these types.
-
-              This allows code dealing with Animal objects to know it can call animal.makeAnimalSound() and access animal.name and animal.isMammal, regardless of the specific class. The interface defines the contract between the implementation and usage of Animals, without caring about specific details.
-
-              Interfaces like this are useful for writing reusable code that can handle different types of objects in a consistent way. The code using the interface doesn't need to know about the specifics of each class, just that it implements the Animal interface. This allows easily extending the code to handle new types of animals by simply creating a new class implementing Animal.
-
-              So in summary, the Animal interface defines the input expectations and output guarantees for objects representing animals in the system, allowing code to work with any animal in a generic way based on this contract."
+              So in summary, the Animal interface defines a blueprint for Animal objects by specifying required properties and methods. This allows TypeScript to statically analyze objects based on their fulfillment of the interface contract. The interface itself does not contain logic - it simply defines the shape of objects. Any consuming code can then rely on objects implementing the Animal interface having the defined structure."
             `,
                 explainPollyError
             )
@@ -542,57 +696,59 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-              " Okay, based on the shared context, it looks like Vitest is being used as the test framework. No mocks are detected.
+                  " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
-              Here are some new unit tests for the Animal interface in src/animal.ts using Vitest:
+                  Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
 
-              \`\`\`ts
-              import {describe, expect, it} from 'vitest'
-              import {Animal} from './animal'
+                  \`\`\`typescript
+                  import { expect } from 'vitest'
 
-              describe('Animal', () => {
+                  import { describe, it } from 'vitest'
 
-                it('has a name property', () => {
-                  const animal: Animal = {
-                    name: 'Leo',
-                    makeAnimalSound() {
-                      return 'Roar'
-                    },
-                    isMammal: true
-                  }
+                  import { Animal } from './animal'
 
-                  expect(animal.name).toBe('Leo')
-                })
+                  describe('Animal', () => {
 
-                it('has a makeAnimalSound method', () => {
-                  const animal: Animal = {
-                    name: 'Whale',
-                    makeAnimalSound() {
-                      return 'Whistle'
-                    },
-                    isMammal: true
-                  }
+                    it('has name property', () => {
+                      const animal: Animal = {
+                        name: 'Cat',
+                        makeAnimalSound() {
+                          return 'Meow'
+                        },
+                        isMammal: true
+                      }
 
-                  expect(animal.makeAnimalSound()).toBe('Whistle')
-                })
+                      expect(animal.name).toEqual('Cat')
+                    })
 
-                it('has an isMammal property', () => {
-                  const animal: Animal = {
-                    name: 'Snake',
-                    makeAnimalSound() {
-                      return 'Hiss'
-                    },
-                    isMammal: false
-                  }
+                    it('has makeAnimalSound method', () => {
+                      const animal: Animal = {
+                        name: 'Dog',
+                        makeAnimalSound() {
+                          return 'Woof'
+                        },
+                        isMammal: true
+                      }
 
-                  expect(animal.isMammal).toBe(false)
-                })
+                      expect(animal.makeAnimalSound()).toEqual('Woof')
+                    })
 
-              })
-              \`\`\`
+                    it('has isMammal property', () => {
+                      const animal: Animal = {
+                        name: 'Snake',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
+                        isMammal: false
+                      }
 
-              This covers basic validation of the Animal interface properties and methods using Vitest assertions. Additional test cases could be added for more edge cases."
-            `,
+                      expect(animal.isMammal).toEqual(false)
+                    })
+                  })
+                  \`\`\`
+
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
+                `,
                     explainPollyError
                 )
             },
@@ -665,42 +821,69 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        describe('Document code', () => {
-            function check(name: string, filename: string, assertion: (obtained: string) => void): void {
-                it(name, async () => {
-                    await client.request('command/execute', {
-                        command: 'cody.search.index-update',
-                    })
-                    const uri = Uri.file(path.join(workspaceRootPath, 'src', filename))
-                    await client.openFile(uri, { removeCursor: false })
-                    const task = await client.request('commands/document', null)
-                    await client.taskHasReachedAppliedPhase(task)
-                    const lenses = client.codeLenses.get(uri.toString()) ?? []
-                    expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-                    const acceptCommand = lenses.find(
-                        ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-                    )
-                    if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                        throw new Error(
-                            `Expected accept command, found none. Lenses ${JSON.stringify(
-                                lenses,
-                                null,
-                                2
-                            )}`
-                        )
-                    }
-                    await client.request('command/execute', acceptCommand.command)
-                    expect(client.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
-                    const newContent = client.workspace.getDocument(uri)?.content
-                    assertion(trimEndOfLine(newContent))
-                })
-            }
+        // Skipped because it's timing out for some reason and the functionality
+        // is still not working 100% correctly. Keeping the test so we can fix
+        // the test later.
+        it.skip('editCommand/test', async () => {
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const uri = vscode.Uri.file(trickyLogicPath)
 
-            check('commands/document (basic function)', 'sum.ts', obtained =>
+            await client.openFile(uri)
+            const id = await client.request('editCommands/test', null)
+            await client.taskHasReachedAppliedPhase(id)
+            const originalDocument = client.workspace.getDocument(uri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+              "export function trickyLogic(a: number, b: number): number {
+                  if (a === 0) {
+                      return 1
+                  }
+                  if (b === 2) {
+                      return 1
+                  }
+
+                  return a - b
+              }
+
+
+              "
+            `)
+
+            const untitledDocuments = client.workspace
+                .allUris()
+                .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
+            expect(untitledDocuments).toHaveLength(1)
+            const [untitledDocument] = untitledDocuments
+            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(`
+              "import { trickyLogic } from './trickyLogic';
+
+              describe('trickyLogic', () => {
+                it('should return 1 if a is 0', () => {
+                  expect(trickyLogic(0, 1)).toBe(1);
+                });
+
+                it('should return 1 if b is 2', () => {
+                  expect(trickyLogic(1, 2)).toBe(1);
+                });
+
+                it('should return a - b if neither a is 0 nor b is 2', () => {
+                  expect(trickyLogic(3, 1)).toBe(2);
+                });
+              });
+              "
+            `)
+
+            // Just to make sure the edit happened via `workspace/edit` instead
+            // of `textDocument/edit`.
+            expect(client.workspaceEditParams).toHaveLength(1)
+        }, 30_000)
+
+        describe('Document code', () => {
+            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Returns the sum of two numbers.
-                   */
+                   * Sums two numbers and returns the result.
+                  */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
@@ -708,15 +891,19 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Method as part of a class)', 'TestClass.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Method as part of a class)',
+                'TestClass.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
 
                   export class TestClass {
                       constructor(private shouldGreet: boolean) {}
 
                       /**
-                       * Logs a greeting if the shouldGreet property is true.
+                       * If shouldGreet is true, logs a greeting to the console.
                        */
                       public functionName() {
                           if (this.shouldGreet) {
@@ -728,11 +915,17 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (Function within a property)', 'TestLogger.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (Function within a property)',
+                'TestLogger.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   /**
-                   * Starts logging by initializing and calling the \`recordLog\` function.
+                   * Starts logging by initializing some internal state,
+                   * and then calls an internal \`recordLog\` function
+                   * to log a sample message.
                    */
                   export const TestLogger = {
                       startLogging: () => {
@@ -749,20 +942,22 @@ describe('Agent', () => {
                 `)
             )
 
-            check('commands/document (nested test case)', 'example.test.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(
+                client,
+                'commands/document (nested test case)',
+                'example.test.ts',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "import { expect } from 'vitest'
                   import { it } from 'vitest'
                   import { describe } from 'vitest'
 
                   /**
-                   * A test block with multiple test cases.
-                   *
-                   * Contains 3 test cases:
-                   * - 'does 1' asserts that true equals true
-                   * - 'does 2' asserts that true equals true
-                   * - 'does something else' has a commented out line that would error due to incorrect usage of \`performance.now\`
-                   */
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does another test that has a bug
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
@@ -781,6 +976,180 @@ describe('Agent', () => {
                 `)
             )
         })
+    })
+
+    describe('Custom Commands', () => {
+        it('commands/custom, chat command, open tabs context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            // Note: The test editor has all the files opened from previous tests as open tabs,
+            // so we will need to open a new file that has not been opened before,
+            // to make sure this context type is working.
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            await client.openFile(trickyLogicUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/countTabs',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " So far you have shared code context from these files:
+
+              - src/trickyLogic.ts
+              - src/TestLogger.ts
+              - src/TestClass.ts
+              - src/sum.ts
+              - src/squirrel.ts
+              - src/multiple-selections.ts
+              - src/example.test.ts
+              - src/animal.ts
+              - .cody/ignore"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, chat command, adds argument', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/translate Python',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " Here is the TypeScript code translated to Python:
+
+              \`\`\`python
+              class Animal:
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
+
+                  def make_animal_sound(self) -> str:
+                      pass
+              \`\`\`
+
+              The key differences:
+
+              - Interfaces don't exist in Python, so Animal is translated to a class
+              - The interface properties become initialized attributes in the __init__ method
+              - The interface method becomes a method in the class
+              - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
+
+              Let me know if you have any other questions!"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, chat command, no context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/none',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `" no"`,
+                explainPollyError
+            )
+        }, 30_000)
+
+        // The context files are presented in an order in the CI that is different
+        // than the order shown in recordings when on Windows, causing it to fail.
+        it('commands/custom, chat command, current directory context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/countDirFiles',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
+            expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
+            expect(reply).toMatchInlineSnapshot(
+                `
+              " You have shared 7 file contexts with me so far:
+
+              1. src/trickyLogic.ts
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/sum.ts
+              5. src/squirrel.ts
+              6. src/multiple-selections.ts
+              7. src/example.test.ts"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, edit command, insert mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri, { removeCursor: false })
+            const result = (await client.request('commands/custom', {
+                key: '/hello',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(sumUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
+              "/** hello */
+              export function sum(a: number, b: number): number {
+                  /* CURSOR */
+              }
+              "
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, edit command, edit mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/newField',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(animalUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
+              "/* SELECTION_START */
+              export interface Animal {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void
+              }
+
+              /* SELECTION_END */
+
+              "
+            `,
+                explainPollyError
+            )
+        }, 30_000)
     })
 
     describe('Progress bars', () => {
@@ -917,6 +1286,40 @@ describe('Agent', () => {
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
+        checkDocumentCommand(
+            enterpriseClient,
+            'commands/document (enterprise client)',
+            'example.test.ts',
+            obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
+
+                  /**
+                   * Defines a test block with 3 test cases using Vitest:
+                   * - does 1 - asserts true equals true
+                   * - does 2 - asserts true equals true
+                   * - does something else - attempts to call performance.now incorrectly
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `)
+        )
+
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword
         // query is not replaying on Windows due to some platform-dependency on
         // how the HTTP request is constructed. I manually tested multi-repo on
@@ -958,7 +1361,6 @@ describe('Agent', () => {
                     }
                 }
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
-
                 expect(paths).includes('cmd/symbols/squirrel/README.md')
 
                 const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })

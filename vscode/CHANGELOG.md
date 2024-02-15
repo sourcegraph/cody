@@ -15,13 +15,105 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Command: The `Generate Unit Tests` command now functions as an inline edit command. When executed, the new tests will be automatically appended to the test file. If no existing test file is found, a temporary one will be created. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
 - [Internal] Command: Added new code lenses for generating additional unit tests. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
 
+- Edit: Added keyboard shortcuts for codelens actions such as "Undo" and "Retry" [pull/2757][https://github.com/sourcegraph/cody/pull/2757]
+- Chat: Displays warnings for large @-mentioned files during selection. [pull/3118](https://github.com/sourcegraph/cody/pull/3118)
+- Once [sourcegraph/sourcegraph#60515](https://github.com/sourcegraph/sourcegraph/pull/60515) is deployed, login works in VSCodium. [pull/3167](https://github.com/sourcegraph/cody/pull/3167)
+
 ### Fixed
+
+- Chat: Fixed an issue where Cody Chat steals focus from file editor after a request is completed. [pull/3147](https://github.com/sourcegraph/cody/pull/3147)
+- Chat: Fixed an issue where the links in the welcome message for chat are unclickable. [pull/3155](https://github.com/sourcegraph/cody/pull/3155)
+- Chat: File range is now displayed correctly in the chat view. [pull/3172](https://github.com/sourcegraph/cody/pull/3172)
 
 ### Changed
 
-- Autocomplete: Improved the new jaccard similarity retriever and context mixing experiments. [pull/2898](https://github.com/sourcegraph/cody/pull/2898)
-- Autocomplete: Remove obvious prompt-continuations. [pull/2974](https://github.com/sourcegraph/cody/pull/2974)
+- Autocomplete: Removes the latency for cached completions. [https://github.com/sourcegraph/cody/pull/3138](https://github.com/sourcegraph/cody/pull/3138)
+- Autocomplete: Enable the recent jaccard similarity improvements by default. [pull/3135](https://github.com/sourcegraph/cody/pull/3135)
+- Autocomplete: Start retrieval phase earlier to improve latency. [pull/3149](https://github.com/sourcegraph/cody/pull/3149)
+- Chat: Add tracing. [pull/3168](https://github.com/sourcegraph/cody/pull/3168)
+- Command: Leading slashes are removed from command names in the command menu. [pull/3061](https://github.com/sourcegraph/cody/pull/3061)
+- Autocomplete: Trigger one LLM request instead of three for multiline completions to reduce the response latency. [pull/3176](https://github.com/sourcegraph/cody/pull/3176)
 - Autocomplete: Allow the client to pick up feature flag changes that were previously requiring a client restart. [pull/2992](https://github.com/sourcegraph/cody/pull/2992)
+
+## [1.4.4]
+
+### Added
+
+### Fixed
+
+- The signin menu now displays a warning for invalid URL input. [pull/3156](https://github.com/sourcegraph/cody/pull/3156)
+
+### Changed
+
+## [1.4.3]
+
+### Added
+
+- Autocomplete: Updated the BFG binary version. [pull/3130](https://github.com/sourcegraph/cody/pull/3130)
+
+### Changed
+
+## [1.4.2]
+
+### Fixed
+
+- Chat: Fixed an issue where Cody would sometimes exceed the context window limit for shorter context OpenAI models. [pull/3121](https://github.com/sourcegraph/cody/pull/3121)
+
+## [1.4.1]
+
+### Added
+
+- Chat: Support `@-mentioned` in mid sentences. [pull/3043](https://github.com/sourcegraph/cody/pull/3043)
+- Chat: Support `@-mentioned` in editing mode. [pull/3091](https://github.com/sourcegraph/cody/pull/3091)
+
+### Fixed
+
+- Autocomplete: Fixed the completion partial removal upon acceptance caused by `cody.autocomplete.formatOnAccept`. [pull/3083](https://github.com/sourcegraph/cody/pull/3083)
+
+### Changed
+
+- Autocomplete: Improve client side tracing to get a better understanding of the E2E latency. [pull/3034](https://github.com/sourcegraph/cody/pull/3034)
+- Autocomplete: Move some work off the critical path in an attempt to further reduce latency. [pull/3096](https://github.com/sourcegraph/cody/pull/3096)
+- Custom Command: The `description` field is now optional and will default to use the command prompt. [pull/3025](https://github.com/sourcegraph/cody/pull/3025)
+
+## [1.4.0]
+
+### Added
+
+- Autocomplete: Add a new `cody.autocomplete.disableInsideComments` option to prevent completions from being displayed while writing code comments. [pull/3049](https://github.com/sourcegraph/cody/pull/3049)
+- Autocomplete: Added a shortcut to go to the Autocomplete settings from the Cody Settings overlay. [pull/3048](https://github.com/sourcegraph/cody/pull/3048)
+- Chat: Display Cody icon in the editor title of the chat panels when `cody.editorTitleCommandIcon` is enabled. [pull/2937](https://github.com/sourcegraph/cody/pull/2937)
+- Command: The `Generate Unit Tests` command now functions as an inline edit command. When executed, the new tests will be automatically appended to the test file. If no existing test file is found, a temporary one will be created. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
+- Command: You can now highlight the output in your terminal panel and right-click to `Ask Cody to Explain`. [pull/3008](https://github.com/sourcegraph/cody/pull/3008)
+- Edit: Added a multi-model selector to the Edit input, allowing quick access to change the Edit LLM. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
+- Edit: Added Cody Pro support for models: GPT-4, GPT-3.5, Claude 2.1 and Claude Instant. [pull/2951](https://github.com/sourcegraph/cody/pull/2951)
+- Edit: Added new keyboard shortcuts for Edit (`Alt+K`) and Chat (`Alt+L`). [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
+- Edit: Improved the input UX. You can now adjust the range of the Edit, select from available symbols in the document, and get quick access to the "Document" and "Test" commands. [pull/2884](https://github.com/sourcegraph/cody/pull/2884)
+- Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. Enable it by setting `cody.commandHints.enabled` to true. [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
+- [Internal] Command: Added new code lenses for generating additional unit tests. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
+
+### Fixed
+
+- Chat: Messages without enhanced context should not include the sparkle emoji in context list. [pull/3006](https://github.com/sourcegraph/cody/pull/3006)
+- Custom Command: Fixed an issue where custom commands could fail to load due to an invalid entry (e.g. missing prompt). [pull/3012](https://github.com/sourcegraph/cody/pull/3012)
+- Edit: Fixed an issue where "Ask Cody to Explain" would result in an error. [pull/3015](https://github.com/sourcegraph/cody/pull/3015)
+
+### Changed
+
+- Autocomplete: Expanded the configuration list to include `astro`, `rust`, `svelte`, and `elixir` for enhanced detection of multiline triggers. [pulls/3044](https://github.com/sourcegraph/cody/pull/3044)
+- Autocomplete: Improved the new jaccard similarity retriever and context mixing experiments. [pull/2898](https://github.com/sourcegraph/cody/pull/2898)
+- Autocomplete: Multiline completions are now enabled only for languages from a predefined list. [pulls/3044](https://github.com/sourcegraph/cody/pull/3044)
+- Autocomplete: Remove obvious prompt-continuations. [pull/2974](https://github.com/sourcegraph/cody/pull/2974)
+- Autocomplete: Enables the new fast-path mode for all Cody community users to directly connect with our inference service. [pull/2927](https://github.com/sourcegraph/cody/pull/2927)
+- Autocomplete: Rename `unstable-ollama` option to `experimental-ollama` to better communicate the current state. We still support `unstable-ollama` in the config for backward compatibility. [pull/3077](https://github.com/sourcegraph/cody/pull/3077)
+- Chat: Edit buttons are disabled on messages generated by the default commands. [pull/3005](https://github.com/sourcegraph/cody/pull/3005)
+
+## [1.2.3]
+
+### Added
+
+- Autocomplete: local inference support with [deepseek-coder](https://ollama.ai/library/deepseek-coder) powered by ollama. [pull/2966](https://github.com/sourcegraph/cody/pull/2966)
+- Autocomplete: Add a new experimental fast-path mode for Cody community users that directly connections to our inference services. [pull/2927](https://github.com/sourcegraph/cody/pull/2927)
 
 ## [1.2.2]
 

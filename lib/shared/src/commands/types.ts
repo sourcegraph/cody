@@ -6,6 +6,7 @@ export enum DefaultChatCommands {
     Explain = 'explain', // Explain code
     Unit = 'unit', // Generate unit tests in Chat
     Smell = 'smell', // Generate code smell report in Chat
+    Terminal = 'terminal', // Explain terminal output
 }
 
 // Default Cody Commands that runs as an Inline Edit command
@@ -16,7 +17,14 @@ export enum DefaultEditCommands {
 
 // The blueprint of a Cody Custom Command
 export interface CodyCommand {
-    slashCommand: string
+    /**
+     * @deprecated Use 'commandKey' instead.
+     */
+    slashCommand?: string
+    /**
+     * key of the command, e.g. 'smell' for Code Smell
+     */
+    key: string
     prompt: string
     description?: string
     context?: CodyCommandContext
