@@ -137,12 +137,14 @@ export class KotlinCodegen extends BaseCodegen {
         for (const member of union.members) {
             p.line()
             const typeName = this.f.discriminatedUnionTypeName(union, member)
-            const info = new scip.SymbolInformation({
-                display_name: typeName,
-                signature: new scip.Signature({
-                    value_signature: new scip.ValueSignature({ tpe: member.type }),
-                }),
-            })
+            const info = member.type.has_type_ref
+                ? this.symtab.info(member.type.type_ref.symbol)
+                : new scip.SymbolInformation({
+                      display_name: typeName,
+                      signature: new scip.Signature({
+                          value_signature: new scip.ValueSignature({ tpe: member.type }),
+                      }),
+                  })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
                 heritageClause: ` : ${name}()`,
             })
@@ -237,12 +239,7 @@ export class KotlinCodegen extends BaseCodegen {
         // Nest enum classe inside data class to avoid naming conflicts with
         // enums for other data classes in the same package.
         p.block(() => {
-            const packageIndex = p.out.findIndex(line => line.startsWith('package')) + 3
-            p.out = [
-                ...p.out.slice(0, packageIndex),
-                'import com.google.gson.annotations.SerializedName\n\n',
-                ...p.out.slice(packageIndex),
-            ]
+            p.addImport('import com.google.gson.annotations.SerializedName')
 
             for (const { name, members } of enums) {
                 p.line()
@@ -476,7 +473,11 @@ export class KotlinCodegen extends BaseCodegen {
                 }
                 const count = candidates.get(property.display_name) ?? 0
                 candidates.set(property.display_name, count + 1)
-                const members = memberss.get(property.display_name) ?? []
+                let members = memberss.get(property.display_name)
+                if (!members) {
+                    members = []
+                    memberss.set(property.display_name, members)
+                }
                 members.push({ value: stringLiteral, type: unionType })
             }
         }

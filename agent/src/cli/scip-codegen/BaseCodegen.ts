@@ -168,6 +168,10 @@ export abstract class BaseCodegen {
             return this.properties(info.signature.type_signature.lower_bound)
         }
 
+        if (info.signature.has_value_signature) {
+            return this.properties(info.signature.value_signature.tpe)
+        }
+
         this.reporter.error(info.symbol, `info has no properties: ${this.debug(info)}`)
         return []
     }

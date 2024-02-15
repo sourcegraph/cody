@@ -4,6 +4,23 @@ export class CodePrinter {
     private printIndent(): void {
         this.out.push(' '.repeat(this.indent))
     }
+
+    public addImport(text: string): void {
+        if (this.out.find(line => line.includes(text))) {
+            return
+        }
+        const importIndex = this.out.findIndex(line => line.startsWith('import '))
+        if (importIndex >= 0) {
+            this.out[importIndex] = `${text}\n${this.out[importIndex]}`
+            return
+        }
+        const packageIndex = this.out.findIndex(line => line.startsWith('import '))
+        if (packageIndex >= 0) {
+            this.out[packageIndex] = `${this.out[packageIndex]}\n\n${text}`
+            return
+        }
+    }
+
     public sectionComment(label: string): void {
         const header = '='.repeat(label.length)
         this.line(`// ${header}`)
