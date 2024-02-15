@@ -50,7 +50,7 @@ export enum FeatureFlag {
     CodyCommandHints = 'cody-command-hints',
 }
 
-const ONE_HOUR = 10000 //60 * 60 * 1000
+const ONE_HOUR = 60 * 60 * 1000
 
 export class FeatureFlagProvider {
     // The exposed feature flags are one where the backend returns a non-null value and thus we know
