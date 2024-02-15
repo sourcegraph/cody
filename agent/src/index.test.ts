@@ -321,11 +321,13 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
               " \`\`\`typescript
+              import { Animal } from './animal';
+
               export class Dog implements Animal {
-                name: string;
+                name = 'Dog';
 
                 makeAnimalSound() {
-                  return "Bark!";
+                  return 'Bark';
                 }
 
                 isMammal = true;
