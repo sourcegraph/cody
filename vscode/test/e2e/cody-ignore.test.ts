@@ -21,6 +21,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:explain:clicked',
         'CodyVSCodeExtension:command:explain:executed',
