@@ -337,7 +337,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                '" I\'m an AI assistant created by Anthropic. I don\'t have a specific model name or version."',
+                '" I don\'t have a specific model name or version. I was created by Anthropic using their conversational AI technology."',
                 explainPollyError
             )
         }, 30_000)
