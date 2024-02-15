@@ -268,4 +268,12 @@ test.extend<ExpectedEvents>({
 
     // The opened cody.json file should be shown as "Deleted"
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
+
+    // Open the cody.json from User Settings
+    await customCommandSidebar.click()
+    await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
+    await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
+    await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+    await page.getByLabel('cody.json, preview', { exact: true }).hover()
+    await expect(page.getByLabel('cody.json, preview', { exact: true })).toBeVisible()
 })
