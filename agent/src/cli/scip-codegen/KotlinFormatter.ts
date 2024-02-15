@@ -1,3 +1,4 @@
+import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
 import type { SymbolTable } from './SymbolTable'
@@ -151,5 +152,20 @@ export class KotlinFormatter {
         const isKeyword = this.kotlinKeywords.has(escaped)
         const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
         return needsBacktick ? `\`${escaped}\`` : escaped
+    }
+
+    public discriminatedUnionTypeName(
+        union: DiscriminatedUnion,
+        member: DiscriminatedUnionMember
+    ): string {
+        if (member.type.has_type_ref) {
+            return this.symtab.info(member.type.type_ref.symbol).display_name
+        }
+        return capitalize(
+            this.formatFieldName(member.value + this.symtab.info(union.symbol).display_name)
+        )
+    }
+    public formatEnumType(name: string): string {
+        return `${capitalize(name)}Enum`
     }
 }

@@ -21,7 +21,18 @@ export interface ProtocolSymbol {
     kind: ProtocolMethodKind
 }
 
+export interface DiscriminatedUnionMember {
+    value: string
+    type: scip.Type
+}
+export interface DiscriminatedUnion {
+    symbol: string
+    discriminatorDisplayName: string
+    members: DiscriminatedUnionMember[]
+}
 export abstract class BaseCodegen {
+    public readonly isNestedDiscriminatedUnion: boolean
+    public discriminatedUnions = new Map<string, DiscriminatedUnion>()
     public siblingDiscriminatedUnionProperties = new Map<string, string[]>()
     public static protocolSymbols = {
         client: {
@@ -62,7 +73,9 @@ export abstract class BaseCodegen {
         public readonly options: CodegenOptions,
         public readonly symtab: SymbolTable,
         public readonly reporter: ConsoleReporter
-    ) {}
+    ) {
+        this.isNestedDiscriminatedUnion = options.discriminatedUnions === 'nested'
+    }
 
     public abstract run(): Promise<void>
 

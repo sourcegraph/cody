@@ -11,7 +11,8 @@ import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
 import dedent from 'dedent'
 import { resetOutputPath } from './resetOutputPath'
-import { BaseCodegen } from './BaseCodegen'
+import { BaseCodegen, type DiscriminatedUnionMember, type DiscriminatedUnion } from './BaseCodegen'
+import { stringLiteralType } from './stringLiteralType'
 
 interface DocumentContext {
     f: KotlinFormatter
@@ -90,10 +91,69 @@ export class KotlinCodegen extends BaseCodegen {
         await fspromises.writeFile(path.join(this.options.output, 'Null.kt'), p.build())
     }
 
+    private async writeSealedClass(
+        { p, f, symtab }: DocumentContext,
+        name: string,
+        info: scip.SymbolInformation,
+        union: DiscriminatedUnion
+    ): Promise<void> {
+        p.line('import com.google.gson.Gson')
+        p.line('import com.google.gson.JsonDeserializationContext')
+        p.line('import com.google.gson.JsonDeserializer')
+        p.line('import com.google.gson.JsonElement')
+        p.line('import java.lang.reflect.Type')
+
+        p.line()
+        p.line(`sealed class ${name}() {`)
+        p.block(() => {
+            p.line('companion object {')
+            p.block(() => {
+                p.line(`val deserializer: JsonDeserializer<${name}> =`)
+                p.block(() => {
+                    p.line(
+                        'JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->'
+                    )
+                    p.block(() => {
+                        p.line(
+                            'when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {'
+                        )
+                        p.block(() => {
+                            for (const member of union.members) {
+                                const typeName = this.f.discriminatedUnionTypeName(union, member)
+                                p.line(
+                                    `"${member.value}" -> context.deserialize<${typeName}>(element, ${typeName}::class.java)`
+                                )
+                            }
+                            p.line('else -> throw Exception("Unknown discriminator ${element}")')
+                        })
+                        p.line('}')
+                    })
+                    p.line('}')
+                })
+            })
+            p.line('}')
+        })
+        p.line('}')
+        for (const member of union.members) {
+            p.line()
+            const typeName = this.f.discriminatedUnionTypeName(union, member)
+            const info = new scip.SymbolInformation({
+                display_name: typeName,
+                signature: new scip.Signature({
+                    value_signature: new scip.ValueSignature({ tpe: member.type }),
+                }),
+            })
+            this.writeDataClass({ p, f, symtab }, typeName, info, {
+                heritageClause: ` : ${name}() `,
+            })
+        }
+    }
+
     private async writeDataClass(
         { p, f, symtab }: DocumentContext,
         name: string,
-        info: scip.SymbolInformation
+        info: scip.SymbolInformation,
+        params?: { heritageClause?: string }
     ): Promise<void> {
         if (info.kind === scip.SymbolInformation.Kind.Class) {
             this.reporter.warn(
@@ -162,7 +222,7 @@ export class KotlinCodegen extends BaseCodegen {
                 }
 
                 if (constants.length > 0 && memberTypeSyntax === 'String') {
-                    memberTypeSyntax = `${capitalize(member.display_name)}Enum`
+                    memberTypeSyntax = this.f.formatEnumType(member.display_name)
                     enums.push({ name: memberTypeSyntax, members: constants })
                 }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
@@ -170,10 +230,10 @@ export class KotlinCodegen extends BaseCodegen {
             }
         })
         if (enums.length === 0) {
-            p.line(')')
+            p.line(`) ${params?.heritageClause ?? ''}`)
             return
         }
-        p.line(') {')
+        p.line(`) ${params?.heritageClause ?? ''} {`)
         // Nest enum classe inside data class to avoid naming conflicts with
         // enums for other data classes in the same package.
         p.block(() => {
@@ -229,7 +289,11 @@ export class KotlinCodegen extends BaseCodegen {
         if (alias) {
             p.line(`typealias ${name} = ${alias}`)
         } else {
-            this.writeDataClass(c, name, info)
+            const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
+            if (discriminatedUnion) {
+            } else {
+                this.writeDataClass(c, name, info)
+            }
         }
         p.line()
         await fspromises.writeFile(path.join(this.options.output, `${name}.kt`), p.build())
@@ -392,6 +456,41 @@ export class KotlinCodegen extends BaseCodegen {
         throw new Error(`unsupported type: ${this.debug(type)}`)
     }
 
+    private discriminatedUnion(info: scip.SymbolInformation): DiscriminatedUnion | undefined {
+        if (!info.signature.has_type_signature) {
+            return undefined
+        }
+        const type = info.signature.type_signature.lower_bound
+        if (!type.has_union_type || type.union_type.types.length === 0) {
+            return undefined
+        }
+        const candidates = new Map<string, number>()
+        const memberss = new Map<string, DiscriminatedUnionMember[]>()
+        for (const unionType of type.union_type.types) {
+            for (const propertySymbol of this.properties(unionType)) {
+                const property = this.symtab.info(propertySymbol)
+                const stringLiteral = stringLiteralType(property.signature.value_signature.tpe)
+                if (!stringLiteral) {
+                    continue
+                }
+                const count = candidates.get(property.display_name) ?? 0
+                candidates.set(property.display_name, count + 1)
+                const members = memberss.get(property.display_name) ?? []
+                members.push({ value: stringLiteral, type: unionType })
+            }
+        }
+        for (const [candidate, count] of candidates.entries()) {
+            if (count === type.union_type.types.length) {
+                return {
+                    symbol: info.symbol,
+                    discriminatorDisplayName: candidate,
+                    members: memberss.get(candidate) ?? [],
+                }
+            }
+        }
+        return undefined
+    }
+
     // Same as `queueClassLikeType` but for `scip.SymbolInformation` instead of `scip.Type`.
     private queueClassLikeInfo(jsonrpcMethod: scip.SymbolInformation): void {
         if (jsonrpcMethod.signature.has_class_signature) {
@@ -402,6 +501,15 @@ export class KotlinCodegen extends BaseCodegen {
 
         if (this.isStringTypeInfo(jsonrpcMethod)) {
             // Easy, we can create a string type alias
+            this.queue.push(jsonrpcMethod)
+            return
+        }
+
+        const discriminatedUnion = this.isNestedDiscriminatedUnion
+            ? this.discriminatedUnion(jsonrpcMethod)
+            : undefined
+        if (discriminatedUnion) {
+            this.discriminatedUnions.set(jsonrpcMethod.symbol, discriminatedUnion)
             this.queue.push(jsonrpcMethod)
             return
         }
@@ -482,6 +590,8 @@ export class KotlinCodegen extends BaseCodegen {
                         }),
                     })
                 )
+            } else {
+                this.reporter.warn(jsonrpcMethod.symbol, 'no properties found for this type')
             }
             return
         }
