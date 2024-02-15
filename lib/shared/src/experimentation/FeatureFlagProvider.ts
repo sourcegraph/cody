@@ -1,3 +1,4 @@
+import { logDebug } from '../logger'
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -52,10 +53,17 @@ export enum FeatureFlag {
 const ONE_HOUR = 10000 //60 * 60 * 1000
 
 export class FeatureFlagProvider {
+    // The exposed feature flags are one where the backend returns a non-null value and thus we know
+    // the user is in either the test or control group.
+    //
     // The first key maps to the endpoint so that we do never cache the wrong flag for different
     // endpoints
-    private featureFlags: Record<string, Record<string, boolean>> = {}
-    private lastUpdated = 0
+    private exposedFeatureFlags: Record<string, Record<string, boolean>> = {}
+    private lastRefreshTimestamp = 0
+    // Unexposed feature flags are cached differently since they don't usually mean that the backend
+    // won't have access to this feature flag. Those will not automatically update when feature
+    // flags are updated in the background.
+    private unexposedFeatureFlags: Record<string, Set<string>> = {}
 
     private subscriptions: Map<
         string, // ${endpoint}#${prefix filter}
@@ -66,26 +74,34 @@ export class FeatureFlagProvider {
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    public getFromCache(
-        flagName: FeatureFlag,
-        endpoint: string = this.apiClient.endpoint
-    ): boolean | undefined {
+    public getFromCache(flagName: FeatureFlag, endpoint = this.apiClient.endpoint): boolean | undefined {
         const now = Date.now()
-        if (now - this.lastUpdated > ONE_HOUR) {
+        if (now - this.lastRefreshTimestamp > ONE_HOUR) {
             // Cache expired, refresh
             void this.refreshFeatureFlags()
         }
 
-        return this.featureFlags[endpoint]?.[flagName]
+        const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
+        if (exposedValue !== undefined) {
+            return exposedValue
+        }
+
+        if (this.unexposedFeatureFlags[endpoint]?.has(flagName)) {
+            return false
+        }
+
+        return undefined
     }
 
-    public getExposedExperiments(endpoint: string = this.apiClient.endpoint): Record<string, boolean> {
-        return this.featureFlags[endpoint] || {}
+    public getExposedExperiments(endpoint = this.apiClient.endpoint): Record<string, boolean> {
+        return this.exposedFeatureFlags[endpoint] || {}
     }
 
-    public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
+    public async evaluateFeatureFlag(
+        flagName: FeatureFlag,
+        endpoint = this.apiClient.endpoint
+    ): Promise<boolean> {
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
-            const endpoint = this.apiClient.endpoint
             if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
                 return false
             }
@@ -96,16 +112,28 @@ export class FeatureFlagProvider {
             }
 
             const value = await this.apiClient.evaluateFeatureFlag(flagName)
-            if (!this.featureFlags[endpoint]) {
-                this.featureFlags[endpoint] = {}
+
+            if (value === null || typeof value === 'undefined' || isError(value)) {
+                // The backend does not know about this feature flag, so we can't know if the user
+                // is in the test or control group.
+                if (!this.unexposedFeatureFlags[endpoint]) {
+                    this.unexposedFeatureFlags[endpoint] = new Set()
+                }
+                this.unexposedFeatureFlags[endpoint].add(flagName)
+                return false
             }
-            this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
-            return this.featureFlags[endpoint][flagName]
+
+            if (!this.exposedFeatureFlags[endpoint]) {
+                this.exposedFeatureFlags[endpoint] = {}
+            }
+            this.exposedFeatureFlags[endpoint][flagName] = value
+            return value
         })
     }
 
     public async syncAuthStatus(): Promise<void> {
-        this.featureFlags = {}
+        this.exposedFeatureFlags = {}
+        this.unexposedFeatureFlags = {}
         await this.refreshFeatureFlags()
     }
 
@@ -113,8 +141,9 @@ export class FeatureFlagProvider {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
             const endpoint = this.apiClient.endpoint
             const data = await this.apiClient.getEvaluatedFeatureFlags()
-            this.featureFlags[endpoint] = isError(data) ? {} : data
-            this.lastUpdated = Date.now()
+
+            this.exposedFeatureFlags[endpoint] = isError(data) ? {} : data
+            this.lastRefreshTimestamp = Date.now()
             this.notifyFeatureFlagChanged()
 
             if (this.nextRefreshTimeout) {
@@ -130,8 +159,15 @@ export class FeatureFlagProvider {
     // Allows you to subscribe to a change event that is triggered when feature flags with a
     // predefined prefix are updated. Can be used to sync code that only queries flags at startup
     // to outside changes.
-    public onFeatureFlagChanged(prefixFilter: string, callback: () => void): () => void {
-        const endpoint = this.apiClient.endpoint
+    //
+    // Note this will only update feature flags that a user is currently exposed to. For feature
+    // flags not defined upstream, the changes will require a new call to `evaluateFeatureFlag` to
+    // be picked up.
+    public onFeatureFlagChanged(
+        prefixFilter: string,
+        callback: () => void,
+        endpoint = this.apiClient.endpoint
+    ): () => void {
         const key = endpoint + '#' + prefixFilter
         const subscription = this.subscriptions.get(key)
         if (subscription) {
@@ -183,13 +219,14 @@ export class FeatureFlagProvider {
             }
             subs.lastSnapshot = currentSnapshot
         }
+        logDebug('featureflag', 'refreshed')
         for (const callback of callbacksToTrigger) {
             callback()
         }
     }
 
     private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): Record<string, boolean> {
-        const featureFlags = this.featureFlags[endpoint]
+        const featureFlags = this.exposedFeatureFlags[endpoint]
         if (!featureFlags) {
             return {}
         }
@@ -209,15 +246,5 @@ function computeIfExistingFlagChanged(
     oldFlags: Record<string, boolean>,
     newFlags: Record<string, boolean>
 ): boolean {
-    return Object.keys(oldFlags).some(key => {
-        const oldValue = oldFlags[key]
-        const newValue = newFlags[key]
-
-        // If the old value was false and the flag is not present in the new set, the flag was
-        // either deleted on the upstream server (in which case it would still evaluate to false) or
-        // was never part of the upstream server (in which case a new call would again evaluate to
-        // false). Thus, we don't need to count this as a change event.
-        const isSame = (oldValue === false && newValue === undefined) || oldValue === newValue
-        return !isSame
-    })
+    return Object.keys(oldFlags).some(key => oldFlags[key] !== newFlags[key])
 }
