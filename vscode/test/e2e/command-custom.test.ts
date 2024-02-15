@@ -221,7 +221,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:command:config:clicked',
     ],
-}).only('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
+})('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
