@@ -142,6 +142,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalFastPath: false,
             autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalSmartThrottle: false,
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: 'http://localhost:11434',

@@ -1,3 +1,4 @@
+import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import { forkSignal, sleep } from './utils'
 import type * as vscode from 'vscode'
@@ -24,7 +25,7 @@ export class SmartThrottleService implements vscode.Disposable {
     // exceeds the throttle timeout, a tail request will be promoted again.
     private lastThrottlePromotion = 0
 
-    async throttle(request: RequestParams): Promise<RequestParams | null> {
+    async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
         const throttledRequest = new ThrottledRequest(request)
 
         // Case 1: If this is a start-of-line request, cancel any previous start-of-line requests
@@ -52,9 +53,11 @@ export class SmartThrottleService implements vscode.Disposable {
         this.tailRequest = throttledRequest
         const newRequestParams = throttledRequest.updatedRequestParams()
 
-        await sleep(25)
-        if (newRequestParams.abortSignal?.aborted) {
-            return null
+        if (triggerKind === TriggerKind.Automatic) {
+            await sleep(25)
+            if (newRequestParams.abortSignal?.aborted) {
+                return null
+            }
         }
 
         return newRequestParams

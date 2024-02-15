@@ -24,6 +24,7 @@ import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { completionProviderConfig } from './completion-provider-config'
 import { sleep } from './utils'
+import { SmartThrottleService } from './smart-throttle'
 
 export interface InlineCompletionsParams {
     // Context
@@ -41,6 +42,7 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
+    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -179,6 +181,7 @@ async function doGetInlineCompletions(
         providerConfig,
         contextMixer,
         requestManager,
+        smartThrottleService,
         lastCandidate,
         debounceInterval,
         setIsLoading,
@@ -278,7 +281,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    const requestParams: RequestParams = {
+    let requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -302,10 +305,19 @@ async function doGetInlineCompletions(
         }
     }
 
-    const debounceTime =
-        triggerKind !== TriggerKind.Automatic
-            ? 0
-            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+    if (smartThrottleService) {
+        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        if (throttledRequest === null) {
+            return null
+        }
+        requestParams = throttledRequest
+    }
+
+    const debounceTime = smartThrottleService
+        ? 0
+        : triggerKind !== TriggerKind.Automatic
+          ? 0
+          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
               (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every

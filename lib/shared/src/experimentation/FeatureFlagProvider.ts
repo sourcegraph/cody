@@ -31,6 +31,8 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
+    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
+    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',

@@ -65,6 +65,7 @@ export interface Configuration {
     autocompleteExperimentalFastPath?: boolean
     autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
+    autocompleteExperimentalSmartThrottle?: boolean
 
     /**
      * Hidden settings
