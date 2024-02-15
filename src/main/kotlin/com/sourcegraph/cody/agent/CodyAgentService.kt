@@ -41,8 +41,10 @@ class CodyAgentService(project: Project) : Disposable {
         }
       }
 
-      FileEditorManager.getInstance(project).openFiles.forEach { file ->
-        CodyFileEditorListener.fileOpened(project, agent, file)
+      if (!project.isDisposed) {
+        FileEditorManager.getInstance(project).openFiles.forEach { file ->
+          CodyFileEditorListener.fileOpened(project, agent, file)
+        }
       }
     }
   }
