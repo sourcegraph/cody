@@ -274,6 +274,5 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
-    await page.getByLabel('cody.json, preview', { exact: true }).hover()
-    await expect(page.getByLabel('cody.json, preview', { exact: true })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
 })
