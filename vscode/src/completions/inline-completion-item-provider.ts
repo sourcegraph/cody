@@ -159,8 +159,7 @@ export class InlineCompletionItemProvider
         )
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
-        this.isProbablyNewInstall =
-            !chatHistory || [...Object.values(chatHistory)].some(chat => chat.interactions.length > 0)
+        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',
