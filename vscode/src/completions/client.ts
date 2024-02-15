@@ -310,10 +310,9 @@ export function logResponseHeadersToSpan(span: Span, response: BrowserOrNodeResp
     response.headers.forEach((value, key) => {
         responseHeaders[key] = value
     })
-    const properties = {
+    span.addEvent('response')
+    span.setAttributes({
         ...responseHeaders,
         status: response.status,
-    }
-    span.addEvent('response')
-    span.setAttributes(properties)
+    })
 }
