@@ -31,8 +31,6 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
-    // Trigger only one request for every multiline completion instead of three.
-    CodyAutocompleteSingleMultilineRequest = 'cody-autocomplete-single-multiline-request',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',

@@ -124,6 +124,7 @@ export interface ChatUITextAreaProps {
     chatModels?: ModelProvider[]
     messageBeingEdited: number | undefined
     inputCaretPosition?: number
+    isWebviewActive: boolean
 }
 
 export interface ChatUISubmitButtonProps {
@@ -901,7 +902,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             chatModels={chatModels}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
-                            inputCaretPosition={inputCaretPosition}
+                            inputCaretPosition={isWebviewActive ? inputCaretPosition : undefined}
+                            isWebviewActive={isWebviewActive}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>

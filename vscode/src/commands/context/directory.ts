@@ -18,7 +18,7 @@ import { type URI, Utils } from 'vscode-uri'
  * Limits file sizes to 1MB.
  */
 export async function getContextFileFromDirectory(directory?: URI): Promise<ContextFile[]> {
-    return wrapInActiveSpan('commands.context.directory', async span => {
+    return wrapInActiveSpan('commands.context.directory', async () => {
         const contextFiles: ContextFile[] = []
 
         const editor = getEditor()
@@ -57,7 +57,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 const bytes = await vscode.workspace.fs.readFile(fileUri)
                 const decoded = new TextDecoder('utf-8').decode(bytes)
                 const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
-                const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
+                const range = new vscode.Range(0, 0, truncatedContent.split('\n').length - 1 || 0, 0)
 
                 const contextFile = {
                     type: 'file',

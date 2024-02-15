@@ -12,13 +12,13 @@ export async function openFile(
     range?: ActiveTextEditorSelectionRange,
     currentViewColumn?: vscode.ViewColumn
 ): Promise<void> {
-    const doc = await vscode.workspace.openTextDocument(uri)
-
     let viewColumn = vscode.ViewColumn.Beside
     if (currentViewColumn) {
         viewColumn = currentViewColumn - 1 || currentViewColumn + 1
     }
-    const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
+    const doc = await vscode.workspace.openTextDocument(uri)
+    // +1 because selection range starts at 0 while editor line starts at 1
+    const selection = range && new vscode.Range(range.start.line, 0, range.end.line + 1, 0)
     await vscode.window.showTextDocument(doc, {
         selection,
         viewColumn,
