@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Testing_ProgressCancelationParams(
-  var title: String? = null,
+  val title: String? = null,
 )
 

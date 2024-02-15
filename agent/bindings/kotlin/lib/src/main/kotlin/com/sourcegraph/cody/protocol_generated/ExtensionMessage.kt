@@ -2,31 +2,31 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ExtensionMessage(
-  var type: String? = null, // Oneof: search:config, history, transcript, view, errors, notice, transcript-errors, userContextFiles, chatModels, update-search-results, index-updated, enhanced-context, attribution, setChatEnabledConfigFeature, webview-state, context/remote-repos, setConfigFeatures, config
-  var config: ConfigParams? = null,
-  var authStatus: AuthStatus? = null,
-  var workspaceFolderUris: List<String>? = null,
-  var localHistory: UserLocalHistory? = null,
-  var messages: List<ChatMessage>? = null,
-  var isMessageInProgress: Boolean? = null,
-  var chatID: String? = null,
-  var view: View? = null, // Oneof: chat, login
-  var errors: String? = null,
-  var notice: NoticeParams? = null,
-  var isTranscriptError: Boolean? = null,
-  var userContextFiles: List<ContextFile>? = null,
-  var kind: ContextFileType? = null, // Oneof: file, symbol
-  var models: List<ModelProvider>? = null,
-  var results: List<SearchPanelFile>? = null,
-  var query: String? = null,
-  var scopeDir: String? = null,
-  var enhancedContextStatus: EnhancedContextContextT? = null,
-  var snippet: String? = null,
-  var attribution: AttributionParams? = null,
-  var error: String? = null,
-  var data: Boolean? = null,
-  var isActive: Boolean? = null,
-  var repos: List<Repo>? = null,
-  var configFeatures: ConfigFeaturesParams? = null,
+  val type: TypeEnum? = null, // Oneof: search:config, history, transcript, view, errors, notice, transcript-errors, userContextFiles, chatModels, update-search-results, index-updated, enhanced-context, attribution, setChatEnabledConfigFeature, webview-state, context/remote-repos, setConfigFeatures, config
+  val config: ConfigParams? = null,
+  val authStatus: AuthStatus? = null,
+  val workspaceFolderUris: List<String>? = null,
+  val localHistory: UserLocalHistory? = null,
+  val messages: List<ChatMessage>? = null,
+  val isMessageInProgress: Boolean? = null,
+  val chatID: String? = null,
+  val view: View? = null, // Oneof: chat, login
+  val errors: String? = null,
+  val notice: NoticeParams? = null,
+  val isTranscriptError: Boolean? = null,
+  val userContextFiles: List<ContextFile>? = null,
+  val kind: ContextFileType? = null, // Oneof: file, symbol
+  val models: List<ModelProvider>? = null,
+  val results: List<SearchPanelFile>? = null,
+  val query: String? = null,
+  val scopeDir: String? = null,
+  val enhancedContextStatus: EnhancedContextContextT? = null,
+  val snippet: String? = null,
+  val attribution: AttributionParams? = null,
+  val error: String? = null,
+  val data: Boolean? = null,
+  val isActive: Boolean? = null,
+  val repos: List<Repo>? = null,
+  val configFeatures: ConfigFeaturesParams? = null,
 )
 

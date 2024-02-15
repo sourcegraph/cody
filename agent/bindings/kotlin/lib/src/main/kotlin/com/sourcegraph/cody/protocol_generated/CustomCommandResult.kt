@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class CustomCommandResult(
-  var type: String? = null, // Oneof: edit, chat
-  var chatResult: String? = null,
-  var editResult: EditTask? = null,
+  val type: TypeEnum? = null, // Oneof: edit, chat
+  val chatResult: String? = null,
+  val editResult: EditTask? = null,
 )
 

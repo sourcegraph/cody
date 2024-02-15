@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class TextDocument_ShowParams(
-  var uri: String? = null,
-  var options: TextDocumentShowOptions? = null,
+  val uri: String? = null,
+  val options: TextDocumentShowOptions? = null,
 )
 

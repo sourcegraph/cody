@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class FileIdentifier(
-  var uri: String? = null,
+  val uri: String? = null,
 )
 

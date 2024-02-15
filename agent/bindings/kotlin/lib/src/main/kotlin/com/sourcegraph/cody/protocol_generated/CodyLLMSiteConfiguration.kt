@@ -2,12 +2,12 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class CodyLLMSiteConfiguration(
-  var chatModel: String? = null,
-  var chatModelMaxTokens: Int? = null,
-  var fastChatModel: String? = null,
-  var fastChatModelMaxTokens: Int? = null,
-  var completionModel: String? = null,
-  var completionModelMaxTokens: Int? = null,
-  var provider: String? = null,
+  val chatModel: String? = null,
+  val chatModelMaxTokens: Int? = null,
+  val fastChatModel: String? = null,
+  val fastChatModelMaxTokens: Int? = null,
+  val completionModel: String? = null,
+  val completionModelMaxTokens: Int? = null,
+  val provider: String? = null,
 )
 

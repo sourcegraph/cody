@@ -2,10 +2,10 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class PreciseContext(
-  var symbol: SymbolParams? = null,
-  var hoverText: List<String>? = null,
-  var definitionSnippet: String? = null,
-  var filePath: String? = null,
-  var range: RangeParams? = null,
+  val symbol: SymbolParams? = null,
+  val hoverText: List<String>? = null,
+  val definitionSnippet: String? = null,
+  val filePath: String? = null,
+  val range: RangeParams? = null,
 )
 

@@ -2,17 +2,17 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ChatError(
-  var kind: String? = null,
-  var name: String? = null,
-  var message: String? = null,
-  var retryAfter: String? = null,
-  var limit: Int? = null,
-  var userMessage: String? = null,
-  var retryAfterDate: Date? = null,
-  var retryAfterDateString: String? = null,
-  var retryMessage: String? = null,
-  var feature: String? = null,
-  var upgradeIsAvailable: Boolean? = null,
-  var isChatErrorGuard: String? = null, // Oneof: isChatErrorGuard
+  val kind: String? = null,
+  val name: String? = null,
+  val message: String? = null,
+  val retryAfter: String? = null,
+  val limit: Int? = null,
+  val userMessage: String? = null,
+  val retryAfterDate: Date? = null,
+  val retryAfterDateString: String? = null,
+  val retryMessage: String? = null,
+  val feature: String? = null,
+  val upgradeIsAvailable: Boolean? = null,
+  val isChatErrorGuard: IsChatErrorGuardEnum? = null, // Oneof: isChatErrorGuard
 )
 

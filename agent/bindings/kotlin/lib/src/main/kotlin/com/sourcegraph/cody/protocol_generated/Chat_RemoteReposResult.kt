@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Chat_RemoteReposResult(
-  var remoteRepos: List<Repo>? = null,
+  val remoteRepos: List<Repo>? = null,
 )
 

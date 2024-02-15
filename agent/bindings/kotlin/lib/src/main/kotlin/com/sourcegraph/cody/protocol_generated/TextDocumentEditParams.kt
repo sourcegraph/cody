@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class TextDocumentEditParams(
-  var uri: String? = null,
-  var edits: List<TextEdit>? = null,
-  var options: OptionsParams? = null,
+  val uri: String? = null,
+  val edits: List<TextEdit>? = null,
+  val options: OptionsParams? = null,
 )
 

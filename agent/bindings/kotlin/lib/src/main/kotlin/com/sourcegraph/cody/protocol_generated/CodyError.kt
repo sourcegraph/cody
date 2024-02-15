@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class CodyError(
-  var message: String? = null,
-  var cause: CodyError? = null,
-  var stack: String? = null,
+  val message: String? = null,
+  val cause: CodyError? = null,
+  val stack: String? = null,
 )
 

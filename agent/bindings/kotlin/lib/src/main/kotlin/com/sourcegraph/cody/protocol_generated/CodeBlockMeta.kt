@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class CodeBlockMeta(
-  var source: String? = null,
-  var requestID: String? = null,
+  val source: String? = null,
+  val requestID: String? = null,
 )
 

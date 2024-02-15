@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Graphql_GetRepoIdsParams(
-  var names: List<String>? = null,
-  var first: Int? = null,
+  val names: List<String>? = null,
+  val first: Int? = null,
 )
 

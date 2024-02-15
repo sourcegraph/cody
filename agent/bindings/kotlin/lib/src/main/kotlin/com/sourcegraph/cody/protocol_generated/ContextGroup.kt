@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ContextGroup(
-  var dir: Uri? = null,
-  var displayName: String? = null,
-  var providers: List<ContextProvider>? = null,
+  val dir: Uri? = null,
+  val displayName: String? = null,
+  val providers: List<ContextProvider>? = null,
 )
 

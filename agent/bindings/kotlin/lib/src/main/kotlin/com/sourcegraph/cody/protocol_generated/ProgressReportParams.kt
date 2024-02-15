@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ProgressReportParams(
-  var id: String? = null,
-  var message: String? = null,
-  var increment: Int? = null,
+  val id: String? = null,
+  val message: String? = null,
+  val increment: Int? = null,
 )
 

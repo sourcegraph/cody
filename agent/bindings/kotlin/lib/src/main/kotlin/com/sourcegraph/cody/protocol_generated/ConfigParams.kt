@@ -2,13 +2,13 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ConfigParams(
-  var debugEnable: Boolean? = null,
-  var experimentalGuardrails: Boolean? = null,
-  var serverEndpoint: String? = null,
-  var os: String? = null,
-  var arch: String? = null,
-  var homeDir: String? = null,
-  var extensionVersion: String? = null,
-  var uiKindIsWeb: Boolean? = null,
+  val debugEnable: Boolean? = null,
+  val experimentalGuardrails: Boolean? = null,
+  val serverEndpoint: String? = null,
+  val os: String? = null,
+  val arch: String? = null,
+  val homeDir: String? = null,
+  val extensionVersion: String? = null,
+  val uiKindIsWeb: Boolean? = null,
 )
 

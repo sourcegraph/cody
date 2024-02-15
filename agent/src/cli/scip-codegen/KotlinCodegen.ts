@@ -3,7 +3,7 @@ import { scip } from './scip'
 import { CodePrinter } from './CodePrinter'
 import path from 'path'
 import type { SymbolTable } from './SymbolTable'
-import { typescriptKeyword, typescriptKeywordSyntax } from './utils'
+import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 import { KotlinFormatter } from './KotlinFormatter'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { CodegenOptions } from './command'
@@ -102,6 +102,7 @@ export class KotlinCodegen extends BaseCodegen {
             )
         }
         const generatedName = new Set<string>()
+        const enums: { name: string; members: string[] }[] = []
         p.line(`data class ${name}(`)
         p.block(() => {
             for (const memberSymbol of this.infoProperties(info)) {
@@ -153,17 +154,34 @@ export class KotlinCodegen extends BaseCodegen {
                     continue
                 }
                 this.queueClassLikeType(memberType, member, 'parameter')
-                const memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
+                let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
                 const constants = this.stringConstantsFromInfo(member)
                 for (const constant of constants) {
                     // HACK: merge this duplicate code with the same logic in this file
                     this.stringLiteralConstants.add(constant)
                 }
+                if (constants.length > 0 && memberTypeSyntax === 'String') {
+                    memberTypeSyntax = `${capitalize(member.display_name)}Enum`
+                    enums.push({ name: memberTypeSyntax, members: constants })
+                }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
-                p.line(`var ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
+                p.line(`val ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
             }
         })
         p.line(')')
+
+        // for (const { name, members } of enums) {
+        //     p.line()
+        //     p.line(`enum ${name} {`)
+        //     p.block(() => {
+        //         for (const member of members) {
+        //             const serializedName = `@com.google.gson.annotations.SerializedName("${member}")`
+        //             const enumName = capitalize(this.f.formatFieldName(member))
+        //             p.line(`${serializedName} ${enumName},`)
+        //         }
+        //     })
+        //     p.line('}')
+        // }
     }
 
     private aliasType(info: scip.SymbolInformation): string | undefined {

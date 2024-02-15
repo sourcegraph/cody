@@ -2,14 +2,14 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ChatMessage(
-  var speaker: String? = null, // Oneof: human, assistant
-  var text: String? = null,
-  var displayText: String? = null,
-  var contextFiles: List<ContextFile>? = null,
-  var preciseContext: List<PreciseContext>? = null,
-  var buttons: List<ChatButton>? = null,
-  var data: Any? = null,
-  var metadata: ChatMetadata? = null,
-  var error: ChatError? = null,
+  val speaker: SpeakerEnum? = null, // Oneof: human, assistant
+  val text: String? = null,
+  val displayText: String? = null,
+  val contextFiles: List<ContextFile>? = null,
+  val preciseContext: List<PreciseContext>? = null,
+  val buttons: List<ChatButton>? = null,
+  val data: Any? = null,
+  val metadata: ChatMetadata? = null,
+  val error: ChatError? = null,
 )
 

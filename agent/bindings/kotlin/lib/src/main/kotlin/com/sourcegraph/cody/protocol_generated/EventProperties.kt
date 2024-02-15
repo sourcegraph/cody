@@ -2,9 +2,9 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class EventProperties(
-  var anonymousUserID: String? = null,
-  var prefix: String? = null,
-  var client: String? = null,
-  var source: String? = null, // Oneof: IDEEXTENSION
+  val anonymousUserID: String? = null,
+  val prefix: String? = null,
+  val client: String? = null,
+  val source: SourceEnum? = null, // Oneof: IDEEXTENSION
 )
 

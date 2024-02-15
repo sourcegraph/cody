@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ChatButton(
-  var label: String? = null,
-  var action: String? = null,
-  var appearance: String? = null, // Oneof: primary, secondary, icon
+  val label: String? = null,
+  val action: String? = null,
+  val appearance: AppearanceEnum? = null, // Oneof: primary, secondary, icon
 )
 

@@ -2,9 +2,9 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class WorkspaceEditEntryMetadata(
-  var needsConfirmation: Boolean? = null,
-  var label: String? = null,
-  var description: String? = null,
-  var iconPath: Uri? = null,
+  val needsConfirmation: Boolean? = null,
+  val label: String? = null,
+  val description: String? = null,
+  val iconPath: Uri? = null,
 )
 

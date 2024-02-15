@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class WebviewPostMessageParams(
-  var id: String? = null,
-  var message: ExtensionMessage? = null,
+  val id: String? = null,
+  val message: ExtensionMessage? = null,
 )
 
