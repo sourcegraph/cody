@@ -23,6 +23,7 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -242,7 +243,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.submitType,
                     message.contextFiles ?? [],
-                    message.addEnhancedContext ?? false
+                    message.addEnhancedContext ?? false,
+                    'chat'
                 )
                 break
             }
@@ -383,9 +385,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: string,
         submitType: ChatSubmitType,
         userContextFiles: ContextFile[],
-        addEnhancedContext: boolean
+        addEnhancedContext: boolean,
+        source?: ChatEventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            telemetryService.log('CodyVSCodeExtension:chat-question:submitted', { requestID, source })
+            telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
+                privateMetadata: { requestID, source },
+            })
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 span.setAttribute('sampled', true)
 
