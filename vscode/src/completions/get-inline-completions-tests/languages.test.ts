@@ -37,8 +37,7 @@ describe('[getInlineCompletions] languages', () => {
                 }
             )
         )
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
           "print(i)
               elif i % 3 == 0:
@@ -79,8 +78,7 @@ describe('[getInlineCompletions] languages', () => {
                 }
             )
         )
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
           "System.out.println(i);
               } else if (i % 3 == 0) {
@@ -130,8 +128,7 @@ describe('[getInlineCompletions] languages', () => {
                 }
             )
         )
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
                 "Console.WriteLine(i);
                     }"
@@ -169,8 +166,7 @@ describe('[getInlineCompletions] languages', () => {
                 }
             )
         )
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
           "std::cout << i;
               } else if (i % 3 == 0) {
@@ -212,8 +208,8 @@ describe('[getInlineCompletions] languages', () => {
                 }
             )
         )
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
           "printf("%d", i);
               } else if (i % 3 == 0) {
@@ -256,8 +252,7 @@ describe('[getInlineCompletions] languages', () => {
             )
         )
 
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
           "echo $i;
               } else if ($i % 3 == 0) {
@@ -300,8 +295,7 @@ describe('[getInlineCompletions] languages', () => {
             )
         )
 
-        expect(requests).toHaveLength(3)
-        expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+        expect(requests).toBeMultiLine()
         expect(items[0]).toMatchInlineSnapshot(`
               "print(i);
                   } else if (i % 3 == 0) {
