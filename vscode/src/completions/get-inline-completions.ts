@@ -315,21 +315,9 @@ async function doGetInlineCompletions(
     const remainingInterval = debounceTime - waitInterval
     if (waitInterval > 0) {
         await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
-    }
-
-    // Debounce to avoid firing off too many network requests as the user is still typing.
-    await wrapInActiveSpan('autocomplete.debounce', async () => {
-        const interval =
-            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
-        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        if (abortSignal?.aborted) {
+            return null
         }
-    })
-
-    // We don't need to make a request at all if the signal is already aborted after the debounce.
-    if (abortSignal?.aborted) {
-        return null
     }
 
     setIsLoading?.(true)
