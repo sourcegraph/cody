@@ -1,5 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
+
+import com.google.gson.annotations.SerializedName
 
 data class ExtensionMessage(
   val type: TypeEnum? = null, // Oneof: search:config, history, transcript, view, errors, notice, transcript-errors, userContextFiles, chatModels, update-search-results, index-updated, enhanced-context, attribution, setChatEnabledConfigFeature, webview-state, context/remote-repos, setConfigFeatures, config
@@ -28,5 +30,27 @@ data class ExtensionMessage(
   val isActive: Boolean? = null,
   val repos: List<Repo>? = null,
   val configFeatures: ConfigFeaturesParams? = null,
-)
+) {
+
+  enum class TypeEnum {
+    @SerializedName("search:config") Search_config,
+    @SerializedName("history") History,
+    @SerializedName("transcript") Transcript,
+    @SerializedName("view") View,
+    @SerializedName("errors") Errors,
+    @SerializedName("notice") Notice,
+    @SerializedName("transcript-errors") `Transcript-errors`,
+    @SerializedName("userContextFiles") UserContextFiles,
+    @SerializedName("chatModels") ChatModels,
+    @SerializedName("update-search-results") `Update-search-results`,
+    @SerializedName("index-updated") `Index-updated`,
+    @SerializedName("enhanced-context") `Enhanced-context`,
+    @SerializedName("attribution") Attribution,
+    @SerializedName("setChatEnabledConfigFeature") SetChatEnabledConfigFeature,
+    @SerializedName("webview-state") `Webview-state`,
+    @SerializedName("context/remote-repos") `Context_remote-repos`,
+    @SerializedName("setConfigFeatures") SetConfigFeatures,
+    @SerializedName("config") Config,
+  }
+}
 

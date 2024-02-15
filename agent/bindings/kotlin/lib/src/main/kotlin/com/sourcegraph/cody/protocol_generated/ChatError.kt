@@ -1,5 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
+
+import com.google.gson.annotations.SerializedName
 
 data class ChatError(
   val kind: String? = null,
@@ -14,5 +16,10 @@ data class ChatError(
   val feature: String? = null,
   val upgradeIsAvailable: Boolean? = null,
   val isChatErrorGuard: IsChatErrorGuardEnum? = null, // Oneof: isChatErrorGuard
-)
+) {
+
+  enum class IsChatErrorGuardEnum {
+    @SerializedName("isChatErrorGuard") IsChatErrorGuard,
+  }
+}
 

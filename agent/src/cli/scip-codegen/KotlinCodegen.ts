@@ -160,6 +160,7 @@ export class KotlinCodegen extends BaseCodegen {
                     // HACK: merge this duplicate code with the same logic in this file
                     this.stringLiteralConstants.add(constant)
                 }
+
                 if (constants.length > 0 && memberTypeSyntax === 'String') {
                     memberTypeSyntax = `${capitalize(member.display_name)}Enum`
                     enums.push({ name: memberTypeSyntax, members: constants })
@@ -168,20 +169,35 @@ export class KotlinCodegen extends BaseCodegen {
                 p.line(`val ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
             }
         })
-        p.line(')')
+        if (enums.length === 0) {
+            p.line(')')
+            return
+        }
+        p.line(') {')
+        // Nest enum classe inside data class to avoid naming conflicts with
+        // enums for other data classes in the same package.
+        p.block(() => {
+            const packageIndex = p.out.findIndex(line => line.startsWith('package')) + 3
+            p.out = [
+                ...p.out.slice(0, packageIndex),
+                'import com.google.gson.annotations.SerializedName\n\n',
+                ...p.out.slice(packageIndex),
+            ]
 
-        // for (const { name, members } of enums) {
-        //     p.line()
-        //     p.line(`enum ${name} {`)
-        //     p.block(() => {
-        //         for (const member of members) {
-        //             const serializedName = `@com.google.gson.annotations.SerializedName("${member}")`
-        //             const enumName = capitalize(this.f.formatFieldName(member))
-        //             p.line(`${serializedName} ${enumName},`)
-        //         }
-        //     })
-        //     p.line('}')
-        // }
+            for (const { name, members } of enums) {
+                p.line()
+                p.line(`enum class ${name} {`)
+                p.block(() => {
+                    for (const member of members) {
+                        const serializedName = `@SerializedName("${member}")`
+                        const enumName = this.f.formatFieldName(capitalize(member))
+                        p.line(`${serializedName} ${enumName},`)
+                    }
+                })
+                p.line('}')
+            }
+        })
+        p.line('}')
     }
 
     private aliasType(info: scip.SymbolInformation): string | undefined {
@@ -206,7 +222,7 @@ export class KotlinCodegen extends BaseCodegen {
     private async writeType(info: scip.SymbolInformation): Promise<void> {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
-        p.line('@file:Suppress("FunctionName", "ClassName")')
+        p.line('@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")')
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
         const alias = this.aliasType(info)

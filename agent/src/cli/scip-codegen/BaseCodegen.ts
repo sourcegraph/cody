@@ -169,7 +169,7 @@ export abstract class BaseCodegen {
         )
     }
     protected stringConstantsFromInfo(info: scip.SymbolInformation): string[] {
-        const result: string[] = []
+        const result = new Set<string>()
         const isVisited = new Set<string>()
         const visitInfo = (info: scip.SymbolInformation) => {
             if (isVisited.has(info.symbol)) {
@@ -197,7 +197,7 @@ export abstract class BaseCodegen {
         }
         const visitType = (type: scip.Type) => {
             if (type.has_constant_type && type.constant_type.constant.has_string_constant) {
-                result.push(type.constant_type.constant.string_constant.value)
+                result.add(type.constant_type.constant.string_constant.value)
             }
             if (type.has_union_type) {
                 for (const constant of type.union_type.types) {
@@ -209,7 +209,7 @@ export abstract class BaseCodegen {
             }
         }
         visitInfo(info)
-        return result
+        return [...result.values()]
     }
 
     protected pickProperties(type: scip.Type): string[] {

@@ -1,5 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
+
+import com.google.gson.annotations.SerializedName
 
 data class ContextFile(
   val uri: Uri? = null,
@@ -12,5 +14,11 @@ data class ContextFile(
   val type: TypeEnum? = null, // Oneof: symbol, file
   val symbolName: String? = null,
   val kind: SymbolKind? = null, // Oneof: class, function, method
-)
+) {
+
+  enum class TypeEnum {
+    @SerializedName("symbol") Symbol,
+    @SerializedName("file") File,
+  }
+}
 

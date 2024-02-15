@@ -1,5 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
+
+import com.google.gson.annotations.SerializedName
 
 data class ChatMessage(
   val speaker: SpeakerEnum? = null, // Oneof: human, assistant
@@ -11,5 +13,11 @@ data class ChatMessage(
   val data: Any? = null,
   val metadata: ChatMetadata? = null,
   val error: ChatError? = null,
-)
+) {
+
+  enum class SpeakerEnum {
+    @SerializedName("human") Human,
+    @SerializedName("assistant") Assistant,
+  }
+}
 

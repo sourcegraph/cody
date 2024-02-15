@@ -1,5 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
+
+import com.google.gson.annotations.SerializedName
 
 data class AutocompleteParams(
   val uri: String? = null,
@@ -7,5 +9,11 @@ data class AutocompleteParams(
   val position: Position? = null,
   val triggerKind: TriggerKindEnum? = null, // Oneof: Automatic, Invoke
   val selectedCompletionInfo: SelectedCompletionInfo? = null,
-)
+) {
+
+  enum class TriggerKindEnum {
+    @SerializedName("Automatic") Automatic,
+    @SerializedName("Invoke") Invoke,
+  }
+}
 

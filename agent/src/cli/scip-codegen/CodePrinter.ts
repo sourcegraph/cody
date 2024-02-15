@@ -1,6 +1,6 @@
 export class CodePrinter {
-    out: string[] = []
-    indent = 0
+    public out: string[] = []
+    public indent = 0
     private printIndent(): void {
         this.out.push(' '.repeat(this.indent))
     }
