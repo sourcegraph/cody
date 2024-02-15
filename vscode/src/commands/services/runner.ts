@@ -22,8 +22,9 @@ import { getEditor } from '../../editor/active-editor'
 
 /**
  * NOTE: Used by Command Controller only.
+ * NOTE: Execute Custom Commands only
  *
- * Handles executing a Cody custom command.
+ * Handles executing a Cody Custom Command.
  * It sorts the given command into:
  * - an inline edit command (mode !== 'ask), or;
  * - a chat command (mode === 'ask')
@@ -47,38 +48,37 @@ export class CommandRunner implements vscode.Disposable {
     }
 
     /**
-     * Starts executing the Cody command.
+     * Starts executing the Cody Custom Command.
      */
     public async start(): Promise<CommandResult | undefined> {
-        // all user and workspace custom command should be logged under 'custom'
-        const name = this.command.type === 'default' ? this.command.key : 'custom'
+        // NOTE: Default commands are processed in controller
+        if (this.command.type === 'default') {
+            console.error('Default commands are not supported in runner.')
+            return undefined
+        }
 
-        // Only log the chat commands (mode === ask) to avoid double logging by the edit commands
-        if (this.command.mode === 'ask') {
-            // NOTE: codebase context is not supported for custom commands
-            const addCodebaseContex = false
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:executed`, {
+        const addCodebaseContex = false
+        telemetryService.log('CodyVSCodeExtension:command:custom:executed', {
+            mode: this.command.mode,
+            useCodebaseContex: addCodebaseContex,
+            useShellCommand: !!this.command.context?.command,
+            requestID: this.args.requestID,
+            source: this.args.source,
+            traceId: this.span.spanContext().traceId,
+        })
+        telemetryRecorder.recordEvent('cody.command.custom', 'executed', {
+            metadata: {
+                useCodebaseContex: addCodebaseContex ? 1 : 0,
+                useShellCommand: this.command.context?.command ? 1 : 0,
+            },
+            interactionID: this.args.requestID,
+            privateMetadata: {
                 mode: this.command.mode,
-                useCodebaseContex: addCodebaseContex,
-                useShellCommand: !!this.command.context?.command,
                 requestID: this.args.requestID,
                 source: this.args.source,
                 traceId: this.span.spanContext().traceId,
-            })
-            telemetryRecorder.recordEvent(`cody.command.${name}`, 'executed', {
-                metadata: {
-                    useCodebaseContex: addCodebaseContex ? 1 : 0,
-                    useShellCommand: this.command.context?.command ? 1 : 0,
-                },
-                interactionID: this.args.requestID,
-                privateMetadata: {
-                    mode: this.command.mode,
-                    requestID: this.args.requestID,
-                    source: this.args.source,
-                    traceId: this.span.spanContext().traceId,
-                },
-            })
-        }
+            },
+        })
 
         // Conditions checks
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
@@ -128,7 +128,7 @@ export class CommandRunner implements vscode.Disposable {
                 submitType: 'user',
                 contextFiles,
                 addEnhancedContext: this.command.context?.codebase ?? false,
-                source: this.args.source,
+                source: 'custom-commands',
             }),
         }
     }
@@ -141,12 +141,6 @@ export class CommandRunner implements vscode.Disposable {
         this.span.setAttribute('mode', 'edit')
         logDebug('CommandRunner:handleEditRequest', 'fixup request detected')
 
-        // Conditions for categorizing an edit command
-        const commandKey = this.command.key
-        const isDefaultCommand = this.command.type === 'default'
-        const instruction = this.command.prompt
-        const source = isDefaultCommand ? commandKey : 'custom-commands'
-
         // Fetch context for the command
         const userContextFiles = await this.getContextFiles()
 
@@ -154,12 +148,12 @@ export class CommandRunner implements vscode.Disposable {
             type: 'edit',
             task: await executeEdit({
                 configuration: {
-                    instruction,
+                    instruction: this.command.prompt,
                     intent: 'edit',
                     mode: this.command.mode as EditMode,
                     userContextFiles,
                 },
-                source: source as ChatEventSource,
+                source: 'custom-commands' as ChatEventSource,
             } satisfies ExecuteEditArguments),
         }
     }
