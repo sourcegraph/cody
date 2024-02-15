@@ -389,6 +389,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         source?: ChatEventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
@@ -397,7 +398,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
-                privateMetadata: sharedProperties,
+                metadata: {
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    ...sharedProperties,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an additional safeguard measure
+                    promptText:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? inputText : undefined,
+                },
             })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
@@ -448,7 +462,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         : undefined
                 )
                 const sendTelemetry = (contextSummary: any): void => {
-                    const authStatus = this.authProvider.getAuthStatus()
                     const properties = {
                         ...sharedProperties,
                         contextSummary,
