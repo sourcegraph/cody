@@ -1,25 +1,20 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
 package com.sourcegraph.cody.protocol_generated
 
-import com.google.gson.annotations.SerializedName
+import com.google.gson.Gson
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import java.lang.reflect.Type
 
-data class WorkspaceEditOperation(
-  val type: TypeEnum? = null, // Oneof: rename-file, delete-file, edit-file, create-file
-  val uri: String? = null,
-  val options: WriteFileOptions? = null,
-  val textContents: String? = null,
-  val metadata: WorkspaceEditEntryMetadata? = null,
-  val oldUri: String? = null,
-  val newUri: String? = null,
-  val deleteOptions: DeleteOptionsParams? = null,
-  val edits: List<TextEdit>? = null,
-) {
-
-  enum class TypeEnum {
-    @SerializedName("rename-file") `Rename-file`,
-    @SerializedName("delete-file") `Delete-file`,
-    @SerializedName("edit-file") `Edit-file`,
-    @SerializedName("create-file") `Create-file`,
+sealed class WorkspaceEditOperation() {
+  companion object {
+    val deserializer: JsonDeserializer<WorkspaceEditOperation> =
+      JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
+        when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {
+          else -> throw Exception("Unknown discriminator ${element}")
+        }
+      }
   }
 }
 

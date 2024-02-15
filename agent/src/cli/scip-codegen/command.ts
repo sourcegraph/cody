@@ -58,10 +58,13 @@ const command = new Command('scip-codegen')
     )
     .option('--protocol <value>', 'what protocol to generate bindings for', 'agent')
     .option('--severity <warning|error>', 'what protocol to generate bindings for', 'error')
-    .option(
-        '--discriminated-unions <flat|nested>',
-        'whether to translate discriminated unions as flat or nested types',
-        'nested'
+    .addOption(
+        new Option(
+            '--discriminated-unions <flat|nested>',
+            'whether to translate discriminated unions as flat or nested types'
+        )
+            .default('nested')
+            .argParser(discriminatedUnion)
     )
     .option(
         '--kotlin-package <value>',

@@ -144,7 +144,7 @@ export class KotlinCodegen extends BaseCodegen {
                 }),
             })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
-                heritageClause: ` : ${name}() `,
+                heritageClause: ` : ${name}()`,
             })
         }
     }
@@ -230,10 +230,10 @@ export class KotlinCodegen extends BaseCodegen {
             }
         })
         if (enums.length === 0) {
-            p.line(`) ${params?.heritageClause ?? ''}`)
+            p.line(`)${params?.heritageClause ?? ''}`)
             return
         }
-        p.line(`) ${params?.heritageClause ?? ''} {`)
+        p.line(`)${params?.heritageClause ?? ''} {`)
         // Nest enum classe inside data class to avoid naming conflicts with
         // enums for other data classes in the same package.
         p.block(() => {
@@ -291,6 +291,7 @@ export class KotlinCodegen extends BaseCodegen {
         } else {
             const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
             if (discriminatedUnion) {
+                this.writeSealedClass(c, name, info, discriminatedUnion)
             } else {
                 this.writeDataClass(c, name, info)
             }
