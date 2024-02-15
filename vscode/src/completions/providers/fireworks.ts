@@ -41,7 +41,7 @@ import {
 import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { AuthStatus } from '../../chat/protocol'
 import { SpanStatusCode } from '@opentelemetry/api'
-import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {
     model: FireworksModel
@@ -375,14 +375,14 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 if (response.status === 429) {
                     const upgradeIsAvailable = self.authStatus.userCanUpgrade
 
-                    throw recordSpanWithError(
+                    throw recordErrorToSpan(
                         span,
                         await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
                     )
                 }
 
                 if (!response.ok) {
-                    throw recordSpanWithError(
+                    throw recordErrorToSpan(
                         span,
                         new NetworkError(
                             response,
@@ -394,14 +394,14 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 }
 
                 if (response.body === null) {
-                    throw recordSpanWithError(span, new TracedError('No response body', traceId))
+                    throw recordErrorToSpan(span, new TracedError('No response body', traceId))
                 }
 
                 const isStreamingResponse = response.headers
                     .get('content-type')
                     ?.startsWith('text/event-stream')
                 if (!isStreamingResponse || !isNodeResponse(response)) {
-                    throw recordSpanWithError(
+                    throw recordErrorToSpan(
                         span,
                         new TracedError('No streaming response given', traceId)
                     )
@@ -469,7 +469,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                         return
                     }
 
-                    recordSpanWithError(span, error as Error)
+                    recordErrorToSpan(span, error as Error)
 
                     if (isRateLimitError(error as Error)) {
                         throw error
