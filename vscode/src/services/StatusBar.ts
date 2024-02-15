@@ -17,7 +17,13 @@ interface StatusBarError {
 
 export interface CodyStatusBar {
     dispose(): void
-    startLoading(label: string, params?: { timeoutMs: number }): () => void
+    startLoading(
+        label: string,
+        params?: {
+            // When set, the loading lease will expire after the timeout to avoid getting stuck
+            timeoutMs: number
+        }
+    ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
 }
