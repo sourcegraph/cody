@@ -236,7 +236,9 @@ export class InlineCompletionItemProvider
                     if (!hasRateLimitError) {
                         stopLoading = this.config.statusBar.startLoading(
                             'Completions are being generated',
-                            30000 // 30 second timeout before loading is cancelled
+                            {
+                                timeoutMs: 30_000,
+                            }
                         )
                     }
                 } else {

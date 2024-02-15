@@ -249,13 +249,13 @@ export function createStatusBar(): CodyStatusBar {
     verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
 
     return {
-        startLoading(label: string, timeoutMs: number) {
+        startLoading(label: string, params: { timeoutMs?: number } = {}) {
             openLoadingLeases++
             statusBarItem.tooltip = label
             rerender()
 
             let didClose = false
-            const timeoutId = setTimeout(stopLoading, timeoutMs)
+            const timeoutId = params.timeoutMs ? setTimeout(stopLoading, params.timeoutMs) : null
             function stopLoading() {
                 if (didClose) {
                     return
@@ -264,7 +264,9 @@ export function createStatusBar(): CodyStatusBar {
 
                 openLoadingLeases--
                 rerender()
-                clearTimeout(timeoutId)
+                if (timeoutId) {
+                    clearTimeout(timeoutId)
+                }
             }
 
             return stopLoading
