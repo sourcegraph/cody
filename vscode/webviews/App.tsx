@@ -4,13 +4,13 @@ import './App.css'
 
 import {
     GuardrailsPost,
-    type ChatHistory,
     type ChatInputHistory,
     type ChatMessage,
     type ModelProvider,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
+    type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
@@ -47,7 +47,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
-    const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+    const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
@@ -130,7 +130,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'history':
                         setInputHistory(message.localHistory?.input ?? [])
-                        setUserHistory(message.localHistory?.chat ?? null)
+                        setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
@@ -218,8 +218,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <>
                     <Notices
                         probablyNewInstall={
-                            !!userHistory &&
-                            [...Object.values(userHistory)].every(chat => chat.interactions.length === 0)
+                            !userHistory.filter(chat => chat.interactions.length)?.length
                         }
                     />
                     {errorMessages && (
