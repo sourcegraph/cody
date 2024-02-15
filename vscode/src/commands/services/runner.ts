@@ -20,6 +20,8 @@ import { executeChat } from '../execute/ask'
 import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
 import { getEditor } from '../../editor/active-editor'
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 /**
  * NOTE: Used by Command Controller only.
  *
@@ -175,6 +177,13 @@ export class CommandRunner implements vscode.Disposable {
         if (contextConfig) {
             const commandContext = await getCommandContextFiles(contextConfig)
             userContextFiles.push(...commandContext)
+        }
+
+        if (isAgentTesting) {
+            // Sort results for deterministic ordering for stable tests. Ideally, we
+            // could sort by some numerical score from symf based on how relevant
+            // the matches are for the query.
+            return userContextFiles.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
         }
 
         return userContextFiles

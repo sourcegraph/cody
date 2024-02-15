@@ -20,8 +20,6 @@ import { viewRangeToRange } from './chat-helpers'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { ContextItem } from '../../prompt-builder/types'
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-
 export interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
@@ -241,22 +239,7 @@ async function searchSymf(
             return (await Promise.all(items)).flat()
         })
 
-        const allResults = (await Promise.all(r0)).flat()
-
-        if (isAgentTesting) {
-            // Sort results for deterministic ordering for stable tests. Ideally, we
-            // could sort by some numerical score from symf based on how relevant
-            // the matches are for the query.
-            allResults.sort((a, b) => {
-                const byUri = a.uri.fsPath.localeCompare(b.uri.fsPath)
-                if (byUri !== 0) {
-                    return byUri
-                }
-                return a.text.localeCompare(b.text)
-            })
-        }
-
-        return allResults
+        return (await Promise.all(r0)).flat()
     })
 }
 
