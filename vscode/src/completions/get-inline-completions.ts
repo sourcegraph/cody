@@ -1,12 +1,7 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import {
-    FeatureFlag,
-    getActiveTraceAndSpanId,
-    isAbortError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -418,23 +413,21 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         firstCompletionTimeout: 1900,
     }
 
+    // Show more if manually triggered (but only showing 1 is faster, so we use it
+    // in the automatic trigger case).
+    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
+
     if (docContext.multilineTrigger) {
         return providerConfig.create({
             ...sharedProviderOptions,
-            n: completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteSingleMultilineRequest
-            )
-                ? 1
-                : 3, // 3 vs. 1 does not meaningfully affect perf
+            n,
             multiline: true,
         })
     }
 
     return providerConfig.create({
         ...sharedProviderOptions,
-        // Show more if manually triggered (but only showing 1 is faster, so we use it
-        // in the automatic trigger case).
-        n: triggerKind === TriggerKind.Automatic ? 1 : 3,
+        n,
         multiline: false,
     })
 }
