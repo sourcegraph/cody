@@ -235,7 +235,8 @@ export class InlineCompletionItemProvider
                     const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
                     if (!hasRateLimitError) {
                         stopLoading = this.config.statusBar.startLoading(
-                            'Completions are being generated'
+                            'Completions are being generated',
+                            30000 // 30 second timeout before loading is cancelled
                         )
                     }
                 } else {

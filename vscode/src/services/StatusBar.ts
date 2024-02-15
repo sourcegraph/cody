@@ -17,7 +17,7 @@ interface StatusBarError {
 
 export interface CodyStatusBar {
     dispose(): void
-    startLoading(label: string): () => void
+    startLoading(label: string, timeoutMs: number): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
 }
@@ -249,13 +249,14 @@ export function createStatusBar(): CodyStatusBar {
     verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
 
     return {
-        startLoading(label: string) {
+        startLoading(label: string, timeoutMs: number) {
             openLoadingLeases++
             statusBarItem.tooltip = label
             rerender()
 
             let didClose = false
-            return () => {
+            const timeoutId = setTimeout(stopLoading, timeoutMs)
+            function stopLoading() {
                 if (didClose) {
                     return
                 }
@@ -263,7 +264,10 @@ export function createStatusBar(): CodyStatusBar {
 
                 openLoadingLeases--
                 rerender()
+                clearTimeout(timeoutId)
             }
+
+            return stopLoading
         },
         addError(error: StatusBarError) {
             const errorObject = { error, createdAt: Date.now() }
