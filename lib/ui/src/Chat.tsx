@@ -162,7 +162,7 @@ export interface ChatCommandsProps {
 }
 
 export interface UserContextSelectorProps {
-    onSelected: (context: ContextFile, input: string) => void
+    onSelected: (context: ContextFile, queryEndsWithColon?: boolean) => void
     formInput: string
     contextSelection?: ContextFile[]
     selected?: number
@@ -377,7 +377,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      * Allows users to quickly insert file context into the chat input.
      */
     const onChatContextSelected = useCallback(
-        (selected: ContextFile): void => {
+        (selected: ContextFile, queryEndsWithColon = false): void => {
             if (inputCaretPosition) {
                 const inputBeforeCaret = formInput.slice(0, inputCaretPosition) || ''
                 const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
@@ -388,8 +388,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const afterCaret = formInput.slice(inputCaretPosition)
                     const spaceAfterCaret = afterCaret.indexOf(' ')
                     const inputSuffix = !spaceAfterCaret ? afterCaret : afterCaret.slice(spaceAfterCaret)
+                    const colon = queryEndsWithColon ? ':' : ''
                     // Add empty space at the end to end the file matching process
-                    const newInput = `${inputPrefix}${fileDisplayText} ${inputSuffix.trimStart()}`
+                    const newInput = `${inputPrefix}${fileDisplayText}${colon} ${inputSuffix.trimStart()}`
                     // Updates contextConfig with the new added context file.
                     // We will use the newInput as key to check if the file still exists in formInput on submit
                     setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
@@ -443,10 +444,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const mentionQuery = extractMentionQuery(inputValue, caretPosition)
             const query = mentionQuery.replace(/^@/, '')
 
-            // Cover cases where user prefer to type the file without tabbing the selection
+            // Cover cases where user prefer to type the file without expicitly select it.
             if (contextSelection?.length) {
-                if (currentChatContextQuery === query.trimEnd()) {
-                    onChatContextSelected(contextSelection[0])
+                const isTrimmedQuery = query.trimEnd() === currentChatContextQuery
+                const isColonQuery = query.replace(/:$/, '') === currentChatContextQuery
+                if (isColonQuery || isTrimmedQuery) {
+                    onChatContextSelected(contextSelection[0], query.endsWith(':'))
                     return
                 }
             }

@@ -112,7 +112,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                         selected === i && styles.selected
                                     )}
                                     title={title}
-                                    onClick={() => onSelected(match, formInput)}
+                                    onClick={() => onSelected(match)}
                                     type="button"
                                 >
                                     {match.type === 'symbol' && icon && (
