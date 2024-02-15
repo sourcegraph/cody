@@ -17,7 +17,7 @@ interface StatusBarError {
 
 export interface CodyStatusBar {
     dispose(): void
-    startLoading(label: string, timeoutMs: number): () => void
+    startLoading(label: string, params?: { timeoutMs: number }): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
 }
