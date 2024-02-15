@@ -14,11 +14,12 @@ export class CodePrinter {
             this.out[importIndex] = `${text}\n${this.out[importIndex]}`
             return
         }
-        const packageIndex = this.out.findIndex(line => line.startsWith('import '))
+        const packageIndex = this.out.findIndex(line => line.startsWith('package '))
         if (packageIndex >= 0) {
             this.out[packageIndex] = `${this.out[packageIndex]}\n\n${text}`
             return
         }
+        throw new Error(`Could not find import or package statement in ${this.out.join('\n')}`)
     }
 
     public sectionComment(label: string): void {

@@ -1,21 +1,18 @@
-@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
 import com.google.gson.Gson
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
-sealed class CustomCommandResult() {
+sealed class CustomCommandResult {
   companion object {
     val deserializer: JsonDeserializer<CustomCommandResult> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-        when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {
+        when (element.asJsonObject.get("type").asString) {
           "chat" -> context.deserialize<CustomChatCommandResult>(element, CustomChatCommandResult::class.java)
           "edit" -> context.deserialize<CustomEditCommandResult>(element, CustomEditCommandResult::class.java)
           else -> throw Exception("Unknown discriminator ${element}")

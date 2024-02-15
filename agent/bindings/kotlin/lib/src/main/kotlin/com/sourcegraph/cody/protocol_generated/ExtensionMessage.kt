@@ -1,53 +1,18 @@
-@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
-import com.google.gson.annotations.SerializedName
-
 import com.google.gson.Gson
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
-sealed class ExtensionMessage() {
+sealed class ExtensionMessage {
   companion object {
     val deserializer: JsonDeserializer<ExtensionMessage> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-        when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {
+        when (element.asJsonObject.get("type").asString) {
           "config" -> context.deserialize<ConfigExtensionMessage>(element, ConfigExtensionMessage::class.java)
           "search:config" -> context.deserialize<Search_configExtensionMessage>(element, Search_configExtensionMessage::class.java)
           "history" -> context.deserialize<HistoryExtensionMessage>(element, HistoryExtensionMessage::class.java)

@@ -53,6 +53,7 @@ export class KotlinCodegen extends BaseCodegen {
             info = this.queue.pop()
         }
 
+        await this.writeGsonAdapters()
         await this.writeStringLiteralConstants()
 
         await fspromises.mkdir(this.options.output, { recursive: true })
@@ -63,6 +64,29 @@ export class KotlinCodegen extends BaseCodegen {
     } {
         const context: DocumentContext = { f: this.f, p: new CodePrinter(), symtab: this.symtab }
         return { ...context, c: context }
+    }
+
+    private async writeGsonAdapters(): Promise<void> {
+        if (this.discriminatedUnions.size === 0) {
+            return
+        }
+        const { p } = this.startDocument()
+        p.line('@file:Suppress("unused", "ConstPropertyName")')
+        p.line(`package ${this.options.kotlinPackage}`)
+        p.line()
+        p.line('object ProtocolTypeAdapters {')
+        p.block(() => {
+            p.line('fun register(gson: com.google.gson.GsonBuilder) {')
+            p.block(() => {
+                for (const symbol of this.discriminatedUnions.keys()) {
+                    const name = this.symtab.info(symbol).display_name
+                    p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
+                }
+            })
+            p.line('}')
+        })
+        p.line('}')
+        await fspromises.writeFile(path.join(this.options.output, 'ProtocolTypeAdapters.kt'), p.build())
     }
 
     private async writeStringLiteralConstants(): Promise<void> {
@@ -104,7 +128,7 @@ export class KotlinCodegen extends BaseCodegen {
         p.line('import java.lang.reflect.Type')
 
         p.line()
-        p.line(`sealed class ${name}() {`)
+        p.line(`sealed class ${name} {`)
         p.block(() => {
             p.line('companion object {')
             p.block(() => {
@@ -115,7 +139,7 @@ export class KotlinCodegen extends BaseCodegen {
                     )
                     p.block(() => {
                         p.line(
-                            'when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {'
+                            `when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {`
                         )
                         p.block(() => {
                             for (const member of union.members) {
@@ -279,7 +303,7 @@ export class KotlinCodegen extends BaseCodegen {
     private async writeType(info: scip.SymbolInformation): Promise<void> {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
-        p.line('@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName")')
+        p.line('@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")')
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
         const alias = this.aliasType(info)
@@ -454,6 +478,28 @@ export class KotlinCodegen extends BaseCodegen {
         throw new Error(`unsupported type: ${this.debug(type)}`)
     }
 
+    private unionTypes(type: scip.Type): scip.Type[] {
+        const result: scip.Type[] = []
+        const loop = (t: scip.Type): void => {
+            if (t.has_union_type) {
+                for (const unionType of t.union_type.types) {
+                    if (unionType.has_type_ref) {
+                        const info = this.symtab.info(unionType.type_ref.symbol)
+                        if (
+                            info.signature.has_type_signature &&
+                            info.signature.type_signature.lower_bound.has_union_type
+                        ) {
+                            loop(info.signature.type_signature.lower_bound)
+                            continue
+                        }
+                    }
+                    result.push(unionType)
+                }
+            }
+        }
+        loop(type)
+        return result
+    }
     private discriminatedUnion(info: scip.SymbolInformation): DiscriminatedUnion | undefined {
         if (!info.signature.has_type_signature) {
             return undefined
@@ -464,7 +510,8 @@ export class KotlinCodegen extends BaseCodegen {
         }
         const candidates = new Map<string, number>()
         const memberss = new Map<string, DiscriminatedUnionMember[]>()
-        for (const unionType of type.union_type.types) {
+        const unionTypes = this.unionTypes(type)
+        for (const unionType of unionTypes) {
             for (const propertySymbol of this.properties(unionType)) {
                 const property = this.symtab.info(propertySymbol)
                 const stringLiteral = stringLiteralType(property.signature.value_signature.tpe)
@@ -482,7 +529,7 @@ export class KotlinCodegen extends BaseCodegen {
             }
         }
         for (const [candidate, count] of candidates.entries()) {
-            if (count === type.union_type.types.length) {
+            if (count === unionTypes.length) {
                 return {
                     symbol: info.symbol,
                     discriminatorDisplayName: candidate,
