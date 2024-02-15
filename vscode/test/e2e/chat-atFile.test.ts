@@ -186,9 +186,10 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
 
+    const osKey = getMetaKeyByOS()
+
     // Typing out the whole file path without pressing tab/enter should still include the
     // file as context
-    const osKey = getMetaKeyByOS()
     await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
     await chatInput.press('l')
@@ -197,4 +198,26 @@ test.extend<ExpectedEvents>({
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
+
+    // Support line number at end of at-file query
+    await chatInput.press(`${osKey}+/`) // start a new chat
+    await chatInput.fill('@index.htm')
+    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
+    await chatInput.press('Tab')
+    // Warning about no matching file should not show up during line number input.
+    await chatInput.fill('@index.html:1')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.fill('@index.html:1-')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.fill('@index.html:1-3')
+    await expect(noMatches).not.toBeVisible()
+    await chatInput.press('Enter')
+    // Confirm the context file with the correct line numbers shows up in the chat view,
+    // and the file opens on click.
+    await chatPanelFrame.getByText('✨ Context: 3 lines from 1 file').hover()
+    await chatPanelFrame.getByRole('link', { name: '@index.html:1-3' }).hover()
+    await chatPanelFrame.getByRole('link', { name: '@index.html:1-3' }).click()
+    const indexFileTab = page.getByRole('tab', { name: /index.html, preview, Editor Group/ })
+    await indexFileTab.hover()
+    await expect(indexFileTab).toBeVisible()
 })
