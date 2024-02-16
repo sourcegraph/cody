@@ -7,6 +7,7 @@ import { logDebug } from '../../log'
 import type { MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 import { PromptBuilder } from '../../prompt-builder'
 import type { ContextItem } from '../../prompt-builder/types'
+import { sortContextItems } from './agentContextSorting'
 
 interface PromptInfo {
     prompt: Message[]
@@ -169,6 +170,7 @@ export class DefaultPrompter implements IPrompter {
                     lastMessage.message.text,
                     enhancedContextCharLimit
                 )
+                sortContextItems(additionalContextItems)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                     additionalContextItems,
                     enhancedContextCharLimit
