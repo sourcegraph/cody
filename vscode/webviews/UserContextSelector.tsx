@@ -107,7 +107,8 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                     ref={selected === i ? selectionRef : null}
                                     className={classNames(
                                         styles.selectionItem,
-                                        selected === i && styles.selected
+                                        selected === i && styles.selected,
+                                        warning && styles.showWarning
                                     )}
                                     title={title}
                                     onClick={() => onSelected(match, formInput)}
@@ -136,9 +137,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                                 styles.warningContainer
                                             )}
                                         >
-                                            <span className={styles.selectionDescription}>
-                                                {warning}
-                                            </span>
+                                            <span className={styles.warningDescription}>{warning}</span>
                                         </p>
                                     )}
                                 </button>
