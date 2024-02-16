@@ -8,10 +8,6 @@ async function main(): Promise<void> {
     // Set this environment variable so the extension exposes hooks to the test runner.
     process.env.CODY_TESTING = 'true'
 
-    // No rg is installed on CI, so use `true` (which ignores arguments and always returns empty
-    // with exit status 0).
-    process.env.MOCK_RG_PATH = 'true'
-
     // When run, this script's filename is `vscode/dist/tsc/test/integration/main.js`, so
     // __dirname is derived from that path, not this file's source path.
     const vscodeCodyRoot = path.resolve(__dirname, '..', '..', '..', '..')

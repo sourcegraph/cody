@@ -111,7 +111,6 @@
       "smartStep": true,
       "env": {
         "CODY_TESTING": "true",
-        "MOCK_RG_PATH": "true",
         "RUN_TEST_PATH": "${fileBasenameNoExtension}",
       },
       "presentation": {
@@ -139,7 +138,6 @@
       "smartStep": true,
       "env": {
         "CODY_TESTING": "true",
-        "MOCK_RG_PATH": "true",
         "RUN_TEST_PATH": "${fileBasenameNoExtension}",
       },
       "presentation": {
