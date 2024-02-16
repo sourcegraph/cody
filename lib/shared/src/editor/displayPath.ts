@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common/path'
+import { pathFunctionsForURI, posixAndURIPaths } from '../common/path'
 
 /**
  * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
@@ -50,15 +50,10 @@ export function displayPathDirname(location: URI): string {
     const envInfo = checkEnvInfo()
     const result = _displayPath(location, envInfo)
 
-    // File path.
-    if (typeof result === 'string') {
-        // If the result is a string, it is a path (not a URI), so we must
-        // use the correct path functions.
-        return envInfo.isWindows ? windowsFilePaths.dirname(result) : posixFilePaths.dirname(result)
-    }
-
-    // Otherwise, URI.
     const dirname = pathFunctionsForURI(location, envInfo.isWindows).dirname
+    if (typeof result === 'string') {
+        return dirname(result)
+    }
     return result.with({ path: dirname(result.path) }).toString()
 }
 
@@ -68,17 +63,10 @@ export function displayPathDirname(location: URI): string {
  */
 export function displayPathBasename(location: URI): string {
     const envInfo = checkEnvInfo()
-    const result = _displayPath(location, envInfo)
-
-    // File path.
-    if (typeof result === 'string') {
-        // If the result is a string, it is a path (not a URI), so we must
-        // use the correct path functions.
-        return envInfo.isWindows ? windowsFilePaths.basename(result) : posixFilePaths.basename(result)
-    }
-
-    // Otherwise, URI.
-    return posixFilePaths.basename(result.path)
+    const displayPath = _displayPath(location, envInfo)
+    return pathFunctionsForURI(location, envInfo.isWindows).basename(
+        typeof displayPath === 'string' ? displayPath : displayPath.path
+    )
 }
 
 /**
@@ -110,10 +98,9 @@ function _displayPath(
     const includeWorkspaceFolder = includeWorkspaceFolderWhenMultiple && workspaceFolders.length >= 2
     for (const folder of workspaceFolders) {
         if (uriHasPrefix(uri, folder, isWindows)) {
-            const pathFunctions = pathFunctionsForURI(folder)
             const workspacePrefix = folder.path.endsWith('/') ? folder.path.slice(0, -1) : folder.path
             const workspaceDisplayPrefix = includeWorkspaceFolder
-                ? pathFunctions.basename(folder.path) + pathFunctions.separator
+                ? posixAndURIPaths.basename(folder.path) + pathFunctionsForURI(folder).separator
                 : ''
             return fixPathSep(
                 workspaceDisplayPrefix + uri.path.slice(workspacePrefix.length + 1),

@@ -4,7 +4,7 @@ import {
     BotResponseMultiplexer,
     isAbortError,
     isDotCom,
-    posixFilePaths,
+    posixAndURIPaths,
     Typewriter,
     uriBasename,
     wrapInActiveSpan,
@@ -278,7 +278,7 @@ export class EditProvider {
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
+            posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)

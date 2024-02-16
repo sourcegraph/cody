@@ -60,7 +60,7 @@ export {
     markdownCodeBlockLanguageIDForFilename,
 } from './common/languages'
 export { renderMarkdown } from './common/markdown'
-export { posixFilePaths } from './common/path'
+export { posixAndURIPaths } from './common/path'
 export { isWindows } from './common/platform'
 export {
     assertFileURI,

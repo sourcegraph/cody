@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import { pathFunctionsForURI } from './path'
+import { posixAndURIPaths } from './path'
 
 /**
  * dirname, but operates on a {@link URI}.
@@ -9,7 +9,7 @@ import { pathFunctionsForURI } from './path'
  * separators, which will break because URI paths are always separated with '/'.
  */
 export function uriDirname(uri: URI): URI {
-    return uri.with({ path: pathFunctionsForURI(uri).dirname(uri.path) })
+    return uri.with({ path: posixAndURIPaths.dirname(uri.path) })
 }
 
 /**
@@ -18,7 +18,7 @@ export function uriDirname(uri: URI): URI {
  * See {@link uriDirname} for why we use this instead of Node's `path` module.
  */
 export function uriBasename(uri: URI, suffix?: string): string {
-    return pathFunctionsForURI(uri).basename(uri.path, suffix)
+    return posixAndURIPaths.basename(uri.path, suffix)
 }
 
 /**
@@ -27,7 +27,7 @@ export function uriBasename(uri: URI, suffix?: string): string {
  * See {@link uriDirname} for why we use this instead of Node's `path` module.
  */
 export function uriExtname(uri: URI): string {
-    return pathFunctionsForURI(uri).extname(uri.path)
+    return posixAndURIPaths.extname(uri.path)
 }
 
 /**

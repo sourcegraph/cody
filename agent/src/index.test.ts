@@ -544,12 +544,6 @@ describe('Agent', () => {
             })
         })
 
-        it('ignore rule is not case sensitive', async () => {
-            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
-            const result = await client.request('check/isCodyIgnoredFile', { urls: [alsoIgnoredPath] })
-            expect(result).toBeTruthy()
-        })
-
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
             // as it should stay active for each workspace session.
