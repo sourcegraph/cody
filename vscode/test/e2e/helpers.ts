@@ -146,8 +146,10 @@ export const test = base
 
             const page = await app.firstWindow()
 
-            // Bring the cody sidebar to the foreground
-            await page.click('[aria-label="Cody"]')
+            // Bring the cody sidebar to the foreground if not already visible
+            if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
+                await page.click('[aria-label="Cody"]')
+            }
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
@@ -333,8 +335,13 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
 
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+    await executeCommandInPalette(page, 'cody sign out')
+}
+
+export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
+    // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill('>cody sign out')
+    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 
