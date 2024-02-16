@@ -95,20 +95,20 @@
       // This config itself is hidden and should not be used directly because the integration
       // tests depend on the MockServer. The "Debug Integration Tests" compound config
       // will launch both this and the mock server together (and allow debugging both).
-			"type": "extensionHost",
-			"request": "launch",
-			"name": "Debug Current Integration Test (Single-root impl)",
-			"preLaunchTask": "Build Tests",
-			"runtimeExecutable": "${execPath}",
-			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
-			"args": [
-				"${workspaceFolder}/vscode/test/fixtures/workspace",
-				"--extensionDevelopmentPath=${workspaceFolder}/vscode",
-				"--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/single-root",
-				"--profile-temp"
-			],
-			"outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
-			"smartStep": true,
+      "type": "extensionHost",
+      "request": "launch",
+      "name": "Debug Current Integration Test (Single-root impl)",
+      "preLaunchTask": "Build Tests",
+      "runtimeExecutable": "${execPath}",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "args": [
+        "${workspaceFolder}/vscode/test/fixtures/workspace",
+        "--extensionDevelopmentPath=${workspaceFolder}/vscode",
+        "--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/single-root",
+        "--profile-temp"
+      ],
+      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+      "smartStep": true,
       "env": {
         "CODY_TESTING": "true",
         "MOCK_RG_PATH": "true",
@@ -117,26 +117,26 @@
       "presentation": {
         "hidden": true,
       }
-		},
+    },
     {
       // This config runs the integration tests in debug mode.
       // This config itself is hidden and should not be used directly because the integration
       // tests depend on the MockServer. The "Debug Integration Tests" compound config
       // will launch both this and the mock server together (and allow debugging both).
-			"type": "extensionHost",
-			"request": "launch",
-			"name": "Debug Current Integration Test (Multi-root impl)",
-			"preLaunchTask": "Build Tests",
-			"runtimeExecutable": "${execPath}",
-			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
-			"args": [
-				"${workspaceFolder}/vscode/test/fixtures/multi-root.code-workspace",
-				"--extensionDevelopmentPath=${workspaceFolder}/vscode",
-				"--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/multi-root",
-				"--profile-temp"
-			],
-			"outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
-			"smartStep": true,
+      "type": "extensionHost",
+      "request": "launch",
+      "name": "Debug Current Integration Test (Multi-root impl)",
+      "preLaunchTask": "Build Tests",
+      "runtimeExecutable": "${execPath}",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "args": [
+        "${workspaceFolder}/vscode/test/fixtures/multi-root.code-workspace",
+        "--extensionDevelopmentPath=${workspaceFolder}/vscode",
+        "--extensionTestsPath=${workspaceFolder}/vscode/dist/tsc/test/integration/multi-root",
+        "--profile-temp"
+      ],
+      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+      "smartStep": true,
       "env": {
         "CODY_TESTING": "true",
         "MOCK_RG_PATH": "true",
@@ -145,7 +145,7 @@
       "presentation": {
         "hidden": true,
       }
-		},
+    },
     {
       // This config runs the mock server in debug mode.
       // This config itself is hidden and is not so useful on its own (unless you intend to
