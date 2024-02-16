@@ -124,6 +124,7 @@ export type ClientRequests = {
     'testing/progress': [{ title: string }, { result: string }]
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
+    'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
