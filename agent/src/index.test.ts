@@ -487,7 +487,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'Which file is the isIgnoredByCody functions defined?',
+                'What files contain SELECTION_START?',
                 { addEnhancedContext: true }
             )
             decodeURIs(transcript)
