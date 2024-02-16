@@ -21,7 +21,18 @@ export interface ProtocolSymbol {
     kind: ProtocolMethodKind
 }
 
+export interface DiscriminatedUnionMember {
+    value: string
+    type: scip.Type
+}
+export interface DiscriminatedUnion {
+    symbol: string
+    discriminatorDisplayName: string
+    members: DiscriminatedUnionMember[]
+}
 export abstract class BaseCodegen {
+    public readonly isNestedDiscriminatedUnion: boolean
+    public discriminatedUnions = new Map<string, DiscriminatedUnion>()
     public siblingDiscriminatedUnionProperties = new Map<string, string[]>()
     public static protocolSymbols = {
         client: {
@@ -62,7 +73,9 @@ export abstract class BaseCodegen {
         public readonly options: CodegenOptions,
         public readonly symtab: SymbolTable,
         public readonly reporter: ConsoleReporter
-    ) {}
+    ) {
+        this.isNestedDiscriminatedUnion = options.discriminatedUnions === 'nested'
+    }
 
     public abstract run(): Promise<void>
 
@@ -144,15 +157,19 @@ export abstract class BaseCodegen {
     protected infoProperties(info: scip.SymbolInformation): string[] {
         if (info.signature.has_class_signature) {
             const result: string[] = []
-            result.push(...info.signature.class_signature.declarations.symlinks)
             for (const parent of info.signature.class_signature.parents) {
                 result.push(...this.properties(parent))
             }
+            result.push(...info.signature.class_signature.declarations.symlinks)
             return result
         }
 
         if (info.signature.has_type_signature) {
             return this.properties(info.signature.type_signature.lower_bound)
+        }
+
+        if (info.signature.has_value_signature) {
+            return this.properties(info.signature.value_signature.tpe)
         }
 
         this.reporter.error(info.symbol, `info has no properties: ${this.debug(info)}`)
@@ -169,7 +186,7 @@ export abstract class BaseCodegen {
         )
     }
     protected stringConstantsFromInfo(info: scip.SymbolInformation): string[] {
-        const result: string[] = []
+        const result = new Set<string>()
         const isVisited = new Set<string>()
         const visitInfo = (info: scip.SymbolInformation) => {
             if (isVisited.has(info.symbol)) {
@@ -197,7 +214,7 @@ export abstract class BaseCodegen {
         }
         const visitType = (type: scip.Type) => {
             if (type.has_constant_type && type.constant_type.constant.has_string_constant) {
-                result.push(type.constant_type.constant.string_constant.value)
+                result.add(type.constant_type.constant.string_constant.value)
             }
             if (type.has_union_type) {
                 for (const constant of type.union_type.types) {
@@ -209,7 +226,7 @@ export abstract class BaseCodegen {
             }
         }
         visitInfo(info)
-        return result
+        return [...result.values()]
     }
 
     protected pickProperties(type: scip.Type): string[] {

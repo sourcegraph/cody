@@ -1,11 +1,11 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class CurrentUserCodySubscription(
-  var status: String? = null,
-  var plan: String? = null,
-  var applyProRateLimits: Boolean? = null,
-  var currentPeriodStartAt: Date? = null,
-  var currentPeriodEndAt: Date? = null,
+  val status: String? = null,
+  val plan: String? = null,
+  val applyProRateLimits: Boolean? = null,
+  val currentPeriodStartAt: Date? = null,
+  val currentPeriodEndAt: Date? = null,
 )
 

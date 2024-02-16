@@ -1,12 +1,12 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ClientInfo(
-  var name: String? = null,
-  var version: String? = null,
-  var workspaceRootUri: String? = null,
-  var workspaceRootPath: String? = null,
-  var extensionConfiguration: ExtensionConfiguration? = null,
-  var capabilities: ClientCapabilities? = null,
+  val name: String? = null,
+  val version: String? = null,
+  val workspaceRootUri: String? = null,
+  val workspaceRootPath: String? = null,
+  val extensionConfiguration: ExtensionConfiguration? = null,
+  val capabilities: ClientCapabilities? = null,
 )
 

@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class StartParams(
-  var line: Int? = null,
-  var character: Int? = null,
+  val line: Int? = null,
+  val character: Int? = null,
 )
 
