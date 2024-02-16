@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ReposParams(
-  var name: String? = null,
-  var id: String? = null,
+  val name: String? = null,
+  val id: String? = null,
 )
 

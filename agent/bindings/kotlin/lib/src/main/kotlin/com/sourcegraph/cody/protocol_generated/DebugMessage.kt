@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class DebugMessage(
-  var channel: String? = null,
-  var message: String? = null,
+  val channel: String? = null,
+  val message: String? = null,
 )
 

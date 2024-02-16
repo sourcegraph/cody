@@ -1,22 +1,22 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class AuthStatus(
-  var username: String? = null,
-  var endpoint: String? = null,
-  var isDotCom: Boolean? = null,
-  var isLoggedIn: Boolean? = null,
-  var showInvalidAccessTokenError: Boolean? = null,
-  var authenticated: Boolean? = null,
-  var hasVerifiedEmail: Boolean? = null,
-  var requiresVerifiedEmail: Boolean? = null,
-  var siteHasCodyEnabled: Boolean? = null,
-  var siteVersion: String? = null,
-  var configOverwrites: CodyLLMSiteConfiguration? = null,
-  var showNetworkError: Boolean? = null,
-  var primaryEmail: String? = null,
-  var displayName: String? = null,
-  var avatarURL: String? = null,
-  var userCanUpgrade: Boolean? = null,
+  val username: String? = null,
+  val endpoint: String? = null,
+  val isDotCom: Boolean? = null,
+  val isLoggedIn: Boolean? = null,
+  val showInvalidAccessTokenError: Boolean? = null,
+  val authenticated: Boolean? = null,
+  val hasVerifiedEmail: Boolean? = null,
+  val requiresVerifiedEmail: Boolean? = null,
+  val siteHasCodyEnabled: Boolean? = null,
+  val siteVersion: String? = null,
+  val configOverwrites: CodyLLMSiteConfiguration? = null,
+  val showNetworkError: Boolean? = null,
+  val primaryEmail: String? = null,
+  val displayName: String? = null,
+  val avatarURL: String? = null,
+  val userCanUpgrade: Boolean? = null,
 )
 

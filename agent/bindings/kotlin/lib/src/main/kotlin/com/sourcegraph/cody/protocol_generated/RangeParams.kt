@@ -1,10 +1,10 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class RangeParams(
-  var startLine: Int? = null,
-  var startCharacter: Int? = null,
-  var endLine: Int? = null,
-  var endCharacter: Int? = null,
+  val startLine: Int? = null,
+  val startCharacter: Int? = null,
+  val endLine: Int? = null,
+  val endCharacter: Int? = null,
 )
 

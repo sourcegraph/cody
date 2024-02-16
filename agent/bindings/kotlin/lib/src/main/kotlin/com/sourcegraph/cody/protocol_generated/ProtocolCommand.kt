@@ -1,10 +1,10 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ProtocolCommand(
-  var title: String? = null,
-  var command: String? = null,
-  var tooltip: String? = null,
-  var arguments: List<Any>? = null,
+  val title: String? = null,
+  val command: String? = null,
+  val tooltip: String? = null,
+  val arguments: List<Any>? = null,
 )
 

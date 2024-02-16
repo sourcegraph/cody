@@ -74,6 +74,8 @@ interface CodyAgentServer {
   fun testing_networkRequests(params: Null): CompletableFuture<Testing_NetworkRequestsResult>
   @JsonRequest("testing/requestErrors")
   fun testing_requestErrors(params: Null): CompletableFuture<Testing_RequestErrorsResult>
+  @JsonRequest("testing/closestPostData")
+  fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
   @JsonRequest("testing/progressCancelation")
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
