@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-
 import { trailingNonAlphaNumericRegex } from './test-commands'
 
 /**

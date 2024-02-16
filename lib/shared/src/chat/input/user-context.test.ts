@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import type { ContextFileFile } from '@sourcegraph/cody-shared'
-import { verifyContextFilesFromInput } from './inputParser'
+import { verifyContextFilesFromInput } from './user-context'
+import type { ContextFileFile } from '../..'
 
 describe('verifyContextFilesFromInput', () => {
     it('returns empty array if no contextFilesMap provided', () => {

@@ -35,7 +35,7 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
-import { verifyContextFilesFromInput } from './utils/inputParser'
+import { verifyContextFilesFromInput } from '@sourcegraph/cody-shared/src/chat/input/user-context'
 
 interface ChatboxProps {
     welcomeMessage?: string

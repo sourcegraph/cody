@@ -1,4 +1,4 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import type { ContextFile } from '../..'
 
 /**
  * Verifies that the context files passed in the contextFilesMap are still referenced

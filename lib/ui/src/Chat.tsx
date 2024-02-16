@@ -23,7 +23,7 @@ import { isDefaultCommandPrompts, type TranscriptItemClassNames } from './chat/T
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
-import { getAtMentionedInputText } from '@sourcegraph/cody-shared/src/chat/at-mentioned'
+import { getAtMentionedInputText } from '@sourcegraph/cody-shared/src/chat/input/at-mentioned'
 
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]

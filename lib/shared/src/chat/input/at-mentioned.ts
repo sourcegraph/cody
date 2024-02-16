@@ -1,5 +1,5 @@
-import type { ContextFile } from '../codebase-context/messages'
-import { displayPath } from '../editor/displayPath'
+import type { ContextFile } from '../../codebase-context/messages'
+import { displayPath } from '../../editor/displayPath'
 
 /**
  * Generates updated input text and caret position for auto-completing

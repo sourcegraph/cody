@@ -15,7 +15,11 @@ export type { TranscriptJSON } from './chat/transcript'
 export { Interaction } from './chat/transcript/interaction'
 export type { InteractionJSON } from './chat/transcript/interaction'
 export { errorToChatError } from './chat/transcript/messages'
-export { getContextFileDisplayText } from './chat/at-mentioned'
+export {
+    getAtMentionedInputText,
+    getContextFileDisplayText,
+    verifyContextFilesFromInput,
+} from './chat/input'
 export type {
     ChatButton,
     ChatError,
