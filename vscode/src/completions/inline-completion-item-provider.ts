@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
-    featureFlagProvider,
     isCodyIgnoredFile,
     RateLimitError,
     wrapInActiveSpan,
@@ -46,6 +45,7 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
+import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -173,6 +173,10 @@ export class InlineCompletionItemProvider
                 }
             )
         )
+
+        // Warm caches for the config feature configuration to avoid the first completion call
+        // having to block on this.
+        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -194,7 +198,7 @@ export class InlineCompletionItemProvider
             return null
         }
 
-        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
+        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -206,14 +210,11 @@ export class InlineCompletionItemProvider
 
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
-            try {
-                if (!configFeatures.autoComplete) {
-                    // If Configfeatures exists and autocomplete is disabled then raise
-                    // the error banner for autocomplete config turned off
-                    throw new Error('AutocompleteConfigTurnedOff')
-                }
-            } catch (error) {
-                this.onError(error as Error)
+            if (!configFeatures.autoComplete) {
+                // If Configfeatures exists and autocomplete is disabled then raise
+                // the error banner for autocomplete config turned off
+                const error = new Error('AutocompleteConfigTurnedOff')
+                this.onError(error)
                 throw error
             }
             const start = performance.now()
@@ -222,11 +223,6 @@ export class InlineCompletionItemProvider
                 this.lastCompletionRequestTimestamp = start
             }
 
-            // We start feature flag requests early so that we have a high chance of getting a response
-            // before we need it.
-            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteUserLatency
-            )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
             let stopLoading: (() => void) | undefined
@@ -239,7 +235,10 @@ export class InlineCompletionItemProvider
                     const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
                     if (!hasRateLimitError) {
                         stopLoading = this.config.statusBar.startLoading(
-                            'Completions are being generated'
+                            'Completions are being generated',
+                            {
+                                timeoutMs: 30_000,
+                            }
                         )
                     }
                 } else {
@@ -304,7 +303,9 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await userLatencyPromise,
+                user: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteUserLatency
+                ),
             }
 
             const artificialDelay = getArtificialDelay(
@@ -315,6 +316,10 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
+            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteEagerCancellation
+            )
+            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -328,8 +333,8 @@ export class InlineCompletionItemProvider
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
-                        singleLine: isLocalProvider ? 75 : 125,
-                        multiLine: 125,
+                        singleLine: debounceInterval,
+                        multiLine: debounceInterval,
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
@@ -413,7 +418,8 @@ export class InlineCompletionItemProvider
                     docContext,
                     position,
                     visibleItems,
-                    context
+                    context,
+                    span
                 )
 
                 // Store the log ID for each completion item so that we can later map to the selected
@@ -435,6 +441,8 @@ export class InlineCompletionItemProvider
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
+
+                recordExposedExperimentsToSpan(span)
 
                 return autocompleteResult
             } catch (error) {
@@ -521,14 +529,14 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem'> | CompletionItemID
+        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem' | 'span'> | CompletionItemID
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
 
-        CompletionLogger.suggested(completion.logId)
+        CompletionLogger.suggested(completion.logId, completion.span)
     }
 
     /**

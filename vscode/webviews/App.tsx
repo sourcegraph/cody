@@ -4,13 +4,13 @@ import './App.css'
 
 import {
     GuardrailsPost,
-    type ChatHistory,
     type ChatInputHistory,
     type ChatMessage,
     type ModelProvider,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
+    type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
@@ -31,9 +31,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -49,7 +47,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
-    const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+    const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
@@ -131,20 +129,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.messages?.input ?? [])
-                        setUserHistory(message.messages?.chat ?? null)
+                        setInputHistory(message.localHistory?.input ?? [])
+                        setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'enhanced-context':
-                        setEnhancedContextStatus(message.context)
+                        setEnhancedContextStatus(message.enhancedContextStatus)
                         break
                     case 'userContextFiles':
-                        setContextSelection(message.context)
+                        setContextSelection(message.userContextFiles)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
                         break
                     case 'view':
-                        setView(message.messages)
+                        setView(message.view)
                         break
                     case 'webview-state':
                         setIsWebviewActive(message.isActive)
@@ -192,7 +190,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             // We do not change the view here. We want to keep presenting the
             // login buttons until we get a token so users don't get stuck if
             // they close the browser during an auth flow.
-            vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
+            vscodeAPI.postMessage({
+                command: 'auth',
+                authKind: 'simplified-onboarding',
+                authMethod: method,
+            })
         },
         [vscodeAPI]
     )
@@ -215,7 +217,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             ) : (
                 <>
                     <Notices
-                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                        probablyNewInstall={
+                            !userHistory.filter(chat => chat.interactions.length)?.length
+                        }
                     />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
@@ -255,11 +259,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        guardrails={
-                                            config.experimentalGuardrails && attributionEnabled
-                                                ? guardrails
-                                                : undefined
-                                        }
+                                        guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
                                     />

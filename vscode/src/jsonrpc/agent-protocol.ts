@@ -5,6 +5,7 @@ import type {
     ChatMessage,
     ModelProvider,
     event,
+    CurrentUserCodySubscription,
 } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
@@ -14,9 +15,8 @@ import type {
 } from '@sourcegraph/telemetry'
 
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
-import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { CodyTaskState } from '../non-stop/utils'
-import type { CurrentUserCodySubscription } from '@sourcegraph/cody-shared/dist/sourcegraph-api/graphql/client'
 import type { Repo } from '../context/repo-fetcher'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -25,11 +25,12 @@ import type { Repo } from '../context/repo-fetcher'
 
 // The JSON-RPC requests of the Cody Agent protocol. Requests are async
 // functions that return some (possibly null) value.
-export type Requests = {
-    // ================
-    // Client -> Server
-    // ================
+export type Requests = ClientRequests & ServerRequests
 
+// ================
+// Client -> Server
+// ================
+export type ClientRequests = {
     // The 'initialize' request must be sent at the start of the connection
     // before any other request/notification is sent.
     initialize: [ClientInfo, ServerInfo]
@@ -67,6 +68,9 @@ export type Requests = {
     'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
     'commands/test': [null, string]
     'commands/smell': [null, string]
+
+    // Trigger custom commands that could be a chat-based command or an edit command.
+    'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
     'editCommands/test': [null, EditTask]
@@ -153,11 +157,12 @@ export type Requests = {
             limitHit: boolean
         },
     ]
+}
 
-    // ================
-    // Server -> Client
-    // ================
-
+// ================
+// Server -> Client
+// ================
+export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
@@ -175,11 +180,12 @@ export type Requests = {
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
 // synchronous fire-and-forget messages that have no return value. Notifications are
 // conventionally used to represent streams of values.
-export type Notifications = {
-    // ================
-    // Client -> Server
-    // ================
+export type Notifications = ClientNotifications & ServerNotifications
 
+// ================
+// Client -> Server
+// ================
+export type ClientNotifications = {
     // The 'initalized' notification must be sent after receiving the 'initialize' response.
     initialized: [null]
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
@@ -228,11 +234,12 @@ export type Notifications = {
     // User requested to cancel this progress bar. Only supported for progress
     // bars with `cancelable: true`.
     'progress/cancel': [{ id: string }]
+}
 
-    // ================
-    // Server -> Client
-    // ================
-
+// ================
+// Server -> Client
+// ================
+export type ServerNotifications = {
     'debug/message': [DebugMessage]
 
     'editTaskState/didChange': [EditTask]
@@ -254,11 +261,11 @@ export type Notifications = {
 }
 
 interface CancelParams {
-    id: string | number
+    id: string // actuall: string | number
 }
 
 interface CompletionItemParams {
-    completionID: CompletionItemID
+    completionID: string
 }
 
 interface AutocompleteParams {
@@ -283,7 +290,7 @@ export interface AutocompleteResult {
 }
 
 export interface AutocompleteItem {
-    id: CompletionItemID
+    id: string
     insertText: string
     range: Range
 }
@@ -327,10 +334,8 @@ export interface ServerInfo {
     authenticated?: boolean
     codyEnabled?: boolean
     codyVersion?: string | null
-    capabilities?: ServerCapabilities
     authStatus?: AuthStatus
 }
-type ServerCapabilities = Record<string, never>
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -513,13 +518,15 @@ export type WorkspaceEditOperation =
     | DeleteFileOperation
     | EditFileOperation
 
+export interface WriteFileOptions {
+    overwrite?: boolean
+    ignoreIfExists?: boolean
+}
+
 export interface CreateFileOperation {
     type: 'create-file'
     uri: string
-    options?: {
-        readonly overwrite?: boolean
-        readonly ignoreIfExists?: boolean
-    }
+    options?: WriteFileOptions
     textContents: string
     metadata?: vscode.WorkspaceEditEntryMetadata
 }
@@ -527,16 +534,13 @@ export interface RenameFileOperation {
     type: 'rename-file'
     oldUri: string
     newUri: string
-    options?: {
-        readonly overwrite?: boolean
-        readonly ignoreIfExists?: boolean
-    }
+    options?: WriteFileOptions
     metadata?: vscode.WorkspaceEditEntryMetadata
 }
 export interface DeleteFileOperation {
     type: 'delete-file'
     uri: string
-    options?: {
+    deleteOptions?: {
         readonly recursive?: boolean
         readonly ignoreIfNotExists?: boolean
     }
@@ -621,12 +625,30 @@ export interface ShowWindowMessageParams {
     items?: string[]
 }
 
+interface FileIdentifier {
+    uri: string
+}
+
 export interface DeleteFilesParams {
-    files: { uri: string }[]
+    files: FileIdentifier[]
 }
 export interface CreateFilesParams {
-    files: { uri: string }[]
+    files: FileIdentifier[]
+}
+interface RenameFile {
+    oldUri: string
+    newUri: string
 }
 export interface RenameFilesParams {
-    files: { oldUri: string; newUri: string }[]
+    files: RenameFile[]
+}
+
+export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandResult
+export interface CustomChatCommandResult {
+    type: 'chat'
+    chatResult: string
+}
+export interface CustomEditCommandResult {
+    type: 'edit'
+    editResult: EditTask
 }

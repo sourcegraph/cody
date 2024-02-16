@@ -435,7 +435,7 @@ const register = async (
             }
         ),
 
-        // Register URI Handler (vscode://sourcegraph.cody-ai)
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {

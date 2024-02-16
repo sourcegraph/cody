@@ -45,7 +45,7 @@ export async function activate(
     context: vscode.ExtensionContext,
     platformContext: PlatformContext
 ): Promise<ExtensionApi> {
-    const api = new ExtensionApi()
+    const api = new ExtensionApi(context.extensionMode)
 
     try {
         const disposable = await start(context, platformContext)

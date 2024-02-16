@@ -14,9 +14,11 @@ import {
     type ContextFileSymbol,
     type ContextFileType,
     type SymbolKind,
+    MAX_CURRENT_FILE_TOKENS,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
@@ -25,7 +27,7 @@ const findWorkspaceFiles = async (
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
     const fileExcludesPattern =
-        '**/{*.env,.git,.class,out/,dist/,build/,snap,node_modules,__pycache__}**'
+        '**/{*.env,.git/,.class,out/,dist/,build/,snap,node_modules/,__pycache__/}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }
@@ -85,7 +87,7 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Remove ignored files and apply a penalty for segments that are in the low scoring list.
+    // Apply a penalty for segments that are in the low scoring list.
     const adjustedResults = [...results].map(result => {
         const segments = result.obj.uri.fsPath.split(path.sep)
         for (const lowScoringPathSegment of lowScoringPathSegments) {
@@ -98,20 +100,42 @@ export async function getFileContextFiles(
         }
         return result
     })
-
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same.
-    const sortedResults = adjustedResults.sort((a, b) => {
-        return (
-            b.score - a.score ||
-            new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.fsPath, b.obj.uri.fsPath)
-        )
-    })
+    const sortedResults = adjustedResults
+        .sort((a, b) => {
+            return (
+                b.score - a.score ||
+                new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.path, b.obj.uri.path)
+            )
+        })
+        .flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
+    const filtered = []
+    try {
+        for (const sorted of sortedResults) {
+            // Remove file larger than 1MB and non-text files
+            // NOTE: Sourcegraph search only includes files up to 1MB
+            const fileStat = await vscode.workspace.fs.stat(sorted.uri)
+            if (fileStat.type !== vscode.FileType.File || fileStat.size > 1000000) {
+                continue
+            }
+            // Check if file contains more characters than the token limit based on fileStat.size
+            // and set the title of the result as 'large-file' for webview to display file size
+            // warning.
+            if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
+                sorted.title = 'large-file'
+            }
+            filtered.push(sorted)
+        }
+    } catch (error) {
+        console.log('atMention:getFileContextFiles:failed', error)
+    }
+
+    return filtered
 }
 
 export async function getSymbolContextFiles(

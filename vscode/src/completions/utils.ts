@@ -72,17 +72,24 @@ export async function* generatorWithErrorObserver<T>(
     generator: AsyncGenerator<T>,
     errorObserver: (error: unknown) => void
 ): AsyncGenerator<T> {
-    while (true) {
-        try {
-            const res = await generator.next()
-            if (res.done) {
-                return
+    try {
+        while (true) {
+            try {
+                const res = await generator.next()
+                if (res.done) {
+                    return
+                }
+                yield res.value
+            } catch (error: unknown) {
+                errorObserver(error)
+                throw error
             }
-            yield res.value
-        } catch (error: unknown) {
-            errorObserver(error)
-            throw error
         }
+    } finally {
+        // The return value is optional according to MDN
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/return
+        // @ts-ignore
+        generator.return()
     }
 }
 
@@ -123,4 +130,8 @@ function createTimeout(timeoutMs: number): Promise<never> {
     return new Promise((_, reject) =>
         setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs)
     )
+}
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
 }

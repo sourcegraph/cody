@@ -301,7 +301,10 @@ for (const isTreeSitterEnabled of cases) {
                             console.log('bar')
                         }┤
                     ┴┴┴┴`,
-                        ]
+                        ],
+                        {
+                            providerOptions: { n: 2 },
+                        }
                     )
                 )
 
