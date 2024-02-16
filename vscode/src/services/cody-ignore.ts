@@ -4,6 +4,7 @@ import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@source
 
 import { logDebug } from '../log'
 import { findFiles } from '../search/find-files'
+import { pathFunctionsForURI } from '@sourcegraph/cody-shared/src/common/path'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -89,7 +90,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 
         ignoreFile.content += '\n'
         ignoreFile.content += ignoreFiles.skipped
-            .map(ignored => ignores.relativePath(wf.uri, ignored))
+            .map(ignored => pathFunctionsForURI(wf.uri).relative(wf.uri.path, ignored.path))
             .join('\n')
     }
 
