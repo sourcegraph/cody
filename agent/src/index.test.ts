@@ -320,15 +320,11 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              import { Animal } from './animal';
-
-              export class Dog implements Animal {
-                name = 'Dog';
-
+              class Dog implements Animal {
+                name: string;
                 makeAnimalSound() {
-                  return 'Bark!';
+                  return "Woof";
                 }
-
                 isMammal = true;
               }
               \`\`\`"
