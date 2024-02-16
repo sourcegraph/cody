@@ -24,7 +24,7 @@ import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { completionProviderConfig } from './completion-provider-config'
 import { sleep } from './utils'
-import { SmartThrottleService } from './smart-throttle'
+import type { SmartThrottleService } from './smart-throttle'
 
 export interface InlineCompletionsParams {
     // Context
