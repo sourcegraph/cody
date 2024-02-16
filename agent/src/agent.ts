@@ -53,6 +53,8 @@ import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { Har } from '@pollyjs/persister'
+import levenshtein from 'js-levenshtein'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -392,6 +394,28 @@ export class Agent extends MessageHandler {
             return {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
+        })
+        this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
+            const polly = this.params?.polly
+            let closestDistance = Number.MAX_VALUE
+            let closest = ''
+            if (polly) {
+                const persister = polly.persister._cache as Map<string, Promise<Har>>
+                for (const [, har] of persister) {
+                    for (const entry of (await har).log.entries) {
+                        if (entry.request.url !== url) {
+                            continue
+                        }
+                        const entryPostData = entry.request.postData?.text ?? ''
+                        const distance = levenshtein(postData, entryPostData)
+                        if (distance < closestDistance) {
+                            closest = entryPostData
+                            closestDistance = distance
+                        }
+                    }
+                }
+            }
+            return { closestBody: closest }
         })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
