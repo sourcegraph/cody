@@ -323,7 +323,11 @@ describe('Agent', () => {
               import { Animal } from './animal';
 
               export class Dog implements Animal {
-                name = 'Dog';
+                name: string;
+
+                constructor(name: string) {
+                  this.name = name;
+                }
 
                 makeAnimalSound() {
                   return 'Bark!';
