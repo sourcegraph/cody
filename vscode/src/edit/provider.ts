@@ -25,7 +25,7 @@ import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { contentSanitizer } from './utils'
+import { responseTransformer } from './output/response-transformer'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -211,7 +211,7 @@ export class EditProvider {
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
             this.config.task.id,
-            contentSanitizer(response),
+            responseTransformer(response),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }
@@ -235,7 +235,7 @@ export class EditProvider {
 
             this.insertionPromise = this.config.controller.didReceiveFixupInsertion(
                 this.config.task.id,
-                contentSanitizer(responseToSend),
+                responseTransformer(responseToSend),
                 this.insertionInProgress ? 'streaming' : 'complete'
             )
 
