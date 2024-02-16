@@ -320,19 +320,11 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              import { Animal } from './animal';
-
-              export class Dog implements Animal {
+              class Dog implements Animal {
                 name: string;
-
-                constructor(name: string) {
-                  this.name = name;
-                }
-
                 makeAnimalSound() {
-                  return 'Bark!';
+                  return "Woof";
                 }
-
                 isMammal = true;
               }
               \`\`\`"
@@ -550,6 +542,12 @@ describe('Agent', () => {
             await client.request('commands/document', null).catch(err => {
                 expect(err).toBeDefined()
             })
+        })
+
+        it('ignore rule is not case sensitive', async () => {
+            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [alsoIgnoredPath] })
+            expect(result).toBeTruthy()
         })
 
         afterAll(async () => {
