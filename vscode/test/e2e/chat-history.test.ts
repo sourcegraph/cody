@@ -1,9 +1,22 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { type ExpectedEvents, test } from './helpers'
 
-test('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:Auth:connected',
+    ],
+})('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

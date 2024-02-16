@@ -37,6 +37,7 @@ import type {
     AutocompleteItem,
     ClientInfo,
     CodyError,
+    CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
     TextEdit,
@@ -51,6 +52,7 @@ import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -538,12 +540,12 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID)
+            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -680,6 +682,16 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
+            )
+        })
+
+        this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
+            return this.executeCustomCommand(
+                vscode.commands.executeCommand<CommandResult | undefined>(
+                    'cody.action.command',
+                    key,
+                    commandArgs
+                )
             )
         })
 
@@ -1008,6 +1020,22 @@ export class Agent extends MessageHandler {
         }
         webviewPanel.initialize()
         return webviewPanel.panelID
+    }
+
+    private async executeCustomCommand(
+        commandResult: Thenable<CommandResult | undefined>
+    ): Promise<CustomCommandResult> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+
+        if (result?.type === 'chat') {
+            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
+        }
+
+        if (result?.type === 'edit') {
+            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
+        }
+
+        throw new Error('Invalid custom command result')
     }
 
     // Alternative to `registerRequest` that awaits on authentication changes to

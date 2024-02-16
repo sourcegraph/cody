@@ -8,6 +8,6 @@
     "allowJs": true,
   },
   "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
-  "exclude": ["dist", "src/__tests__", "src/bfg/__tests__", "scip.ts", "vitest.config.ts"],
+  "exclude": ["dist", "bindings", "src/__tests__", "src/bfg/__tests__", "vitest.config.ts"],
   "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
 }

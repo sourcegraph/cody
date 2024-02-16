@@ -2,7 +2,7 @@
     "name": "cody-ai",
     "private": true,
     "displayName": "Cody AI",
-    "version": "1.4.2",
+    "version": "1.4.4",
     "publisher": "sourcegraph",
     "license": "Apache-2.0",
     "icon": "resources/cody.png",
@@ -517,6 +517,11 @@
                 "when": "cody.activated"
             },
             {
+                "command": "cody.menu.custom-commands",
+                "key": "shift+alt+c",
+                "when": "cody.activated"
+            },
+            {
                 "command": "-github.copilot.generate",
                 "key": "ctrl+enter"
             },
@@ -524,6 +529,26 @@
                 "command": "cody.autocomplete.manual-trigger",
                 "key": "alt+\\",
                 "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+            },
+            {
+                "command": "cody.fixup.acceptNearest",
+                "key": "alt+a",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.retryNearest",
+                "key": "alt+r",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.undoNearest",
+                "key": "alt+x",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.cancelNearest",
+                "key": "alt+z",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
             }
         ],
         "submenus": [
@@ -822,8 +847,8 @@
                     "order": 12,
                     "title": "Cody Command Hints",
                     "type": "boolean",
-                    "markdownDescription": "Enable hints for Edit and Chat shortcuts, displayed alongside editor selections.",
-                    "default": false
+                    "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+                    "default": true
                 },
                 "cody.experimental.simpleChatContext": {
                     "order": 99,

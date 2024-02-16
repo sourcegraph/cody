@@ -1,6 +1,7 @@
 import type { URI } from 'vscode-uri'
 import * as vscode from 'vscode'
 import { findLast } from 'lodash'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 /**
  * Gets folding ranges for the given URI.
  * @param uri - The URI of the document to get folding ranges for.
@@ -17,25 +18,30 @@ export async function getFoldingRanges(
     type?: 'imports' | 'comment' | 'all',
     getLastItem?: boolean
 ): Promise<vscode.FoldingRange[] | undefined> {
-    // Run built-in command to get folding ranges
-    const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
-        'vscode.executeFoldingRangeProvider',
-        uri
-    )
+    return wrapInActiveSpan('commands.context.foldingRange', async span => {
+        // Run built-in command to get folding ranges
+        const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+            'vscode.executeFoldingRangeProvider',
+            uri
+        )
 
-    if (type === 'all') {
-        return foldingRanges
-    }
+        if (type === 'all') {
+            return foldingRanges
+        }
 
-    const kind = type === 'imports' ? vscode.FoldingRangeKind.Imports : vscode.FoldingRangeKind.Comment
+        const kind =
+            type === 'imports' ? vscode.FoldingRangeKind.Imports : vscode.FoldingRangeKind.Comment
 
-    if (!getLastItem) {
-        const ranges = foldingRanges?.filter(range => range.kind === kind)
-        return ranges
-    }
+        if (!getLastItem) {
+            const ranges = foldingRanges?.filter(range => range.kind === kind)
+            return ranges
+        }
 
-    // Get the line number of the last import statement
-    const lastKind = foldingRanges ? findLast(foldingRanges, range => range.kind === kind) : undefined
+        // Get the line number of the last import statement
+        const lastKind = foldingRanges
+            ? findLast(foldingRanges, range => range.kind === kind)
+            : undefined
 
-    return lastKind ? [lastKind] : []
+        return lastKind ? [lastKind] : []
+    })
 }

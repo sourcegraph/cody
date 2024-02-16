@@ -131,3 +131,7 @@ function createTimeout(timeoutMs: number): Promise<never> {
         setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs)
     )
 }
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}

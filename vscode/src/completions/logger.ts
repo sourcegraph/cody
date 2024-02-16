@@ -2,7 +2,12 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
+import {
+    isNetworkError,
+    type BillingCategory,
+    type BillingProduct,
+    FeatureFlag,
+} from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
@@ -20,6 +25,7 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 import type { Span } from '@opentelemetry/api'
+import { completionProviderConfig } from './completion-provider-config'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -522,6 +528,15 @@ export function suggested(id: CompletionLogID, span?: Span): void {
 
         span?.setAttributes(getSharedParams(event) as any)
         span?.addEvent('suggested')
+
+        // Mark the completion as sampled if tracing is enable for this user
+        const shouldSample = completionProviderConfig.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteTracing
+        )
+
+        if (shouldSample && span) {
+            span.setAttribute('sampled', true)
+        }
 
         setTimeout(() => {
             const event = activeSuggestionRequests.get(id)
