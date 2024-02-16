@@ -160,10 +160,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
         const featureEnabled = await getGhostHintEnablement()
-
-        if (!this.enrollmentListener) {
-            this.registerEnrollmentListener(featureEnabled)
-        }
+        this.registerEnrollmentListener(featureEnabled)
 
         if (!authStatus.isLoggedIn || !featureEnabled) {
             this.dispose()
