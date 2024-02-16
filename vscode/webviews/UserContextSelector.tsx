@@ -71,7 +71,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                 >
                     <span className={styles.titleAndDescriptionContainer}>
                         <span className={styles.selectionTitle}>
-                            {contextQuery}
+                            @{contextQuery}
                             <span className={styles.ghostText}>
                                 {ghostStart}
                                 {ghostEnd} (line range)
