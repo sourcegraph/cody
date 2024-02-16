@@ -295,14 +295,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (index === undefined || index > transcript.length) {
                 return
             }
-
             // Only returns command name if it is the first word in the message
             // Attempts to remove markdown links
             const messageAtIndex = transcript[index]
-            const displayText = messageAtIndex?.displayText
-            const inputText = displayText?.startsWith('/')
-                ? displayText.replaceAll(/\[_@.*\)/g, '') || displayText?.split(' ')?.[0]
-                : messageAtIndex?.text
+            const inputText = messageAtIndex?.text
             if (inputText) {
                 setFormInput(inputText)
                 if (messageAtIndex.contextFiles) {
