@@ -11,13 +11,12 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity,
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
-        FeatureFlag.CodyAutocompleteSingleMultilineRequest,
         FeatureFlag.CodyAutocompleteFastPath,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
+        FeatureFlag.CodyAutocompleteTracing,
     ] as const
 
     private get config() {
@@ -76,9 +75,6 @@ class CompletionProviderConfig {
         const { config } = this
 
         const bfgMixedContextFlag = this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-        const newJaccardSimilarityContextFlag = this.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity
-        )
 
         const contextStrategy: ContextStrategy =
             config.autocompleteExperimentalGraphContext === 'bfg'
@@ -93,9 +89,7 @@ class CompletionProviderConfig {
                               ? 'new-jaccard-similarity'
                               : bfgMixedContextFlag
                                   ? 'bfg-mixed'
-                                  : newJaccardSimilarityContextFlag
-                                      ? 'new-jaccard-similarity'
-                                      : 'jaccard-similarity'
+                                  : 'jaccard-similarity'
 
         return contextStrategy
     }

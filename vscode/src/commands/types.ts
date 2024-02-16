@@ -4,7 +4,11 @@ import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cod
  * The name of the file for configuring Custom Commands.
  */
 export enum ConfigFiles {
+    // Cody Commands config file location in VS CODE
+    // TODO: Migrate to use the one in /.cody
     VSCODE = '.vscode/cody.json',
+    // Cody Commands config file location for all clients
+    COMMAND = '.cody/commands.json',
 }
 
 /**
@@ -19,7 +23,7 @@ export interface CodyCommandsFile {
 
 // JSON format of the CodyCommandsFile
 export interface CodyCommandsFileJSON {
-    commands: { [id: string]: Omit<CodyCommand, 'slashCommand'> }
+    commands: { [id: string]: Omit<CodyCommand, 'key'> }
 }
 
 export interface CodyCommandArgs {

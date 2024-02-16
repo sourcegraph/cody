@@ -1,4 +1,5 @@
 import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -18,9 +19,6 @@ export enum FeatureFlag {
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
-    // Enables the new-jaccard-similarity context strategy that can find more than one match per
-    // open file and includes matches from the same file.
-    CodyAutocompleteContextNewJaccardSimilarity = 'cody-autocomplete-new-jaccard-similarity',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     // Dynamically decide wether to show a single line or multiple lines for completions.
@@ -33,8 +31,6 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
-    // Trigger only one request for every multiline completion instead of three.
-    CodyAutocompleteSingleMultilineRequest = 'cody-autocomplete-single-multiline-request',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
@@ -48,6 +44,9 @@ export enum FeatureFlag {
 
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
+
+    // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
+    CodyCommandHints = 'cody-command-hints',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -73,23 +72,29 @@ export class FeatureFlagProvider {
         return this.featureFlags[endpoint]?.[flagName]
     }
 
+    public getExposedExperiments(endpoint: string = this.apiClient.endpoint): Record<string, boolean> {
+        return this.featureFlags[endpoint] || {}
+    }
+
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = this.apiClient.endpoint
-        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
-            return false
-        }
+        return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
+            const endpoint = this.apiClient.endpoint
+            if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+                return false
+            }
 
-        const cachedValue = this.getFromCache(flagName, endpoint)
-        if (cachedValue !== undefined) {
-            return cachedValue
-        }
+            const cachedValue = this.getFromCache(flagName, endpoint)
+            if (cachedValue !== undefined) {
+                return cachedValue
+            }
 
-        const value = await this.apiClient.evaluateFeatureFlag(flagName)
-        if (!this.featureFlags[endpoint]) {
-            this.featureFlags[endpoint] = {}
-        }
-        this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
-        return this.featureFlags[endpoint][flagName]
+            const value = await this.apiClient.evaluateFeatureFlag(flagName)
+            if (!this.featureFlags[endpoint]) {
+                this.featureFlags[endpoint] = {}
+            }
+            this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
+            return this.featureFlags[endpoint][flagName]
+        })
     }
 
     public async syncAuthStatus(): Promise<void> {
@@ -98,10 +103,12 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        const endpoint = this.apiClient.endpoint
-        const data = await this.apiClient.getEvaluatedFeatureFlags()
-        this.featureFlags[endpoint] = isError(data) ? {} : data
-        this.lastUpdated = Date.now()
+        return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
+            const endpoint = this.apiClient.endpoint
+            const data = await this.apiClient.getEvaluatedFeatureFlags()
+            this.featureFlags[endpoint] = isError(data) ? {} : data
+            this.lastUpdated = Date.now()
+        })
     }
 }
 
