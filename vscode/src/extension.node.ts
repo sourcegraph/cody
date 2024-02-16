@@ -12,7 +12,7 @@ import {
 } from './local-context/local-embeddings'
 import {
     createContextRankingController,
-    type ContextRankerConfig
+    type ContextRankerConfig,
 } from './local-context/context-ranking'
 import { SymfRunner } from './local-context/symf'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
@@ -37,7 +37,8 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
             ? undefined
             : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
                   createLocalEmbeddingsController(context, config),
-        createContextRankingController: (config: ContextRankerConfig) => createContextRankingController(context, config),
+        createContextRankingController: (config: ContextRankerConfig) =>
+            createContextRankingController(context, config),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: (...args) => new SymfRunner(...args),

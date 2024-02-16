@@ -10,15 +10,15 @@ import {
     // type FileURI,
 } from '@sourcegraph/cody-shared'
 import type { ContextItem } from '../prompt-builder/types'
-import { MessageHandler } from '../jsonrpc/jsonrpc'
+import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { captureException } from '../services/sentry/sentry'
-import { FileURI, isFileURI } from '@sourcegraph/cody-shared'
+import { type FileURI, isFileURI } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
-import { RankContextItem } from '../jsonrpc/context-ranking-protocol'
+import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
 import { CodyEngineService } from './cody-engine'
 
 export interface ContextRanker {
-    rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]>   
+    rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]>
 }
 
 export function createContextRankingController(
@@ -30,8 +30,8 @@ export function createContextRankingController(
 
 export type ContextRankerConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint'
->
+    'serverEndpoint' | 'accessToken'
+> & { experimentalChatContextRanker: boolean | undefined }
 
 function getIndexLibraryPath(): FileURI {
     switch (process.platform) {
@@ -46,20 +46,22 @@ function getIndexLibraryPath(): FileURI {
     }
 }
 
-export class ContextRankingController implements ContextRanker{
-
+export class ContextRankingController implements ContextRanker {
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
     // True if the service has finished starting and been initialized.
     private serviceStarted = false
     // Whether the account is a consumer account.
     private endpointIsDotcom = false
+    private readonly accessToken: string | undefined
     private readonly indexLibraryPath: FileURI | undefined
 
-    private doesFeaturesExist: boolean = false
-
-    constructor(private readonly context: vscode.ExtensionContext, config: ContextRankerConfig) {
+    constructor(
+        private readonly context: vscode.ExtensionContext,
+        config: ContextRankerConfig
+    ) {
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
+        this.accessToken = config.accessToken || undefined
         logDebug('ContextRankingController', 'constructor')
     }
 
@@ -67,35 +69,36 @@ export class ContextRankingController implements ContextRanker{
         logDebug('ContextRankingController', 'start')
         await this.getService()
 
-        const repoUri = this.getRepoUri();
+        const repoUri = this.getRepoUri()
         if (repoUri && isFileURI(repoUri)) {
             this.computeFeatures(repoUri)
         }
     }
 
     private getRepoUri(): vscode.Uri | undefined {
-        return vscode.workspace.workspaceFolders?.[0]?.uri;
+        return vscode.workspace.workspaceFolders?.[0]?.uri
     }
-    
+
     // Tries to compute the index at the start of the service.
     private async computeFeatures(repoDir: FileURI): Promise<void> {
         try {
-            const isPrecomputeSucess = await (await this.getService()).request('context-ranking/compute-features', {
+            await (await this.getService()).request('context-ranking/compute-features', {
                 repoPath: repoDir.fsPath,
-                bm25ChunkingStrategy: 'full-file-chunks',
             })
-            logDebug('ContextRankingController', 'compute-features', JSON.stringify(isPrecomputeSucess))
-            this.doesFeaturesExist = isPrecomputeSucess;    
         } catch (error) {
-            logDebug('ContextRankingController', 'error in feature preCompute call', captureException(error), JSON.stringify(error))
+            logDebug(
+                'ContextRankingController',
+                'error in feature preCompute call',
+                captureException(error),
+                JSON.stringify(error)
+            )
         }
     }
 
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
             const instance = CodyEngineService.getInstance(this.context)
-            this.service = instance.getService()
-            instance.setupServiceHandler(this.setupContextRankingService)
+            this.service = instance.getService(this.setupContextRankingService)
         }
         return this.service
     }
@@ -113,39 +116,47 @@ export class ContextRankingController implements ContextRanker{
             )
             indexPath = this.indexLibraryPath
         }
-        const initResult = await service.request('context-ranking/initialize', {
-            indexPath: indexPath.fsPath,
-        })
-        logDebug(
-            'LocalEmbeddingsController',
-            'spawnAndBindService',
-            'initialized',
-            initResult,
-        )
-        this.serviceStarted = true
+        if (this.accessToken) {
+            const initResult = await service.request('context-ranking/initialize', {
+                indexPath: indexPath.fsPath,
+                accessToken: this.accessToken,
+            })
+            logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', initResult)
+            this.serviceStarted = true
+        }
     }
 
     public async rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]> {
-        const repoUri = this.getRepoUri();
-        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted || !this.doesFeaturesExist) {
+        const repoUri = this.getRepoUri()
+        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
             return contextItems
         }
-        
+
         try {
             const service = await this.getService()
             const rankItems = this.convertContextItemsToRankItems(repoUri.path, contextItems)
             const rankedItemsOrder = await service.request('context-ranking/rank-items', {
                 repoPath: repoUri.path,
-                bm25ChunkingStrategy: 'full-file-chunks',
                 contextItems: rankItems,
                 query: query,
             })
-            // ToDo: Add more checks to ensure validity of reRanked Items
-            if (rankedItemsOrder.length!== contextItems.length) {
-                logDebug('ContextRankingController', 'rank-items', 'unexpected-response, length of reranked items does not match', 'original items', JSON.stringify(contextItems), ' reranked items', JSON.stringify(rankedItemsOrder))
+
+            if (rankedItemsOrder.prediction.length !== contextItems.length) {
+                logDebug(
+                    'ContextRankingController',
+                    'rank-items',
+                    'unexpected-response, length of reranked items does not match',
+                    'original items',
+                    JSON.stringify(contextItems),
+                    ' reranked items',
+                    JSON.stringify(rankedItemsOrder)
+                )
                 return contextItems
             }
-            const reRankedContextItems = this.orderContextItemsAsRankItems(contextItems, rankedItemsOrder)
+            const reRankedContextItems = this.orderContextItemsAsRankItems(
+                contextItems,
+                rankedItemsOrder.prediction
+            )
             return reRankedContextItems
         } catch (error) {
             logDebug('ContextRankingController', 'rank-items', captureException(error), error)
@@ -153,27 +164,39 @@ export class ContextRankingController implements ContextRanker{
         }
     }
 
-    private convertContextItemsToRankItems(baseRepoUrl: string, contextItems: ContextItem[]): RankContextItem[] {
+    private convertContextItemsToRankItems(
+        baseRepoUrl: string,
+        contextItems: ContextItem[]
+    ): RankContextItem[] {
         const rankContextItems = contextItems.map((item, index) => ({
-            index: index,
+            document_id: index,
             filePath: item.uri?.path ? path.relative(baseRepoUrl, item.uri?.path) : '',
             content: item.text,
-            source: item.source
+            source: item.source,
         }))
         return rankContextItems
     }
 
-    private orderContextItemsAsRankItems(contextItems: ContextItem[], rankedItemsOrder: RankContextItem[]): ContextItem[] {
-        let orderedContextItems: ContextItem[] = []; // Initialize the array
-        for (const rankItem of rankedItemsOrder) {
-            const newIndex = rankItem.index;
-            if(newIndex<0 || newIndex>=contextItems.length) {
-                logDebug('ContextRankingController', 'length of rankItems', JSON.stringify(rankedItemsOrder), 'does not match context items', JSON.stringify(contextItems))
+    private orderContextItemsAsRankItems(
+        contextItems: ContextItem[],
+        rankedItemsOrder: RankerPrediction[]
+    ): ContextItem[] {
+        rankedItemsOrder.sort((a, b) => b.score - a.score)
+        const orderedContextItems: ContextItem[] = [] // Initialize the array
+        for (const item of rankedItemsOrder) {
+            const newIndex = item.document_id
+            if (newIndex < 0 || newIndex >= contextItems.length) {
+                logDebug(
+                    'ContextRankingController',
+                    'length of rankItems',
+                    JSON.stringify(rankedItemsOrder),
+                    'does not match context items',
+                    JSON.stringify(contextItems)
+                )
                 return contextItems
             }
-            orderedContextItems.push(contextItems[newIndex]);
+            orderedContextItems.push(contextItems[newIndex])
         }
-        return orderedContextItems;
+        return orderedContextItems
     }
 }
-

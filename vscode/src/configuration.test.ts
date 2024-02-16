@@ -153,6 +153,7 @@ describe('getConfiguration', () => {
             testingLocalEmbeddingsEndpoint: undefined,
             testingLocalEmbeddingsIndexLibraryPath: undefined,
             testingLocalEmbeddingsModel: undefined,
+            experimentalChatContextRanker: false,
         } satisfies Configuration)
     })
 })

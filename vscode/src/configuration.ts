@@ -170,6 +170,10 @@ export function getConfiguration(
         testingLocalEmbeddingsIndexLibraryPath: isTesting
             ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
             : undefined,
+
+        experimentalChatContextRanker:
+            getHiddenSetting('internal.unstable', false) &&
+            getHiddenSetting('experimental.chatContextRanker', false),
     }
 }
 

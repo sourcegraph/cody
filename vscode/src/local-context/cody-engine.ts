@@ -1,14 +1,14 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
-import { MessageHandler } from '../jsonrpc/jsonrpc'
+import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 
 export class CodyEngineService {
-    // Starting this service leads to spawning seperate codyEngine process. 
-    // Making this singleton helps ensure only single instance of engine running.  
+    // Starting this service leads to spawning seperate codyEngine process.
+    // Making this singleton helps ensure only single instance of engine running.
     private static instance: CodyEngineService | null = null
-    private service : Promise<MessageHandler> | undefined
+    private service: Promise<MessageHandler> | undefined
 
     // Ensure only one instance starts the process at a time.
 
@@ -23,18 +23,21 @@ export class CodyEngineService {
         return CodyEngineService.instance
     }
 
-    public getService(): Promise<MessageHandler> {
+    public async getService(
+        serviceSetupCB: (service: MessageHandler) => Promise<void>
+    ): Promise<MessageHandler> {
+        const service = await this.initService()
+        await serviceSetupCB(service)
+        return service
+    }
+
+    private initService(): Promise<MessageHandler> {
         if (!this.service) {
-            this.service = this.spawnAndBindService()   
+            this.service = this.spawnAndBindService()
         }
         return this.service
     }
 
-    public async setupServiceHandler(serviceSetupCB: (service: MessageHandler) => Promise<void>): Promise<void> {
-        const service = await this.getService()
-        serviceSetupCB(service)
-    }
-    
     private async spawnAndBindService(): Promise<MessageHandler> {
         const service = await new Promise<MessageHandler>((resolve, reject) => {
             spawnBfg(this.context, reject).then(

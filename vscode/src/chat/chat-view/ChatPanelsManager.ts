@@ -25,13 +25,17 @@ import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ContextRankingController } from '../../local-context/context-ranking'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 
 type ChatID = string
 
 export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
-    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable' | 'useContext'
+    | 'experimentalGuardrails'
+    | 'experimentalSymfContext'
+    | 'internalUnstable'
+    | 'useContext'
+    | 'experimentalChatContextRanker'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {

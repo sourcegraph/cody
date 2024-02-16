@@ -15,9 +15,10 @@ import {
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
+import type { ContextRankerConfig } from './local-context/context-ranking'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
-import { ContextRankingController } from './local-context/context-ranking'
+import type { ContextRankingController } from './local-context/context-ranking'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -43,7 +44,8 @@ type ExternalServicesConfiguration = Pick<
     | 'debugVerbose'
     | 'experimentalTracing'
 > &
-    LocalEmbeddingsConfig
+    LocalEmbeddingsConfig &
+    ContextRankerConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -77,7 +79,10 @@ export async function configureExternalServices(
         )
     }
 
-    const contextRanking = platform.createContextRankingController?.(initialConfig)
+    const contextRanking = initialConfig.experimentalChatContextRanker
+        ? platform.createContextRankingController?.(initialConfig)
+        : undefined
+
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)

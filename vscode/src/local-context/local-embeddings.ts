@@ -168,8 +168,7 @@ export class LocalEmbeddingsController
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
             const instance = CodyEngineService.getInstance(this.context)
-            this.service = instance.getService()
-            instance.setupServiceHandler(this.setupLocalEmbeddingsService)
+            this.service = instance.getService(this.setupLocalEmbeddingsService)
         }
         return this.service
     }

@@ -22,7 +22,7 @@ import type {
 } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
 import type { CommandsProvider } from './commands/services/provider'
-import { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
+import type { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A

@@ -76,6 +76,8 @@ export interface Configuration {
     testingLocalEmbeddingsModel: string | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
+
+    experimentalChatContextRanker: boolean | undefined
 }
 
 export interface AutocompleteTimeouts {

@@ -80,13 +80,10 @@ import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { chatModel } from '../../models'
 import { getContextWindowForModel } from '../../models/utilts'
 import type { ContextItem } from '../../prompt-builder/types'
-<<<<<<< HEAD
 import type { Span } from '@opentelemetry/api'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
-=======
-import { ContextRankingController } from '../../local-context/context-ranking'
->>>>>>> af602235 (context-ranking support)
+import type { ContextRankingController } from '../../local-context/context-ranking'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -406,34 +403,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 FeatureFlag.CodyChatFusedContext
             )
 
-<<<<<<< HEAD
-=======
-        const userContextItems = await contextFilesToContextItems(
-            this.editor,
-            userContextFiles || [],
-            true
-        )
-        const prompter = new DefaultPrompter(
-            userContextItems,
-            addEnhancedContext
-                ? (text, maxChars) =>
-                      getEnhancedContext({
-                          strategy: this.config.useContext,
-                          editor: this.editor,
-                          text,
-                          providers: {
-                              localEmbeddings: this.localEmbeddings,
-                              symf: this.config.experimentalSymfContext ? this.symf : null,
-                              remoteSearch: this.remoteSearch,
-                          },
-                          featureFlags: this.config,
-                          hints: { maxChars },
-                          contextRanking: this.contextRanking,
-                      })
-                : undefined
-        )
-        const sendTelemetry = (contextSummary: any): void => {
->>>>>>> af602235 (context-ranking support)
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -504,8 +473,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                   featureFlags: {
                                       fusedContext:
                                           this.config.internalUnstable || (await useFusedContextPromise),
+                                      testingContextRanking:
+                                          this.config.internalUnstable &&
+                                          this.config.experimentalChatContextRanker,
                                   },
                                   hints: { maxChars },
+                                  contextRanking: this.contextRanking,
                               })
                         : undefined
                 )
