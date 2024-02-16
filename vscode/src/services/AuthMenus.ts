@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared'
+import { isSourcegraphToken } from '../chat/protocol'
 
 interface LoginMenuItem {
     id: string
@@ -56,10 +57,28 @@ export const AuthMenu = async (
 export async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
     const result = await vscode.window.showInputBox({
         title,
-        prompt: 'Enter the URL of the Sourcegraph instance',
+        prompt: 'Enter the URL of the Sourcegraph instance. For example, https://sourcegraph.example.com.',
         placeHolder: 'https://sourcegraph.example.com',
+        value: 'https://',
         password: false,
         ignoreFocusOut: true,
+        // valide input to ensure the user is not entering a token as URL
+        validateInput: (value: string) => {
+            // ignore empty value
+            if (!value) {
+                return null
+            }
+            if (isSourcegraphToken(value)) {
+                return 'Please enter a valid URL'
+            }
+            if (value.length > 4 && !value.startsWith('http')) {
+                return 'URL must start with http or https'
+            }
+            if (!/([.]|^https?:\/\/)/.test(value)) {
+                return 'Please enter a valid URL'
+            }
+            return null
+        },
     })
 
     if (typeof result === 'string') {

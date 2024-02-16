@@ -6,6 +6,7 @@ import type { DocumentContext } from './get-current-doc-context'
 import type { CompletionItemID, CompletionLogID } from './logger'
 import type { RequestParams } from './request-manager'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { Span } from '@opentelemetry/api'
 
 interface AutocompleteItemParams {
     insertText: string | vscode.SnippetString
@@ -15,6 +16,7 @@ interface AutocompleteItemParams {
     requestParams: RequestParams
     completionItem: InlineCompletionItemWithAnalytics
     command?: vscode.Command
+    span?: Span
 }
 
 export class AutocompleteItem extends vscode.InlineCompletionItem {
@@ -52,8 +54,14 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
      */
     public analyticsItem: InlineCompletionItemWithAnalytics
 
+    /**
+     * Eventual Open Telemetry span associated with the completion request
+     */
+    public span: Span | undefined
+
     constructor(params: AutocompleteItemParams) {
-        const { insertText, logId, range, trackedRange, requestParams, completionItem, command } = params
+        const { insertText, logId, range, trackedRange, requestParams, completionItem, command, span } =
+            params
 
         super(insertText, range, command)
 
@@ -62,6 +70,7 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
         this.trackedRange = trackedRange
         this.requestParams = requestParams
         this.analyticsItem = completionItem
+        this.span = span
     }
 }
 
@@ -103,7 +112,8 @@ export function analyticsItemToAutocompleteItem(
     docContext: DocumentContext,
     position: vscode.Position,
     items: InlineCompletionItemWithAnalytics[],
-    context: vscode.InlineCompletionContext
+    context: vscode.InlineCompletionContext,
+    span: Span
 ): AutocompleteItem[] {
     return items.map(item => {
         const { insertText, range } = item
@@ -144,6 +154,7 @@ export function analyticsItemToAutocompleteItem(
             requestParams,
             completionItem: item,
             command,
+            span,
         })
 
         command.arguments[0].codyCompletion = autocompleteItem

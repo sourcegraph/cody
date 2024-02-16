@@ -14,7 +14,10 @@ export const SymbolLink: React.FunctionComponent<SymbolLinkProps> = ({ symbol, p
             getVSCodeAPI().postMessage({
                 command: 'openLocalFileWithRange',
                 filePath: path,
-                range,
+                range: {
+                    start: { line: range?.startLine ?? 0, character: range?.startCharacter ?? 0 },
+                    end: { line: range?.endLine ?? 0, character: range?.endCharacter ?? 0 },
+                },
             })
         }}
         title={symbol}

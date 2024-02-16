@@ -32,7 +32,7 @@ import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -289,6 +289,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     messageBeingEdited,
     isNewChat,
     inputCaretPosition,
+    isWebviewActive,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const tips = '(@ to include files or symbols)'
@@ -298,7 +299,9 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
     useEffect(() => {
         if (isFocusd) {
-            inputRef.current?.focus()
+            if (isWebviewActive) {
+                inputRef.current?.focus()
+            }
 
             if (inputCaretPosition) {
                 return
@@ -427,7 +430,14 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
         title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
         type="button"
         disabled={disabled}
-        onClick={() => setMessageBeingEdited(messageBeingEdited)}
+        onClick={() => {
+            setMessageBeingEdited(messageBeingEdited)
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
+                properties: { source: 'chat' },
+            })
+        }}
     >
         <i className="codicon codicon-edit" />
     </VSCodeButton>

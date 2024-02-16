@@ -2,7 +2,12 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isNetworkError, type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared'
+import {
+    isNetworkError,
+    type BillingCategory,
+    type BillingProduct,
+    FeatureFlag,
+} from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
@@ -19,6 +24,8 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
+import type { Span } from '@opentelemetry/api'
+import { completionProviderConfig } from './completion-provider-config'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -505,7 +512,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID): void {
+export function suggested(id: CompletionLogID, span?: Span): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -518,6 +525,18 @@ export function suggested(id: CompletionLogID): void {
 
     if (!event.suggestedAt) {
         event.suggestedAt = performance.now()
+
+        span?.setAttributes(getSharedParams(event) as any)
+        span?.addEvent('suggested')
+
+        // Mark the completion as sampled if tracing is enable for this user
+        const shouldSample = completionProviderConfig.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteTracing
+        )
+
+        if (shouldSample && span) {
+            span.setAttribute('sampled', true)
+        }
 
         setTimeout(() => {
             const event = activeSuggestionRequests.get(id)

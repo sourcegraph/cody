@@ -124,6 +124,7 @@ export interface ChatUITextAreaProps {
     chatModels?: ModelProvider[]
     messageBeingEdited: number | undefined
     inputCaretPosition?: number
+    isWebviewActive: boolean
 }
 
 export interface ChatUISubmitButtonProps {
@@ -303,7 +304,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 : messageAtIndex?.text
             if (inputText) {
                 setFormInput(inputText)
+                if (messageAtIndex.contextFiles) {
+                    useOldChatMessageContext(messageAtIndex.contextFiles)
+                }
             }
+            // move focus back to chatbox
             setInputFocus(true)
         },
         [messageBeingEdited, setFormInput, setMessageBeingEdited, transcript]
@@ -315,19 +320,30 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      * Calls setEditMessageState() to reset any in-progress edit state.
      * Sends a 'reset' command to postMessage to reset the chat on the server.
      */
-    const onChatResetClick = useCallback(() => {
-        setEditMessageState()
-        postMessage?.({ command: 'reset' })
-    }, [postMessage, setEditMessageState])
+    const onChatResetClick = useCallback(
+        (eventType: 'keyDown' | 'click' = 'click') => {
+            setEditMessageState()
+            postMessage?.({ command: 'reset' })
+            postMessage?.({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
+                properties: { source: 'chat', eventType },
+            })
+        },
+        [postMessage, setEditMessageState]
+    )
 
     /**
      * Resets the context selection and query state.
      */
-    const resetContextSelection = useCallback(() => {
-        setSelectedChatContext(0)
-        setCurrentChatContextQuery(undefined)
-        setContextSelection(null)
-    }, [setContextSelection])
+    const resetContextSelection = useCallback(
+        (eventType?: 'keyDown' | 'click') => {
+            setSelectedChatContext(0)
+            setCurrentChatContextQuery(undefined)
+            setContextSelection(null)
+        },
+        [setContextSelection]
+    )
 
     /**
      * Gets the display text for a context file to be completed into the chat when a user
@@ -343,6 +359,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             : ''
         const symbolName = isFileType ? '' : `#${contextFile.symbolName}`
         return `@${displayPath(contextFile.uri)}${range}${symbolName}`
+    }
+
+    // Add old context files from the transcript to the map
+    const useOldChatMessageContext = (oldContextFiles: ContextFile[]) => {
+        const contextFilesMap = new Map<string, ContextFile>()
+        for (const file of oldContextFiles) {
+            contextFilesMap.set(getContextFileDisplayText(file), file)
+        }
+        setChatContextFiles(contextFilesMap)
     }
 
     /**
@@ -400,7 +425,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // At mention should start with @ and contains no whitespaces
-            const isAtMention = (word: string) => /^@/.test(word) && !word.includes(' ')
+            const isAtMention = (word: string) => /^@[^ ]*$/.test(word)
 
             // Extract mention query by splitting input value into before/after caret sections.
             const extractMentionQuery = (input: string, caretPos: number) => {
@@ -418,6 +443,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const mentionQuery = extractMentionQuery(inputValue, caretPosition)
             const query = mentionQuery.replace(/^@/, '')
 
+            // Cover cases where user prefer to type the file without tabbing the selection
+            if (contextSelection?.length) {
+                if (currentChatContextQuery === query.trimEnd()) {
+                    onChatContextSelected(contextSelection[0])
+                    return
+                }
+            }
+
             // Filters invalid queries and sets context query state accordingly:
             // Sets the current chat context query state if a valid mention is detected.
             // Otherwise resets the context selection and query state.
@@ -430,7 +463,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setCurrentChatContextQuery(query)
             postMessage({ command: 'getUserContext', query })
         },
-        [postMessage, resetContextSelection]
+        [
+            postMessage,
+            resetContextSelection,
+            contextSelection,
+            currentChatContextQuery,
+            onChatContextSelected,
+        ]
     )
 
     const inputHandler = useCallback(
@@ -558,7 +597,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === '/') {
                     event.preventDefault()
                     event.stopPropagation()
-                    onChatResetClick()
+                    onChatResetClick('keyDown')
                     return
                 }
                 // Ctrl/Cmd + K - When not already editing, edits the last human message
@@ -566,6 +605,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     event.stopPropagation()
                     setEditMessageState(lastHumanMessageIndex)
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
+                        properties: { source: 'chat', eventType: 'keyDown' },
+                    })
                     return
                 }
             }
@@ -581,6 +626,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const deleteKeysList = new Set(['Backspace', 'Delete'])
             if (deleteKeysList.has(event.key)) {
                 setSelectedChatContext(0)
+                return
+            }
+
+            // Allow navigation/selection with Ctrl(+Shift?)+Arrows
+            const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+            if (event.ctrlKey && arrowKeys.has(event.key)) {
                 return
             }
 
@@ -693,12 +744,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     } else {
                         setFormInput(newHistoryInput.inputText)
                         // chatContextFiles uses a map but history only stores a simple array.
-                        const contextFilesMap = new Map<string, ContextFile>()
-                        for (const file of newHistoryInput.inputContextFiles) {
-                            contextFilesMap.set(getContextFileDisplayText(file), file)
-                        }
-                        setChatContextFiles(contextFilesMap)
+                        useOldChatMessageContext(newHistoryInput.inputContextFiles)
                     }
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatInputHistory:executed',
+                        properties: { source: 'chat' },
+                    })
                 }
             }
         },
@@ -718,6 +771,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             onChatContextSelected,
             enableNewChatMode,
             resetContextSelection,
+            useOldChatMessageContext,
+            postMessage,
         ]
     )
 
@@ -847,7 +902,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             chatModels={chatModels}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
-                            inputCaretPosition={inputCaretPosition}
+                            inputCaretPosition={isWebviewActive ? inputCaretPosition : undefined}
+                            isWebviewActive={isWebviewActive}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>

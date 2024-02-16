@@ -37,6 +37,7 @@ import type {
     AutocompleteItem,
     ClientInfo,
     CodyError,
+    CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
     TextEdit,
@@ -51,6 +52,9 @@ import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { Har } from '@pollyjs/persister'
+import levenshtein from 'js-levenshtein'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -391,6 +395,28 @@ export class Agent extends MessageHandler {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+        this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
+            const polly = this.params?.polly
+            let closestDistance = Number.MAX_VALUE
+            let closest = ''
+            if (polly) {
+                const persister = polly.persister._cache as Map<string, Promise<Har>>
+                for (const [, har] of persister) {
+                    for (const entry of (await har).log.entries) {
+                        if (entry.request.url !== url) {
+                            continue
+                        }
+                        const entryPostData = entry.request.postData?.text ?? ''
+                        const distance = levenshtein(postData, entryPostData)
+                        if (distance < closestDistance) {
+                            closest = entryPostData
+                            closestDistance = distance
+                        }
+                    }
+                }
+            }
+            return { closestBody: closest }
+        })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
             return { errors: requests.map(({ request, error }) => ({ url: request.url, error })) }
@@ -538,12 +564,12 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID)
+            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -680,6 +706,16 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
+            )
+        })
+
+        this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
+            return this.executeCustomCommand(
+                vscode.commands.executeCommand<CommandResult | undefined>(
+                    'cody.action.command',
+                    key,
+                    commandArgs
+                )
             )
         })
 
@@ -1008,6 +1044,22 @@ export class Agent extends MessageHandler {
         }
         webviewPanel.initialize()
         return webviewPanel.panelID
+    }
+
+    private async executeCustomCommand(
+        commandResult: Thenable<CommandResult | undefined>
+    ): Promise<CustomCommandResult> {
+        const result = (await commandResult) ?? { type: 'empty-command-result' }
+
+        if (result?.type === 'chat') {
+            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
+        }
+
+        if (result?.type === 'edit') {
+            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
+        }
+
+        throw new Error('Invalid custom command result')
     }
 
     // Alternative to `registerRequest` that awaits on authentication changes to
