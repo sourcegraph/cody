@@ -27,19 +27,25 @@ export class SmartThrottleService implements vscode.Disposable {
 
     async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
         const throttledRequest = new ThrottledRequest(request)
+        const now = Date.now()
 
         // Case 1: If this is a start-of-line request, cancel any previous start-of-line requests
         //         and immediately continue with the execution.
         if (this.isStartOfLineRequest(request)) {
             this.startOfLineRequest?.abort()
             this.startOfLineRequest = throttledRequest
+
+            // When a start-of-line request is started, we also want to increment the last throttled
+            // request timer. This is to ensure that, on a new line, the very next keystroke does
+            // not get prompted into a kept-alive request yet.
+            this.lastThrottlePromotion = now
+
             return throttledRequest.updatedRequestParams()
         }
 
         // Case 2: The last throttled promotion is more than the throttle timeout ago. In this case,
         //         promote the last tail request to a throttled request and continue with the third
         //         case.
-        const now = Date.now()
         if (now - this.lastThrottlePromotion > SMART_THROTTLE_WINDOWS && this.tailRequest) {
             // Setting tailRequest to null will make sure the throttled request can no longer be
             // cancelled by this logic.
