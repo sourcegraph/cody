@@ -310,7 +310,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const lastMessage = await client.sendSingleMessageToNewChat(
-                'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+                'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
                     addEnhancedContext: true,
                 }
@@ -318,22 +318,21 @@ describe('Agent', () => {
             // TODO: make this test return a TypeScript implementation of
             // `animal.ts`. It currently doesn't do this because the workspace root
             // is not a git directory and symf reports some git-related error.
-            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
-                `
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
+              import { Animal } from './animal';
+
               export class Dog implements Animal {
-                name: string;
+                name = 'Dog';
 
                 makeAnimalSound() {
-                  return "Bark!";
+                  return 'Bark!';
                 }
 
                 isMammal = true;
               }
               \`\`\`"
-            `,
-                explainPollyError
-            )
+            `)
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
