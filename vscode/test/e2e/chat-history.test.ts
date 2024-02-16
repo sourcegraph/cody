@@ -75,6 +75,8 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('tab', { name: 'Hola' })).not.toBeVisible()
 
     // Once the chat history is empty, the 'New Chat' button should show up
+    await page.waitForSelector('div[class*="welcome-view-content"]')
+    await page.locator('.welcome-view-content').hover()
     await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
     await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
 })
