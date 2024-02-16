@@ -13,12 +13,26 @@ export interface CodegenOptions {
     language: string
     protocol: string
     kotlinPackage: string
+    discriminatedUnions: 'flat' | 'nested'
     severity: string
 }
 
 enum CodegenLanguage {
     Kotlin = 'kotlin',
     Markdown = 'markdown',
+}
+
+function discriminatedUnion(value: string): 'flat' | 'nested' {
+    switch (value) {
+        case 'flat':
+            return 'flat'
+        case 'nested':
+            return 'nested'
+        default:
+            throw new InvalidOptionArgumentError(
+                `Invalid discriminated union. Valid options are 'flat' and 'nested'.`
+            )
+    }
 }
 
 function languageOption(value: string): CodegenLanguage {
@@ -44,6 +58,14 @@ const command = new Command('scip-codegen')
     )
     .option('--protocol <value>', 'what protocol to generate bindings for', 'agent')
     .option('--severity <warning|error>', 'what protocol to generate bindings for', 'error')
+    .addOption(
+        new Option(
+            '--discriminated-unions <flat|nested>',
+            'whether to translate discriminated unions as flat or nested types'
+        )
+            .default('nested')
+            .argParser(discriminatedUnion)
+    )
     .option(
         '--kotlin-package <value>',
         'what package name to use for the kotlin classes',

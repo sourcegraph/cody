@@ -1,9 +1,13 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class Selection(
-  var anchor: Position? = null,
-  var active: Position? = null,
-  var isReversed: Boolean? = null,
+  val start: Position? = null,
+  val end: Position? = null,
+  val isEmpty: Boolean? = null,
+  val isSingleLine: Boolean? = null,
+  val anchor: Position? = null,
+  val active: Position? = null,
+  val isReversed: Boolean? = null,
 )
 

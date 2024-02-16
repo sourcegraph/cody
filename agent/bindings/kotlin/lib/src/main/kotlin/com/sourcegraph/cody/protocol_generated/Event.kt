@@ -1,15 +1,15 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class Event(
-  var event: String? = null,
-  var userCookieID: String? = null,
-  var url: String? = null,
-  var source: String? = null,
-  var argument: String? = null,
-  var publicArgument: String? = null,
-  var client: String? = null,
-  var connectedSiteID: String? = null,
-  var hashedLicenseKey: String? = null,
+  val event: String? = null,
+  val userCookieID: String? = null,
+  val url: String? = null,
+  val source: String? = null,
+  val argument: String? = null,
+  val publicArgument: String? = null,
+  val client: String? = null,
+  val connectedSiteID: String? = null,
+  val hashedLicenseKey: String? = null,
 )
 

@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class SearchPanelSnippet(
-  var contents: String? = null,
-  var range: RangeParams? = null,
+  val contents: String? = null,
+  val range: RangeParams? = null,
 )
 

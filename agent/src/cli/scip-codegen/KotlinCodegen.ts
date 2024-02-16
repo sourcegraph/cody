@@ -3,7 +3,7 @@ import { scip } from './scip'
 import { CodePrinter } from './CodePrinter'
 import path from 'path'
 import type { SymbolTable } from './SymbolTable'
-import { typescriptKeyword, typescriptKeywordSyntax } from './utils'
+import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 import { KotlinFormatter } from './KotlinFormatter'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { CodegenOptions } from './command'
@@ -11,7 +11,8 @@ import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
 import dedent from 'dedent'
 import { resetOutputPath } from './resetOutputPath'
-import { BaseCodegen } from './BaseCodegen'
+import { BaseCodegen, type DiscriminatedUnionMember, type DiscriminatedUnion } from './BaseCodegen'
+import { stringLiteralType } from './stringLiteralType'
 
 interface DocumentContext {
     f: KotlinFormatter
@@ -23,6 +24,7 @@ export class KotlinCodegen extends BaseCodegen {
     private f: KotlinFormatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
+    public stringLiteralConstants = new Set<string>()
 
     constructor(options: CodegenOptions, symtab: SymbolTable, reporter: ConsoleReporter) {
         super(options, symtab, reporter)
@@ -51,6 +53,9 @@ export class KotlinCodegen extends BaseCodegen {
             info = this.queue.pop()
         }
 
+        await this.writeGsonAdapters()
+        await this.writeStringLiteralConstants()
+
         await fspromises.mkdir(this.options.output, { recursive: true })
     }
 
@@ -61,6 +66,47 @@ export class KotlinCodegen extends BaseCodegen {
         return { ...context, c: context }
     }
 
+    private async writeGsonAdapters(): Promise<void> {
+        if (this.discriminatedUnions.size === 0) {
+            return
+        }
+        const { p } = this.startDocument()
+        p.line('@file:Suppress("unused", "ConstPropertyName")')
+        p.line(`package ${this.options.kotlinPackage}`)
+        p.line()
+        p.line('object ProtocolTypeAdapters {')
+        p.block(() => {
+            p.line('fun register(gson: com.google.gson.GsonBuilder) {')
+            p.block(() => {
+                for (const symbol of this.discriminatedUnions.keys()) {
+                    const name = this.symtab.info(symbol).display_name
+                    p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
+                }
+            })
+            p.line('}')
+        })
+        p.line('}')
+        await fspromises.writeFile(path.join(this.options.output, 'ProtocolTypeAdapters.kt'), p.build())
+    }
+
+    private async writeStringLiteralConstants(): Promise<void> {
+        if (this.stringLiteralConstants.size === 0) {
+            return
+        }
+        const { p } = this.startDocument()
+        p.line('@file:Suppress("unused", "ConstPropertyName")')
+        p.line(`package ${this.options.kotlinPackage}`)
+        p.line()
+        p.line('object Constants {')
+        p.block(() => {
+            for (const constant of this.stringLiteralConstants.values()) {
+                p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
+            }
+        })
+        p.line('}')
+        await fspromises.writeFile(path.join(this.options.output, 'Constants.kt'), p.build())
+    }
+
     private async writeNullAlias(): Promise<void> {
         const { p } = this.startDocument()
         p.line(`package ${this.options.kotlinPackage}`)
@@ -69,10 +115,71 @@ export class KotlinCodegen extends BaseCodegen {
         await fspromises.writeFile(path.join(this.options.output, 'Null.kt'), p.build())
     }
 
+    private async writeSealedClass(
+        { p, f, symtab }: DocumentContext,
+        name: string,
+        info: scip.SymbolInformation,
+        union: DiscriminatedUnion
+    ): Promise<void> {
+        p.line('import com.google.gson.Gson')
+        p.line('import com.google.gson.JsonDeserializationContext')
+        p.line('import com.google.gson.JsonDeserializer')
+        p.line('import com.google.gson.JsonElement')
+        p.line('import java.lang.reflect.Type')
+
+        p.line()
+        p.line(`sealed class ${name} {`)
+        p.block(() => {
+            p.line('companion object {')
+            p.block(() => {
+                p.line(`val deserializer: JsonDeserializer<${name}> =`)
+                p.block(() => {
+                    p.line(
+                        'JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->'
+                    )
+                    p.block(() => {
+                        p.line(
+                            `when (element.asJsonObject.get("${union.discriminatorDisplayName}").asString) {`
+                        )
+                        p.block(() => {
+                            for (const member of union.members) {
+                                const typeName = this.f.discriminatedUnionTypeName(union, member)
+                                p.line(
+                                    `"${member.value}" -> context.deserialize<${typeName}>(element, ${typeName}::class.java)`
+                                )
+                            }
+                            p.line('else -> throw Exception("Unknown discriminator ${element}")')
+                        })
+                        p.line('}')
+                    })
+                    p.line('}')
+                })
+            })
+            p.line('}')
+        })
+        p.line('}')
+        for (const member of union.members) {
+            p.line()
+            const typeName = this.f.discriminatedUnionTypeName(union, member)
+            const info = member.type.has_type_ref
+                ? this.symtab.info(member.type.type_ref.symbol)
+                : new scip.SymbolInformation({
+                      display_name: typeName,
+                      signature: new scip.Signature({
+                          value_signature: new scip.ValueSignature({ tpe: member.type }),
+                      }),
+                  })
+            this.writeDataClass({ p, f, symtab }, typeName, info, {
+                heritageClause: ` : ${name}()`,
+            })
+        }
+    }
+
     private async writeDataClass(
         { p, f, symtab }: DocumentContext,
         name: string,
-        info: scip.SymbolInformation
+        info: scip.SymbolInformation,
+        params?: { heritageClause?: string }
     ): Promise<void> {
         if (info.kind === scip.SymbolInformation.Kind.Class) {
             this.reporter.warn(
@@ -80,9 +187,11 @@ export class KotlinCodegen extends BaseCodegen {
                 `classes should not be exposed in the agent protocol because they don't serialize to JSON.`
             )
         }
+        const generatedName = new Set<string>()
+        const enums: { name: string; members: string[] }[] = []
         p.line(`data class ${name}(`)
         p.block(() => {
-            for (const memberSymbol of info.signature.class_signature.declarations.symlinks) {
+            for (const memberSymbol of this.infoProperties(info)) {
                 if (
                     this.f.ignoredProperties.find(ignoredProperty =>
                         memberSymbol.endsWith(ignoredProperty)
@@ -98,6 +207,12 @@ export class KotlinCodegen extends BaseCodegen {
                     continue
                 }
                 const member = symtab.info(memberSymbol)
+
+                if (generatedName.has(member.display_name)) {
+                    continue
+                }
+                generatedName.add(member.display_name)
+
                 if (!member.signature.has_value_signature) {
                     throw new TypeError(
                         `not a value signature: ${JSON.stringify(member.toObject(), null, 2)}`
@@ -125,13 +240,45 @@ export class KotlinCodegen extends BaseCodegen {
                     continue
                 }
                 this.queueClassLikeType(memberType, member, 'parameter')
-                const memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
+                let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
                 const constants = this.stringConstantsFromInfo(member)
+                for (const constant of constants) {
+                    // HACK: merge this duplicate code with the same logic in this file
+                    this.stringLiteralConstants.add(constant)
+                }
+
+                if (constants.length > 0 && memberTypeSyntax === 'String') {
+                    memberTypeSyntax = this.f.formatEnumType(member.display_name)
+                    enums.push({ name: memberTypeSyntax, members: constants })
+                }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
-                p.line(`var ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
+                p.line(`val ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
             }
         })
-        p.line(')')
+        if (enums.length === 0) {
+            p.line(`)${params?.heritageClause ?? ''}`)
+            return
+        }
+        p.line(`)${params?.heritageClause ?? ''} {`)
+        // Nest enum classe inside data class to avoid naming conflicts with
+        // enums for other data classes in the same package.
+        p.block(() => {
+            p.addImport('import com.google.gson.annotations.SerializedName')
+
+            for (const { name, members } of enums) {
+                p.line()
+                p.line(`enum class ${name} {`)
+                p.block(() => {
+                    for (const member of members) {
+                        const serializedName = `@SerializedName("${member}")`
+                        const enumName = this.f.formatFieldName(capitalize(member))
+                        p.line(`${serializedName} ${enumName},`)
+                    }
+                })
+                p.line('}')
+            }
+        })
+        p.line('}')
     }
 
     private aliasType(info: scip.SymbolInformation): string | undefined {
@@ -144,6 +291,9 @@ export class KotlinCodegen extends BaseCodegen {
 
         if (this.isStringTypeInfo(info)) {
             const constants = this.stringConstantsFromInfo(info)
+            for (const constant of constants) {
+                this.stringLiteralConstants.add(constant)
+            }
             return `String // One of: ${constants.join(', ')}`
         }
 
@@ -153,14 +303,19 @@ export class KotlinCodegen extends BaseCodegen {
     private async writeType(info: scip.SymbolInformation): Promise<void> {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
-        p.line('@file:Suppress("FunctionName", "ClassName")')
+        p.line('@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")')
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
         const alias = this.aliasType(info)
         if (alias) {
             p.line(`typealias ${name} = ${alias}`)
         } else {
-            this.writeDataClass(c, name, info)
+            const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
+            if (discriminatedUnion) {
+                this.writeSealedClass(c, name, info, discriminatedUnion)
+            } else {
+                this.writeDataClass(c, name, info)
+            }
         }
         p.line()
         await fspromises.writeFile(path.join(this.options.output, `${name}.kt`), p.build())
@@ -323,6 +478,68 @@ export class KotlinCodegen extends BaseCodegen {
         throw new Error(`unsupported type: ${this.debug(type)}`)
     }
 
+    private unionTypes(type: scip.Type): scip.Type[] {
+        const result: scip.Type[] = []
+        const loop = (t: scip.Type): void => {
+            if (t.has_union_type) {
+                for (const unionType of t.union_type.types) {
+                    if (unionType.has_type_ref) {
+                        const info = this.symtab.info(unionType.type_ref.symbol)
+                        if (
+                            info.signature.has_type_signature &&
+                            info.signature.type_signature.lower_bound.has_union_type
+                        ) {
+                            loop(info.signature.type_signature.lower_bound)
+                            continue
+                        }
+                    }
+                    result.push(unionType)
+                }
+            }
+        }
+        loop(type)
+        return result
+    }
+    private discriminatedUnion(info: scip.SymbolInformation): DiscriminatedUnion | undefined {
+        if (!info.signature.has_type_signature) {
+            return undefined
+        }
+        const type = info.signature.type_signature.lower_bound
+        if (!type.has_union_type || type.union_type.types.length === 0) {
+            return undefined
+        }
+        const candidates = new Map<string, number>()
+        const memberss = new Map<string, DiscriminatedUnionMember[]>()
+        const unionTypes = this.unionTypes(type)
+        for (const unionType of unionTypes) {
+            for (const propertySymbol of this.properties(unionType)) {
+                const property = this.symtab.info(propertySymbol)
+                const stringLiteral = stringLiteralType(property.signature.value_signature.tpe)
+                if (!stringLiteral) {
+                    continue
+                }
+                const count = candidates.get(property.display_name) ?? 0
+                candidates.set(property.display_name, count + 1)
+                let members = memberss.get(property.display_name)
+                if (!members) {
+                    members = []
+                    memberss.set(property.display_name, members)
+                }
+                members.push({ value: stringLiteral, type: unionType })
+            }
+        }
+        for (const [candidate, count] of candidates.entries()) {
+            if (count === unionTypes.length) {
+                return {
+                    symbol: info.symbol,
+                    discriminatorDisplayName: candidate,
+                    members: memberss.get(candidate) ?? [],
+                }
+            }
+        }
+        return undefined
+    }
+
     // Same as `queueClassLikeType` but for `scip.SymbolInformation` instead of `scip.Type`.
     private queueClassLikeInfo(jsonrpcMethod: scip.SymbolInformation): void {
         if (jsonrpcMethod.signature.has_class_signature) {
@@ -333,6 +550,15 @@ export class KotlinCodegen extends BaseCodegen {
 
         if (this.isStringTypeInfo(jsonrpcMethod)) {
             // Easy, we can create a string type alias
+            this.queue.push(jsonrpcMethod)
+            return
+        }
+
+        const discriminatedUnion = this.isNestedDiscriminatedUnion
+            ? this.discriminatedUnion(jsonrpcMethod)
+            : undefined
+        if (discriminatedUnion) {
+            this.discriminatedUnions.set(jsonrpcMethod.symbol, discriminatedUnion)
             this.queue.push(jsonrpcMethod)
             return
         }
@@ -413,6 +639,8 @@ export class KotlinCodegen extends BaseCodegen {
                         }),
                     })
                 )
+            } else {
+                this.reporter.warn(jsonrpcMethod.symbol, 'no properties found for this type')
             }
             return
         }

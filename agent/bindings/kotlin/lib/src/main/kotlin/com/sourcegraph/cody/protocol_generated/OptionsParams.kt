@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class OptionsParams(
-  var undoStopBefore: Boolean? = null,
-  var undoStopAfter: Boolean? = null,
+  val undoStopBefore: Boolean? = null,
+  val undoStopAfter: Boolean? = null,
 )
 

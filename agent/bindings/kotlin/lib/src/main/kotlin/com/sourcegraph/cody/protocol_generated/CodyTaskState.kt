@@ -1,15 +1,15 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class CodyTaskState(
-  var idle: Int? = null,
-  var working: Int? = null,
-  var inserting: Int? = null,
-  var applying: Int? = null,
-  var formatting: Int? = null,
-  var applied: Int? = null,
-  var finished: Int? = null,
-  var error: Int? = null,
-  var pending: Int? = null,
+  val idle: Int? = null,
+  val working: Int? = null,
+  val inserting: Int? = null,
+  val applying: Int? = null,
+  val formatting: Int? = null,
+  val applied: Int? = null,
+  val finished: Int? = null,
+  val error: Int? = null,
+  val pending: Int? = null,
 )
 
