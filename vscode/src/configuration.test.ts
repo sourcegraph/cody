@@ -94,6 +94,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'bfg'
+                    case 'cody.autocomplete.experimental.smartThrottle':
+                        return false
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
