@@ -58,18 +58,23 @@ test.extend<ExpectedEvents>({
         .filter({ hasText: 'Hey' })
         .nth(3)
         .click()
-    await expect(page.getByRole('tab', { name: 'Hola' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hey' })).toBeVisible()
 
-    // Chat buttons may only appear when we're hovering a chat.
+    // NOTE: Action buttons may only appear when we're hovering a chat.
+    // Deleting a chat should also close its associated chat panel
     await heyTreeItem.hover()
+    await heyTreeItem.getByLabel('Delete Chat').hover()
     await heyTreeItem.getByLabel('Delete Chat').click()
-    await holaTreeItem.hover()
-    await holaTreeItem.getByLabel('Delete Chat').click()
-
     expect(heyTreeItem).not.toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Hey' })).not.toBeVisible()
+
+    await holaTreeItem.hover()
+    await holaTreeItem.getByLabel('Delete Chat').hover()
+    await holaTreeItem.getByLabel('Delete Chat').click()
     expect(holaTreeItem).not.toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Hola' })).not.toBeVisible()
 
     // Once the chat history is empty, the 'New Chat' button should show up
+    await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
     await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
 })
