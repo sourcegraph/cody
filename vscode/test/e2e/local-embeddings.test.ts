@@ -134,6 +134,7 @@ test
             'CodyVSCodeExtension:auth:selectSigninMenu',
             'CodyVSCodeExtension:auth:fromToken',
             'CodyVSCodeExtension:Auth:connected',
+            'CodyVSCodeExtension:chat-question:submitted',
             'CodyVSCodeExtension:chat-question:executed',
         ],
     })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
