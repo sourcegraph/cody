@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
-    displayPath,
     isDefined,
     type ChatButton,
     type ChatInputHistory,
@@ -13,6 +12,7 @@ import {
     type CodyCommand,
     type ContextFile,
     type Guardrails,
+    getContextFileDisplayText,
 } from '@sourcegraph/cody-shared'
 
 import type { CodeBlockMeta } from './chat/CodeBlocks'
@@ -23,6 +23,7 @@ import { isDefaultCommandPrompts, type TranscriptItemClassNames } from './chat/T
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
+import { getAtMentionedInputText } from '@sourcegraph/cody-shared/src/chat/at-mentioned'
 
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
@@ -345,27 +346,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [setContextSelection]
     )
 
-    /**
-     * Gets the display text for a context file to be completed into the chat when a user
-     * selects a file.
-     *
-     * This is also used to reconstruct the map from the chat history (which only stores context
-     * files).
-     */
-    function getContextFileDisplayText(contextFile: ContextFile): string {
-        const isFileType = contextFile.type === 'file'
-        const range = contextFile.range
-            ? `:${contextFile.range?.start.line}-${contextFile.range?.end.line}`
-            : ''
-        const symbolName = isFileType ? '' : `#${contextFile.symbolName}`
-        return `@${displayPath(contextFile.uri)}${range}${symbolName}`
-    }
-
     // Add old context files from the transcript to the map
     const useOldChatMessageContext = (oldContextFiles: ContextFile[]) => {
-        const contextFilesMap = new Map<string, ContextFile>()
+        const contextFilesMap = new Map<string, ContextFile>(chatContextFiles)
         for (const file of oldContextFiles) {
-            contextFilesMap.set(getContextFileDisplayText(file), file)
+            const fileDisplayText = getContextFileDisplayText(file)
+            contextFilesMap.set(fileDisplayText, file)
         }
         setChatContextFiles(contextFilesMap)
     }
@@ -378,34 +364,42 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      */
     const onChatContextSelected = useCallback(
         (selected: ContextFile, queryEndsWithColon = false): void => {
-            if (inputCaretPosition) {
-                const inputBeforeCaret = formInput.slice(0, inputCaretPosition) || ''
-                const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
-                if (lastAtIndex >= 0 && selected) {
-                    // Trims any existing @file text from the input.
-                    const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
-                    const fileDisplayText = getContextFileDisplayText(selected).trim()
-                    const afterCaret = formInput.slice(inputCaretPosition)
-                    const spaceAfterCaret = afterCaret.indexOf(' ')
-                    const inputSuffix = !spaceAfterCaret ? afterCaret : afterCaret.slice(spaceAfterCaret)
-                    const colon = queryEndsWithColon ? ':' : ''
-                    // Add empty space at the end to end the file matching process
-                    const newInput = `${inputPrefix}${fileDisplayText}${colon} ${inputSuffix.trimStart()}`
+            const fileDisplayText = getContextFileDisplayText(selected)
+            if (inputCaretPosition && fileDisplayText) {
+                const newDisplayInput = getAtMentionedInputText(
+                    fileDisplayText,
+                    formInput,
+                    inputCaretPosition,
+                    queryEndsWithColon
+                )
+                if (newDisplayInput) {
                     // Updates contextConfig with the new added context file.
                     // We will use the newInput as key to check if the file still exists in formInput on submit
                     setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
-                    setFormInput(newInput)
+                    setFormInput(newDisplayInput.newInput)
                     // Move the caret to the end of the newly added file display text,
                     // including the length of text exisited before the lastAtIndex
                     // + 1 empty whitespace added after the fileDisplayText
-                    setInputCaretPosition(fileDisplayText.length + inputPrefix.length + 1)
+                    setInputCaretPosition(newDisplayInput.newInputCaretPosition)
                 }
             }
-
-            // Resets the context selection and query state.
-            resetContextSelection()
+            // Resets the context selection and query state unless the query ends with colon, which is used
+            // to initiate range selection, so we will keep the current selection as the context selection
+            // to display the current selector box.
+            if (!queryEndsWithColon) {
+                resetContextSelection()
+                return
+            }
+            setContextSelection([selected])
         },
-        [formInput, chatContextFiles, setFormInput, inputCaretPosition, resetContextSelection]
+        [
+            formInput,
+            chatContextFiles,
+            setFormInput,
+            inputCaretPosition,
+            resetContextSelection,
+            setContextSelection,
+        ]
     )
 
     /**
@@ -426,7 +420,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // At mention should start with @ and contains no whitespaces
-            const isAtMention = (word: string) => /^@[^ ]*$/.test(word)
+            const isAtMention = (text: string) => /^@[^ ]*( )?$/.test(text)
 
             // Extract mention query by splitting input value into before/after caret sections.
             const extractMentionQuery = (input: string, caretPos: number) => {
@@ -444,16 +438,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const mentionQuery = extractMentionQuery(inputValue, caretPosition)
             const query = mentionQuery.replace(/^@/, '')
 
-            // Cover cases where user prefer to type the file without expicitly select it.
-            if (contextSelection?.length) {
-                const isTrimmedQuery = query.trimEnd() === currentChatContextQuery
-                const isColonQuery = query.replace(/:$/, '') === currentChatContextQuery
-                if (isColonQuery || isTrimmedQuery) {
-                    onChatContextSelected(contextSelection[0], query.endsWith(':'))
-                    return
-                }
-            }
-
             // Filters invalid queries and sets context query state accordingly:
             // Sets the current chat context query state if a valid mention is detected.
             // Otherwise resets the context selection and query state.
@@ -462,8 +446,20 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
-            // Posts a getUserContext command to fetch context for the mention query.
             setCurrentChatContextQuery(query)
+
+            if (contextSelection?.length) {
+                // Cover cases where user prefer to type the file without expicitly select it
+                const isEndWithSpace = query.replace(/ $/, '') === currentChatContextQuery
+                const isEndWithColon = query.endsWith(':')
+                const isAtRange = /:\d+-\d+?$/.test(query)
+                if (isEndWithSpace || isEndWithColon || isAtRange) {
+                    onChatContextSelected(contextSelection[0], isEndWithColon)
+                    return
+                }
+            }
+
+            // Posts a getUserContext command to fetch context for the mention query.
             postMessage({ command: 'getUserContext', query })
         },
         [

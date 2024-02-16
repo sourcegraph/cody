@@ -49,16 +49,48 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return SYMBOL_NO_RESULT
     }, [contextQuery, contextSelection?.length])
 
+    /**
+     * Extracts line range information from the context query and displays tips as ghost text.
+     */
+    const regex = /:([0-9]+)?(-)?([0-9]+)?$/
+    const match = regex.exec(contextQuery)
+    if (match) {
+        const [colon, startLine, dash, endLine] = match
+        const ghostStart = colon && startLine ? '' : 'line'
+        const ghostEnd = dash ? (endLine ? '' : 'line') : '-line'
+        return (
+            <div className={classNames(styles.container)}>
+                <div className={classNames(styles.headingContainer)}>
+                    <h3 className={styles.heading}>{FILE_ON_RESULT}</h3>
+                </div>
+                <button
+                    ref={selectionRef}
+                    className={classNames(styles.selectionItem, styles.selected)}
+                    title={contextQuery}
+                    type="button"
+                >
+                    <span className={styles.titleAndDescriptionContainer}>
+                        <span className={styles.selectionTitle}>
+                            {contextQuery}
+                            <span className={styles.ghostText}>
+                                {ghostStart}
+                                {ghostEnd} (line range)
+                            </span>
+                        </span>
+                    </span>
+                </button>
+            </div>
+        )
+    }
+
     if (contextSelection === null || selected === -1) {
         return null
     }
 
-    // Don't display the selector when there is no contextSelection to display AND:
-    // 1. query ends with optional ':{digit}-{digit}'.
-    // e.g. '@foo:12-' -> true || '@bar.go:1' -> true || '@foo.ts:1-15' -> true || '@foo.py:12-file' -> false
-    // 2. or query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
+    // Don't display the selector when there is no contextSelection to display AND
+    // query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
     // e.g. '@abcdefg?' -> false || '@abcdefg?file' -> false
-    const endRegex = /:([0-9]+)(-[0-9]+)?|[^a-zA-Z0-9#]$/
+    const endRegex = /[^a-zA-Z0-9#]$/
     if (endRegex.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null

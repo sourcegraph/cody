@@ -52,7 +52,7 @@ export function replaceFileNameWithMarkdownLink(
             {
                 selection: range,
                 preserveFocus: true,
-                background: true,
+                background: false,
                 preview: true,
                 viewColumn: vscode.ViewColumn.Beside,
             },
