@@ -1,7 +1,7 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ChatHistory(
-  var chatID: String? = null,
+  val chatID: String? = null,
 )
 

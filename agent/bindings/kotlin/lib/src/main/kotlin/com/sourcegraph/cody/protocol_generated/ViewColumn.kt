@@ -1,17 +1,17 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ViewColumn(
-  var Active: Int? = null,
-  var Beside: Int? = null,
-  var One: Int? = null,
-  var Two: Int? = null,
-  var Three: Int? = null,
-  var Four: Int? = null,
-  var Five: Int? = null,
-  var Six: Int? = null,
-  var Seven: Int? = null,
-  var Eight: Int? = null,
-  var Nine: Int? = null,
+  val Active: Int? = null,
+  val Beside: Int? = null,
+  val One: Int? = null,
+  val Two: Int? = null,
+  val Three: Int? = null,
+  val Four: Int? = null,
+  val Five: Int? = null,
+  val Six: Int? = null,
+  val Seven: Int? = null,
+  val Eight: Int? = null,
+  val Nine: Int? = null,
 )
 

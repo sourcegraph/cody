@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class SelectedCompletionInfo(
-  var range: Range? = null,
-  var text: String? = null,
+  val range: Range? = null,
+  val text: String? = null,
 )
 

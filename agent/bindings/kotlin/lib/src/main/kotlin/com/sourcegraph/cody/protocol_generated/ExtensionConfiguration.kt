@@ -1,18 +1,18 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class ExtensionConfiguration(
-  var serverEndpoint: String? = null,
-  var proxy: String? = null,
-  var accessToken: String? = null,
-  var customHeaders: Map<String, String>? = null,
-  var anonymousUserID: String? = null,
-  var autocompleteAdvancedProvider: String? = null,
-  var autocompleteAdvancedModel: String? = null,
-  var debug: Boolean? = null,
-  var verboseDebug: Boolean? = null,
-  var codebase: String? = null,
-  var eventProperties: EventProperties? = null,
-  var customConfiguration: Map<String, Any>? = null,
+  val serverEndpoint: String? = null,
+  val proxy: String? = null,
+  val accessToken: String? = null,
+  val customHeaders: Map<String, String>? = null,
+  val anonymousUserID: String? = null,
+  val autocompleteAdvancedProvider: String? = null,
+  val autocompleteAdvancedModel: String? = null,
+  val debug: Boolean? = null,
+  val verboseDebug: Boolean? = null,
+  val codebase: String? = null,
+  val eventProperties: EventProperties? = null,
+  val customConfiguration: Map<String, Any>? = null,
 )
 

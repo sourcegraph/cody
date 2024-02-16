@@ -25,7 +25,7 @@ describe('[getInlineCompletions] triggers', () => {
 
         it('middle of line', async () => {
             const result = await getInlineCompletions(
-                params('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
+                params('function bubbleSort(█)', [completion`array) {`])
             )
 
             expect(
@@ -33,10 +33,7 @@ describe('[getInlineCompletions] triggers', () => {
                     insertText: item.insertText,
                     range: item.range,
                 }))
-            ).toEqual([
-                { insertText: 'array) {', range: range(0, 20, 0, 21) },
-                { insertText: 'items) {', range: range(0, 20, 0, 21) },
-            ])
+            ).toEqual([{ insertText: 'array) {', range: range(0, 20, 0, 21) }])
         })
 
         describe('same line suffix behavior', () => {

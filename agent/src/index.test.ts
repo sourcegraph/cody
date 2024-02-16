@@ -310,7 +310,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const lastMessage = await client.sendSingleMessageToNewChat(
-                'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+                'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
                     addEnhancedContext: true,
                 }
@@ -318,22 +318,17 @@ describe('Agent', () => {
             // TODO: make this test return a TypeScript implementation of
             // `animal.ts`. It currently doesn't do this because the workspace root
             // is not a git directory and symf reports some git-related error.
-            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
-                `
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              export class Dog implements Animal {
+              class Dog implements Animal {
                 name: string;
-
                 makeAnimalSound() {
-                  return "Bark!";
+                  return "Woof";
                 }
-
                 isMammal = true;
               }
               \`\`\`"
-            `,
-                explainPollyError
-            )
+            `)
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
@@ -492,7 +487,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'Which file is the isIgnoredByCody functions defined?',
+                'What files contain SELECTION_START?',
                 { addEnhancedContext: true }
             )
             decodeURIs(transcript)
@@ -547,6 +542,12 @@ describe('Agent', () => {
             await client.request('commands/document', null).catch(err => {
                 expect(err).toBeDefined()
             })
+        })
+
+        it('ignore rule is not case sensitive', async () => {
+            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [alsoIgnoredPath] })
+            expect(result).toBeTruthy()
         })
 
         afterAll(async () => {

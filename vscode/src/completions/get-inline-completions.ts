@@ -1,12 +1,7 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import {
-    FeatureFlag,
-    getActiveTraceAndSpanId,
-    isAbortError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -320,21 +315,9 @@ async function doGetInlineCompletions(
     const remainingInterval = debounceTime - waitInterval
     if (waitInterval > 0) {
         await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
-    }
-
-    // Debounce to avoid firing off too many network requests as the user is still typing.
-    await wrapInActiveSpan('autocomplete.debounce', async () => {
-        const interval =
-            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
-        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        if (abortSignal?.aborted) {
+            return null
         }
-    })
-
-    // We don't need to make a request at all if the signal is already aborted after the debounce.
-    if (abortSignal?.aborted) {
-        return null
     }
 
     setIsLoading?.(true)
@@ -418,23 +401,21 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         firstCompletionTimeout: 1900,
     }
 
+    // Show more if manually triggered (but only showing 1 is faster, so we use it
+    // in the automatic trigger case).
+    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
+
     if (docContext.multilineTrigger) {
         return providerConfig.create({
             ...sharedProviderOptions,
-            n: completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteSingleMultilineRequest
-            )
-                ? 1
-                : 3, // 3 vs. 1 does not meaningfully affect perf
+            n,
             multiline: true,
         })
     }
 
     return providerConfig.create({
         ...sharedProviderOptions,
-        // Show more if manually triggered (but only showing 1 is faster, so we use it
-        // in the automatic trigger case).
-        n: triggerKind === TriggerKind.Automatic ? 1 : 3,
+        n,
         multiline: false,
     })
 }
