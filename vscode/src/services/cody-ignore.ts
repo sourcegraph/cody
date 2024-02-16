@@ -75,11 +75,6 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     )
 
     // Now, ensure any folders we skipped (symlinks) are ignored. Add them to the top-level ignore for the workspace.
-    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
-    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
-    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
-    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
-    // TODO(dantup): Is this code VS Code-only? We need to ensure this applies equally to all editors!
     if (ignoreFiles.skipped.length) {
         const rootIgnoreFileUri = vscode.Uri.joinPath(wf.uri, '.cody/ignore')
         let ignoreFile = filesWithContent.find(f => f.uri.toString() === rootIgnoreFileUri.toString())

@@ -50,7 +50,12 @@ export async function findFiles(
             const uri = vscode.Uri.file(path.join(dir.fsPath, name))
             const relativePath = path.relative(workspaceRoot.fsPath, uri.fsPath)
 
-            // These checks skip symlinks because fileType is a bitmask.
+            // Skip symlinks.
+            if (fileType.valueOf() === vscode.FileType.SymbolicLink.valueOf()) {
+                skipped.push(uri)
+                continue
+            }
+
             if (fileType.valueOf() === vscode.FileType.Directory.valueOf()) {
                 if (!matchesGlobPatterns([], exclude ? [exclude] : [], relativePath)) {
                     continue
@@ -71,8 +76,6 @@ export async function findFiles(
                 if (maxResults !== undefined && matches.length >= maxResults) {
                     return
                 }
-            } else {
-                skipped.push(uri)
             }
         }
     }
