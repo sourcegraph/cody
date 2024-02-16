@@ -13,7 +13,6 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
-        FeatureFlag.CodyAutocompleteFastPath,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
@@ -61,13 +60,6 @@ class CompletionProviderConfig {
         return (
             this.config.autocompleteExperimentalHotStreak ||
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)
-        )
-    }
-
-    public get fastPath(): boolean {
-        return (
-            this.config.autocompleteExperimentalFastPath ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
         )
     }
 

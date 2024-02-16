@@ -23,10 +23,6 @@ export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
     logger: CompletionLogger | undefined
-    complete(
-        params: T,
-        abortController: AbortController,
-        featureFlags?: { fastPath?: boolean }
-    ): CompletionResponseGenerator
+    complete(params: T, abortController: AbortController): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }
