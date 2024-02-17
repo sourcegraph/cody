@@ -10,9 +10,7 @@
   "include": [
     "src",
     "src/commands/execute/cody.json",
-    "test/fixtures",
     "playwright.config.ts",
-    "test/e2e",
     "webviews",
     "webviews/*.d.ts",
     "package.json",
@@ -21,7 +19,6 @@
   "exclude": [
     "scripts",
     "dist",
-    "test/integration",
     "**/test-data",
     "vite.config.ts",
     "webviews/vite.config.ts"
