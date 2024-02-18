@@ -93,3 +93,4 @@ The Cody editor extensions work with:
 
 foo
 
+bar
