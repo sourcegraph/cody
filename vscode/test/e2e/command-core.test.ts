@@ -64,7 +64,7 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await chatPanel.getByText('Context: 9 lines from 1 file').click()
+    await chatPanel.getByText('Context: 21 lines from 1 file').click()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
