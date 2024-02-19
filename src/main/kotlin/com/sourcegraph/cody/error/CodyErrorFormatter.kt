@@ -8,8 +8,9 @@ object CodyErrorFormatter {
               "IDE version" to error.ideVersion,
               "Additional information" to error.additionalInfo,
               "Stacktrace" to error.stacktrace)
-          .filterValues { it != null }
-          .map { toLabeledCodeBlock(it.key, it.value!!) }
+          .flatMap { (key, value) ->
+            value?.let { listOf(toLabeledCodeBlock(key, it)) } ?: listOf()
+          }
           .joinToString("\n")
 
   private fun toLabeledCodeBlock(label: String, text: String) =

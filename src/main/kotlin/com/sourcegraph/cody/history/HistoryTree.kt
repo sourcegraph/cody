@@ -84,14 +84,13 @@ class HistoryTree(
         root.periods().flatMap { it.leafs() }.none { it.chat.internalId == chat.internalId }
     if (leafNotInTree) {
       val periodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
-      val periodNotInTree = root.periods().none { it.periodText == periodText }
-      if (periodNotInTree) {
+      val period = root.periods().find { it.periodText == periodText }
+      if (period == null) {
         val newPeriod = PeriodNode(periodText)
         val newLeaf = LeafNode(chat)
         root.add(newPeriod.also { it.add(newLeaf) })
         model.reload(root)
       } else {
-        val period = root.periods().find { it.periodText == periodText }!!
         addChatToPeriodAndSort(period, chat)
       }
     } else {

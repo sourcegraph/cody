@@ -7,22 +7,18 @@ import com.intellij.util.Alarm
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import java.awt.Component
 import java.awt.Rectangle
-import javax.swing.JComboBox
-import javax.swing.JList
-import javax.swing.JTable
-import javax.swing.JTree
-import javax.swing.SwingUtilities
+import javax.swing.*
 
 class DeferredIconRepaintScheduler {
   private val repaintScheduler = RepaintScheduler()
 
   @RequiresEdt
-  fun createRepaintRequest(c: Component?, x: Int, y: Int): RepaintRequest {
+  fun createRepaintRequest(c: Component, x: Int, y: Int): RepaintRequest {
     val target = getTarget(c)
     val paintingParent: Component? =
         SwingUtilities.getAncestorOfClass(PaintingParent::class.java, c)
     val paintingParentRec: Rectangle? =
-        if (paintingParent == null) null else (paintingParent as PaintingParent).getChildRec(c!!)
+        if (paintingParent == null) null else (paintingParent as PaintingParent).getChildRec(c)
 
     return RepaintRequest(c, x, y, target, paintingParent, paintingParentRec)
   }

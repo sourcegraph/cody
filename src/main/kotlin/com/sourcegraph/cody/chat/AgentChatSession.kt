@@ -219,7 +219,7 @@ private constructor(
         }
       }
       else -> {
-        logger.warn(String.format("CodyToolWindowContent: unknown message type: %s", message.type))
+        logger.debug(String.format("CodyToolWindowContent: unknown message type: %s", message.type))
       }
     }
   }

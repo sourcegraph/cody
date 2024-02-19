@@ -23,7 +23,7 @@ class CodyFormatter {
       val appendedString =
           document.text.substring(0, offset) + originalText + document.text.substring(offset)
 
-      val file = FileDocumentManager.getInstance().getFile(document)!!
+      val file = FileDocumentManager.getInstance().getFile(document) ?: return originalText
       val psiFile =
           PsiFileFactory.getInstance(project)
               .createFileFromText("TEMP", file.fileType, appendedString)

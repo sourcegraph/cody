@@ -24,7 +24,6 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.config.ConfigUtil
 import java.util.*
-import java.util.stream.Collectors
 import kotlin.math.min
 
 object CodyEditorUtil {
@@ -91,18 +90,17 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getAllOpenEditors(): Set<Editor> {
-    return Arrays.stream(ProjectManager.getInstance().openProjects)
-        .flatMap { project: Project? ->
-          Arrays.stream(FileEditorManager.getInstance(project!!).allEditors)
-        }
-        .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
+    return ProjectManager.getInstance()
+        .openProjects
+        .flatMap { project: Project -> FileEditorManager.getInstance(project).allEditors.toList() }
+        .filterIsInstance<TextEditor>()
         .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
-        .collect(Collectors.toSet())
+        .toSet()
   }
 
   @JvmStatic
   fun getFocusedEditorForAnActionEvent(e: AnActionEvent): Editor? {
-    return FileEditorManager.getInstance(e.project!!).selectedTextEditor
+    return e.project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
   }
 
   @JvmStatic

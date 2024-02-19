@@ -412,7 +412,7 @@ class CodyAutocompleteManager {
 
   private fun cancelCurrentJob(project: Project?) {
     currentJob.get().abort()
-    resetApplication(project!!)
+    project?.let { resetApplication(it) }
   }
 
   companion object {

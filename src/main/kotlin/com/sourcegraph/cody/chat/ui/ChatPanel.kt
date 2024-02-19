@@ -76,7 +76,7 @@ class ChatPanel(project: Project, chatSession: ChatSession) :
         agent.server.isCurrentUserPro().thenApplyAsync { isUserPro ->
           agent.server.evaluateFeatureFlag(GetFeatureFlag.CodyProTrialEnded).thenApplyAsync {
               trialEnded ->
-            if (isUserPro && !trialEnded!!) {
+            if (isUserPro && trialEnded == false) {
               if (selectedModel == null) {
                 addAllAvailableModelsToTheDropdown(agent, sessionId)
               } else {

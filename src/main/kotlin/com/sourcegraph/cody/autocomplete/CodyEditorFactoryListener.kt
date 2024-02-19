@@ -98,9 +98,11 @@ class CodyEditorFactoryListener : EditorFactoryListener {
 
         // This notification must be sent after the above, see tracker comment for more details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-          CodyAgentService.withAgent(editor.project!!) { agent ->
-            agent.server.completionAccepted(CompletionItemParams(completionID))
-            agent.server.autocompleteClearLastCandidate()
+          editor.project?.let { project ->
+            CodyAgentService.withAgent(project) { agent ->
+              agent.server.completionAccepted(CompletionItemParams(completionID))
+              agent.server.autocompleteClearLastCandidate()
+            }
           }
         }
 
@@ -164,7 +166,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
     ) {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
       val document = TextDocument.fromPath(file.path, editor.document.text, getSelection(editor))
-      val project = editor.project!!
+      val project = editor.project ?: return
 
       if (hasFileChanged) {
         CodyAgentCodebase.getInstance(project).onFileOpened(project, file)

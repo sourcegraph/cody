@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 
 object ErrorNotification {
-  fun show(project: Project?, errorMessage: String?) {
+  fun show(project: Project?, errorMessage: String) {
     val notification = create(errorMessage)
     val dismissAction: AnAction =
         object : DumbAwareAction("Dismiss") {
@@ -23,9 +23,9 @@ object ErrorNotification {
     notification.notify(project)
   }
 
-  fun create(errorMessage: String?): Notification {
+  fun create(errorMessage: String): Notification {
     val notification =
-        Notification("Sourcegraph errors", "Sourcegraph", errorMessage!!, NotificationType.WARNING)
+        Notification("Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING)
     notification.setIcon(Icons.CodyLogo)
     return notification
   }

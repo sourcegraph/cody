@@ -20,7 +20,7 @@ data class ContextFileFile(
 }
 
 val contextFileDeserializer =
-    JsonDeserializer { jsonElement: JsonElement, typ: Type, context: JsonDeserializationContext ->
+    JsonDeserializer { jsonElement: JsonElement, _: Type, context: JsonDeserializationContext ->
       val jsonObject = jsonElement.asJsonObject
       when (jsonObject["type"]?.asString) {
         "file" -> {
@@ -38,7 +38,7 @@ val contextFileDeserializer =
     }
 
 val uriDeserializer =
-    JsonDeserializer { jsonElement: JsonElement, typ: Type, context: JsonDeserializationContext ->
+    JsonDeserializer { jsonElement: JsonElement?, _: Type, _: JsonDeserializationContext ->
       val j = jsonElement?.asJsonObject
       if (j == null || j.isJsonNull) {
         null
@@ -55,7 +55,7 @@ val uriDeserializer =
       }
     }
 
-val uriSerializer = JsonSerializer { uri: URI, type, context ->
+val uriSerializer = JsonSerializer { uri: URI?, _, _ ->
   if (uri == null) {
     JsonNull.INSTANCE
   } else {

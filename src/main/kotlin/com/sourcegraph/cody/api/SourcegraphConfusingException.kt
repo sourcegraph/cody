@@ -13,10 +13,10 @@ open class SourcegraphConfusingException : IOException {
     myDetails = details
   }
 
-  override val message: String
+  override val message: String?
     get() =
         if (myDetails == null) {
-          super.message!!
+          super.message
         } else {
           """$myDetails
 

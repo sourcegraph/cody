@@ -1,10 +1,6 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonPrimitive
+import com.google.gson.*
 import java.lang.reflect.Type
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
@@ -30,7 +26,7 @@ data class RateLimitError(val upgradeIsAvailable: Boolean, val limit: Int?) {
         val limit = errorObject["limit"]?.asInt
         val upgradeIsAvailable = errorObject["upgradeIsAvailable"]?.asBoolean
 
-        return RateLimitError(upgradeIsAvailable!!, limit)
+        return RateLimitError(upgradeIsAvailable ?: false, limit)
       }
     }
   }

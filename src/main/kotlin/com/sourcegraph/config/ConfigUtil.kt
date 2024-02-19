@@ -18,8 +18,6 @@ import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.config.SourcegraphServerPath.Companion.from
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
-import java.util.stream.Collectors
 import org.jetbrains.annotations.Contract
 
 object ConfigUtil {
@@ -123,13 +121,12 @@ object ConfigUtil {
   @JvmStatic
   fun getAllEditors(): List<Editor> {
     val openProjects = ProjectManager.getInstance().openProjects
-    return Arrays.stream(openProjects)
-        .flatMap { project: Project? ->
-          Arrays.stream(FileEditorManager.getInstance(project!!).allEditors)
-        }
-        .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
+    return openProjects
+        .toList()
+        .flatMap { project: Project -> FileEditorManager.getInstance(project).allEditors.toList() }
+        .filterIsInstance<TextEditor>()
         .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
-        .collect(Collectors.toList())
+        .toList()
   }
 
   @JvmStatic
