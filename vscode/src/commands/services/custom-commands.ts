@@ -30,8 +30,9 @@ export class CustomCommandsManager implements vscode.Disposable {
     public customCommandsMap = new Map<string, CodyCommand>()
     public userJSON: Record<string, unknown> | null = null
 
-    protected configFileName = ConfigFiles.COMMAND
-    private userConfigFile = Utils.joinPath(URI.file(userHomePath), this.configFileName)
+    // Configuration files
+    protected configFileName
+    private userConfigFile
     private get workspaceConfigFile(): vscode.Uri | undefined {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
         if (!workspaceRoot) {
@@ -41,6 +42,14 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     constructor() {
+        // TODO (bee) Migrate to use .cody/commands.json for VS Code
+        // Right now agent is using .cody/commands.json for Custom Commands,
+        // .vscode/cody.json in VS Code.
+        const workspaceConfig = vscode.workspace.getConfiguration()
+        const config = getConfiguration(workspaceConfig)
+        this.configFileName = config.isRunningInsideAgent ? ConfigFiles.COMMAND : ConfigFiles.VSCODE
+        this.userConfigFile = Utils.joinPath(URI.file(userHomePath), this.configFileName)
+
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.custom.build', () =>
                 this.newCustomCommandQuickPick()
@@ -64,12 +73,6 @@ export class CustomCommandsManager implements vscode.Disposable {
      * Automatically update the command map when the cody.json files are changed
      */
     public init(): void {
-        const workspaceConfig = vscode.workspace.getConfiguration()
-        const config = getConfiguration(workspaceConfig)
-        if (!config.isRunningInsideAgent) {
-            this.configFileName = ConfigFiles.VSCODE
-        }
-
         const userConfigWatcher = createFileWatchers(this.userConfigFile)
         if (userConfigWatcher) {
             this.fileWatcherDisposables.push(

@@ -10,11 +10,6 @@ on:
       - '**.ts'
       - '**.tsx'
       - '**.js'
-  push:
-    paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
 
 jobs:
   kotlin:

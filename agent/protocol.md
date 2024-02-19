@@ -9,9 +9,9 @@ commands, and edit-based commands.
 ## Base protocol
 
 [JSON-RPC](https://www.jsonrpc.org) is a specification that enables two
-processes runningu on the same computer to communicate with each other using
-JSON and stdout/stdin, TCP, or IPC sockets. The Cody Agent currently only
-supports communication via stdin/stdout.
+processes runningu to communicate with each other using JSON via stdout/stdin or
+IPC sockets. The Cody Agent currently only supports communication via
+stdin/stdout.
 
 In simplified terms, JSON-RPC works like the following:
 
@@ -20,7 +20,7 @@ In simplified terms, JSON-RPC works like the following:
 * A *method* can either be a *request* or a *notification*
 * A *request* must be paired with a *response*
 * A *notification* method must not be matched with a response
-* Both the server and the client can send a request or a method
+* Both the server and the client can send a request or a notification
 
 At a low-level, the Cody Agent uses the exact same flavor of JSON-RPC as the Language Server
 Protocol (LSP) does.  The full specification for this flavor of JSON-RPC is

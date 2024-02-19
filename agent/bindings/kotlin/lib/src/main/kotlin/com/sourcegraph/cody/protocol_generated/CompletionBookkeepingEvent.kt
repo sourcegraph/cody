@@ -1,17 +1,17 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class CompletionBookkeepingEvent(
-  var id: CompletionLogID? = null,
-  var startedAt: Int? = null,
-  var networkRequestStartedAt: Int? = null,
-  var startLoggedAt: Int? = null,
-  var loadedAt: Int? = null,
-  var suggestedAt: Int? = null,
-  var suggestionLoggedAt: Int? = null,
-  var suggestionAnalyticsLoggedAt: Int? = null,
-  var acceptedAt: Int? = null,
-  var items: List<CompletionItemInfo>? = null,
-  var loggedPartialAcceptedLength: Int? = null,
+  val id: CompletionLogID? = null,
+  val startedAt: Int? = null,
+  val networkRequestStartedAt: Int? = null,
+  val startLoggedAt: Int? = null,
+  val loadedAt: Int? = null,
+  val suggestedAt: Int? = null,
+  val suggestionLoggedAt: Int? = null,
+  val suggestionAnalyticsLoggedAt: Int? = null,
+  val acceptedAt: Int? = null,
+  val items: List<CompletionItemInfo>? = null,
+  val loggedPartialAcceptedLength: Int? = null,
 )
 

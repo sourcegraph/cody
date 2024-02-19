@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class AttributionParams(
-  var repositoryNames: List<String>? = null,
-  var limitHit: Boolean? = null,
+  val repositoryNames: List<String>? = null,
+  val limitHit: Boolean? = null,
 )
 
