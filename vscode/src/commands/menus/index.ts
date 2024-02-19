@@ -32,6 +32,9 @@ export async function showCommandMenu(
         // Add Default Commands
         if (type !== 'custom') {
             for (const _command of CodyCommandMenuItems) {
+                if (_command.key === 'custom') {
+                    continue
+                }
                 const key = _command.key
                 const label = `$(${_command.icon}) ${_command.description}`
                 const command = _command.command.command
