@@ -6,15 +6,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Display Cody icon in the editor title of the chat panels when `cody.editorTitleCommandIcon` is enabled. [pull/2937](https://github.com/sourcegraph/cody/pull/2937)
-- Edit: Improved the input UX. You can now adjust the range of the Edit, select from available symbols in the document, and get quick access to the "Document" and "Test" commands. [pull/2884](https://github.com/sourcegraph/cody/pull/2884)
-- Edit: Added new keyboard shortcuts for Edit (`Alt+K`) and Chat (`Alt+L`). [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
-- Edit/Chat: Added "ghost" text alongside code to showcase Edit and Chat commands. Enable it by setting `cody.commandHints.enabled` to true. [pull/2865](https://github.com/sourcegraph/cody/pull/2865)
-- Autocomplete: local inference support with [deepseek-coder](https://ollama.ai/library/deepseek-coder) powered by ollama. [pull/2966](https://github.com/sourcegraph/cody/pull/2966)
-- Autocomplete: Add a new experimental fast-path mode for Cody community users that directly connections to our inference services. [pull/2927](https://github.com/sourcegraph/cody/pull/2927)
-- Command: The `Generate Unit Tests` command now functions as an inline edit command. When executed, the new tests will be automatically appended to the test file. If no existing test file is found, a temporary one will be created. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
-- [Internal] Command: Added new code lenses for generating additional unit tests. [pull/2959](https://github.com/sourcegraph/cody/pull/2959)
-
 - Edit: Added keyboard shortcuts for codelens actions such as "Undo" and "Retry" [pull/2757][https://github.com/sourcegraph/cody/pull/2757]
 - Chat: Displays warnings for large @-mentioned files during selection. [pull/3118](https://github.com/sourcegraph/cody/pull/3118)
 - Once [sourcegraph/sourcegraph#60515](https://github.com/sourcegraph/sourcegraph/pull/60515) is deployed, login works in VSCodium. [pull/3167](https://github.com/sourcegraph/cody/pull/3167)
