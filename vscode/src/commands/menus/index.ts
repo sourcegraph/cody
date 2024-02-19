@@ -11,6 +11,7 @@ import { executeEdit } from '../../edit/execute'
 import { CodyCommandMenuItems } from '..'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
@@ -27,32 +28,37 @@ export async function showCommandMenu(
     if (type === 'config') {
         items.push(...CustomCommandConfigMenuItems)
     } else {
-        if (type === 'default') {
-            items.push(CommandMenuSeperator.commands)
+        items.push(CommandMenuSeperator.commands)
+        // Add Default Commands
+        if (type !== 'custom') {
             for (const _command of CodyCommandMenuItems) {
                 const key = _command.key
                 const label = `$(${_command.icon}) ${_command.description}`
                 const command = _command.command.command
                 // Show keybind as description if present
                 const description = _command.keybinding ? _command.keybinding : ''
+                const type = 'default'
                 items.push({ label, command, description, type, key })
             }
         }
 
-        // The Create New Command option should show up in custom command menu only
-        if (type === 'custom') {
-            // Add custom commands
-            items.push(CommandMenuSeperator.custom)
-            for (const customCommand of customCommands) {
-                const label = `$(tools) ${customCommand.key}`
-                const description = customCommand.description ?? customCommand.prompt
-                const command = customCommand.key
-                const key = customCommand.key
-                items.push({ label, description, command, key })
-            }
-            // Extra options
-            items.push(CommandMenuSeperator.settings, configOption, addOption)
+        // Add Custom Commands
+        items.push(CommandMenuSeperator.custom)
+        for (const customCommand of customCommands) {
+            const label = `$(tools) ${customCommand.key}`
+            const description = customCommand.description ?? customCommand.prompt
+            const command = customCommand.key
+            const key = customCommand.key
+            const type = customCommand.type ?? CustomCommandType.User
+            items.push({ label, description, command, type, key })
         }
+
+        // Extra options - Settings
+        if (type === 'custom') {
+            // The Create New Command option should show up in custom command menu only
+            items.push(CommandMenuSeperator.settings, addOption)
+        }
+        items.push(configOption)
     }
 
     const options = CommandMenuTitleItem[type]
