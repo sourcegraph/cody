@@ -15,6 +15,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
     ],
 })('editing follow-up messages in chat view', async ({ page, sidebar }) => {

@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class MessageOptions(
-  var modal: Boolean? = null,
-  var detail: String? = null,
+  val modal: Boolean? = null,
+  val detail: String? = null,
 )
 

@@ -1,8 +1,8 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class DeleteOptionsParams(
-  var recursive: Boolean? = null,
-  var ignoreIfNotExists: Boolean? = null,
+  val recursive: Boolean? = null,
+  val ignoreIfNotExists: Boolean? = null,
 )
 

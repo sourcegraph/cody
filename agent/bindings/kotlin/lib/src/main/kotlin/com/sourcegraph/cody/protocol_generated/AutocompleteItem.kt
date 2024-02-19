@@ -1,9 +1,9 @@
-@file:Suppress("FunctionName", "ClassName")
+@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
 data class AutocompleteItem(
-  var id: String? = null,
-  var insertText: String? = null,
-  var range: Range? = null,
+  val id: String? = null,
+  val insertText: String? = null,
+  val range: Range? = null,
 )
 

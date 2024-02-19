@@ -23,6 +23,7 @@ import {
     type InteractionJSON,
     type Message,
     type TranscriptJSON,
+    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -242,7 +243,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.submitType,
                     message.contextFiles ?? [],
-                    message.addEnhancedContext ?? false
+                    message.addEnhancedContext ?? false,
+                    'chat'
                 )
                 break
             }
@@ -383,9 +385,35 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: string,
         submitType: ChatSubmitType,
         userContextFiles: ContextFile[],
-        addEnhancedContext: boolean
+        addEnhancedContext: boolean,
+        source?: ChatEventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            const authStatus = this.authProvider.getAuthStatus()
+            const sharedProperties = {
+                requestID,
+                chatModel: this.chatModel.modelID,
+                source,
+                traceId: span.spanContext().traceId,
+            }
+            telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
+            telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
+                metadata: {
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                },
+                privateMetadata: {
+                    ...sharedProperties,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an additional safeguard measure
+                    promptText:
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? inputText : undefined,
+                },
+            })
+
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 span.setAttribute('sampled', true)
 
@@ -434,10 +462,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         : undefined
                 )
                 const sendTelemetry = (contextSummary: any): void => {
-                    const authStatus = this.authProvider.getAuthStatus()
                     const properties = {
-                        requestID,
-                        chatModel: this.chatModel.modelID,
+                        ...sharedProperties,
                         contextSummary,
                         traceId: span.spanContext().traceId,
                     }
