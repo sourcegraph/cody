@@ -60,6 +60,11 @@ class ChatPanel(project: Project, chatSession: ChatSession) :
     add(lowerPanel, BorderLayout.SOUTH)
   }
 
+  fun setAsActive() {
+    contextView.setContextFromThisChatAsDefault()
+    promptPanel.focus()
+  }
+
   fun addModelDropdown(project: Project, sessionId: String, selectedModel: ChatModel?) {
     CodyAgentService.withAgent(project) { agent ->
       val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)

@@ -2,8 +2,9 @@ package com.sourcegraph.cody.context.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.CheckedTreeNode
+import java.util.concurrent.atomic.AtomicBoolean
 
-open class ContextTreeNode<T>(value: T, private val onSetChecked: (Boolean) -> Unit) :
+open class ContextTreeNode<T>(value: T, private val onSetChecked: (Boolean) -> Unit = {}) :
     CheckedTreeNode(value) {
   override fun setChecked(checked: Boolean) {
     super.setChecked(checked)
@@ -11,24 +12,25 @@ open class ContextTreeNode<T>(value: T, private val onSetChecked: (Boolean) -> U
   }
 }
 
-class ContextTreeRootNode(
-    val text: String,
-    isEnabled: Boolean = true,
-    onSetChecked: (Boolean) -> Unit = {}
-) : ContextTreeNode<String>(text, onSetChecked) {
-  init {
-    this.isEnabled = isEnabled
-  }
-}
+class ContextTreeRootNode(val text: String, onSetChecked: (Boolean) -> Unit) :
+    ContextTreeNode<String>(text, onSetChecked)
 
-class ContextTreeRemoteRepoCodebaseNameNode(
-    val repoUrl: String,
-    val codebaseName: String,
-    onSetChecked: (Boolean) -> Unit
-) : ContextTreeNode<String>(repoUrl, onSetChecked)
+class ContextTreeRemoteRootNode(val text: String) : ContextTreeNode<String>(text)
 
-class ContextTreeLocalRepoNode(val project: Project) : ContextTreeNode<Project>(project, {}) {
+class ContextTreeRemoteRepoNode(val codebaseName: String, onSetChecked: (Boolean) -> Unit) :
+    ContextTreeNode<String>(codebaseName, onSetChecked)
+
+open class ContextTreeLocalNode<T>(value: T, private val isEnhancedContextEnabled: AtomicBoolean) :
+    ContextTreeNode<T>(value) {
   init {
     this.isEnabled = false
   }
+
+  override fun isChecked(): Boolean = isEnhancedContextEnabled.get()
 }
+
+class ContextTreeLocalRootNode(val text: String, isEnhancedContextEnabled: AtomicBoolean) :
+    ContextTreeLocalNode<String>(text, isEnhancedContextEnabled)
+
+class ContextTreeLocalRepoNode(val project: Project, isEnhancedContextEnabled: AtomicBoolean) :
+    ContextTreeLocalNode<Project>(project, isEnhancedContextEnabled)

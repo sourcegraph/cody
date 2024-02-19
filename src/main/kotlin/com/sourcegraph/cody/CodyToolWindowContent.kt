@@ -75,6 +75,7 @@ class CodyToolWindowContent(private val project: Project) {
   fun switchToChatSession(chatSession: AgentChatSession, showChatWindow: Boolean = true) {
     UIUtil.invokeLaterIfNeeded {
       currentChatSession.getAndSet(chatSession)
+      currentChatSession.get()?.getPanel()?.setAsActive()
       chatContainerPanel.removeAll()
       chatContainerPanel.add(chatSession.getPanel())
       if (showChatWindow) tabbedPane.selectedIndex = CHAT_TAB_INDEX
@@ -83,7 +84,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   fun focusOnChat() {
     tabbedPane.selectedIndex = CHAT_TAB_INDEX
-    currentChatSession.get()?.getPanel()?.promptPanel?.focus()
+    currentChatSession.get()?.getPanel()?.setAsActive()
   }
 
   fun refreshMyAccountTab() {

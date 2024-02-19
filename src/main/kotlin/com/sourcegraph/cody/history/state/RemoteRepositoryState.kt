@@ -10,13 +10,4 @@ class RemoteRepositoryState : BaseState() {
   @get:OptionTag(tag = "isEnabled", nameAttribute = "") var isEnabled: Boolean by property(true)
 
   @get:OptionTag(tag = "remoteUrl", nameAttribute = "") var remoteUrl: String? by string()
-
-  companion object {
-    fun create(remoteUrl: String, isEnabled: Boolean): RemoteRepositoryState {
-      val state = RemoteRepositoryState()
-      state.isEnabled = isEnabled
-      state.remoteUrl = remoteUrl
-      return state
-    }
-  }
 }

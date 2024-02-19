@@ -301,7 +301,7 @@ You should also be able to switch between accounts while tokens are still being 
 3. Select one of the files from the list for Cody to use as chat context.
 4. Ask Cody a question about that file and verify that the answer is correct.
 
-Note: It's important to test performance on large repos here. 
+Note: It's important to test performance on large repos here.
 
 ## Multi-repo context
 
@@ -312,11 +312,10 @@ Note: It's important to test performance on large repos here.
 3. Open new chat and ask question about squirrel - assistant should describe you an animal.
 4. Open new chat and disable local context. Ask about current repo (e.g. some class) - assistant should not have a
    context.
-5. Save current context as default. Close the IDE. Reopen the IDE.
+5. Close the IDE. Reopen the IDE.
     - Go to Chat History tab and open previous chats one by one. Both history and context settings are properly
       preserved.
-    - Open new chat. Context should be disabled, as we previously set that as new default. Enable it again and set as
-      default.
+    - Open new chat and check if it properly inherits all setting from previously opened historical chat
 
 ### Enterprise accounts:
 
@@ -326,16 +325,14 @@ Note: It's important to test performance on large repos here.
     - Validator should block accepting incomplete or invalid URL.
     - Add the `sourcegraph/sourcegraph` repo by hitting Add button.
 4. Open new chat and ask question about squirrel - assistant should describe you an HTTP server, **NOT** animal.
-5. Set current context as default and open new chat. It should use/display default context configuration.
-6. Disable `sourcegraph/sourcegraph` remote repo context.
+5. Open new chat and disable `sourcegraph/sourcegraph` remote repo context.
 7. Ask question about squirrel. It should again describe you an animal or have no context.
-8. Save current context as default. Close the IDE. Reopen the IDE.
+8. Close the IDE. Reopen the IDE.
     - Go to Chat History tab and open previous chats one by one. Check if both history and context settings are properly
       preserved.
-    - Open new chat and check if `sourcegraph/sourcegraph` is disabled. It should be, as we previously set that as a
-      default. Enable it again and set as default.
-    - Open new chat and check if `sourcegraph/sourcegraph` is enabled, it should be.
-    - Remove `sourcegraph/sourcegraph` repo by selecting it, and then clicking [-] button.
+    - Open new chat and check if it properly inherits all setting from previously opened historical chat
+    - If `sourcegraph/sourcegraph` repo was previously added please remove it by selecting it, and then clicking [-]
+      button.
     - Ask question about squirrel. It should again describe you an animal or have no context.
 
 ## Code Search
@@ -421,51 +418,57 @@ To open the context menu:
 1. Open the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repo locally in the IDE to be tested
 2. Go to the `Chat`
 3. **Verify**: Local context is enabled:
-   
-  ![Local Context Enabled](https://github.com/sourcegraph/jetbrains/assets/7814431/11a68b1a-53a4-474e-97c7-74c18374beda)
-  
+
+![Local Context Enabled](https://github.com/sourcegraph/jetbrains/assets/7814431/11a68b1a-53a4-474e-97c7-74c18374beda)
+
 5. Type: "what is squirrel?"
 6. **Verify**: You get an answer similar to:
-   > "Squirrel is a code intelligence service developed by Sourcegraph that uses tree-sitter for syntactic analysis of code. Some key things about Squirrel"
+   > "Squirrel is a code intelligence service developed by Sourcegraph that uses tree-sitter for syntactic analysis of
+   code. Some key things about Squirrel"
 8. Disable Local context
-   
+
    ![Local Context Disabled](https://github.com/sourcegraph/jetbrains/assets/7814431/3c755039-e19e-4e58-a9d7-72ac1a381e16)
-   
+
 10. Create (or refresh) a new Chat thread
 11. **Type**: "what is squirrel?"
 12. **Verify**: You get an answer similar to:
-    > Squirrels are small, bushy-tailed rodents that are found all over the world. Here are some key facts about squirrels...
+    > Squirrels are small, bushy-tailed rodents that are found all over the world. Here are some key facts about
+    squirrels...
 
 ## Model dropdown
 
 ### Pro account
 
 #### Chat
+
 1. Login to Cody Pro account
 2. Create new chat
 3. User is able to change default LLM
 4. Change model to ChatGPT 4
-5. Send message 
-    > What model are you?
+5. Send message
+   > What model are you?
 6. User should get the response that model is ChatGPT
 7. Change account to different one and then back to your pro account
 8. Open `What model are you?` chat from the history
 9. Send again message
-    > What model are you?
+   > What model are you?
 10. User should again get the response that model is ChatGPT
 
 #### Commands
+
 1. Login to Cody Pro account
 2. Go to commands panel
 3. Trigger command
 4. Command should be executed with default model
 
 ### Free account
+
 1. Login to Cody Free account
 2. Create new chat
 3. User doesn't see model dropdown
 
 ### Pro account after trial
+
 1. Login to Cody Pro account that has trial expired
 2. Create new chat
 3. User doesn't see model dropdown
@@ -473,10 +476,13 @@ To open the context menu:
 ### Enterprise account
 
 #### Chat
+
 1. Login to Cody Enterprise account
 2. Create new chat
 3. User should see the default model in the dropdown but is unable to change it
+
 #### Commands
+
 1. Login to Cody Enterprise account
 2. Go to commands panel
 3. Trigger command

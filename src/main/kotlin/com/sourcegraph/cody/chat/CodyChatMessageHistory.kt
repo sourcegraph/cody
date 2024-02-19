@@ -59,7 +59,7 @@ class CodyChatMessageHistory(
 
   private fun preloadHistoricalMessages(chatSession: ChatSession) {
     HistoryService.getInstance(project)
-        .getHistoryReadOnly()
+        .state
         .chats
         .find { it.internalId == chatSession.getInternalId() }
         ?.messages

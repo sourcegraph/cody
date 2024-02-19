@@ -2,7 +2,6 @@ package com.sourcegraph.cody.history
 
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
-import com.jetbrains.rd.framework.base.deepClonePolymorphic
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -48,31 +47,28 @@ class HistoryService(private val project: Project) :
 
   @Synchronized
   fun updateContextState(internalId: String, contextState: EnhancedContextState?) {
-    val found = getOrCreateChat(internalId)
-    if (found.enhancedContext == null || contextState == null) {
-      found.enhancedContext = EnhancedContextState()
-    }
     if (contextState != null) {
+      val found = getOrCreateChat(internalId)
+      found.enhancedContext = EnhancedContextState()
       found.enhancedContext?.copyFrom(contextState)
     }
   }
 
   @Synchronized
   fun updateDefaultContextState(contextState: EnhancedContextState) {
-    if (state.defaultEnhancedContext == null) {
-      state.defaultEnhancedContext = EnhancedContextState()
-    }
+    state.defaultEnhancedContext = EnhancedContextState()
     state.defaultEnhancedContext?.copyFrom(contextState)
   }
 
   @Synchronized
-  fun getOrCreateChatReadOnly(internalId: String): ChatState {
-    return getOrCreateChat(internalId).deepClonePolymorphic()
+  fun getContextReadOnly(internalId: String): EnhancedContextState? {
+    return copyEnhancedContextState(
+        state.chats.find { it.internalId == internalId }?.enhancedContext)
   }
 
   @Synchronized
-  fun getHistoryReadOnly(): HistoryState {
-    return state.deepClonePolymorphic()
+  fun getDefaultContextReadOnly(): EnhancedContextState? {
+    return copyEnhancedContextState(state.defaultEnhancedContext)
   }
 
   @Synchronized
@@ -80,8 +76,17 @@ class HistoryService(private val project: Project) :
     state.chats.removeIf { it.internalId == internalId }
   }
 
+  @Synchronized
   fun removeAll() {
     state.chats = mutableListOf()
+  }
+
+  private fun copyEnhancedContextState(context: EnhancedContextState?): EnhancedContextState? {
+    if (context == null) return null
+
+    val copy = EnhancedContextState()
+    copy.copyFrom(context)
+    return copy
   }
 
   private fun convertToMessageState(chatMessage: ChatMessage): MessageState {
