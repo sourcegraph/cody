@@ -915,7 +915,6 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
-const codeLensProviders = new Set<vscode.CodeLensProvider>()
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -942,7 +941,7 @@ const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
-        return { dispose: () => codeLensProviders.delete(provider) }
+        return { dispose: () => removeCodeLensProvider.fire(provider) }
     },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any
