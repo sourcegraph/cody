@@ -430,5 +430,5 @@ export function getSuffixAfterFirstNewline(suffix: string): string {
         return ''
     }
 
-    return suffix.slice(suffix.indexOf('\n'))
+    return suffix.slice(firstNlInSuffix)
 }
