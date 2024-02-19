@@ -25,6 +25,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Add tracing. [pull/3168](https://github.com/sourcegraph/cody/pull/3168)
 - Command: Leading slashes are removed from command names in the command menu. [pull/3061](https://github.com/sourcegraph/cody/pull/3061)
 - Autocomplete: Trigger one LLM request instead of three for multiline completions to reduce the response latency. [pull/3176](https://github.com/sourcegraph/cody/pull/3176)
+- Autocomplete: Allow the client to pick up feature flag changes that were previously requiring a client restart. [pull/2992](https://github.com/sourcegraph/cody/pull/2992)
 
 ## [1.4.4]
 
