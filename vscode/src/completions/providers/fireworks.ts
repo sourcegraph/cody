@@ -21,7 +21,12 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
+import {
+    CLOSING_CODE_TAG,
+    getHeadAndTail,
+    getSuffixAfterFirstNewline,
+    OPENING_CODE_TAG,
+} from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import { fetch } from '../../fetch'
@@ -173,6 +178,8 @@ class FireworksProvider extends Provider {
                 .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
                 .join('\n')}\n`
 
+            // We want to remove the same line suffix from a completion request since both StarCoder and Llama
+            // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
@@ -532,19 +539,6 @@ export function createProviderConfig({
         identifier: PROVIDER_IDENTIFIER,
         model: resolvedModel,
     }
-}
-
-// We want to remove the same line suffix from a completion request since both StarCoder and Llama
-// code can't handle this correctly.
-function getSuffixAfterFirstNewline(suffix: string): string {
-    const firstNlInSuffix = suffix.indexOf('\n')
-
-    // When there is no next line, the suffix should be empty
-    if (firstNlInSuffix === -1) {
-        return ''
-    }
-
-    return suffix.slice(suffix.indexOf('\n'))
 }
 
 function isStarCoderFamily(model: string): boolean {
