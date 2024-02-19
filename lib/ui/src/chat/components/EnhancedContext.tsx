@@ -50,7 +50,7 @@ export const EnhancedContext: React.FunctionComponent<{
         (total, file) => total + (file.range ? file.range?.end?.line - file.range?.start?.line + 1 : 0),
         0
     )
-    const fileCount = contextFiles.length
+    const fileCount = new Set(contextFiles.map(file => file.uri.toString())).size
     const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
     const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     const title = lineCount ? `${lines} from ${files}` : `${files}`
