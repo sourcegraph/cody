@@ -31,8 +31,9 @@ export function verifyContextFilesFromInput(
 
         // Add fileName in input that is not followed by a colon
         const counts = input.matchAll(new RegExp(atFileName + '(?!:)', 'g'))
-        for (const _count of Array.from(counts)) {
-            userContextFiles.push(contextFile)
+        for (const _count of [...Array.from(counts)]) {
+            const contextFileMatch = { ...contextFile, range: undefined }
+            userContextFiles.push(contextFileMatch)
         }
 
         // Get the line number behind the file name if there is one:

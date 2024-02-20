@@ -67,12 +67,12 @@ function inputRepresentation(
 ): string {
     const fileName = displayPath(file)
     const components = [fileName]
-    const singleRange = range?.start && `:${range.start.line + 1}`
 
     // +1 on start line because VS Code line numbers start at 1 in the editor UI,
     // and is zero-based in the API for position used in VS Code selection/range.
     // Since createDisplayTextWithFileLinks added 1 to end line, we don't need to add it again here.
     // But add it for start line because this is for displaying the line number to user, which is +1-based.
+    const singleRange = range?.start && `:${range.start.line + 1}`
     const fullRange = range?.end?.line && `:${range.start.line + 1}-${range.end.line}`
     if (fullRange && humanInput.includes(`@${fileName}${fullRange}`)) {
         components.push(fullRange)
