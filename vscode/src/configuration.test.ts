@@ -85,8 +85,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
-                    case 'cody.autocomplete.experimental.fastPath':
-                        return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
@@ -140,7 +138,6 @@ describe('getConfiguration', () => {
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
-            autocompleteExperimentalFastPath: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',

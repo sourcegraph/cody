@@ -13,8 +13,6 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Force all StarCoder traffic (controlled by the above flag) to point to the 16b model.
-    CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     // Enable Llama Code 13b as the default model via Fireworks
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
@@ -30,8 +28,6 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
-    // Connects to Cody Gateway directly and skips the Sourcegraph instance hop for completions
-    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
