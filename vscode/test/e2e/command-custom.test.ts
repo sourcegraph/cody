@@ -241,13 +241,14 @@ test.extend<ExpectedEvents>({
     await page.getByLabel('Chats Section').click()
 
     // Check button click to open the cody.json file in the editor
-    const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'
-    const configMenuItem = page.getByLabel(label).locator('a')
+    // const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'
+    // const configMenuItem = page.getByLabel(label).locator('a')
     const customCommandSidebar = page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a')
 
     // Able to open the cody.json file in the editor from the command menu
     await customCommandSidebar.click()
-    await configMenuItem.click()
+    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
+    await page.getByLabel('Configure Custom Commands...', { exact: true }).click()
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await expect(page.getByRole('button', { name: 'Open or Create Settings File' })).toBeVisible()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
@@ -256,7 +257,8 @@ test.extend<ExpectedEvents>({
 
     // Check button click to delete the cody.json file from the workspace tree view
     await customCommandSidebar.click()
-    await configMenuItem.click()
+    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
+    await page.getByLabel('Configure Custom Commands...', { exact: true }).click()
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()

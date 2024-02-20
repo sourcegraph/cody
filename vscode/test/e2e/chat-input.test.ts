@@ -1,9 +1,21 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { type ExpectedEvents, test } from './helpers'
 
-test('editing messages in the chat input', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -27,6 +39,8 @@ test('editing messages in the chat input', async ({ page, sidebar }) => {
 
     // Chat input should have focused after sending a message.
     await expect(chatInput).toBeFocused()
+    await chatInput.fill('Chat events on submit')
+    await chatInput.press('Enter')
 })
 
 // TODO (bee) fix flanky test

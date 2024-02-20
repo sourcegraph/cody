@@ -828,7 +828,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteDisableInsideComments: false,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
-    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
