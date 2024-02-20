@@ -613,7 +613,7 @@ export interface ProtocolCommand {
             value: string
             position: number
         }[]
-    },
+    }
     command: string
     tooltip?: string
     arguments?: any[]
