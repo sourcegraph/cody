@@ -24,14 +24,18 @@ export async function showCommandMenu(
     telemetryService.log(`CodyVSCodeExtension:menu:command:${type}:clicked`)
     telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked')
 
-    // Add items to menu
+    // Add items to menus accordingly:
+    // 1. default: contains default commands and custom commands
+    // 2. custom (custom commands): contain custom commands and add custom command option
+    // 3. config (settings): setting options for custom commands
     if (type === 'config') {
         items.push(...CustomCommandConfigMenuItems)
     } else {
-        items.push(CommandMenuSeperator.commands)
         // Add Default Commands
         if (type !== 'custom') {
+            items.push(CommandMenuSeperator.commands)
             for (const _command of CodyCommandMenuItems) {
+                // Skip the 'Custom Commands' option
                 if (_command.key === 'custom') {
                     continue
                 }
@@ -46,22 +50,24 @@ export async function showCommandMenu(
         }
 
         // Add Custom Commands
-        items.push(CommandMenuSeperator.custom)
-        for (const customCommand of customCommands) {
-            const label = `$(tools) ${customCommand.key}`
-            const description = customCommand.description ?? customCommand.prompt
-            const command = customCommand.key
-            const key = customCommand.key
-            const type = customCommand.type ?? CustomCommandType.User
-            items.push({ label, description, command, type, key })
+        if (customCommands?.length) {
+            items.push(CommandMenuSeperator.custom)
+            for (const customCommand of customCommands) {
+                const label = `$(tools) ${customCommand.key}`
+                const description = customCommand.description ?? customCommand.prompt
+                const command = customCommand.key
+                const key = customCommand.key
+                const type = customCommand.type ?? CustomCommandType.User
+                items.push({ label, description, command, type, key })
+            }
         }
 
         // Extra options - Settings
+        items.push(CommandMenuSeperator.settings)
         if (type === 'custom') {
-            // The Create New Command option should show up in custom command menu only
-            items.push(CommandMenuSeperator.settings, addOption)
+            items.push(addOption) // Create New Custom Command option
         }
-        items.push(configOption)
+        items.push(configOption) // Configure Custom Command option
     }
 
     const options = CommandMenuTitleItem[type]
