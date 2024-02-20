@@ -14,6 +14,7 @@ import {
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
+import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -48,6 +49,15 @@ export async function createProviderConfig(
             }
             case 'anthropic': {
                 return createAnthropicProviderConfig({ client })
+            }
+            case 'experimental-openaicompatible': {
+                return createOpenAICompatibleProviderConfig({
+                    client,
+                    model: config.autocompleteAdvancedModel ?? model ?? null,
+                    timeouts: config.autocompleteTimeouts,
+                    authStatus,
+                    config,
+                })
             }
             case 'experimental-ollama':
             case 'unstable-ollama': {
@@ -93,6 +103,14 @@ export async function createProviderConfig(
 
             case 'fireworks':
                 return createFireworksProviderConfig({
+                    client,
+                    timeouts: config.autocompleteTimeouts,
+                    model: model ?? null,
+                    authStatus,
+                    config,
+                })
+            case 'experimental-openaicompatible':
+                return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
                     model: model ?? null,

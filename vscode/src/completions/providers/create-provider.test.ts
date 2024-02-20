@@ -87,6 +87,30 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
+        // TODO: test 'openaicompatible'
+        // it('returns "fireworks" provider config and corresponding model if specified', async () => {
+        //     const provider = await createProviderConfig(
+        //         getVSCodeConfigurationWithAccessToken({
+        //             autocompleteAdvancedProvider: 'fireworks',
+        //             autocompleteAdvancedModel: 'starcoder-7b',
+        //         }),
+        //         dummyCodeCompletionsClient,
+        //         dummyAuthStatus
+        //     )
+        //     expect(provider?.identifier).toBe('fireworks')
+        //     expect(provider?.model).toBe('starcoder-7b')
+        // })
+
+        // it('returns "fireworks" provider config if specified in settings and default model', async () => {
+        //     const provider = await createProviderConfig(
+        //         getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'fireworks' }),
+        //         dummyCodeCompletionsClient,
+        //         dummyAuthStatus
+        //     )
+        //     expect(provider?.identifier).toBe('fireworks')
+        //     expect(provider?.model).toBe('starcoder-hybrid')
+        // })
+
         it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
