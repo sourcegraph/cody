@@ -607,7 +607,13 @@ export interface ProtocolCodeLens {
 }
 
 export interface ProtocolCommand {
-    title: string
+    title: {
+        text: string
+        icons: {
+            value: string
+            position: number
+        }[]
+    }
     command: string
     tooltip?: string
     arguments?: any[]
