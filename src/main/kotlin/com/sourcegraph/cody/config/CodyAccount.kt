@@ -61,6 +61,8 @@ data class CodyAccount(
     fun isCodyApp(server: SourcegraphServerPath): Boolean {
       return server.url.startsWith(LocalAppManager.DEFAULT_LOCAL_APP_URL)
     }
+
+    fun CodyAccount?.isEnterpriseAccount() = this?.isDotcomAccount()?.not() ?: false
   }
 }
 
