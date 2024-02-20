@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 
-import { getAtMentionedInputText } from './at-mentioned'
+import { getAtMentionedInputText, extractMentionQuery } from './at-mentioned'
 
 describe('getAtMentionedInputText', () => {
     it('returns null when filePath is empty', () => {
@@ -75,18 +75,60 @@ describe('getAtMentionedInputText', () => {
     it('handles colon based on param', () => {
         let result = getAtMentionedInputText(
             '@src/file.ts',
-            'Hello @old/file.ts ',
-            'Hello @old/file.ts '.length,
+            'Hello @src/file.ts ',
+            'Hello @src/file.ts '.length,
             true
         )
         expect(result?.newInput).toContain('@src/file.ts:')
 
         result = getAtMentionedInputText(
             '@src/file.ts',
-            'Hello @old/file.ts',
-            'Hello @old/file.ts'.length,
+            'Hello @src/file.ts',
+            'Hello @src/file.ts'.length,
             false
         )
         expect(result?.newInput).toContain('@src/file.ts ')
+    })
+
+    it('keeps range', () => {
+        const result = getAtMentionedInputText(
+            '@src/file.ts',
+            'Hello @src/file.ts:1-7',
+            'Hello @src/file.ts:1-7'.length,
+            false
+        )
+        expect(result?.newInput).toContain('Hello @src/file.ts:1-7 ')
+    })
+})
+
+describe('extractMentionQuery', () => {
+    it('returns empty string if no @ in input', () => {
+        const query = extractMentionQuery('Hello world', 'Hello world'.length)
+        expect(query).toEqual('')
+    })
+
+    it('returns empty string if caret before last @', () => {
+        const query = extractMentionQuery('@foo Hello world', 0)
+        expect(query).toEqual('')
+    })
+
+    it('extracts mention between last @ and caret', () => {
+        const query = extractMentionQuery('@foo/bar Hello @world', '@foo/bar Hello @world'.length)
+        expect(query).toEqual('@world')
+    })
+
+    it('handles no text and space after caret', () => {
+        const query = extractMentionQuery('@foo/bar', '@foo/bar'.length)
+        expect(query).toEqual('@foo/bar')
+    })
+
+    it('handles space at caret after query', () => {
+        const query = extractMentionQuery('@foo/bar ', '@foo/bar '.length)
+        expect(query).toEqual('@foo/bar ')
+    })
+
+    it('returns full mention query with suffix', () => {
+        const query = extractMentionQuery('@foo/bar:10 world', '@foo/bar:10 '.length)
+        expect(query).toEqual('@foo/bar:10 world')
     })
 })

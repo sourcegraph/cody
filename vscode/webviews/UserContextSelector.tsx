@@ -49,32 +49,37 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return SYMBOL_NO_RESULT
     }, [contextQuery, contextSelection?.length])
 
+    if (formInput.endsWith(' ')) {
+        return null
+    }
+
     /**
      * Extracts line range information from the context query and displays tips as ghost text.
      */
-    const regex = /:([0-9]+)?(-)?([0-9]+)?$/
+    const regex = /:(\d+)?(-)?(\d+)?$/
     const match = regex.exec(contextQuery)
-    if (match) {
+    if (match && contextSelection?.length) {
         const [colon, startLine, dash, endLine] = match
         const ghostStart = colon && startLine ? '' : 'line'
         const ghostEnd = dash ? (endLine ? '' : 'line') : '-line'
+        const hint = endLine && endLine < startLine ? '(invalid line range)' : '(line range)'
         return (
             <div className={classNames(styles.container)}>
                 <div className={classNames(styles.headingContainer)}>
                     <h3 className={styles.heading}>{FILE_ON_RESULT}</h3>
                 </div>
                 <button
-                    ref={selectionRef}
                     className={classNames(styles.selectionItem, styles.selected)}
                     title={contextQuery}
                     type="button"
+                    onClick={() => onSelected(contextSelection[0])}
                 >
                     <span className={styles.titleAndDescriptionContainer}>
                         <span className={styles.selectionTitle}>
-                            @{contextQuery}
+                            {contextQuery}
                             <span className={styles.ghostText}>
                                 {ghostStart}
-                                {ghostEnd} (line range)
+                                {ghostEnd} {hint}
                             </span>
                         </span>
                     </span>

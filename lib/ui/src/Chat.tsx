@@ -13,6 +13,11 @@ import {
     type ContextFile,
     type Guardrails,
     getContextFileDisplayText,
+    displayPath,
+    getAtMentionQuery,
+    getAtMentionedInputText,
+    isAtMention,
+    isAtRange,
 } from '@sourcegraph/cody-shared'
 
 import type { CodeBlockMeta } from './chat/CodeBlocks'
@@ -23,7 +28,6 @@ import { isDefaultCommandPrompts, type TranscriptItemClassNames } from './chat/T
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
-import { getAtMentionedInputText } from '@sourcegraph/cody-shared/src/chat/input/at-mentioned'
 
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
@@ -360,7 +364,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      */
     const onChatContextSelected = useCallback(
         (selected: ContextFile, queryEndsWithColon = false): void => {
-            const fileDisplayText = getContextFileDisplayText(selected)
+            const atRangeEndingRegex = /:\d+(-\d+)?$/
+            const inputBeforeCaret = formInput.slice(0, inputCaretPosition)
+            const isSettingRange = atRangeEndingRegex.test(inputBeforeCaret)
+            if (chatContextFiles.has(`@${displayPath(selected.uri)}`)) {
+                if (isSettingRange) {
+                    resetContextSelection()
+                    return
+                }
+            }
+
+            const fileDisplayText = getContextFileDisplayText(selected, inputBeforeCaret)
             if (inputCaretPosition && fileDisplayText) {
                 const newDisplayInput = getAtMentionedInputText(
                     fileDisplayText,
@@ -368,10 +382,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     inputCaretPosition,
                     queryEndsWithColon
                 )
+
                 if (newDisplayInput) {
                     // Updates contextConfig with the new added context file.
                     // We will use the newInput as key to check if the file still exists in formInput on submit
-                    setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
+                    const storedFileName = fileDisplayText.replace(atRangeEndingRegex, '')
+                    setChatContextFiles(new Map(chatContextFiles).set(storedFileName, selected))
                     setFormInput(newDisplayInput.newInput)
                     // Move the caret to the end of the newly added file display text,
                     // including the length of text exisited before the lastAtIndex
@@ -379,14 +395,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setInputCaretPosition(newDisplayInput.newInputCaretPosition)
                 }
             }
-            // Resets the context selection and query state unless the query ends with colon, which is used
-            // to initiate range selection, so we will keep the current selection as the context selection
-            // to display the current selector box.
-            if (!queryEndsWithColon) {
-                resetContextSelection()
-                return
-            }
-            setContextSelection([selected])
+            resetContextSelection() // RESET
         },
         [
             formInput,
@@ -394,7 +403,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setFormInput,
             inputCaretPosition,
             resetContextSelection,
-            setContextSelection,
+            // setContextSelection,
         ]
     )
 
@@ -405,52 +414,45 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      * and if so extracts the text after the last '@' up to the caret position as the
      * mention query.
      */
-    const atMentionHandler = useCallback(
+    const atMentionInputHandler = useCallback(
         (inputValue: string, caretPosition?: number) => {
             // If any of these conditions are false, it indicates an invalid state
             // where the necessary inputs for processing the at-mention are missing.
-            if (!caretPosition || !postMessage || !inputValue) {
+            if (!postMessage || !inputValue || !caretPosition) {
                 // Resets the context selection and query state.
                 resetContextSelection()
                 return
             }
 
-            // At mention should start with @ and contains no whitespaces
-            const isAtMention = (text: string) => /^@[^ ]*( )?$/.test(text)
-
-            // Extract mention query by splitting input value into before/after caret sections.
-            const extractMentionQuery = (input: string, caretPos: number) => {
-                const inputBeforeCaret = input.slice(0, caretPos) || ''
-                const inputAfterCaret = input.slice(caretPos) || ''
-                // Find the last '@' index in inputBeforeCaret to determine if it's an @mention
-                const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
-                // Extracts text between last '@' and caret position as mention query
-                // by getting the input value after the last '@' in inputBeforeCaret
-                const inputPrefix = inputBeforeCaret.slice(lastAtIndex)
-                const inputSuffix = inputAfterCaret.split(' ')?.[0]
-                return inputPrefix + inputSuffix
-            }
-
-            const mentionQuery = extractMentionQuery(inputValue, caretPosition)
+            const mentionQuery = getAtMentionQuery(inputValue, caretPosition)
             const query = mentionQuery.replace(/^@/, '')
 
             // Filters invalid queries and sets context query state accordingly:
             // Sets the current chat context query state if a valid mention is detected.
             // Otherwise resets the context selection and query state.
-            if (!isAtMention(mentionQuery)) {
+            if (!isAtMention(mentionQuery) && !isAtRange(mentionQuery)) {
                 resetContextSelection()
                 return
             }
 
             setCurrentChatContextQuery(query)
 
+            if (isAtRange(mentionQuery)) {
+                if (contextSelection?.length) {
+                    setContextSelection([contextSelection[0]])
+                    return
+                }
+                // The actual file query shouldn't contain the range input
+                postMessage({ command: 'getUserContext', query: query.replace(/:[^ ]*$/, '') })
+                return
+            }
+
             if (contextSelection?.length) {
                 // Cover cases where user prefer to type the file without expicitly select it
-                const isEndWithSpace = query.replace(/ $/, '') === currentChatContextQuery
-                const isEndWithColon = query.endsWith(':')
-                const isAtRange = /:\d+-\d+?$/.test(query)
-                if (isEndWithSpace || isEndWithColon || isAtRange) {
-                    onChatContextSelected(contextSelection[0], isEndWithColon)
+                const isEndWithSpace = query.trimEnd() === currentChatContextQuery
+                const isAtRange = /:\d+(-\d+)?$/.test(query)
+                if (isEndWithSpace || isAtRange) {
+                    onChatContextSelected(contextSelection[0])
                     return
                 }
             }
@@ -462,6 +464,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             postMessage,
             resetContextSelection,
             contextSelection,
+            setContextSelection,
             currentChatContextQuery,
             onChatContextSelected,
         ]
@@ -525,9 +528,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const hasSelection = selectionStart !== selectionEnd
             const caretPosition = hasSelection ? undefined : selectionStart
             setInputCaretPosition(caretPosition)
-            atMentionHandler(value, caretPosition)
+            atMentionInputHandler(value, caretPosition)
         },
-        [inputHandler, atMentionHandler]
+        [inputHandler, atMentionInputHandler]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -678,9 +681,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 // tab/enter to complete
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
-                    const selected = contextSelection[selectedChatContext]
-                    onChatContextSelected(selected)
+                    const contextIndex = /(^| )@[^ ]*:\d+(-\d+)?$/.test(formInput)
+                        ? 0
+                        : selectedChatContext
+                    onChatContextSelected(contextSelection[contextIndex])
                     return
+                }
+
+                // Close the popover on space
+                if (event.key === 'Space') {
+                    resetContextSelection()
                 }
             }
 

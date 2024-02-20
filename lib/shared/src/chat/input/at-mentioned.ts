@@ -25,6 +25,12 @@ export function getAtMentionedInputText(
         return undefined
     }
 
+    if (/:\d+(-)?(\d+)?( )?$/.test(inputBeforeCaret)) {
+        // Add a space after inputBeforeCaret to formInput
+        const newInput = formInput.replace(inputBeforeCaret, `${inputBeforeCaret} `)
+        return { newInput, newInputCaretPosition: inputCaretPosition }
+    }
+
     // Trims any existing @file text from the input.
     const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
     const afterCaret = formInput.slice(inputCaretPosition)
@@ -51,9 +57,21 @@ export function getAtMentionedInputText(
  *
  * e.g. @foo/bar.ts or @foo/bar.ts:1-15#baz
  */
-export function getContextFileDisplayText(contextFile: ContextFile): string {
+export function getContextFileDisplayText(contextFile: ContextFile, inputBeforeCaret?: string): string {
     const isSymbol = contextFile.type === 'symbol'
     const displayText = `@${displayPath(contextFile.uri)}`
+
+    // If the inputBeforeCaret string is provided, check if it matches the
+    // expected pattern for an @mention with range query, and if so,
+    // return it as this is not an autocomplete request.
+    if (inputBeforeCaret) {
+        const AtQueryRegex = /(^| )@[^ ]*:\d+(-\d+)?$/
+        const atQuery = AtQueryRegex.exec(inputBeforeCaret)?.[0]
+        if (atQuery?.startsWith(`${displayText}:`)) {
+            return atQuery
+        }
+    }
+
     if (!isSymbol) {
         return displayText
     }
@@ -64,3 +82,49 @@ export function getContextFileDisplayText(contextFile: ContextFile): string {
     const symbolName = isSymbol ? `#${contextFile.symbolName}` : ''
     return `${displayText}${range}${symbolName}`.trim()
 }
+
+/**
+ * Extracts the mention query string from the given input string and caret position.
+ *
+ * Splits the input into before and after caret sections. Finds the last '@' before
+ * the caret and extracts the text between it and the caret position as the mention
+ * query.
+ */
+export const extractMentionQuery = (input: string, caretPos: number) => {
+    // Extract mention query by splitting input value into before/after caret sections.
+    const inputBeforeCaret = input.slice(0, caretPos) || ''
+    const inputAfterCaret = input.slice(caretPos) || ''
+    // Find the last '@' index in inputBeforeCaret to determine if it's an @mention
+    const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
+    if (caretPos < 1 || lastAtIndex < 0 || caretPos <= lastAtIndex) {
+        return ''
+    }
+
+    // Extracts text between last '@' and caret position as mention query
+    // by getting the input value after the last '@' in inputBeforeCaret
+    const inputPrefix = inputBeforeCaret.slice(lastAtIndex)
+    const inputSuffix = inputAfterCaret.split(' ')?.[0]
+    return inputPrefix + inputSuffix
+}
+
+/**
+ * Extracts the at mention query from the given input string and caret position.
+ *
+ * Calls extractMentionQuery to extract the mention query if there is a caret position.
+ * Otherwise checks if it is an at range query and returns the input.
+ * Returns empty string if no query.
+ */
+export const getAtMentionQuery = (input: string, caretPos: number) => {
+    return caretPos ? extractMentionQuery(input, caretPos) : isAtRange(input) ? input : ''
+}
+
+/**
+ * At mention should start with @ and contains no whitespaces in between
+ */
+export const isAtMention = (text: string) => /^@[^ ]*( )?$/.test(text)
+
+/**
+ * Checks if the given text is an at-range query of the form '@start:end'
+ * or '@start-end'.
+ */
+export const isAtRange = (text: string) => /(^| )@[^ ]*:(\d+)?(-)?(\d+)?$/.test(text)

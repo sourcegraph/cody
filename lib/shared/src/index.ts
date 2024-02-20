@@ -16,9 +16,12 @@ export { Interaction } from './chat/transcript/interaction'
 export type { InteractionJSON } from './chat/transcript/interaction'
 export { errorToChatError } from './chat/transcript/messages'
 export {
+    getAtMentionQuery,
     getAtMentionedInputText,
     getContextFileDisplayText,
     verifyContextFilesFromInput,
+    isAtMention,
+    isAtRange,
 } from './chat/input'
 export type {
     ChatButton,

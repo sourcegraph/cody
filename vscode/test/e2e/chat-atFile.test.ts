@@ -215,23 +215,30 @@ test('@-file with range support', async ({ page, sidebar }) => {
     // NOTE: Ghost text format: @path/file:line-line (line range)
     // Ghost text shows up when @file is followed by a colon and get updated as the user types
     await chatInput.fill('@index.html:')
-    const ghostText0 = '@index.html:line-line (line range)'
+    const ghostText0 = 'index.html:line-line (line range)'
     await expect(chatPanelFrame.getByRole('button', { name: ghostText0 })).toBeVisible()
 
     await chatInput.fill('@index.html:1')
-    const ghostText1 = '@index.html:1-line (line range)'
+    const ghostText1 = 'index.html:1-line (line range)'
     await expect(chatPanelFrame.getByRole('button', { name: ghostText1 })).toBeVisible()
 
     await chatInput.fill('@index.html:1-')
-    const ghostText2 = '@index.html:1-line (line range)'
+    const ghostText2 = 'index.html:1-line (line range)'
     await expect(chatPanelFrame.getByRole('button', { name: ghostText2 })).toBeVisible()
 
     await chatInput.fill('@index.html:1-5')
-    const ghostText3 = '@index.html:1-5 (line range)'
+    const ghostText3 = 'index.html:1-5 (line range)'
     await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).toBeVisible()
 
-    // @-file with the correct line range shows up in the chat view and it opens on click
+    // Pressing enter should close the suggestion box without changing the input
     await chatInput.press('Enter')
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).not.toBeVisible()
+    await expect(chatInput).toHaveValue('@index.html:1-5')
+
+    // Submit the message
+    await chatInput.press('Enter')
+
+    // @-file with the correct line range shows up in the chat view and it opens on click
     await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').hover()
     await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').click()
     await chatPanelFrame.getByRole('link', { name: '@index.html:1-5' }).hover()

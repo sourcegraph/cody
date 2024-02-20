@@ -6,14 +6,14 @@ import type { ContextFileFile } from '../..'
 
 describe('verifyContextFilesFromInput', () => {
     it('returns empty array if no contextFilesMap provided', () => {
-        const input = 'foo.ts'
+        const input = '@foo.ts'
         const contextFiles = verifyContextFilesFromInput(input)
 
         expect(contextFiles).toEqual([])
     })
 
     it('returns empty array if contextFilesMap is empty', () => {
-        const input = 'foo.ts'
+        const input = '@foo.ts'
         const contextFilesMap = new Map()
         const contextFiles = verifyContextFilesFromInput(input, contextFilesMap)
 
@@ -21,7 +21,7 @@ describe('verifyContextFilesFromInput', () => {
     })
 
     it('returns only context files referenced in input', () => {
-        const input = 'foo.ts bar.ts'
+        const input = '@foo.ts @bar.ts'
         const contextFilesMap = new Map<string, ContextFileFile>([
             ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
             ['baz.ts', { uri: URI.file('baz.ts'), type: 'file' }],
@@ -33,7 +33,7 @@ describe('verifyContextFilesFromInput', () => {
     })
 
     it('sets range property if line numbers included', () => {
-        const input = 'foo.ts:1-2'
+        const input = '@foo.ts:1-2'
         const contextFilesMap = new Map<string, ContextFileFile>([
             ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
         ])
@@ -52,8 +52,41 @@ describe('verifyContextFilesFromInput', () => {
         ])
     })
 
+    it('sets range property for all at-mentioned with and without line numbers', () => {
+        const input = 'Explain @foo.ts:1-2 in @foo.ts, expand @foo.ts:1'
+        const contextFilesMap = new Map<string, ContextFileFile>([
+            ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
+        ])
+
+        const contextFiles = verifyContextFilesFromInput(input, contextFilesMap)
+
+        expect(contextFiles).toEqual([
+            {
+                range: undefined,
+                type: 'file',
+                uri: URI.file('foo.ts'),
+            },
+            {
+                type: 'file',
+                uri: URI.file('foo.ts'),
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 0 },
+                },
+            },
+            {
+                type: 'file',
+                uri: URI.file('foo.ts'),
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 1, character: 0 },
+                },
+            },
+        ])
+    })
+
     it('handles invalid line numbers gracefully', () => {
-        const input = 'foo.ts:a-b'
+        const input = '@foo.ts:5-1'
         const contextFilesMap = new Map<string, ContextFileFile>([
             ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
         ])
@@ -61,5 +94,25 @@ describe('verifyContextFilesFromInput', () => {
         const contextFiles = verifyContextFilesFromInput(input, contextFilesMap)
 
         expect(contextFiles).toEqual([{ uri: URI.file('foo.ts'), type: 'file' }])
+    })
+
+    it('sets range property even if only start line number is included', () => {
+        const input = '@foo.ts:1'
+        const contextFilesMap = new Map<string, ContextFileFile>([
+            ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
+        ])
+
+        const contextFiles = verifyContextFilesFromInput(input, contextFilesMap)
+
+        expect(contextFiles).toEqual([
+            {
+                type: 'file',
+                uri: URI.file('foo.ts'),
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 0 },
+                },
+            },
+        ])
     })
 })
