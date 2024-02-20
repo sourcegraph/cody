@@ -207,8 +207,8 @@ describe('createProviderConfig', () => {
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-7b' },
-                    expected: { provider: 'fireworks', model: 'llama-code-7b' },
+                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-13b' },
+                    expected: { provider: 'fireworks', model: 'llama-code-13b' },
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },

@@ -916,17 +916,7 @@
                 "cody.autocomplete.advanced.model": {
                     "type": "string",
                     "default": null,
-                    "enum": [
-                        null,
-                        "starcoder-16b",
-                        "starcoder-7b",
-                        "starcoder-3b",
-                        "starcoder-1b",
-                        "llama-code-7b",
-                        "llama-code-13b",
-                        "llama-code-13b-instruct",
-                        "mistral-7b-instruct-4k"
-                    ],
+                    "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
                     "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
                 },
                 "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -968,11 +958,6 @@
                     "type": "boolean",
                     "default": false,
                     "markdownDescription": "Preload follow-up completions"
-                },
-                "cody.autocomplete.experimental.fastPath": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Routes code completion requests directly to our Cody Gateway instance. Only works when connected to the Cody community edition and when using the default StarCoder model."
                 },
                 "cody.autocomplete.experimental.graphContext": {
                     "type": "string",
