@@ -137,7 +137,7 @@ function getCancelLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = process.platform === 'darwin' ? '⌥Z' : 'Alt+Z'
     lens.command = {
-        title: `Cancel [${shortcut}]`,
+        title: `Cancel (${shortcut})`,
         command: 'cody.fixup.codelens.cancel',
         arguments: [id],
     }

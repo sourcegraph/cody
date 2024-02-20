@@ -828,7 +828,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteDisableInsideComments: false,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
-    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {

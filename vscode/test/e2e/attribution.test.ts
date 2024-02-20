@@ -21,6 +21,7 @@ const test = baseTest
             'CodyVSCodeExtension:auth:selectSigninMenu',
             'CodyVSCodeExtension:auth:fromToken',
             'CodyVSCodeExtension:Auth:connected',
+            'CodyVSCodeExtension:chat-question:submitted',
             'CodyVSCodeExtension:chat-question:executed',
             'CodyVSCodeExtension:chatResponse:hasCode',
         ],

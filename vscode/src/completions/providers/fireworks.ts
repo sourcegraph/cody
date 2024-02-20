@@ -21,7 +21,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
+import { getSuffixAfterFirstNewline } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import { fetch } from '../../fetch'
@@ -66,10 +66,7 @@ const MODEL_MAP = {
     'starcoder-7b': 'fireworks/starcoder-7b',
 
     // Fireworks model identifiers
-    'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
-    'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
-    'mistral-7b-instruct-4k': 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k',
 }
 
 type FireworksModel =
@@ -87,13 +84,9 @@ function getMaxContextTokens(model: FireworksModel): number {
             // other providers.
             return 2048
         }
-        case 'llama-code-7b':
         case 'llama-code-13b':
-        case 'llama-code-13b-instruct':
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
-            return 2048
-        case 'mistral-7b-instruct-4k':
             return 2048
         default:
             return 1200
@@ -128,7 +121,6 @@ class FireworksProvider extends Provider {
 
         const isNode = typeof process !== 'undefined'
         this.fastPathAccessToken =
-            this.options.fastPath &&
             config.accessToken &&
             // Require the upstream to be dotcom
             this.authStatus.isDotCom &&
@@ -173,6 +165,8 @@ class FireworksProvider extends Provider {
                 .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
                 .join('\n')}\n`
 
+            // We want to remove the same line suffix from a completion request since both StarCoder and Llama
+            // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
@@ -270,19 +264,6 @@ class FireworksProvider extends Provider {
         if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
-        }
-        if (this.model === 'mistral-7b-instruct-4k') {
-            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
-            const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
-            const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
-            const infillSuffix = this.options.docContext.suffix
-            const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
-            const infillPrefix = head.raw
-            return `<s>[INST] Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
-\`\`\`
-${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
-\`\`\`[/INST]
- ${OPENING_CODE_TAG}${infillBlock}`
         }
 
         console.error('Could not generate infilling prompt for', this.model)
@@ -532,19 +513,6 @@ export function createProviderConfig({
         identifier: PROVIDER_IDENTIFIER,
         model: resolvedModel,
     }
-}
-
-// We want to remove the same line suffix from a completion request since both StarCoder and Llama
-// code can't handle this correctly.
-function getSuffixAfterFirstNewline(suffix: string): string {
-    const firstNlInSuffix = suffix.indexOf('\n')
-
-    // When there is no next line, the suffix should be empty
-    if (firstNlInSuffix === -1) {
-        return ''
-    }
-
-    return suffix.slice(suffix.indexOf('\n'))
 }
 
 function isStarCoderFamily(model: string): boolean {
