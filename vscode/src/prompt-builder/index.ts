@@ -42,6 +42,12 @@ export class PromptBuilder {
 
         const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
         if (this.charsUsed + msgLen > this.charLimit) {
+            // Remove the last assistant message which is a response to the current message
+            // from human to avoid the `found consecutive messages with the same speaker 'assistant'`
+            // error when we add the preamble that ends with 'assistant'.
+            if (message.speaker === 'human' && lastMessage?.speaker === 'assistant') {
+                this.reverseMessages.pop()
+            }
             return false
         }
         this.reverseMessages.push(message)
