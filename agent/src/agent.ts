@@ -851,7 +851,10 @@ export class Agent extends MessageHandler {
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
-    /** Matches VS Code codicon syntax, e.g. $(cody-logo) */
+    /**
+     * Matches VS Code codicon syntax, e.g. $(cody-logo)
+     * Source: https://sourcegraph.com/github.com/microsoft/vscode@f34d4/-/blob/src/vs/base/browser/ui/iconLabel/iconLabels.ts?L9
+     */
     private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
     /**
      * Given a title, such as "$(cody-logo) Cody", returns the raw
