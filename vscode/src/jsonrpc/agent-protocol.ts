@@ -608,6 +608,10 @@ export interface ProtocolCodeLens {
 
 export interface ProtocolCommand {
     title: string
+    icons: {
+        value: string
+        position: number
+    }[]
     command: string
     tooltip?: string
     arguments?: any[]

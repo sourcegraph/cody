@@ -40,6 +40,7 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    ProtocolCommand,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -850,6 +851,25 @@ export class Agent extends MessageHandler {
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
+    /** Matches VS Code codicon syntax, e.g. $(cody-logo) */
+    private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
+    /**
+     * Given a title, such as "$(cody-logo) Cody", returns the raw
+     * title without icons and the icons matched with their respective positions.
+     */
+    private extractIconsFromTitle(title: string): Pick<ProtocolCommand, 'title' | 'icons'> {
+        const icons: { value: string; position: number }[] = []
+        const matches = [...title.matchAll(this.labelWithIconsRegex)]
+
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                icons.push({ value: match[0], position: match.index })
+            }
+        }
+
+        return { title: title.replace(this.labelWithIconsRegex, ''), icons }
+    }
+
     private async updateCodeLenses(): Promise<void> {
         const uri = this.workspace.activeDocumentFilePath
         if (!uri) {
@@ -867,9 +887,28 @@ export class Agent extends MessageHandler {
         }
         const lenses = (await Promise.all(promises)).flat()
 
+        // VS Code supports icons in code lenses, but we cannot render these through agent.
+        // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
+        const agentLenses = lenses.map(lens => {
+            if (!lens.command) {
+                return {
+                    ...lens,
+                    command: undefined,
+                }
+            }
+
+            return {
+                ...lens,
+                command: {
+                    ...lens.command,
+                    ...this.extractIconsFromTitle(lens.command.title),
+                },
+            }
+        })
+
         this.notify('codeLenses/display', {
             uri: uri.toString(),
-            codeLenses: lenses,
+            codeLenses: agentLenses,
         })
     }
     private async provideCodeLenses(
