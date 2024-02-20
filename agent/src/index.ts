@@ -20,6 +20,12 @@ process.on('uncaughtException', e => {
     console.error('Uncaught exception:', e)
 })
 
+const blocked = require('blocked-at');
+
+blocked((time: number, stack: string[]) => {
+  console.log(`Blocked for ${time}ms, operation started here:`, stack)
+});
+
 const args = process.argv.slice(2)
 const { operands } = rootCommand.parseOptions(args)
 if (operands.length === 0) {
