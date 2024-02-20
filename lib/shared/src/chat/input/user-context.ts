@@ -12,10 +12,10 @@ import type { ContextFile } from '../..'
  * @returns The ContextFile objects that are still referenced in the input.
  */
 export function verifyContextFilesFromInput(
-    input: string,
+    inputValue: string,
     contextFilesMap?: Map<string, ContextFile>
 ): ContextFile[] {
-    if (!input.trim() || !contextFilesMap?.size) {
+    if (!inputValue.trim() || !contextFilesMap?.size) {
         return []
     }
 
@@ -24,10 +24,14 @@ export function verifyContextFilesFromInput(
     // If so, create a new contextFile and add it to the returned array based on
     // presented strings that matches the @file-name with correct range.
     const userContextFiles: ContextFile[] = []
-    for (const [atFileName, contextFile] of contextFilesMap) {
-        if (!input.includes(atFileName)) {
+    for (const [fileName, contextFile] of contextFilesMap) {
+        if (!inputValue.includes(fileName)) {
             continue
         }
+
+        // Support windows paths
+        const input = inputValue.replace(/\\/g, '/')
+        const atFileName = fileName.replace(/\\/g, '/')
 
         // Add fileName in input that is not followed by a colon
         const counts = input.matchAll(new RegExp(atFileName + '(?!:)', 'g'))
