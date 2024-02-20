@@ -639,6 +639,13 @@ describe('Agent', () => {
                         `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
                     )
                 }
+
+                // Check the command is corrected parsed by the agent
+                expect(acceptCommand.command.title).toBe(' Accept')
+                expect(acceptCommand.command.icons).toStrictEqual([
+                    { position: 0, value: '$(cody-logo)' },
+                ])
+
                 await documentClient.request('command/execute', acceptCommand.command)
                 expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
                 const newContent = documentClient.workspace.getDocument(uri)?.content
