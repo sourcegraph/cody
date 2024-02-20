@@ -117,11 +117,11 @@ export const renderMarkdown = (markdown: string, options: MarkdownOptions = {}):
         })
     }
 
-    // Wrap links with the '_cody.vscode.open' command
+    // Wrap non-command links with the '_cody.vscode.open' command
     if (options.wrapLinksWithCodyCommand) {
         DOMPurify.addHook('afterSanitizeAttributes', node => {
             const link = node.getAttribute('href')
-            if (node.tagName.toLowerCase() === 'a' && link) {
+            if (node.tagName.toLowerCase() === 'a' && link && !link.startsWith('command:')) {
                 const encodedLink = encodeURIComponent(JSON.stringify(link))
                 node.setAttribute('href', `command:_cody.vscode.open?${encodedLink}`)
             }
