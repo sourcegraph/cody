@@ -641,8 +641,8 @@ describe('Agent', () => {
                 }
 
                 // Check the command is corrected parsed by the agent
-                expect(acceptCommand.command.title).toBe(' Accept')
-                expect(acceptCommand.command.icons).toStrictEqual([
+                expect(acceptCommand.command.title.text).toBe(' Accept')
+                expect(acceptCommand.command.title.icons).toStrictEqual([
                     { position: 0, value: '$(cody-logo)' },
                 ])
 
