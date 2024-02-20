@@ -1,6 +1,6 @@
 # AI that knows your entire codebase
 
-[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is a free AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
+[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
 Cody is now generally available. If you're using Cody Pro, make sure to update to the latest version of the IDE extension to get the latest features and unlimited rate limits.
 
@@ -53,7 +53,7 @@ Cody builds a Search index of your local files to make it easier to find what yo
 
 Cody Free: This version of Cody is available entirely free for all developers. It includes up to 500 autocomplete suggestions & 20 chat/command invocations per month.
 
-Cody Pro: This is an expanded version of Cody for developers who want to use it every day, for either work or personal projects, with no usage limits. Cody Pro will be available for free until February 14, 2024, and after that Cody Pro will be available for $9/user/month.
+Cody Pro: This is an expanded version of Cody for developers who want to use it every day, for either work or personal projects, with no usage limits. Cody Pro is available for $9/user/month.
 
 You can find more information on our [pricing page](https://sourcegraph.com/pricing).
 
