@@ -546,6 +546,7 @@ const register = async (
                 onSelect: () => {
                     // Bring up the sidebar view
                     void vscode.commands.executeCommand('cody.focus')
+                    return false
                 },
             })
         }

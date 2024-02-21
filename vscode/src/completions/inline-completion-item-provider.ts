@@ -633,6 +633,7 @@ export class InlineCompletionItemProvider
                         })
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
+                    return true
                 },
                 onShow: () => {
                     if (shown) {

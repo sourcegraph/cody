@@ -14,8 +14,9 @@ interface StatusBarError {
     errorType: StatusBarErrorName
     statusButtonLabel?: string
     onShow?: () => void
-    onSelect?: () => void
+    onSelect?: () => boolean
 }
+
 
 export interface CodyStatusBar {
     dispose(): void
@@ -111,11 +112,13 @@ export function createStatusBar(): CodyStatusBar {
                           description: '',
                           detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
                           onSelect(): Promise<void> {
-                              error.error.onSelect?.()
-                              const index = errors.indexOf(error)
-                              errors.splice(index)
-                              rerender()
-                              return Promise.resolve()
+                            const removeError = error.error.onSelect?.()
+                            if (removeError) {
+                                const index = errors.indexOf(error)
+                                errors.splice(index)
+                                rerender()
+                            }
+                            return Promise.resolve()
                           },
                       })),
                   ]
