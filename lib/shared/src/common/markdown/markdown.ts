@@ -39,33 +39,38 @@ const highlightCodeSafe = (code: string, language?: string): string => {
     }
 }
 
+export interface MarkdownOptions {
+    /** Whether to render line breaks as HTML `<br>`s */
+    breaks?: boolean
+    /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
+    disableAutolinks?: boolean
+    renderer?: marked.Renderer
+    headerPrefix?: string
+    /** Strip off any HTML and return a plain text string, useful for previews */
+    plainText?: boolean
+    dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
+    noDomPurify?: boolean
+
+    /**
+     * Add target="_blank" and rel="noopener" to all <a> links that have a
+     * href value. This affects all markdown-formatted links and all inline
+     * HTML links.
+     */
+    addTargetBlankToAllLinks?: boolean
+
+    /**
+     * Wrap all <a> links that have a href value with the _cody.vscode.open
+     * command that will open the links with the editor link handler.
+     */
+    wrapLinksWithCodyCommand?: boolean
+}
+
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
  * @param markdown The markdown to render
  */
-export const renderMarkdown = (
-    markdown: string,
-    options: {
-        /** Whether to render line breaks as HTML `<br>`s */
-        breaks?: boolean
-        /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
-        disableAutolinks?: boolean
-        renderer?: marked.Renderer
-        headerPrefix?: string
-        /** Strip off any HTML and return a plain text string, useful for previews */
-        plainText?: boolean
-        dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
-        noDomPurify?: boolean
-
-        /**
-         * Add target="_blank" and rel="noopener" to all <a> links that have a
-         * href value. This affects all markdown-formatted links and all inline
-         * HTML links.
-         */
-        addTargetBlankToAllLinks?: boolean
-    } = {}
-): string => {
+export const renderMarkdown = (markdown: string, options: MarkdownOptions = {}): string => {
     const tokenizer = new marked.Tokenizer()
     if (options.disableAutolinks) {
         // Why the odd double-casting below?
@@ -112,12 +117,23 @@ export const renderMarkdown = (
         })
     }
 
+    // Wrap non-command links with the '_cody.vscode.open' command
+    if (options.wrapLinksWithCodyCommand) {
+        DOMPurify.addHook('afterSanitizeAttributes', node => {
+            const link = node.getAttribute('href')
+            if (node.tagName.toLowerCase() === 'a' && link && !link.startsWith('command:')) {
+                const encodedLink = encodeURIComponent(JSON.stringify(link))
+                node.setAttribute('href', `command:_cody.vscode.open?${encodedLink}`)
+            }
+        })
+    }
+
     const result = options.noDomPurify ? rendered : DOMPurify.sanitize(rendered, dompurifyConfig).trim()
 
-    if (options.addTargetBlankToAllLinks) {
+    if (options.addTargetBlankToAllLinks || options.wrapLinksWithCodyCommand) {
         // Because DOMPurify doesn't have a way to set hooks per individual call
         // to sanitize(), we have to clean up by removing the hook that we added
-        // for addTargetBlankToAllLinks.
+        // for addTargetBlankToAllLinks or wrapLinksWithCodyCommand.
         DOMPurify.removeHook('afterSanitizeAttributes')
     }
 

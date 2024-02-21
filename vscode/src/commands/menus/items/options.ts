@@ -1,41 +1,42 @@
+import { CodyCommandMenuItems } from '../..'
 import type { CommandMenuItem } from '../types'
 
-export const ASK_QUESTION_COMMAND = {
-    description: 'Ask a question',
-    slashCommand: '/ask',
-}
+export const ASK_QUESTION_COMMAND = CodyCommandMenuItems[0]
 
-export const EDIT_COMMAND = {
-    description: 'Edit code',
-    slashCommand: '/edit',
-}
+export const EDIT_COMMAND = CodyCommandMenuItems[1]
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {
-    label: ASK_QUESTION_COMMAND.slashCommand,
-    description: ASK_QUESTION_COMMAND.description,
-    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+    label: `$(${ASK_QUESTION_COMMAND.icon}) ${ASK_QUESTION_COMMAND.description}`,
+    description: ASK_QUESTION_COMMAND.prompt,
+    key: ASK_QUESTION_COMMAND.key,
     alwaysShow: true,
+    type: 'default',
+    command: ASK_QUESTION_COMMAND.command.command,
 }
 
 const fixOption: CommandMenuItem = {
-    label: EDIT_COMMAND.slashCommand,
-    description: EDIT_COMMAND.description,
-    slashCommand: EDIT_COMMAND.slashCommand,
+    label: `$(${EDIT_COMMAND.icon}) ${EDIT_COMMAND.description}`,
+    description: EDIT_COMMAND.prompt,
+    key: EDIT_COMMAND.key,
     alwaysShow: true,
+    type: 'default',
+    command: ASK_QUESTION_COMMAND.command.command,
 }
 
 const configOption: CommandMenuItem = {
-    label: 'Configure Custom Commands...',
+    label: '$(gear) Configure Custom Commands...',
     description: 'Manage your custom reusable commands',
-    slashCommand: '',
+    key: '',
+    command: 'cody.menu.commands-settings',
 }
+
 const addOption: CommandMenuItem = {
-    label: 'New Custom Command...',
+    label: '$(diff-added) New Custom Command...',
     alwaysShow: true,
     description: 'Create a new reusable command',
-    slashCommand: '',
-    command: 'cody.commands.add',
+    key: '',
+    command: 'cody.menu.custom.build',
 }
 
 export const CommandMenuOption = {

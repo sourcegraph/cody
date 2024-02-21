@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '../fetch'
-import { recordSpanWithError, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { type Span, SpanStatusCode } from '@opentelemetry/api'
 
 /**
@@ -98,21 +98,21 @@ export function createClient(
                     const upgradeIsAvailable =
                         response.headers.get('x-is-cody-pro-user') === 'false' &&
                         typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-                    throw recordSpanWithError(
+                    throw recordErrorToSpan(
                         span,
                         await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
                     )
                 }
 
                 if (!response.ok) {
-                    throw recordSpanWithError(
+                    throw recordErrorToSpan(
                         span,
                         new NetworkError(response, await response.text(), traceId)
                     )
                 }
 
                 if (response.body === null) {
-                    throw recordSpanWithError(span, new TracedError('No response body', traceId))
+                    throw recordErrorToSpan(span, new TracedError('No response body', traceId))
                 }
 
                 // For backward compatibility, we have to check if the response is an SSE stream or a
@@ -191,7 +191,7 @@ export function createClient(
                         return
                     }
 
-                    recordSpanWithError(span, error as Error)
+                    recordErrorToSpan(span, error as Error)
 
                     if (isRateLimitError(error as Error)) {
                         throw error
@@ -310,7 +310,8 @@ export function logResponseHeadersToSpan(span: Span, response: BrowserOrNodeResp
     response.headers.forEach((value, key) => {
         responseHeaders[key] = value
     })
-    span.addEvent('response', {
+    span.addEvent('response')
+    span.setAttributes({
         ...responseHeaders,
         status: response.status,
     })

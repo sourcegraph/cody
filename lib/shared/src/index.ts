@@ -60,7 +60,7 @@ export {
     markdownCodeBlockLanguageIDForFilename,
 } from './common/languages'
 export { renderMarkdown } from './common/markdown'
-export { posixAndURIPaths } from './common/path'
+export { posixFilePaths } from './common/path'
 export { isWindows } from './common/platform'
 export {
     assertFileURI,
@@ -196,3 +196,4 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
+export { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'

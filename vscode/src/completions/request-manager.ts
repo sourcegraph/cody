@@ -73,29 +73,38 @@ export class RequestManager {
     // the relevance of existing requests (i.e to find out if the generations are still relevant)
     private latestRequestParams: null | RequestsManagerParams = null
 
+    public checkCache(
+        params: Pick<RequestsManagerParams, 'requestParams' | 'isCacheEnabled'>
+    ): RequestManagerResult | null {
+        const { requestParams, isCacheEnabled } = params
+        const cachedCompletions = this.cache.get(requestParams)
+
+        if (isCacheEnabled && cachedCompletions) {
+            addAutocompleteDebugEvent('RequestManager.checkCache', { cachedCompletions })
+            return cachedCompletions
+        }
+        return null
+    }
+
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
         const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
             FeatureFlag.CodyAutocompleteEagerCancellation
         )
+        const smartThrottle = completionProviderConfig.smartThrottle
+
         this.latestRequestParams = params
 
-        const { requestParams, provider, context, isCacheEnabled, tracer } = params
+        const { requestParams, provider, context, tracer } = params
 
-        const cachedCompletions = this.cache.get(requestParams)
-        addAutocompleteDebugEvent('RequestManager.request', {
-            cachedCompletions,
-            isCacheEnabled,
-        })
+        addAutocompleteDebugEvent('RequestManager.request')
 
-        if (isCacheEnabled && cachedCompletions) {
-            return cachedCompletions
-        }
+        const shouldHonorCancellation = eagerCancellation || smartThrottle
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
         const abortController: AbortController =
-            eagerCancellation && params.requestParams.abortSignal
+            shouldHonorCancellation && params.requestParams.abortSignal
                 ? forkSignal(params.requestParams.abortSignal)
                 : new AbortController()
 

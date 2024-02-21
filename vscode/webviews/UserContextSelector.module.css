@@ -63,6 +63,23 @@
     overflow: hidden;
 }
 
+.warning-container {
+    margin: 0;
+}
+
+.show-warning {
+    flex-direction: column;
+    align-items: self-start;
+}
+
+.warning-description {
+    opacity: 0.6;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex: 1;
+}
+
 .selection-title {
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -71,8 +88,7 @@
 
 .selection-description {
     margin-left: 0.25rem;
-    font-size: smaller;
-    opacity: 0.7;
+    opacity: 0.8;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;

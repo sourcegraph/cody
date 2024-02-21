@@ -198,7 +198,7 @@ const _workspace: typeof vscode.workspace = {
         logError('vscode.workspace.applyEdit', 'agent is undefined')
         return Promise.resolve(false)
     },
-    isTrusted: false,
+    isTrusted: true,
     name: undefined,
     notebookDocuments: [],
     openNotebookDocument: (() => {}) as any,
@@ -915,7 +915,6 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
-const codeLensProviders = new Set<vscode.CodeLensProvider>()
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -942,14 +941,21 @@ const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
-        return { dispose: () => codeLensProviders.delete(provider) }
+        return { dispose: () => removeCodeLensProvider.fire(provider) }
     },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any
         resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
+    getDiagnostics: ((resource: vscode.Uri) => {
+        if (resource) {
+            return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
+        }
+        return [[resource, []]] // return diagnostics for all resources
+    }) as { (resource: vscode.Uri): vscode.Diagnostic[]; (): [vscode.Uri, vscode.Diagnostic[]][] },
 }
+
 export const languages = _languages as typeof vscode.languages
 
 const commentController: vscode.CommentController = {

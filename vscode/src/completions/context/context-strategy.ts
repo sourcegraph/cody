@@ -4,7 +4,6 @@ import type { ContextRetriever } from '../types'
 
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
-import { JaccardSimilarityRetriever as NewJaccardSimilarityRetriever } from './retrievers/new-jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
 export type ContextStrategy =
@@ -45,10 +44,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             case 'jaccard-similarity':
                 this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                break
-            case 'new-jaccard-similarity':
-                this.localRetriever = new NewJaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 break
             case 'local-mixed':
@@ -101,8 +96,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
 
             // The jaccard similarity strategies only uses the local retriever
-            case 'jaccard-similarity':
-            case 'new-jaccard-similarity': {
+            case 'jaccard-similarity': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
                 }

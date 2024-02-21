@@ -421,3 +421,14 @@ export function getPositionAfterTextInsertion(position: Position, text?: string)
 
     return updatedPosition
 }
+
+export function getSuffixAfterFirstNewline(suffix: string): string {
+    const firstNlInSuffix = suffix.indexOf('\n')
+
+    // When there is no next line, the suffix should be empty
+    if (firstNlInSuffix === -1) {
+        return ''
+    }
+
+    return suffix.slice(firstNlInSuffix)
+}

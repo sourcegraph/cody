@@ -2,10 +2,8 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import * as mockServer from '../fixtures/mock-server'
-
 import { sidebarSignin } from './common'
-import { assertEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 /**
  * Tests for @-file & @#-symbol in chat
@@ -13,7 +11,15 @@ import { assertEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpe
  *
  * NOTE: Creating new chats is slow, and setup is slow, so we collapse all these into one test
  */
-test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+    ],
+})('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -152,15 +158,17 @@ test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
 
     //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
-    await page.keyboard.type(' @abcdefg')
+    await chatInput.type(' @abcdefg', { delay: 50 })
     await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('ArrowRight')
     await expect(noMatches).not.toBeVisible()
-    await chatInput.press('?')
+    await chatInput.type('?', { delay: 50 })
     await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefg?file')
+    await noMatches.hover()
     await expect(noMatches).toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
@@ -189,11 +197,4 @@ test('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

@@ -4,9 +4,10 @@ import {
     BotResponseMultiplexer,
     isAbortError,
     isDotCom,
-    posixAndURIPaths,
+    posixFilePaths,
     Typewriter,
     uriBasename,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
@@ -42,96 +43,105 @@ export class EditProvider {
     constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
-        const model = this.config.task.model
-        const contextWindow = getContextWindowForModel(this.config.authProvider.getAuthStatus(), model)
-        const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
-            model,
-            contextWindow,
-            task: this.config.task,
-            editor: this.config.editor,
-        })
+        return wrapInActiveSpan('command.edit.start', async span => {
+            const model = this.config.task.model
+            const contextWindow = getContextWindowForModel(
+                this.config.authProvider.getAuthStatus(),
+                model
+            )
+            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+                model,
+                contextWindow,
+                task: this.config.task,
+                editor: this.config.editor,
+            })
 
-        const multiplexer = new BotResponseMultiplexer()
+            const multiplexer = new BotResponseMultiplexer()
 
-        const typewriter = new Typewriter({
-            update: content => {
-                void this.handleResponse(content, true)
-            },
-            close: () => {},
-        })
+            const typewriter = new Typewriter({
+                update: content => {
+                    void this.handleResponse(content, true)
+                },
+                close: () => {},
+            })
 
-        let text = ''
-        multiplexer.sub(responseTopic, {
-            onResponse: async (content: string) => {
-                text += content
-                typewriter.update(responsePrefix + text)
-                return Promise.resolve()
-            },
-            onTurnComplete: async () => {
-                typewriter.close()
-                typewriter.stop()
-                void this.handleResponse(text, false)
-                return Promise.resolve()
-            },
-        })
-
-        // Listen to test file name suggestion from responses
-        // Allows Cody to let us know which test file we should add the new content to
-        if (this.config.task.intent === 'test') {
-            let filepath = ''
-            multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+            let text = ''
+            multiplexer.sub(responseTopic, {
                 onResponse: async (content: string) => {
-                    filepath += content
-                    void this.handleFileCreationResponse(filepath, true)
+                    text += content
+                    typewriter.update(responsePrefix + text)
                     return Promise.resolve()
                 },
                 onTurnComplete: async () => {
+                    typewriter.close()
+                    typewriter.stop()
+                    void this.handleResponse(text, false)
                     return Promise.resolve()
                 },
             })
-        }
 
-        const abortController = new AbortController()
-        this.cancelCompletionCallback = () => abortController.abort()
-        const stream = this.config.chat.chat(messages, { model, stopSequences }, abortController.signal)
+            // Listen to test file name suggestion from responses
+            // Allows Cody to let us know which test file we should add the new content to
+            if (this.config.task.intent === 'test') {
+                let filepath = ''
+                multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                    onResponse: async (content: string) => {
+                        filepath += content
+                        void this.handleFileCreationResponse(filepath, true)
+                        return Promise.resolve()
+                    },
+                    onTurnComplete: async () => {
+                        return Promise.resolve()
+                    },
+                })
+            }
 
-        let textConsumed = 0
-        for await (const message of stream) {
-            switch (message.type) {
-                case 'change': {
-                    if (textConsumed === 0 && responsePrefix) {
-                        void multiplexer.publish(responsePrefix)
+            const abortController = new AbortController()
+            this.cancelCompletionCallback = () => abortController.abort()
+            const stream = this.config.chat.chat(
+                messages,
+                { model, stopSequences },
+                abortController.signal
+            )
+
+            let textConsumed = 0
+            for await (const message of stream) {
+                switch (message.type) {
+                    case 'change': {
+                        if (textConsumed === 0 && responsePrefix) {
+                            void multiplexer.publish(responsePrefix)
+                        }
+                        const text = message.text.slice(textConsumed)
+                        textConsumed += text.length
+                        void multiplexer.publish(text)
+                        break
                     }
-                    const text = message.text.slice(textConsumed)
-                    textConsumed += text.length
-                    void multiplexer.publish(text)
-                    break
-                }
-                case 'complete': {
-                    void multiplexer.notifyTurnComplete()
-                    break
-                }
-                case 'error': {
-                    let err = message.error
-                    logError('EditProvider:onError', err.message)
-
-                    if (isAbortError(err)) {
-                        void this.handleResponse(text, false)
-                        return
+                    case 'complete': {
+                        void multiplexer.notifyTurnComplete()
+                        break
                     }
+                    case 'error': {
+                        let err = message.error
+                        logError('EditProvider:onError', err.message)
 
-                    if (isNetworkError(err)) {
-                        err = new Error('Cody could not respond due to network error.')
+                        if (isAbortError(err)) {
+                            void this.handleResponse(text, false)
+                            return
+                        }
+
+                        if (isNetworkError(err)) {
+                            err = new Error('Cody could not respond due to network error.')
+                        }
+
+                        // Display error message as assistant response
+                        this.handleError(err)
+                        console.error(`Completion request failed: ${err.message}`)
+
+                        break
                     }
-
-                    // Display error message as assistant response
-                    this.handleError(err)
-                    console.error(`Completion request failed: ${err.message}`)
-
-                    break
                 }
             }
-        }
+        })
     }
 
     public abortEdit(): void {
@@ -268,7 +278,7 @@ export class EditProvider {
         // remove open and close tags from text
         const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixAndURIPaths.extname(currentFileName) === posixAndURIPaths.extname(newFileName)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)

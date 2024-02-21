@@ -11,14 +11,12 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity,
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
-        FeatureFlag.CodyAutocompleteSingleMultilineRequest,
-        FeatureFlag.CodyAutocompleteFastPath,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
     ] as const
 
     private get config() {
@@ -66,20 +64,10 @@ class CompletionProviderConfig {
         )
     }
 
-    public get fastPath(): boolean {
-        return (
-            this.config.autocompleteExperimentalFastPath ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
-        )
-    }
-
     public get contextStrategy(): ContextStrategy {
         const { config } = this
 
         const bfgMixedContextFlag = this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-        const newJaccardSimilarityContextFlag = this.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity
-        )
 
         const contextStrategy: ContextStrategy =
             config.autocompleteExperimentalGraphContext === 'bfg'
@@ -94,11 +82,16 @@ class CompletionProviderConfig {
                               ? 'new-jaccard-similarity'
                               : bfgMixedContextFlag
                                   ? 'bfg-mixed'
-                                  : newJaccardSimilarityContextFlag
-                                      ? 'new-jaccard-similarity'
-                                      : 'jaccard-similarity'
+                                  : 'jaccard-similarity'
 
         return contextStrategy
+    }
+
+    public get smartThrottle(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
+        )
     }
 }
 

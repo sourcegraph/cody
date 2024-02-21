@@ -13,6 +13,7 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
 
@@ -163,27 +164,29 @@ describe('Agent', () => {
         expect(valid?.username).toStrictEqual('olafurpg-testing')
     }, 10_000)
 
-    it('autocomplete/execute (non-empty result)', async () => {
-        await client.openFile(sumUri)
-        const completions = await client.request('autocomplete/execute', {
-            uri: sumUri.toString(),
-            position: { line: 1, character: 3 },
-            triggerKind: 'Invoke',
-        })
-        const texts = completions.items.map(item => item.insertText)
-        expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(
-            `
+    describe('Autocomplete', () => {
+        it('autocomplete/execute (non-empty result)', async () => {
+            await client.openFile(sumUri)
+            const completions = await client.request('autocomplete/execute', {
+                uri: sumUri.toString(),
+                position: { line: 1, character: 3 },
+                triggerKind: 'Invoke',
+            })
+            const texts = completions.items.map(item => item.insertText)
+            expect(completions.items.length).toBeGreaterThan(0)
+            expect(texts).toMatchInlineSnapshot(
+                `
           [
             "   return a + b;",
           ]
         `,
-            explainPollyError
-        )
-        client.notify('autocomplete/completionAccepted', {
-            completionID: completions.items[0].id,
-        })
-    }, 10_000)
+                explainPollyError
+            )
+            client.notify('autocomplete/completionAccepted', {
+                completionID: completions.items[0].id,
+            })
+        }, 10_000)
+    })
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         const currentUserCodySubscription = await client.request(
@@ -307,7 +310,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const lastMessage = await client.sendSingleMessageToNewChat(
-                'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+                'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
                     addEnhancedContext: true,
                 }
@@ -315,22 +318,17 @@ describe('Agent', () => {
             // TODO: make this test return a TypeScript implementation of
             // `animal.ts`. It currently doesn't do this because the workspace root
             // is not a git directory and symf reports some git-related error.
-            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
-                `
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              export class Dog implements Animal {
+              class Dog implements Animal {
                 name: string;
-
                 makeAnimalSound() {
-                  return "Bark!";
+                  return "Woof";
                 }
-
                 isMammal = true;
               }
               \`\`\`"
-            `,
-                explainPollyError
-            )
+            `)
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
@@ -489,7 +487,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'Which file is the isIgnoredByCody functions defined?',
+                'What files contain SELECTION_START?',
                 { addEnhancedContext: true }
             )
             decodeURIs(transcript)
@@ -544,6 +542,12 @@ describe('Agent', () => {
             await client.request('commands/document', null).catch(err => {
                 expect(err).toBeDefined()
             })
+        })
+
+        it('ignore rule is not case sensitive', async () => {
+            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
+            const result = await client.request('check/isCodyIgnoredFile', { urls: [alsoIgnoredPath] })
+            expect(result).toBeTruthy()
         })
 
         afterAll(async () => {
@@ -635,6 +639,13 @@ describe('Agent', () => {
                         `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
                     )
                 }
+
+                // Check the command is corrected parsed by the agent
+                expect(acceptCommand.command.title.text).toBe(' Accept')
+                expect(acceptCommand.command.title.icons).toStrictEqual([
+                    { position: 0, value: '$(cody-logo)' },
+                ])
+
                 await documentClient.request('command/execute', acceptCommand.command)
                 expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
                 const newContent = documentClient.workspace.getDocument(uri)?.content
@@ -661,27 +672,21 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " Here is an explanation of the selected TypeScript code in simple terms:
+              " Animal Interface
 
-              The Animal interface
+              The selected code defines an interface called Animal. An interface in TypeScript is like a blueprint or contract that defines the structure of an object. Specifically:
 
-              The Animal interface defines the shape of an Animal object. It does not contain any actual implementation, just declarations for what properties and methods an Animal object should have.
+              1. The purpose of this Animal interface is to define the shape of Animal objects - that is, to specify what properties and methods any object implementing the Animal interface must have.
 
-              The interface has three members:
+              2. The Animal interface itself does not take any inputs. However, any concrete classes that implement the Animal interface would take inputs to instantiate an object (for example, constructor arguments).
 
-              1. name - This is a string property to store the animal's name.
+              3. Similarly, the Animal interface does not directly produce any outputs. Its role is to define the shape of objects. Any class implementing Animal would be responsible for producing outputs through its concrete methods and properties.
 
-              2. makeAnimalSound() - This is a method that should return a string representing the sound the animal makes.
+              4. The interface achieves its purpose by declaring a name property of type string, a makeAnimalSound method that returns a string, and an isMammal property of type boolean.
 
-              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
+              5. By defining this structure, the interface ensures that any class implementing Animal will have these required members with the specified types. This allows TypeScript to enforce that objects adhere to the Animal contract.
 
-              The purpose of this interface is to define a consistent structure for Animal objects. Any class that implements the Animal interface will be required to have these three members with these types.
-
-              This allows code dealing with Animal objects to know it can call animal.makeAnimalSound() and access animal.name and animal.isMammal, regardless of the specific class. The interface defines the contract between the implementation and usage of Animals, without caring about specific details.
-
-              Interfaces like this are useful for writing reusable code that can handle different types of objects in a consistent way. The code using the interface doesn't need to know about the specifics of each class, just that it implements the Animal interface. This allows easily extending the code to handle new types of animals by simply creating a new class implementing Animal.
-
-              So in summary, the Animal interface defines the input expectations and output guarantees for objects representing animals in the system, allowing code to work with any animal in a generic way based on this contract."
+              So in summary, the Animal interface defines a blueprint for Animal objects by specifying required properties and methods. This allows TypeScript to statically analyze objects based on their fulfillment of the interface contract. The interface itself does not contain logic - it simply defines the shape of objects. Any consuming code can then rely on objects implementing the Animal interface having the defined structure."
             `,
                 explainPollyError
             )
@@ -699,53 +704,58 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  " Okay, reviewing the shared context, it looks like there are no existing test files provided.
+                  " Okay, based on the shared context, I see that Vitest is being used as the test framework. No mocks are detected.
 
-                  Since \`src/animal.ts\` defines an \`Animal\` interface, I will generate Jest unit tests for this interface in \`src/animal.test.ts\`:
+                  Since there are no existing tests for the Animal interface, I will generate a new test file with sample unit tests covering basic validation of the Animal interface:
 
                   \`\`\`typescript
-                  // src/animal.test.ts
+                  import { expect } from 'vitest'
 
-                  import { Animal } from './animal';
+                  import { describe, it } from 'vitest'
 
-                  describe('Animal interface', () => {
+                  import { Animal } from './animal'
 
-                    it('should have a name property', () => {
+                  describe('Animal', () => {
+
+                    it('has name property', () => {
                       const animal: Animal = {
                         name: 'Cat',
-                        makeAnimalSound: () => '',
+                        makeAnimalSound() {
+                          return 'Meow'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.name).toBeDefined();
-                    });
+                      expect(animal.name).toEqual('Cat')
+                    })
 
-                    it('should have a makeAnimalSound method', () => {
+                    it('has makeAnimalSound method', () => {
                       const animal: Animal = {
                         name: 'Dog',
-                        makeAnimalSound: () => 'Woof',
+                        makeAnimalSound() {
+                          return 'Woof'
+                        },
                         isMammal: true
-                      };
+                      }
 
-                      expect(animal.makeAnimalSound).toBeDefined();
-                      expect(typeof animal.makeAnimalSound).toBe('function');
-                    });
+                      expect(animal.makeAnimalSound()).toEqual('Woof')
+                    })
 
-                    it('should have an isMammal property', () => {
+                    it('has isMammal property', () => {
                       const animal: Animal = {
                         name: 'Snake',
-                        makeAnimalSound: () => 'Hiss',
+                        makeAnimalSound() {
+                          return 'Hiss'
+                        },
                         isMammal: false
-                      };
+                      }
 
-                      expect(animal.isMammal).toBeDefined();
-                      expect(typeof animal.isMammal).toBe('boolean');
-                    });
-
-                  });
+                      expect(animal.isMammal).toEqual(false)
+                    })
+                  })
                   \`\`\`
 
-                  This covers basic validation of the Animal interface properties and methods using Jest assertions. Additional tests could validate more complex object shapes and logic."
+                  This covers basic validation of the Animal interface properties and methods using Vitest assertions.Let me know if you would like me to expand on any additional test cases."
                 `,
                     explainPollyError
                 )
@@ -974,6 +984,180 @@ describe('Agent', () => {
                 `)
             )
         })
+    })
+
+    describe('Custom Commands', () => {
+        it('commands/custom, chat command, open tabs context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            // Note: The test editor has all the files opened from previous tests as open tabs,
+            // so we will need to open a new file that has not been opened before,
+            // to make sure this context type is working.
+            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
+            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            await client.openFile(trickyLogicUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/countTabs',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " So far you have shared code context from these files:
+
+              - src/trickyLogic.ts
+              - src/TestLogger.ts
+              - src/TestClass.ts
+              - src/sum.ts
+              - src/squirrel.ts
+              - src/multiple-selections.ts
+              - src/example.test.ts
+              - src/animal.ts
+              - .cody/ignore"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, chat command, adds argument', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/translate Python',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " Here is the TypeScript code translated to Python:
+
+              \`\`\`python
+              class Animal:
+                  def __init__(self, name: str, is_mammal: bool):
+                      self.name = name
+                      self.is_mammal = is_mammal
+
+                  def make_animal_sound(self) -> str:
+                      pass
+              \`\`\`
+
+              The key differences:
+
+              - Interfaces don't exist in Python, so Animal is translated to a class
+              - The interface properties become initialized attributes in the __init__ method
+              - The interface method becomes a method in the class
+              - Python type hints are added for name, is_mammal, and the return type of make_animal_sound
+
+              Let me know if you have any other questions!"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, chat command, no context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/none',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `" no"`,
+                explainPollyError
+            )
+        }, 30_000)
+
+        // The context files are presented in an order in the CI that is different
+        // than the order shown in recordings when on Windows, causing it to fail.
+        it('commands/custom, chat command, current directory context', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+            const result = (await client.request('commands/custom', {
+                key: '/countDirFiles',
+            })) as CustomChatCommandResult
+            expect(result.type).toBe('chat')
+            const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
+            expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
+            expect(reply).toMatchInlineSnapshot(
+                `
+              " You have shared 7 file contexts with me so far:
+
+              1. src/trickyLogic.ts
+              2. src/TestLogger.ts
+              3. src/TestClass.ts
+              4. src/sum.ts
+              5. src/squirrel.ts
+              6. src/multiple-selections.ts
+              7. src/example.test.ts"
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, edit command, insert mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(sumUri, { removeCursor: false })
+            const result = (await client.request('commands/custom', {
+                key: '/hello',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(sumUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
+              "/** hello */
+              export function sum(a: number, b: number): number {
+                  /* CURSOR */
+              }
+              "
+            `,
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('commands/custom, edit command, edit mode', async () => {
+            await client.request('command/execute', {
+                command: 'cody.search.index-update',
+            })
+            await client.openFile(animalUri)
+
+            const result = (await client.request('commands/custom', {
+                key: '/newField',
+            })) as CustomEditCommandResult
+            expect(result.type).toBe('edit')
+            await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
+
+            const originalDocument = client.workspace.getDocument(animalUri)!
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
+              "/* SELECTION_START */
+              export interface Animal {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void
+              }
+
+              /* SELECTION_END */
+
+              "
+            `,
+                explainPollyError
+            )
+        }, 30_000)
     })
 
     describe('Progress bars', () => {

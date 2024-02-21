@@ -87,8 +87,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
-                    case 'cody.autocomplete.experimental.fastPath':
-                        return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
@@ -96,6 +94,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'bfg'
+                    case 'cody.autocomplete.experimental.smartThrottle':
+                        return false
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
@@ -143,8 +143,8 @@ describe('getConfiguration', () => {
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
-            autocompleteExperimentalFastPath: false,
             autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalSmartThrottle: false,
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: 'http://localhost:11434',

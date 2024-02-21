@@ -82,7 +82,10 @@ for (const isTreeSitterEnabled of cases) {
                         completion`
                         ├console.log('foo')┤
                     `,
-                    ]
+                    ],
+                    {
+                        providerOptions: { n: 3 },
+                    }
                 )
             )
 
@@ -175,7 +178,10 @@ for (const isTreeSitterEnabled of cases) {
                         completions.map(completion => ({
                             completion,
                             stopReason: 'unknown',
-                        }))
+                        })),
+                        {
+                            providerOptions: { n: 3 },
+                        }
                     )
                 )
 
@@ -215,37 +221,29 @@ for (const isTreeSitterEnabled of cases) {
                     `,
                     ['array) {\nreturn array.sort()\n} function two() {}', 'array) new\n']
                 )
+                const [completion] = completions.map(c =>
+                    pick(c, ['insertText', 'nodeTypes', 'nodeTypesWithCompletion', 'parseErrorCount'])
+                )
 
-                expect(
-                    completions.map(c =>
-                        pick(c, [
-                            'insertText',
-                            'nodeTypes',
-                            'nodeTypesWithCompletion',
-                            'parseErrorCount',
-                        ])
-                    )
-                ).toMatchInlineSnapshot(`
-                  [
-                    {
-                      "insertText": "array) {",
-                      "nodeTypes": {
-                        "atCursor": "(",
-                        "grandparent": "function_signature",
-                        "greatGrandparent": "program",
-                        "lastAncestorOnTheSameLine": "function_signature",
-                        "parent": "formal_parameters",
-                      },
-                      "nodeTypesWithCompletion": {
-                        "atCursor": "(",
-                        "grandparent": "function_declaration",
-                        "greatGrandparent": "program",
-                        "lastAncestorOnTheSameLine": "function_declaration",
-                        "parent": "formal_parameters",
-                      },
-                      "parseErrorCount": 0,
+                expect(completion).toMatchInlineSnapshot(`
+                  {
+                    "insertText": "array) {",
+                    "nodeTypes": {
+                      "atCursor": "(",
+                      "grandparent": "function_signature",
+                      "greatGrandparent": "program",
+                      "lastAncestorOnTheSameLine": "function_signature",
+                      "parent": "formal_parameters",
                     },
-                  ]
+                    "nodeTypesWithCompletion": {
+                      "atCursor": "(",
+                      "grandparent": "function_declaration",
+                      "greatGrandparent": "program",
+                      "lastAncestorOnTheSameLine": "function_declaration",
+                      "parent": "formal_parameters",
+                    },
+                    "parseErrorCount": 0,
+                  }
                 `)
             })
 
