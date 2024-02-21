@@ -33,8 +33,8 @@ describe('getAtMentionedInputText', () => {
     it('handles at-mention with no preceding space', () => {
         const result = getAtMentionedInputText(
             '@src/file.ts',
-            'Hello @old/file.ts',
-            'Hello @old/file.ts'.length
+            'Hello @src/file.ts',
+            'Hello @src/file.ts'.length
         )
         expect(result).toEqual({
             newInput: 'Hello @src/file.ts ',
@@ -50,8 +50,8 @@ describe('getAtMentionedInputText', () => {
     it('returns updated input text and caret position', () => {
         const result = getAtMentionedInputText(
             '@src/file.ts',
-            'Hello @old/file.ts: world',
-            'Hello @old/file.ts:'.length,
+            'Hello @src/file.ts: world',
+            'Hello @src/file.ts:'.length,
             true
         )
         expect(result).toEqual({
@@ -63,8 +63,8 @@ describe('getAtMentionedInputText', () => {
     it('handles no text after caret', () => {
         const result = getAtMentionedInputText(
             '@src/file.ts',
-            'Hello @old/file.ts ',
-            'Hello @old/file.ts'.length
+            'Hello @src/file.ts ',
+            'Hello @src/file.ts'.length
         )
         expect(result).toEqual({
             newInput: 'Hello @src/file.ts ',
@@ -109,6 +109,11 @@ describe('extractMentionQuery', () => {
 
     it('returns empty string if caret before last @', () => {
         const query = extractMentionQuery('@foo Hello world', 0)
+        expect(query).toEqual('')
+    })
+
+    it('returns empty string if there is no space in front of @', () => {
+        const query = extractMentionQuery('Explain@foo', 0)
         expect(query).toEqual('')
     })
 

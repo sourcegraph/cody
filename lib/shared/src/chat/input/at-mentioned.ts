@@ -99,6 +99,9 @@ export const extractMentionQuery = (input: string, caretPos: number) => {
     if (caretPos < 1 || lastAtIndex < 0 || caretPos <= lastAtIndex) {
         return ''
     }
+    if (lastAtIndex - 1 > 0 && input[lastAtIndex - 1] !== ' ') {
+        return ''
+    }
 
     // Extracts text between last '@' and caret position as mention query
     // by getting the input value after the last '@' in inputBeforeCaret

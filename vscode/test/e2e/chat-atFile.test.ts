@@ -76,6 +76,13 @@ test.extend<ExpectedEvents>({
         ).toBeVisible()
     }
 
+    // Space before @ is required unless it's at position 0
+    await chatInput.fill('Explain@mj')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
+    await chatInput.fill('@mj')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await chatInput.fill('clear')
+
     // Searching and clicking
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('button', { name: 'Main.java' }).click()
@@ -230,10 +237,10 @@ test('@-file with range support', async ({ page, sidebar }) => {
     const ghostText3 = 'index.html:1-5 (line range)'
     await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).toBeVisible()
 
-    // Pressing enter should close the suggestion box without changing the input
+    // Pressing enter should close the suggestion box and add a whitespace after selection
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).not.toBeVisible()
-    await expect(chatInput).toHaveValue('@index.html:1-5')
+    await expect(chatInput).toHaveValue('@index.html:1-5 ')
 
     // Submit the message
     await chatInput.press('Enter')

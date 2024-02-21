@@ -1,7 +1,15 @@
 import * as vscode from 'vscode'
 
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-import { trailingNonAlphaNumericRegex } from './test-commands'
+
+/**
+ * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
+ * https://github.com/microsoft/vscode/issues/178868#issuecomment-1494826381); you can't pass a
+ * selection or viewColumn. We need to proxy `vscode.open` to be able to pass these args.
+ *
+ * Also update `lib/shared/src/chat/markdown.ts`'s `ALLOWED_URI_REGEXP` if you change this.
+ */
+export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
 
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
@@ -33,8 +41,7 @@ export function replaceFileNameWithMarkdownLink(
 ): string {
     const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
     const fileAsInput = inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
-    const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?!\\S)`, 'g')
-
+    const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
             file.toJSON(),
@@ -48,11 +55,8 @@ export function replaceFileNameWithMarkdownLink(
         ])
     )})`
 
-    const text = humanInput
-        .replace(trailingNonAlphaNumericRegex, '')
-        .replace(textToBeReplaced, ` ${markdownText}`)
-    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
-    return (text + lastChar).trim()
+    const text = humanInput.replace(textToBeReplaced, ` ${markdownText}`)
+    return text.trim()
 }
 
 /**
@@ -83,12 +87,3 @@ function inputRepresentation(
     components.push(symbolName ? `#${symbolName}` : '')
     return components.join('').trim()
 }
-
-/**
- * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
- * https://github.com/microsoft/vscode/issues/178868#issuecomment-1494826381); you can't pass a
- * selection or viewColumn. We need to proxy `vscode.open` to be able to pass these args.
- *
- * Also update `lib/shared/src/chat/markdown.ts`'s `ALLOWED_URI_REGEXP` if you change this.
- */
-export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
