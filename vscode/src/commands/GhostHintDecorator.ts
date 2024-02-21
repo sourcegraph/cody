@@ -66,18 +66,30 @@ export const ghostHintDecoration = vscode.window.createTextEditorDecorationType(
     },
 })
 
+const GHOST_TEXT_THROTTLE = 250
+const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
+
 export class GhostHintDecorator implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private isActive = false
     private activeDecoration: vscode.DecorationOptions | null = null
-    private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
+    private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
+    private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
     private enrollmentListener: vscode.Disposable | null = null
 
     constructor(authProvider: AuthProvider) {
-        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
+        this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
             leading: false,
             trailing: true,
         })
+        this.fireThrottledDisplayEvent = throttle(
+            this._fireDisplayEvent.bind(this),
+            TELEMETRY_THROTTLE,
+            {
+                leading: true,
+                trailing: false,
+            }
+        )
 
         // Set initial state, based on the configuration and authentication status
         const initialAuth = authProvider.getAuthStatus()
@@ -135,8 +147,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                         this.clearGhostText(editor)
                     }
 
+                    this.fireThrottledDisplayEvent()
                     // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                    return this.throttledSetGhostText(editor, targetPosition)
+                    return this.setThrottledGhostText(editor, targetPosition)
                 }
             )
         )
@@ -153,9 +166,14 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
-        this.throttledSetGhostText.cancel()
+        this.setThrottledGhostText.cancel()
         this.activeDecoration = null
         editor.setDecorations(ghostHintDecoration, [])
+    }
+
+    private _fireDisplayEvent(): void {
+        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.ghostText', 'visible')
     }
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {

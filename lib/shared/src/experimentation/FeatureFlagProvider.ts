@@ -28,6 +28,8 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
+    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',
@@ -41,6 +43,8 @@ export enum FeatureFlag {
 
     // A feature flag to test potential chat experiments. No functionality is gated by it.
     CodyChatMockTest = 'cody-chat-mock-test',
+    // When enabled, fuses embeddings and symf context for chat.
+    CodyChatFusedContext = 'cody-chat-fused-context',
 
     // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
     CodyCommandHints = 'cody-command-hints',
