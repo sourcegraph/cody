@@ -28,6 +28,8 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
+    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
 
     // Enable Cody PLG features on JetBrains
     CodyProJetBrains = 'cody-pro-jetbrains',

@@ -16,6 +16,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
     ] as const
 
     private get config() {
@@ -84,6 +85,13 @@ class CompletionProviderConfig {
                                   : 'jaccard-similarity'
 
         return contextStrategy
+    }
+
+    public get smartThrottle(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
+        )
     }
 }
 

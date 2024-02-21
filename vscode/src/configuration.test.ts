@@ -92,6 +92,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'bfg'
+                    case 'cody.autocomplete.experimental.smartThrottle':
+                        return false
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
@@ -139,6 +141,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalSmartThrottle: false,
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: 'http://localhost:11434',
