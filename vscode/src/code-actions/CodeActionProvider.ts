@@ -35,16 +35,16 @@ export class CodeActionProvider implements vscode.Disposable {
         }
 
         this.actionProviders.push(
-            vscode.languages.registerCodeActionsProvider('*', new EditCodeAction(), {
+            vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new EditCodeAction(), {
                 providedCodeActionKinds: EditCodeAction.providedCodeActionKinds,
             }),
-            vscode.languages.registerCodeActionsProvider('*', new DocumentCodeAction(), {
+            vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new DocumentCodeAction(), {
                 providedCodeActionKinds: DocumentCodeAction.providedCodeActionKinds,
             }),
-            vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+            vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new ExplainCodeAction(), {
                 providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
             }),
-            vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
+            vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new FixupCodeAction(), {
                 providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
             }),
             vscode.languages.registerCodeActionsProvider(
