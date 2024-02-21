@@ -108,8 +108,8 @@ export class DefaultPrompter implements IPrompter {
             }
 
             // Add existing transcript messages
-            const transcript = [...chat.getMessagesWithContext()]
-            const contextLimitReached = promptBuilder.tryAddTranscript(transcript)
+            const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
+            const contextLimitReached = promptBuilder.tryAddTranscript(reverseTranscript)
             if (contextLimitReached) {
                 logDebug(
                     'DefaultPrompter.tryAddTranscript',
@@ -134,7 +134,6 @@ export class DefaultPrompter implements IPrompter {
                 }
             }
 
-            const reverseTranscript: MessageWithContext[] = transcript.reverse()
             // TODO(beyang): Decide whether context from previous messages is less
             // important than user added context, and if so, reorder this.
             {

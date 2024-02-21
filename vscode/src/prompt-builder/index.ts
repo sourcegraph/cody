@@ -60,19 +60,19 @@ export class PromptBuilder {
     }
 
     /**
-     * Tries to add messages from transcript in pairs to the prompt builder, in reverse order.
+     * Tries to add messages in pairs from reversed transcript to the prompt builder.
      * Returns the index of the last message that was successfully added.
      *
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddTranscript(transcript: MessageWithContext[]): number {
+    public tryAddTranscript(reverseTranscript: MessageWithContext[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
-        let i = transcript.findLastIndex(msg => msg.message?.speaker === 'human')
-        while (i >= 0) {
-            const humanMsg = transcript[i]?.message
-            const assistantMsg = transcript[i + 1]?.message
+        let i = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
+        while (i < reverseTranscript.length) {
+            const humanMsg = reverseTranscript[i]?.message
+            const assistantMsg = reverseTranscript[i - 1]?.message
             if (humanMsg?.speaker !== 'human') {
                 throw new Error('Invalid transcript: expected human message at index ' + i)
             }
@@ -90,7 +90,7 @@ export class PromptBuilder {
             }
             this.reverseMessages.push(humanMsg)
             this.charsUsed += msgLen
-            i -= 2
+            i += 2
         }
         return 0
     }
