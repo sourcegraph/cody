@@ -6,6 +6,8 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.WebviewMessage
+import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.chat.SessionId
@@ -16,12 +18,14 @@ import com.sourcegraph.cody.ui.LLMComboBoxItem
 import com.sourcegraph.cody.ui.LLMComboBoxRenderer
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.CodyBundle
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class LLMDropdown(val project: Project, private val modelFromState: ChatModel?) :
     ComboBox<LLMComboBoxItem>(MutableCollectionComboBoxModel()) {
 
   private var firstMessageSent: Boolean = false
+  val sessionId = CompletableFuture<SessionId>()
 
   init {
     renderer = LLMComboBoxRenderer(this)
@@ -81,8 +85,8 @@ class LLMDropdown(val project: Project, private val modelFromState: ChatModel?) 
           return
         }
       }
-
       super.setSelectedItem(anObject)
+      selectedModel()?.let { setLlmForAgentSession(it.agentName) }
     }
   }
 
@@ -94,5 +98,25 @@ class LLMDropdown(val project: Project, private val modelFromState: ChatModel?) 
     if (activeAccountType?.isDotcomAccount() == true) {
       toolTipText = CodyBundle.getString("LLMDropdown.disabled.text")
     }
+  }
+
+  private fun setLlmForAgentSession(modelName: String) {
+    val sessionIdGetNow = sessionId.getNow(null) ?: return
+
+    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+      if (activeAccountType.isEnterpriseAccount()) {
+        agent.server.webviewReceiveMessage(
+            WebviewReceiveMessageParams(sessionIdGetNow, WebviewMessage(command = "chatModel")))
+      } else {
+        agent.server.webviewReceiveMessage(
+            WebviewReceiveMessageParams(
+                sessionIdGetNow, WebviewMessage(command = "chatModel", model = modelName)))
+      }
+    }
+  }
+
+  fun selectedModel(): ChatModel? {
+    return (selectedItem as? LLMComboBoxItem)?.let { ChatModel.fromDisplayName(it.name) }
   }
 }

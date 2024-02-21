@@ -10,14 +10,11 @@ import com.sourcegraph.cody.agent.*
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.commands.CommandId
-import com.sourcegraph.cody.config.CodyAccount.Companion.isEnterpriseAccount
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.ui.ChatModel
-import com.sourcegraph.cody.ui.LLMComboBoxItem
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
@@ -94,17 +91,13 @@ private constructor(
             displayText,
         )
 
-    if (messages.size == 0) {
-      val model = fetchModelFromDropdown()
-      setCustomModelForAgentSession(model).thenApply {
-        submitMessageToAgent(humanMessage, contextFiles)
-      }
-      addMessageAtIndex(
-          humanMessage, index = messages.count(), shouldAddBlinkingCursor = null, model)
-    } else {
-      submitMessageToAgent(humanMessage, contextFiles)
-      addMessageAtIndex(humanMessage, index = messages.count())
-    }
+    submitMessageToAgent(humanMessage, contextFiles)
+    addMessageAtIndex(
+        humanMessage,
+        index = messages.count(),
+        shouldAddBlinkingCursor = null,
+        chatPanel.llmDropdown.selectedModel())
+
     val responsePlaceholder =
         ChatMessage(
             Speaker.ASSISTANT,
@@ -217,33 +210,6 @@ private constructor(
       }
       else -> {
         logger.debug(String.format("CodyToolWindowContent: unknown message type: %s", message.type))
-      }
-    }
-  }
-
-  @RequiresEdt
-  private fun fetchModelFromDropdown(): ChatModel {
-    return if (chatPanel.llmDropdown.selectedItem != null) {
-      val selectedItem = chatPanel.llmDropdown.selectedItem
-      val displayName = (selectedItem as LLMComboBoxItem).name
-      ChatModel.fromDisplayName(displayName)
-    } else {
-      ChatModel.UNKNOWN_MODEL
-    }
-  }
-
-  private fun setCustomModelForAgentSession(model: ChatModel): CompletableFuture<Void> {
-    return sessionId.get().thenAccept { sessionId ->
-      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-        if (activeAccountType.isEnterpriseAccount()) {
-          agent.server.webviewReceiveMessage(
-              WebviewReceiveMessageParams(sessionId, WebviewMessage(command = "chatModel")))
-        } else {
-          agent.server.webviewReceiveMessage(
-              WebviewReceiveMessageParams(
-                  sessionId, WebviewMessage(command = "chatModel", model = model.agentName)))
-        }
       }
     }
   }

@@ -94,5 +94,6 @@ class ChatPanel(project: Project, chatSession: ChatSession, modelFromState: Chat
 
   fun updateWithSessionId(sessionId: SessionId) {
     llmDropdown.fetchAndUpdateModels(sessionId)
+    llmDropdown.sessionId.complete(sessionId)
   }
 }
