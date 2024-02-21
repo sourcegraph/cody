@@ -1,6 +1,7 @@
-import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { type Message, isCodyIgnoredFile, logDebug } from '@sourcegraph/cody-shared'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
+import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -53,6 +54,40 @@ export class PromptBuilder {
         this.reverseMessages.push(message)
         this.charsUsed += msgLen
         return true
+    }
+
+    public tryAddTranscript(transcript: MessageWithContext[]): boolean {
+        // All Human message is expected to be followed by response from Assistant,
+        // except for the Human message at the last index that Assistant hasn't responded yet.
+        let i = transcript.findLastIndex(msg => msg.message?.speaker === 'human')
+        while (i >= 0) {
+            const humanMsg = transcript[i]?.message
+            const assistantMsg = transcript[i + 1]?.message
+
+            if (humanMsg?.speaker !== 'human') {
+                throw new Error('Invalid transcript: expected human message at index ' + i)
+            }
+            if (humanMsg?.speaker === assistantMsg?.speaker) {
+                throw new Error('Cannot add message with same speaker as last message')
+            }
+
+            const getLength = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
+            const msgLen = getLength(humanMsg) + (assistantMsg ? getLength(assistantMsg) : 0)
+            if (this.charsUsed + msgLen > this.charLimit) {
+                logDebug(
+                    'PromptBuilder.tryAddTranscript',
+                    `Ignored ${i} transcript messages due to context limit`
+                )
+                return true
+            }
+            if (assistantMsg) {
+                this.reverseMessages.push(assistantMsg)
+            }
+            this.reverseMessages.push(humanMsg)
+            this.charsUsed += msgLen
+            i -= 2
+        }
+        return false
     }
 
     /**
