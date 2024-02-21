@@ -248,14 +248,14 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
  * Filters the given context files to remove files larger than 1MB and non-text files.
  * Sets the title to 'large-file' for files contains more characters than the token limit.
  */
-async function filterLargeFiles(contextFiles: ContextFileFile[]): Promise<ContextFileFile[]> {
+export async function filterLargeFiles(contextFiles: ContextFileFile[]): Promise<ContextFileFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
         // Remove file larger than 1MB and non-text files
         // NOTE: Sourcegraph search only includes files up to 1MB
-        const fileStat = await vscode.workspace.fs.stat(cf.uri).then(
+        const fileStat = await vscode.workspace.fs.stat(cf.uri)?.then(
             stat => stat,
-            () => undefined
+            error => undefined
         )
         if (fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
