@@ -579,7 +579,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
             telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
 
-            const tabs = getOpenTabsContextFile()
+            const tabs = await getOpenTabsContextFile()
             void this.postMessage({
                 type: 'userContextFiles',
                 userContextFiles: tabs,
