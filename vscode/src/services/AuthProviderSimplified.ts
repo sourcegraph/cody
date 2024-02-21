@@ -33,6 +33,7 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
         {
             'vscode-insiders': 'CODY_INSIDERS',
             vscodium: 'CODY_VSCODIUM',
+            cursor: 'CODY_CURSOR',
         }[uriScheme] || 'CODY'
     const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}`
     const postSignUpSurveyUrl = `/post-sign-up?returnTo=${newTokenUrl}`
