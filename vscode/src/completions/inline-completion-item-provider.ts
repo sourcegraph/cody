@@ -46,6 +46,7 @@ import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTr
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { SmartThrottleService } from './smart-throttle'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -94,6 +95,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -155,6 +157,10 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
+        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -331,6 +337,7 @@ export class InlineCompletionItemProvider
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
+                    smartThrottleService: this.smartThrottleService,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
                         singleLine: debounceInterval,

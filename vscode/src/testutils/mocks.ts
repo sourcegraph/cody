@@ -829,6 +829,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
         url: 'http://localhost:11434',
