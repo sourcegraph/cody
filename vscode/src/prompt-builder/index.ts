@@ -35,6 +35,9 @@ export class PromptBuilder {
         return true
     }
 
+    /**
+     * @deprecated Use 'tryAddTranscript' instead.
+     */
     public tryAdd(message: Message): boolean {
         const lastMessage = this.reverseMessages.at(-1)
         if (lastMessage?.speaker === message.speaker) {
@@ -57,7 +60,7 @@ export class PromptBuilder {
     }
 
     /**
-     * Tries to add the given transcript of messages to the prompt builder in reverse order.
+     * Tries to add messages from transcript in pairs to the prompt builder, in reverse order.
      * Returns the index of the last message that was successfully added.
      *
      * Validates that the transcript alternates between human and assistant speakers.
