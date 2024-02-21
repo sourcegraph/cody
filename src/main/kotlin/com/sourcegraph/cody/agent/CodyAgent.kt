@@ -141,7 +141,7 @@ private constructor(
               listOf("node", "--enable-source-maps", script.absolutePath)
             }
           } else {
-            val binary = agentBinary(token)
+            val binary = agentBinary()
             logger.info("starting Cody agent " + binary.absolutePath)
             listOf(binary.absolutePath)
           }
@@ -224,7 +224,7 @@ private constructor(
     }
 
     @Throws(CodyAgentException::class)
-    private fun agentBinary(token: CancellationToken): File {
+    private fun agentBinary(): File {
       val pluginPath =
           agentDirectory()
               ?: throw CodyAgentException("Sourcegraph Cody + Code Search plugin path not found")
@@ -233,27 +233,7 @@ private constructor(
         throw CodyAgentException(
             "Cody agent binary not found at path " + binarySource.toAbsolutePath())
       }
-      val binaryTarget = Files.createTempFile("cody-agent", binarySuffix())
-      return try {
-        binaryTarget?.toFile()?.deleteOnExit()
-        token.onFinished {
-          // Important: delete the file from disk after the process exists
-          // Ideally, we should eventually replace this temporary file with a permanent location
-          // in the plugin directory.
-          Files.deleteIfExists(binaryTarget)
-        }
-        logger.info("extracting Cody agent binary to " + binaryTarget.toAbsolutePath())
-        Files.copy(binarySource, binaryTarget, StandardCopyOption.REPLACE_EXISTING)
-        val binary = binaryTarget.toFile()
-        if (binary.setExecutable(true)) {
-          binary
-        } else {
-          throw CodyAgentException("failed to make executable " + binary.absolutePath)
-        }
-      } catch (e: IOException) {
-        Files.deleteIfExists(binaryTarget)
-        throw CodyAgentException("failed to create agent binary", e)
-      }
+      return binarySource.toFile()
     }
 
     private fun traceWriter(): PrintWriter? {
