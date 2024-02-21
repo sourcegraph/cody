@@ -500,17 +500,19 @@ export class FixupController
         // Always ensure that any scheduled diffs have ran before applying edits
         this.updateDiffs()
 
-        const diff = this.applicableDiffOrRespin(task, document)
-        if (!diff) {
-            return
-        }
-
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk =
-            task.mode === 'edit'
-                ? await this.replaceEdit(edit, diff, task, applyEditOptions)
-                : await this.insertEdit(edit, document, task, applyEditOptions)
+
+        let editOk: boolean
+        if (task.mode === 'edit') {
+            const applicableDiff = this.applicableDiffOrRespin(task, document)
+            if (!applicableDiff) {
+                return
+            }
+            editOk = await this.replaceEdit(edit, applicableDiff, task, applyEditOptions)
+        } else {
+            editOk = await this.insertEdit(edit, document, task, applyEditOptions)
+        }
 
         this.logTaskCompletion(task, editOk)
 
