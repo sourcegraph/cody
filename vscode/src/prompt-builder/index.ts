@@ -1,4 +1,4 @@
-import { type Message, isCodyIgnoredFile, logDebug } from '@sourcegraph/cody-shared'
+import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
 import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
@@ -56,30 +56,32 @@ export class PromptBuilder {
         return true
     }
 
-    public tryAddTranscript(transcript: MessageWithContext[]): boolean {
+    /**
+     * Tries to add the given transcript of messages to the prompt builder in reverse order.
+     * Returns the index of the last message that was successfully added.
+     *
+     * Validates that the transcript alternates between human and assistant speakers.
+     * Stops adding when the character limit would be exceeded.
+     */
+    public tryAddTranscript(transcript: MessageWithContext[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
         let i = transcript.findLastIndex(msg => msg.message?.speaker === 'human')
         while (i >= 0) {
             const humanMsg = transcript[i]?.message
             const assistantMsg = transcript[i + 1]?.message
-
             if (humanMsg?.speaker !== 'human') {
                 throw new Error('Invalid transcript: expected human message at index ' + i)
             }
             if (humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error('Cannot add message with same speaker as last message')
             }
-
             const getLength = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
             const msgLen = getLength(humanMsg) + (assistantMsg ? getLength(assistantMsg) : 0)
             if (this.charsUsed + msgLen > this.charLimit) {
-                logDebug(
-                    'PromptBuilder.tryAddTranscript',
-                    `Ignored ${i} transcript messages due to context limit`
-                )
-                return true
+                return i
             }
+            // Push the assistant response first to the reverseMessages to maintain the order.
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
@@ -87,7 +89,7 @@ export class PromptBuilder {
             this.charsUsed += msgLen
             i -= 2
         }
-        return false
+        return 0
     }
 
     /**

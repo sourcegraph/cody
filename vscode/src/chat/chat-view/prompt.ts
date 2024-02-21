@@ -111,6 +111,10 @@ export class DefaultPrompter implements IPrompter {
             const transcript = [...chat.getMessagesWithContext()]
             const contextLimitReached = promptBuilder.tryAddTranscript(transcript)
             if (contextLimitReached) {
+                logDebug(
+                    'DefaultPrompter.tryAddTranscript',
+                    `Ignored ${contextLimitReached} transcript messages due to context limit`
+                )
                 return {
                     prompt: promptBuilder.build(),
                     newContextUsed,
