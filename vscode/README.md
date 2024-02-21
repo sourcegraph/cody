@@ -51,11 +51,9 @@ Cody builds a Search index of your local files to make it easier to find what yo
 
 ## Usage
 
-Cody Free: This version of Cody is available entirely free for all developers. It includes up to 500 autocomplete suggestions & 20 chat/command invocations per month.
+This plugin works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
 
-Cody Pro: This is an expanded version of Cody for developers who want to use it every day, for either work or personal projects, with no usage limits. Cody Pro is available for $9/user/month.
-
-You can find more information on our [pricing page](https://sourcegraph.com/pricing).
+You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 
 ## Programming Languages
 
