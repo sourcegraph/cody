@@ -539,9 +539,10 @@ const register = async (
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In to Use Cody',
+                title: 'Sign in to use Cody',
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
+                statusButtonLabel: 'Sign in to Cody',
                 onSelect: () => {
                     // Bring up the sidebar view
                     void vscode.commands.executeCommand('cody.focus')

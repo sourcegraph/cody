@@ -50,7 +50,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // Click on Cody at the bottom menu to open the Cody Settings Menu and click on Sign In.
-    await page.getByRole('button', { name: 'cody-logo-heavy, Sign In to Use Cody' }).click()
+    await page.getByRole('button', { name: 'cody-logo-heavy, Sign in to use Cody' }).click()
     await page
         .getByLabel('alert  Sign In to Use Cody, You need to sign in to use Cody., notice')
         .locator('a')

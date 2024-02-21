@@ -12,6 +12,7 @@ interface StatusBarError {
     title: string
     description: string
     errorType: StatusBarErrorName
+    statusButtonLabel?: string
     onShow?: () => void
     onSelect?: () => void
 }
@@ -239,6 +240,9 @@ export function createStatusBar(): CodyStatusBar {
         if (errors.length > 0) {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             statusBarItem.tooltip = errors[0].error.title
+            if (errors[0].error.statusButtonLabel) {
+                statusBarItem.text = `$(cody-logo-heavy) ${errors[0].error.statusButtonLabel}`
+            }
         } else {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
         }
