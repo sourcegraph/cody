@@ -71,7 +71,9 @@ For example:
 
 ## Cody Enterprise
 
-Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=marketplace.visualstudio.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
+Cody Enterprise is able to retrieve context from your entire remote codebase using Sourcegraph search. This gives Cody the ability to understand and answer questions about all of your code, even the repositories that don't live on your local machine.
+
+[Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=marketplace.visualstudio.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
 ## Feedback
 
