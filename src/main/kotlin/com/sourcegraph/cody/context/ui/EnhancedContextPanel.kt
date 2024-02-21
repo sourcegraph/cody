@@ -224,7 +224,8 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       toolbarDecorator.setAddActionName(
           CodyBundle.getString("context-panel.button.add-remote-repo"))
       toolbarDecorator.setAddAction {
-        AddRepositoryDialog(project) { repoUrl -> addRemoteRepository(repoUrl) }.show()
+        AddRepositoryDialog(project, remoteContextNode) { repoUrl -> addRemoteRepository(repoUrl) }
+            .show()
         expandAllNodes()
       }
 

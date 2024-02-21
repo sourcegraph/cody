@@ -20,8 +20,11 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import org.jetbrains.annotations.NotNull
 
-class AddRepositoryDialog(private val project: Project, private val addAction: (String) -> Unit) :
-    DialogWrapper(project) {
+class AddRepositoryDialog(
+    private val project: Project,
+    private val remoteContextNode: ContextTreeRemoteRootNode,
+    private val addAction: (String) -> Unit
+) : DialogWrapper(project) {
 
   private val repoUrlInputField = TextFieldWithAutoCompletion.create(project, listOf(), false, null)
 
@@ -62,7 +65,23 @@ class AddRepositoryDialog(private val project: Project, private val addAction: (
               repo != null
             }
 
-    return listOfNotNull(validateNonEmpty() ?: validateValidUrl() ?: validateRepoExists())
+    fun validateRepoNotAddedYet() =
+        DialogValidationUtils.custom(
+            repoUrlInputField,
+            CodyBundle.getString("context-panel.add-repo-dialog.error-repo-already-added")) {
+              val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text)
+              remoteContextNode
+                  .children()
+                  .toList()
+                  .filterIsInstance<ContextTreeRemoteRepoNode>()
+                  .none { it.codebaseName == codebaseName }
+            }
+
+    return listOfNotNull(
+        validateNonEmpty()
+            ?: validateValidUrl()
+            ?: validateRepoNotAddedYet()
+            ?: validateRepoExists())
   }
 
   override fun getValidationThreadToUse(): Alarm.ThreadToUse {
