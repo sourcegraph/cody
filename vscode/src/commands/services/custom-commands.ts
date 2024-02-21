@@ -25,6 +25,7 @@ const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE
 export class CustomCommandsManager implements vscode.Disposable {
     // Watchers for the cody.json files
     private fileWatcherDisposables: vscode.Disposable[] = []
+    private registeredCommands: vscode.Disposable[] = []
     private disposables: vscode.Disposable[] = []
 
     public customCommandsMap = new Map<string, CodyCommand>()
@@ -125,8 +126,11 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     public async build(type: CustomCommandType): Promise<Map<string, CodyCommand> | null> {
-        const uri = this.getConfigFileByType(type)
+        // Deregister all commands before rebuilding to avoid duplicates
+        this.disposeRegisteredCommands()
+
         // Security: Make sure workspace is trusted before building commands from workspace
+        const uri = this.getConfigFileByType(type)
         if (!uri || (type === CustomCommandType.Workspace && !vscode.workspace.isTrusted)) {
             return null
         }
@@ -142,6 +146,19 @@ export class CustomCommandsManager implements vscode.Disposable {
             // Keep a copy of the user json file for recreating the commands later
             if (type === CustomCommandType.User) {
                 this.userJSON = JSON.parse(content)
+            }
+
+            // Register Custom Commands as VS Code commands
+            for (const [key, command] of this.customCommandsMap) {
+                if (command.register) {
+                    this.registeredCommands.push(
+                        vscode.commands.registerCommand(`cody.command.custom.${key}`, () =>
+                            vscode.commands.executeCommand('cody.action.command', key, {
+                                source: 'keybinding',
+                            })
+                        )
+                    )
+                }
             }
         } catch (error) {
             logDebug('CustomCommandsProvider:build', 'failed', { verbose: error })
@@ -285,6 +302,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        this.disposeRegisteredCommands()
         this.disposeWatchers()
         this.customCommandsMap = new Map<string, CodyCommand>()
         this.userJSON = null
@@ -295,7 +313,13 @@ export class CustomCommandsManager implements vscode.Disposable {
             disposable.dispose()
         }
         this.fileWatcherDisposables = []
-        logDebug('CommandsController:disposeWatchers', 'watchers disposed')
+    }
+
+    private disposeRegisteredCommands(): void {
+        for (const rc of this.registeredCommands) {
+            rc.dispose()
+        }
+        this.registeredCommands = []
     }
 }
 

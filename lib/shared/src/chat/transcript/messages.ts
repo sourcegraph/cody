@@ -78,6 +78,7 @@ export type ChatEventSource =
     | 'custom-commands'
     | 'test'
     | 'code-lens'
+    | 'keybinding'
     | DefaultCodyCommands
 
 /**

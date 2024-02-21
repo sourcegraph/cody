@@ -31,6 +31,9 @@ export interface CodyCommand {
     type?: CodyCommandType
     mode?: CodyCommandMode
 
+    // Register the command as editor command to allow keybindings.
+    register?: boolean
+
     // Internal use - the ID of the request
     requestID?: string
 }
