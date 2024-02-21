@@ -122,9 +122,9 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Set codyignore list on git extension startup
-    const gitAPI = await gitAPIinit()
-    if (gitAPI) {
-        disposables.push(gitAPI)
+    const gitApiDisposable = await gitAPIinit()
+    if (gitApiDisposable) {
+        disposables.push(gitApiDisposable)
     }
 
     const isExtensionModeDevOrTest =
@@ -227,7 +227,11 @@ const register = async (
         ghostHintDecorator,
         authProvider,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+    disposables.push(
+        ghostHintDecorator,
+        editorManager,
+        new CodeActionProvider({ contextProvider, chatClient, editor })
+    )
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {

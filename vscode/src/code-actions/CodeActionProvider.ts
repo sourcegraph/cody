@@ -6,16 +6,20 @@ import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
 import { FixupCodeAction } from './fixup'
+import { CommitMessageCodeAction } from './commit-message'
+import type { ChatClient, Editor } from '@sourcegraph/cody-shared'
 
 interface CodeActionProviderOptions {
     contextProvider: ContextProvider
+    chatClient: ChatClient
+    editor: Editor
 }
 
 export class CodeActionProvider implements vscode.Disposable {
     private configurationChangeListener: vscode.Disposable
     private actionProviders: vscode.Disposable[] = []
 
-    constructor(options: CodeActionProviderOptions) {
+    constructor(private options: CodeActionProviderOptions) {
         this.registerCodeActions(options.contextProvider.config)
         this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
             this.registerCodeActions(options.contextProvider.config)
@@ -30,20 +34,28 @@ export class CodeActionProvider implements vscode.Disposable {
             return
         }
 
-        this.addActionProvider(EditCodeAction)
-        this.addActionProvider(DocumentCodeAction)
-        this.addActionProvider(ExplainCodeAction)
-        this.addActionProvider(FixupCodeAction)
-    }
-
-    private addActionProvider(ActionType: {
-        new (): vscode.CodeActionProvider
-        providedCodeActionKinds: vscode.CodeActionKind[]
-    }): void {
-        const provider = vscode.languages.registerCodeActionsProvider('*', new ActionType(), {
-            providedCodeActionKinds: ActionType.providedCodeActionKinds,
-        })
-        this.actionProviders.push(provider)
+        this.actionProviders.push(
+            vscode.languages.registerCodeActionsProvider('*', new EditCodeAction(), {
+                providedCodeActionKinds: EditCodeAction.providedCodeActionKinds,
+            }),
+            vscode.languages.registerCodeActionsProvider('*', new DocumentCodeAction(), {
+                providedCodeActionKinds: DocumentCodeAction.providedCodeActionKinds,
+            }),
+            vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+            }),
+            vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
+                providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
+            }),
+            vscode.languages.registerCodeActionsProvider(
+                { scheme: 'vscode-scm' },
+                new CommitMessageCodeAction({
+                    chatClient: this.options.chatClient,
+                    editor: this.options.editor,
+                }),
+                { providedCodeActionKinds: CommitMessageCodeAction.providedCodeActionKinds }
+            )
+        )
     }
 
     public dispose(): void {
