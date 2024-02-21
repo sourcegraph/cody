@@ -5,7 +5,6 @@ import com.intellij.lang.Language
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.fileTypes.PlainTextFileType
 import com.intellij.openapi.project.Project
@@ -30,6 +29,7 @@ class CodeEditorPart(
     val attribution: AttributionButtonController
 ) : MessagePart {
 
+  private var recognizedLanguage: Language? = null
   private val _text = AtomicReference("")
   var text: String
     set(value) {
@@ -38,20 +38,25 @@ class CodeEditorPart(
     get() = _text.get()
 
   fun updateCode(project: Project, code: String, language: String?) {
-    updateLanguage(language)
+    recognizeLanguage(language)
     updateText(project, code)
   }
 
-  fun updateLanguage(language: String?) {
-    val fileType: FileType =
+  fun recognizeLanguage(languageName: String?) {
+    if (recognizedLanguage != null) return
+    val language =
         Language.getRegisteredLanguages()
-            .firstOrNull { it.displayName.equals(language, ignoreCase = true) }
-            ?.let { FileTypeManager.getInstance().findFileTypeByLanguage(it) }
-            ?: PlainTextFileType.INSTANCE
-    val editorHighlighter =
-        HighlighterFactory.createHighlighter(
-            fileType, EditorColorsManager.getInstance().schemeForCurrentUITheme, null)
-    editor.highlighter = editorHighlighter
+            .filter { it != Language.ANY }
+            .firstOrNull { it.displayName.equals(languageName, ignoreCase = true) }
+    if (language != null) {
+      val fileType =
+          FileTypeManager.getInstance().findFileTypeByLanguage(language)
+              ?: PlainTextFileType.INSTANCE
+      val settings = EditorColorsManager.getInstance().schemeForCurrentUITheme
+      val editorHighlighter = HighlighterFactory.createHighlighter(fileType, settings, null)
+      editor.highlighter = editorHighlighter
+      recognizedLanguage = language
+    }
   }
 
   private fun updateText(project: Project, text: String) {

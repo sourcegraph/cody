@@ -157,7 +157,7 @@ public class CodeEditorFactory {
     editor.addEditorMouseListener(editorMouseListener);
     CodeEditorPart codeEditorPart =
         new CodeEditorPart(layeredEditorPane, editor, attributionButtonController);
-    codeEditorPart.updateLanguage(language);
+    codeEditorPart.recognizeLanguage(language);
     return codeEditorPart;
   }
 
