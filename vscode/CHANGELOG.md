@@ -28,8 +28,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixed an issue where Cody Chat steals focus from file editor after a request is completed. [pull/3147](https://github.com/sourcegraph/cody/pull/3147)
 - Chat: Fixed an issue where the links in the welcome message for chat are unclickable. [pull/3155](https://github.com/sourcegraph/cody/pull/3155)
 - Chat: File range is now displayed correctly in the chat view. [pull/3172](https://github.com/sourcegraph/cody/pull/3172)
-- Autocomplete: Fixed an issue where the loading indicator might get stuck in the loading state. [pull/3178](https://github.com/sourcegraph/cody/pull/3178)
-- Autocomplete: Fixes an issue where Ollama results were sometimes not visible when the current line has text after the cursor. [pull/3213](https://github.com/sourcegraph/cody/pull/3213)
 
 ### Changed
 
