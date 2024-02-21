@@ -13,7 +13,6 @@ import {
 import { SymfRunner } from './local-context/symf'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
-import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { CommandsProvider } from './commands/services/provider'
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -40,7 +39,6 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
-        createCommitMessageProvider: (...args) => new CommitMessageProvider(...args),
 
         onConfigurationChange: setCustomAgent,
     })

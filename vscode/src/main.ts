@@ -35,8 +35,7 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
 import { showSetupNotification } from './notifications/setup-notification'
-import type { CommitMessageProvider } from './scm/CommitMessageProvider'
-import { gitAPIinit, gitAPI as getGitAPI } from './repository/repositoryHelpers'
+import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -220,14 +219,6 @@ const register = async (
         guardrails
     )
 
-    const gitApi = getGitAPI()
-    let commitMessageProvider: CommitMessageProvider | null = null
-    if (gitApi && platform.createCommitMessageProvider) {
-        commitMessageProvider = platform.createCommitMessageProvider({ chatClient, editor, gitApi })
-        commitMessageProvider.onConfigurationChange(initialConfig)
-        disposables.push(commitMessageProvider)
-    }
-
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
     const editorManager = new EditManager({
         chat: chatClient,
@@ -236,7 +227,11 @@ const register = async (
         ghostHintDecorator,
         authProvider,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+    disposables.push(
+        ghostHintDecorator,
+        editorManager,
+        new CodeActionProvider({ contextProvider, chatClient, editor })
+    )
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -252,7 +247,6 @@ const register = async (
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
         platform.onConfigurationChange?.(newConfig)
-        commitMessageProvider?.onConfigurationChange(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         enterpriseContextFactory.clientConfigurationDidChange()
         promises.push(

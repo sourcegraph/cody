@@ -1,80 +1,91 @@
-import { readFile } from 'fs/promises'
-import { execFile as _execFile } from 'node:child_process'
-import path from 'node:path'
-import { promisify } from 'node:util'
 import * as vscode from 'vscode'
+import { execFile as _execFile } from 'node:child_process'
 import parseDiff from 'parse-diff'
 
-import { isCodyIgnoredFile, isRateLimitError } from '@sourcegraph/cody-shared'
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import type { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import type { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import type {
-    Repository,
-    API as ScmAPI,
-    CommitMessageProvider as VSCodeCommitMessageProvider,
-} from '../repository/builtinGitExtension'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
+import {
+    BotResponseMultiplexer,
+    type ChatClient,
+    type Editor,
+    isCodyIgnoredFile,
+    isRateLimitError,
+    truncateText,
+} from '@sourcegraph/cody-shared'
+import { promisify } from 'util'
+import path from 'node:path'
+import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { readFile } from 'node:fs/promises'
 
 const execFile = promisify(_execFile)
-
-export interface CommitMessageProviderOptions {
-    chatClient: ChatClient
-    editor: Editor
-    gitApi: ScmAPI
-}
-
-export interface CommitMessageGuide {
-    template?: string
-}
 
 const COMMIT_MESSAGE_TOPIC = 'commit-message'
 //Used to split a full diff into individual file diffs
 const DIFF_SPLIT_REGEX = /(^diff --git)/gm
 
-export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscode.Disposable {
-    public icon = new vscode.ThemeIcon('cody-logo')
-    public title = 'Generate Commit Message (Cody)'
+interface CommitMessageCodeActionOptions {
+    chatClient: ChatClient
+    editor: Editor
+}
 
-    private disposables: vscode.Disposable[] = []
-    private _subscription?: vscode.Disposable
+export class CommitMessageCodeAction implements vscode.CodeActionProvider {
+    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
 
-    constructor(private readonly options: CommitMessageProviderOptions) {}
+    constructor(private options: CommitMessageCodeActionOptions) {
+        vscode.commands.registerCommand(
+            'cody.command.generate-commit-message',
+            async (document: vscode.TextDocument) => {
+                telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:started', {
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'started')
 
-    public onConfigurationChange(config: ConfigurationWithAccessToken): void {
-        if (config.experimentalCommitMessage) {
-            this._subscription = this.options.gitApi.registerCommitMessageProvider?.(this)
-        } else {
-            this._subscription?.dispose()
-            this._subscription = undefined
-        }
+                const commitMessage = await this.provideCommitMessage()
+                if (!commitMessage || commitMessage.length === 0) {
+                    telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:empty', {
+                        hasV2Event: true,
+                    })
+                    telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'empty')
+                    return
+                }
+
+                // Insert the generated text into the SCM editor
+                const commitEdit = new vscode.WorkspaceEdit()
+                commitEdit.insert(document.uri, new vscode.Position(0, 0), commitMessage)
+                return vscode.workspace.applyEdit(commitEdit)
+            }
+        )
     }
 
-    public async provideCommitMessage(
-        repository: Repository,
-        changes: string[],
-        cancellationToken?: vscode.CancellationToken
-    ): Promise<string | undefined> {
-        telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:clicked', {
-            hasV2Event: true,
-        })
-        telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'clicked')
-        const humanPrompt = await this.getHumanPrompt(changes)
+    public provideCodeActions(document: vscode.TextDocument): vscode.CodeAction[] {
+        if (document.uri.scheme !== 'vscode-scm') {
+            // Not in the commit message input, do nothing
+            return []
+        }
+
+        return [this.createCommitMessageCodeAction(document)]
+    }
+
+    private createCommitMessageCodeAction(document: vscode.TextDocument): vscode.CodeAction {
+        const displayText = 'Ask Cody to Generate a Commit Message'
+        const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
+        action.command = {
+            command: 'cody.command.generate-commit-message',
+            arguments: [document],
+            title: displayText,
+        }
+        return action
+    }
+
+    private async provideCommitMessage(): Promise<string | undefined> {
+        const humanPrompt = await this.getHumanPrompt()
         if (!humanPrompt) {
             return Promise.reject()
         }
 
         const { isEmpty, prompt, isTruncated } = humanPrompt
         if (isEmpty) {
-            telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:empty', {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'empty')
-            return repository.inputBox.value
+            return
         }
 
         if (isTruncated) {
@@ -96,8 +107,7 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         })
 
         // Prefix the assistant response with any prewritten human text
-        const prefix = repository.inputBox.value
-        const preamble = `Here is a suggested commit message for the diff:\n\n<${COMMIT_MESSAGE_TOPIC}>${prefix}`
+        const preamble = `Here is a suggested commit message for the diff:\n\n<${COMMIT_MESSAGE_TOPIC}>`
         multiplexer.publish(preamble)
 
         telemetryService.log('CodyVSCodeExtension:command:generateCommitMessage:executed', {
@@ -105,7 +115,6 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         })
         telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'executed')
         try {
-            const abortController = new AbortController()
             const stream = this.options.chatClient.chat(
                 [
                     { speaker: 'human', text: prompt },
@@ -117,10 +126,8 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
                 {
                     fast: true,
                     stopSequences: [`</${COMMIT_MESSAGE_TOPIC}>`],
-                },
-                abortController.signal
+                }
             )
-            cancellationToken?.onCancellationRequested(abortController.abort)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change':
@@ -145,8 +152,55 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
             return Promise.reject(error)
         }
 
-        const fullText = prefix + completion
-        return fullText.trim()
+        return completion.trim()
+    }
+
+    private async getHumanPrompt(): Promise<{
+        prompt: string
+        isTruncated: boolean
+        isEmpty: boolean
+    } | null> {
+        const workspaceUri = this.options.editor.getWorkspaceRootUri()
+        //TODO: we need to discover the git root path for the workspace because it might be further up the tree
+        //For instance if you debug this application it opens the `vscode` workspace and suddenly everything breaks
+        //But I can't see a good way to do so and it affects more than just the diff. Also doesn't seem to fetch
+        //.cody files from the root of the git repo when in a sub-workspace.
+        //If you look at the git plugin they run git root discovery for the workspace. We probably want a similar helper.
+        if (!workspaceUri) {
+            return null
+        }
+        const diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
+
+        if (diffs.length === 0) {
+            return { isEmpty: true, isTruncated: false, prompt: '' }
+        }
+
+        const allowedDiffs = diffs.filter(diff => {
+            const files = parseDiff(diff)
+            const affectedFileUris = files
+                .filter(file => file.to)
+                .map(file => vscode.Uri.file(path.join(workspaceUri.fsPath, file.to!)))
+            if (affectedFileUris.some(isCodyIgnoredFile)) {
+                return false
+            }
+            return true
+        })
+
+        const diffContent = allowedDiffs.join('\n').trim()
+        if (!diffContent) {
+            return { isEmpty: true, isTruncated: false, prompt: '' }
+        }
+
+        const templateContent =
+            (await this.getCommitTemplate(workspaceUri!.fsPath)) || DEFAULT_TEMPLATE_CONTENT //somehow tsc screws up here?!?
+        const fullPrompt = PROMPT_PREFIX(diffContent) + PROMPT_SUFFIX(templateContent)
+        const prompt = truncateText(fullPrompt, MAX_AVAILABLE_PROMPT_LENGTH)
+
+        return {
+            prompt,
+            isTruncated: prompt.length < fullPrompt.length,
+            isEmpty: false,
+        }
     }
 
     private async getDiffFromGitCli(cwd: string): Promise<string[]> {
@@ -187,55 +241,6 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         return chunks
     }
 
-    public async getHumanPrompt(
-        diffs: string[] | undefined
-    ): Promise<{ prompt: string; isTruncated: boolean; isEmpty: boolean } | null> {
-        const workspaceUri = this.options.editor.getWorkspaceRootUri()
-        //TODO: we need to discover the git root path for the workspace because it might be further up the tree
-        //For instance if you debug this application it opens the `vscode` workspace and suddenly everything breaks
-        //But I can't see a good way to do so and it affects more than just the diff. Also doesn't seem to fetch
-        //.cody files from the root of the git repo when in a sub-workspace.
-        //If you look at the git plugin they run git root discovery for the workspace. We probably want a similar helper.
-        if (!workspaceUri) {
-            return null
-        }
-
-        if (!diffs?.length) {
-            diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
-        }
-
-        if (diffs.length === 0) {
-            return { isEmpty: true, isTruncated: false, prompt: '' }
-        }
-
-        const allowedDiffs = diffs.filter(diff => {
-            const files = parseDiff(diff)
-            const affectedFileUris = files
-                .filter(file => file.to)
-                .map(file => vscode.Uri.file(path.join(workspaceUri.fsPath, file.to!)))
-            if (affectedFileUris.some(isCodyIgnoredFile)) {
-                return false
-            }
-            return true
-        })
-
-        const diffContent = allowedDiffs.join('\n').trim()
-        if (!diffContent) {
-            return { isEmpty: true, isTruncated: false, prompt: '' }
-        }
-
-        const templateContent =
-            (await this.getCommitTemplate(workspaceUri!.fsPath)) || DEFAULT_TEMPLATE_CONTENT //somehow tsc screws up here?!?
-        const fullPrompt = PROMPT_PREFIX(diffContent) + PROMPT_SUFFIX(templateContent)
-        const prompt = truncateText(fullPrompt, MAX_AVAILABLE_PROMPT_LENGTH)
-
-        return {
-            prompt,
-            isTruncated: prompt.length < fullPrompt.length,
-            isEmpty: false,
-        }
-    }
-
     private async getCommitTemplate(cwd: string): Promise<string | null> {
         try {
             const commitTemplateFile = (
@@ -253,12 +258,6 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         } catch (error) {
             console.warn('Unable to get commit template', error)
             return null
-        }
-    }
-
-    public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
         }
     }
 }
