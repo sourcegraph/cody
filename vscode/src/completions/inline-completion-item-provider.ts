@@ -626,6 +626,7 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
+                removeAfterSelected: true,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
@@ -633,7 +634,6 @@ export class InlineCompletionItemProvider
                         })
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
-                    return true
                 },
                 onShow: () => {
                     if (shown) {
@@ -678,6 +678,7 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: 'Contact your Sourcegraph site admin to enable autocomplete',
                 errorType: 'AutoCompleteDisabledByAdmin',
+                removeAfterSelected: false,
                 onShow: () => {
                     if (shown) {
                         return

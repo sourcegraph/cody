@@ -13,8 +13,9 @@ interface StatusBarError {
     description: string
     errorType: StatusBarErrorName
     statusButtonLabel?: string
+    removeAfterSelected: boolean
     onShow?: () => void
-    onSelect?: () => boolean
+    onSelect?: () => void
 }
 
 export interface CodyStatusBar {
@@ -111,8 +112,8 @@ export function createStatusBar(): CodyStatusBar {
                           description: '',
                           detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
                           onSelect(): Promise<void> {
-                              const removeError = error.error.onSelect?.()
-                              if (removeError) {
+                              error.error.onSelect?.()
+                              if (error.error.removeAfterSelected) {
                                   const index = errors.indexOf(error)
                                   errors.splice(index)
                                   rerender()

@@ -543,10 +543,10 @@ const register = async (
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 statusButtonLabel: 'Sign in to Cody',
+                removeAfterSelected: false,
                 onSelect: () => {
                     // Bring up the sidebar view
                     void vscode.commands.executeCommand('cody.focus')
-                    return false
                 },
             })
         }
