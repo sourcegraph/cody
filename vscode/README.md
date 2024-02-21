@@ -51,7 +51,7 @@ Cody builds a Search index of your local files to make it easier to find what yo
 
 ## Usage
 
-This plugin works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
 
 You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 
