@@ -24,6 +24,8 @@ import {
     type Message,
     type TranscriptJSON,
     type ChatEventSource,
+    featureFlagProvider,
+    FeatureFlag,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -389,6 +391,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         source?: ChatEventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            const useFusedContextPromise = featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyChatFusedContext
+            )
+
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -446,7 +452,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext
-                        ? (text, maxChars) =>
+                        ? async (text, maxChars) =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
@@ -456,7 +462,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
                                       remoteSearch: this.remoteSearch,
                                   },
-                                  featureFlags: this.config,
+                                  featureFlags: {
+                                      fusedContext:
+                                          this.config.internalUnstable || (await useFusedContextPromise),
+                                  },
                                   hints: { maxChars },
                               })
                         : undefined

@@ -30,7 +30,7 @@ export interface GetEnhancedContextOptions {
         remoteSearch: RemoteSearch | null
     }
     featureFlags: {
-        internalUnstable: boolean
+        fusedContext: boolean
     }
     hints: {
         maxChars: number
@@ -45,7 +45,7 @@ export async function getEnhancedContext({
     featureFlags,
     hints,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (featureFlags.internalUnstable) {
+    if (featureFlags.fusedContext) {
         return getEnhancedContextFused({
             strategy,
             editor,
