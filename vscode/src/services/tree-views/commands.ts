@@ -21,6 +21,7 @@ export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem
                 ? vscode.TreeItemCollapsibleState.Expanded
                 : vscode.TreeItemCollapsibleState.None
         )
+        treeItem.description = item.keybinding
 
         if (item.key === 'custom' && customCommands?.length) {
             try {
