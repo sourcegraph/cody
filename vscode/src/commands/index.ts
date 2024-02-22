@@ -1,4 +1,4 @@
-import type { CodySidebarTreeItem } from '../services/treeViewItems'
+import type { CodySidebarTreeItem } from '../services/tree-views/treeViewItems'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
 const osIcon = isMac() ? '⌥' : 'Alt+'

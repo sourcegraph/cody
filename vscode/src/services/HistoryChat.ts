@@ -4,7 +4,7 @@ import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import type { AuthStatus } from '../chat/protocol'
 
-import type { CodySidebarTreeItem } from './treeViewItems'
+import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 import type { InteractionMessage } from '@sourcegraph/cody-shared'
 
 interface GroupedChats {
