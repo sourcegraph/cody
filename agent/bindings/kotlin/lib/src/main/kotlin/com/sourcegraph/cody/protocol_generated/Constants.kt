@@ -62,6 +62,7 @@ object Constants {
   const val `custom-commands` = "custom-commands"
   const val test = "test"
   const val `code-lens` = "code-lens"
+  const val keybinding = "keybinding"
   const val explain = "explain"
   const val unit = "unit"
   const val smell = "smell"
