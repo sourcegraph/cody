@@ -9,6 +9,8 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
+// const https = require('https');
+import * as https from 'https'
 
 import {
     CONTEXT_SEARCH_QUERY,
@@ -768,13 +770,18 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
+        const httpsAgent = new https.Agent({
+            rejectUnauthorized: false,
+        })
+
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
-            })
+                agent: httpsAgent,
+            } as any)
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
