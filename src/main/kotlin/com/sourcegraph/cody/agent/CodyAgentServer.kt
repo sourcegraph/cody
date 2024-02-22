@@ -39,9 +39,6 @@ interface CodyAgentServer {
   @JsonRequest("graphql/getRepoIds")
   fun getRepoIds(repoName: GetRepoIdsParam): CompletableFuture<GetRepoIdsResponse>
 
-  @JsonRequest("git/codebaseName")
-  fun convertGitCloneURLToCodebaseName(cloneURL: CloneURL): CompletableFuture<String?>
-
   @JsonRequest("featureFlags/getFeatureFlag")
   fun evaluateFeatureFlag(flagName: GetFeatureFlag): CompletableFuture<Boolean?>
 

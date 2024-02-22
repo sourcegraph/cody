@@ -9,19 +9,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import com.sourcegraph.cody.agent.CodyAgentService;
-import com.sourcegraph.cody.agent.protocol.CloneURL;
 import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.common.ErrorNotification;
-import com.sourcegraph.config.ConfigUtil;
 import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -94,7 +87,7 @@ public class RepoUtil {
       return null;
     }
     try {
-      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
+      return RepoUtil.getRemoteRepoUrl(project, fileFromTheRepository);
     } catch (Exception e) {
       return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
     }
@@ -128,22 +121,7 @@ public class RepoUtil {
     return remoteUrlWithReplacements;
   }
 
-  // Returned format: github.com/sourcegraph/sourcegraph
-  // Must be called from non-EDT context
-  private static @NotNull String getRemoteRepoUrlWithoutScheme(
-      @NotNull Project project, @NotNull VirtualFile file) throws Exception {
-    String remoteUrl = getRemoteRepoUrl(project, file);
-    String repoName;
-    try {
-      URL url = new URL(remoteUrl);
-      repoName = url.getHost() + url.getPath();
-    } catch (MalformedURLException e) {
-      repoName = remoteUrl.substring(remoteUrl.indexOf('@') + 1).replaceFirst(":", "/");
-    }
-    return repoName.replaceFirst(".git$", "");
-  }
-
-  // Returned format: git@github.com:sourcegraph/sourcegraph.git
+  // Returned format: github.com:sourcegraph/sourcegraph.git
   // Must be called from non-EDT context
   public static @NotNull String getRemoteRepoUrl(
       @NotNull Project project, @NotNull VirtualFile file) throws Exception {
@@ -152,30 +130,6 @@ public class RepoUtil {
 
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
-      if (ConfigUtil.isCodyEnabled()) {
-        CompletableFuture<String> repoNameFuture = new CompletableFuture<>();
-        CodyAgentService.withAgent(
-            project,
-            agent -> {
-              try {
-                agent
-                    .getServer()
-                    .convertGitCloneURLToCodebaseName(new CloneURL(cloneURL))
-                    .thenAccept(repoNameFuture::complete);
-              } catch (Exception ignored) {
-              }
-            });
-
-        String codebaseName = repoNameFuture.completeOnTimeout(null, 15, TimeUnit.SECONDS).get();
-        if (codebaseName != null) {
-          return codebaseName;
-        } else {
-          logger.warn(
-              "Failed to convert git clone URL to codebase name for cloneURL via agent for cloneUrl="
-                  + cloneURL);
-        }
-      }
-
       return convertGitCloneURLToCodebaseNameOrError(cloneURL);
     }
 
