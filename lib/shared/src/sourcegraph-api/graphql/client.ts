@@ -9,7 +9,6 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-// const https = require('https');
 import * as https from 'https'
 
 import {
