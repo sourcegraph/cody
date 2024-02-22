@@ -98,12 +98,11 @@ export const buildInteraction = async ({
     const preamble = getSimplePreamble()
     promptBuilder.tryAddToPrefix(preamble)
 
-    const reversedTranscript: MessageWithContext[] = []
+    const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]
     if (assistantText) {
-        reversedTranscript.push({ message: { speaker: 'assistant', text: assistantText } })
+        transcript.push({ message: { speaker: 'assistant', text: assistantText } })
     }
-    reversedTranscript.push({ message: { speaker: 'human', text: prompt } })
-    promptBuilder.tryAddTranscript(reversedTranscript)
+    promptBuilder.tryAddMessages(transcript.reverse())
 
     const contextItems = await getContext({
         intent: task.intent,

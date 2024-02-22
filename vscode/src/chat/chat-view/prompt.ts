@@ -109,10 +109,10 @@ export class DefaultPrompter implements IPrompter {
 
             // Add existing transcript messages
             const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
-            const contextLimitReached = promptBuilder.tryAddTranscript(reverseTranscript)
+            const contextLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (contextLimitReached) {
                 logDebug(
-                    'DefaultPrompter.tryAddTranscript',
+                    'DefaultPrompter.makePrompt',
                     `Ignored ${contextLimitReached} transcript messages due to context limit`
                 )
                 return {

@@ -36,7 +36,7 @@ export class PromptBuilder {
     }
 
     /**
-     * @deprecated Use 'tryAddTranscript' instead.
+     * @deprecated Use 'tryAddMessages' instead.
      */
     public tryAdd(message: Message): boolean {
         const lastMessage = this.reverseMessages.at(-1)
@@ -66,15 +66,15 @@ export class PromptBuilder {
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddTranscript(reverseTranscript: MessageWithContext[]): number {
+    public tryAddMessages(reverseTranscript: MessageWithContext[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
         let i = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
         while (i < reverseTranscript.length) {
             const humanMsg = reverseTranscript[i]?.message
             const assistantMsg = reverseTranscript[i - 1]?.message
-            if (humanMsg?.speaker !== 'human') {
-                throw new Error('Invalid transcript: expected human message at index ' + i)
+            if (humanMsg?.speaker !== 'human' || (humanMsg && !assistantMsg)) {
+                throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
             if (humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error('Cannot add message with same speaker as last message')
