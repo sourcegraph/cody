@@ -265,7 +265,7 @@ async function searchSymf(
 
         const indexExists = await symf.getIndexStatus(workspaceRoot)
         if (indexExists !== 'ready' && !blockOnIndex) {
-            void symf.ensureIndex(workspaceRoot, { hard: false })
+            void symf.ensureIndex(workspaceRoot, { retryIfLastAttemptFailed: false })
             return []
         }
 

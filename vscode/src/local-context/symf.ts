@@ -111,7 +111,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         // Run in a loop in case the index is deleted before we can query it
         for (let i = 0; i < maxRetries; i++) {
             await this.getIndexLock(scopeDir).withWrite(async () => {
-                await this.unsafeEnsureIndex(scopeDir, { hard: i === 0 })
+                await this.unsafeEnsureIndex(scopeDir, { retryIfLastAttemptFailed: i === 0 })
             })
 
             let indexNotFound = false
@@ -159,7 +159,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     public async ensureIndex(
         scopeDir: FileURI,
-        options: { hard: boolean } = { hard: false }
+        options: { retryIfLastAttemptFailed: boolean } = { retryIfLastAttemptFailed: false }
     ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeEnsureIndex(scopeDir, options)
@@ -239,16 +239,19 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private async unsafeEnsureIndex(
         scopeDir: FileURI,
-        options: { hard: boolean } = { hard: false }
+        options: { retryIfLastAttemptFailed: boolean } = { retryIfLastAttemptFailed: false }
     ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
             return
         }
 
-        if (!options.hard && (await this.didIndexFail(scopeDir))) {
+        if (!options.retryIfLastAttemptFailed && (await this.didIndexFail(scopeDir))) {
             // Index build previous failed, so don't try to rebuild
-            logDebug('symf', 'index build previously failed and `hard` === false, not rebuilding')
+            logDebug(
+                'symf',
+                'index build previously failed and retryIfLastAttemptFailed=false, not rebuilding'
+            )
             return
         }
 

@@ -649,7 +649,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleSymfIndex(): Promise<void> {
         const codebase = await this.codebaseStatusProvider.currentCodebase()
         if (codebase && isFileURI(codebase.localFolder)) {
-            await this.symf?.ensureIndex(codebase.localFolder, { hard: true })
+            await this.symf?.ensureIndex(codebase.localFolder, { retryIfLastAttemptFailed: true })
         }
     }
 
