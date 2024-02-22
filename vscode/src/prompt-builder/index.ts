@@ -70,10 +70,10 @@ export class PromptBuilder {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
         let i = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
-        while (i < reverseTranscript.length) {
+        while (i <= reverseTranscript.length) {
             const humanMsg = reverseTranscript[i]?.message
             const assistantMsg = reverseTranscript[i - 1]?.message
-            if (humanMsg?.speaker !== 'human' || (humanMsg && !assistantMsg)) {
+            if (humanMsg?.speaker !== 'human' || (!humanMsg && assistantMsg)) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
             if (humanMsg?.speaker === assistantMsg?.speaker) {
@@ -82,14 +82,14 @@ export class PromptBuilder {
             const getLength = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
             const msgLen = getLength(humanMsg) + (assistantMsg ? getLength(assistantMsg) : 0)
             if (this.charsUsed + msgLen > this.charLimit) {
-                return i
+                return reverseTranscript.length - i + 1
             }
+            this.charsUsed += msgLen
             // Push the assistant response first to the reverseMessages to maintain the order.
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
-            this.charsUsed += msgLen
             i += 2
         }
         return 0
