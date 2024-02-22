@@ -14,6 +14,7 @@ import type { MessageErrorType, MessageProviderOptions } from '../MessageProvide
 import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
+import { startTokenReceiver } from '../../auth/token-receiver'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -49,20 +50,40 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 await this.setWebviewView('chat')
                 await this.contextProvider.init()
                 break
-            case 'auth':
+            case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
-                if (message.authKind === 'simplified-onboarding') {
+                if (
+                    message.authKind === 'simplified-onboarding' ||
+                    message.authKind === 'simplified-onboarding-local-server'
+                ) {
+                    const endpoint = DOTCOM_URL.href
+                    const tokenReceiverUrl = await startTokenReceiver(
+                        endpoint,
+                        async (token, endpoint) => {
+                            const authStatus = await this.authProvider.auth(endpoint, token)
+                            if (!authStatus?.isLoggedIn) {
+                                void vscode.window.showErrorMessage(
+                                    'Authentication failed. Please check your token and try again.'
+                                )
+                            }
+                        }
+                    )
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
-                    void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
+                    void authProviderSimplified.openExternalAuthUrl(
+                        this.authProvider,
+                        authMethod,
+                        tokenReceiverUrl
+                    )
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
+            }
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
                 telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, {

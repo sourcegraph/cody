@@ -74,7 +74,7 @@ export type WebviewMessage =
               | 'support'
               | 'callback'
               | 'simplified-onboarding'
-              | 'simplified-onboarding-exposure'
+              | 'simplified-onboarding-local-server'
           endpoint?: string
           value?: string
           authMethod?: AuthMethod
