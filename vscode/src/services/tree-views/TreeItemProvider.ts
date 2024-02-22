@@ -9,7 +9,7 @@ export class CodyTreeItem extends vscode.TreeItem {
         icon?: string,
         command?: {
             command: string
-            args?: string[] | { [key: string]: string }[]
+            args?: any[]
         },
         contextValue?: string,
         collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,

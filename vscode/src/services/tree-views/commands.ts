@@ -4,32 +4,24 @@ import { CodyCommandMenuItems } from '../../commands'
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 /**
- * Method to initialize the grouped chats for the Commands items
+ * Method to get items for the Commands sidebar
  */
 export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem[] {
     const treeNodes = []
 
     // Create a CodyTreeItem for each group and add to treeNodes
     for (const item of CodyCommandMenuItems) {
-        const treeItem = new CodyTreeItem(
-            item.key,
-            item.description,
-            item.icon,
-            item.command,
-            undefined,
-            item.key === 'custom'
-                ? vscode.TreeItemCollapsibleState.Expanded
-                : vscode.TreeItemCollapsibleState.None
-        )
+        const treeItem = new CodyTreeItem(item.key, item.description, item.icon, item.command)
         treeItem.description = item.keybinding
 
         if (item.key === 'custom' && customCommands?.length) {
+            treeItem.collapsibleState = vscode.TreeItemCollapsibleState.Expanded
             try {
                 treeItem.children = customCommands.map(
                     command =>
-                        new CodyTreeItem(command.key as string, command.key, 'tools', {
+                        new CodyTreeItem(command.key, command.key, 'tools', {
                             command: 'cody.action.command',
-                            args: [command.key],
+                            args: [command.key, { source: 'sidebar' }],
                         })
                 )
             } catch (e) {

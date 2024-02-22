@@ -1,4 +1,3 @@
-import type { CodySidebarTreeItem } from '../services/tree-views/treeViewItems'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
 const osIcon = isMac() ? '⌥' : 'Alt+'
@@ -69,13 +68,3 @@ export const CodyCommandMenuItems = [
         type: 'default',
     },
 ]
-
-export function getCommandTreeItems(): CodySidebarTreeItem[] {
-    return CodyCommandMenuItems.map(item => {
-        return {
-            ...item,
-            title: item.description,
-            description: item.keybinding,
-        }
-    })
-}
