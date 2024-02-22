@@ -5,6 +5,23 @@ import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {
+        it('adds single valid transcript', () => {
+            const builder = new PromptBuilder(100)
+            const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: 'Hi!' } }]
+            builder.tryAddMessages(transcript.reverse())
+            const messages = builder.build()
+            expect(messages.length).toBe(1)
+            expect(messages[0].speaker).toBe('human')
+        })
+
+        it('throw on transcript starts with assistant', () => {
+            const builder = new PromptBuilder(100)
+            const transcript: MessageWithContext[] = [{ message: { speaker: 'assistant', text: 'Hi!' } }]
+            expect(() => {
+                builder.tryAddMessages(transcript)
+            }).toThrowError()
+        })
+
         it('adds valid transcript in reverse order', () => {
             const builder = new PromptBuilder(1000)
             const transcript: MessageWithContext[] = [
@@ -26,7 +43,9 @@ describe('PromptBuilder', () => {
             const builder = new PromptBuilder(1000)
             const invalidTranscript: MessageWithContext[] = [
                 { message: { speaker: 'human', text: 'Hi there!' } },
-                { message: { speaker: 'human', text: 'How are you?' } },
+                { message: { speaker: 'human', text: 'Hello there!' } },
+                { message: { speaker: 'assistant', text: 'How are you?' } },
+                { message: { speaker: 'assistant', text: 'Hello there!' } },
             ]
             expect(() => {
                 builder.tryAddMessages(invalidTranscript)

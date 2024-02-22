@@ -69,28 +69,23 @@ export class PromptBuilder {
     public tryAddMessages(reverseTranscript: MessageWithContext[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
-        let i = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
-        while (i <= reverseTranscript.length) {
+        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
+        for (let i = lastHumanMsgIndex; i < reverseTranscript.length; i += 2) {
             const humanMsg = reverseTranscript[i]?.message
             const assistantMsg = reverseTranscript[i - 1]?.message
-            if (humanMsg?.speaker !== 'human' || (!humanMsg && assistantMsg)) {
+            if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            if (humanMsg?.speaker === assistantMsg?.speaker) {
-                throw new Error('Cannot add message with same speaker as last message')
-            }
-            const getLength = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
-            const msgLen = getLength(humanMsg) + (assistantMsg ? getLength(assistantMsg) : 0)
+            const countChar = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
+            const msgLen = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
             if (this.charsUsed + msgLen > this.charLimit) {
-                return reverseTranscript.length - i + 1
+                return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
-            this.charsUsed += msgLen
-            // Push the assistant response first to the reverseMessages to maintain the order.
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
-            i += 2
+            this.charsUsed += msgLen
         }
         return 0
     }
