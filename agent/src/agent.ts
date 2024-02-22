@@ -581,8 +581,9 @@ export class Agent extends MessageHandler {
             return { repos }
         })
         this.registerAuthenticatedRequest('graphql/currentUserId', async () => {
-            // NOTE: this request fails
+            // NOTE: this request fails with an error
             const id = await graphqlClient.getCurrentUserId()
+            console.log("### graphql/currentUserId response:", id)
             if (typeof id === 'string') {
                 return id
             }
