@@ -118,6 +118,9 @@ export type ClientRequests = {
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
 
+    // Retrieves the folding ranges for a given file, empty on any error.
+    'workspace/foldingRanges': [{ url: string }, vscode.FoldingRange[]]
+
     // Only used for testing purposes. If you want to write an integration test
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.

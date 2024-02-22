@@ -848,6 +848,25 @@ export class Agent extends MessageHandler {
                 limitHit: result?.attribution?.limitHit || false,
             }
         })
+
+        this.registerAuthenticatedRequest('workspace/foldingRanges', async ({ url }) => {
+            try {
+                const uri = vscode.Uri.file(url)
+                const document = this.workspace.getDocument(uri)
+                if (!document) {
+                    console.error(`Document not found for URL: ${url}`)
+                    return []
+                }
+                const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+                    'vscode.executeFoldingRangeProvider',
+                    uri
+                )
+                return foldingRanges || []
+            } catch (error) {
+                console.error(`Error providing folding ranges for URL: ${url}`, error)
+                return []
+            }
+        })
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
