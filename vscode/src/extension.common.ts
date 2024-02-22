@@ -16,7 +16,10 @@ import { ExtensionApi } from './extension-api'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
+import type {
+    OpenTelemetryService,
+    OpenTelemetryServiceConfig,
+} from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
 import type { CommandsProvider } from './commands/services/provider'
 
@@ -35,9 +38,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
-    createOpenTelemetryService?: (
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
-    ) => OpenTelemetryService
+    createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
     onConfigurationChange?: (configuration: Configuration) => void
 }
 

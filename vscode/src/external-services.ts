@@ -38,6 +38,7 @@ type ExternalServicesConfiguration = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'debugEnable'
+    | 'debugVerbose'
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig

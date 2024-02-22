@@ -15,9 +15,9 @@ import { version } from '../../version'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
-type OpenTelemetryServiceConfig = Pick<
+export type OpenTelemetryServiceConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'experimentalTracing'
+    'serverEndpoint' | 'experimentalTracing' | 'debugVerbose'
 >
 
 export class OpenTelemetryService {
@@ -50,7 +50,9 @@ export class OpenTelemetryService {
             return
         }
         this.lastTraceUrl = traceUrl
-        diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR)
+
+        const logLevel = this.config.debugVerbose ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR
+        diag.setLogger(new DiagConsoleLogger(), logLevel)
 
         await this.sdk?.shutdown()
         this.sdk = undefined
@@ -66,7 +68,7 @@ export class OpenTelemetryService {
             // Disable default process logging. We do not care about the VS Code extension process
             autoDetectResources: false,
 
-            ...(process.env.NODE_ENV === 'development' && {
+            ...((process.env.NODE_ENV === 'development' || this.config.debugVerbose) && {
                 spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
             }),
         })
