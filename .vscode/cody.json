@@ -1,21 +1,21 @@
 {
-    "commands": {
-        "commit-message": {
-            "description": "Commit Message Suggestion",
-            "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
-            "context": {
-                "selection": false,
-                "command": "git diff"
-            },
-            "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
-        },
-        "summarize-latest-release": {
-            "description": "Summarize the latest Cody Release",
-            "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
-            "context": {
-                "selection": false,
-                "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
-            }
-        }
+  "commands": {
+    "commit-message": {
+      "description": "Commit Message Suggestion",
+      "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
+      "context": {
+        "selection": false,
+        "command": "git diff"
+      },
+      "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
+    },
+    "summarize-latest-release": {
+      "description": "Summarize the latest Cody Release",
+      "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
+      "context": {
+        "selection": false,
+        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
+      }
     }
+  }
 }
