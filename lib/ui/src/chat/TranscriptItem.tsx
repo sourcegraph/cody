@@ -94,11 +94,6 @@ export const TranscriptItem: React.FunctionComponent<
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
 
-    // TODO (bee) can be removed once we support editing command prompts.
-    // A boolean indicating whether the current message is a known command input.
-    const isCommandInput =
-        message?.displayText?.startsWith('/') || isDefaultCommandPrompts(message?.text)
-
     return (
         <div
             className={classNames(
@@ -131,7 +126,7 @@ export const TranscriptItem: React.FunctionComponent<
                             className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
-                            disabled={isCommandInput || isInEditingMode}
+                            disabled={isInEditingMode}
                         />
                     </header>
                 </div>
@@ -183,7 +178,6 @@ export const TranscriptItem: React.FunctionComponent<
                             contextFiles={message.contextFiles}
                             fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
-                            isCommand={isCommandInput}
                         />
                     ) : (
                         inProgress && <LoadingContext />
@@ -212,18 +206,3 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 })
-
-// TODO: TO BE REMOVED
-// This is a temporary workaround for disabling editing on the default chat commands.
-const commandPrompts = {
-    explain:
-        'Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.',
-    smell: `Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'`,
-}
-
-export function isDefaultCommandPrompts(text?: string): boolean {
-    if (!text) {
-        return false
-    }
-    return Object.values(commandPrompts).includes(text)
-}

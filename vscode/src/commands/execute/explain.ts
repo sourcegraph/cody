@@ -1,4 +1,4 @@
-import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
+import { logDebug, type ContextFile, displayPath } from '@sourcegraph/cody-shared'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFileFromCurrentFile } from '../context/current-file'
 import { type ExecuteChatArguments, executeChat } from './ask'
@@ -37,6 +37,12 @@ export async function explainCommand(
 
     const currentFile = await getContextFileFromCurrentFile()
     contextFiles.push(...currentFile)
+
+    const cs = currentSelection[0] ?? currentFile[0]
+    if (cs) {
+        const range = cs.range && `:${cs.range.start.line + 1}-${cs.range.end.line + 1}`
+        prompt = prompt.replace('the selected code', `@${displayPath(cs.uri)}${range ?? ''} `)
+    }
 
     return {
         text: prompt,

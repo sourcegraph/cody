@@ -40,8 +40,11 @@ export function replaceFileNameWithMarkdownLink(
     symbolName?: string
 ): string {
     const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
+    if (!inputRepr) {
+        return humanInput
+    }
     const fileAsInput = inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
-    const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#])`, 'g')
+    const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#-_])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
             file.toJSON(),
@@ -70,18 +73,24 @@ function inputRepresentation(
     symbolName?: string
 ): string {
     const fileName = displayPath(file)
-    const components = [fileName]
-
+    const components = []
+    const startLine = range?.start?.line
     // +1 on start line because VS Code line numbers start at 1 in the editor UI,
     // and is zero-based in the API for position used in VS Code selection/range.
     // Since createDisplayTextWithFileLinks added 1 to end line, we don't need to add it again here.
     // But add it for start line because this is for displaying the line number to user, which is +1-based.
-    const singleRange = range?.start && `:${range.start.line + 1}`
-    const fullRange = range?.end?.line && `:${range.start.line + 1}-${range.end.line}`
-    if (fullRange && humanInput.includes(`@${fileName}${fullRange}`)) {
-        components.push(fullRange)
-    } else if (singleRange && humanInput.includes(`@${fileName}${singleRange}`)) {
-        components.push(singleRange)
+    if (startLine !== undefined) {
+        if (humanInput.matchAll(new RegExp(`@${fileName}:${startLine}(?!-)`, 'g'))) {
+            if (startLine + 1 === range?.end?.line) {
+                components.push(fileName, `:${startLine + 1}`)
+            }
+        }
+        const fullRange = range?.end?.line && `:${startLine + 1}-${range.end.line}`
+        if (fullRange && humanInput.includes(`@${fileName}${fullRange}`)) {
+            components.push(fileName, fullRange)
+        }
+    } else {
+        return fileName
     }
 
     components.push(symbolName ? `#${symbolName}` : '')
