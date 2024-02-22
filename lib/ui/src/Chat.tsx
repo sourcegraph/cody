@@ -13,7 +13,6 @@ import {
     type ContextFile,
     type Guardrails,
     getContextFileDisplayText,
-    displayPath,
     getAtMentionQuery,
     getAtMentionedInputText,
     isAtMention,
@@ -357,19 +356,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (selected: ContextFile, queryEndsWithColon = false): void => {
             const atRangeEndingRegex = /:\d+(-\d+)?$/
             const inputBeforeCaret = formInput.slice(0, inputCaretPosition)
-            const isSettingRange = atRangeEndingRegex.test(inputBeforeCaret)
-            if (chatContextFiles.has(`@${displayPath(selected.uri)}`)) {
-                if (isSettingRange && inputCaretPosition) {
-                    const inputAfterCaret = formInput.slice(inputCaretPosition)
-                    if (!inputAfterCaret.trimStart().startsWith('-')) {
-                        // Add a space after inputBeforeCaret to formInput
-                        setFormInput(`${inputBeforeCaret} ${inputAfterCaret}`)
-                        setInputCaretPosition(inputCaretPosition + 1)
-                    }
-                    resetContextSelection()
-                    return
-                }
-            }
 
             const fileDisplayText = getContextFileDisplayText(selected, inputBeforeCaret)
             if (inputCaretPosition && fileDisplayText) {

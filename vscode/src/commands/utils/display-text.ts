@@ -41,10 +41,10 @@ export function replaceFileNameWithMarkdownLink(
     symbolName?: string
 ): string {
     const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
-    console.log(inputRepr, 'inputRepr')
     if (!inputRepr) {
         return humanInput
     }
+    // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const fileAsInput = inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
     const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#-_])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
