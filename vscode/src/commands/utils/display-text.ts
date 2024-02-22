@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
+import { trailingNonAlphaNumericRegex } from './test-commands'
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -40,6 +41,7 @@ export function replaceFileNameWithMarkdownLink(
     symbolName?: string
 ): string {
     const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
+    console.log(inputRepr, 'inputRepr')
     if (!inputRepr) {
         return humanInput
     }
@@ -58,8 +60,11 @@ export function replaceFileNameWithMarkdownLink(
         ])
     )})`
 
-    const text = humanInput.replace(textToBeReplaced, ` ${markdownText}`)
-    return text.trim()
+    const text = humanInput
+        .replace(trailingNonAlphaNumericRegex, '')
+        .replace(textToBeReplaced, ` ${markdownText}`)
+    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
+    return (text + lastChar).trim()
 }
 
 /**
@@ -73,26 +78,23 @@ function inputRepresentation(
     symbolName?: string
 ): string {
     const fileName = displayPath(file)
-    const components = []
+    const components = [fileName]
     const startLine = range?.start?.line
     // +1 on start line because VS Code line numbers start at 1 in the editor UI,
     // and is zero-based in the API for position used in VS Code selection/range.
     // Since createDisplayTextWithFileLinks added 1 to end line, we don't need to add it again here.
     // But add it for start line because this is for displaying the line number to user, which is +1-based.
     if (startLine !== undefined) {
-        if (humanInput.matchAll(new RegExp(`@${fileName}:${startLine}(?!-)`, 'g'))) {
-            if (startLine + 1 === range?.end?.line) {
-                components.push(fileName, `:${startLine + 1}`)
-            }
-        }
         const fullRange = range?.end?.line && `:${startLine + 1}-${range.end.line}`
         if (fullRange && humanInput.includes(`@${fileName}${fullRange}`)) {
-            components.push(fileName, fullRange)
+            components.push(fullRange)
+        } else if (humanInput.matchAll(new RegExp(`@${fileName}:${startLine}(?!-)`, 'g'))) {
+            if (startLine + 1 === range?.end?.line) {
+                components.push(`:${startLine + 1}`)
+            }
         }
-    } else {
-        return fileName
+        components.push(symbolName ? `#${symbolName}` : '')
     }
 
-    components.push(symbolName ? `#${symbolName}` : '')
     return components.join('').trim()
 }
