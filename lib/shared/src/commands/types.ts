@@ -31,9 +31,6 @@ export interface CodyCommand {
     type?: CodyCommandType
     mode?: CodyCommandMode
 
-    // Register the command as editor command to allow keybindings.
-    register?: boolean
-
     // Internal use - the ID of the request
     requestID?: string
 }
@@ -42,9 +39,8 @@ export interface CodyCommand {
  * - 'ask' mode is the default mode, run prompt in chat view
  * - 'edit' mode will run prompt with edit command which replace selection with cody's response
  * - 'insert' mode is the same as edit, it adds to the top of the selection instead of replacing selection
- * - 'file' mode create a new file with cody's response as content
  */
-type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
+type CodyCommandMode = 'ask' | 'edit' | 'insert'
 
 // Type of context available for prompt building
 export interface CodyCommandContext {
