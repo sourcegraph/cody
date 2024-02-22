@@ -7,7 +7,6 @@
                 "selection": false,
                 "command": "git diff"
             },
-            "register": true,
             "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
         },
         "summarize-latest-release": {
