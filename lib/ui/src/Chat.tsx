@@ -359,10 +359,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const inputBeforeCaret = formInput.slice(0, inputCaretPosition)
             const isSettingRange = atRangeEndingRegex.test(inputBeforeCaret)
             if (chatContextFiles.has(`@${displayPath(selected.uri)}`)) {
-                if (isSettingRange) {
-                    // Add a space after inputBeforeCaret to formInput
-                    setFormInput(formInput.replace(inputBeforeCaret, inputBeforeCaret + ' '))
-                    setInputCaretPosition(formInput.length + 1)
+                if (isSettingRange && inputCaretPosition) {
+                    const inputAfterCaret = formInput.slice(inputCaretPosition)
+                    if (!inputAfterCaret.trimStart().startsWith('-')) {
+                        // Add a space after inputBeforeCaret to formInput
+                        setFormInput(`${inputBeforeCaret} ${inputAfterCaret}`)
+                        setInputCaretPosition(inputCaretPosition + 1)
+                    }
                     resetContextSelection()
                     return
                 }
