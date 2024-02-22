@@ -49,15 +49,54 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return SYMBOL_NO_RESULT
     }, [contextQuery, contextSelection?.length])
 
+    if (formInput.endsWith(' ')) {
+        return null
+    }
+
+    /**
+     * Extracts line range information from the context query and displays tips as ghost text.
+     */
+    const regex = /:(\d+)?(-)?(\d+)?$/
+    const match = regex.exec(contextQuery)
+    if (match && contextSelection?.length) {
+        const [colon, startLine, dash, endLine] = match
+        const ghostStart = colon && startLine ? '' : 'line'
+        const ghostEnd = dash ? (endLine ? '' : 'line') : '-line'
+        const hint = endLine && endLine < startLine ? '(invalid line range)' : '(line range)'
+        return (
+            <div className={classNames(styles.container)}>
+                <div className={classNames(styles.headingContainer)}>
+                    <h3 className={styles.heading}>{FILE_ON_RESULT}</h3>
+                </div>
+                <button
+                    className={classNames(styles.selectionItem, styles.selected)}
+                    title={contextQuery}
+                    type="button"
+                    onClick={() => onSelected(contextSelection[0])}
+                >
+                    <span className={styles.titleAndDescriptionContainer}>
+                        <span className={styles.selectionTitle}>
+                            {contextQuery}
+                            <span className={styles.ghostText}>
+                                {ghostStart}
+                                {ghostEnd} {hint}
+                            </span>
+                        </span>
+                    </span>
+                </button>
+            </div>
+        )
+    }
+
     if (contextSelection === null || selected === -1) {
         return null
     }
 
-    // If the query ENDS with a non-alphanumeric character (except #),
-    // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
-    // and there is no contextSelection to display,
-    // don't display the selector.
-    if (/[^a-zA-Z0-9#]$/.test(contextQuery)) {
+    // Don't display the selector when there is no contextSelection to display AND
+    // query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
+    // e.g. '@abcdefg?' -> false || '@abcdefg?file' -> false
+    const endRegex = /[^a-zA-Z0-9#]$/
+    if (endRegex.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null
         }
@@ -111,7 +150,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                         warning && styles.showWarning
                                     )}
                                     title={title}
-                                    onClick={() => onSelected(match, formInput)}
+                                    onClick={() => onSelected(match)}
                                     type="button"
                                 >
                                     {match.type === 'symbol' && icon && (

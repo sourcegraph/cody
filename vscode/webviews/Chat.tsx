@@ -35,6 +35,7 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
+import { verifyContextFilesFromInput } from '@sourcegraph/cody-shared/src/chat/input/user-context'
 
 interface ChatboxProps {
     welcomeMessage?: string
@@ -106,14 +107,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // loop the added contextFiles to:
             // 1. check if the key still exists in the text
             // 2. remove the ones not present
-            const userContextFiles: ContextFile[] = []
-            if (contextFiles?.size) {
-                for (const [fileName, contextFile] of contextFiles) {
-                    if (text.includes(fileName)) {
-                        userContextFiles.push(contextFile)
-                    }
-                }
-            }
+            const userContextFiles = verifyContextFilesFromInput(text, contextFiles)
 
             // Handle edit requests
             if (submitType === 'edit') {
