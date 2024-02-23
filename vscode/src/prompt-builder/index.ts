@@ -36,30 +36,6 @@ export class PromptBuilder {
     }
 
     /**
-     * @deprecated Use 'tryAddMessages' instead.
-     */
-    public tryAdd(message: Message): boolean {
-        const lastMessage = this.reverseMessages.at(-1)
-        if (lastMessage?.speaker === message.speaker) {
-            throw new Error('Cannot add message with same speaker as last message')
-        }
-
-        const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        if (this.charsUsed + msgLen > this.charLimit) {
-            // Remove the last assistant message which is a response to the current message
-            // from human to avoid the `found consecutive messages with the same speaker 'assistant'`
-            // error when we add the preamble that ends with 'assistant'.
-            if (message.speaker === 'human' && lastMessage?.speaker === 'assistant') {
-                this.reverseMessages.pop()
-            }
-            return false
-        }
-        this.reverseMessages.push(message)
-        this.charsUsed += msgLen
-        return true
-    }
-
-    /**
      * Tries to add messages in pairs from reversed transcript to the prompt builder.
      * Returns the index of the last message that was successfully added.
      *
