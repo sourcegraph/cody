@@ -50,7 +50,6 @@ test.extend<ExpectedEvents>({
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
-    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     // Click the Custom Commands button in the Command view
     await page.getByText('Custom Commands').click()
@@ -149,7 +148,6 @@ test.extend<ExpectedEvents>({
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
-    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     /* Test: context.currentDir with currentDir command */
     await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
@@ -247,7 +245,6 @@ test.extend<ExpectedEvents>({
     await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
-    await page.getByLabel('Cody Ignore Files (Experimental) Section').click()
 
     // Check button click to open the cody.json file in the editor
     // const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'

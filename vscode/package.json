@@ -226,11 +226,6 @@
                     "when": "cody.activated"
                 },
                 {
-                    "id": "cody.ignore.tree.view",
-                    "name": "Cody Ignore Files (Experimental)",
-                    "when": "cody.activated && config.cody.internal.unstable"
-                },
-                {
                     "type": "webview",
                     "id": "cody.search",
                     "name": "Natural Language Search (Beta)",
@@ -249,21 +244,6 @@
                 "view": "cody.chat.tree.view",
                 "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
                 "when": "cody.activated"
-            },
-            {
-                "view": "cody.ignore.tree.view",
-                "contents": "Searching workspace for .cody/ignore file(s)...",
-                "when": "cody.activated && config.cody.internal.unstable && !cody.ignoreSyncCompleted"
-            },
-            {
-                "view": "cody.ignore.tree.view",
-                "contents": "No .cody/ignore file was found.",
-                "when": "cody.activated && config.cody.internal.unstable && cody.ignoreSyncCompleted && !config.search.followSymlinks"
-            },
-            {
-                "view": "cody.ignore.tree.view",
-                "contents": "No .cody/ignore file was found.\n[Try disable 'Follow Symlinks'](command:cody.sidebar.ignore.settings)",
-                "when": "cody.activated && config.cody.internal.unstable && cody.ignoreSyncCompleted && config.search.followSymlinks"
             }
         ],
         "commands": [

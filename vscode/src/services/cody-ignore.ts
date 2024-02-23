@@ -1,19 +1,15 @@
 import * as vscode from 'vscode'
 
-import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
+import {
+    CODY_IGNORE_POSIX_GLOB,
+    ignores,
+    type IgnoreFileContent,
+    type ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import type { TreeViewProvider } from './tree-views/TreeViewProvider'
-import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 const utf8 = new TextDecoder('utf-8')
-
-let ignoreSidebar: TreeViewProvider | undefined = undefined
-let ignoreSidebarItems: CodySidebarTreeItem[] = []
-export const getIgnoreSidebarItems = () => ignoreSidebarItems.reverse()
-
-// Used for setting context for the sidebar to display the current welcome view.
-const loadingStateContext = 'cody.ignoreSyncCompleted'
 
 /**
  * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
@@ -21,12 +17,16 @@ const loadingStateContext = 'cody.ignoreSyncCompleted'
  *
  * NOTE: This is only called ONCE at ChatPanelsManager initialization where all sidebars are registered.
  */
-export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable[] {
-    const disposables: vscode.Disposable[] = []
-    ignoreSidebar = sidebar
+export function setUpCodyIgnore(config: ConfigurationWithAccessToken): vscode.Disposable[] {
+    ignores.setActiveState(config.internalUnstable)
+    if (!config.internalUnstable) {
+        return []
+    }
+
     // Enable ignore and then handle existing workspace folders.
-    onConfigChange()
     vscode.workspace.workspaceFolders?.map(async wf => await refresh(wf.uri))
+
+    const disposables: vscode.Disposable[] = []
 
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
@@ -50,7 +50,7 @@ export function setUpCodyIgnore(sidebar: TreeViewProvider): vscode.Disposable[] 
         if (e.affectsConfiguration('search')) {
             // Only refresh if the ignore sidebar is empty,
             // which means the setup step has initially failed.
-            if (!ignoreSidebarItems) {
+            if (!ignores.hasCodyIgnoreFiles) {
                 onConfigChange()
             }
         }
@@ -69,11 +69,8 @@ const findInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
  * Rebuilds the ignore files for the workspace containing `uri`.
  */
 async function refresh(uri: vscode.Uri): Promise<void> {
-    ignoreSidebarItems = []
-
     // Skip refresh if .cody/ignore is not enabled
-    if (!ignores.isEnabled) {
-        ignoreSidebar = undefined
+    if (!ignores.isActive) {
         return
     }
 
@@ -117,7 +114,6 @@ async function refresh(uri: vscode.Uri): Promise<void> {
             if (!findInProgressTokens.get(uri.path)) {
                 return
             }
-            void vscode.commands.executeCommand('setContext', loadingStateContext, true)
             cancel()
             const title = 'Fail to find Cody ignore files.'
             const description = ' Try disable the `search.followSymlinks` setting in your editor.'
@@ -138,17 +134,6 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         undefined,
         newToken.token
     )
-
-    void vscode.commands.executeCommand('setContext', loadingStateContext, true)
-    // Create a sidebar item for each found ignore file.
-    for (const ignoreFile of ignoreFiles) {
-        ignoreSidebarItems.push({
-            title: vscode.workspace.asRelativePath(ignoreFile),
-            icon: 'file',
-            command: { command: 'vscode.open', args: [ignoreFile.path] },
-        })
-    }
-    ignoreSidebar?.refresh()
 
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
@@ -183,12 +168,6 @@ function clear(wf: vscode.WorkspaceFolder): void {
         token.dispose()
     }
     findInProgressTokens.clear()
-
-    // Clear sidebar
-    ignoreSidebarItems = []
-    ignoreSidebar?.refresh()
-
-    void vscode.commands.executeCommand('setContext', loadingStateContext, true)
     logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.toString() })
 }
 

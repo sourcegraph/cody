@@ -44,10 +44,6 @@ test.extend<ExpectedEvents>({
 
     await page.click('.badge[aria-label="Cody"]')
 
-    // Check the ignore sidebar
-    await expect(page.getByLabel('Cody Ignore Files (Experimental) Section')).toBeVisible()
-    await expect(page.getByLabel('No .cody/ignore file was found.')).not.toBeVisible()
-
     // Start new chat
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 

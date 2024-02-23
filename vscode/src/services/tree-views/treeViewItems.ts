@@ -2,9 +2,8 @@ import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
 import { releaseType } from '../../release'
 import { version } from '../../version'
-import { getIgnoreSidebarItems } from '../cody-ignore'
 
-export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat' | 'ignore'
+export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
 export interface CodySidebarTreeItem {
     title: string
@@ -28,8 +27,6 @@ export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] 
     switch (type) {
         case 'support':
             return supportItems
-        case 'ignore':
-            return getIgnoreSidebarItems()
         default:
             return []
     }
