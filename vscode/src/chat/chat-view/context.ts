@@ -32,7 +32,6 @@ export interface GetEnhancedContextOptions {
     }
     featureFlags: {
         fusedContext: boolean
-        testingContextRanking: boolean | undefined
     }
     hints: {
         maxChars: number
@@ -49,7 +48,7 @@ export async function getEnhancedContext({
     hints,
     contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (featureFlags.testingContextRanking && contextRanking) {
+    if (contextRanking) {
         return getEnhancedContextFromRanker({
             strategy,
             editor,
@@ -217,7 +216,9 @@ async function getEnhancedContextFromRanker({
         if (!contextRanking) {
             return allContext
         }
-        const rankedContext = contextRanking.rankContextItems(text, allContext)
+        const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
+            contextRanking.rankContextItems(text, allContext)
+        )
         return rankedContext
     })
 }

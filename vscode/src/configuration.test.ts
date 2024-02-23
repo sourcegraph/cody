@@ -100,6 +100,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.internal.unstable':
                         return false
+                    case 'cody.experimental.chatContextRanker':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }

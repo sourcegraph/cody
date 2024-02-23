@@ -124,6 +124,8 @@ export function getConfiguration(
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
+        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
+
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
@@ -170,10 +172,6 @@ export function getConfiguration(
         testingLocalEmbeddingsIndexLibraryPath: isTesting
             ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
             : undefined,
-
-        experimentalChatContextRanker:
-            getHiddenSetting('internal.unstable', false) &&
-            getHiddenSetting('experimental.chatContextRanker', false),
     }
 }
 

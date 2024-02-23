@@ -50,6 +50,7 @@ export interface Configuration {
     experimentalSymfContext: boolean
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
+    experimentalChatContextRanker: boolean | undefined
 
     /**
      * Unstable Features for internal testing only
@@ -76,8 +77,6 @@ export interface Configuration {
     testingLocalEmbeddingsModel: string | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
-
-    experimentalChatContextRanker: boolean | undefined
 }
 
 export interface AutocompleteTimeouts {

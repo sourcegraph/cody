@@ -25,6 +25,7 @@ export interface RankerPredictions {
 }
 
 export interface RankerPrediction {
+    //todo: Change to camel case, when changing the protocol on bfg.
     document_id: number
     score: number
 }

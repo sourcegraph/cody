@@ -1,14 +1,8 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
-
-// import { URI } from 'vscode-uri'
 import { logDebug } from '../log'
 
-import {
-    isDotCom,
-    type ConfigurationWithAccessToken,
-    // type FileURI,
-} from '@sourcegraph/cody-shared'
+import { isDotCom, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 import type { ContextItem } from '../prompt-builder/types'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { captureException } from '../services/sentry/sentry'
@@ -53,7 +47,7 @@ export class ContextRankingController implements ContextRanker {
     private serviceStarted = false
     // Whether the account is a consumer account.
     private endpointIsDotcom = false
-    private readonly accessToken: string | undefined
+    private accessToken: string | undefined
     private readonly indexLibraryPath: FileURI | undefined
 
     constructor(
@@ -73,6 +67,20 @@ export class ContextRankingController implements ContextRanker {
         if (repoUri && isFileURI(repoUri)) {
             this.computeFeatures(repoUri)
         }
+    }
+
+    public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
+        const endpointIsDotcom = isDotCom(serverEndpoint)
+        logDebug(
+            'ContextRankingController',
+            'setAccessToken',
+            endpointIsDotcom ? 'is dotcom' : 'not dotcom'
+        )
+        this.endpointIsDotcom = endpointIsDotcom
+        if (token === this.accessToken) {
+            return Promise.resolve()
+        }
+        this.accessToken = token || undefined
     }
 
     private getRepoUri(): vscode.Uri | undefined {
@@ -104,25 +112,19 @@ export class ContextRankingController implements ContextRanker {
     }
 
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
-        logDebug('ContextRankingController', 'spawnAndBindService', 'service started, initializing')
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
-            logDebug(
-                'ContextRankingController',
-                'spawnAndBindService',
-                'overriding index library path',
-                this.indexLibraryPath
-            )
             indexPath = this.indexLibraryPath
         }
         if (this.accessToken) {
-            const initResult = await service.request('context-ranking/initialize', {
+            await service.request('context-ranking/initialize', {
                 indexPath: indexPath.fsPath,
                 accessToken: this.accessToken,
             })
-            logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', initResult)
             this.serviceStarted = true
+        } else {
+            logDebug('ContextRankingController', 'setupContextRankingService', 'no access token found')
         }
     }
 
@@ -134,7 +136,7 @@ export class ContextRankingController implements ContextRanker {
 
         try {
             const service = await this.getService()
-            const rankItems = this.convertContextItemsToRankItems(repoUri.path, contextItems)
+            const rankItems = this.convertContextItemsToRankItems(repoUri.fsPath, contextItems)
             const rankedItemsOrder = await service.request('context-ranking/rank-items', {
                 repoPath: repoUri.path,
                 contextItems: rankItems,
@@ -142,15 +144,6 @@ export class ContextRankingController implements ContextRanker {
             })
 
             if (rankedItemsOrder.prediction.length !== contextItems.length) {
-                logDebug(
-                    'ContextRankingController',
-                    'rank-items',
-                    'unexpected-response, length of reranked items does not match',
-                    'original items',
-                    JSON.stringify(contextItems),
-                    ' reranked items',
-                    JSON.stringify(rankedItemsOrder)
-                )
                 return contextItems
             }
             const reRankedContextItems = this.orderContextItemsAsRankItems(
@@ -159,18 +152,17 @@ export class ContextRankingController implements ContextRanker {
             )
             return reRankedContextItems
         } catch (error) {
-            logDebug('ContextRankingController', 'rank-items', captureException(error), error)
             return contextItems
         }
     }
 
     private convertContextItemsToRankItems(
-        baseRepoUrl: string,
+        baseRepoPath: string,
         contextItems: ContextItem[]
     ): RankContextItem[] {
         const rankContextItems = contextItems.map((item, index) => ({
             document_id: index,
-            filePath: item.uri?.path ? path.relative(baseRepoUrl, item.uri?.path) : '',
+            filePath: item.uri?.path ? path.relative(baseRepoPath, item.uri?.path) : '',
             content: item.text,
             source: item.source,
         }))
@@ -182,17 +174,10 @@ export class ContextRankingController implements ContextRanker {
         rankedItemsOrder: RankerPrediction[]
     ): ContextItem[] {
         rankedItemsOrder.sort((a, b) => b.score - a.score)
-        const orderedContextItems: ContextItem[] = [] // Initialize the array
+        const orderedContextItems: ContextItem[] = []
         for (const item of rankedItemsOrder) {
             const newIndex = item.document_id
             if (newIndex < 0 || newIndex >= contextItems.length) {
-                logDebug(
-                    'ContextRankingController',
-                    'length of rankItems',
-                    JSON.stringify(rankedItemsOrder),
-                    'does not match context items',
-                    JSON.stringify(contextItems)
-                )
                 return contextItems
             }
             orderedContextItems.push(contextItems[newIndex])

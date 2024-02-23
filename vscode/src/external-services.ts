@@ -103,6 +103,7 @@ export async function configureExternalServices(
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+            void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

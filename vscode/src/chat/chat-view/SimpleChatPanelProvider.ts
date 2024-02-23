@@ -473,9 +473,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                   featureFlags: {
                                       fusedContext:
                                           this.config.internalUnstable || (await useFusedContextPromise),
-                                      testingContextRanking:
-                                          this.config.internalUnstable &&
-                                          this.config.experimentalChatContextRanker,
                                   },
                                   hints: { maxChars },
                                   contextRanking: this.contextRanking,
