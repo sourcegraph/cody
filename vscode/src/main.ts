@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    FeatureFlag,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
