@@ -1,6 +1,7 @@
 import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
+import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -34,19 +35,35 @@ export class PromptBuilder {
         return true
     }
 
-    public tryAdd(message: Message): boolean {
-        const lastMessage = this.reverseMessages.at(-1)
-        if (lastMessage?.speaker === message.speaker) {
-            throw new Error('Cannot add message with same speaker as last message')
+    /**
+     * Tries to add messages in pairs from reversed transcript to the prompt builder.
+     * Returns the index of the last message that was successfully added.
+     *
+     * Validates that the transcript alternates between human and assistant speakers.
+     * Stops adding when the character limit would be exceeded.
+     */
+    public tryAddMessages(reverseTranscript: MessageWithContext[]): number {
+        // All Human message is expected to be followed by response from Assistant,
+        // except for the Human message at the last index that Assistant hasn't responded yet.
+        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
+        for (let i = lastHumanMsgIndex; i < reverseTranscript.length; i += 2) {
+            const humanMsg = reverseTranscript[i]?.message
+            const assistantMsg = reverseTranscript[i - 1]?.message
+            if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
+                throw new Error(`Invalid transcript order: expected human message at index ${i}`)
+            }
+            const countChar = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
+            const msgLen = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
+            if (this.charsUsed + msgLen > this.charLimit) {
+                return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
+            }
+            if (assistantMsg) {
+                this.reverseMessages.push(assistantMsg)
+            }
+            this.reverseMessages.push(humanMsg)
+            this.charsUsed += msgLen
         }
-
-        const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        if (this.charsUsed + msgLen > this.charLimit) {
-            return false
-        }
-        this.reverseMessages.push(message)
-        this.charsUsed += msgLen
-        return true
+        return 0
     }
 
     /**
