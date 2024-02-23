@@ -17,6 +17,7 @@ import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } fro
 import { openai } from './models/openai'
 import { claude } from './models/claude'
 import { PromptBuilder } from '../../prompt-builder'
+import type { MessageWithContext } from '../../chat/chat-view/SimpleChatModel'
 
 const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
@@ -97,10 +98,11 @@ export const buildInteraction = async ({
     const preamble = getSimplePreamble()
     promptBuilder.tryAddToPrefix(preamble)
 
+    const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]
     if (assistantText) {
-        promptBuilder.tryAdd({ speaker: 'assistant', text: assistantText })
+        transcript.push({ message: { speaker: 'assistant', text: assistantText } })
     }
-    promptBuilder.tryAdd({ speaker: 'human', text: prompt })
+    promptBuilder.tryAddMessages(transcript.reverse())
 
     const contextItems = await getContext({
         intent: task.intent,
