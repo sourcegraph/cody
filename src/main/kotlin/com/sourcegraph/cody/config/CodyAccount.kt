@@ -5,13 +5,11 @@ import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.auth.ServerAccount
-import com.sourcegraph.cody.localapp.LocalAppManager
 import com.sourcegraph.config.ConfigUtil
 
 enum class AccountType {
   DOTCOM,
-  ENTERPRISE,
-  LOCAL_APP
+  ENTERPRISE
 }
 
 @Tag("account")
@@ -24,16 +22,9 @@ data class CodyAccount(
     @Attribute("id") override var id: String = generateId(),
 ) : ServerAccount() {
 
-  fun isCodyApp(): Boolean {
-    return Companion.isCodyApp(server)
-  }
-
   fun getAccountType(): AccountType {
     if (isDotcomAccount()) {
       return AccountType.DOTCOM
-    }
-    if (isCodyApp()) {
-      return AccountType.LOCAL_APP
     }
     return AccountType.ENTERPRISE
   }
@@ -49,17 +40,7 @@ data class CodyAccount(
         server: SourcegraphServerPath,
         id: String = generateId(),
     ): CodyAccount {
-      val username =
-          if (isCodyApp(server)) {
-            LocalAppManager.LOCAL_APP_ID
-          } else {
-            username
-          }
       return CodyAccount(username, displayName ?: username, server, id)
-    }
-
-    fun isCodyApp(server: SourcegraphServerPath): Boolean {
-      return server.url.startsWith(LocalAppManager.DEFAULT_LOCAL_APP_URL)
     }
 
     fun CodyAccount?.isEnterpriseAccount() = this?.isDotcomAccount()?.not() ?: false

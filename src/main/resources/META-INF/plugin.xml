@@ -210,18 +210,6 @@
         </action>
 
         <action
-                id="cody.downloadAndInstallCodyAction"
-                class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
-                text="Download Cody App"
-                icon="/icons/codyLogoSm.svg"/>
-
-        <action
-                id="cody.runCodyAppAction"
-                class="com.sourcegraph.cody.recipes.RunCodyAppAction"
-                text="Run Cody App"
-                icon="/icons/codyLogoSm.svg"/>
-
-        <action
                 id="cody.restartAgent"
                 class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
                 text="Restart Cody Agent"/>
@@ -232,8 +220,6 @@
 
         <group id="CodyEditorActions" popup="true" text="Cody"
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
-            <reference ref="cody.downloadAndInstallCodyAction"/>
-            <reference ref="cody.runCodyAppAction"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
             <reference ref="cody.command.Explain"/>
             <reference ref="cody.command.Smell"/>

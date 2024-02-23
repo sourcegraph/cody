@@ -9,8 +9,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.config.AccountType;
-import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
@@ -132,13 +130,6 @@ public abstract class FileActionBase extends DumbAwareAction {
 
   @Override
   public void update(@NotNull AnActionEvent e) {
-    Project project = e.getProject();
-    if (project == null) {
-      return;
-    }
-    e.getPresentation()
-        .setEnabled(
-            CodyAuthenticationManager.getInstance().getActiveAccountType(project)
-                != AccountType.LOCAL_APP);
+    e.getPresentation().setEnabled(true);
   }
 }

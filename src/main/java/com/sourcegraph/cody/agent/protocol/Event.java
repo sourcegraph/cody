@@ -17,7 +17,7 @@ public class Event {
    * @deprecated This property is no longer used for events.
    *     <p>Use {@link #publicArgument} instead.
    */
-  @NotNull public Object argument;
+  @Deprecated @NotNull public Object argument;
 
   @Nullable public Object publicArgument;
   @NotNull public final String client;

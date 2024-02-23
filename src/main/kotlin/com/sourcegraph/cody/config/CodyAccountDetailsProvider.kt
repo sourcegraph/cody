@@ -6,7 +6,6 @@ import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.util.IconUtil
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.auth.ui.LoadingAccountsDetailsProvider
@@ -31,18 +30,13 @@ class CodyAccountDetailsProvider(
               } ?: return@submitIOTask noToken()
           val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
 
-          if (account.isCodyApp()) {
-            val details = CodyAccountDetails(account.id, account.name, account.name, null)
-            DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)
-          } else {
-            val accountDetails =
-                SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(account.server)
-            val image =
-                accountDetails.avatarURL?.let { url ->
-                  CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()
-                }
-            DetailsLoadingResult(accountDetails, image, null, false)
-          }
+          val accountDetails =
+              SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(account.server)
+          val image =
+              accountDetails.avatarURL?.let { url ->
+                CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()
+              }
+          DetailsLoadingResult(accountDetails, image, null, false)
         }
         .successOnEdt(indicator.modalityState) {
           accountsModel.accountsListModel.contentsChanged(account)

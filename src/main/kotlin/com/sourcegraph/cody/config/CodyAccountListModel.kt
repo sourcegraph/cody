@@ -5,10 +5,8 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.awt.RelativePoint
-import com.intellij.util.containers.orNull
 import com.sourcegraph.cody.auth.ui.AccountsListModel
 import com.sourcegraph.cody.auth.ui.AccountsListModelBase
-import com.sourcegraph.cody.localapp.LocalAppManager
 import javax.swing.JComponent
 
 class CodyAccountListModel(private val project: Project) :
@@ -30,28 +28,20 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   override fun editAccount(parentComponent: JComponent, account: CodyAccount) {
+
+    val token = newCredentials[account] ?: getOldToken(account)
     val authData =
-        if (!account.isCodyApp()) {
-          val token = newCredentials[account] ?: getOldToken(account)
-          CodyAuthenticationManager.instance.login(
-              project,
-              parentComponent,
-              CodyLoginRequest(
-                  login = account.name,
-                  server = account.server,
-                  token = token,
-                  customRequestHeaders = account.server.customRequestHeaders,
-                  title = "Edit Sourcegraph Account",
-                  loginButtonText = "Save account",
-              ))
-        } else {
-          val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
-          if (localAppAccessToken != null) {
-            CodyAuthData(account, LocalAppManager.LOCAL_APP_ID, localAppAccessToken)
-          } else {
-            null
-          }
-        }
+        CodyAuthenticationManager.instance.login(
+            project,
+            parentComponent,
+            CodyLoginRequest(
+                login = account.name,
+                server = account.server,
+                token = token,
+                customRequestHeaders = account.server.customRequestHeaders,
+                title = "Edit Sourcegraph Account",
+                loginButtonText = "Save account",
+            ))
 
     if (authData == null) return
 

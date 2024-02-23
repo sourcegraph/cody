@@ -92,9 +92,7 @@ class SettingsMigration : Activity {
     if (!dotcomAccessToken.isNullOrEmpty()) {
       val server = SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, customRequestHeaders)
       val extractedAccountType = extractAccountType(project)
-      val shouldSetAccountAsDefault =
-          extractedAccountType == AccountType.DOTCOM ||
-              extractedAccountType == AccountType.LOCAL_APP
+      val shouldSetAccountAsDefault = extractedAccountType == AccountType.DOTCOM
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
             project,
