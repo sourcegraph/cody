@@ -1,4 +1,4 @@
-import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
+import { featureFlagProvider, type CodyCommand, type ContextFile } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
@@ -6,6 +6,7 @@ import { showCommandMenu } from '../menus'
 import { getContextFileFromShell } from '../context/shell'
 import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CodyCommandMenuItems } from '..'
+import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 
 export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 
@@ -18,7 +19,8 @@ export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems 
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     protected readonly defaultCommands = vscodeDefaultCommands
-    protected customCommandsStore = new CustomCommandsManager()
+    public treeViewProvider = new TreeViewProvider('command', featureFlagProvider)
+    protected customCommandsStore = new CustomCommandsManager(this.treeViewProvider)
 
     // The commands grouped with default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
@@ -33,7 +35,12 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
             vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
-            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    await this.treeViewProvider.refresh()
+                }
+            })
         )
 
         this.customCommandsStore.init()
