@@ -155,7 +155,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 this.registeredCommands.push(
                     vscode.commands.registerCommand(`cody.command.custom.${key}`, () =>
                         vscode.commands.executeCommand('cody.action.command', key, {
-                            source: 'keybinding',
+                            source: 'editor',
                         })
                     )
                 )
