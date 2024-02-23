@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.chat.ui
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.SwingHelper
@@ -10,6 +11,7 @@ import com.sourcegraph.cody.attribution.AttributionListener
 import com.sourcegraph.cody.attribution.AttributionSearchCommand
 import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
+import com.sourcegraph.telemetry.GraphQlLogger
 import java.awt.Color
 import javax.swing.JEditorPane
 import javax.swing.JPanel
@@ -107,6 +109,10 @@ class SingleMessagePanel(
       chatSession.getSessionId()?.let { sessionId ->
         val listener = AttributionListener.UiThreadDecorator(lastPart.attribution)
         AttributionSearchCommand(project).onSnippetFinished(lastPart.text, sessionId, listener)
+      }
+
+      ApplicationManager.getApplication().executeOnPooledThread {
+        GraphQlLogger.logCodeGenerationEvent(project, "chatResponse", "hasCode", lastPart.text)
       }
     }
   }

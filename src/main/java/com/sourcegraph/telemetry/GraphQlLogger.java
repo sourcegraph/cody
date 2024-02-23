@@ -35,6 +35,22 @@ public class GraphQlLogger {
     logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, new JsonObject()));
   }
 
+  public static void logCodeGenerationEvent(
+      @NotNull Project project,
+      @NotNull String componentName,
+      @NotNull String action,
+      String generatedCode) {
+    JsonObject eventParameters = new JsonObject();
+    eventParameters.addProperty("code", generatedCode);
+    eventParameters.addProperty("lineCount", generatedCode.lines().count());
+    eventParameters.addProperty("charCount", generatedCode.length());
+    eventParameters.addProperty("eventName", componentName);
+    eventParameters.addProperty("source", "chat");
+
+    var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
+    logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, eventParameters));
+  }
+
   @NotNull
   private static Event createEvent(
       @NotNull SourcegraphServerPath sourcegraphServerPath,

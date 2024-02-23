@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.autocomplete
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.*
@@ -17,8 +18,10 @@ import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.TextDocument
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
+import com.sourcegraph.cody.chat.CodeEditorFactory
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
+import com.sourcegraph.telemetry.GraphQlLogger
 import com.sourcegraph.utils.CodyEditorUtil.VIM_EXIT_INSERT_MODE_ACTION
 import com.sourcegraph.utils.CodyEditorUtil.isEditorValidForAutocomplete
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
@@ -103,6 +106,17 @@ class CodyEditorFactoryListener : EditorFactoryListener {
               agent.server.completionAccepted(CompletionItemParams(completionID))
               agent.server.autocompleteClearLastCandidate()
             }
+          }
+        }
+
+        val pastedCode = event.newFragment.toString()
+        val project = editor.project
+        if (project != null &&
+            pastedCode.isNotBlank() &&
+            CodeEditorFactory.lastCopiedText == pastedCode) {
+          CodeEditorFactory.lastCopiedText = null
+          ApplicationManager.getApplication().executeOnPooledThread {
+            GraphQlLogger.logCodeGenerationEvent(project, "keyDown:Paste", "clicked", pastedCode)
           }
         }
 

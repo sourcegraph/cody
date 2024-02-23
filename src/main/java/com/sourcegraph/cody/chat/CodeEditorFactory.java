@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.chat;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
@@ -15,12 +16,14 @@ import com.intellij.openapi.editor.event.EditorMouseMotionListener;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
 import com.sourcegraph.cody.chat.ui.CodeEditorButtons;
 import com.sourcegraph.cody.chat.ui.CodeEditorPart;
 import com.sourcegraph.cody.ui.AttributionButtonController;
 import com.sourcegraph.cody.ui.TransparentButton;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Toolkit;
@@ -28,6 +31,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +46,8 @@ public class CodeEditorFactory {
   private final @NotNull JPanel parentPanel;
   private final int rightMargin;
   public static final int spaceBetweenButtons = 5;
+
+  public static volatile String lastCopiedText = null;
 
   public CodeEditorFactory(@NotNull Project project, @NotNull JPanel parentPanel, int rightMargin) {
     this.project = project;
@@ -59,7 +66,7 @@ public class CodeEditorFactory {
 
     TransparentButton copyButton = new TransparentButton("Copy");
     copyButton.setToolTipText("Copy text");
-    copyButton.addActionListener(getSendActionListener(editor, copyButton));
+    copyButton.addActionListener(copyCodeListener(editor, copyButton));
 
     TransparentButton insertAtCursorButton = new TransparentButton("Insert at Cursor");
     insertAtCursorButton.setToolTipText("Insert text at current cursor position");
@@ -162,7 +169,7 @@ public class CodeEditorFactory {
   }
 
   @NotNull
-  private static ActionListener getSendActionListener(EditorEx editor, JButton copyButton) {
+  private ActionListener copyCodeListener(EditorEx editor, JButton copyButton) {
     return e -> {
       String text = editor.getDocument().getText();
       StringSelection stringSelection = new StringSelection(text);
@@ -173,6 +180,17 @@ public class CodeEditorFactory {
           new Timer((int) Duration.ofSeconds(2).toMillis(), it -> copyButton.setText("Copy"));
       timer.setRepeats(false);
       timer.start();
+
+      Optional<@NotNull Project> project =
+          Arrays.stream(ProjectManager.getInstance().getOpenProjects()).findFirst();
+      if (project.isEmpty()) return;
+
+      lastCopiedText = text;
+      ApplicationManager.getApplication()
+          .executeOnPooledThread(
+              () ->
+                  GraphQlLogger.logCodeGenerationEvent(
+                      project.get(), "copyButton", "clicked", text));
     };
   }
 
@@ -199,6 +217,11 @@ public class CodeEditorFactory {
                 logger.warn("Failed to insert text at cursor", ex);
               }
             });
+
+        ApplicationManager.getApplication()
+            .executeOnPooledThread(
+                () ->
+                    GraphQlLogger.logCodeGenerationEvent(project, "insertButton", "clicked", text));
       }
     };
   }
