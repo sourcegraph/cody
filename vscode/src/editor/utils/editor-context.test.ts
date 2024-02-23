@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import { ignores, testFileUri, uriBasename } from '@sourcegraph/cody-shared'
+import {
+    type ContextFileFile,
+    ignores,
+    testFileUri,
+    uriBasename,
+    MAX_CURRENT_FILE_TOKENS,
+} from '@sourcegraph/cody-shared'
 
-import { getFileContextFiles } from './editor-context'
+import { filterLargeFiles, getFileContextFiles } from './editor-context'
+import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -12,36 +19,21 @@ afterEach(() => {
 })
 
 describe('getFileContextFiles', () => {
-    /**
-     * Mocks the fs.stat function to return a fake stat object for the given URI.
-     * This allows tests to mock filesystem access for specific files.
-     */
-    function setFileStat(uri: vscode.Uri, isFile = true) {
-        vscode.workspace.fs.stat = vi.fn().mockImplementation(() => {
-            const relativePath = uriBasename(uri)
-            return {
-                type: isFile ? vscode.FileType.File : vscode.FileType.SymbolicLink,
-                ctime: 1,
-                mtime: 1,
-                size: 1,
-                isDirectory: () => false,
-                isFile: () => isFile,
-                isSymbolicLink: () => !isFile,
-                uri,
-                with: vi.fn(),
-                toString: vi.fn().mockReturnValue(relativePath),
-            }
-        })
-    }
-
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi
             .fn()
             .mockResolvedValueOnce(relativePaths.map(f => testFileUri(f)))
 
-        for (const relativePath of relativePaths) {
-            const isFile = relativePath !== 'symlink'
-            setFileStat(testFileUri(relativePath), isFile)
+        for (const rp of relativePaths) {
+            vscode.workspace.fs.stat = vi.fn().mockResolvedValue({
+                size: rp.startsWith('large-file.') ? 10000000 : 10,
+                type: rp === 'symlink' ? vscode.FileType.SymbolicLink : vscode.FileType.File,
+                uri: testFileUri(rp),
+                isDirectory: () => false,
+                isFile: () => true,
+                isSymbolicLink: () => false,
+                toString: vi.fn().mockReturnValue(rp),
+            })
         }
     }
 
@@ -104,6 +96,16 @@ describe('getFileContextFiles', () => {
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
     })
 
+    it('do not return file larger than 1MB', async () => {
+        setFiles(['large-file.go'])
+
+        expect(await runSearch('large', 5)).toMatchInlineSnapshot(`
+          []
+        `)
+
+        expect(vscode.workspace.findFiles).toBeCalledTimes(1)
+    })
+
     it('filters out ignored files', async () => {
         ignores.setActiveState(true)
         ignores.setIgnoreFiles(testFileUri(''), [
@@ -128,5 +130,52 @@ describe('getFileContextFiles', () => {
         await getFileContextFiles('search', 5, new vscode.CancellationTokenSource().token)
         expect(cancellation.token.isCancellationRequested)
         expect(vscode.workspace.findFiles).toBeCalledTimes(2)
+    })
+})
+
+describe('filterLargeFiles', () => {
+    it('filters out files larger than 1MB', async () => {
+        const largeFile = {
+            uri: vscode.Uri.file('/large-file.txt'),
+            type: 'file',
+        } as ContextFileFile
+        vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
+            size: 1000001,
+            type: vscode.FileType.File,
+        } as any)
+
+        const filtered = await filterLargeFiles([largeFile])
+
+        expect(filtered).toEqual([])
+    })
+
+    it('filters out non-text files', async () => {
+        const binaryFile = {
+            uri: vscode.Uri.file('/binary.bin'),
+            type: 'file',
+        } as ContextFileFile
+        vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
+            size: 100,
+            type: vscode.FileType.SymbolicLink,
+        } as any)
+
+        const filtered = await filterLargeFiles([binaryFile])
+
+        expect(filtered).toEqual([])
+    })
+
+    it('sets title to large-file for files exceeding token limit', async () => {
+        const largeTextFile = {
+            uri: vscode.Uri.file('/large-text.txt'),
+            type: 'file',
+        } as ContextFileFile
+        vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
+            size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
+            type: vscode.FileType.File,
+        } as any)
+
+        const filtered = await filterLargeFiles([largeTextFile])
+
+        expect(filtered[0].title).toEqual('large-file')
     })
 })
