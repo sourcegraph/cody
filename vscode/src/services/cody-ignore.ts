@@ -50,7 +50,7 @@ export function setUpCodyIgnore(config: ConfigurationWithAccessToken): vscode.Di
         if (e.affectsConfiguration('search')) {
             // Only refresh if the ignore sidebar is empty,
             // which means the setup step has initially failed.
-            if (!ignores.hasCodyIgnoreFiles) {
+            if (ignores.isActive && !ignores.hasCodyIgnoreFiles) {
                 onConfigChange()
             }
         }
@@ -66,7 +66,13 @@ export function setUpCodyIgnore(config: ConfigurationWithAccessToken): vscode.Di
 const findInProgressTokens = new Map<string, vscode.CancellationTokenSource>()
 
 /**
- * Rebuilds the ignore files for the workspace containing `uri`.
+ * Refreshes the ignore rules for the given workspace URI by searching
+ * for `.cody/ignore` files and reading their contents. This allows
+ * dynamically updating the ignore rules as ignore files are added/removed.
+ *
+ * Cancels any existing findFiles processes for the workspace to avoid
+ * multiple concurrent processes. Also sets a timeout of 1 min to avoid long running
+ * processes.
  */
 async function refresh(uri: vscode.Uri): Promise<void> {
     // Skip refresh if .cody/ignore is not enabled
@@ -97,7 +103,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     }
 
     const startTime = performance.now()
-    logDebug('CodyIgnore:refresh:workspace', 'started', { verbose: wf.uri.path })
+    logDebug('CodyIgnore:refresh', 'started', { verbose: startTime })
 
     // Cancel fileFiles process for current workspace if there is one in progress to avoid
     // having multiple find files in progress that can cause performance slow-down issues.
@@ -110,18 +116,29 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     // Timeout after 1 minutes to avoid causing performance issues.
     setTimeout(
         () => {
-            // The search is already completed / canceled.
-            if (!findInProgressTokens.get(uri.path)) {
-                return
+            // The search is already completed / canceled if no token is found.
+            if (findInProgressTokens.get(uri.path)) {
+                cancel()
+                // TODO locate ignore file from codebase root instead of workspace
+                // Try looking for ignore file at workspace root as fallback.
+                const ignoreFileAtRoot = vscode.Uri.joinPath(wf.uri, '.cody', 'ignore')
+                tryReadFile(ignoreFileAtRoot).then(content => {
+                    if (content.length) {
+                        ignores.setIgnoreFiles(wf.uri, [{ uri: ignoreFileAtRoot, content }])
+                        logDebug('CodyIgnore:refresh', 'found ignore file at root', {
+                            verbose: wf.uri.path,
+                        })
+                        return
+                    }
+                    const title = 'Failed to locate Cody ignore files in current workspace.'
+                    const description = 'Try disable the `search.followSymlinks` setting in your editor.'
+                    const message = `${title} ${description}`
+                    logDebug('CodyIgnore:refresh:failed', message, { verbose: wf.uri.path })
+                })
             }
-            cancel()
-            const title = 'Fail to find Cody ignore files.'
-            const description = ' Try disable the `search.followSymlinks` setting in your editor.'
-            logDebug('CodyIgnore:refresh:workspace:timeout', title + description, {
-                verbose: wf.uri.path,
-            })
+            return
         },
-        1 * 60 * 1000
+        1 * 60 * 1000 // 1 minute
     )
 
     // Look for .cody/ignore files within the workspace,
@@ -134,19 +151,20 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         undefined,
         newToken.token
     )
-
     const filesWithContent: IgnoreFileContent[] = await Promise.all(
         ignoreFiles?.map(async fileUri => ({
             uri: fileUri,
             content: await tryReadFile(fileUri),
         }))
     )
-
     ignores.setIgnoreFiles(wf.uri, filesWithContent)
 
-    findInProgressTokens.delete(uri.path)
-    const elapsed = performance.now() - startTime
-    logDebug('CodyIgnore:refresh:workspace', `completed in ${elapsed}`, { verbose: wf.uri.path })
+    // If we can locate the token, that means the job was completed before it times out.
+    if (findInProgressTokens.get(uri.path)) {
+        findInProgressTokens.delete(uri.path)
+        const elapsed = performance.now() - startTime
+        logDebug('CodyIgnore:refresh', `refresh completed in ${elapsed}`, { verbose: wf.uri.path })
+    }
 }
 
 /**

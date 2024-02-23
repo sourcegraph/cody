@@ -72,9 +72,5 @@ export function registerSidebarCommands(): vscode.Disposable[] {
             logSidebarClick('account')
             void vscode.commands.executeCommand('cody.auth.account')
         }),
-        vscode.commands.registerCommand('cody.sidebar.ignore.settings', () => {
-            logSidebarClick('ignoreSettings')
-            void vscode.commands.executeCommand('cody.settings.extension', '@command:search.symlinks')
-        }),
     ]
 }
