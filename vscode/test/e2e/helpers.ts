@@ -7,7 +7,7 @@ import { test as base, expect, type Frame, type FrameLocator, type Page } from '
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
+import { loggedEvents, MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -29,6 +29,11 @@ export interface ExtraWorkspaceSettings {
 // Playwright test extension: Treat this URL as if it is "dotcom".
 export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
+}
+
+// playwright test extension: Add expectedEvents to each test to compare against
+export interface ExpectedEvents {
+    expectedEvents: string[]
 }
 
 export const test = base
@@ -53,6 +58,17 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    // By default, these events should always fire for each test
+    .extend<ExpectedEvents>({
+        expectedEvents: [
+            'CodyInstalled',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ],
+    })
     .extend<{ server: MockServer }>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
         server: async ({}, use) => {
@@ -63,7 +79,14 @@ export const test = base
     })
     .extend({
         page: async (
-            { page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl, server: MockServer },
+            {
+                page: _page,
+                workspaceDirectory,
+                extraWorkspaceSettings,
+                dotcomUrl,
+                server: MockServer,
+                expectedEvents,
+            },
             use,
             testInfo
         ) => {
@@ -123,8 +146,10 @@ export const test = base
 
             const page = await app.firstWindow()
 
-            // Bring the cody sidebar to the foreground
-            await page.click('[aria-label="Cody"]')
+            // Bring the cody sidebar to the foreground if not already visible
+            if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
+                await page.click('[aria-label="Cody"]')
+            }
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
@@ -137,8 +162,19 @@ export const test = base
                 await signOut(page)
             }
 
-            resetLoggedEvents()
             await use(page)
+
+            // Critical test to prevent event logging regressions.
+            // Do not remove without consulting data analytics team.
+            try {
+                await assertEvents(loggedEvents, expectedEvents)
+            } catch (error) {
+                console.error('Expected events do not match actual events!')
+                console.log('Expected:', expectedEvents)
+                console.log('Logged:', loggedEvents)
+                throw error
+            }
+            resetLoggedEvents()
 
             await app.close()
 
@@ -157,7 +193,6 @@ export const test = base
             await use(sidebar)
         },
     })
-
 /**
  * Calls rmSync(path, options) and retries a few times if it fails before throwing.
  *
@@ -300,8 +335,13 @@ async function buildCodyJson(workspaceDirectory: string): Promise<void> {
 
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+    await executeCommandInPalette(page, 'cody sign out')
+}
+
+export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
+    // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill('>cody sign out')
+    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 

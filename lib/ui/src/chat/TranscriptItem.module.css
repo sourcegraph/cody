@@ -40,7 +40,10 @@
 }
 
 /* Style @-file tokens to match TranscriptAction context files */
-.content a[href^="vscode://file"] em
+.content a[href^="vscode://file"] em,
+.content a[href^="vscode-insiders://file"] em,
+.content a[href^="vscodium://file"] em,
+.content a[href^="cursor://file"] em
 {
     padding: 1px 2px;
     box-sizing: border-box;

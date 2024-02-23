@@ -3,10 +3,29 @@ import { expect, type Frame, type FrameLocator, type Locator, type Page } from '
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { test as baseTest, type DotcomUrlOverride, type ExtraWorkspaceSettings } from './helpers'
+import {
+    test as baseTest,
+    type ExpectedEvents,
+    type DotcomUrlOverride,
+    type ExtraWorkspaceSettings,
+} from './helpers'
 
 const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
+    .extend<ExpectedEvents>({
+        // list of events we expect this test to log, add to this list as needed
+        expectedEvents: [
+            'CodyInstalled',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+            'CodyVSCodeExtension:chat-question:submitted',
+            'CodyVSCodeExtension:chat-question:executed',
+            'CodyVSCodeExtension:chatResponse:hasCode',
+        ],
+    })
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
             // TODO(#59720): Remove experimental setting.
@@ -14,7 +33,7 @@ const test = baseTest
         },
     })
 
-test('attribution search enabled in chat', async ({ page, sidebar }) => {
+test('attribution search enabled in chat', async ({ page, sidebar, expectedEvents }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })
     const [chatFrame, chatInput] = await prepareChat2(page, sidebar)
     await chatInput.fill('show me a code snippet')
@@ -22,7 +41,7 @@ test('attribution search enabled in chat', async ({ page, sidebar }) => {
     await expect(chatFrame.getByTestId('attribution-indicator')).toBeVisible()
 })
 
-test('attribution search disabled in chat', async ({ page, sidebar }) => {
+test('attribution search disabled in chat', async ({ page, sidebar, expectedEvents }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/disable`, { method: 'POST' })
     const [chatFrame, chatInput] = await prepareChat2(page, sidebar)
     await chatInput.fill('show me a code snippet')

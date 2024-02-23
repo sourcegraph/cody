@@ -431,7 +431,7 @@ const register = async (
             }
         ),
 
-        // Register URI Handler (vscode://sourcegraph.cody-ai)
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {
@@ -543,16 +543,27 @@ const register = async (
     authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
     updateAuthStatusBarIndicator()
 
-    let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
-    disposables.push({ dispose: () => completionsProvider?.dispose() })
+
+    let autocompleteDisposables: vscode.Disposable[] = []
+    function disposeAutocomplete(): void {
+        if (autocompleteDisposables) {
+            for (const d of autocompleteDisposables) {
+                d.dispose()
+            }
+            autocompleteDisposables = []
+        }
+    }
+    disposables.push({
+        dispose: disposeAutocomplete,
+    })
+
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = await getFullConfig()
                 if (!config.autocomplete) {
-                    completionsProvider?.dispose()
-                    completionsProvider = null
+                    disposeAutocomplete()
                     if (config.isRunningInsideAgent) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
@@ -562,22 +573,27 @@ const register = async (
                     return
                 }
 
-                if (completionsProvider !== null) {
-                    // If completions are already initialized and still enabled, we
-                    // need to reset the completion provider.
-                    completionsProvider.dispose()
-                }
+                // If completions are already initialized and still enabled, we need to reset the
+                // completion provider.
+                disposeAutocomplete()
 
-                completionsProvider = await createInlineCompletionItemProvider({
-                    config,
-                    client: codeCompletionsClient,
-                    statusBar,
-                    authProvider,
-                    triggerNotice: notice => {
-                        void chatManager.triggerNotice(notice)
-                    },
-                    createBfgRetriever: platform.createBfgRetriever,
-                })
+                const autocompleteFeatureFlagChangeSubscriber = featureFlagProvider.onFeatureFlagChanged(
+                    'cody-autocomplete',
+                    setupAutocomplete
+                )
+                autocompleteDisposables.push({ dispose: autocompleteFeatureFlagChangeSubscriber })
+                autocompleteDisposables.push(
+                    await createInlineCompletionItemProvider({
+                        config,
+                        client: codeCompletionsClient,
+                        statusBar,
+                        authProvider,
+                        triggerNotice: notice => {
+                            void chatManager.triggerNotice(notice)
+                        },
+                        createBfgRetriever: platform.createBfgRetriever,
+                    })
+                )
             })
             .catch(error => {
                 console.error('Error creating inline completion item provider:', error)

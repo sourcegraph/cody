@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
-    featureFlagProvider,
     isCodyIgnoredFile,
     RateLimitError,
     wrapInActiveSpan,
@@ -13,7 +12,7 @@ import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
-import { getExtensionDetails, telemetryService } from '../services/telemetry'
+import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
@@ -46,8 +45,8 @@ import {
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { completionProviderConfig } from './completion-provider-config'
-import type { Span } from '@opentelemetry/api'
-import { getConfiguration } from '../configuration'
+import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { SmartThrottleService } from './smart-throttle'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -96,6 +95,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -157,6 +157,10 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
+        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -237,7 +241,10 @@ export class InlineCompletionItemProvider
                     const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
                     if (!hasRateLimitError) {
                         stopLoading = this.config.statusBar.startLoading(
-                            'Completions are being generated'
+                            'Completions are being generated',
+                            {
+                                timeoutMs: 30_000,
+                            }
                         )
                     }
                 } else {
@@ -330,6 +337,7 @@ export class InlineCompletionItemProvider
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
+                    smartThrottleService: this.smartThrottleService,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
                         singleLine: debounceInterval,
@@ -441,7 +449,7 @@ export class InlineCompletionItemProvider
                     this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
                 }
 
-                addExposedExperimentsToSpan(span, result.source)
+                recordExposedExperimentsToSpan(span)
 
                 return autocompleteResult
             } catch (error) {
@@ -783,11 +791,4 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
-}
-
-function addExposedExperimentsToSpan(span: Span, source: InlineCompletionsResultSource): void {
-    // Add exposed experiments at the very end to make sure we include experiments that the user is
-    // being exposed to while the completion was generated
-    span.setAttributes(featureFlagProvider.getExposedExperiments())
-    span.setAttributes(getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())) as any)
 }

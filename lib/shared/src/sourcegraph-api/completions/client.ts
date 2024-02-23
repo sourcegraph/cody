@@ -1,3 +1,4 @@
+import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
 import type {
@@ -7,6 +8,7 @@ import type {
     CompletionResponse,
     Event,
 } from './types'
+import { recordErrorToSpan } from '../../tracing'
 
 export interface CompletionLogger {
     startCompletion(
@@ -50,23 +52,32 @@ export abstract class SourcegraphCompletionsClient {
         return new URL('/.api/completions/stream', this.config.serverEndpoint).href
     }
 
-    protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
+    protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
         for (const event of events) {
             switch (event.type) {
-                case 'completion':
+                case 'completion': {
+                    span?.addEvent('yield', { stopReason: event.stopReason })
                     cb.onChange(event.completion)
                     break
-                case 'error':
+                }
+                case 'error': {
+                    const error = new Error(event.error)
+                    if (span) {
+                        recordErrorToSpan(span, error)
+                    }
                     this.errorEncountered = true
-                    cb.onError(new Error(event.error))
+                    cb.onError(error)
                     break
-                case 'done':
+                }
+                case 'done': {
                     if (!this.errorEncountered) {
                         cb.onComplete()
                     }
                     // reset errorEncountered for next request
                     this.errorEncountered = false
+                    span?.end()
                     break
+                }
             }
         }
     }

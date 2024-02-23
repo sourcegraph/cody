@@ -1,7 +1,7 @@
 import ignore, { type Ignore } from 'ignore'
 import { URI, Utils } from 'vscode-uri'
 
-import { posixAndURIPaths } from '../common/path'
+import { pathFunctionsForURI } from '../common/path'
 import { isWindows } from '../common/platform'
 import { uriBasename } from '../common/uri'
 import { uriHasPrefix } from '../editor/displayPath'
@@ -48,18 +48,6 @@ export class IgnoreHelper {
     }
 
     /**
-     * Computes the relative path `from` to `to`.
-     */
-    private relativePath(from: URI, to: URI) {
-        // HACK(dantup): It's possible we got here with two URIs that have a Windows drive letter cased
-        // differently. This will cause relative() to produce an incorrect path. As a workaround,
-        // re-create the URIs from fsPath which VS Code normalizes.
-        return isWindows()
-            ? posixAndURIPaths.relative(URI.file(from.fsPath).path, URI.file(to.fsPath).path)
-            : posixAndURIPaths.relative(from.path, to.path)
-    }
-
-    /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
      * @param workspaceRoot The workspace root.
      * @param ignoreFiles The URIs and content of all ignore files within the root.
@@ -74,7 +62,10 @@ export class IgnoreHelper {
             // Compute the relative path from the workspace root to the folder this ignore
             // file applies to.
             const effectiveDir = ignoreFileEffectiveDirectory(ignoreFile.uri)
-            const relativeFolderUriPath = this.relativePath(workspaceRoot, effectiveDir)
+            const relativeFolderUriPath = pathFunctionsForURI(workspaceRoot).relative(
+                workspaceRoot.path,
+                effectiveDir.path
+            )
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
@@ -138,7 +129,7 @@ export class IgnoreHelper {
             return this.getDefaultIgnores().ignores(uriBasename(uri))
         }
 
-        const relativePath = this.relativePath(workspaceRoot, uri)
+        const relativePath = pathFunctionsForURI(workspaceRoot).relative(workspaceRoot.path, uri.path)
         const rules = this.workspaceIgnores.get(workspaceRoot.toString()) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }

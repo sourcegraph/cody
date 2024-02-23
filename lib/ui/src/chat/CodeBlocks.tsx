@@ -333,7 +333,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                     ref={rootRef}
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
                     dangerouslySetInnerHTML={{
-                        __html: renderCodyMarkdown(displayText),
+                        // wrapLinksWithCodyCommand opens all links using the _cody.vscode.open command
+                        __html: renderCodyMarkdown(displayText, { wrapLinksWithCodyCommand: true }),
                     }}
                 />
             ),

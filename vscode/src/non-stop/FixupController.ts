@@ -17,7 +17,7 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { computeDiff, type Diff } from './diff'
-import { FixupCodeLenses } from './FixupCodeLenses'
+import { FixupCodeLenses } from './codelenses/provider'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
@@ -26,9 +26,10 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState } from './utils'
+import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
 import { getInput } from '../edit/input/get-input'
 import type { AuthProvider } from '../services/AuthProvider'
+import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -104,6 +105,34 @@ export class FixupController
                 })
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
                 return this.skipFormatting(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: CANCELABLE_TASK_STATES } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.cancel', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.acceptNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.accept', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.retryNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.undoNearest', () => {
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
+                if (!nearestTask) {
+                    return
+                }
+                return vscode.commands.executeCommand('cody.fixup.codelens.undo', nearestTask.id)
             })
         )
         // Observe file renaming and deletion
@@ -471,17 +500,19 @@ export class FixupController
         // Always ensure that any scheduled diffs have ran before applying edits
         this.updateDiffs()
 
-        const diff = this.applicableDiffOrRespin(task, document)
-        if (!diff) {
-            return
-        }
-
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk =
-            task.mode === 'edit'
-                ? await this.replaceEdit(edit, diff, task, applyEditOptions)
-                : await this.insertEdit(edit, document, task, applyEditOptions)
+
+        let editOk: boolean
+        if (task.mode === 'edit') {
+            const applicableDiff = this.applicableDiffOrRespin(task, document)
+            if (!applicableDiff) {
+                return
+            }
+            editOk = await this.replaceEdit(edit, applicableDiff, task, applyEditOptions)
+        } else {
+            editOk = await this.insertEdit(edit, document, task, applyEditOptions)
+        }
 
         this.logTaskCompletion(task, editOk)
 
@@ -946,6 +977,9 @@ export class FixupController
         for (const [file, editors] of editorsByFile.entries()) {
             this.decorator.didChangeVisibleTextEditors(file, editors)
         }
+
+        // Update shortcut enablement for visible files
+        this.codelenses.updateKeyboardShortcutEnablement([...editorsByFile.keys()])
     }
 
     private updateDiffs(): void {
@@ -1128,6 +1162,33 @@ export class FixupController
             this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
+    }
+
+    private getNearestTask({ filter }: { filter: { states: CodyTaskState[] } }): FixupTask | undefined {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            return
+        }
+
+        const fixupFile = this.maybeFileForUri(editor.document.uri)
+        if (!fixupFile) {
+            return
+        }
+
+        const position = editor.selection.active
+
+        /**
+         * Get the task closest to the current cursor position from the tasks associated with the current file.
+         */
+        const closestTask = this.tasksForFile(fixupFile)
+            .filter(({ state }) => filter.states.includes(state))
+            .sort(
+                (a, b) =>
+                    getMinimumDistanceToRangeBoundary(position, a.selectionRange) -
+                    getMinimumDistanceToRangeBoundary(position, b.selectionRange)
+            )[0]
+
+        return closestTask
     }
 
     private reset(): void {

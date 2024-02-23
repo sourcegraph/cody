@@ -46,6 +46,7 @@ const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
  * it by getting a list of all files across all workspaces and using fuzzysort.
+ * Large files over 1MB are filtered.
  */
 export async function getFileContextFiles(
     query: string,
@@ -114,28 +115,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    const filtered = []
-    try {
-        for (const sorted of sortedResults) {
-            // Remove file larger than 1MB and non-text files
-            // NOTE: Sourcegraph search only includes files up to 1MB
-            const fileStat = await vscode.workspace.fs.stat(sorted.uri)
-            if (fileStat.type !== vscode.FileType.File || fileStat.size > 1000000) {
-                continue
-            }
-            // Check if file contains more characters than the token limit based on fileStat.size
-            // and set the title of the result as 'large-file' for webview to display file size
-            // warning.
-            if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
-                sorted.title = 'large-file'
-            }
-            filtered.push(sorted)
-        }
-    } catch (error) {
-        console.log('atMention:getFileContextFiles:failed', error)
-    }
-
-    return filtered
+    return await filterLargeFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -193,21 +173,16 @@ export async function getSymbolContextFiles(
     return matches.flatMap(match => match)
 }
 
-export function getOpenTabsContextFile(): ContextFile[] {
-    // de-dupe by fspath in case if they have a file open in two tabs
-    const fsPaths = new Set()
-    return getOpenTabsUris()
-        .filter(uri => {
-            if (isCodyIgnoredFile(uri)) {
-                return false
-            }
-            if (!fsPaths.has(uri.path)) {
-                fsPaths.add(uri.path)
-                return true
-            }
-            return false
-        })
-        .flatMap(uri => createContextFileFromUri(uri, 'user', 'file'))
+/**
+ * Gets context files for each open editor tab in VS Code.
+ * Filters out large files over 1MB to avoid expensive parsing.
+ */
+export async function getOpenTabsContextFile(): Promise<ContextFileFile[]> {
+    return await filterLargeFiles(
+        getOpenTabsUris()
+            .filter(uri => !isCodyIgnoredFile(uri))
+            .flatMap(uri => createContextFileFromUri(uri, 'user', 'file'))
+    )
 }
 
 function createContextFileFromUri(
@@ -267,4 +242,31 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
             character: selectionRange.end.character,
         },
     }
+}
+
+/**
+ * Filters the given context files to remove files larger than 1MB and non-text files.
+ * Sets the title to 'large-file' for files contains more characters than the token limit.
+ */
+export async function filterLargeFiles(contextFiles: ContextFileFile[]): Promise<ContextFileFile[]> {
+    const filtered = []
+    for (const cf of contextFiles) {
+        // Remove file larger than 1MB and non-text files
+        // NOTE: Sourcegraph search only includes files up to 1MB
+        const fileStat = await vscode.workspace.fs.stat(cf.uri)?.then(
+            stat => stat,
+            error => undefined
+        )
+        if (fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
+            continue
+        }
+        // Check if file contains more characters than the token limit based on fileStat.size
+        // and set the title of the result as 'large-file' for webview to display file size
+        // warning.
+        if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
+            cf.title = 'large-file'
+        }
+        filtered.push(cf)
+    }
+    return filtered
 }

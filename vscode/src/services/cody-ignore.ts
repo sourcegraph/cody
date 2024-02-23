@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { CODY_IGNORE_POSIX_GLOB, ignores, type IgnoreFileContent } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import type { CodySidebarTreeItem } from './treeViewItems'
-import type { TreeViewProvider } from './TreeViewProvider'
+import type { TreeViewProvider } from './tree-views/TreeViewProvider'
+import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 const utf8 = new TextDecoder('utf-8')
 

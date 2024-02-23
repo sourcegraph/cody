@@ -1,4 +1,4 @@
-import { logError, type ContextFile } from '@sourcegraph/cody-shared'
+import { logError, type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { CancellationTokenSource, workspace } from 'vscode'
 import { getDocText } from '../utils/workspace-files'
 import { createContextFile } from '../utils/create-context-file'
@@ -17,33 +17,35 @@ export async function getWorkspaceFilesContext(
     excludePattern?: string,
     maxResults = 5
 ): Promise<ContextFile[]> {
-    // the default exclude pattern excludes dotfiles, node_modules, and snap directories
-    const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
+    return wrapInActiveSpan('commands.context.workspace', async span => {
+        // the default exclude pattern excludes dotfiles, node_modules, and snap directories
+        const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
 
-    const contextFiles: ContextFile[] = []
+        const contextFiles: ContextFile[] = []
 
-    // set cancellation token to time out after 20s
-    const token = new CancellationTokenSource()
-    setTimeout(() => {
-        token.cancel()
-    }, 20000)
+        // set cancellation token to time out after 20s
+        const token = new CancellationTokenSource()
+        setTimeout(() => {
+            token.cancel()
+        }, 20000)
 
-    try {
-        const results = await workspace.findFiles(globalPattern, excluded, maxResults, token.token)
+        try {
+            const results = await workspace.findFiles(globalPattern, excluded, maxResults, token.token)
 
-        for (const result of results) {
-            const decoded = await getDocText(result)
-            const contextFile = await createContextFile(result, decoded)
+            for (const result of results) {
+                const decoded = await getDocText(result)
+                const contextFile = await createContextFile(result, decoded)
 
-            if (contextFile) {
-                contextFiles.push(contextFile)
+                if (contextFile) {
+                    contextFiles.push(contextFile)
+                }
             }
+
+            return contextFiles
+        } catch (error) {
+            logError('getWorkspaceFilesContext failed', `${error}`)
+
+            return contextFiles
         }
-
-        return contextFiles
-    } catch (error) {
-        logError('getWorkspaceFilesContext failed', `${error}`)
-
-        return contextFiles
-    }
+    })
 }

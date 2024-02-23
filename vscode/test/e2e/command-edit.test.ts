@@ -3,15 +3,20 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, assertEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.beforeEach(() => {
-    mockServer.resetLoggedEvents()
-})
-
-test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:command:edit:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
+        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
+        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
+    ],
+})('code lenses for edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -34,9 +39,9 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'replace hello with goodbye'
     const inputTitle = /^Edit index.html:(\d+).* with Cody$/
-    const showDiffLens = page.getByRole('button', { name: 'A Show Diff' })
+    const showDiffLens = page.getByRole('button', { name: 'Show Diff' })
     const acceptLens = page.getByRole('button', { name: 'Accept' })
-    const retryLens = page.getByRole('button', { name: 'Retry' })
+    const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
     const undoLens = page.getByRole('button', { name: 'Undo' })
 
     // Wait for the input box to appear with the document name in title
@@ -96,13 +101,4 @@ test('code lenses for edit (fixup) task', async ({ page, sidebar }) => {
     await undoLens.click()
     await expect(page.getByText('>Hello Cody</')).toBeVisible()
     await expect(page.getByText('>Goodbye Cody</')).not.toBeVisible()
-
-    const expectedEvents = [
-        'CodyVSCodeExtension:command:edit:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
-        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
-        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
-    ]
-    await assertEvents(mockServer.loggedEvents, expectedEvents)
 })

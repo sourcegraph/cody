@@ -210,6 +210,19 @@ export class MockServer {
             if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
                 response = responses.chatWithSnippet
             }
+            // Delay by 400ms to allow the client to perform a small action before receiving the response.
+            // e.g. clicking on a file or move the cursor around.
+            if (request.body.messages[lastHumanMessageIndex].text.startsWith('delay')) {
+                const r1 = responses.chatWithSnippet
+                const r2 = r1 + '\n\nDone'
+                res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r1)}}\n\n`)
+                setTimeout(() => {
+                    res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r2)}}\n\n`)
+                    res.write('event: done\ndata: {}\n\n')
+                    res.end() // End the response after sending the events
+                }, 400)
+                return
+            }
             res.send(
                 `event: completion\ndata: {"completion": ${JSON.stringify(
                     response
@@ -433,6 +446,8 @@ export class MockServer {
     }
 }
 
+const loggedTestRun: Record<string, boolean> = {}
+
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
@@ -451,10 +466,15 @@ async function logTestingData(type: 'legacy' | 'new', data: string): Promise<voi
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
+    await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
+    if (!loggedTestRun[currentTestRunID]) {
+        console.log(
+            `Messages published - TestRunId: ${currentTestRunID}, TestName: ${currentTestName}, TestID: ${currentTestID}`
+        )
+        loggedTestRun[currentTestRunID] = true
+    }
 }
 
 let currentTestName: string

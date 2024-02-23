@@ -1,64 +1,7 @@
 import * as vscode from 'vscode'
 
-import { displayPath, type ActiveTextEditorSelection, type ContextFile } from '@sourcegraph/cody-shared'
-
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { trailingNonAlphaNumericRegex } from './test-commands'
-
-/**
- * Creates display text for the given context files by replacing file names with markdown links.
- */
-export function createDisplayTextWithFileLinks(humanInput: string, files: ContextFile[]): string {
-    let formattedText = humanInput
-    for (const file of files) {
-        if (file.uri) {
-            const range = file.range
-                ? new vscode.Range(
-                      file.range.start.line,
-                      file.range.start.character,
-                      file.range.end.line,
-                      file.range.end.character
-                  )
-                : undefined
-            formattedText = replaceFileNameWithMarkdownLink(
-                formattedText,
-                file.uri,
-                range,
-                file.type === 'symbol' ? file.symbolName : undefined
-            )
-        }
-    }
-    return formattedText
-}
-
-/**
- * Gets the display text to show for the human's input.
- *
- * If there is a selection, display the file name + range alongside with human input
- * If the workspace root is available, it generates a markdown link to the file.
- */
-export function createDisplayTextWithFileSelection(
-    humanInput: string,
-    selection?: ActiveTextEditorSelection | null
-): string {
-    if (!selection) {
-        return humanInput
-    }
-
-    const range = selection.selectionRange
-        ? new vscode.Range(
-              selection.selectionRange.start.line,
-              selection.selectionRange.start.character,
-              selection.selectionRange.end.line,
-              selection.selectionRange.end.character
-          )
-        : undefined
-
-    const displayText = `${humanInput} @${inputRepresentation(selection.fileUri, range)}`
-
-    // Create markdown link to the file
-
-    return replaceFileNameWithMarkdownLink(displayText, selection.fileUri, range)
-}
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -70,6 +13,24 @@ export function createDisplayTextWithFileSelection(
 export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
 
 /**
+ * Creates display text for the given context files by replacing file names with markdown links.
+ */
+export function createDisplayTextWithFileLinks(humanInput: string, files: ContextFile[]): string {
+    let formattedText = humanInput
+    for (const file of files) {
+        // +1 on the end line numbers because we want to make sure to include everything on the end line by
+        // including the next line at position 0.
+        formattedText = replaceFileNameWithMarkdownLink(
+            formattedText,
+            file.uri,
+            file.range && new vscode.Range(file.range.start.line, 0, file.range.end.line + 1, 0),
+            file.type === 'symbol' ? file.symbolName : undefined
+        )
+    }
+    return formattedText
+}
+
+/**
  * Replaces a file name in given text with markdown link to open that file in editor.
  * @returns The updated text with the file name replaced by a markdown link.
  */
@@ -79,42 +40,61 @@ export function replaceFileNameWithMarkdownLink(
     range?: vscode.Range,
     symbolName?: string
 ): string {
-    const inputRepr = inputRepresentation(file, range, symbolName)
-
-    // Then encode the complete link to go into Markdown.
+    const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
+    if (!inputRepr) {
+        return humanInput
+    }
+    // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
+    const fileAsInput = inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+    const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#-_])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
             file.toJSON(),
             {
                 selection: range,
                 preserveFocus: true,
-                background: true,
+                background: false,
                 preview: true,
                 viewColumn: vscode.ViewColumn.Beside,
             },
         ])
     )})`
 
-    // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
-    const textToBeReplaced = new RegExp(
-        `\\s*@${inputRepr.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`,
-        'g'
-    )
     const text = humanInput
         .replace(trailingNonAlphaNumericRegex, '')
-        .replaceAll(textToBeReplaced, ` ${markdownText}`)
+        .replace(textToBeReplaced, ` ${markdownText}`)
     const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
     return (text + lastChar).trim()
 }
 
-function inputRepresentation(file: vscode.Uri, range?: vscode.Range, symbolName?: string): string {
-    return [
-        displayPath(file),
-        range && !(range.start.line === 0 && range.end.line === 0)
-            ? `:${range.start.line}-${range.end.line}`
-            : '',
-        symbolName ? `#${symbolName}` : '',
-    ]
-        .join('')
-        .trim()
+/**
+ * Generates a string representation of the given file, range, and symbol name
+ * to use when linking to locations in code.
+ */
+function inputRepresentation(
+    humanInput: string,
+    file: vscode.Uri,
+    range?: vscode.Range,
+    symbolName?: string
+): string {
+    const fileName = displayPath(file)
+    const components = [fileName]
+    const startLine = range?.start?.line
+    // +1 on start line because VS Code line numbers start at 1 in the editor UI,
+    // and is zero-based in the API for position used in VS Code selection/range.
+    // Since createDisplayTextWithFileLinks added 1 to end line, we don't need to add it again here.
+    // But add it for start line because this is for displaying the line number to user, which is +1-based.
+    if (startLine !== undefined) {
+        const fullRange = range?.end?.line && `:${startLine + 1}-${range.end.line}`
+        if (fullRange && humanInput.includes(`@${fileName}${fullRange}`)) {
+            components.push(fullRange)
+        } else if (humanInput.matchAll(new RegExp(`@${fileName}:${startLine}(?!-)`, 'g'))) {
+            if (startLine + 1 === range?.end?.line) {
+                components.push(`:${startLine + 1}`)
+            }
+        }
+        components.push(symbolName ? `#${symbolName}` : '')
+    }
+
+    return components.join('').trim()
 }

@@ -732,14 +732,14 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
             {}
-        ).then(response =>
-            extractDataOrError(response, data =>
+        ).then(response => {
+            return extractDataOrError(response, data =>
                 data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
                     acc[name] = value
                     return acc
                 }, {})
             )
-        )
+        })
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {

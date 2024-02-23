@@ -1,3 +1,4 @@
+import type { ExtensionMode } from 'vscode'
 import { TestSupport } from './test-support'
 
 // The API surface exported to other extensions.
@@ -6,8 +7,7 @@ export class ExtensionApi {
     // environment contains CODY_TESTING=true . This is only for
     // testing and the API will change.
     public testing: TestSupport | undefined = undefined
-
-    constructor() {
+    constructor(public extensionMode: ExtensionMode) {
         if (process.env.CODY_TESTING === 'true') {
             console.warn('Setting up testing hooks')
             this.testing = new TestSupport()

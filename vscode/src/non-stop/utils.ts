@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 export enum CodyTaskState {
     idle = 1,
     working = 2,
@@ -18,4 +20,16 @@ export function isTerminalCodyTaskState(state: CodyTaskState): boolean {
         default:
             return false
     }
+}
+
+/**
+ * Calculates the minimum distance from the given position to the start or end of the provided range.
+ */
+export function getMinimumDistanceToRangeBoundary(
+    position: vscode.Position,
+    range: vscode.Range
+): number {
+    const startDistance = Math.abs(position.line - range.start.line)
+    const endDistance = Math.abs(position.line - range.end.line)
+    return Math.min(startDistance, endDistance)
 }

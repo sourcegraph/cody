@@ -29,8 +29,12 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     // 2. Post-sign up survery redirects to the new token page
     // 3. New token page redirects back to the extension with the new token
     const uriScheme = vscode.env.uriScheme
-    const isInsiders = uriScheme === 'vscode-insiders'
-    const referralCode = isInsiders ? 'CODY_INSIDERS' : 'CODY'
+    const referralCode =
+        {
+            'vscode-insiders': 'CODY_INSIDERS',
+            vscodium: 'CODY_VSCODIUM',
+            cursor: 'CODY_CURSOR',
+        }[uriScheme] || 'CODY'
     const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}`
     const postSignUpSurveyUrl = `/post-sign-up?returnTo=${newTokenUrl}`
     const site = DOTCOM_URL.toString() // Note, ends with the path /

@@ -1,16 +1,29 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { assertEvents, signOut, test } from './helpers'
+import { type ExpectedEvents, signOut, test } from './helpers'
 
-const expectedEvents = ['CodyVSCodeExtension:logout:clicked']
-
-test.beforeEach(() => {
-    void resetLoggedEvents()
-})
-
-test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:logout:clicked',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:Auth:disconnected',
+    ],
+})('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
@@ -47,6 +60,4 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     // instead of the chat panel.
     await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
     await page.getByRole('heading', { name: 'Cody: Chat' }).click()
-
-    await assertEvents(loggedEvents, expectedEvents)
 })

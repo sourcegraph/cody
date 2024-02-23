@@ -154,6 +154,7 @@ export function params(
         providerConfig,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
+        smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
             position,
@@ -362,13 +363,14 @@ expect.extend({
         const { isNot } = this
 
         return {
-            pass:
-                requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
+            pass: isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
             message: () => `Completion requests are${isNot ? ' not' : ''} multi-line`,
             actual: requests.map(r => ({ stopSequences: r.stopSequences })),
-            expected: Array.from({ length: 3 }).map(() => ({
-                stopSequences: MULTI_LINE_STOP_SEQUENCES,
-            })),
+            expected: [
+                {
+                    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+                },
+            ],
         }
     },
 })

@@ -18,31 +18,31 @@ export interface PathFunctions {
     /** The extension of path, including the last '.'. */
     extname: (path: string) => string
 
-    /** Path separator. */
-    separator: string
-}
-
-/** For file system paths on Windows ('\' separators and drive letters). */
-export const windowsFilePaths: PathFunctions = pathFunctions(true)
-
-/**
- * For POSIX and URI paths ('/' separators).
- */
-export const posixAndURIPaths: PathFunctions & {
     /**
      * The relative path from {@link from} to {@link to}.
-     *
-     * Only implemented for POSIX and URI paths because there are currently no callers that need
-     * this for Windows paths.
      */
     relative: (from: string, to: string) => string
-} = { ...pathFunctions(false), relative: posixAndURIPathsRelative }
+
+    /** Path separator. */
+    separator: PathSeparator
+}
+
+/** For file system paths on Windows ('\' separators, drive letters, case-insensitive). */
+export const windowsFilePaths: PathFunctions = pathFunctions(true, '\\', false)
+
+/** For POSIX file system paths ('/' separators, case-sensitive). */
+export const posixFilePaths: PathFunctions = pathFunctions(false, '/', true)
 
 /**
- * Get the {@link PathFunctions} to use for the given URI's path.
+ * Get the {@link PathFunctions} to use for the given URI's path ('/' separators, drive letters/case-sensitivity depend on `isWindows`).
  */
 export function pathFunctionsForURI(uri: URI, isWindows = _isWindows()): PathFunctions {
-    return uri.scheme === 'file' && isWindows ? windowsFilePaths : posixAndURIPaths
+    // URIs are always forward slashes even on Windows.
+    const sep = '/'
+    return uri.scheme === 'file' && isWindows
+        ? // Like windowsFilePaths but with forward slashes.
+          pathFunctions(true, sep, false)
+        : posixFilePaths
 }
 
 // I don't like reimplementing this here, but it's the best option because: (1) using Node's `path`
@@ -50,8 +50,14 @@ export function pathFunctionsForURI(uri: URI, isWindows = _isWindows()): PathFun
 // doesn't have `path/win32` support, so we'd need multiple underlying packages); and (2)
 // `vscode-uri` is hard to test because it has a global constant for the current platform set at
 // init time.
-function pathFunctions(isWindows: boolean): PathFunctions {
-    const sep = isWindows ? '\\' : '/'
+//
+// note: case-insensitive for Windows is not strictly sound, it's possible to have case-sensitive
+// volumes on Windows (and case-insensitive on other platforms), however it's impossible to tell from
+// a URI/path alone whether that's the case and VS Code already assumes based on platform, so things
+// are unfortunately already broken if you don't use the "defaults".
+// - https://github.com/microsoft/vscode/issues/94307
+// - https://github.com/microsoft/vscode/issues/177925
+function pathFunctions(isWindows: boolean, sep: '\\' | '/', caseSensitive: boolean): PathFunctions {
     const f: PathFunctions = {
         dirname(path: string): string {
             if (path === '') {
@@ -103,6 +109,11 @@ function pathFunctions(isWindows: boolean): PathFunctions {
             }
             return basename.slice(i)
         },
+        relative(from, to) {
+            // For relative paths, output separator is always based on platform, even
+            // if the input (sep) is forward slash/URI.
+            return relative(from, to, sep, isWindows ? '\\' : '/', caseSensitive)
+        },
         separator: sep,
     }
     return f
@@ -113,37 +124,52 @@ function isDriveLetter(path: string): boolean {
 }
 
 /** The relative path from {@link from} to {@link to}. */
-function posixAndURIPathsRelative(from: string, to: string): string {
-    // Normalize slashes.
-    from = from.replaceAll(/\/{2,}/g, '/')
-    to = to.replaceAll(/\/{2,}/g, '/')
+function relative(
+    from: string,
+    to: string,
+    inputSeparator: PathSeparator,
+    outputSeparator: PathSeparator,
+    caseSensitive: boolean
+): string {
+    function equalSegments(a: string, b: string) {
+        return caseSensitive ? a === b : a.toLowerCase() === b.toLowerCase()
+    }
+
+    // Normalize extra slashes.
+    if (inputSeparator === '/') {
+        from = from.replaceAll(/\/{2,}/g, '/')
+        to = to.replaceAll(/\/{2,}/g, '/')
+    } else {
+        from = from.replaceAll(/\\{2,}/g, '\\')
+        to = to.replaceAll(/\\{2,}/g, '\\')
+    }
 
     // Trim trailing slashes.
-    if (from !== '/' && from.endsWith('/')) {
+    if (from !== inputSeparator && from.endsWith(inputSeparator)) {
         from = from.slice(0, -1)
     }
-    if (to !== '/' && to.endsWith('/')) {
+    if (to !== inputSeparator && to.endsWith(inputSeparator)) {
         to = to.slice(0, -1)
     }
 
-    if (from === to) {
+    if (equalSegments(from, to)) {
         return ''
     }
 
     // From a relative to an absolute path, the absolute path dominates.
-    if (!from.startsWith('/') && to.startsWith('/')) {
+    if (!from.startsWith(inputSeparator) && to.startsWith(inputSeparator)) {
         return to
     }
 
-    const fromParts = from === '/' ? [''] : from.split('/')
-    const toParts = to === '/' ? [''] : to.split('/')
+    const fromParts = from === inputSeparator ? [''] : from.split(inputSeparator)
+    const toParts = to === inputSeparator ? [''] : to.split(inputSeparator)
 
     // Find the common root.
     let commonLength = 0
     while (
         commonLength < fromParts.length &&
         commonLength < toParts.length &&
-        fromParts[commonLength] === toParts[commonLength]
+        equalSegments(fromParts[commonLength], toParts[commonLength])
     ) {
         commonLength++
     }
@@ -160,5 +186,7 @@ function posixAndURIPathsRelative(from: string, to: string): string {
     // Add the non-common path parts from the 'to' path.
     relativePath.push(...toParts.slice(commonLength))
 
-    return relativePath.join('/')
+    return relativePath.join(outputSeparator)
 }
+
+type PathSeparator = '\\' | '/'

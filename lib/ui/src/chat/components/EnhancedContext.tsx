@@ -25,28 +25,8 @@ export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-    isCommand: boolean
-}> = React.memo(function ContextFilesContent({
-    contextFiles,
-    fileLinkComponent: FileLink,
-    className,
-    isCommand,
-}) {
+}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
     if (!contextFiles.length) {
-        return
-    }
-
-    const uniqueFiles = new Set<string /* uri.toString() */>()
-
-    const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.uri.toString())) {
-            return false
-        }
-        uniqueFiles.add(file.uri.toString())
-        return true
-    })
-
-    if (!filteredFiles.length) {
         return
     }
 
@@ -55,16 +35,16 @@ export const EnhancedContext: React.FunctionComponent<{
     // NOTE: Core chat commands (e.g. /explain and /smell) use local context only.
     // Check if the filteredFiles only contain local context (non-enhanced context).
     const localContextType = ['user', 'selection', 'terminal', 'editor']
-    const localContextOnly = filteredFiles.every(file => localContextType.includes(file.type))
-    const sparkle = localContextOnly || isCommand ? '' : '✨ '
+    const localContextOnly = contextFiles.every(file => localContextType.includes(file.type))
+    const sparkle = localContextOnly ? '' : '✨ '
     const prefix = sparkle + 'Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
-    const lineCount = filteredFiles.reduce(
+    const lineCount = contextFiles.reduce(
         (total, file) => total + (file.range ? file.range?.end?.line - file.range?.start?.line + 1 : 0),
         0
     )
-    const fileCount = filteredFiles.length
+    const fileCount = new Set(contextFiles.map(file => file.uri.toString())).size
     const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
     const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     const title = lineCount ? `${lines} from ${files}` : `${files}`
@@ -76,7 +56,7 @@ export const EnhancedContext: React.FunctionComponent<{
                 object: '',
                 tooltip: 'Related code automatically included as context',
             }}
-            steps={filteredFiles?.map(file => ({
+            steps={contextFiles?.map(file => ({
                 verb: '',
                 object: (
                     <FileLink

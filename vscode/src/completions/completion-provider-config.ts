@@ -13,11 +13,10 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
-        FeatureFlag.CodyAutocompleteSingleMultilineRequest,
-        FeatureFlag.CodyAutocompleteFastPath,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
     ] as const
 
     private get config() {
@@ -65,13 +64,6 @@ class CompletionProviderConfig {
         )
     }
 
-    public get fastPath(): boolean {
-        return (
-            this.config.autocompleteExperimentalFastPath ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
-        )
-    }
-
     public get contextStrategy(): ContextStrategy {
         const { config } = this
 
@@ -93,6 +85,13 @@ class CompletionProviderConfig {
                                   : 'jaccard-similarity'
 
         return contextStrategy
+    }
+
+    public get smartThrottle(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
+        )
     }
 }
 

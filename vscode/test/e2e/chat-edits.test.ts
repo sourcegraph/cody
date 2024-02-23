@@ -1,12 +1,24 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { test, withPlatformSlashes } from './helpers'
+import { test, withPlatformSlashes, type ExpectedEvents } from './helpers'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
 
 const osKey = isMac() ? 'Meta' : 'Control'
 
-test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+    ],
+})('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -125,4 +137,7 @@ test('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await expect(chatFrame.getByText('The End')).not.toBeVisible()
 
     await expect(startNewChatButton).not.toBeVisible()
+
+    // Chat input should still have focus.
+    await expect(chatInput).toBeFocused()
 })

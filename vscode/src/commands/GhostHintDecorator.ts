@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { AuthStatus } from '../chat/protocol'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '../services/telemetry-v2'
+import { telemetryService } from '../services/telemetry'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -64,17 +66,30 @@ export const ghostHintDecoration = vscode.window.createTextEditorDecorationType(
     },
 })
 
+const GHOST_TEXT_THROTTLE = 250
+const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
+
 export class GhostHintDecorator implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private isActive = false
     private activeDecoration: vscode.DecorationOptions | null = null
-    private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
+    private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
+    private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
+    private enrollmentListener: vscode.Disposable | null = null
 
     constructor(authProvider: AuthProvider) {
-        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, {
+        this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
             leading: false,
             trailing: true,
         })
+        this.fireThrottledDisplayEvent = throttle(
+            this._fireDisplayEvent.bind(this),
+            TELEMETRY_THROTTLE,
+            {
+                leading: true,
+                trailing: false,
+            }
+        )
 
         // Set initial state, based on the configuration and authentication status
         const initialAuth = authProvider.getAuthStatus()
@@ -132,8 +147,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                         this.clearGhostText(editor)
                     }
 
+                    this.fireThrottledDisplayEvent()
                     // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                    return this.throttledSetGhostText(editor, targetPosition)
+                    return this.setThrottledGhostText(editor, targetPosition)
                 }
             )
         )
@@ -150,13 +166,19 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
-        this.throttledSetGhostText.cancel()
+        this.setThrottledGhostText.cancel()
         this.activeDecoration = null
         editor.setDecorations(ghostHintDecoration, [])
     }
 
+    private _fireDisplayEvent(): void {
+        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.ghostText', 'visible')
+    }
+
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
         const featureEnabled = await getGhostHintEnablement()
+        this.registerEnrollmentListener(featureEnabled)
 
         if (!authStatus.isLoggedIn || !featureEnabled) {
             this.dispose()
@@ -168,6 +190,46 @@ export class GhostHintDecorator implements vscode.Disposable {
             this.init()
             return
         }
+    }
+
+    /**
+     * Register a listener for when the user has enrolled in the ghost hint feature.
+     * This code is _only_ to be used to support the ongoing A/B test for ghost hint usage.
+     */
+    private registerEnrollmentListener(featureEnabled: boolean): void {
+        this.enrollmentListener = vscode.window.onDidChangeTextEditorSelection(
+            (event: vscode.TextEditorSelectionChangeEvent) => {
+                const editor = event.textEditor
+
+                /**
+                 * Matches the logic for actually displaying the ghost text.
+                 * This is a temporary check to support an ongoing A/B test,
+                 * that is handled separately as we do this regardless if the ghost text is enabled/disabled
+                 */
+                const ghostTextWouldShow =
+                    editor.document.uri.scheme === 'file' &&
+                    event.selections.length === 1 &&
+                    !isEmptyOrIncompleteSelection(editor.document, event.selections[0])
+
+                if (ghostTextWouldShow) {
+                    // The user will be shown the ghost text in these conditions
+                    // Log a telemetry event for A/B tracking depending on if the text is enabled or disabled for them.
+                    telemetryService.log(
+                        'CodyVSCodeExtension:experiment:ghostText:enrolled',
+                        {
+                            variant: featureEnabled ? 'treatment' : 'control',
+                        },
+                        { hasV2Event: true }
+                    )
+                    telemetryRecorder.recordEvent('cody.experiment.ghostText', 'enrolled', {
+                        privateMetadata: { variant: featureEnabled ? 'treatment' : 'control' },
+                    })
+
+                    // Now that we have fired the enrollment event, we can stop listening
+                    this.enrollmentListener?.dispose()
+                }
+            }
+        )
     }
 
     public dispose(): void {

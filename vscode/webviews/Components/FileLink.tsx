@@ -36,10 +36,13 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         )
     }
 
+    // +1 because selection range starts at 0 but editor line number starts at 1
+    const startLine = (range?.start.line ?? 0) + 1
+    const endLine = (range?.end.line ?? -1) + 1
+    const hasValidRange = startLine <= endLine
+
     const pathToDisplay = `@${displayPath(uri)}`
-    const pathWithRange = range?.end.line
-        ? `${pathToDisplay}:${range?.start.line + 1}-${range?.end.line - 1}`
-        : pathToDisplay
+    const pathWithRange = hasValidRange ? `${pathToDisplay}:${startLine}-${endLine}` : pathToDisplay
     const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
     return (
         <button

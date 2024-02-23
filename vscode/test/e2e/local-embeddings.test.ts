@@ -18,6 +18,17 @@ const test = helpers.test
     .extend<helpers.DotcomUrlOverride>({
         dotcomUrl: SERVER_URL,
     })
+    .extend<helpers.ExpectedEvents>({
+        // list of events we expect this test to log, add to this list as needed
+        expectedEvents: [
+            'CodyInstalled',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ],
+    })
     .extend<helpers.WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
@@ -106,15 +117,27 @@ test('git repositories without a remote should explain the issue', async ({ page
     await expect(chatFrame.getByText('Git repository is missing a remote origin.')).toBeVisible()
 })
 
-test.extend<helpers.WorkspaceDirectory>({
-    workspaceDirectory: async ({ workspaceDirectory }, use) => {
-        // Add a remote to the git repo so that it can be indexed.
-        await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/repo.git'], {
-            cwd: workspaceDirectory,
-        })
-        await use(workspaceDirectory)
-    },
-})('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
+test
+    .extend<helpers.WorkspaceDirectory>({
+        workspaceDirectory: async ({ workspaceDirectory }, use) => {
+            // Add a remote to the git repo so that it can be indexed.
+            await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/repo.git'], {
+                cwd: workspaceDirectory,
+            })
+            await use(workspaceDirectory)
+        },
+    })
+    .extend<helpers.ExpectedEvents>({
+        expectedEvents: [
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+            'CodyVSCodeExtension:chat-question:submitted',
+            'CodyVSCodeExtension:chat-question:executed',
+        ],
+    })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)

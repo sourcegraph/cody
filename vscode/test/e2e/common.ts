@@ -1,6 +1,7 @@
 import { expect, type Frame, type Locator, type Page } from '@playwright/test'
 
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { executeCommandInPalette } from './helpers'
 
 // Sign into Cody with valid auth from the sidebar
 export const sidebarSignin = async (
@@ -28,6 +29,7 @@ const sidebarExplorerRole = { name: /Explorer.*/ }
 export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidebarExplorerRole)
 
 async function disableNotifications(page: Page): Promise<void> {
-    await page.getByRole('button', { name: 'Notifications' }).click()
-    await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
+    // Use the command to toggle DND mode because the UI differs on Windows/non-Windows since 1.86 with
+    // macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
+    await executeCommandInPalette(page, 'notifications: toggle do not disturb')
 }

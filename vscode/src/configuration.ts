@@ -132,13 +132,16 @@ export function getConfiguration(
             'autocomplete.experimental.hotStreak',
             false
         ),
-        autocompleteExperimentalFastPath: getHiddenSetting('autocomplete.experimental.fastPath', false),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
                 url: 'http://localhost:11434',
                 model: 'codellama:7b-code',
             }
+        ),
+        autocompleteExperimentalSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.smartThrottle',
+            false
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.

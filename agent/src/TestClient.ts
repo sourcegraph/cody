@@ -1,4 +1,7 @@
 import assert from 'assert'
+
+import { createPatch } from 'diff'
+
 import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import fspromises from 'fs/promises'
 import os from 'os'
@@ -16,6 +19,7 @@ import type {
     DeleteFileOperation,
     EditTask,
     ExtensionConfiguration,
+    NetworkRequest,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
@@ -507,6 +511,60 @@ export class TestClient extends MessageHandler {
         return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
     }
 
+    // Given the following missing recording, tries to find an existing
+    // recording that has the closest levenshtein distance and prints out a
+    // unified diff. This could save a lot of time trying to debug a test
+    // failure caused by missing recordings for common scenarios like 1) leaking
+    // an absolute file path into the prompt or 2) forgetting to sort context
+    // files.
+    private async printDiffAgainstClosestMatchingRecording(
+        missingRecording: NetworkRequest
+    ): Promise<void> {
+        const message = missingRecording.error ?? ''
+        const jsonText = message.split('\n').slice(1).join('\n')
+        const json = JSON.parse(jsonText)
+        const bodyText = json?.body ?? '{}'
+        const body = JSON.parse(bodyText)
+        const { closestBody } = await this.request('testing/closestPostData', {
+            url: json?.url ?? '',
+            postData: bodyText,
+        })
+        if (closestBody) {
+            const oldChange = JSON.stringify(body, null, 2)
+            const newChange = JSON.stringify(JSON.parse(closestBody), null, 2)
+            if (oldChange === newChange) {
+                console.log(
+                    dedent`There exists a recording with exactly the same request body, but for some reason the recordings did not match.
+                           This only really happens in exceptional cases like
+                           - There is a bug in how Polly computes HTTP request identifiers
+                           - Somebody manually edited the HTTP recording file
+                           Possible ways to fix the problem:
+                           - Confirm tests run in passthrough mode: CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts
+                           - Reset recordings and re-record everything: rm -rf agent/recordings && pnpm update-agent-recordings
+                           `
+                )
+            } else {
+                const patch = createPatch(
+                    missingRecording.url,
+                    oldChange,
+                    newChange,
+                    'the request in this test that has no matching recording',
+                    'the closest matchin recording in the recording file.'
+                )
+                console.log(
+                    `
+Found a recording in the recording file that looks similar to this request that has no matching recording.
+Sometimes this happens when our prompt construction logic is non-determinic. For example, if we expose
+an absolute file path in the recording, then the tests fail in CI because the absolutely file path in CI
+is different from the one in the recording file. Another example, sometimes the ordering of context files
+is non-deterministic resulting in failing tests in CI because the ordering of context files in CI is different.
+Closely inspect the diff below to non-determinic prompt construction is the reason behind this failure.
+${patch}`
+                )
+            }
+        }
+    }
+
     public async shutdownAndExit() {
         if (this.isAlive()) {
             const { errors } = await this.request('testing/requestErrors', null)
@@ -514,6 +572,9 @@ export class TestClient extends MessageHandler {
                 error?.includes?.('`recordIfMissing` is')
             )
             if (missingRecordingErrors.length > 0) {
+                for (const error of missingRecordingErrors) {
+                    await this.printDiffAgainstClosestMatchingRecording(error)
+                }
                 const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
                 throw new Error(
                     dedent`${errorMessage}.

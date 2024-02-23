@@ -15,7 +15,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { AuthStatus, ExtensionMessage } from '../protocol'
 
@@ -57,7 +57,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeView
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
-    public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
     public ignoreTreeViewProvider = new TreeViewProvider('ignore', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
@@ -94,17 +93,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             vscode.window.registerTreeDataProvider(
                 'cody.support.tree.view',
                 this.supportTreeViewProvider
-            ),
-            vscode.window.registerTreeDataProvider(
-                'cody.commands.tree.view',
-                this.commandTreeViewProvider
-            ),
-            vscode.window.registerTreeDataProvider('cody.ignore.tree.view', this.ignoreTreeViewProvider),
-            vscode.workspace.onDidChangeConfiguration(async event => {
-                if (event.affectsConfiguration('cody')) {
-                    await this.commandTreeViewProvider.refresh()
-                }
-            })
+            )
         )
         this.disposables.push(...setUpCodyIgnore(this.ignoreTreeViewProvider))
     }

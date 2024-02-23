@@ -24,6 +24,7 @@ import {
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
+import { getSuffixAfterFirstNewline } from '../text-processing'
 
 interface OllamaPromptContext {
     snippets: { uri: vscode.Uri; content: string }[]
@@ -87,7 +88,7 @@ class ExperimentalOllamaProvider extends Provider {
             currentFileNameComment,
             isInfill,
             prefix: this.options.docContext.prefix,
-            suffix: this.options.docContext.suffix,
+            suffix: getSuffixAfterFirstNewline(this.options.docContext.suffix),
         }
 
         if (process.env.OLLAMA_CONTEXT_SNIPPETS) {

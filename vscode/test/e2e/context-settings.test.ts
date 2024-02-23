@@ -1,10 +1,21 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { newChat, test } from './helpers'
+import { newChat, test, type ExpectedEvents } from './helpers'
+
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-test('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+    ],
+})('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
@@ -30,7 +41,7 @@ test('enhanced context selector is keyboard accessible', async ({ page, sidebar 
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
 })
 
-test('enterprise context selector can pick repos', async ({ page, sidebar, server }) => {
+test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
     const repos1: RepoListResponse = {
         repositories: {
             nodes: [

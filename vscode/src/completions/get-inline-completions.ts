@@ -1,12 +1,7 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import {
-    FeatureFlag,
-    getActiveTraceAndSpanId,
-    isAbortError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -29,6 +24,7 @@ import type { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { completionProviderConfig } from './completion-provider-config'
 import { sleep } from './utils'
+import type { SmartThrottleService } from './smart-throttle'
 
 export interface InlineCompletionsParams {
     // Context
@@ -46,6 +42,7 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
+    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -153,17 +150,19 @@ export async function getInlineCompletions(
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+
+        if (isAbortError(error)) {
+            return null
+        }
+
         if (process.env.NODE_ENV === 'development') {
             // Log errors to the console in the development mode to see the stack traces with source maps
             // in Chrome dev tools.
             console.error(error)
         }
+
         logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
-
-        if (isAbortError(error)) {
-            return null
-        }
 
         throw error
     } finally {
@@ -184,6 +183,7 @@ async function doGetInlineCompletions(
         providerConfig,
         contextMixer,
         requestManager,
+        smartThrottleService,
         lastCandidate,
         debounceInterval,
         setIsLoading,
@@ -283,7 +283,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    const requestParams: RequestParams = {
+    let requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -307,10 +307,19 @@ async function doGetInlineCompletions(
         }
     }
 
-    const debounceTime =
-        triggerKind !== TriggerKind.Automatic
-            ? 0
-            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+    if (smartThrottleService) {
+        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        if (throttledRequest === null) {
+            return null
+        }
+        requestParams = throttledRequest
+    }
+
+    const debounceTime = smartThrottleService
+        ? 0
+        : triggerKind !== TriggerKind.Automatic
+          ? 0
+          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
               (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
@@ -320,21 +329,9 @@ async function doGetInlineCompletions(
     const remainingInterval = debounceTime - waitInterval
     if (waitInterval > 0) {
         await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
-    }
-
-    // Debounce to avoid firing off too many network requests as the user is still typing.
-    await wrapInActiveSpan('autocomplete.debounce', async () => {
-        const interval =
-            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
-        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        if (abortSignal?.aborted) {
+            return null
         }
-    })
-
-    // We don't need to make a request at all if the signal is already aborted after the debounce.
-    if (abortSignal?.aborted) {
-        return null
     }
 
     setIsLoading?.(true)
@@ -413,28 +410,25 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
-        fastPath: completionProviderConfig.fastPath,
         // For the now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1900,
     }
 
+    // Show more if manually triggered (but only showing 1 is faster, so we use it
+    // in the automatic trigger case).
+    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
+
     if (docContext.multilineTrigger) {
         return providerConfig.create({
             ...sharedProviderOptions,
-            n: completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteSingleMultilineRequest
-            )
-                ? 1
-                : 3, // 3 vs. 1 does not meaningfully affect perf
+            n,
             multiline: true,
         })
     }
 
     return providerConfig.create({
         ...sharedProviderOptions,
-        // Show more if manually triggered (but only showing 1 is faster, so we use it
-        // in the automatic trigger case).
-        n: triggerKind === TriggerKind.Automatic ? 1 : 3,
+        n,
         multiline: false,
     })
 }

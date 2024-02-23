@@ -50,18 +50,18 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 await this.contextProvider.init()
                 break
             case 'auth':
-                if (message.type === 'callback' && message.endpoint) {
+                if (message.authKind === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
-                if (message.type === 'simplified-onboarding') {
+                if (message.authKind === 'simplified-onboarding') {
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
                     void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
-                await vscode.commands.executeCommand(`cody.auth.${message.type}`)
+                await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
@@ -77,7 +77,7 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 void openExternalLinks(message.value)
                 break
             case 'simplified-onboarding':
-                if (message.type === 'web-sign-in-token') {
+                if (message.onboardingKind === 'web-sign-in-token') {
                     void vscode.window
                         .showInputBox({ prompt: 'Enter web sign-in token' })
                         .then(async token => {
@@ -124,7 +124,7 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
         await vscode.commands.executeCommand('cody.chat.focus')
         await this.webview?.postMessage({
             type: 'view',
-            messages: view,
+            view: view,
         })
     }
 

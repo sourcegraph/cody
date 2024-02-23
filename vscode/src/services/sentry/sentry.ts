@@ -38,7 +38,7 @@ export abstract class SentryService {
 
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
-            if (!isSentryEnabled) {
+            if (!isProd && !isSentryEnabled) {
                 return
             }
 
@@ -66,14 +66,6 @@ export abstract class SentryService {
 
                     return null
                 },
-
-                // The extension host is shared across other extensions, so listening on the default
-                // unhandled error listeners would not be helpful in case other extensions or VS Code
-                // throw. Instead, use the manual `captureException` API.
-                //
-                // When running inside Agent, we control the whole Node environment so we can safely
-                // listen to unhandled errors/rejections.
-                ...(this.config.isRunningInsideAgent ? {} : { defaultIntegrations: false }),
             }
 
             this.reconfigure(options)

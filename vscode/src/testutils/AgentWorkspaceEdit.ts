@@ -73,7 +73,7 @@ export class AgentWorkspaceEdit implements vscode.WorkspaceEdit {
         this.edits.push({
             type: 'delete-file',
             uri: uri.toString(),
-            options,
+            deleteOptions: options,
             metadata,
         })
     }

@@ -9,6 +9,7 @@ import {
     uriBasename,
     type ConfigurationUseContext,
     type Result,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -18,8 +19,6 @@ import { logDebug, logError } from '../../log'
 import { viewRangeToRange } from './chat-helpers'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { ContextItem } from '../../prompt-builder/types'
-
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -31,7 +30,7 @@ export interface GetEnhancedContextOptions {
         remoteSearch: RemoteSearch | null
     }
     featureFlags: {
-        internalUnstable: boolean
+        fusedContext: boolean
     }
     hints: {
         maxChars: number
@@ -46,7 +45,7 @@ export async function getEnhancedContext({
     featureFlags,
     hints,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (featureFlags.internalUnstable) {
+    if (featureFlags.fusedContext) {
         return getEnhancedContextFused({
             strategy,
             editor,
@@ -56,53 +55,56 @@ export async function getEnhancedContext({
             hints,
         })
     }
-    const searchContext: ContextItem[] = []
 
-    // use user attention context only if config is set to none
-    if (strategy === 'none') {
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
-        searchContext.push(...getVisibleEditorContext(editor))
-        return searchContext
-    }
+    return wrapInActiveSpan('chat.enhancedContext', async span => {
+        const searchContext: ContextItem[] = []
 
-    let hasEmbeddingsContext = false
-    // Get embeddings context if useContext Config is not set to 'keyword' only
-    if (strategy !== 'keyword') {
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
-        try {
-            const r = await localEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+        // use user attention context only if config is set to none
+        if (strategy === 'none') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+            searchContext.push(...getVisibleEditorContext(editor))
+            return searchContext
         }
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-    }
 
-    if (strategy !== 'embeddings') {
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
-        if (providers.remoteSearch) {
+        let hasEmbeddingsContext = false
+        // Get embeddings context if useContext Config is not set to 'keyword' only
+        if (strategy !== 'keyword') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+            const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
             try {
-                searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
+                const r = await localEmbeddingsResults
+                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+                searchContext.push(...r)
             } catch (error) {
-                // TODO: Error reporting
-                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
+                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
             }
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
         }
-        if (providers.symf) {
-            try {
-                searchContext.push(...(await searchSymf(providers.symf, editor, text)))
-            } catch (error) {
-                // TODO(beyang): handle this error better
-                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
-            }
-        }
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
-    }
 
-    const priorityContext = await getPriorityContext(text, editor, searchContext)
-    return priorityContext.concat(searchContext)
+        if (strategy !== 'embeddings') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
+            if (providers.remoteSearch) {
+                try {
+                    searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
+                } catch (error) {
+                    // TODO: Error reporting
+                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
+                }
+            }
+            if (providers.symf) {
+                try {
+                    searchContext.push(...(await searchSymf(providers.symf, editor, text)))
+                } catch (error) {
+                    // TODO(beyang): handle this error better
+                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+                }
+            }
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
+        }
+
+        const priorityContext = await getPriorityContext(text, editor, searchContext)
+        return priorityContext.concat(searchContext)
+    })
 }
 
 async function getEnhancedContextFused({
@@ -112,66 +114,70 @@ async function getEnhancedContextFused({
     providers,
     hints,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    // use user attention context only if config is set to none
-    if (strategy === 'none') {
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
-        return getVisibleEditorContext(editor)
-    }
+    return wrapInActiveSpan('chat.enhancedContextFused', async () => {
+        // use user attention context only if config is set to none
+        if (strategy === 'none') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+            return getVisibleEditorContext(editor)
+        }
 
-    // Get embeddings context if useContext Config is not set to 'keyword' only
-    const embeddingsContextItemsPromise =
-        strategy !== 'keyword'
-            ? retrieveContextGracefully(
-                  searchEmbeddingsLocal(providers.localEmbeddings, text),
-                  'local-embeddings'
-              )
-            : []
+        // Get embeddings context if useContext Config is not set to 'keyword' only
+        const embeddingsContextItemsPromise =
+            strategy !== 'keyword'
+                ? retrieveContextGracefully(
+                      searchEmbeddingsLocal(providers.localEmbeddings, text),
+                      'local-embeddings'
+                  )
+                : []
 
-    // Get search (symf or remote search) context if config is not set to 'embeddings' only
-    const localSearchContextItemsPromise =
-        providers.symf && strategy !== 'embeddings'
-            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
-            : []
-    const remoteSearchContextItemsPromise =
-        providers.remoteSearch && strategy !== 'embeddings'
-            ? await retrieveContextGracefully(
-                  searchRemote(providers.remoteSearch, text),
-                  'remote-search'
-              )
-            : []
-    const keywordContextItemsPromise = (async () => [
-        ...(await localSearchContextItemsPromise),
-        ...(await remoteSearchContextItemsPromise),
-    ])()
+        // Get search (symf or remote search) context if config is not set to 'embeddings' only
+        const localSearchContextItemsPromise =
+            providers.symf && strategy !== 'embeddings'
+                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+                : []
+        const remoteSearchContextItemsPromise =
+            providers.remoteSearch && strategy !== 'embeddings'
+                ? await retrieveContextGracefully(
+                      searchRemote(providers.remoteSearch, text),
+                      'remote-search'
+                  )
+                : []
+        const keywordContextItemsPromise = (async () => [
+            ...(await localSearchContextItemsPromise),
+            ...(await remoteSearchContextItemsPromise),
+        ])()
 
-    const [embeddingsContextItems, keywordContextItems] = await Promise.all([
-        embeddingsContextItemsPromise,
-        keywordContextItemsPromise,
-    ])
+        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
+            embeddingsContextItemsPromise,
+            keywordContextItemsPromise,
+        ])
 
-    const fusedContext = fuseContext(keywordContextItems, embeddingsContextItems, hints.maxChars)
+        const fusedContext = fuseContext(keywordContextItems, embeddingsContextItems, hints.maxChars)
 
-    const priorityContext = await getPriorityContext(text, editor, fusedContext)
-    return priorityContext.concat(fusedContext)
+        const priorityContext = await getPriorityContext(text, editor, fusedContext)
+        return priorityContext.concat(fusedContext)
+    })
 }
 
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
     userText: string
 ): Promise<ContextItem[]> {
-    if (!remoteSearch) {
-        return []
-    }
-    return (await remoteSearch.query(userText)).map(result => {
-        return {
-            text: result.content,
-            range: new vscode.Range(result.startLine, 0, result.endLine, 0),
-            uri: result.uri,
-            source: 'unified',
-            repoName: result.repoName,
-            title: result.path,
-            revision: result.commit,
+    return wrapInActiveSpan('chat.context.embeddings.remote', async () => {
+        if (!remoteSearch) {
+            return []
         }
+        return (await remoteSearch.query(userText)).map(result => {
+            return {
+                text: result.content,
+                range: new vscode.Range(result.startLine, 0, result.endLine, 0),
+                uri: result.uri,
+                source: 'unified',
+                repoName: result.repoName,
+                title: result.path,
+                revision: result.commit,
+            }
+        })
     })
 }
 
@@ -184,98 +190,90 @@ async function searchSymf(
     userText: string,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
-    if (!symf) {
-        return []
-    }
-    const workspaceRoot = editor.getWorkspaceRootUri()
-    if (!workspaceRoot || !isFileURI(workspaceRoot)) {
-        return []
-    }
+    return wrapInActiveSpan('chat.context.symf', async () => {
+        if (!symf) {
+            return []
+        }
+        const workspaceRoot = editor.getWorkspaceRootUri()
+        if (!workspaceRoot || !isFileURI(workspaceRoot)) {
+            return []
+        }
 
-    const indexExists = await symf.getIndexStatus(workspaceRoot)
-    if (indexExists !== 'ready' && !blockOnIndex) {
-        void symf.ensureIndex(workspaceRoot, { hard: false })
-        return []
-    }
+        const indexExists = await symf.getIndexStatus(workspaceRoot)
+        if (indexExists !== 'ready' && !blockOnIndex) {
+            void symf.ensureIndex(workspaceRoot, { hard: false })
+            return []
+        }
 
-    const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
-        const items = (await results).flatMap(
-            async (result: Result): Promise<ContextItem[] | ContextItem> => {
-                const range = new vscode.Range(
-                    result.range.startPoint.row,
-                    result.range.startPoint.col,
-                    result.range.endPoint.row,
-                    result.range.endPoint.col
-                )
+        const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
+            const items = (await results).flatMap(
+                async (result: Result): Promise<ContextItem[] | ContextItem> => {
+                    const range = new vscode.Range(
+                        result.range.startPoint.row,
+                        result.range.startPoint.col,
+                        result.range.endPoint.row,
+                        result.range.endPoint.col
+                    )
 
-                let text: string | undefined
-                try {
-                    text = await editor.getTextEditorContentForFile(result.file, range)
-                    if (!text) {
+                    let text: string | undefined
+                    try {
+                        text = await editor.getTextEditorContentForFile(result.file, range)
+                        if (!text) {
+                            return []
+                        }
+                    } catch (error) {
+                        logError(
+                            'SimpleChatPanelProvider.searchSymf',
+                            `Error getting file contents: ${error}`
+                        )
                         return []
                     }
-                } catch (error) {
-                    logError(
-                        'SimpleChatPanelProvider.searchSymf',
-                        `Error getting file contents: ${error}`
-                    )
-                    return []
+                    return {
+                        uri: result.file,
+                        range,
+                        source: 'search',
+                        text,
+                    }
                 }
-                return {
-                    uri: result.file,
-                    range,
-                    source: 'search',
-                    text,
-                }
-            }
-        )
-        return (await Promise.all(items)).flat()
-    })
-
-    const allResults = (await Promise.all(r0)).flat()
-
-    if (isAgentTesting) {
-        // Sort results for deterministic ordering for stable tests. Ideally, we
-        // could sort by some numerical score from symf based on how relevant
-        // the matches are for the query.
-        allResults.sort((a, b) => {
-            const byUri = a.uri.fsPath.localeCompare(b.uri.fsPath)
-            if (byUri !== 0) {
-                return byUri
-            }
-            return a.text.localeCompare(b.text)
+            )
+            return (await Promise.all(items)).flat()
         })
-    }
 
-    return allResults
+        return (await Promise.all(r0)).flat()
+    })
 }
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
     text: string
 ): Promise<ContextItem[]> {
-    if (!localEmbeddings) {
-        return []
-    }
+    return wrapInActiveSpan('chat.context.embeddings.local', async () => {
+        if (!localEmbeddings) {
+            return []
+        }
 
-    logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
-    const contextItems: ContextItem[] = []
-    const embeddingsResults = await localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
-
-    for (const result of embeddingsResults) {
-        const range = new vscode.Range(
-            new vscode.Position(result.startLine, 0),
-            new vscode.Position(result.endLine, 0)
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
+        const contextItems: ContextItem[] = []
+        const embeddingsResults = await localEmbeddings.getContext(
+            text,
+            NUM_CODE_RESULTS + NUM_TEXT_RESULTS
         )
 
-        contextItems.push({
-            uri: result.uri,
-            range,
-            text: result.content,
-            source: 'embeddings',
-        })
-    }
-    return contextItems
+        for (const result of embeddingsResults) {
+            const range = new vscode.Range(
+                new vscode.Position(result.startLine, 0),
+                new vscode.Position(result.endLine, 0)
+            )
+
+            contextItems.push({
+                uri: result.uri,
+                range,
+                text: result.content,
+                source: 'embeddings',
+            })
+        }
+        return contextItems
+    })
 }
 
 const userAttentionRegexps: RegExp[] = [
@@ -311,21 +309,23 @@ function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
 }
 
 function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
-    const visible = editor.getActiveTextEditorVisibleContent()
-    const fileUri = visible?.fileUri
-    if (!visible || !fileUri) {
-        return []
-    }
-    if (!visible.content.trim()) {
-        return []
-    }
-    return [
-        {
-            text: visible.content,
-            uri: fileUri,
-            source: 'editor',
-        },
-    ]
+    return wrapInActiveSpan('chat.context.visibleEditorContext', () => {
+        const visible = editor.getActiveTextEditorVisibleContent()
+        const fileUri = visible?.fileUri
+        if (!visible || !fileUri) {
+            return []
+        }
+        if (!visible.content.trim()) {
+            return []
+        }
+        return [
+            {
+                text: visible.content,
+                uri: fileUri,
+                source: 'editor',
+            },
+        ]
+    })
 }
 
 async function getPriorityContext(
@@ -333,31 +333,33 @@ async function getPriorityContext(
     editor: VSCodeEditor,
     retrievedContext: ContextItem[]
 ): Promise<ContextItem[]> {
-    const priorityContext: ContextItem[] = []
-    const selectionContext = getCurrentSelectionContext(editor)
-    if (selectionContext.length > 0) {
-        priorityContext.push(...selectionContext)
-    } else if (needsUserAttentionContext(text)) {
-        // Query refers to current editor
-        priorityContext.push(...getVisibleEditorContext(editor))
-    } else if (needsReadmeContext(editor, text)) {
-        // Query refers to project, so include the README
-        let containsREADME = false
-        for (const contextItem of retrievedContext) {
-            const basename = uriBasename(contextItem.uri)
-            if (
-                basename.toLocaleLowerCase() === 'readme' ||
-                basename.toLocaleLowerCase().startsWith('readme.')
-            ) {
-                containsREADME = true
-                break
+    return wrapInActiveSpan('chat.context.priority', async () => {
+        const priorityContext: ContextItem[] = []
+        const selectionContext = getCurrentSelectionContext(editor)
+        if (selectionContext.length > 0) {
+            priorityContext.push(...selectionContext)
+        } else if (needsUserAttentionContext(text)) {
+            // Query refers to current editor
+            priorityContext.push(...getVisibleEditorContext(editor))
+        } else if (needsReadmeContext(editor, text)) {
+            // Query refers to project, so include the README
+            let containsREADME = false
+            for (const contextItem of retrievedContext) {
+                const basename = uriBasename(contextItem.uri)
+                if (
+                    basename.toLocaleLowerCase() === 'readme' ||
+                    basename.toLocaleLowerCase().startsWith('readme.')
+                ) {
+                    containsREADME = true
+                    break
+                }
+            }
+            if (!containsREADME) {
+                priorityContext.push(...(await getReadmeContext()))
             }
         }
-        if (!containsREADME) {
-            priorityContext.push(...(await getReadmeContext()))
-        }
-    }
-    return priorityContext
+        return priorityContext
+    })
 }
 
 function needsUserAttentionContext(input: string): boolean {

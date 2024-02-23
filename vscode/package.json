@@ -2,7 +2,7 @@
     "name": "cody-ai",
     "private": true,
     "displayName": "Cody AI",
-    "version": "1.4.3",
+    "version": "1.6.0",
     "publisher": "sourcegraph",
     "license": "Apache-2.0",
     "icon": "resources/cody.png",
@@ -548,6 +548,26 @@
                 "command": "cody.autocomplete.manual-trigger",
                 "key": "alt+\\",
                 "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+            },
+            {
+                "command": "cody.fixup.acceptNearest",
+                "key": "alt+a",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.retryNearest",
+                "key": "alt+r",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.undoNearest",
+                "key": "alt+x",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+            },
+            {
+                "command": "cody.fixup.cancelNearest",
+                "key": "alt+z",
+                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
             }
         ],
         "submenus": [
@@ -916,17 +936,7 @@
                 "cody.autocomplete.advanced.model": {
                     "type": "string",
                     "default": null,
-                    "enum": [
-                        null,
-                        "starcoder-16b",
-                        "starcoder-7b",
-                        "starcoder-3b",
-                        "starcoder-1b",
-                        "llama-code-7b",
-                        "llama-code-13b",
-                        "llama-code-13b-instruct",
-                        "mistral-7b-instruct-4k"
-                    ],
+                    "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
                     "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
                 },
                 "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -968,11 +978,6 @@
                     "type": "boolean",
                     "default": false,
                     "markdownDescription": "Preload follow-up completions"
-                },
-                "cody.autocomplete.experimental.fastPath": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Routes code completion requests directly to our Cody Gateway instance. Only works when connected to the Cody community edition and when using the default StarCoder model."
                 },
                 "cody.autocomplete.experimental.graphContext": {
                     "type": "string",

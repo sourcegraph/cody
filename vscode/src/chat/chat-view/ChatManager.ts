@@ -119,19 +119,14 @@ export class ChatManager implements vscode.Disposable {
      * Execute a chat request in a new chat panel
      */
     public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const requestID = uuid.v4()
-        telemetryService.log('CodyVSCodeExtension:chat-question:submitted', {
-            requestID,
-            source: args?.source,
-        })
-
         const provider = await this.getChatProvider()
         await provider?.handleUserMessageSubmission(
-            requestID,
+            uuid.v4(),
             args.text,
             args?.submitType,
             args?.contextFiles ?? [],
-            args?.addEnhancedContext ?? true
+            args?.addEnhancedContext ?? true,
+            args?.source
         )
         return provider
     }

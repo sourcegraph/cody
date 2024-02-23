@@ -40,6 +40,7 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    ProtocolCommand,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -52,6 +53,9 @@ import { AgentCodeLenses } from './AgentCodeLenses'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { Har } from '@pollyjs/persister'
+import levenshtein from 'js-levenshtein'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -392,6 +396,28 @@ export class Agent extends MessageHandler {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+        this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
+            const polly = this.params?.polly
+            let closestDistance = Number.MAX_VALUE
+            let closest = ''
+            if (polly) {
+                const persister = polly.persister._cache as Map<string, Promise<Har>>
+                for (const [, har] of persister) {
+                    for (const entry of (await har).log.entries) {
+                        if (entry.request.url !== url) {
+                            continue
+                        }
+                        const entryPostData = entry.request.postData?.text ?? ''
+                        const distance = levenshtein(postData, entryPostData)
+                        if (distance < closestDistance) {
+                            closest = entryPostData
+                            closestDistance = distance
+                        }
+                    }
+                }
+            }
+            return { closestBody: closest }
+        })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
             return { errors: requests.map(({ request, error }) => ({ url: request.url, error })) }
@@ -539,12 +565,12 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID)
+            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -825,6 +851,28 @@ export class Agent extends MessageHandler {
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
+    /**
+     * Matches VS Code codicon syntax, e.g. $(cody-logo)
+     * Source: https://sourcegraph.com/github.com/microsoft/vscode@f34d4/-/blob/src/vs/base/browser/ui/iconLabel/iconLabels.ts?L9
+     */
+    private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
+    /**
+     * Given a title, such as "$(cody-logo) Cody", returns the raw
+     * title without icons and the icons matched with their respective positions.
+     */
+    private splitIconsFromTitle(title: string): ProtocolCommand['title'] {
+        const icons: { value: string; position: number }[] = []
+        const matches = [...title.matchAll(this.labelWithIconsRegex)]
+
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                icons.push({ value: match[0], position: match.index })
+            }
+        }
+
+        return { text: title.replace(this.labelWithIconsRegex, ''), icons }
+    }
+
     private async updateCodeLenses(): Promise<void> {
         const uri = this.workspace.activeDocumentFilePath
         if (!uri) {
@@ -842,9 +890,28 @@ export class Agent extends MessageHandler {
         }
         const lenses = (await Promise.all(promises)).flat()
 
+        // VS Code supports icons in code lenses, but we cannot render these through agent.
+        // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
+        const agentLenses = lenses.map(lens => {
+            if (!lens.command) {
+                return {
+                    ...lens,
+                    command: undefined,
+                }
+            }
+
+            return {
+                ...lens,
+                command: {
+                    ...lens.command,
+                    title: this.splitIconsFromTitle(lens.command.title),
+                },
+            }
+        })
+
         this.notify('codeLenses/display', {
             uri: uri.toString(),
-            codeLenses: lenses,
+            codeLenses: agentLenses,
         })
     }
     private async provideCodeLenses(
