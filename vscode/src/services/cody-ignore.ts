@@ -15,7 +15,7 @@ const utf8 = new TextDecoder('utf-8')
  * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
- * NOTE: This is only called ONCE at ChatPanelsManager initialization where all sidebars are registered.
+ * NOTE: Execute ONCE at extension activation time.
  */
 export function setUpCodyIgnore(config: ConfigurationWithAccessToken): vscode.Disposable[] {
     ignores.setActiveState(config.internalUnstable)
