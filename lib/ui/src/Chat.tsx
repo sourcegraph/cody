@@ -13,7 +13,6 @@ import {
     type ContextFile,
     type Guardrails,
     getContextFileDisplayText,
-    displayPath,
     getAtMentionQuery,
     getAtMentionedInputText,
     isAtMention,
@@ -24,7 +23,7 @@ import type { CodeBlockMeta } from './chat/CodeBlocks'
 import type { FileLinkProps } from './chat/components/EnhancedContext'
 import type { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
-import { isDefaultCommandPrompts, type TranscriptItemClassNames } from './chat/TranscriptItem'
+import type { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
@@ -262,20 +261,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
     const [enableNewChatMode, setEnableNewChatMode] = useState(false)
 
-    const [isLastItemCommand, setIsLastItemCommand] = useState(false)
-
     const lastHumanMessageIndex = useMemo<number | undefined>(() => {
         if (!transcript?.length) {
             return undefined
         }
         const index = transcript.findLastIndex(msg => msg.speaker === 'human')
-
-        // TODO (bee) can be removed once we support editing command prompts.
-        // Used for displaying "Edit Last Message" chat action button
-        const lastDisplayText = transcript[index]?.displayText ?? ''
-        const isCustomCommand = !!lastDisplayText.startsWith('/')
-        const isCoreCommand = isDefaultCommandPrompts(lastDisplayText)
-        setIsLastItemCommand(isCustomCommand || isCoreCommand)
 
         return index
     }, [transcript])
@@ -366,16 +356,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (selected: ContextFile, queryEndsWithColon = false): void => {
             const atRangeEndingRegex = /:\d+(-\d+)?$/
             const inputBeforeCaret = formInput.slice(0, inputCaretPosition)
-            const isSettingRange = atRangeEndingRegex.test(inputBeforeCaret)
-            if (chatContextFiles.has(`@${displayPath(selected.uri)}`)) {
-                if (isSettingRange) {
-                    // Add a space after inputBeforeCaret to formInput
-                    setFormInput(formInput.replace(inputBeforeCaret, inputBeforeCaret + ' '))
-                    setInputCaretPosition(formInput.length + 1)
-                    resetContextSelection()
-                    return
-                }
-            }
 
             const fileDisplayText = getContextFileDisplayText(selected, inputBeforeCaret)
             if (inputCaretPosition && fileDisplayText) {
@@ -861,7 +841,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     isEmptyChat={transcript.length < 1}
                     isMessageInProgress={!!messageInProgress?.speaker}
                     isEditing={transcript.length > 1 && messageBeingEdited !== undefined}
-                    disableEditLastMessage={isLastItemCommand}
                     onChatResetClick={onChatResetClick}
                     onCancelEditClick={() => setEditMessageState()}
                     onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}

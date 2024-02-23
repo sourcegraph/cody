@@ -68,10 +68,9 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
-    // Edit button should shows as disabled for all command messages.
-    // Edit Last Message are removed if last submitted message is a command.
-    await expect(disabledEditButtons).toHaveCount(1)
-    await expect(editLastMessageButton).not.toBeVisible()
+    // Edit button and Edit Last Message are shown on all command messages.
+    await expect(disabledEditButtons).toHaveCount(0)
+    await expect(editLastMessageButton).toBeVisible()
 
     // Smell Command
     // Running a command again should reuse the current cursor position
@@ -80,8 +79,8 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
     await chatPanel.getByText('Context: 9 lines from 1 file').click()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
-    await expect(disabledEditButtons).toHaveCount(1)
-    await expect(editLastMessageButton).not.toBeVisible()
+    await expect(disabledEditButtons).toHaveCount(0)
+    await expect(editLastMessageButton).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({
