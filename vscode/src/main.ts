@@ -203,9 +203,6 @@ const register = async (
         contextProvider,
     }
 
-    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
-    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
-
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
