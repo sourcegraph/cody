@@ -25,13 +25,7 @@ export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-    isCommand: boolean
-}> = React.memo(function ContextFilesContent({
-    contextFiles,
-    fileLinkComponent: FileLink,
-    className,
-    isCommand,
-}) {
+}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
     if (!contextFiles.length) {
         return
     }
@@ -42,7 +36,7 @@ export const EnhancedContext: React.FunctionComponent<{
     // Check if the filteredFiles only contain local context (non-enhanced context).
     const localContextType = ['user', 'selection', 'terminal', 'editor']
     const localContextOnly = contextFiles.every(file => localContextType.includes(file.type))
-    const sparkle = localContextOnly || isCommand ? '' : '✨ '
+    const sparkle = localContextOnly ? '' : '✨ '
     const prefix = sparkle + 'Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.

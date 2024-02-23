@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
@@ -23,7 +23,13 @@ class CommandsController implements vscode.Disposable {
     public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
-            this.disposables.push(this.provider)
+            this.disposables.push(
+                this.provider,
+                vscode.window.registerTreeDataProvider(
+                    'cody.commands.tree.view',
+                    this.provider.treeViewProvider
+                )
+            )
         }
     }
 

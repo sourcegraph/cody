@@ -46,7 +46,7 @@ import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import type { TreeViewProvider } from '../../services/TreeViewProvider'
+import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -579,7 +579,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
             telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
 
-            const tabs = getOpenTabsContextFile()
+            const tabs = await getOpenTabsContextFile()
             void this.postMessage({
                 type: 'userContextFiles',
                 userContextFiles: tabs,

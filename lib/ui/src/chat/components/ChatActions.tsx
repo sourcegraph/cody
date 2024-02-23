@@ -14,7 +14,6 @@ export const ChatActions: React.FunctionComponent<{
     onEditLastMessageClick: () => void
     setInputFocus: (focus: boolean) => void
     onRestoreLastChatClick?: () => void
-    disableEditLastMessage: boolean
 }> = React.memo(function ContextFilesContent({
     isEditing,
     isEmptyChat,
@@ -23,7 +22,6 @@ export const ChatActions: React.FunctionComponent<{
     onCancelEditClick,
     onEditLastMessageClick,
     setInputFocus,
-    disableEditLastMessage,
     onRestoreLastChatClick,
     isWebviewActive,
 }) {
@@ -52,7 +50,7 @@ export const ChatActions: React.FunctionComponent<{
             keybind: `${osIcon}K`,
             onClick: onEditLastMessageClick,
             focus: true,
-            when: !isEmptyChat && !isEditing && !disableEditLastMessage,
+            when: !isEmptyChat && !isEditing,
         },
         {
             name: '← Return to Previous Chat',

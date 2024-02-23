@@ -42,14 +42,14 @@ export async function getWorkspaceSymbols(query = ''): Promise<vscode.SymbolInfo
 }
 
 /**
- * Returns an array of URI's for all open editor tabs.
+ * Returns an array of URI's for all unique open editor tabs.
  *
  * Loops through all open tab groups and tabs, collecting the URI
  * of each tab with a 'file' scheme.
  */
 export function getOpenTabsUris(): vscode.Uri[] {
-    const uris = []
-    // Get open tabs
+    // de-dupe in case if they have a file open in two tabs
+    const uris = new Map<string, vscode.Uri>()
     const tabGroups = vscode.window.tabGroups.all
     const openTabs = tabGroups.flatMap(group =>
         group.tabs.map(tab => tab.input)
@@ -58,8 +58,8 @@ export function getOpenTabsUris(): vscode.Uri[] {
     for (const tab of openTabs) {
         // Skip non-file URIs
         if (tab?.uri?.scheme === 'file') {
-            uris.push(tab.uri)
+            uris.set(tab.uri.path, tab.uri)
         }
     }
-    return uris
+    return Array.from(uris.values())
 }
