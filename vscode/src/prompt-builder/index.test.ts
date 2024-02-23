@@ -52,6 +52,19 @@ describe('PromptBuilder', () => {
             }).toThrowError()
         })
 
+        it('throws on transcript with human speakers only', () => {
+            const builder = new PromptBuilder(1000)
+            const invalidTranscript: MessageWithContext[] = [
+                { message: { speaker: 'human', text: '1' } },
+                { message: { speaker: 'human', text: '2' } },
+                { message: { speaker: 'human', text: '3' } },
+                { message: { speaker: 'human', text: '4' } },
+            ]
+            expect(() => {
+                builder.tryAddMessages(invalidTranscript)
+            }).toThrowError()
+        })
+
         it('stops adding message-pairs when limit has been reached', () => {
             const builder = new PromptBuilder(30)
             const longTranscript: MessageWithContext[] = [
