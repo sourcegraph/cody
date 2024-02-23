@@ -14,6 +14,8 @@ import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { getConfiguration } from '../../configuration'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import { getCommandTreeItems } from '../../services/tree-views/commands'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 const isMacOS = isMac()
@@ -41,7 +43,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         return Utils.joinPath(workspaceRoot, this.configFileName)
     }
 
-    constructor() {
+    constructor(private sidebar: TreeViewProvider) {
         // TODO (bee) Migrate to use .cody/commands.json for VS Code
         // Right now agent is using .cody/commands.json for Custom Commands,
         // .vscode/cody.json in VS Code.
@@ -121,6 +123,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         } catch (error) {
             logError('CustomCommandsProvider:refresh', 'failed', { verbose: error })
         }
+        this.sidebar.setTreeNodes(getCommandTreeItems([...this.customCommandsMap.values()]))
         return { commands: this.customCommandsMap }
     }
 

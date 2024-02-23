@@ -3,8 +3,8 @@ import type * as vscode from 'vscode'
 
 import { DOTCOM_URL, isDotCom } from '@sourcegraph/cody-shared'
 
-import { newAuthStatus } from '../chat/utils'
-import { emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'
+import { newAuthStatus } from '../../chat/utils'
+import { emptyMockFeatureFlagProvider, vsCodeMocks } from '../../testutils/mocks'
 
 import { TreeViewProvider } from './TreeViewProvider'
 

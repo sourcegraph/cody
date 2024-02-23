@@ -1,8 +1,7 @@
 import type { FeatureFlag } from '@sourcegraph/cody-shared'
 
-import { releaseType } from '../release'
-import { version } from '../version'
-import { getCommandTreeItems } from '../commands'
+import { releaseType } from '../../release'
+import { version } from '../../version'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -26,8 +25,6 @@ export interface CodySidebarTreeItem {
  */
 export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] {
     switch (type) {
-        case 'command':
-            return getCommandTreeItems()
         case 'support':
             return supportItems
         default:
