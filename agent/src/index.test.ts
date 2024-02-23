@@ -672,21 +672,21 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " Animal Interface
+              " The code defines an Animal interface:
 
-              The selected code defines an interface called Animal. An interface in TypeScript is like a blueprint or contract that defines the structure of an object. Specifically:
+              The Animal interface defines the structure of an animal object. It takes no inputs. The purpose is to define the properties and methods that any animal object should have.
 
-              1. The purpose of this Animal interface is to define the shape of Animal objects - that is, to specify what properties and methods any object implementing the Animal interface must have.
+              It has three members:
 
-              2. The Animal interface itself does not take any inputs. However, any concrete classes that implement the Animal interface would take inputs to instantiate an object (for example, constructor arguments).
+              1. name - This is a string property that represents the animal's name. All animals should have a name.
 
-              3. Similarly, the Animal interface does not directly produce any outputs. Its role is to define the shape of objects. Any class implementing Animal would be responsible for producing outputs through its concrete methods and properties.
+              2. makeAnimalSound() - This is a method that returns a string. It represents the sound the animal makes. All animals should be able to make a sound.
 
-              4. The interface achieves its purpose by declaring a name property of type string, a makeAnimalSound method that returns a string, and an isMammal property of type boolean.
+              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not. All animals can be classified as mammals or not mammals.
 
-              5. By defining this structure, the interface ensures that any class implementing Animal will have these required members with the specified types. This allows TypeScript to enforce that objects adhere to the Animal contract.
+              By defining this interface, we can then create animal objects of different types like Dog, Cat, Cow etc that follow this structure. They will be guaranteed to have these members that we can rely on when writing code that interacts with animal objects.
 
-              So in summary, the Animal interface defines a blueprint for Animal objects by specifying required properties and methods. This allows TypeScript to statically analyze objects based on their fulfillment of the interface contract. The interface itself does not contain logic - it simply defines the shape of objects. Any consuming code can then rely on objects implementing the Animal interface having the defined structure."
+              So in summary, it defines a consistent structure for animal data without needing to know the specific animal type. The interface itself doesn't contain implementation details, it just defines the contract. Classes that implement the Animal interface would provide the actual implementation."
             `,
                 explainPollyError
             )
@@ -772,58 +772,52 @@ describe('Agent', () => {
                 `
               " Here are 5 potential improvements for the selected TypeScript code:
 
-              1. Add type annotations for method parameters and return values:
+              1. Add type annotations for method parameters and return types:
 
-              \`\`\`
               export interface Animal {
-                name: string
-                makeAnimalSound(volume?: number): string
-                isMammal: boolean
+                name: string;
+                makeAnimalSound(volume?: number): string;
+                isMammal: boolean;
               }
-              \`\`\`
 
-              Adding type annotations makes the code more self-documenting and enables stronger type checking.
+              Adding annotations improves understandability and enables stronger type checking.
 
-              2. Make interface name more semantic:
+              2. Make interface properties readonly if they are not meant to be reassigned:
 
-              \`\`\`
-              export interface Creature {
-                // ...
+              export interface Animal {
+                readonly name: string;
+                makeAnimalSound(volume?: number): string;
+                readonly isMammal: boolean;
               }
-              \`\`\`
 
-              The name 'Animal' is not very descriptive. A name like 'Creature' captures the intent better.
+              Readonly properties clarify intent and prevent accidental mutation.
 
-              3. Make sound method name more semantic:
+              3. Use more specific parameter names than volume for makeAnimalSound():
 
-              \`\`\`
-              makeSound()
-              \`\`\`
+              makeAnimalSound(loudness?: number): string;
 
-              The name 'makeAnimalSound' is verbose. A shorter name like 'makeSound' conveys the purpose clearly.
+              More descriptive names improve readability.
 
-              4. Use boolean type for isMammal property:
+              4. Consider extending the interface from a base class for code reuse:
 
-              \`\`\`
-              isMammal: boolean
-              \`\`\`
+              export interface Animal extends BaseAnimal {
+                makeAnimalSound(loudness?: number): string;
+              }
 
-              Using the boolean type instead of just true/false improves readability.
+              Inheritance promotes abstraction and reduces duplication.
 
-              5. Add JSDoc comments for documentation:
+              5. Add JSDoc comments for overall interface description:
 
-              \`\`\`
               /**
-               * Represents a creature in the game
+               * Represents an animal with common attributes.
                */
-              export interface Creature {
+              export interface Animal {
                 // ...
               }
-              \`\`\`
 
-              JSDoc comments enable generating API documentation and improve understandability.
+              Comments improve understanding of intent and usage.
 
-              Overall, the selected code follows reasonable design principles. The interface encapsulates animal data nicely. The suggestions above would incrementally improve quality but no major issues were found."
+              Overall, the code is well-structured but could benefit from some minor improvements like annotations, readonly properties, descriptive names, inheritance, and comments. No major issues were identified."
             `,
                 explainPollyError
             )
