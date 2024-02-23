@@ -83,6 +83,7 @@ import type { ContextItem } from '../../prompt-builder/types'
 import type { Span } from '@opentelemetry/api'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -90,6 +91,7 @@ interface SimpleChatPanelProviderOptions {
     authProvider: AuthProvider
     chatClient: ChatClient
     localEmbeddings: LocalEmbeddingsController | null
+    contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
@@ -138,6 +140,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
+    private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -161,6 +164,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         authProvider,
         chatClient,
         localEmbeddings,
+        contextRanking,
         symf,
         editor,
         treeView,
@@ -173,6 +177,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
+        this.contextRanking = contextRanking
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
@@ -187,6 +192,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
+
+        // Start the context Ranking module
+        void this.contextRanking?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(
@@ -467,6 +475,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                           this.config.internalUnstable || (await useFusedContextPromise),
                                   },
                                   hints: { maxChars },
+                                  contextRanking: this.contextRanking,
                               })
                         : undefined
                 )

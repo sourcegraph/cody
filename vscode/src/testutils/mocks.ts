@@ -841,4 +841,5 @@ export const DEFAULT_VSCODE_SETTINGS = {
     testingLocalEmbeddingsEndpoint: undefined,
     testingLocalEmbeddingsIndexLibraryPath: undefined,
     testingLocalEmbeddingsModel: undefined,
+    experimentalChatContextRanker: false,
 } satisfies Configuration
