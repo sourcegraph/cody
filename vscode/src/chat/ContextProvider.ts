@@ -43,6 +43,7 @@ export type Config = Pick<
     | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'internalUnstable'
+    | 'experimentalChatContextRanker'
 >
 
 enum ContextEvent {

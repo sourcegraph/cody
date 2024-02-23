@@ -168,6 +168,7 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform)
@@ -212,6 +213,7 @@ const register = async (
         chatClient,
         enterpriseContextFactory,
         localEmbeddings || null,
+        contextRanking || null,
         symfRunner || null,
         guardrails
     )
