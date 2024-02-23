@@ -34,6 +34,12 @@ suite('Ignores in multi-root workspace', () => {
     test('does not ignore ws2 files in workspace1', () =>
         checkIgnore(`${workspace1Path}/ignoreTests/ignoreTest.ws2`, false))
 
+    test('does not ignore ws1nested files in workspace1', () =>
+        checkIgnore(`${workspace1Path}/ignoreTests/ignoreTest.ws1nested`, false))
+
+    test('ignores ws1nested files in workspace1/nested', () =>
+        checkIgnore(`${workspace1Path}/ignoreTests/nested/ignoreTest.ws1nested`, true))
+
     test('does not ignore ws1 files in workspace2', () =>
         checkIgnore(`${workspace2Path}/ignoreTests/ignoreTest.ws1`, false))
 

@@ -7,9 +7,9 @@ import * as vscode from 'vscode'
 import { newAgentClient } from '../../agent'
 
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
+import { matchesGlobPatterns } from '../../../../vscode/src/search/matchesGlobPatterns'
 
 export interface EvaluateAutocompleteOptions {
     workspace: string

@@ -10,10 +10,10 @@ import { getLanguageForFileName } from '../../language'
 
 import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { SnapshotWriter } from './SnapshotWriter'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
+import { matchesGlobPatterns } from '../../../../vscode/src/search/matchesGlobPatterns'
 
 export async function evaluateGitLogStrategy(
     client: MessageHandler,

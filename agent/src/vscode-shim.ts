@@ -20,6 +20,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
+import { findFiles } from '../../vscode/src/search/find-files'
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
@@ -30,7 +31,6 @@ import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
     ExtensionKind,
-    FileType,
     LogLevel,
     ProgressLocation,
     Range,
@@ -47,7 +47,6 @@ import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
-import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 import { AgentQuickPick } from './AgentQuickPick'
 import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
@@ -210,81 +209,7 @@ const _workspace: typeof vscode.workspace = {
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
     async findFiles(include, exclude, maxResults, token) {
-        let searchFolders: vscode.WorkspaceFolder[]
-        let searchPattern: string
-
-        if (typeof include === 'string') {
-            searchFolders = workspaceFolders
-            searchPattern = include
-        } else {
-            const matchingWorkspaceFolder = workspaceFolders.find(
-                wf => wf.uri.toString() === include.baseUri.toString()
-            )
-            if (!matchingWorkspaceFolder) {
-                throw new TypeError(
-                    `workspaces.findFiles: RelativePattern must use a known WorkspaceFolder\n  Got: ${
-                        include.baseUri
-                    }\n  Known:\n${workspaceFolders.map(wf => `  - ${wf.uri.toString()}\n`).join()}`
-                )
-            }
-            searchFolders = [matchingWorkspaceFolder]
-            searchPattern = include.pattern
-        }
-
-        if (exclude !== undefined && typeof exclude !== 'string') {
-            throw new TypeError('workspaces.findFiles: exclude must be a string')
-        }
-
-        const result: vscode.Uri[] = []
-        const loop = async (workspaceRoot: vscode.Uri, dir: vscode.Uri): Promise<void> => {
-            if (token?.isCancellationRequested) {
-                return
-            }
-            const files = await workspaceFs.readDirectory(dir)
-            for (const [name, fileType] of files) {
-                const uri = Uri.file(path.join(dir.fsPath, name))
-                const relativePath = path.relative(workspaceRoot.fsPath, uri.fsPath)
-
-                if (fileType.valueOf() === FileType.Directory.valueOf()) {
-                    if (!matchesGlobPatterns([], exclude ? [exclude] : [], relativePath)) {
-                        continue
-                    }
-                    await loop(workspaceRoot, uri)
-                } else if (fileType.valueOf() === FileType.File.valueOf()) {
-                    if (
-                        !matchesGlobPatterns(
-                            searchPattern ? [searchPattern] : [],
-                            exclude ? [exclude] : [],
-                            relativePath
-                        )
-                    ) {
-                        continue
-                    }
-
-                    result.push(uri)
-                    if (maxResults !== undefined && result.length >= maxResults) {
-                        return
-                    }
-                }
-            }
-        }
-
-        await Promise.all(
-            searchFolders.map(async folder => {
-                try {
-                    const stat = await workspaceFs.stat(folder.uri)
-                    if (stat.type.valueOf() === FileType.Directory.valueOf()) {
-                        await loop(folder.uri, folder.uri)
-                    }
-                } catch (error) {
-                    console.error(
-                        `workspace.workspace.findFiles: failed to stat workspace folder ${folder.uri}. Error ${error}`,
-                        new Error().stack
-                    )
-                }
-            })
-        )
-        return result
+        return (await findFiles(include, exclude, maxResults, token)).matches
     },
     openTextDocument: async uriOrString => {
         if (!workspaceDocuments) {
