@@ -28,6 +28,7 @@ import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
+import { getAuthReferralCode } from './AuthProviderSimplified'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
@@ -396,10 +397,7 @@ export class AuthProvider {
         }
 
         const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
-        newTokenCallbackUrl.searchParams.append(
-            'requestFrom',
-            this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
-        )
+        newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
         this.authStatus.endpoint = endpoint
         void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
     }
