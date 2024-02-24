@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import {
     ConfigFeaturesSingleton,
     FeatureFlag,
-    isCodyIgnoredFile,
     RateLimitError,
+    isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -14,7 +14,9 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
+import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
+import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
@@ -23,30 +25,28 @@ import { FirstCompletionDecorationHandler } from './first-completion-decoration-
 import { formatCompletion } from './format-completion'
 import { getCurrentDocContext } from './get-current-doc-context'
 import {
-    getInlineCompletions,
-    InlineCompletionsResultSource,
-    TriggerKind,
     type InlineCompletionsParams,
+    InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
+    TriggerKind,
+    getInlineCompletions,
 } from './get-inline-completions'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
+import { SmartThrottleService } from './smart-throttle'
 import {
+    type AutocompleteInlineAcceptedCommandArgs,
+    type AutocompleteItem,
     analyticsItemToAutocompleteItem,
     suggestedAutocompleteItemsCache,
     updateInsertRangeForVSCode,
-    type AutocompleteInlineAcceptedCommandArgs,
-    type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import { completionProviderConfig } from './completion-provider-config'
-import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
-import { SmartThrottleService } from './smart-throttle'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID

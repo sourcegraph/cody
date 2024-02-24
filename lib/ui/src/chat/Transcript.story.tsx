@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
+import { Transcript } from './Transcript'
 import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
-import { Transcript } from './Transcript'
 
 import styles from './Transcript.story.module.css'
 

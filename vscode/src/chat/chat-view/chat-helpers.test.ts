@@ -2,21 +2,21 @@ import { describe, expect, test } from 'vitest'
 
 import {
     CodebaseContext,
+    type ContextFile,
     populateCurrentEditorSelectedContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
     testFileUri,
-    type ContextFile,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from '../../testutils/mocks'
 
+import type { ContextItem } from '../../prompt-builder/types'
 import {
     contextItemsToContextFiles,
     contextMessageToContextItem,
     getChatPanelTitle,
     stripContextWrapper,
 } from './chat-helpers'
-import type { ContextItem } from '../../prompt-builder/types'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {

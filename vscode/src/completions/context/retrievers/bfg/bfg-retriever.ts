@@ -9,7 +9,7 @@ import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
-import { inferGitRepository, type SimpleRepository } from './simple-git'
+import { type SimpleRepository, inferGitRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'

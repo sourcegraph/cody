@@ -1,5 +1,5 @@
 import { Position, Range, type TextDocument } from 'vscode'
-import type { default as Parser, Point, Tree } from 'web-tree-sitter'
+import type { Point, Tree, default as Parser } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
@@ -7,8 +7,8 @@ import type { DocumentContext } from '../get-current-doc-context'
 import type { InlineCompletionItem } from '../types'
 
 import {
-    getMatchingSuffixLength,
     type InlineCompletionItemWithAnalytics,
+    getMatchingSuffixLength,
 } from './process-inline-completions'
 import { getLastLine, lines } from './utils'
 

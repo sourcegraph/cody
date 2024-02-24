@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { PromptBuilder } from './index'
 import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
+import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {

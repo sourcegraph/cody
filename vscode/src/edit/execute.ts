@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
-import type { EditIntent, EditMode } from './types'
 import type { FixupTask } from '../non-stop/FixupTask'
+import type { EditIntent, EditMode } from './types'
 
 export interface ExecuteEditArguments {
     configuration?: {

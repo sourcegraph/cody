@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { isWindows, testFileUri } from '@sourcegraph/cody-shared'
 
-import { claude } from './claude'
 import type { GetLLMInteractionOptions } from '../type'
+import { claude } from './claude'
 import { openai } from './openai'
 
 describe('Edit Prompts', () => {

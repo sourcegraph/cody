@@ -2,22 +2,22 @@ import * as vscode from 'vscode'
 
 import {
     BotResponseMultiplexer,
-    getSimplePreamble,
     type CompletionParameters,
-    type Message,
     type EditModel,
+    type Message,
+    getSimplePreamble,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import type { EditIntent } from '../types'
 
-import { getContext } from './context'
-import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
-import { openai } from './models/openai'
-import { claude } from './models/claude'
-import { PromptBuilder } from '../../prompt-builder'
 import type { MessageWithContext } from '../../chat/chat-view/SimpleChatModel'
+import { PromptBuilder } from '../../prompt-builder'
+import { getContext } from './context'
+import { claude } from './models/claude'
+import { openai } from './models/openai'
+import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,

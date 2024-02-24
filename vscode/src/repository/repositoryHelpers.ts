@@ -4,8 +4,8 @@ import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-sha
 
 import { logDebug } from '../log'
 
-import type { API, GitExtension, Repository } from './builtinGitExtension'
 import { TestSupport } from '../test-support'
+import type { API, GitExtension, Repository } from './builtinGitExtension'
 
 export function gitDirectoryUri(uri: vscode.Uri): vscode.Uri | undefined {
     return gitAPI()?.getRepository(uri)?.rootUri

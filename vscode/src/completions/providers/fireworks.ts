@@ -1,47 +1,47 @@
-import * as vscode from 'vscode'
 import { SHA256, enc } from 'crypto-js'
+import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    tokensToChars,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
-    type CompletionResponseGenerator,
     type CodeCompletionsParams,
-    TracedError,
     type CompletionResponse,
-    isRateLimitError,
-    isAbortError,
-    NetworkError,
-    isNodeResponse,
-    getActiveTraceAndSpanId,
-    addTraceparent,
-    type ConfigurationWithAccessToken,
+    type CompletionResponseGenerator,
     CompletionStopReason,
+    type ConfigurationWithAccessToken,
+    NetworkError,
+    TracedError,
+    addTraceparent,
+    displayPath,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    isNodeResponse,
+    isRateLimitError,
+    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import { fetch } from '../../fetch'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-import { fetch } from '../../fetch'
 
+import { SpanStatusCode } from '@opentelemetry/api'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import type { AuthStatus } from '../../chat/protocol'
+import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
     getCompletionParamsAndFetchImpl,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
-    Provider,
-    standardContextSizeHints,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
-import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
-import type { AuthStatus } from '../../chat/protocol'
-import { SpanStatusCode } from '@opentelemetry/api'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {
     model: FireworksModel

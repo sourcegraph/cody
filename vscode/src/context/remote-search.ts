@@ -1,19 +1,19 @@
 import * as vscode from 'vscode'
 
 import {
-    isError,
+    type ContextFileFile,
     type ContextGroup,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
     type IRemoteSearch,
-    type ContextFileFile,
     graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
-import type * as repofetcher from './repo-fetcher'
 import type { URI } from 'vscode-uri'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
     Automatic = 'auto',

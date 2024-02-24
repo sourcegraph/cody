@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    tokensToChars,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    displayPath,
+    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import {
@@ -25,11 +25,11 @@ import {
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
-    Provider,
-    standardContextSizeHints,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256

@@ -4,9 +4,9 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
+    type ExpectedEvents,
     test as baseTest,
     withPlatformSlashes,
-    type ExpectedEvents,
 } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })

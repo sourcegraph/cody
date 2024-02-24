@@ -3,12 +3,12 @@ import type { URI } from 'vscode-uri'
 import type {
     ActiveTextEditorSelectionRange,
     ChatMessage,
-    ModelProvider,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
     ContextFileType,
     EnhancedContextContextT,
+    ModelProvider,
     SearchPanelFile,
     TelemetryEventProperties,
     UserLocalHistory,

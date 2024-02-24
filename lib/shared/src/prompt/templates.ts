@@ -1,9 +1,9 @@
 import type { URI } from 'vscode-uri'
 
 import {
+    ProgrammingLanguage,
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
-    ProgrammingLanguage,
 } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'

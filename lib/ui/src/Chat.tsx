@@ -4,26 +4,26 @@ import { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
-    isDefined,
     type ChatButton,
     type ChatInputHistory,
     type ChatMessage,
-    type ModelProvider,
     type CodyCommand,
     type ContextFile,
     type Guardrails,
-    getContextFileDisplayText,
+    type ModelProvider,
     getAtMentionQuery,
     getAtMentionedInputText,
+    getContextFileDisplayText,
     isAtMention,
     isAtRange,
+    isDefined,
 } from '@sourcegraph/cody-shared'
 
 import type { CodeBlockMeta } from './chat/CodeBlocks'
-import type { FileLinkProps } from './chat/components/EnhancedContext'
 import type { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import type { TranscriptItemClassNames } from './chat/TranscriptItem'
+import type { FileLinkProps } from './chat/components/EnhancedContext'
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'

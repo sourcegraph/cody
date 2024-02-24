@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
+import { recordErrorToSpan } from '../../tracing'
 import type {
     CompletionCallbacks,
     CompletionGeneratorValue,
@@ -8,7 +9,6 @@ import type {
     CompletionResponse,
     Event,
 } from './types'
-import { recordErrorToSpan } from '../../tracing'
 
 export interface CompletionLogger {
     startCompletion(

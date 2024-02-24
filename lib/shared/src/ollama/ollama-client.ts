@@ -1,9 +1,9 @@
 import { isDefined } from '../common'
 import type { OllamaGenerateParameters, OllamaOptions } from '../configuration'
 import {
-    CompletionStopReason,
     type CodeCompletionsClient,
     type CompletionResponseGenerator,
+    CompletionStopReason,
 } from '../inferenceClient/misc'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type { CompletionResponse } from '../sourcegraph-api/completions/types'

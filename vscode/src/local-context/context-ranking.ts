@@ -1,14 +1,14 @@
-import * as vscode from 'vscode'
 import * as path from 'path'
+import * as vscode from 'vscode'
 import { logDebug } from '../log'
 
-import { isDotCom, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../prompt-builder/types'
-import type { MessageHandler } from '../jsonrpc/jsonrpc'
-import { captureException } from '../services/sentry/sentry'
+import { type ConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
 import { type FileURI, isFileURI } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
+import type { MessageHandler } from '../jsonrpc/jsonrpc'
+import type { ContextItem } from '../prompt-builder/types'
+import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
 export interface ContextRanker {

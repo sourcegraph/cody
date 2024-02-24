@@ -1,10 +1,10 @@
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import {
     CommandMenuAction,
-    CustomCommandConfigFile,
     type CommandMenuItem,
     type ContextOption,
+    CustomCommandConfigFile,
 } from '../types'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { type CommandMenuButton, CommandMenuButtons } from './buttons'
 
 import { platform } from 'os'

@@ -1,5 +1,5 @@
 import { logDebug } from '../logger'
-import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 

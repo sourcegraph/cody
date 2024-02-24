@@ -1,7 +1,8 @@
 {
     "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
     "organizeImports": {
-        "enabled": false
+        "enabled": true,
+        "ignore": ["dist/"]
     },
     "linter": {
         "enabled": true,

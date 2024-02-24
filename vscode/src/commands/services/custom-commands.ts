@@ -1,22 +1,22 @@
+import os from 'os'
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
-import os from 'os'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
-import { ConfigFiles, type CodyCommandsFile } from '../types'
-import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
-import { showNewCustomCommandMenu } from '../menus'
-import { URI, Utils } from 'vscode-uri'
-import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { getConfiguration } from '../../configuration'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
-import { getDocText } from '../utils/workspace-files'
+import { URI, Utils } from 'vscode-uri'
+import { getConfiguration } from '../../configuration'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import { getCommandTreeItems } from '../../services/tree-views/commands'
+import { showNewCustomCommandMenu } from '../menus'
+import { type CodyCommandsFile, ConfigFiles } from '../types'
+import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
+import { buildCodyCommandMap } from '../utils/get-commands'
+import { getDocText } from '../utils/workspace-files'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 const isMacOS = isMac()

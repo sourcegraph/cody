@@ -1,4 +1,4 @@
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
@@ -6,13 +6,13 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
+    type ConfigurationWithAccessToken,
     FeatureFlag,
     featureFlagProvider,
-    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
-import { version } from '../../version'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { version } from '../../version'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 export type OpenTelemetryServiceConfig = Pick<

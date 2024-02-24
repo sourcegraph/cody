@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import { RemoteSearch } from './remote-search'
-import type { WorkspaceRepoMapper } from './workspace-repo-mapper'
 import { type Repo, type RepoFetcher, RepoFetcherState } from './repo-fetcher'
+import type { WorkspaceRepoMapper } from './workspace-repo-mapper'
 
 // A quickpick for choosing a set of repositories from a Sourcegraph instance.
 export class RemoteRepoPicker implements vscode.Disposable {

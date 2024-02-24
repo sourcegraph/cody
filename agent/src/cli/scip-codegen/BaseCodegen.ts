@@ -1,9 +1,9 @@
-import { scip } from './scip'
-import type { SymbolTable } from './SymbolTable'
-import { typescriptKeyword } from './utils'
 import type * as pb_1 from 'google-protobuf'
 import type { ConsoleReporter } from './ConsoleReporter'
+import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
+import { scip } from './scip'
+import { typescriptKeyword } from './utils'
 
 export enum ProtocolMethodDirection {
     ClientToServer = 1,

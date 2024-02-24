@@ -7,8 +7,8 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared'
-import type { ContextItem } from './types'
 import { URI } from 'vscode-uri'
+import type { ContextItem } from './types'
 
 export function contextItemId(contextItem: ContextItem): string {
     return contextItem.range

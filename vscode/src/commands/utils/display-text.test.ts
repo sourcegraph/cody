@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { replaceFileNameWithMarkdownLink } from './display-text'
 import {
     type DisplayPathEnvInfo,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared/src/editor/displayPath'
+import { replaceFileNameWithMarkdownLink } from './display-text'
 
 describe('replaceFileNameWithMarkdownLink', () => {
     // Mock a `displayPath` function that always uses forward slashes (even on Windows).

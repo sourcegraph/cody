@@ -6,7 +6,7 @@ import { range } from '../../testutils/textDocument'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
 
-import { getInlineCompletions, getInlineCompletionsInsertText, params, T } from './helpers'
+import { T, getInlineCompletions, getInlineCompletionsInsertText, params } from './helpers'
 
 const cases = [true, false]
 

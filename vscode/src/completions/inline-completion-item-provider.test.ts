@@ -2,24 +2,24 @@ import dedent from 'dedent'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
+import { type GraphQLAPIClientConfig, RateLimitError, graphqlClient } from '@sourcegraph/cody-shared'
 
 import type { AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 
-import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import { InlineCompletionsResultSource, getInlineCompletions } from './get-inline-completions'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import type { CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 import type { InlineCompletionItem } from './types'
-import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
-import { getParser, resetParsersCache } from '../tree-sitter/parser'
-import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
-import { SupportedLanguage } from '../tree-sitter/grammars'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,

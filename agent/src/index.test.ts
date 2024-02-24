@@ -1,18 +1,18 @@
-import * as vscode from 'vscode'
 import assert from 'assert'
 import { execSync } from 'child_process'
-import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import fspromises from 'fs/promises'
+import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
-import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import { isNode16 } from './isNode16'
 import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `

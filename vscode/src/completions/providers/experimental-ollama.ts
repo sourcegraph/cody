@@ -1,10 +1,10 @@
 import type * as vscode from 'vscode'
 
 import {
-    createOllamaClient,
-    displayPath,
     type OllamaGenerateParams,
     type OllamaOptions,
+    createOllamaClient,
+    displayPath,
 } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
@@ -12,19 +12,19 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { type OllamaModel, getModelHelpers } from './ollama-models'
+import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
+    type FetchCompletionResult,
     fetchAndProcessCompletions,
     fetchAndProcessDynamicMultilineCompletions,
-    type FetchCompletionResult,
 } from './fetch-and-process-completions'
+import { type OllamaModel, getModelHelpers } from './ollama-models'
 import {
-    Provider,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
-import { getSuffixAfterFirstNewline } from '../text-processing'
 
 interface OllamaPromptContext {
     snippets: { uri: vscode.Uri; content: string }[]
