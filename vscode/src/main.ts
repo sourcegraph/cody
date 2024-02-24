@@ -64,6 +64,7 @@ import {
     executeExplainOutput,
 } from './commands/execute'
 import { registerSidebarCommands } from './services/SidebarCommands'
+import { exportOutputLog } from './services/export-logs'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -520,7 +521,9 @@ const register = async (
                 privateMetadata: { source },
             })
             void vscode.commands.executeCommand(command, [source])
-        })
+        }),
+
+        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
     )
 
     /**

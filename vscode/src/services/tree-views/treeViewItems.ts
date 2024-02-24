@@ -83,4 +83,9 @@ const supportItems: CodySidebarTreeItem[] = [
         icon: 'account',
         command: { command: 'cody.sidebar.account' },
     },
+    {
+        title: 'Export Logs',
+        icon: 'debug',
+        command: { command: 'cody.sidebar.logs' },
+    },
 ]
