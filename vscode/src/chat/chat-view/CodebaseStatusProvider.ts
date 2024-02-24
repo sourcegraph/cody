@@ -2,20 +2,20 @@ import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
-    isFileURI,
-    uriBasename,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
     type Disposable,
     type Editor,
+    isFileURI,
+    uriBasename,
 } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../../configuration'
+import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
 import type { SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
-import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri

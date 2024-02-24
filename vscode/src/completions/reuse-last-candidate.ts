@@ -5,9 +5,9 @@ import { isDefined } from '@sourcegraph/cody-shared'
 import { getCurrentLinePrefixWithoutInjectedPrefix } from './doc-context-getters'
 import type { DocumentContext } from './get-current-doc-context'
 import {
-    InlineCompletionsResultSource,
     type InlineCompletionsParams,
     type InlineCompletionsResult,
+    InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import type { RequestParams } from './request-manager'

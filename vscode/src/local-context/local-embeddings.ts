@@ -3,9 +3,6 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    isDotCom,
-    isFileURI,
-    uriBasename,
     type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
@@ -13,6 +10,9 @@ import {
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
+    isDotCom,
+    isFileURI,
+    uriBasename,
 } from '@sourcegraph/cody-shared'
 
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'

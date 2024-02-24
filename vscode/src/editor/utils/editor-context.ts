@@ -5,20 +5,20 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    isCodyIgnoredFile,
-    isWindows,
     type ContextFile,
     type ContextFileFile,
     type ContextFileSource,
     type ContextFileSymbol,
     type ContextFileType,
-    type SymbolKind,
     MAX_CURRENT_FILE_TOKENS,
+    type SymbolKind,
+    displayPath,
+    isCodyIgnoredFile,
+    isWindows,
 } from '@sourcegraph/cody-shared'
 
-import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken

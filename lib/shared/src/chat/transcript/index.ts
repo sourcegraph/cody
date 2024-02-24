@@ -4,7 +4,7 @@ import { PromptMixin } from '../../prompt/prompt-mixin'
 import type { Message } from '../../sourcegraph-api'
 
 import type { Interaction, InteractionJSON } from './interaction'
-import { errorToChatError, type ChatMessage } from './messages'
+import { type ChatMessage, errorToChatError } from './messages'
 
 interface DeprecatedTranscriptJSONScope {
     includeInferredRepository: boolean

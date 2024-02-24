@@ -2,9 +2,9 @@ import { describe, expect, it, test } from 'vitest'
 
 import {
     CLOSING_CODE_TAG,
+    OPENING_CODE_TAG,
     collapseDuplicativeWhitespace,
     extractFromCodeBlock,
-    OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
 } from './text-processing'
 

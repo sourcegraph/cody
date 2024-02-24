@@ -5,7 +5,7 @@ import { SupportedLanguage } from '../../tree-sitter/grammars'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
 
-import { getInlineCompletionsInsertText, params, T } from './helpers'
+import { T, getInlineCompletionsInsertText, params } from './helpers'
 
 const cases = [true, false]
 

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../tree-sitter/language'
-import { execQueryWrapper, type CompletionIntent } from '../tree-sitter/query-sdk'
+import { type CompletionIntent, execQueryWrapper } from '../tree-sitter/query-sdk'
 
 import type { DocumentContext } from './get-current-doc-context'
 

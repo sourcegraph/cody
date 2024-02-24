@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 import {
-    EventLogger,
     type Configuration,
     type ConfigurationWithAccessToken,
+    EventLogger,
     type ExtensionDetails,
     type TelemetryEventProperties,
     type TelemetryService,

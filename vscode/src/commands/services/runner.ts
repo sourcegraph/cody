@@ -1,25 +1,25 @@
 import * as vscode from 'vscode'
 
+import type { Span } from '@opentelemetry/api'
 import {
-    ConfigFeaturesSingleton,
     type ChatEventSource,
     type CodyCommand,
+    ConfigFeaturesSingleton,
     type ContextFile,
 } from '@sourcegraph/cody-shared'
-import type { Span } from '@opentelemetry/api'
 
-import { executeEdit, type ExecuteEditArguments } from '../../edit/execute'
+import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import type { CodyCommandArgs } from '../types'
+import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
+import { getEditor } from '../../editor/active-editor'
+import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
 import { getCommandContextFiles } from '../context'
 import { executeChat } from '../execute/ask'
-import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
-import { getEditor } from '../../editor/active-editor'
-import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
+import type { CodyCommandArgs } from '../types'
 
 /**
  * NOTE: Used by Command Controller only.

@@ -7,9 +7,9 @@ import type { Agent } from 'http'
 import isomorphicFetch from 'isomorphic-fetch'
 
 import {
+    type BrowserOrNodeResponse,
     addCustomUserAgent,
     customUserAgent,
-    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
 /**

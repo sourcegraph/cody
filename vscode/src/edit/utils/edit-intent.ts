@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
-import type { EditIntent } from '../types'
 import { DEFAULT_EDIT_INTENT } from '../constants'
+import type { EditIntent } from '../types'
 
 /**
  * Checks if the current selection and editor represent a generate intent.

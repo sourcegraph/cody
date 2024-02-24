@@ -1,6 +1,6 @@
-import { it, expect, describe } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { getAtMentionedInputText, extractMentionQuery } from './at-mentioned'
+import { extractMentionQuery, getAtMentionedInputText } from './at-mentioned'
 
 describe('getAtMentionedInputText', () => {
     it('returns null when filePath is empty', () => {

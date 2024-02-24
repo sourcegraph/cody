@@ -19,5 +19,9 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
   "editor.defaultFormatter": "biomejs.biome",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "never",
+    "source.organizeImports.biome": "explicit"
+  },
   "editor.insertSpaces": true,
 }

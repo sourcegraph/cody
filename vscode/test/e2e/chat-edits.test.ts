@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test'
 
-import { sidebarSignin } from './common'
-import { test, withPlatformSlashes, type ExpectedEvents } from './helpers'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import { sidebarSignin } from './common'
+import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 const osKey = isMac() ? 'Meta' : 'Control'
 

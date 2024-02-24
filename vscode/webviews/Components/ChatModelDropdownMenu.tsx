@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useRef, useState, type ComponentProps } from 'react'
+import { type ComponentProps, useCallback, useRef, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'

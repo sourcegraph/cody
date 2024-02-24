@@ -1,4 +1,4 @@
-import { logError, type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextFile, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 

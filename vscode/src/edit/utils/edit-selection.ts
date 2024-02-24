@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { getSmartSelection } from '../../editor/utils'
 import { MAX_CURRENT_FILE_TOKENS, tokensToChars } from '@sourcegraph/cody-shared'
+import { getSmartSelection } from '../../editor/utils'
 import type { EditIntent } from '../types'
 import { getEditIntent } from './edit-intent'
 

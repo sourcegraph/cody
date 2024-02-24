@@ -4,7 +4,7 @@ import path from 'path'
 import dedent from 'dedent'
 import { findLast } from 'lodash'
 import { expect } from 'vitest'
-import type { default as Parser, Point, SyntaxNode } from 'web-tree-sitter'
+import type { Point, SyntaxNode, default as Parser } from 'web-tree-sitter'
 
 import type { SupportedLanguage } from '../grammars'
 import { getLanguageConfig } from '../language'

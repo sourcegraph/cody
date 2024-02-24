@@ -1,12 +1,12 @@
-import { featureFlagProvider, type CodyCommand, type ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyCommand, type ContextFile, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
-import { showCommandMenu } from '../menus'
-import { getContextFileFromShell } from '../context/shell'
-import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CodyCommandMenuItems } from '..'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import { getContextFileFromShell } from '../context/shell'
+import { showCommandMenu } from '../menus'
+import { getDefaultCommandsMap } from '../utils/get-commands'
+import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
 export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 

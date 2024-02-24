@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    hydrateAfterPostMessage,
-    isDefined,
-    isFileURI,
     type FileURI,
     type Result,
     type SearchPanelFile,
     type SearchPanelSnippet,
+    displayPath,
+    hydrateAfterPostMessage,
+    isDefined,
+    isFileURI,
 } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'

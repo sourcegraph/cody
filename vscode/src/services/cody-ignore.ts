@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 import {
     CODY_IGNORE_POSIX_GLOB,
-    ignores,
-    type IgnoreFileContent,
     type ConfigurationWithAccessToken,
+    type IgnoreFileContent,
+    ignores,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'

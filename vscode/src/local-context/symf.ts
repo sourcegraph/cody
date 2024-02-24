@@ -8,15 +8,15 @@ import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import {
+    type FileURI,
+    type IndexedKeywordContextFetcher,
+    type Result,
+    type SourcegraphCompletionsClient,
     assertFileURI,
     isFileURI,
     isWindows,
     uriBasename,
     uriDirname,
-    type FileURI,
-    type IndexedKeywordContextFetcher,
-    type Result,
-    type SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'

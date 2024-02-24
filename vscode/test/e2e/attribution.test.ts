@@ -1,13 +1,13 @@
-import { expect, type Frame, type FrameLocator, type Locator, type Page } from '@playwright/test'
+import { type Frame, type FrameLocator, type Locator, type Page, expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
 import {
-    test as baseTest,
-    type ExpectedEvents,
     type DotcomUrlOverride,
+    type ExpectedEvents,
     type ExtraWorkspaceSettings,
+    test as baseTest,
 } from './helpers'
 
 const test = baseTest

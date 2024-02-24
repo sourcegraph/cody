@@ -1,11 +1,10 @@
-import type * as vscode from 'vscode'
 import type {
     BillingCategory,
     BillingProduct,
     ChatMessage,
+    CurrentUserCodySubscription,
     ModelProvider,
     event,
-    CurrentUserCodySubscription,
 } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
@@ -13,11 +12,12 @@ import type {
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
+import type * as vscode from 'vscode'
 
 import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
-import type { CodyTaskState } from '../non-stop/utils'
 import type { Repo } from '../context/repo-fetcher'
+import type { CodyTaskState } from '../non-stop/utils'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification

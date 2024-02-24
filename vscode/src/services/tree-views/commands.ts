@@ -1,7 +1,7 @@
-import * as vscode from 'vscode'
-import { CodyTreeItem } from './TreeItemProvider'
-import { CodyCommandMenuItems } from '../../commands'
 import type { CodyCommand } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import { CodyCommandMenuItems } from '../../commands'
+import { CodyTreeItem } from './TreeItemProvider'
 
 /**
  * Method to get items for the Commands sidebar

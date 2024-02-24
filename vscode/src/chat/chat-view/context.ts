@@ -1,25 +1,25 @@
 import * as vscode from 'vscode'
 
 import {
-    isFileURI,
+    type ConfigurationUseContext,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
+    type Result,
+    isFileURI,
     truncateTextNearestLine,
     uriBasename,
-    type ConfigurationUseContext,
-    type Result,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { viewRangeToRange } from './chat-helpers'
-import type { RemoteSearch } from '../../context/remote-search'
 import type { ContextItem } from '../../prompt-builder/types'
-import type { ContextRankingController } from '../../local-context/context-ranking'
+import { viewRangeToRange } from './chat-helpers'
 
 export interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext

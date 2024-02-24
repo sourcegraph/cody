@@ -1,7 +1,7 @@
-import type { URI } from 'vscode-uri'
-import * as vscode from 'vscode'
-import { findLast } from 'lodash'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { findLast } from 'lodash'
+import * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
 /**
  * Gets folding ranges for the given URI.
  * @param uri - The URI of the document to get folding ranges for.

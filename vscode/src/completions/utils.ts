@@ -1,6 +1,6 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { TimeoutError, type Message } from '@sourcegraph/cody-shared'
+import { type Message, TimeoutError } from '@sourcegraph/cody-shared'
 
 export function messagesToText(messages: Message[]): string {
     return messages
