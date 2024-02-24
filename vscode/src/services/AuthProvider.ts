@@ -36,7 +36,6 @@ type Unsubscribe = () => void
 export class AuthProvider {
     private endpointHistory: string[] = []
 
-    private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
 
     private authStatus: AuthStatus = defaultAuthStatus
