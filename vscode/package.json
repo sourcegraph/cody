@@ -144,6 +144,14 @@
                         "media": {
                             "markdown": "walkthroughs/search.md"
                         }
+                    },
+                    {
+                        "id": "keyboard",
+                        "title": "Keyboard Shortcuts",
+                        "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
+                        "media": {
+                            "markdown": "walkthroughs/keyboard.md"
+                        }
                     }
                 ]
             }
@@ -308,6 +316,13 @@
                 "title": "Custom Commands",
                 "icon": "$(tools)",
                 "when": "cody.activated && workspaceFolderCount > 0"
+            },
+            {
+                "command": "cody.menu.commands-settings",
+                "category": "Cody Command",
+                "title": "Custom Commands Settings",
+                "icon": "$(gear)",
+                "when": "cody.activated"
             },
             {
                 "command": "cody.command.context-search",

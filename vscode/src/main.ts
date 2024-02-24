@@ -65,6 +65,7 @@ import {
 } from './commands/execute'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { exportOutputLog } from './services/export-logs'
+import { setUpCodyIgnore } from './services/cody-ignore'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -117,16 +118,12 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     const disposables: vscode.Disposable[] = []
-
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Set codyignore list on git extension startup
-    const gitAPI = await gitAPIinit()
-    if (gitAPI) {
-        disposables.push(gitAPI)
-    }
+    // Set codyignore list after git extension startup
+    disposables.push(await gitAPIinit())
 
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
@@ -172,6 +169,7 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform)
@@ -216,6 +214,7 @@ const register = async (
         chatClient,
         enterpriseContextFactory,
         localEmbeddings || null,
+        contextRanking || null,
         symfRunner || null,
         guardrails
     )
@@ -522,7 +521,7 @@ const register = async (
             })
             void vscode.commands.executeCommand(command, [source])
         }),
-
+        ...setUpCodyIgnore(initialConfig),
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
     )
 
