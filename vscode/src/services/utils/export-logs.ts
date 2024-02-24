@@ -11,24 +11,25 @@ export async function exportOutputLog(logUri: vscode.Uri): Promise<void> {
     try {
         // Search for a directory that starts with "output" inside logDir
         const files = await vscode.workspace.fs.readDirectory(logDir)
-        const outputDirStat = files.find(
+        const outputDirName = files.find(
             file => file[0].startsWith('output') && file[1] === vscode.FileType.Directory
         )
 
-        if (!outputDirStat) {
+        if (!outputDirName) {
             return
         }
 
         // search for the file name that ends with 'Cody by Sourcegraph.log' inside the outputdir
-        const outputDir = vscode.Uri.joinPath(logDir, outputDirStat[0])
+        const outputDir = vscode.Uri.joinPath(logDir, outputDirName[0])
         const outputFiles = await vscode.workspace.fs.readDirectory(outputDir)
         const logFile = outputFiles.find(file => file[0].endsWith('Cody by Sourcegraph.log'))
 
         if (logFile) {
             const currentLogFile = vscode.Uri.joinPath(outputDir, logFile[0])
-            // Ask user for the location to save the log file
+            // Ask user for the location to save the log file. toDateString but with number
+            const timeNow = new Date().getTime()
             const newLogUri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.joinPath(logUri, logFile[0]),
+                defaultUri: vscode.Uri.joinPath(logUri, `cody_${timeNow}.log`),
                 filters: {
                     'Log Files': ['log'],
                 },

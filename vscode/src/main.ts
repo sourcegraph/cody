@@ -64,7 +64,7 @@ import {
     executeExplainOutput,
 } from './commands/execute'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { exportOutputLog } from './services/export-logs'
+import { exportOutputLog } from './services/utils/export-logs'
 import { setUpCodyIgnore } from './services/cody-ignore'
 
 /**
