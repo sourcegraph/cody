@@ -49,7 +49,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
-        // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
-        usage: [ModelUsage.Chat],
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
 ] as const satisfies ModelProvider[]

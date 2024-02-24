@@ -1,6 +1,6 @@
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
-import { buildGenericPrompt } from './generic'
+import { buildPrompt } from './generic'
 
 const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>\n`
 const SHARED_PARAMETERS = {
@@ -14,19 +14,19 @@ export const claude: EditLLMInteraction = {
     getEdit(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildGenericPrompt('edit', options),
+            prompt: buildPrompt('edit', options),
         }
     },
     getDoc(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildGenericPrompt('doc', options),
+            prompt: buildPrompt('doc', options),
         }
     },
     getFix(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildGenericPrompt('fix', options),
+            prompt: buildPrompt('fix', options),
         }
     },
     getAdd(options) {
@@ -37,13 +37,13 @@ export const claude: EditLLMInteraction = {
         return {
             ...SHARED_PARAMETERS,
             assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
-            prompt: buildGenericPrompt('add', options),
+            prompt: buildPrompt('add', options),
         }
     },
     getTest(options) {
         return {
             ...SHARED_PARAMETERS,
-            prompt: buildGenericPrompt('test', options),
+            prompt: buildPrompt('test', options),
         }
     },
 }
