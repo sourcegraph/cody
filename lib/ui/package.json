@@ -10,14 +10,7 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "!**/*.test.*",
-    "!**/*.story.*",
-    "!dist/**/*.ts?(x)",
-    "dist/**/*.d.ts"
-  ],
+  "files": ["dist", "src", "!**/*.test.*", "!**/*.story.*", "!dist/**/*.ts?(x)", "dist/**/*.d.ts"],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build && cp -R src/* dist/",
