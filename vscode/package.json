@@ -1,1154 +1,1144 @@
 {
-    "name": "cody-ai",
-    "private": true,
-    "displayName": "Cody AI",
-    "version": "1.6.0",
-    "publisher": "sourcegraph",
-    "license": "Apache-2.0",
-    "icon": "resources/cody.png",
-    "description": "Code AI with codebase context",
-    "scripts": {
-        "postinstall": "pnpm download-wasm",
-        "dev": "pnpm run -s dev:desktop",
-        "dev:insiders": "pnpm run -s dev:desktop:insiders",
-        "start:dev:desktop": "NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
-        "dev:desktop": "pnpm run -s build:dev:desktop && pnpm run start:dev:desktop",
-        "dev:desktop:insiders": "pnpm run -s build:dev:desktop && NODE_ENV=development code-insiders --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
-        "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
-        "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
-        "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
-        "build": "tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
-        "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
-        "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
-        "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
-        "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
-        "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
-        "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
-        "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
-        "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --alias:os=os-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
-        "_build:webviews": "vite -c webviews/vite.config.ts build",
-        "release": "ts-node-transpile-only ./scripts/release.ts",
-        "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
-        "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
-        "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
-        "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
-        "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
-        "test:unit": "vitest",
-        "vscode:prepublish": "pnpm -s run build",
-        "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
-        "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
-    },
-    "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
-    "keywords": [
-        "ai",
-        "openai",
-        "anthropic",
-        "assistant",
-        "chatbot",
-        "chat",
-        "refactor",
-        "documentation",
-        "test",
-        "sourcegraph",
-        "codey",
-        "llm",
-        "codegen",
-        "autocomplete",
-        "bot",
-        "model",
-        "typescript",
-        "javascript",
-        "python",
-        "golang",
-        "go",
-        "html",
-        "css",
-        "java",
-        "php",
-        "swift",
-        "kotlin"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/sourcegraph/cody",
-        "directory": "vscode"
-    },
-    "bugs": {
-        "url": "https://github.com/sourcegraph/cody/issues"
-    },
-    "homepage": "https://sourcegraph.com/docs/cody",
-    "badges": [
-        {
-            "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
-            "href": "https://srcgr.ph/discord",
-            "description": "Discord"
-        }
-    ],
-    "engines": {
-        "vscode": "^1.79.0"
-    },
-    "main": "./dist/extension.node.js",
-    "browser": "./dist/extension.web.js",
-    "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
-    "contributes": {
-        "walkthroughs": [
-            {
-                "id": "welcome",
-                "title": "Getting Started with Cody",
-                "description": "Discover how Cody can help you write, understand and fix code faster",
-                "steps": [
-                    {
-                        "id": "autocomplete",
-                        "title": "Code Autocomplete",
-                        "description": "Start writing code and Cody will complete the line (or the entire function) for you. Hit tab to accept the suggestion.",
-                        "media": {
-                            "markdown": "walkthroughs/autocomplete.md"
-                        }
-                    },
-                    {
-                        "id": "chat",
-                        "title": "Cody Chat",
-                        "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.walkthrough.showChat)",
-                        "media": {
-                            "markdown": "walkthroughs/chat.md"
-                        }
-                    },
-                    {
-                        "id": "edit",
-                        "title": "Edit Code",
-                        "description": "Ask Cody to perform code edits with your instructions.",
-                        "media": {
-                            "markdown": "walkthroughs/edit.md"
-                        }
-                    },
-                    {
-                        "id": "fix",
-                        "title": "Fix Code",
-                        "description": "Use Cody to fix or explain problems in your code.",
-                        "media": {
-                            "markdown": "walkthroughs/fix.md"
-                        }
-                    },
-                    {
-                        "id": "commands",
-                        "title": "Cody Commands",
-                        "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.commands.tree.view.focus)",
-                        "media": {
-                            "markdown": "walkthroughs/commands.md"
-                        }
-                    },
-                    {
-                        "id": "search",
-                        "title": "Natural Language Search (Beta)",
-                        "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
-                        "media": {
-                            "markdown": "walkthroughs/search.md"
-                        }
-                    },
-                    {
-                        "id": "keyboard",
-                        "title": "Keyboard Shortcuts",
-                        "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
-                        "media": {
-                            "markdown": "walkthroughs/keyboard.md"
-                        }
-                    }
-                ]
-            }
-        ],
-        "colors": [
-            {
-                "id": "cody.fixup.conflictBackground",
-                "description": "The background of text Cody will edit where there is a specific conflict with your changes.",
-                "defaults": {
-                    "light": "mergeEditor.conflictingLines.background",
-                    "dark": "mergeEditor.conflictingLines.background"
-                }
-            },
-            {
-                "id": "cody.fixup.conflictBorder",
-                "description": "The border of text Cody will edit, if there is a conflict with your changes.",
-                "defaults": {
-                    "light": "mergeEditor.conflict.unhandledFocused.border",
-                    "dark": "mergeEditor.conflict.unhandledFocused.border"
-                }
-            },
-            {
-                "id": "cody.fixup.conflictedBackground",
-                "description": "The background of text Cody will edit, if there is a conflict with your changes.",
-                "defaults": {
-                    "light": "#ffffff00",
-                    "dark": "#00000000"
-                }
-            },
-            {
-                "id": "cody.fixup.conflictedBorder",
-                "description": "The border of text Cody will edit, if there is a conflict with your changes.",
-                "defaults": {
-                    "light": "mergeEditor.conflict.unhandledUnfocused.border",
-                    "dark": "mergeEditor.conflict.unhandledUnfocused.border"
-                }
-            },
-            {
-                "id": "cody.fixup.incomingBackground",
-                "description": "The background of text Cody will edit.",
-                "defaults": {
-                    "light": "merge.incomingContentBackground",
-                    "dark": "merge.incomingContentBackground"
-                }
-            },
-            {
-                "id": "cody.fixup.incomingBorder",
-                "description": "The border around text Cody will edit.",
-                "defaults": {
-                    "light": "#436EB1",
-                    "dark": "#436EB1"
-                }
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "cody",
-                    "title": "Cody",
-                    "icon": "resources/cody.svg"
-                }
-            ]
-        },
-        "views": {
-            "cody": [
-                {
-                    "type": "webview",
-                    "id": "cody.chat",
-                    "name": "Chat",
-                    "when": "!cody.activated"
-                },
-                {
-                    "id": "cody.commands.tree.view",
-                    "name": "Commands",
-                    "when": "cody.activated"
-                },
-                {
-                    "id": "cody.chat.tree.view",
-                    "name": "Chats",
-                    "when": "cody.activated"
-                },
-                {
-                    "type": "webview",
-                    "id": "cody.search",
-                    "name": "Natural Language Search (Beta)",
-                    "visibility": "visible",
-                    "when": "cody.activated"
-                },
-                {
-                    "id": "cody.support.tree.view",
-                    "name": "Settings & Support",
-                    "when": "cody.activated"
-                }
-            ]
-        },
-        "viewsWelcome": [
-            {
-                "view": "cody.chat.tree.view",
-                "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
-                "when": "cody.activated"
-            }
-        ],
-        "commands": [
-            {
-                "command": "cody.welcome",
-                "title": "Getting Started Guide",
-                "category": "Cody",
-                "group": "Cody",
-                "icon": "$(book)"
-            },
-            {
-                "command": "cody.feedback",
-                "title": "Feedback",
-                "category": "Cody",
-                "group": "Cody",
-                "icon": "$(feedback)"
-            },
-            {
-                "command": "cody.command.explain-output",
-                "title": "Ask Cody to Explain",
-                "category": "Cody Command",
-                "icon": "$(cody-logo)"
-            },
-            {
-                "command": "cody.command.edit-code",
-                "category": "Cody Command",
-                "title": "Edit Code",
-                "when": "cody.activated && editorTextFocus",
-                "icon": "$(wand)"
-            },
-            {
-                "command": "cody.command.explain-code",
-                "category": "Cody Command",
-                "title": "Explain Code",
-                "icon": "$(output)",
-                "when": "cody.activated && editorFocus"
-            },
-            {
-                "command": "cody.command.unit-tests",
-                "category": "Cody Command",
-                "title": "Generate Unit Tests",
-                "icon": "$(package)",
-                "when": "cody.activated && editorTextFocus"
-            },
-            {
-                "command": "cody.command.document-code",
-                "category": "Cody Command",
-                "title": "Document Code",
-                "icon": "$(book)",
-                "when": "cody.activated && editorTextFocus"
-            },
-            {
-                "command": "cody.command.smell-code",
-                "category": "Cody Command",
-                "title": "Find Code Smells",
-                "icon": "$(checklist)",
-                "when": "cody.activated && editorFocus"
-            },
-            {
-                "command": "cody.menu.custom-commands",
-                "category": "Cody Command",
-                "title": "Custom Commands",
-                "icon": "$(tools)",
-                "when": "cody.activated && workspaceFolderCount > 0"
-            },
-            {
-                "command": "cody.menu.commands-settings",
-                "category": "Cody Command",
-                "title": "Custom Commands Settings",
-                "icon": "$(gear)",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.command.context-search",
-                "category": "Cody",
-                "title": "Codebase Context Search",
-                "when": "cody.activated && workspaceFolderCount > 0"
-            },
-            {
-                "command": "cody.auth.signout",
-                "category": "Cody",
-                "title": "Sign Out",
-                "icon": "$(sign-out)"
-            },
-            {
-                "command": "cody.auth.signin",
-                "category": "Cody",
-                "title": "Switch Account…"
-            },
-            {
-                "command": "cody.settings.extension",
-                "category": "Cody",
-                "title": "Extension Settings",
-                "group": "Cody",
-                "icon": "$(gear)"
-            },
-            {
-                "command": "cody.settings.extension.chat",
-                "category": "Cody",
-                "title": "Chat Settings",
-                "group": "Cody",
-                "icon": "$(gear)"
-            },
-            {
-                "command": "cody.focus",
-                "category": "Cody",
-                "title": "Sign In"
-            },
-            {
-                "command": "cody.status-bar.interacted",
-                "category": "Cody",
-                "title": "Cody Settings",
-                "group": "Cody",
-                "icon": "$(settings-gear)",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.show-page",
-                "category": "Cody",
-                "title": "Open Account Page",
-                "group": "Cody",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.show-rate-limit-modal",
-                "category": "Cody",
-                "title": "Show Rate Limit Modal",
-                "group": "Cody",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.guardrails.debug",
-                "category": "Cody",
-                "title": "Guardrails Debug Attribution",
-                "enablement": "config.cody.experimental.guardrails && editorHasSelection"
-            },
-            {
-                "command": "cody.menu.commands",
-                "category": "Cody",
-                "title": "Commands",
-                "when": "cody.activated",
-                "icon": "$(cody-logo)"
-            },
-            {
-                "command": "cody.autocomplete.openTraceView",
-                "category": "Cody",
-                "title": "Open Autocomplete Trace View",
-                "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
-            },
-            {
-                "command": "cody.autocomplete.manual-trigger",
-                "category": "Cody",
-                "title": "Trigger Autocomplete at Cursor",
-                "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
-            },
-            {
-                "command": "cody.chat.panel.new",
-                "category": "Cody",
-                "title": "New Chat Panel",
-                "when": "cody.activated",
-                "group": "Cody",
-                "icon": "$(new-comment-icon)"
-            },
-            {
-                "command": "cody.chat.tree.view.focus",
-                "category": "Cody",
-                "title": "Open Cody Sidebar",
-                "group": "Cody",
-                "icon": "$(layout-sidebar-left)"
-            },
-            {
-                "command": "cody.chat.history.edit",
-                "category": "Cody",
-                "title": "Rename Chat",
-                "group": "Cody",
-                "icon": "$(edit)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.chat.history.clear",
-                "category": "Cody",
-                "title": "Delete All Chats",
-                "group": "Cody",
-                "icon": "$(trash)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.chat.history.delete",
-                "category": "Cody",
-                "title": "Delete Chat",
-                "group": "Cody",
-                "icon": "$(trash)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.chat.history.export",
-                "category": "Cody",
-                "title": "Export Chats as JSON",
-                "group": "Cody",
-                "icon": "$(arrow-circle-down)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.chat.history.panel",
-                "category": "Cody",
-                "title": "Chat History",
-                "group": "Cody",
-                "icon": "$(list-unordered)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.search.index-update",
-                "category": "Cody",
-                "group": "Cody",
-                "title": "Update search index for current workspace folder",
-                "icon": "$(refresh)",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.search.index-update-all",
-                "category": "Cody",
-                "group": "Cody",
-                "title": "Update search indices for all workspace folders",
-                "icon": "$(sync)",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.chat.panel.reset",
-                "category": "Cody",
-                "title": "New Chat Session",
-                "group": "Cody",
-                "icon": "$(clear-all)",
-                "when": "cody.activated && cody.hasChatHistory"
-            },
-            {
-                "command": "cody.embeddings.resolveIssue",
-                "title": "Cody Embeddings",
-                "when": "cody.embeddings.hasIssue"
-            }
-        ],
-        "keybindings": [
-            {
-                "command": "cody.chat.focus",
-                "key": "alt+/",
-                "when": "!cody.activated"
-            },
-            {
-                "command": "cody.chat.tree.view.focus",
-                "key": "alt+f1",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.chat.panel.new",
-                "key": "alt+/",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.chat.panel.new",
-                "key": "alt+l",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.command.edit-code",
-                "key": "ctrl+shift+v",
-                "mac": "shift+cmd+v",
-                "when": "cody.activated && !editorReadonly"
-            },
-            {
-                "command": "cody.command.edit-code",
-                "key": "alt+k",
-                "when": "cody.activated && !editorReadonly"
-            },
-            {
-                "command": "cody.menu.commands",
-                "key": "alt+c",
-                "mac": "alt+c",
-                "when": "cody.activated"
-            },
-            {
-                "command": "cody.menu.custom-commands",
-                "key": "shift+alt+c",
-                "when": "cody.activated"
-            },
-            {
-                "command": "-github.copilot.generate",
-                "key": "ctrl+enter"
-            },
-            {
-                "command": "cody.autocomplete.manual-trigger",
-                "key": "alt+\\",
-                "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
-            },
-            {
-                "command": "cody.fixup.acceptNearest",
-                "key": "alt+a",
-                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
-            },
-            {
-                "command": "cody.fixup.retryNearest",
-                "key": "alt+r",
-                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
-            },
-            {
-                "command": "cody.fixup.undoNearest",
-                "key": "alt+x",
-                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
-            },
-            {
-                "command": "cody.fixup.cancelNearest",
-                "key": "alt+z",
-                "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
-            }
-        ],
-        "submenus": [
-            {
-                "label": "Cody",
-                "id": "cody.submenu"
-            }
-        ],
-        "menus": {
-            "commandPalette": [
-                {
-                    "command": "cody.command.edit-code",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.command.explain-code",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.command.context-search",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.command.smell-code",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.command.unit-tests",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.command.document-code",
-                    "when": "cody.activated && editorIsOpen"
-                },
-                {
-                    "command": "cody.menu.custom-commands",
-                    "when": "cody.activated"
-                },
-                {
-                    "command": "cody.embeddings.resolveIssue",
-                    "when": "false"
-                },
-                {
-                    "command": "cody.focus",
-                    "title": "Cody: Sign In",
-                    "when": "!cody.activated"
-                },
-                {
-                    "command": "cody.guardrails.debug",
-                    "when": "config.cody.experimental.guardrails && editorHasSelection"
-                },
-                {
-                    "command": "cody.show-page",
-                    "when": "false"
-                },
-                {
-                    "command": "cody.show-rate-limit-modal",
-                    "when": "false"
-                }
-            ],
-            "editor/context": [
-                {
-                    "submenu": "cody.submenu",
-                    "group": "0_cody"
-                }
-            ],
-            "cody.submenu": [
-                {
-                    "command": "cody.chat.panel.new",
-                    "when": "cody.activated",
-                    "group": "ask"
-                },
-                {
-                    "command": "cody.command.explain-code",
-                    "when": "cody.activated",
-                    "group": "command"
-                },
-                {
-                    "command": "cody.command.edit-code",
-                    "when": "cody.activated",
-                    "group": "ask"
-                },
-                {
-                    "command": "cody.command.unit-tests",
-                    "when": "cody.activated",
-                    "group": "command"
-                },
-                {
-                    "command": "cody.command.document-code",
-                    "when": "cody.activated",
-                    "group": "command"
-                },
-                {
-                    "command": "cody.command.smell-code",
-                    "when": "cody.activated",
-                    "group": "command"
-                },
-                {
-                    "command": "cody.menu.custom-commands",
-                    "when": "cody.activated",
-                    "group": "custom-commands"
-                },
-                {
-                    "command": "cody.focus",
-                    "when": "!cody.activated",
-                    "group": "other"
-                },
-                {
-                    "command": "cody.guardrails.debug",
-                    "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
-                    "group": "other"
-                }
-            ],
-            "view/title": [
-                {
-                    "command": "cody.chat.panel.new",
-                    "when": "view == cody.chat.tree.view && cody.activated",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "cody.chat.history.clear",
-                    "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-                    "enablement": "cody.hasChatHistory",
-                    "group": "navigation@2"
-                },
-                {
-                    "command": "cody.chat.history.export",
-                    "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-                    "enablement": "cody.hasChatHistory",
-                    "group": "navigation@3"
-                },
-                {
-                    "command": "cody.welcome",
-                    "when": "view == cody.support.tree.view",
-                    "group": "7_cody@0"
-                },
-                {
-                    "command": "cody.search.index-update",
-                    "when": "view == cody.search && cody.activated",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "cody.search.index-update-all",
-                    "when": "view == cody.search && cody.activated",
-                    "group": "navigation@2"
-                }
-            ],
-            "editor/title": [
-                {
-                    "command": "cody.menu.commands",
-                    "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
-                    "group": "navigation",
-                    "visibility": "visible"
-                },
-                {
-                    "command": "cody.chat.panel.new",
-                    "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-                    "group": "navigation@1",
-                    "visibility": "visible"
-                },
-                {
-                    "command": "cody.chat.history.panel",
-                    "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-                    "group": "navigation@2",
-                    "visibility": "visible"
-                },
-                {
-                    "command": "cody.settings.extension.chat",
-                    "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-                    "group": "navigation@3",
-                    "visibility": "visible"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "cody.chat.history.edit",
-                    "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-                    "group": "inline@1"
-                },
-                {
-                    "command": "cody.chat.history.delete",
-                    "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-                    "group": "inline@2"
-                }
-            ],
-            "terminal/context": [
-                {
-                    "command": "cody.command.explain-output",
-                    "group": "0_cody",
-                    "when": "cody.activated"
-                }
-            ]
-        },
-        "configuration": {
-            "type": "object",
-            "title": "Cody",
-            "properties": {
-                "cody.serverEndpoint": {
-                    "order": 1,
-                    "type": "string",
-                    "description": "URL to the Sourcegraph instance.",
-                    "examples": "https://example.sourcegraph.com",
-                    "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
-                    "deprecationMessage": "Deprecated: Please sign in via the UI instead."
-                },
-                "cody.proxy": {
-                    "type": "string",
-                    "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
-                },
-                "cody.codebase": {
-                    "order": 2,
-                    "type": "string",
-                    "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-                    "examples": [
-                        "https://github.com/sourcegraph/cody",
-                        "ssh://git@github.com/sourcegraph/cody"
-                    ]
-                },
-                "cody.useContext": {
-                    "order": 99,
-                    "type": "string",
-                    "enum": ["embeddings", "keyword", "blended", "none"],
-                    "default": "blended",
-                    "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
-                },
-                "cody.customHeaders": {
-                    "order": 4,
-                    "type": "object",
-                    "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
-                    "default": {},
-                    "examples": [
-                        {
-                            "Cache-Control": "no-cache",
-                            "Proxy-Authenticate": "Basic"
-                        }
-                    ]
-                },
-                "cody.autocomplete.enabled": {
-                    "order": 5,
-                    "type": "boolean",
-                    "markdownDescription": "Enables code autocompletions.",
-                    "default": true
-                },
-                "cody.autocomplete.languages": {
-                    "order": 5,
-                    "type": "object",
-                    "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"plaintext\": false\n}\n```",
-                    "default": {
-                        "*": true
-                    },
-                    "examples": [
-                        {
-                            "*": true,
-                            "plaintext": false
-                        }
-                    ]
-                },
-                "cody.editorTitleCommandIcon": {
-                    "order": 7,
-                    "type": "boolean",
-                    "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
-                    "default": true
-                },
-                "cody.commandCodeLenses": {
-                    "order": 8,
-                    "type": "boolean",
-                    "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
-                    "default": false
-                },
-                "cody.experimental.guardrails": {
-                    "order": 9,
-                    "type": "boolean",
-                    "markdownDescription": "Experimental feature for internal use.",
-                    "default": false
-                },
-                "cody.experimental.localSymbols": {
-                    "order": 9,
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Experimental feature for internal use."
-                },
-                "cody.chat.preInstruction": {
-                    "order": 6,
-                    "type": "string",
-                    "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
-                    "examples": ["Answer all my questions in Spanish."]
-                },
-                "cody.codeActions.enabled": {
-                    "order": 11,
-                    "title": "Cody Code Actions",
-                    "type": "boolean",
-                    "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
-                    "default": true
-                },
-                "cody.commandHints.enabled": {
-                    "order": 12,
-                    "title": "Cody Command Hints",
-                    "type": "boolean",
-                    "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
-                    "default": true
-                },
-                "cody.experimental.simpleChatContext": {
-                    "order": 99,
-                    "type": "boolean",
-                    "markdownDescription": "Uses the new simplifed chat context fetcher",
-                    "default": true
-                },
-                "cody.experimental.symfContext": {
-                    "order": 99,
-                    "type": "boolean",
-                    "markdownDescription": "Enable symf code search context for chat",
-                    "default": true
-                },
-                "cody.experimental.symf.path": {
-                    "order": 99,
-                    "type": "string",
-                    "markdownDescription": "Path to symf binary",
-                    "default": ""
-                },
-                "cody.experimental.tracing": {
-                    "order": 99,
-                    "type": "boolean",
-                    "markdownDescription": "Enable OpenTelemetry tracing",
-                    "default": false
-                },
-                "cody.debug.enable": {
-                    "order": 99,
-                    "type": "boolean",
-                    "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")"
-                },
-                "cody.debug.verbose": {
-                    "order": 99,
-                    "type": "boolean",
-                    "markdownDescription": "Enables verbose debug output. Debug messages may contain more details if the invocation includes verbose information."
-                },
-                "cody.debug.filter": {
-                    "order": 99,
-                    "type": "string",
-                    "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
-                },
-                "cody.telemetry.level": {
-                    "order": 99,
-                    "type": "string",
-                    "enum": ["all", "off"],
-                    "enumDescriptions": [
-                        "Sends usage data and errors.",
-                        "Disables all extension telemetry."
-                    ],
-                    "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
-                    "default": "all"
-                },
-                "cody.autocomplete.advanced.provider": {
-                    "type": "string",
-                    "default": null,
-                    "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
-                    "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
-                },
-                "cody.autocomplete.advanced.serverEndpoint": {
-                    "type": "string",
-                    "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
-                },
-                "cody.autocomplete.advanced.accessToken": {
-                    "type": "string",
-                    "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
-                },
-                "cody.autocomplete.advanced.model": {
-                    "type": "string",
-                    "default": null,
-                    "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
-                    "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
-                },
-                "cody.autocomplete.completeSuggestWidgetSelection": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
-                },
-                "cody.autocomplete.formatOnAccept": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
-                },
-                "cody.autocomplete.disableInsideComments": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Prevent autocomplete requests while inside code comments."
-                },
-                "cody.experimental.foldingRanges": {
-                    "type": "string",
-                    "enum": ["lsp", "indentation-based"],
-                    "enumDescriptions": [
-                        "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
-                        "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
-                    ],
-                    "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
-                    "default": "all"
-                },
-                "cody.autocomplete.experimental.syntacticPostProcessing": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Rank autocomplete results with tree-sitter."
-                },
-                "cody.autocomplete.experimental.dynamicMultilineCompletions": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
-                },
-                "cody.autocomplete.experimental.hotStreak": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Preload follow-up completions"
-                },
-                "cody.autocomplete.experimental.graphContext": {
-                    "type": "string",
-                    "default": null,
-                    "enum": [null, "bfg", "bfg-mixed"],
-                    "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
-                },
-                "cody.autocomplete.experimental.ollamaOptions": {
-                    "type": "object",
-                    "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
-                    "default": {
-                        "url": "http://localhost:11434",
-                        "model": "deepseek-coder:6.7b-base-q4_K_M"
-                    },
-                    "properties": {
-                        "url": {
-                            "type": "string",
-                            "description": "The URL of the Ollama API.",
-                            "default": "http://localhost:11434"
-                        },
-                        "model": {
-                            "type": "string",
-                            "default": "deepseek-coder:6.7b-base-q4_K_M",
-                            "examples": [
-                                "codellama:7b-code",
-                                "codellama:13b-code",
-                                "deepseek-coder:6.7b-base-q4_K_M"
-                            ]
-                        },
-                        "parameters": {
-                            "type": "object",
-                            "description": "Parameters for how Ollama will run the model. See Ollama [PARAMETER documentation](https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-request-with-options).",
-                            "properties": {
-                                "num_ctx": "number",
-                                "temperature": "number",
-                                "top_k": "number",
-                                "top_p": "number"
-                            }
-                        }
-                    }
-                },
-                "cody.internal.unstable": {
-                    "order": 999,
-                    "type": "boolean",
-                    "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
-                    "default": false
-                }
-            }
-        },
-        "icons": {
-            "cody-logo": {
-                "description": "Cody logo",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0041"
-                }
-            },
-            "cody-logo-heavy": {
-                "description": "Cody logo heavy",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0042"
-                }
-            },
-            "anthropic-logo": {
-                "description": "Anthropic logo",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0043"
-                }
-            },
-            "openai-logo": {
-                "description": "OpenAI logo",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0044"
-                }
-            },
-            "mistral-logo": {
-                "description": "Mistral logo",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0045"
-                }
-            },
-            "new-comment-icon": {
-                "description": "Cody logo heavy",
-                "default": {
-                    "fontPath": "resources/cody-icons.woff",
-                    "fontCharacter": "\\0048"
-                }
-            }
-        }
-    },
-    "dependencies": {
-        "@anthropic-ai/sdk": "^0.4.2",
-        "@opentelemetry/api": "^1.7.0",
-        "@opentelemetry/core": "^1.18.1",
-        "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
-        "@opentelemetry/instrumentation-http": "^0.45.1",
-        "@opentelemetry/resources": "^1.18.1",
-        "@opentelemetry/sdk-node": "^0.45.1",
-        "@opentelemetry/sdk-trace-base": "^1.18.1",
-        "@opentelemetry/semantic-conventions": "^1.18.1",
-        "@sentry/browser": "^7.66.0",
-        "@sentry/core": "^7.66.0",
-        "@sentry/node": "^7.66.0",
-        "@sourcegraph/cody-shared": "workspace:*",
-        "@sourcegraph/cody-ui": "workspace:*",
-        "@sourcegraph/telemetry": "^0.16.0",
-        "@storybook/preview-api": "^7.6.2",
-        "@vscode/codicons": "^0.0.35",
-        "@vscode/webview-ui-toolkit": "^1.2.2",
-        "async-mutex": "^0.4.0",
-        "axios": "^1.3.6",
-        "classnames": "^2.3.2",
-        "crypto-js": "^4.2.0",
-        "detect-indent": "^7.0.1",
-        "fast-xml-parser": "^4.3.2",
-        "glob": "^7.2.3",
-        "isomorphic-fetch": "^3.0.0",
-        "js-levenshtein": "^1.1.6",
-        "lodash": "^4.17.21",
-        "lru-cache": "^10.0.0",
-        "mkdirp": "^3.0.1",
-        "os-browserify": "^0.3.0",
-        "socks-proxy-agent": "^8.0.1",
-        "unzipper": "^0.10.14",
-        "uuid": "^9.0.0",
-        "vscode-languageserver-textdocument": "^1.0.8",
-        "vscode-uri": "^3.0.7",
-        "web-tree-sitter": "^0.20.8",
-        "wink-nlp-utils": "^2.1.0"
-    },
-    "devDependencies": {
-        "@google-cloud/pubsub": "^3.7.3",
-        "@playwright/test": "1.39.0",
-        "@pollyjs/adapter-node-http": "^6.0.6",
-        "@pollyjs/core": "^6.0.6",
-        "@pollyjs/persister": "^6.0.6",
-        "@pollyjs/persister-fs": "^6.0.6",
-        "@types/axios": "^0.14.0",
-        "@types/blueimp-md5": "^2.18.2",
-        "@types/crypto-js": "^4.2.2",
-        "@types/dedent": "^0.7.0",
-        "@types/express": "^4.17.17",
-        "@types/fs-extra": "^11.0.4",
-        "@types/glob": "^8.0.0",
-        "@types/isomorphic-fetch": "^0.0.39",
-        "@types/js-levenshtein": "^1.1.1",
-        "@types/lodash": "^4.14.195",
-        "@types/mocha": "^10.0.1",
-        "@types/pako": "^2.0.3",
-        "@types/progress": "^2.0.5",
-        "@types/semver": "^7.5.0",
-        "@types/unzipper": "^0.10.7",
-        "@types/uuid": "^9.0.2",
-        "@types/vscode": "^1.79.0",
-        "@types/yaml": "^1.9.7",
-        "@vscode/test-electron": "^2.3.8",
-        "@vscode/test-web": "^0.0.47",
-        "@vscode/vsce": "^2.22.0",
-        "blueimp-md5": "^2.19.0",
-        "concurrently": "^8.2.0",
-        "dedent": "^0.7.0",
-        "express": "^4.18.2",
-        "fast-json-stable-stringify": "^2.1.0",
-        "fs-extra": "^11.2.0",
-        "fuzzysort": "^2.0.4",
-        "mocha": "^10.2.0",
-        "ovsx": "^0.8.2",
-        "pako": "^2.1.0",
-        "path-browserify": "^1.0.1",
-        "playwright": "1.39.0",
-        "progress": "^2.0.3",
-        "semver": "^7.5.4",
-        "yaml": "^2.3.4"
+  "name": "cody-ai",
+  "private": true,
+  "displayName": "Cody AI",
+  "version": "1.6.0",
+  "publisher": "sourcegraph",
+  "license": "Apache-2.0",
+  "icon": "resources/cody.png",
+  "description": "Code AI with codebase context",
+  "scripts": {
+    "postinstall": "pnpm download-wasm",
+    "dev": "pnpm run -s dev:desktop",
+    "dev:insiders": "pnpm run -s dev:desktop:insiders",
+    "start:dev:desktop": "NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
+    "dev:desktop": "pnpm run -s build:dev:desktop && pnpm run start:dev:desktop",
+    "dev:desktop:insiders": "pnpm run -s build:dev:desktop && NODE_ENV=development code-insiders --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
+    "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
+    "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
+    "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
+    "build": "tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
+    "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
+    "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
+    "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
+    "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --alias:os=os-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:webviews": "vite -c webviews/vite.config.ts build",
+    "release": "ts-node-transpile-only ./scripts/release.ts",
+    "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
+    "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
+    "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
+    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
+    "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
+    "test:unit": "vitest",
+    "vscode:prepublish": "pnpm -s run build",
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
+  },
+  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "keywords": [
+    "ai",
+    "openai",
+    "anthropic",
+    "assistant",
+    "chatbot",
+    "chat",
+    "refactor",
+    "documentation",
+    "test",
+    "sourcegraph",
+    "codey",
+    "llm",
+    "codegen",
+    "autocomplete",
+    "bot",
+    "model",
+    "typescript",
+    "javascript",
+    "python",
+    "golang",
+    "go",
+    "html",
+    "css",
+    "java",
+    "php",
+    "swift",
+    "kotlin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/cody/issues"
+  },
+  "homepage": "https://sourcegraph.com/docs/cody",
+  "badges": [
+    {
+      "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
+      "href": "https://srcgr.ph/discord",
+      "description": "Discord"
     }
+  ],
+  "engines": {
+    "vscode": "^1.79.0"
+  },
+  "main": "./dist/extension.node.js",
+  "browser": "./dist/extension.web.js",
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "contributes": {
+    "walkthroughs": [
+      {
+        "id": "welcome",
+        "title": "Getting Started with Cody",
+        "description": "Discover how Cody can help you write, understand and fix code faster",
+        "steps": [
+          {
+            "id": "autocomplete",
+            "title": "Code Autocomplete",
+            "description": "Start writing code and Cody will complete the line (or the entire function) for you. Hit tab to accept the suggestion.",
+            "media": {
+              "markdown": "walkthroughs/autocomplete.md"
+            }
+          },
+          {
+            "id": "chat",
+            "title": "Cody Chat",
+            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.walkthrough.showChat)",
+            "media": {
+              "markdown": "walkthroughs/chat.md"
+            }
+          },
+          {
+            "id": "edit",
+            "title": "Edit Code",
+            "description": "Ask Cody to perform code edits with your instructions.",
+            "media": {
+              "markdown": "walkthroughs/edit.md"
+            }
+          },
+          {
+            "id": "fix",
+            "title": "Fix Code",
+            "description": "Use Cody to fix or explain problems in your code.",
+            "media": {
+              "markdown": "walkthroughs/fix.md"
+            }
+          },
+          {
+            "id": "commands",
+            "title": "Cody Commands",
+            "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.commands.tree.view.focus)",
+            "media": {
+              "markdown": "walkthroughs/commands.md"
+            }
+          },
+          {
+            "id": "search",
+            "title": "Natural Language Search (Beta)",
+            "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
+            "media": {
+              "markdown": "walkthroughs/search.md"
+            }
+          },
+          {
+            "id": "keyboard",
+            "title": "Keyboard Shortcuts",
+            "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
+            "media": {
+              "markdown": "walkthroughs/keyboard.md"
+            }
+          }
+        ]
+      }
+    ],
+    "colors": [
+      {
+        "id": "cody.fixup.conflictBackground",
+        "description": "The background of text Cody will edit where there is a specific conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflictingLines.background",
+          "dark": "mergeEditor.conflictingLines.background"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictBorder",
+        "description": "The border of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflict.unhandledFocused.border",
+          "dark": "mergeEditor.conflict.unhandledFocused.border"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictedBackground",
+        "description": "The background of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "#ffffff00",
+          "dark": "#00000000"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictedBorder",
+        "description": "The border of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflict.unhandledUnfocused.border",
+          "dark": "mergeEditor.conflict.unhandledUnfocused.border"
+        }
+      },
+      {
+        "id": "cody.fixup.incomingBackground",
+        "description": "The background of text Cody will edit.",
+        "defaults": {
+          "light": "merge.incomingContentBackground",
+          "dark": "merge.incomingContentBackground"
+        }
+      },
+      {
+        "id": "cody.fixup.incomingBorder",
+        "description": "The border around text Cody will edit.",
+        "defaults": {
+          "light": "#436EB1",
+          "dark": "#436EB1"
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cody",
+          "title": "Cody",
+          "icon": "resources/cody.svg"
+        }
+      ]
+    },
+    "views": {
+      "cody": [
+        {
+          "type": "webview",
+          "id": "cody.chat",
+          "name": "Chat",
+          "when": "!cody.activated"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Natural Language Search (Beta)",
+          "visibility": "visible",
+          "when": "cody.activated"
+        },
+        {
+          "id": "cody.support.tree.view",
+          "name": "Settings & Support",
+          "when": "cody.activated"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "cody.chat.tree.view",
+        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
+        "when": "cody.activated"
+      }
+    ],
+    "commands": [
+      {
+        "command": "cody.welcome",
+        "title": "Getting Started Guide",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(book)"
+      },
+      {
+        "command": "cody.feedback",
+        "title": "Feedback",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(feedback)"
+      },
+      {
+        "command": "cody.command.explain-output",
+        "title": "Ask Cody to Explain",
+        "category": "Cody Command",
+        "icon": "$(cody-logo)"
+      },
+      {
+        "command": "cody.command.edit-code",
+        "category": "Cody Command",
+        "title": "Edit Code",
+        "when": "cody.activated && editorTextFocus",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "cody.command.explain-code",
+        "category": "Cody Command",
+        "title": "Explain Code",
+        "icon": "$(output)",
+        "when": "cody.activated && editorFocus"
+      },
+      {
+        "command": "cody.command.unit-tests",
+        "category": "Cody Command",
+        "title": "Generate Unit Tests",
+        "icon": "$(package)",
+        "when": "cody.activated && editorTextFocus"
+      },
+      {
+        "command": "cody.command.document-code",
+        "category": "Cody Command",
+        "title": "Document Code",
+        "icon": "$(book)",
+        "when": "cody.activated && editorTextFocus"
+      },
+      {
+        "command": "cody.command.smell-code",
+        "category": "Cody Command",
+        "title": "Find Code Smells",
+        "icon": "$(checklist)",
+        "when": "cody.activated && editorFocus"
+      },
+      {
+        "command": "cody.menu.custom-commands",
+        "category": "Cody Command",
+        "title": "Custom Commands",
+        "icon": "$(tools)",
+        "when": "cody.activated && workspaceFolderCount > 0"
+      },
+      {
+        "command": "cody.menu.commands-settings",
+        "category": "Cody Command",
+        "title": "Custom Commands Settings",
+        "icon": "$(gear)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.command.context-search",
+        "category": "Cody",
+        "title": "Codebase Context Search",
+        "when": "cody.activated && workspaceFolderCount > 0"
+      },
+      {
+        "command": "cody.auth.signout",
+        "category": "Cody",
+        "title": "Sign Out",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "cody.auth.signin",
+        "category": "Cody",
+        "title": "Switch Account…"
+      },
+      {
+        "command": "cody.settings.extension",
+        "category": "Cody",
+        "title": "Extension Settings",
+        "group": "Cody",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "cody.settings.extension.chat",
+        "category": "Cody",
+        "title": "Chat Settings",
+        "group": "Cody",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "cody.focus",
+        "category": "Cody",
+        "title": "Sign In"
+      },
+      {
+        "command": "cody.status-bar.interacted",
+        "category": "Cody",
+        "title": "Cody Settings",
+        "group": "Cody",
+        "icon": "$(settings-gear)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.show-page",
+        "category": "Cody",
+        "title": "Open Account Page",
+        "group": "Cody",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.show-rate-limit-modal",
+        "category": "Cody",
+        "title": "Show Rate Limit Modal",
+        "group": "Cody",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.guardrails.debug",
+        "category": "Cody",
+        "title": "Guardrails Debug Attribution",
+        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
+      },
+      {
+        "command": "cody.menu.commands",
+        "category": "Cody",
+        "title": "Commands",
+        "when": "cody.activated",
+        "icon": "$(cody-logo)"
+      },
+      {
+        "command": "cody.autocomplete.openTraceView",
+        "category": "Cody",
+        "title": "Open Autocomplete Trace View",
+        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.autocomplete.manual-trigger",
+        "category": "Cody",
+        "title": "Trigger Autocomplete at Cursor",
+        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "category": "Cody",
+        "title": "New Chat Panel",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "category": "Cody",
+        "title": "Open Cody Sidebar",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "cody.chat.history.edit",
+        "category": "Cody",
+        "title": "Rename Chat",
+        "group": "Cody",
+        "icon": "$(edit)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.clear",
+        "category": "Cody",
+        "title": "Delete All Chats",
+        "group": "Cody",
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.delete",
+        "category": "Cody",
+        "title": "Delete Chat",
+        "group": "Cody",
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.export",
+        "category": "Cody",
+        "title": "Export Chats as JSON",
+        "group": "Cody",
+        "icon": "$(arrow-circle-down)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.panel",
+        "category": "Cody",
+        "title": "Chat History",
+        "group": "Cody",
+        "icon": "$(list-unordered)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.search.index-update",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search index for current workspace folder",
+        "icon": "$(refresh)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.search.index-update-all",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search indices for all workspace folders",
+        "icon": "$(sync)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.panel.reset",
+        "category": "Cody",
+        "title": "New Chat Session",
+        "group": "Cody",
+        "icon": "$(clear-all)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.embeddings.resolveIssue",
+        "title": "Cody Embeddings",
+        "when": "cody.embeddings.hasIssue"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cody.chat.focus",
+        "key": "alt+/",
+        "when": "!cody.activated"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "key": "alt+f1",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "key": "alt+/",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "key": "alt+l",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.command.edit-code",
+        "key": "ctrl+shift+v",
+        "mac": "shift+cmd+v",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.edit-code",
+        "key": "alt+k",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.menu.commands",
+        "key": "alt+c",
+        "mac": "alt+c",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.menu.custom-commands",
+        "key": "shift+alt+c",
+        "when": "cody.activated"
+      },
+      {
+        "command": "-github.copilot.generate",
+        "key": "ctrl+enter"
+      },
+      {
+        "command": "cody.autocomplete.manual-trigger",
+        "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+      },
+      {
+        "command": "cody.fixup.acceptNearest",
+        "key": "alt+a",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.fixup.retryNearest",
+        "key": "alt+r",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.fixup.undoNearest",
+        "key": "alt+x",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.fixup.cancelNearest",
+        "key": "alt+z",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      }
+    ],
+    "submenus": [
+      {
+        "label": "Cody",
+        "id": "cody.submenu"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "cody.command.edit-code",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.explain-code",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.context-search",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.smell-code",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.document-code",
+          "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.menu.custom-commands",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.embeddings.resolveIssue",
+          "when": "false"
+        },
+        {
+          "command": "cody.focus",
+          "title": "Cody: Sign In",
+          "when": "!cody.activated"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.show-page",
+          "when": "false"
+        },
+        {
+          "command": "cody.show-rate-limit-modal",
+          "when": "false"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "cody.submenu",
+          "group": "0_cody"
+        }
+      ],
+      "cody.submenu": [
+        {
+          "command": "cody.chat.panel.new",
+          "when": "cody.activated",
+          "group": "ask"
+        },
+        {
+          "command": "cody.command.explain-code",
+          "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.edit-code",
+          "when": "cody.activated",
+          "group": "ask"
+        },
+        {
+          "command": "cody.command.unit-tests",
+          "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.document-code",
+          "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.smell-code",
+          "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.menu.custom-commands",
+          "when": "cody.activated",
+          "group": "custom-commands"
+        },
+        {
+          "command": "cody.focus",
+          "when": "!cody.activated",
+          "group": "other"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
+          "group": "other"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cody.chat.panel.new",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cody.chat.history.export",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cody.welcome",
+          "when": "view == cody.support.tree.view",
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.search.index-update",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.search.index-update-all",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cody.menu.commands",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "group": "navigation",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.chat.panel.new",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@1",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@2",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.settings.extension.chat",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@3",
+          "visibility": "visible"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cody.chat.history.edit",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
+          "group": "inline@1"
+        },
+        {
+          "command": "cody.chat.history.delete",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
+          "group": "inline@2"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "cody.command.explain-output",
+          "group": "0_cody",
+          "when": "cody.activated"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Cody",
+      "properties": {
+        "cody.serverEndpoint": {
+          "order": 1,
+          "type": "string",
+          "description": "URL to the Sourcegraph instance.",
+          "examples": "https://example.sourcegraph.com",
+          "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
+          "deprecationMessage": "Deprecated: Please sign in via the UI instead."
+        },
+        "cody.proxy": {
+          "type": "string",
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+        },
+        "cody.codebase": {
+          "order": 2,
+          "type": "string",
+          "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
+          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+        },
+        "cody.useContext": {
+          "order": 99,
+          "type": "string",
+          "enum": ["embeddings", "keyword", "blended", "none"],
+          "default": "blended",
+          "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
+        },
+        "cody.customHeaders": {
+          "order": 4,
+          "type": "object",
+          "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
+          "default": {},
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ]
+        },
+        "cody.autocomplete.enabled": {
+          "order": 5,
+          "type": "boolean",
+          "markdownDescription": "Enables code autocompletions.",
+          "default": true
+        },
+        "cody.autocomplete.languages": {
+          "order": 5,
+          "type": "object",
+          "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"plaintext\": false\n}\n```",
+          "default": {
+            "*": true
+          },
+          "examples": [
+            {
+              "*": true,
+              "plaintext": false
+            }
+          ]
+        },
+        "cody.editorTitleCommandIcon": {
+          "order": 7,
+          "type": "boolean",
+          "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
+          "default": true
+        },
+        "cody.commandCodeLenses": {
+          "order": 8,
+          "type": "boolean",
+          "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
+          "default": false
+        },
+        "cody.experimental.guardrails": {
+          "order": 9,
+          "type": "boolean",
+          "markdownDescription": "Experimental feature for internal use.",
+          "default": false
+        },
+        "cody.experimental.localSymbols": {
+          "order": 9,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental feature for internal use."
+        },
+        "cody.chat.preInstruction": {
+          "order": 6,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
+          "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.codeActions.enabled": {
+          "order": 11,
+          "title": "Cody Code Actions",
+          "type": "boolean",
+          "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
+          "default": true
+        },
+        "cody.commandHints.enabled": {
+          "order": 12,
+          "title": "Cody Command Hints",
+          "type": "boolean",
+          "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+          "default": true
+        },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
+          "default": true
+        },
+        "cody.experimental.symfContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable symf code search context for chat",
+          "default": true
+        },
+        "cody.experimental.symf.path": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Path to symf binary",
+          "default": ""
+        },
+        "cody.experimental.tracing": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
+        },
+        "cody.debug.enable": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")"
+        },
+        "cody.debug.verbose": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enables verbose debug output. Debug messages may contain more details if the invocation includes verbose information."
+        },
+        "cody.debug.filter": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
+        },
+        "cody.telemetry.level": {
+          "order": 99,
+          "type": "string",
+          "enum": ["all", "off"],
+          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "default": "all"
+        },
+        "cody.autocomplete.advanced.provider": {
+          "type": "string",
+          "default": null,
+          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
+        },
+        "cody.autocomplete.advanced.serverEndpoint": {
+          "type": "string",
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+        },
+        "cody.autocomplete.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
+        },
+        "cody.autocomplete.advanced.model": {
+          "type": "string",
+          "default": null,
+          "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
+        },
+        "cody.autocomplete.completeSuggestWidgetSelection": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.autocomplete.formatOnAccept": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
+        },
+        "cody.autocomplete.disableInsideComments": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Prevent autocomplete requests while inside code comments."
+        },
+        "cody.experimental.foldingRanges": {
+          "type": "string",
+          "enum": ["lsp", "indentation-based"],
+          "enumDescriptions": [
+            "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
+            "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
+          ],
+          "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
+          "default": "all"
+        },
+        "cody.autocomplete.experimental.syntacticPostProcessing": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Rank autocomplete results with tree-sitter."
+        },
+        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
+        },
+        "cody.autocomplete.experimental.hotStreak": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Preload follow-up completions"
+        },
+        "cody.autocomplete.experimental.graphContext": {
+          "type": "string",
+          "default": null,
+          "enum": [null, "bfg", "bfg-mixed"],
+          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.autocomplete.experimental.ollamaOptions": {
+          "type": "object",
+          "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
+          "default": {
+            "url": "http://localhost:11434",
+            "model": "deepseek-coder:6.7b-base-q4_K_M"
+          },
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Ollama API.",
+              "default": "http://localhost:11434"
+            },
+            "model": {
+              "type": "string",
+              "default": "deepseek-coder:6.7b-base-q4_K_M",
+              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M"]
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for how Ollama will run the model. See Ollama [PARAMETER documentation](https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-request-with-options).",
+              "properties": {
+                "num_ctx": "number",
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number"
+              }
+            }
+          }
+        },
+        "cody.internal.unstable": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
+          "default": false
+        }
+      }
+    },
+    "icons": {
+      "cody-logo": {
+        "description": "Cody logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0041"
+        }
+      },
+      "cody-logo-heavy": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0042"
+        }
+      },
+      "anthropic-logo": {
+        "description": "Anthropic logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0043"
+        }
+      },
+      "openai-logo": {
+        "description": "OpenAI logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0044"
+        }
+      },
+      "mistral-logo": {
+        "description": "Mistral logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0045"
+        }
+      },
+      "new-comment-icon": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0048"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.4.2",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.18.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
+    "@opentelemetry/instrumentation-http": "^0.45.1",
+    "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/sdk-trace-base": "^1.18.1",
+    "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@sentry/browser": "^7.66.0",
+    "@sentry/core": "^7.66.0",
+    "@sentry/node": "^7.66.0",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/cody-ui": "workspace:*",
+    "@sourcegraph/telemetry": "^0.16.0",
+    "@storybook/preview-api": "^7.6.2",
+    "@vscode/codicons": "^0.0.35",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "async-mutex": "^0.4.0",
+    "axios": "^1.3.6",
+    "classnames": "^2.3.2",
+    "crypto-js": "^4.2.0",
+    "detect-indent": "^7.0.1",
+    "fast-xml-parser": "^4.3.2",
+    "glob": "^7.2.3",
+    "isomorphic-fetch": "^3.0.0",
+    "js-levenshtein": "^1.1.6",
+    "lodash": "^4.17.21",
+    "lru-cache": "^10.0.0",
+    "mkdirp": "^3.0.1",
+    "os-browserify": "^0.3.0",
+    "socks-proxy-agent": "^8.0.1",
+    "unzipper": "^0.10.14",
+    "uuid": "^9.0.0",
+    "vscode-languageserver-textdocument": "^1.0.8",
+    "vscode-uri": "^3.0.7",
+    "web-tree-sitter": "^0.20.8",
+    "wink-nlp-utils": "^2.1.0"
+  },
+  "devDependencies": {
+    "@google-cloud/pubsub": "^3.7.3",
+    "@playwright/test": "1.39.0",
+    "@pollyjs/adapter-node-http": "^6.0.6",
+    "@pollyjs/core": "^6.0.6",
+    "@pollyjs/persister": "^6.0.6",
+    "@pollyjs/persister-fs": "^6.0.6",
+    "@types/axios": "^0.14.0",
+    "@types/blueimp-md5": "^2.18.2",
+    "@types/crypto-js": "^4.2.2",
+    "@types/dedent": "^0.7.0",
+    "@types/express": "^4.17.17",
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^8.0.0",
+    "@types/isomorphic-fetch": "^0.0.39",
+    "@types/js-levenshtein": "^1.1.1",
+    "@types/lodash": "^4.14.195",
+    "@types/mocha": "^10.0.1",
+    "@types/pako": "^2.0.3",
+    "@types/progress": "^2.0.5",
+    "@types/semver": "^7.5.0",
+    "@types/unzipper": "^0.10.7",
+    "@types/uuid": "^9.0.2",
+    "@types/vscode": "^1.79.0",
+    "@types/yaml": "^1.9.7",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/test-web": "^0.0.47",
+    "@vscode/vsce": "^2.22.0",
+    "blueimp-md5": "^2.19.0",
+    "concurrently": "^8.2.0",
+    "dedent": "^0.7.0",
+    "express": "^4.18.2",
+    "fast-json-stable-stringify": "^2.1.0",
+    "fs-extra": "^11.2.0",
+    "fuzzysort": "^2.0.4",
+    "mocha": "^10.2.0",
+    "ovsx": "^0.8.2",
+    "pako": "^2.1.0",
+    "path-browserify": "^1.0.1",
+    "playwright": "1.39.0",
+    "progress": "^2.0.3",
+    "semver": "^7.5.4",
+    "yaml": "^2.3.4"
+  }
 }
