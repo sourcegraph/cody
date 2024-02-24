@@ -339,6 +339,7 @@ class FireworksProvider extends Provider {
                 headers.set('X-Sourcegraph-Feature', 'code_completions')
                 addTraceparent(headers)
 
+                logDebug('FireworksProvider', 'fetch', { verbose: { url, fireworksRequest } })
                 const response = await fetch(url, {
                     method: 'POST',
                     body: JSON.stringify(fireworksRequest),
