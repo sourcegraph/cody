@@ -2,22 +2,22 @@ import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    tokensToChars,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type Message,
+    displayPath,
+    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import {
     CLOSING_CODE_TAG,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
+    type PrefixComponents,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
     trimLeadingWhitespaceUntilNewline,
-    type PrefixComponents,
 } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import {
@@ -34,11 +34,11 @@ import {
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
-    Provider,
-    standardContextSizeHints,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256

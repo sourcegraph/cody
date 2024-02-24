@@ -22,9 +22,9 @@ import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
+import type { RemoteSearch } from '../context/remote-search'
 import type { SidebarChatWebview } from './chat-view/SidebarViewController'
 import type { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
-import type { RemoteSearch } from '../context/remote-search'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

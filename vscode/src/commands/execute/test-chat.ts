@@ -1,15 +1,15 @@
-import { logError, type ContextFile, logDebug } from '@sourcegraph/cody-shared'
+import { type ContextFile, logDebug, logError } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-import { getContextFileFromCursor } from '../context/selection'
-import type { CodyCommandArgs } from '../types'
-import { type ExecuteChatArguments, executeChat } from './ask'
 import type { ChatCommandResult } from '../../main'
-import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { getContextFileFromCursor } from '../context/selection'
+import { getContextFilesForTestCommand } from '../context/unit-test-chat'
+import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.

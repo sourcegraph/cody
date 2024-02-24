@@ -3,39 +3,39 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
-    CompletionStopReason,
-    testFileUri,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    CompletionStopReason,
     type Configuration,
+    testFileUri,
 } from '@sourcegraph/cody-shared'
 
+import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
+import { completionProviderConfig } from '../completion-provider-config'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
-    TriggerKind,
-    getInlineCompletions as _getInlineCompletions,
     type InlineCompletionsParams,
     type InlineCompletionsResult,
+    TriggerKind,
+    getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
 import {
-    createProviderConfig,
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
+    createProviderConfig,
 } from '../providers/anthropic'
+import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
-import { pressEnterAndGetIndentString } from '../providers/hot-streak'
-import { completionProviderConfig } from '../completion-provider-config'
-import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import { sleep } from '../utils'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we

@@ -4,9 +4,9 @@ import * as vscode from 'vscode'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import {
+    type CompletionAnalyticsID,
     logCompletionPersistencePresentEvent,
     logCompletionPersistenceRemovedEvent,
-    type CompletionAnalyticsID,
 } from './logger'
 import { lines } from './text-processing'
 

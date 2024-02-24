@@ -5,8 +5,8 @@ import type { ModelProvider } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
-import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 import type { Repo } from '../../vscode/src/context/repo-fetcher'
+import { EventEmitter, defaultWebviewPanel } from './vscode-shim'
 
 /** Utility class to manage a list of `AgentWebPanel` instances. */
 export class AgentWebviewPanels {

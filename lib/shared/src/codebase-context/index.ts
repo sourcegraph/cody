@@ -1,20 +1,20 @@
 import type { URI } from 'vscode-uri'
-import { languageFromFilename, ProgrammingLanguage } from '../common/languages'
+import { ProgrammingLanguage, languageFromFilename } from '../common/languages'
 import type { Configuration } from '../configuration'
 import type { ActiveTextEditorSelectionRange } from '../editor'
 import type {
-    IndexedKeywordContextFetcher,
     IRemoteSearch,
+    IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
 } from '../local-context'
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 import {
-    getContextMessageWithResponse,
     type ContextFile,
     type ContextFileSource,
     type ContextMessage,
+    getContextMessageWithResponse,
 } from './messages'
 
 interface ContextSearchOptions {

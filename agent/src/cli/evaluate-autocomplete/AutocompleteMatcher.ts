@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
-import type { default as Parser, Tree } from 'web-tree-sitter'
+import type { Tree, default as Parser } from 'web-tree-sitter'
 
-import { getParseLanguage, SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
+import { SupportedLanguage, getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 
 import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'

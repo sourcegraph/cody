@@ -4,11 +4,11 @@ import * as vscode from 'vscode'
 
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { AgentTextDocument } from './AgentTextDocument'
-import * as vscode_shim from './vscode-shim'
 import { logDebug, logError } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
+import { AgentTextDocument } from './AgentTextDocument'
+import * as vscode_shim from './vscode-shim'
 
 type EditFunction = (
     uri: vscode.Uri,

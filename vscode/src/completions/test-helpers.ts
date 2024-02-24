@@ -2,7 +2,7 @@ import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import { testFileUri, type CompletionResponse } from '@sourcegraph/cody-shared'
+import { type CompletionResponse, testFileUri } from '@sourcegraph/cody-shared'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 

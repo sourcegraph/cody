@@ -1,11 +1,11 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import type * as vscode from 'vscode'
 
-import { isValidTestFile } from '../utils/test-commands'
-import { getWorkspaceFilesContext } from './workspace'
-import { getContextFileFromDirectory } from './directory'
 import { getSearchPatternForTestFiles } from '../utils/search-pattern'
+import { isValidTestFile } from '../utils/test-commands'
+import { getContextFileFromDirectory } from './directory'
+import { getWorkspaceFilesContext } from './workspace'
 
 /**
  * Gets context files related to the given test file.

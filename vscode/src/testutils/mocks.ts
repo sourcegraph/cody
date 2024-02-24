@@ -9,7 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
+import { type Configuration, type FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Uri } from './uri'

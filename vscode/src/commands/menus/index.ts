@@ -1,17 +1,17 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
-import { window, commands } from 'vscode'
-import { CustomCommandConfigMenuItems, CommandMenuOption } from './items'
+import { commands, window } from 'vscode'
+import { CommandMenuOption, CustomCommandConfigMenuItems } from './items'
 
-import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
-import type { CommandMenuItem } from './types'
-import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
-import { openCustomCommandDocsLink } from '../services/custom-commands'
-import { executeChat } from '../execute/ask'
-import { executeEdit } from '../../edit/execute'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
 import { CodyCommandMenuItems } from '..'
+import { executeEdit } from '../../edit/execute'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { executeChat } from '../execute/ask'
+import { openCustomCommandDocsLink } from '../services/custom-commands'
+import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
+import { type CommandMenuButton, CommandMenuSeperator, CommandMenuTitleItem } from './items'
+import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',

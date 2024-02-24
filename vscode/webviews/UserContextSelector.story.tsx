@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { UserContextSelectorComponent } from './UserContextSelector'
+import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof UserContextSelectorComponent> = {
     title: 'cody/User Context Selector',

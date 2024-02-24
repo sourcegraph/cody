@@ -1,34 +1,34 @@
 import * as vscode from 'vscode'
 
 import {
+    type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     isDotCom,
     isError,
-    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
+    type AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
+    isSourcegraphToken,
     networkErrorAuthStatus,
     unauthenticatedStatus,
-    type AuthStatus,
-    isSourcegraphToken,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
+import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
-import { getAuthReferralCode } from './AuthProviderSimplified'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void

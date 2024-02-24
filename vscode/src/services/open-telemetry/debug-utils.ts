@@ -1,4 +1,4 @@
-import { trace, type Attributes, type Span } from '@opentelemetry/api'
+import { type Attributes, type Span, trace } from '@opentelemetry/api'
 
 /**
  * Adds OpenTelemetry event to the current active span in the development environment.

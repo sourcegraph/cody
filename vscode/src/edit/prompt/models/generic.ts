@@ -1,8 +1,8 @@
+import { displayPath } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import type { EditIntent } from '../../types'
 import { PROMPT_TOPICS } from '../constants'
 import type { GetLLMInteractionOptions } from '../type'
-import { displayPath } from '@sourcegraph/cody-shared'
 
 interface PromptVariant {
     system?: string

@@ -11,7 +11,7 @@ import {
 import type { CompletionLogID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
-import { getInlineCompletions, getInlineCompletionsInsertText, params, type V } from './helpers'
+import { type V, getInlineCompletions, getInlineCompletionsInsertText, params } from './helpers'
 
 describe('[getInlineCompletions] reuseLastCandidate', () => {
     function lastCandidate(

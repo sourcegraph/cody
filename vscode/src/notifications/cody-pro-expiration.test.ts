@@ -6,9 +6,9 @@ import {
     FeatureFlagProvider,
     type SourcegraphGraphQLAPIClient,
 } from '@sourcegraph/cody-shared'
+import { type AuthStatus, defaultAuthStatus } from '../chat/protocol'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
-import { type AuthStatus, defaultAuthStatus } from '../chat/protocol'
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications

@@ -1,20 +1,20 @@
 import { findLast } from 'lodash'
 
 import {
-    errorToChatError,
-    reformatBotMessageForChat,
     type ChatError,
     type ChatMessage,
     type InteractionJSON,
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    errorToChatError,
     isCodyIgnoredFile,
+    reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 
-import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 import type { Repo } from '../../context/repo-fetcher'
 import type { ContextItem } from '../../prompt-builder/types'
+import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 
 /**
  * Interface for a chat message with additional context.

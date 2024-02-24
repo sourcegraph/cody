@@ -1,13 +1,13 @@
 import * as vscode from 'vscode'
 
 import {
-    ModelProvider,
-    featureFlagProvider,
     type ChatClient,
+    type Configuration,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    type Configuration,
+    ModelProvider,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -19,13 +19,13 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { AuthStatus, ExtensionMessage } from '../protocol'
 
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import type { ContextRankingController } from '../../local-context/context-ranking'
 
 type ChatID = string
 

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
-import { newChat, test, type ExpectedEvents } from './helpers'
+import { type ExpectedEvents, newChat, test } from './helpers'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 

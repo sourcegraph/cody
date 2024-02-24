@@ -2,17 +2,17 @@ import { findLast } from 'lodash'
 import type { Position, TextDocument } from 'vscode'
 import type {
     Language,
-    default as Parser,
     Point,
     Query,
     QueryCapture,
     SyntaxNode,
+    default as Parser,
 } from 'web-tree-sitter'
 
-import { getParseLanguage, type SupportedLanguage } from './grammars'
+import { type SupportedLanguage, getParseLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { getParser } from './parser'
-import { intentPriority, languages, type CompletionIntent, type QueryName } from './queries'
+import { type CompletionIntent, type QueryName, intentPriority, languages } from './queries'
 
 interface ParsedQuery {
     compiled: Query

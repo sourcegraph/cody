@@ -6,7 +6,7 @@ import type { CompletionResponse } from '@sourcegraph/cody-shared'
 import { TriggerKind } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
-import { getInlineCompletions, params, type V } from './helpers'
+import { type V, getInlineCompletions, params } from './helpers'
 
 // Simulate the VS Code behavior where accepting a completion will immediately start a new
 // completion request.

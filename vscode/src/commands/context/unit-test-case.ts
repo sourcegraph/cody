@@ -1,10 +1,10 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
-import { isTestFileForOriginal, isValidTestFile } from '../utils/test-commands'
-import { getWorkspaceFilesContext } from './workspace'
-import { getSearchPatternForTestFiles } from '../utils/search-pattern'
 import type { URI } from 'vscode-uri'
+import { getSearchPatternForTestFiles } from '../utils/search-pattern'
+import { isTestFileForOriginal, isValidTestFile } from '../utils/test-commands'
 import { getContextFileFromDirectory } from './directory'
+import { getWorkspaceFilesContext } from './workspace'
 
 export async function getContextFilesForAddingUnitTestCases(testFile: URI): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.testCase', async span => {

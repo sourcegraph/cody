@@ -9,7 +9,7 @@ import { RequestManager } from '../request-manager'
 import { completion } from '../test-helpers'
 import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
 
-import { getInlineCompletions, params, type V } from './helpers'
+import { type V, getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] common', () => {
     test('single-line mode only completes one line', async () =>

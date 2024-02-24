@@ -1,7 +1,7 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
+import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
-import type { SymbolTable } from './SymbolTable'
 import { capitalize, typescriptKeywordSyntax } from './utils'
 
 export class KotlinFormatter {

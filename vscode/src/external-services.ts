@@ -2,23 +2,23 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    SourcegraphGuardrailsClient,
-    SourcegraphIntentDetectorClient,
-    graphqlClient,
-    isError,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
     type IntentDetector,
+    SourcegraphGuardrailsClient,
+    SourcegraphIntentDetectorClient,
+    graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { PlatformContext } from './extension.common'
-import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { ContextRankerConfig } from './local-context/context-ranking'
+import type { ContextRankingController } from './local-context/context-ranking'
+import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
-import type { ContextRankingController } from './local-context/context-ranking'
 
 interface ExternalServices {
     intentDetector: IntentDetector

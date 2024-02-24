@@ -5,12 +5,12 @@ import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-u
 import { getEditorIndentString } from '../../utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { endsWithBlockStart } from '../detect-multiline'
-import { insertIntoDocContext, type DocumentContext } from '../get-current-doc-context'
+import { type DocumentContext, insertIntoDocContext } from '../get-current-doc-context'
 import { getLastLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
-    processCompletion,
     type InlineCompletionItemWithAnalytics,
+    processCompletion,
 } from '../text-processing/process-inline-completions'
 
 import { getDynamicMultilineDocContext } from './dynamic-multiline'

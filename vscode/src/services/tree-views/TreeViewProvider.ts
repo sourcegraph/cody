@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
+import { type FeatureFlagProvider, isDotCom } from '@sourcegraph/cody-shared'
 
 import type { AuthStatus } from '../../chat/protocol'
 
-import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
 import type { CodyTreeItem } from './TreeItemProvider'
 import { initializeGroupedChats } from './chat-history'
+import { type CodySidebarTreeItem, type CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []

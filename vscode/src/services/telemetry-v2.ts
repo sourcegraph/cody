@@ -1,10 +1,10 @@
 import {
-    MockServerTelemetryRecorderProvider,
-    NoOpTelemetryRecorderProvider,
-    TelemetryRecorderProvider,
     type ConfigurationWithAccessToken,
     type LogEventMode,
+    MockServerTelemetryRecorderProvider,
+    NoOpTelemetryRecorderProvider,
     type TelemetryRecorder,
+    TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared'
 import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 

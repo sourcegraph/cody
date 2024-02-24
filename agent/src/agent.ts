@@ -1,25 +1,25 @@
 import { spawn } from 'child_process'
-import * as fspromises from 'fs/promises'
 import path from 'path'
+import * as fspromises from 'fs/promises'
 
 import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import {
-    convertGitCloneURLToCodebaseName,
-    FeatureFlag,
-    featureFlagProvider,
-    graphqlClient,
-    isRateLimitError,
-    logError,
-    NoOpTelemetryRecorderProvider,
-    setUserAgent,
     type BillingCategory,
     type BillingProduct,
-    logDebug,
-    isError,
+    FeatureFlag,
+    NoOpTelemetryRecorderProvider,
+    convertGitCloneURLToCodebaseName,
+    featureFlagProvider,
+    graphqlClient,
     isCodyIgnoredFile,
+    isError,
+    isRateLimitError,
+    logDebug,
+    logError,
+    setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -29,9 +29,20 @@ import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../../vscode/
 import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
+import type { Har } from '@pollyjs/persister'
+import levenshtein from 'js-levenshtein'
+import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import type { CommandResult } from '../../vscode/src/main'
+import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
+import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+import { AgentCodeLenses } from './AgentCodeLenses'
 import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import type { PollyRequestError } from './cli/jsonrpc'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
 import type {
     AutocompleteItem,
@@ -45,17 +56,6 @@ import type {
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
-import type { CommandResult } from '../../vscode/src/main'
-import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
-import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import { AgentCodeLenses } from './AgentCodeLenses'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import type { PollyRequestError } from './cli/jsonrpc'
-import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
-import type { CompletionItemID } from '../../vscode/src/completions/logger'
-import type { Har } from '@pollyjs/persister'
-import levenshtein from 'js-levenshtein'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()

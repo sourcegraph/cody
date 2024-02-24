@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest'
 import { Position, Range } from 'vscode'
 
 import {
+    type UpdateRangeOptions,
     updateFixedRange,
     updateRange,
     updateRangeMultipleChanges,
-    type UpdateRangeOptions,
 } from './tracked-range'
 
 // Creates a position.

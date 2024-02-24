@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    isCodyIgnoredFile,
-    SURROUNDING_LINES,
     type ActiveTextEditor,
     type ActiveTextEditorDiagnostic,
     type ActiveTextEditorDiagnosticType,
@@ -10,10 +8,12 @@ import {
     type ActiveTextEditorSelectionRange,
     type ActiveTextEditorVisibleContent,
     type Editor,
+    SURROUNDING_LINES,
+    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
-import { getEditor } from './active-editor'
 import { CommandCodeLenses } from '../commands/services/code-lenses'
+import { getEditor } from './active-editor'
 import { getSmartSelection } from './utils'
 
 export class VSCodeEditor implements Editor {
