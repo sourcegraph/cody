@@ -29,6 +29,7 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { AuthStatus } from '../../chat/protocol'
+import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {

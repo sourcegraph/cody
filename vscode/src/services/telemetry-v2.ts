@@ -56,12 +56,13 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
         new CallbackTelemetryProcessor(event => {
             logDebug(
                 debugLogLabel,
-                `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${
-                    event.action
-                }: ${JSON.stringify({
-                    parameters: event.parameters,
-                    timestamp: event.timestamp,
-                })}`
+                `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${event.action}`,
+                {
+                    verbose: {
+                        parameters: event.parameters,
+                        timestamp: event.timestamp,
+                    },
+                }
             )
         }),
     ])
