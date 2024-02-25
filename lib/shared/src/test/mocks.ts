@@ -37,18 +37,6 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
-    public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        return this.mocks.getActiveTextEditorSmartSelection?.() ?? Promise.resolve(null)
-    }
-
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
-    }
-
-    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
-    }
-
     public getActiveTextEditorDiagnosticsForRange(
         range: ActiveTextEditorSelectionRange
     ): ActiveTextEditorDiagnostic[] | null {

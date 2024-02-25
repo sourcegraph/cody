@@ -16,10 +16,7 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
  *
  * Context: Current selection
  */
-export async function smellCommand(
-    span: Span,
-    args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments> {
+async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
     let prompt = defaultCommands.smell.prompt
 

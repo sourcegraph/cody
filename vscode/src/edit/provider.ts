@@ -34,8 +34,6 @@ interface EditProviderOptions extends EditManagerOptions {
 }
 
 export class EditProvider {
-    private cancelCompletionCallback: (() => void) | null = null
-
     private insertionResponse: string | null = null
     private insertionInProgress = false
     private insertionPromise: Promise<void> | null = null
@@ -97,7 +95,6 @@ export class EditProvider {
             }
 
             const abortController = new AbortController()
-            this.cancelCompletionCallback = () => abortController.abort()
             const stream = this.config.chat.chat(
                 messages,
                 { model, stopSequences },
@@ -142,10 +139,6 @@ export class EditProvider {
                 }
             }
         })
-    }
-
-    public abortEdit(): void {
-        this.cancelCompletionCallback?.()
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {

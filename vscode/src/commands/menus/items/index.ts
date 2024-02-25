@@ -9,9 +9,9 @@ import { type CommandMenuButton, CommandMenuButtons } from './buttons'
 
 import { platform } from 'os'
 
-export { CommandMenuButton, CommandMenuButtons } from './buttons'
+export { CommandMenuButton } from './buttons'
 export { CommandMenuSeperator } from './seperators'
-export { CommandMenuOption, ASK_QUESTION_COMMAND, EDIT_COMMAND } from './options'
+export { CommandMenuOption } from './options'
 
 export const CommandMenuTitleItem = {
     default: {

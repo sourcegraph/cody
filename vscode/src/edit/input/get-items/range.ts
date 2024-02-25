@@ -8,7 +8,7 @@ import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './
 import type { EditRangeItem } from './types'
 import { symbolIsFunctionLike } from './utils'
 
-export const getDefaultRangeItems = (
+const getDefaultRangeItems = (
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues
 ): EditRangeItem[] => {

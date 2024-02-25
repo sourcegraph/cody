@@ -17,7 +17,7 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
  *
  * Context: Current selection and current file
  */
-export async function explainCommand(
+async function explainCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
 ): Promise<ExecuteChatArguments> {

@@ -72,7 +72,6 @@ interface ChatProps extends ChatClassNames {
         chatCommands: [string, CodyCommand][],
         input: string
     ) => [string, CodyCommand][]
-    ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     setContextSelection: (context: ContextFile[] | null) => void
@@ -155,14 +154,6 @@ export interface FeedbackButtonsProps {
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', metadata?: CodeBlockMeta) => void
     insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
-}
-
-export interface ChatCommandsProps {
-    setFormInput: (input: string) => void
-    setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyCommand][] | null
-    selectedChatCommand?: number
-    onSubmit: (input: string, inputType: WebviewChatSubmitType) => void
 }
 
 export interface UserContextSelectorProps {

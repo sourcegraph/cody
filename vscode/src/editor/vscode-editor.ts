@@ -14,7 +14,6 @@ import {
 
 import { CommandCodeLenses } from '../commands/services/code-lenses'
 import { getEditor } from './active-editor'
-import { getSmartSelection } from './utils'
 
 export class VSCodeEditor implements Editor {
     constructor() {
@@ -69,74 +68,6 @@ export class VSCodeEditor implements Editor {
         if (!selection || selection?.start.isEqual(selection.end)) {
             return null
         }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
-    }
-
-    /**
-     * Gets the current smart selection for the active text editor.
-     *
-     * Checks if there is an existing selection and returns that if it exists.
-     * Otherwise tries to get the folding range containing the cursor position.
-     *
-     * Returns null if no selection can be determined.
-     * @returns The smart selection for the active editor, or null if none can be determined.
-     */
-    public async getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
-            return null
-        }
-        const selection = activeEditor.selection
-        if (!selection.start) {
-            return null
-        }
-
-        if (selection && !selection?.start.isEqual(selection.end)) {
-            return this.createActiveTextEditorSelection(activeEditor, selection)
-        }
-
-        // Get selection for current folding range of cursor
-        const activeCursorPosition = selection.start.line
-        const foldingRange = await getSmartSelection(activeEditor.document.uri, activeCursorPosition)
-        if (foldingRange) {
-            return this.createActiveTextEditorSelection(activeEditor, foldingRange)
-        }
-
-        return null
-    }
-
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
-            return null
-        }
-        let selection = activeEditor.selection
-        if (!selection || selection.isEmpty) {
-            selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
-        }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
-    }
-
-    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
-            return null
-        }
-        let selection = activeEditor.selection
-        if (selection && !selection.isEmpty) {
-            return this.createActiveTextEditorSelection(activeEditor, selection)
-        }
-        const visibleRanges = activeEditor.visibleRanges
-        if (visibleRanges.length === 0) {
-            return null
-        }
-
-        const visibleRange = visibleRanges[0]
-        selection = new vscode.Selection(visibleRange.start.line, 0, visibleRange.end.line + 1, 0)
-        if (!selection || selection.isEmpty) {
-            return null
-        }
-
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
