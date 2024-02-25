@@ -167,7 +167,6 @@ export interface ChatCommandsProps {
 
 export interface UserContextSelectorProps {
     onSelected: (context: ContextFile, queryEndsWithColon?: boolean) => void
-    formInput: string
     contextSelection?: ContextFile[]
     selected?: number
     onSubmit: (input: string, inputType: 'user') => void
@@ -866,7 +865,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 selected={selectedChatContext}
                                 onSelected={onChatContextSelected}
                                 contextSelection={contextSelection}
-                                formInput={'@' + currentChatContextQuery}
                                 onSubmit={onSubmit}
                                 setSelectedChatContext={setSelectedChatContext}
                                 contextQuery={currentChatContextQuery ?? ''}
