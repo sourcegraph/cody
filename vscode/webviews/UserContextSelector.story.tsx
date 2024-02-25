@@ -29,7 +29,7 @@ export const FileSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: undefined,
         selected: 0,
-        formInput: '@',
+        contextQuery: '',
     },
 }
 
@@ -37,7 +37,7 @@ export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> 
     args: {
         contextSelection: [],
         selected: 0,
-        formInput: '@missing',
+        contextQuery: 'missing',
     },
 }
 
@@ -49,7 +49,7 @@ export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = 
             type: 'file',
         })),
         selected: 0,
-        formInput: '@file',
+        contextQuery: 'file',
     },
 }
 
@@ -57,7 +57,7 @@ export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorCo
     args: {
         contextSelection: [],
         selected: 0,
-        formInput: '@#a',
+        contextQuery: '#a',
     },
 }
 
@@ -109,6 +109,6 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
             },
         ],
         selected: 0,
-        formInput: '@#login',
+        contextQuery: '#login',
     },
 }
