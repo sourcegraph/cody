@@ -20,12 +20,14 @@ export function removeAfterLastAt(str: string): string {
  * Includes the file path and an optional range or symbol specifier.
  */
 export function getLabelForContextItem(item: ContextItem): string {
-    const isFileType = item.type === 'file'
     const rangeLabel = item.range ? `:${item.range?.start.line}-${item.range?.end.line}` : ''
-    if (isFileType) {
+    if (item.type === 'file') {
         return `${displayPath(item.uri)}${rangeLabel}`
     }
-    return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
+    if (item.type === 'symbol') {
+        return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
+    }
+    return `${item.title} (${item.uri.toString()})`
 }
 
 /**

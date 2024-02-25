@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
+import { setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 import { UserContextSelectorComponent } from './UserContextSelector'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
@@ -24,6 +25,8 @@ const meta: Meta<typeof UserContextSelectorComponent> = {
 }
 
 export default meta
+
+setDisplayPathEnvInfo({ isWindows: false, workspaceFolders: [] })
 
 export const FileSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
@@ -110,5 +113,35 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
         ],
         selected: 0,
         contextQuery: '#login',
+    },
+}
+
+export const DocSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
+    args: {
+        contextSelection: undefined,
+        selected: 0,
+        contextQuery: '$',
+    },
+}
+
+export const DocSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> = {
+    args: {
+        contextSelection: [],
+        selected: 0,
+        contextQuery: '$missing',
+    },
+}
+
+export const DocSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
+    args: {
+        // Long enough to test text-overflow
+        contextSelection: Array.from(new Array(10).keys()).map(i => ({
+            type: 'doc',
+            uri: URI.parse(`https://example.com/doc${i}`),
+            title: `My Document ${i}`,
+            content: `Contents ${i}`,
+        })),
+        selected: 0,
+        contextQuery: '$foo',
     },
 }

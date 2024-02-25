@@ -17,6 +17,9 @@ importers:
 
   .:
     dependencies:
+      '@openctx/client':
+        specifier: ^0.0.3
+        version: link:../openctx/lib/client
       ignore:
         specifier: ^5.2.4
         version: 5.2.4

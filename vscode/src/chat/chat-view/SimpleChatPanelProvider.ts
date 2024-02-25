@@ -19,6 +19,7 @@ import {
     type TranscriptJSON,
     Typewriter,
     featureFlagProvider,
+    getOpenCtxContextItems,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -60,6 +61,7 @@ import type { Span } from '@opentelemetry/api'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import { getOpenCtxExtensionAPI } from '../../context/openctx'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -620,6 +622,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     await this.postMessage({
                         type: 'userContextFiles',
                         userContextFiles: symbolResults,
+                    })
+                }
+            } else if (query.startsWith('$')) {
+                try {
+                    const openctxAPI = await getOpenCtxExtensionAPI()
+                    const results = await getOpenCtxContextItems(openctxAPI, query.slice(1), MAX_RESULTS)
+                    if (!cancellation.token.isCancellationRequested) {
+                        await this.postMessage({
+                            type: 'userContextFiles',
+                            userContextFiles: results,
+                        })
+                    }
+                } catch (error) {
+                    await vscode.window.showErrorMessage(
+                        error instanceof Error ? error.message : 'Error getting OpenCtx context items'
+                    )
+                    await this.postMessage({
+                        type: 'userContextFiles',
+                        userContextFiles: [],
                     })
                 }
             } else {

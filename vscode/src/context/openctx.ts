@@ -39,9 +39,11 @@ export async function activateOpenCtxDevelopmentExtension(
             ): OpenCtxVSCodeExtensionAPI
             // @ts-ignore
         }> = import('../../../../openctx/client/vscode/dist/extension.node.js')
-        return extModule.then(({ activate }) => {
-            return activate(context, false)
-        })
+        extModule
+            .then(({ activate }) => {
+                resolve(activate(context, false))
+            })
+            .catch(reject)
     })
 
     return openctxExtensionAPI.then(() => undefined)

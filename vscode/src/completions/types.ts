@@ -20,7 +20,7 @@ export interface InlineCompletionItem {
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
  */
-interface FileContextSnippet {
+export interface FileContextSnippet {
     uri: URI
     startLine: number
     endLine: number

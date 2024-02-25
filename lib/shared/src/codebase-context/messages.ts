@@ -43,7 +43,7 @@ interface ContextItemCommon {
     content?: string
 }
 
-export type ContextItem = ContextItemFile | ContextItemSymbol
+export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemDoc
 export type ContextItemFile = ContextItemCommon & { type: 'file' }
 export type ContextItemSymbol = ContextItemCommon & {
     type: 'symbol'
@@ -52,6 +52,12 @@ export type ContextItemSymbol = ContextItemCommon & {
     symbolName: string
 
     kind: SymbolKind
+}
+
+export type ContextItemDoc = ContextItemCommon & {
+    type: 'doc'
+    title: string
+    content: string
 }
 
 export interface ContextMessage extends Required<Message> {
@@ -114,10 +120,11 @@ export function createContextMessageByFile(item: ContextItem, content: string): 
             text:
                 item.type === 'file'
                     ? `Context from file path ${displayPath(item.uri)}:\n${content}`
-                    : `${item.symbolName} is a ${item.kind} symbol from file path ${displayPath(
-                          item.uri
-                      )}:\n${content}`,
-
+                    : item.type === 'symbol'
+                      ? `${item.symbolName} is a ${item.kind} symbol from file path ${displayPath(
+                              item.uri
+                          )}:\n${content}`
+                      : `Context from document "${item.title}":\n${content}`,
             file: item,
         },
         { speaker: 'assistant', text: 'OK.' },

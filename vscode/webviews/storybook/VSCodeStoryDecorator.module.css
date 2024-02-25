@@ -207,3 +207,7 @@ vscode-button::part(control) {
 :global .codicon-symbol-method::before {
     content: '\ea8c';
 }
+
+:global .codicon-book::before {
+    content: '\eaa4';
+}

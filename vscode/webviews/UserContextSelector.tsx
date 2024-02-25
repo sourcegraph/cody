@@ -7,11 +7,13 @@ import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
 
-const STARTER = 'Search for a file to include, or type # to search symbols...'
+const STARTER = 'Search for a file to include (or type # for symbols or $ for docs)...'
 const FILE_ON_RESULT = 'Search for a file to include...'
 const FILE_NO_RESULT = 'No matching files found'
 const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
 const SYMBOL_NO_RESULT = 'No matching symbols found'
+const DOC_ON_RESULT = 'Search for docs to include...'
+const DOC_NO_RESULT = 'No matching docs found'
 
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
@@ -39,14 +41,14 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         }
         const noResult = !contextSelection?.length
         const isSymbolQuery = contextQuery.startsWith('#')
-        if (!isSymbolQuery) {
-            return noResult ? FILE_NO_RESULT : FILE_ON_RESULT
+        const isDocQuery = contextQuery.startsWith('$')
+        if (isSymbolQuery) {
+            return noResult && contextQuery !== '#' ? SYMBOL_NO_RESULT : SYMBOL_ON_RESULT
         }
-        // for empty symbol query or with symbol results
-        if (contextQuery.endsWith('#') || !noResult) {
-            return SYMBOL_ON_RESULT
+        if (isDocQuery) {
+            return noResult && contextQuery !== '$' ? DOC_NO_RESULT : DOC_ON_RESULT
         }
-        return SYMBOL_NO_RESULT
+        return noResult ? FILE_NO_RESULT : FILE_ON_RESULT
     }, [contextQuery, contextSelection?.length])
 
     if (contextQuery.endsWith(' ')) {
@@ -95,7 +97,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     // Don't display the selector when there is no contextSelection to display AND
     // query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
     // e.g. '@abcdefg?' -> false || '@abcdefg?file' -> false
-    const endRegex = /[^a-zA-Z0-9#]$/
+    const endRegex = /[^a-zA-Z0-9#$]$/
     if (endRegex.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null
@@ -127,15 +129,26 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                         const icon =
                             match.type === 'file'
                                 ? null
-                                : match.kind === 'class'
-                                  ? 'symbol-structure'
-                                  : 'symbol-method'
-                        const title = match.type === 'file' ? displayPath(match.uri) : match.symbolName
+                                : match.type === 'symbol'
+                                  ? match.kind === 'class'
+                                        ? 'symbol-structure'
+                                        : 'symbol-method'
+                                  : 'book'
+                        const title =
+                            match.type === 'file'
+                                ? displayPath(match.uri)
+                                : match.type === 'symbol'
+                                  ? match.symbolName
+                                  : match.title
                         const range = match.range
                             ? `:${match.range.start.line + 1}-${match.range.end.line + 1}`
                             : ''
                         const description =
-                            match.type === 'file' ? undefined : displayPath(match.uri) + range
+                            match.type === 'file'
+                                ? undefined
+                                : match.type === 'symbol'
+                                  ? displayPath(match.uri) + range
+                                  : match.uri.toString()
                         const warning =
                             match.type === 'file' && match.title === 'large-file'
                                 ? 'File too large. Type @# to choose a symbol'
