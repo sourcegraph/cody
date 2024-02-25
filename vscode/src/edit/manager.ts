@@ -162,14 +162,6 @@ export class EditManager implements vscode.Disposable {
         return provider
     }
 
-    public removeProviderForTask(task: FixupTask): void {
-        const provider = this.editProviders.get(task)
-
-        if (provider) {
-            this.editProviders.delete(task)
-        }
-    }
-
     public dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose()

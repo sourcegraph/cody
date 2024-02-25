@@ -9,7 +9,7 @@ interface PromptVariant {
     instruction: string
 }
 
-export const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
+const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
     edit: {
         system: dedent`
             - You are an AI programming assistant who is an expert in updating code to meet given instructions.

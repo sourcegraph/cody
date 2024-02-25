@@ -79,7 +79,7 @@ type GraphQlMockResponse =
           message: string | undefined
       }
 
-export class GraphQlMock {
+class GraphQlMock {
     private response: GraphQlMockResponse = {
         kind: 'status',
         status: 400,

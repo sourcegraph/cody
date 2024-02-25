@@ -21,7 +21,7 @@ import { logDebug, logError } from '../../log'
 import type { ContextItem } from '../../prompt-builder/types'
 import { viewRangeToRange } from './chat-helpers'
 
-export interface GetEnhancedContextOptions {
+interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
     text: string

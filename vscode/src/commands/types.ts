@@ -21,11 +21,6 @@ export interface CodyCommandsFile {
     commands: Map<string, CodyCommand>
 }
 
-// JSON format of the CodyCommandsFile
-export interface CodyCommandsFileJSON {
-    commands: { [id: string]: Omit<CodyCommand, 'key'> }
-}
-
 export interface CodyCommandArgs {
     // for tracing the life of the request
     requestID: string

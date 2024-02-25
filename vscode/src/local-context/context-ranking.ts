@@ -11,7 +11,7 @@ import type { ContextItem } from '../prompt-builder/types'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
-export interface ContextRanker {
+interface ContextRanker {
     rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]>
 }
 

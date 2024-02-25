@@ -204,7 +204,7 @@ interface ParamsWithInlinedCompletion extends Params {
  *   return result█
  * }
  */
-export function paramsWithInlinedCompletion(
+function paramsWithInlinedCompletion(
     code: string,
     { delayBetweenChunks, ...completionParams }: ParamsWithInlinedCompletion = {}
 ): ParamsResult {

@@ -67,7 +67,7 @@ function completionMatchesPopupItem(
     return true
 }
 
-export function completionMatchesSuffix(
+function completionMatchesSuffix(
     completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
     currentLineSuffix: string
 ): boolean {

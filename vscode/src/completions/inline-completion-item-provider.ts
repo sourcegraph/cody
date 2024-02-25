@@ -55,7 +55,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-export interface CodyCompletionItemProviderConfig {
+interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null

@@ -102,10 +102,6 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
         }
     }
 
-    public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
-        await this.contextProvider.forceUpdateCodebaseContext()
-    }
-
     /**
      * Display error message in webview as a banner alongside the chat.
      */
