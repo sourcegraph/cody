@@ -40,6 +40,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { activateOpenCtxDevelopmentExtension } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -103,6 +104,9 @@ export async function start(
             }
         })
     )
+
+    // TODO(sqs)
+    await activateOpenCtxDevelopmentExtension(context)
 
     return vscode.Disposable.from(...disposables)
 }
