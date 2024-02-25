@@ -77,4 +77,4 @@ export enum CustomCommandType {
     User = 'user',
 }
 
-export type DefaultCommandType = 'default' | 'experimental'
+type DefaultCommandType = 'default' | 'experimental'

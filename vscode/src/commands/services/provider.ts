@@ -8,7 +8,7 @@ import { showCommandMenu } from '../menus'
 import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
-export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
+const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.

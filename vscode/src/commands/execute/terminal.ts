@@ -8,7 +8,7 @@ import * as uuid from 'uuid'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-export interface TerminalOutputArguments {
+interface TerminalOutputArguments {
     name: string
     selection?: string
     creationOptions?: { shellPath?: string; shellArgs?: string[] }

@@ -140,19 +140,6 @@ export class SimpleChatModel {
         this.messagesWithContext.splice(index)
     }
 
-    public updateLastHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        const lastMessage = this.messagesWithContext.at(-1)
-        if (!lastMessage) {
-            return
-        }
-        if (lastMessage.message.speaker === 'human') {
-            this.messagesWithContext.pop()
-        } else if (lastMessage.message.speaker === 'assistant') {
-            this.messagesWithContext.splice(-2, 2)
-        }
-        this.addHumanMessage(message, displayText)
-    }
-
     public getMessagesWithContext(): MessageWithContext[] {
         return this.messagesWithContext
     }

@@ -18,7 +18,7 @@ interface QuickPickConfiguration {
     onDidTriggerButton?: (target: vscode.QuickInputButton) => void
 }
 
-export interface QuickPick {
+interface QuickPick {
     input: vscode.QuickPick<vscode.QuickPickItem>
     render: (title: string, value: string) => void
 }

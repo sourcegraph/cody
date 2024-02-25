@@ -58,7 +58,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
  * We should also ensure that `activationEvent` `onLanguage` is set to provide the best chance of
  * executing this code early, without impacting VS Code startup time.
  */
-export const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
+const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     after: {
         color: new vscode.ThemeColor('editorGhostText.foreground'),
