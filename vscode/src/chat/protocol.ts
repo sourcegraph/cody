@@ -6,7 +6,6 @@ import type {
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextFile,
-    ContextFileType,
     EnhancedContextContextT,
     ModelProvider,
     SearchPanelFile,
@@ -123,7 +122,6 @@ export type ExtensionMessage =
     | {
           type: 'userContextFiles'
           userContextFiles: ContextFile[] | null
-          kind?: ContextFileType
       }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
