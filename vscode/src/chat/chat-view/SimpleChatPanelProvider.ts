@@ -7,7 +7,7 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     ConfigFeaturesSingleton,
-    type ContextFile,
+    type ContextItem,
     type ContextMessage,
     type Editor,
     FeatureFlag,
@@ -65,7 +65,6 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
 import { getContextWindowForModel } from '../../models/utilts'
-import type { ContextItem } from '../../prompt-builder/types'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import type {
@@ -394,7 +393,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
-        userContextFiles: ContextFile[],
+        userContextFiles: ContextItem[],
         addEnhancedContext: boolean,
         source?: ChatEventSource
     ): Promise<void> {
@@ -541,7 +540,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         text: string,
         index?: number,
-        contextFiles: ContextFile[] = [],
+        contextFiles: ContextItem[] = [],
         addEnhancedContext = true
     ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
@@ -1269,37 +1268,32 @@ async function newChatModelfromTranscriptJSON(
 
 export async function contextFilesToContextItems(
     editor: Editor,
-    files: ContextFile[],
+    items: ContextItem[],
     fetchContent?: boolean
 ): Promise<ContextItem[]> {
     return (
         await Promise.all(
-            files.map(async (file: ContextFile): Promise<ContextItem | null> => {
-                const range = viewRangeToRange(file.range)
-                let text = file.content
-                if (!text && fetchContent) {
+            items.map(async (item: ContextItem): Promise<ContextItem | null> => {
+                const range = viewRangeToRange(item.range)
+                let content = item.content
+                if (!item.content && fetchContent) {
                     try {
-                        text = await editor.getTextEditorContentForFile(file.uri, range)
+                        content = await editor.getTextEditorContentForFile(item.uri, range)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${file.uri}. (Reason: ${error})`
+                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
                         )
                         return null
                     }
                 }
-                return {
-                    uri: file.uri,
-                    range,
-                    text: text || '',
-                    source: file.source,
-                }
+                return { ...item, content: content! }
             })
         )
     ).filter(isDefined)
 }
 
 function deserializedContextFilesToContextItems(
-    files: ContextFile[],
+    files: ContextItem[],
     contextMessages: ContextMessage[]
 ): ContextItem[] {
     const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
@@ -1310,7 +1304,7 @@ function deserializedContextFilesToContextItems(
         contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
     }
 
-    return files.map((file: ContextFile): ContextItem => {
+    return files.map((file: ContextItem): ContextItem => {
         const range = viewRangeToRange(file.range)
         let text = file.content
         if (!text) {
@@ -1320,9 +1314,10 @@ function deserializedContextFilesToContextItems(
             }
         }
         return {
+            type: 'file',
             uri: file.uri,
             range,
-            text: text || '',
+            content: text || '',
             source: file.source,
             repoName: file.repoName,
             revision: file.revision,

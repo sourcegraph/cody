@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import type { ActiveTextEditorSelectionRange } from '../editor'
+import type { RangeData } from '../common/range'
 import { displayPath } from '../editor/displayPath'
 import type { Message } from '../sourcegraph-api'
 
@@ -28,9 +28,9 @@ export type ContextFileType = 'file' | 'symbol'
 
 export type SymbolKind = 'class' | 'function' | 'method'
 
-interface ContextFileCommon {
+interface ContextItemCommon {
     uri: URI
-    range?: ActiveTextEditorSelectionRange
+    range?: RangeData
     repoName?: string
     revision?: string
 
@@ -43,9 +43,9 @@ interface ContextFileCommon {
     content?: string
 }
 
-export type ContextFile = ContextFileFile | ContextFileSymbol
-export type ContextFileFile = ContextFileCommon & { type: 'file' }
-export type ContextFileSymbol = ContextFileCommon & {
+export type ContextItem = ContextItemFile | ContextItemSymbol
+export type ContextItemFile = ContextItemCommon & { type: 'file' }
+export type ContextItemSymbol = ContextItemCommon & {
     type: 'symbol'
 
     /** The fuzzy name of the symbol (if this represents a symbol). */
@@ -55,7 +55,7 @@ export type ContextFileSymbol = ContextFileCommon & {
 }
 
 export interface ContextMessage extends Required<Message> {
-    file?: ContextFile
+    file?: ContextItem
     preciseContext?: PreciseContext
 }
 
@@ -89,7 +89,7 @@ export interface HoverContext {
 
 export function getContextMessageWithResponse(
     text: string,
-    file: ContextFile,
+    file: ContextItem,
     response = 'Ok.',
     source: ContextFileSource = 'editor'
 ): ContextMessage[] {
@@ -101,20 +101,24 @@ export function getContextMessageWithResponse(
     ]
 }
 
-export function createContextMessageByFile(file: ContextFile, content: string): ContextMessage[] {
-    const code = content || file.content
-    if (!code) {
+export function createContextMessageByFile(item: ContextItem, content: string): ContextMessage[] {
+    if (!content) {
+        content = item.content ?? ''
+    }
+    if (!content) {
         return []
     }
-    const filepath = displayPath(file.uri)
     return [
         {
             speaker: 'human',
             text:
-                file.type === 'file'
-                    ? `Context from file path @${filepath}:\n${code}`
-                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${filepath}:\n${code}`,
-            file,
+                item.type === 'file'
+                    ? `Context from file path ${displayPath(item.uri)}:\n${content}`
+                    : `${item.symbolName} is a ${item.kind} symbol from file path ${displayPath(
+                          item.uri
+                      )}:\n${content}`,
+
+            file: item,
         },
         { speaker: 'assistant', text: 'OK.' },
     ]

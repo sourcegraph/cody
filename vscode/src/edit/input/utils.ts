@@ -1,4 +1,4 @@
-import { type ContextFile, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
 
@@ -16,16 +16,16 @@ export function removeAfterLastAt(str: string): string {
 }
 
 /**
- * Returns a string representation of the given ContextFile for use in UI labels.
+ * Returns a string representation of the given ContextItem for use in UI labels.
  * Includes the file path and an optional range or symbol specifier.
  */
-export function getLabelForContextFile(file: ContextFile): string {
-    const isFileType = file.type === 'file'
-    const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
+export function getLabelForContextItem(item: ContextItem): string {
+    const isFileType = item.type === 'file'
+    const rangeLabel = item.range ? `:${item.range?.start.line}-${item.range?.end.line}` : ''
     if (isFileType) {
-        return `${displayPath(file.uri)}${rangeLabel}`
+        return `${displayPath(item.uri)}${rangeLabel}`
     }
-    return `${displayPath(file.uri)}${rangeLabel}#${file.symbolName}`
+    return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
 }
 
 /**

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type ChatEventSource,
-    type ContextFile,
+    type ContextItem,
     type ContextMessage,
     type EditModel,
     displayPathBasename,
@@ -234,7 +234,7 @@ export class FixupController
     public async createTask(
         document: vscode.TextDocument,
         instruction: string,
-        userContextFiles: ContextFile[],
+        userContextFiles: ContextItem[],
         selectionRange: vscode.Range,
         intent: EditIntent,
         mode: EditMode,

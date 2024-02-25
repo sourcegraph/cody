@@ -2,7 +2,7 @@ import React from 'react'
 
 import type { URI } from 'vscode-uri'
 
-import type { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
@@ -17,12 +17,12 @@ export interface FileLinkProps {
     repoName?: string
     revision?: string
     source?: string
-    range?: ActiveTextEditorSelectionRange
+    range?: RangeData
     title?: string
 }
 
 export const EnhancedContext: React.FunctionComponent<{
-    contextFiles: ContextFile[]
+    contextFiles: ContextItem[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
 }> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {

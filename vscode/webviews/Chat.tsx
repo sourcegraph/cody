@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import type {
     ChatInputHistory,
     ChatMessage,
-    ContextFile,
+    ContextItem,
     Guardrails,
     ModelProvider,
     TelemetryService,
@@ -51,8 +51,8 @@ interface ChatboxProps {
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
     isTranscriptError: boolean
-    contextSelection?: ContextFile[] | null
-    setContextSelection: (context: ContextFile[] | null) => void
+    contextSelection?: ContextItem[] | null
+    setContextSelection: (context: ContextItem[] | null) => void
     setChatModels?: (models: ModelProvider[]) => void
     chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
@@ -90,7 +90,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const addEnhancedContext = useEnhancedContextEnabled()
 
     const onEditSubmit = useCallback(
-        (text: string, index: number, contextFiles: ContextFile[]) => {
+        (text: string, index: number, contextFiles: ContextItem[]) => {
             vscodeAPI.postMessage({
                 command: 'edit',
                 index,
@@ -103,7 +103,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onSubmit = useCallback(
-        (text: string, submitType: WebviewChatSubmitType, contextFiles?: Map<string, ContextFile>) => {
+        (text: string, submitType: WebviewChatSubmitType, contextFiles?: Map<string, ContextItem>) => {
             // loop the added contextFiles to:
             // 1. check if the key still exists in the text
             // 2. remove the ones not present

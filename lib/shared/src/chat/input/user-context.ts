@@ -1,4 +1,4 @@
-import type { ContextFile } from '../..'
+import type { ContextItem } from '../..'
 
 /**
  * Verifies that the context files passed in the contextFilesMap are still referenced
@@ -13,8 +13,8 @@ import type { ContextFile } from '../..'
  */
 export function verifyContextFilesFromInput(
     inputValue: string,
-    contextFilesMap?: Map<string, ContextFile>
-): ContextFile[] {
+    contextFilesMap?: Map<string, ContextItem>
+): ContextItem[] {
     if (!inputValue.trim() || !contextFilesMap?.size) {
         return []
     }
@@ -23,7 +23,7 @@ export function verifyContextFilesFromInput(
     // is still present in the input string.
     // If so, create a new contextFile and add it to the returned array based on
     // presented strings that matches the @file-name with correct range.
-    const userContextFiles: ContextFile[] = []
+    const userContextFiles: ContextItem[] = []
     for (const [fileName, contextFile] of contextFilesMap) {
         if (!inputValue.includes(fileName)) {
             continue
