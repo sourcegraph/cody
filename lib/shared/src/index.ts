@@ -49,10 +49,10 @@ export type {
 } from './codebase-context/context-status'
 export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
-    ContextFile,
-    ContextFileFile,
+    ContextItem,
+    ContextItemFile,
     ContextFileSource,
-    ContextFileSymbol,
+    ContextItemSymbol,
     ContextFileType,
     ContextMessage,
     HoverContext,
@@ -62,6 +62,7 @@ export type {
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export { type RangeData, toRangeData } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
@@ -93,7 +94,6 @@ export type {
     ActiveTextEditorDiagnostic,
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from './editor'

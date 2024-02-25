@@ -1,4 +1,4 @@
-import { type ContextFile, displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath, logDebug } from '@sourcegraph/cody-shared'
 import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
@@ -25,7 +25,7 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
         prompt = `${prompt} ${args.additionalInstruction}`
     }
 
-    const contextFiles: ContextFile[] = []
+    const contextFiles: ContextItem[] = []
 
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)

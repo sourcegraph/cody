@@ -1,4 +1,4 @@
-import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem, PreciseContext } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { TranscriptJSON } from '.'
@@ -13,7 +13,7 @@ export interface ChatButton {
 
 export interface ChatMessage extends Message {
     displayText?: string
-    contextFiles?: ContextFile[]
+    contextFiles?: ContextItem[]
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
     data?: any
@@ -62,7 +62,7 @@ export interface ChatHistory {
 
 export interface ChatInputHistory {
     inputText: string
-    inputContextFiles: ContextFile[]
+    inputContextFiles: ContextItem[]
 }
 
 export type ChatEventSource =

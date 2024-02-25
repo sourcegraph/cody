@@ -1,4 +1,4 @@
-import type { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import type { Message } from '../../sourcegraph-api'
@@ -93,7 +93,7 @@ export class Transcript {
         preamble: Message[] = [],
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
         onlyHumanMessages = false
-    ): Promise<{ prompt: Message[]; contextFiles: ContextFile[]; preciseContexts: PreciseContext[] }> {
+    ): Promise<{ prompt: Message[]; contextFiles: ContextItem[]; preciseContexts: PreciseContext[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
@@ -117,7 +117,7 @@ export class Transcript {
         )
         let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
         // Return what context fits in the window
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
         const preciseContexts: PreciseContext[] = []
         for (const msg of truncatedMessages) {
             const contextFile = (msg as ContextMessage).file
@@ -142,7 +142,7 @@ export class Transcript {
     }
 
     public setUsedContextFilesForLastInteraction(
-        contextFiles: ContextFile[],
+        contextFiles: ContextItem[],
         preciseContexts: PreciseContext[] = []
     ): void {
         const lastInteraction = this.interactions.at(-1)

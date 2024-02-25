@@ -1,4 +1,4 @@
-import { type ContextFile, logDebug, logError } from '@sourcegraph/cody-shared'
+import { type ContextItem, logDebug, logError } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -29,7 +29,7 @@ async function unitTestCommand(
 
     const editor = getEditor()?.active
     const document = editor?.document
-    const contextFiles: ContextFile[] = []
+    const contextFiles: ContextItem[] = []
 
     if (document) {
         try {

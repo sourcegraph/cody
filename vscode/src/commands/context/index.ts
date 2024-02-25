@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommandContext, type ContextFile, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { type CodyCommandContext, type ContextItem, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { Utils } from 'vscode-uri'
 import { logDebug } from '../../log'
@@ -20,9 +20,9 @@ import { getContextFileFromCursor } from './selection'
  *
  * The returned context files are filtered to remove any files ignored by Cody.
  */
-export const getCommandContextFiles = async (config: CodyCommandContext): Promise<ContextFile[]> => {
+export const getCommandContextFiles = async (config: CodyCommandContext): Promise<ContextItem[]> => {
     try {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri
 
         // Return immediately if context.none is true

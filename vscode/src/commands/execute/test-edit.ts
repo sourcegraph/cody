@@ -1,4 +1,4 @@
-import { type ContextFile, logError } from '@sourcegraph/cody-shared'
+import { type ContextItem, logError } from '@sourcegraph/cody-shared'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
@@ -37,7 +37,7 @@ export async function executeTestEditCommand(
 
         // Selection will be added by the edit command
         // Only add context from available test files
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         try {
             const files = await getContextFilesForUnitTestCommand(document.uri)

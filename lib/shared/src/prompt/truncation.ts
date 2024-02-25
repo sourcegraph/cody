@@ -1,4 +1,4 @@
-import type { ActiveTextEditorSelectionRange } from '../editor'
+import type { RangeData } from '../common/range'
 
 import { CHARS_PER_TOKEN } from './constants'
 
@@ -20,7 +20,7 @@ export function truncateText(text: string, maxTokens: number): string {
 export function truncateTextNearestLine(
     text: string,
     maxBytes: number
-): { truncated: string; range?: ActiveTextEditorSelectionRange } {
+): { truncated: string; range?: RangeData } {
     if (text.length <= maxBytes) {
         return { truncated: text }
     }
