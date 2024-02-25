@@ -220,6 +220,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={
                             !userHistory.filter(chat => chat.interactions.length)?.length
                         }
+                        vscodeAPI={vscodeAPI}
                     />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
