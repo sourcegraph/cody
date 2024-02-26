@@ -4,7 +4,6 @@ import {
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
-    FeatureFlag,
     PromptMixin,
     featureFlagProvider,
     graphqlClient,
@@ -200,9 +199,6 @@ const register = async (
         authProvider,
         contextProvider,
     }
-
-    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
-    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
     const chatManager = new ChatManager(
         {
