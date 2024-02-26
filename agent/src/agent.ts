@@ -9,8 +9,8 @@ import * as vscode from 'vscode'
 import {
     type BillingCategory,
     type BillingProduct,
-    convertGitCloneURLToCodebaseName,
     FeatureFlag,
+    ModelProvider,
     NoOpTelemetryRecorderProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
@@ -20,8 +20,6 @@ import {
     isRateLimitError,
     logDebug,
     logError,
-    ModelProvider,
-    NoOpTelemetryRecorderProvider,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -34,6 +32,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
@@ -59,18 +58,6 @@ import type {
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
-import type { CommandResult } from '../../vscode/src/main'
-import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
-import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import { AgentCodeLenses } from './AgentCodeLenses'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import type { PollyRequestError } from './cli/jsonrpc'
-import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
-import type { CompletionItemID } from '../../vscode/src/completions/logger'
-import type { Har } from '@pollyjs/persister'
-import levenshtein from 'js-levenshtein'
-import { ModelUsage } from '../../lib/shared/src/models/types'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -751,16 +738,12 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            let chatModel
-            if (modelID === null || modelID === undefined) {
-                const defaultModel = ModelProvider.get(ModelUsage.Chat).at(0)?.model
-                if (!defaultModel) {
-                    throw new Error('No default chat model found')
-                }
-                chatModel = new SimpleChatModel(defaultModel, [], chatID)
-            } else {
-                chatModel = new SimpleChatModel(modelID!, [], chatID)
+            const theModel = modelID ? modelID : ModelProvider.get(ModelUsage.Chat).at(0)?.model
+            if (!theModel) {
+                throw new Error('No default chat model found')
             }
+
+            const chatModel = new SimpleChatModel(modelID!, [], chatID)
             for (const message of messages) {
                 if (message.error) {
                     chatModel.addErrorAsBotMessage(message.error)

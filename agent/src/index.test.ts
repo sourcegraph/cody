@@ -319,7 +319,7 @@ describe('Agent', () => {
                 })
             )
 
-            // Step 2: Restoring chat session with null model.
+            // Step 2: Restoring chat session without model.
             const id2 = await client.request('chat/restore', {
                 messages: reply1.messages,
                 chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
@@ -337,7 +337,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                '" I don\'t have a specific model name or version. I was created by Anthropic using their conversational AI technology."',
+                '" I\'m an AI assistant created by Anthropic to be helpful, harmless, and honest. I don\'t have a specific model name or number."',
                 explainPollyError
             )
         }, 30_000)
