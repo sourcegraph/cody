@@ -220,14 +220,12 @@ export class LocalEmbeddingsController
             codyGatewayEndpoint: this.endpoint,
             indexPath: indexPath.fsPath,
         })
-        logDebug(
-            'LocalEmbeddingsController',
-            'spawnAndBindService',
-            'initialized',
-            initResult,
-            'token available?',
-            !!this.accessToken
-        )
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
+            verbose: {
+                initResult,
+                tokenAvailable: !!this.accessToken,
+            },
+        })
 
         if (this.accessToken) {
             // Set the initial access token

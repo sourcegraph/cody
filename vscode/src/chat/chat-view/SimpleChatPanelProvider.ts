@@ -846,6 +846,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         span: Span,
         firstTokenSpan: Span
     ): void {
+        logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
+            verbose: { requestID, prompt },
+        })
         let firstTokenMeasured = false
         function measureFirstToken() {
             if (firstTokenMeasured) {
