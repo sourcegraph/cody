@@ -24,7 +24,7 @@ object BrowserOpener {
     }
   }
 
-  private fun openInBrowser(project: Project?, uri: URI) {
+  fun openInBrowser(project: Project?, uri: URI) {
     try {
       BrowserUtil.browse(uri)
     } catch (e: Exception) {

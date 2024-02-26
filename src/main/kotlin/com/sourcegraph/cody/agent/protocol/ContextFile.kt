@@ -19,17 +19,28 @@ data class ContextFileFile(
 ) : ContextFile() {
   override val type: String = "file"
 
+  fun isLocal() = repoName == null
+
   fun getLinkActionText(projectPath: String?): String {
-    val intelliJRange = range?.intellijRange()
-    val localPath = uri.path.removePrefix(projectPath ?: "")
+    val theRange = if (isLocal()) range?.intellijRange() else range?.toSearchRange()
+    val path =
+        if (isLocal()) {
+          "@${uri.path.removePrefix(projectPath ?: "")}"
+        } else {
+          val repoCommitFile = uri.path.split("@", "/-/blob/")
+          if (repoCommitFile.size == 3) {
+            val repo = repoCommitFile[0].split("/").lastOrNull()
+            "$repo ${repoCommitFile[2]}"
+          } else uri.path
+        }
 
     return buildString {
-      append("@$localPath")
-      if (intelliJRange != null) {
-        if (intelliJRange.first != intelliJRange.second) {
-          append(":${intelliJRange.first}-${intelliJRange.second}")
+      append(path)
+      if (theRange != null) {
+        if (theRange.first < theRange.second) {
+          append(":${theRange.first}-${theRange.second}")
         } else {
-          append(":${intelliJRange.first}")
+          append(":${theRange.first}")
         }
       }
     }

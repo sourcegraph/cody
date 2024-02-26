@@ -57,7 +57,10 @@ class AddRepositoryDialog(
         DialogValidationUtils.custom(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-no-repo")) {
-              val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text)
+              val codebaseName =
+                  runCatching { convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text) }
+                      .getOrNull()
+              codebaseName ?: return@custom false
               val repo =
                   RemoteRepoUtils.getRepository(project, codebaseName)
                       .completeOnTimeout(null, 2, TimeUnit.SECONDS)
@@ -69,7 +72,9 @@ class AddRepositoryDialog(
         DialogValidationUtils.custom(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-repo-already-added")) {
-              val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text)
+              val codebaseName =
+                  runCatching { convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text) }
+                      .getOrNull()
               remoteContextNode
                   .children()
                   .toList()
