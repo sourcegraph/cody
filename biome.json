@@ -1,73 +1,92 @@
 {
-    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-    "organizeImports": {
-        "enabled": false
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "organizeImports": {
+    "enabled": true,
+    "ignore": ["dist/"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "nursery": {
+        "useExportType": "error",
+        "useImportType": "error",
+        "useGroupedTypeImport": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noUselessTernary": "error",
+        "noDuplicateJsonKeys": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "off",
+        "useTemplate": "off"
+      }
     },
-    "linter": {
-        "enabled": true,
-        "rules": {
-            "recommended": true,
-            "nursery": {
-                "useExportType": "error",
-                "useImportType": "error",
-                "useGroupedTypeImport": "error",
-                "noUnusedImports": "error",
-                "noUnusedPrivateClassMembers": "error",
-                "noInvalidUseBeforeDeclaration": "error",
-                "noUselessTernary": "error",
-                "noDuplicateJsonKeys": "error"
-            },
-            "suspicious": {
-                "noExplicitAny": "off"
-            },
-            "style": {
-                "noNonNullAssertion": "off",
-                "noParameterAssign": "off",
-                "useTemplate": "off"
-            }
-        },
-        "ignore": [
-            "node_modules/",
-            "out/",
-            "dist/",
-            "build/",
-            "**/test-data/**",
-            "vscode/src/testutils/vscode/",
-            "agent/bindings/**",
-            "agent/src/bfg/__tests__/**",
-            "agent/src/__tests__/**",
-            "agent/recordings/**",
-            "agent/src/cli/scip-codegen/scip.ts",
-            "/vitest.workspace.js",
-            "vitest.config.ts",
-            "vite.config.ts",
-            "__mocks__",
-            "*.json",
-            ".vscode-test/"
-        ]
-    },
+    "ignore": [
+      "node_modules/",
+      "out/",
+      "dist/",
+      "build/",
+      "**/test-data/**",
+      "vscode/src/testutils/vscode/",
+      "agent/bindings/**",
+      "agent/src/bfg/__tests__/**",
+      "agent/src/__tests__/**",
+      "agent/recordings/**",
+      "agent/src/cli/scip-codegen/scip.ts",
+      "/vitest.workspace.js",
+      "vitest.config.ts",
+      "vite.config.ts",
+      "__mocks__",
+      ".vscode-test/"
+    ]
+  },
+  "formatter": {
+    "ignore": [
+      "agent/bindings/**",
+      "node_modules/",
+      ".github/PULL_REQUEST_TEMPLATE.md",
+      "dist/**",
+      "vscode/.vscode-test/**",
+      "**/__snapshots__/**",
+      "**/test-data/**",
+      "vscode/src/testutils/vscode/**"
+    ],
+    "indentStyle": "space",
+    "indentWidth": 4,
+    "lineWidth": 105
+  },
+  "javascript": {
     "formatter": {
-        "ignore": [
-            "agent/bindings/**",
-            "node_modules/",
-            ".github/PULL_REQUEST_TEMPLATE.md",
-            "dist/**",
-            "vscode/.vscode-test/**",
-            "**/__snapshots__/**",
-            "**/test-data/**",
-            "vscode/src/testutils/vscode/**",
-            "*.json"
-        ],
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "lineWidth": 105
-    },
-    "javascript": {
-        "formatter": {
-            "semicolons": "asNeeded",
-            "quoteStyle": "single",
-            "arrowParentheses": "asNeeded",
-            "trailingComma": "es5"
-        }
+      "semicolons": "asNeeded",
+      "quoteStyle": "single",
+      "arrowParentheses": "asNeeded",
+      "trailingComma": "es5"
     }
+  },
+  "overrides": [
+    {
+      "include": [".vscode/*.json"],
+      "json": {
+        "parser": {
+          "allowComments": true,
+          "allowTrailingCommas": true
+        }
+      }
+    },
+    {
+      "include": ["*.json"],
+      "json": {
+        "formatter": {
+          "indentWidth": 2,
+          "indentStyle": "space"
+        }
+      }
+    }
+  ]
 }

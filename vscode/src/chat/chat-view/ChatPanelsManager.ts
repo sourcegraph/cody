@@ -1,13 +1,13 @@
 import * as vscode from 'vscode'
 
 import {
-    ModelProvider,
-    featureFlagProvider,
     type ChatClient,
+    type Configuration,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    type Configuration,
+    ModelProvider,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -19,18 +19,23 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { AuthStatus, ExtensionMessage } from '../protocol'
 
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 type ChatID = string
 
 export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
-    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable' | 'useContext'
+    | 'experimentalGuardrails'
+    | 'experimentalSymfContext'
+    | 'internalUnstable'
+    | 'useContext'
+    | 'experimentalChatContextRanker'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -66,6 +71,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
+        private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
         private readonly enterpriseContext: EnterpriseContextFactory | null,
         private readonly guardrails: Guardrails
@@ -224,6 +230,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
             enterpriseContext: isConsumer ? null : this.enterpriseContext,
             models,

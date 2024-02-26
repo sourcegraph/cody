@@ -12,7 +12,9 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
 
+import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
+import type { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
@@ -20,8 +22,7 @@ import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
 } from './services/open-telemetry/OpenTelemetryService.node'
-import { captureException, type SentryService } from './services/sentry/sentry'
-import type { CommandsProvider } from './commands/services/provider'
+import { type SentryService, captureException } from './services/sentry/sentry'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -32,6 +33,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
+    createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
     createCompletionsClient:

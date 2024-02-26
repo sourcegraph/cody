@@ -1,4 +1,4 @@
-import { Utils, type URI } from 'vscode-uri'
+import { type URI, Utils } from 'vscode-uri'
 
 import { uriBasename, uriExtname } from '@sourcegraph/cody-shared'
 

@@ -20,6 +20,7 @@ export function getAtMentionedInputText(
     queryEndsWithColon = false
 ): { newInput: string; newInputCaretPosition: number } | undefined {
     const inputBeforeCaret = formInput.slice(0, inputCaretPosition) || ''
+    const inputAfterCaret = formInput.slice(inputCaretPosition)
     const lastAtIndex = inputBeforeCaret.lastIndexOf('@')
     if (lastAtIndex < 0 || !formInput.trim()) {
         return undefined
@@ -27,15 +28,14 @@ export function getAtMentionedInputText(
 
     if (/:\d+(-)?(\d+)?( )?$/.test(inputBeforeCaret)) {
         // Add a space after inputBeforeCaret to formInput
-        const newInput = formInput.replace(inputBeforeCaret, `${inputBeforeCaret} `)
-        return { newInput, newInputCaretPosition: inputCaretPosition }
+        const newInput = `${inputBeforeCaret} ${inputAfterCaret.trimStart()}`
+        return { newInput, newInputCaretPosition: inputCaretPosition + 1 }
     }
 
     // Trims any existing @file text from the input.
     const inputPrefix = inputBeforeCaret.slice(0, lastAtIndex)
-    const afterCaret = formInput.slice(inputCaretPosition)
-    const spaceAfterCaret = afterCaret.indexOf(' ')
-    const inputSuffix = !spaceAfterCaret ? afterCaret : afterCaret.slice(spaceAfterCaret)
+    const spaceAfterCaret = inputAfterCaret.indexOf(' ')
+    const inputSuffix = !spaceAfterCaret ? inputAfterCaret : inputAfterCaret.slice(spaceAfterCaret)
     // Add empty space at the end to end the file matching process,
     // if the query ends with colon, add a colon instead as it's used for initial range selection.
     const colon = queryEndsWithColon ? ':' : ''

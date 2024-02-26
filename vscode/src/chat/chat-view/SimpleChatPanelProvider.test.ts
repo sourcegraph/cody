@@ -5,8 +5,8 @@ import type { Editor } from '@sourcegraph/cody-shared'
 
 import '../../testutils/vscode'
 
-import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 import type { ContextItem } from '../../prompt-builder/types'
+import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 
 describe('contextFilesToContextItems', () => {
     test('omits files that could not be read', async () => {

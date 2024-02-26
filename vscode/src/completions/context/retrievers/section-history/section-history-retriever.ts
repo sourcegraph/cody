@@ -6,8 +6,8 @@ import { isDefined } from '@sourcegraph/cody-shared'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import {
-    getGraphDocumentSections as defaultGetDocumentSections,
     type DocumentSection,
+    getGraphDocumentSections as defaultGetDocumentSections,
 } from '../../../../graph/lsp/sections'
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'

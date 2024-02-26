@@ -1,6 +1,6 @@
-import { workspace } from 'vscode'
 import { posix } from 'path'
-import { Utils, type URI } from 'vscode-uri'
+import { workspace } from 'vscode'
+import { type URI, Utils } from 'vscode-uri'
 
 /**
  * Returns a glob pattern to search for test files.

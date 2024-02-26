@@ -3,7 +3,7 @@ import { URI, Utils } from 'vscode-uri'
 
 import { testFileUri } from '../test/path-helpers'
 
-import { CODY_IGNORE_URI_PATH, ignoreFileEffectiveDirectory, IgnoreHelper } from './ignore-helper'
+import { CODY_IGNORE_URI_PATH, IgnoreHelper, ignoreFileEffectiveDirectory } from './ignore-helper'
 
 describe('IgnoreHelper', () => {
     let ignore: IgnoreHelper

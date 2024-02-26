@@ -8,10 +8,10 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
 import type { CompletionCallbacks, CompletionParameters } from './types'
-import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 

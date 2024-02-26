@@ -20,11 +20,8 @@ export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
  * @returns A Promise resolving to the decoded text contents of the file.
  */
 export async function getDocText(fileUri: URI): Promise<string> {
-    try {
-        const bytes = await vscode.workspace.fs.readFile(fileUri)
-        const decoded = new TextDecoder('utf-8').decode(bytes)
-        return decoded
-    } catch {
-        return ''
-    }
+    return vscode.workspace.fs.readFile(fileUri).then(
+        bytes => new TextDecoder('utf-8').decode(bytes),
+        error => ''
+    )
 }

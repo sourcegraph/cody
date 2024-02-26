@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
-import { isValidTestFile } from '../utils/test-commands'
 import { getDocumentSections } from '../../editor/utils/document-sections'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { isValidTestFile } from '../utils/test-commands'
 
 interface EditorCodeLens {
     name: string

@@ -1,12 +1,12 @@
 import * as child_process from 'child_process'
 import * as fs from 'fs'
-import * as fspromises from 'fs/promises'
 import path from 'path'
 import * as util from 'util'
+import * as fspromises from 'fs/promises'
 
 import envPaths from 'env-paths'
 import * as rimraf from 'rimraf'
-import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
+import { assert, afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
 import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'

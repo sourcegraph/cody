@@ -1,7 +1,7 @@
+import path from 'path/posix'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getSearchPatternForTestFiles } from './search-pattern'
-import path from 'path/posix'
 
 describe('getSearchPatternForTestFiles', () => {
     it('returns pattern searching current directory for test files with same extension', () => {

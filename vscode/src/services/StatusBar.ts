@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile, type Configuration } from '@sourcegraph/cody-shared'
+import { type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
-import { FeedbackOptionItems } from './FeedbackOptions'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
+import { FeedbackOptionItems } from './FeedbackOptions'
 
 interface StatusBarError {
     title: string

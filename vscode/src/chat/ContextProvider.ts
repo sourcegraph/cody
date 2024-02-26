@@ -22,9 +22,9 @@ import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
+import type { RemoteSearch } from '../context/remote-search'
 import type { SidebarChatWebview } from './chat-view/SidebarViewController'
 import type { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
-import type { RemoteSearch } from '../context/remote-search'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -43,6 +43,7 @@ export type Config = Pick<
     | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'internalUnstable'
+    | 'experimentalChatContextRanker'
 >
 
 enum ContextEvent {
@@ -64,7 +65,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined
-    private codebaseContext: CodebaseContext | undefined
 
     constructor(
         public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -103,13 +103,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         }
     }
 
-    public get context(): CodebaseContext {
-        if (!this.codebaseContext) {
-            throw new Error('retrieved codebase context before initialization')
-        }
-        return this.codebaseContext
-    }
-
     // Initializes context provider state. This blocks extension activation and
     // chat startup. Despite being called 'init', this is called multiple times:
     // - Once on extension activation.
@@ -137,7 +130,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         return Promise.resolve()
     }
 
-    public async forceUpdateCodebaseContext(): Promise<void> {
+    private async forceUpdateCodebaseContext(): Promise<void> {
         this.currentWorkspaceRoot = undefined
         return this.syncAuthStatus()
     }
@@ -172,8 +165,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             return
         }
 
-        this.codebaseContext = codebaseContext
-
         this.statusEmbeddings?.dispose()
         if (this.localEmbeddings) {
             this.statusEmbeddings = this.statusAggregator.addProvider(this.localEmbeddings)
@@ -188,20 +179,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         const authStatus = this.authProvider.getAuthStatus()
         // Update config to the latest one and fire configure change event to update external services
         const newConfig = await getFullConfig()
-        if (authStatus.siteVersion) {
-            // Update codebase context
-            const codebaseContext = await getCodebaseContext(
-                newConfig,
-                this.authProvider.getAuthStatus(),
-                this.symf,
-                this.editor,
-                this.localEmbeddings,
-                this.remoteSearch
-            )
-            if (codebaseContext) {
-                this.codebaseContext = codebaseContext
-            }
-        }
         await this.publishConfig()
         await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null

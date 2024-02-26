@@ -1,23 +1,23 @@
-import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
-import { getContextFileFromCursor } from '../context/selection'
-import { getContextFileFromCurrentFile } from '../context/current-file'
-import { type ExecuteChatArguments, executeChat } from './ask'
+import { type ContextFile, displayPath, logDebug } from '@sourcegraph/cody-shared'
 import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
-import type { CodyCommandArgs } from '../types'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { getContextFileFromCurrentFile } from '../context/current-file'
+import { getContextFileFromCursor } from '../context/selection'
+import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
  *
  * Context: Current selection and current file
  */
-export async function explainCommand(
+async function explainCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
 ): Promise<ExecuteChatArguments> {
@@ -37,6 +37,12 @@ export async function explainCommand(
 
     const currentFile = await getContextFileFromCurrentFile()
     contextFiles.push(...currentFile)
+
+    const cs = currentSelection[0] ?? currentFile[0]
+    if (cs) {
+        const range = cs.range && `:${cs.range.start.line + 1}-${cs.range.end.line + 1}`
+        prompt = prompt.replace('the selected code', `@${displayPath(cs.uri)}${range ?? ''} `)
+    }
 
     return {
         text: prompt,

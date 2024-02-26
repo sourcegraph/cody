@@ -1,29 +1,30 @@
 import * as vscode from 'vscode'
 
 import {
+    type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     isDotCom,
     isError,
-    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
+    type AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
+    isSourcegraphToken,
     networkErrorAuthStatus,
     unauthenticatedStatus,
-    type AuthStatus,
-    isSourcegraphToken,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
+import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
@@ -35,7 +36,6 @@ type Unsubscribe = () => void
 export class AuthProvider {
     private endpointHistory: string[] = []
 
-    private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
 
     private authStatus: AuthStatus = defaultAuthStatus
@@ -396,10 +396,7 @@ export class AuthProvider {
         }
 
         const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
-        newTokenCallbackUrl.searchParams.append(
-            'requestFrom',
-            this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
-        )
+        newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
         this.authStatus.endpoint = endpoint
         void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
     }

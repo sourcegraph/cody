@@ -1,5 +1,5 @@
-import * as vscode from 'vscode'
 import type { ContextFile } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 
 import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { getLabelForContextFile } from './utils'

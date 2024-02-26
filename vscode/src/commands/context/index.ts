@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile, type CodyCommandContext, type ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyCommandContext, type ContextFile, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../../log'
-import { getContextFileFromCursor } from './selection'
-import { getContextFileFromCurrentFile } from './current-file'
-import { getContextFileFromUri } from './file-path'
-import { getContextFileFromDirectory } from './directory'
-import { getContextFileFromTabs } from './open-tabs'
 import { Utils } from 'vscode-uri'
+import { logDebug } from '../../log'
+import { getContextFileFromCurrentFile } from './current-file'
+import { getContextFileFromDirectory } from './directory'
+import { getContextFileFromUri } from './file-path'
+import { getContextFileFromTabs } from './open-tabs'
+import { getContextFileFromCursor } from './selection'
 
 /**
  * Gets the context files for a Cody command based on the given configuration.

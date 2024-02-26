@@ -50,6 +50,7 @@ export interface Configuration {
     experimentalSymfContext: boolean
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
+    experimentalChatContextRanker: boolean | undefined
 
     /**
      * Unstable Features for internal testing only

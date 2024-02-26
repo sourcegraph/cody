@@ -5,7 +5,7 @@ import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-u
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import { type ParsedCompletion, parseCompletion } from './parse-completion'
 import { BRACKET_PAIR, type OpeningBracket } from './utils'
 
 interface CompletionContext {

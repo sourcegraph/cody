@@ -1,6 +1,6 @@
 import type { Polly } from '@pollyjs/core'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { startPollyRecording } from '../testutils/polly'
 

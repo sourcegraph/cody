@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vitest, type Mock } from 'vitest'
+import { type Mock, afterEach, beforeEach, describe, expect, it, vitest } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import { testFileUri } from '@sourcegraph/cody-shared'

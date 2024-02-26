@@ -1,7 +1,7 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 
-import type { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 import type { IgnoreHelper } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
+import type { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the

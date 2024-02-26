@@ -1,8 +1,8 @@
-import { isError, logDebug, graphqlClient } from '@sourcegraph/cody-shared'
+import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/repositoryHelpers'
-import { RemoteSearch } from './remote-search'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
+import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a

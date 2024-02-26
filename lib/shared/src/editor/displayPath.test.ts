@@ -4,12 +4,12 @@ import { URI } from 'vscode-uri'
 import { isWindows } from '../common/platform'
 
 import {
+    type DisplayPathEnvInfo,
     displayPath,
     displayPathBasename,
     displayPathDirname,
     setDisplayPathEnvInfo,
     uriHasPrefix,
-    type DisplayPathEnvInfo,
 } from './displayPath'
 
 const DISPLAY_PATH_TEST_CASES: {

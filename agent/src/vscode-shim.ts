@@ -23,6 +23,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import {
     CancellationTokenSource,
     ColorThemeKind,
@@ -40,17 +41,16 @@ import {
     ViewColumn,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
-import type { Agent } from './agent'
+import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
+import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
+import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
-import { AgentQuickPick } from './AgentQuickPick'
-import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP

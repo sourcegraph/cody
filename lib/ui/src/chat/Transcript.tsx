@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, ModelProvider, Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
 
 import type {
     ApiPostMessage,
@@ -14,9 +14,9 @@ import type {
     UserAccountInfo,
 } from '../Chat'
 
-import type { FileLinkProps } from './components/EnhancedContext'
 import type { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
+import type { FileLinkProps } from './components/EnhancedContext'
 
 import styles from './Transcript.module.css'
 

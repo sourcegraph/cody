@@ -1,5 +1,5 @@
+import { type ContextFile, displayPath } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
 
 /**

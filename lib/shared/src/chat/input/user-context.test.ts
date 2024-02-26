@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { verifyContextFilesFromInput } from './user-context'
 import type { ContextFileFile } from '../..'
+import { verifyContextFilesFromInput } from './user-context'
 
 describe('verifyContextFilesFromInput', () => {
     it('returns empty array if no contextFilesMap provided', () => {
@@ -85,7 +85,7 @@ describe('verifyContextFilesFromInput', () => {
         ])
     })
 
-    it('handles invalid line numbers gracefully', () => {
+    it('returns empty array for invalid line numbers', () => {
         const input = '@foo.ts:5-1'
         const contextFilesMap = new Map<string, ContextFileFile>([
             ['foo.ts', { uri: URI.file('foo.ts'), type: 'file' }],
@@ -93,7 +93,7 @@ describe('verifyContextFilesFromInput', () => {
 
         const contextFiles = verifyContextFilesFromInput(input, contextFilesMap)
 
-        expect(contextFiles).toEqual([{ uri: URI.file('foo.ts'), type: 'file' }])
+        expect(contextFiles).toEqual([])
     })
 
     it('sets range property even if only start line number is included', () => {

@@ -10,9 +10,10 @@ import { isRateLimitError, logError } from '@sourcegraph/cody-shared'
 
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
+import type * as contextRanking from './context-ranking-protocol'
 import type * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests & embeddings.Requests
+type Requests = bfg.Requests & agent.Requests & embeddings.Requests & contextRanking.Requests
 type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
 
 // This file is a standalone implementation of JSON-RPC for Node.js

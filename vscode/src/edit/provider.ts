@@ -2,10 +2,10 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    Typewriter,
     isAbortError,
     isDotCom,
     posixFilePaths,
-    Typewriter,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -16,17 +16,17 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
+import { workspace } from 'vscode'
+import { doesFileExist } from '../commands/utils/workspace-files'
+import { getContextWindowForModel } from '../models/utilts'
+import { CodyTaskState } from '../non-stop/utils'
+import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
-import { doesFileExist } from '../commands/utils/workspace-files'
-import { workspace } from 'vscode'
-import { CodyTaskState } from '../non-stop/utils'
-import { getContextWindowForModel } from '../models/utilts'
-import { telemetryService } from '../services/telemetry'
-import { countCode } from '../services/utils/code-count'
-import { telemetryRecorder } from '../services/telemetry-v2'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -34,8 +34,6 @@ interface EditProviderOptions extends EditManagerOptions {
 }
 
 export class EditProvider {
-    private cancelCompletionCallback: (() => void) | null = null
-
     private insertionResponse: string | null = null
     private insertionInProgress = false
     private insertionPromise: Promise<void> | null = null
@@ -97,7 +95,6 @@ export class EditProvider {
             }
 
             const abortController = new AbortController()
-            this.cancelCompletionCallback = () => abortController.abort()
             const stream = this.config.chat.chat(
                 messages,
                 { model, stopSequences },
@@ -142,10 +139,6 @@ export class EditProvider {
                 }
             }
         })
-    }
-
-    public abortEdit(): void {
-        this.cancelCompletionCallback?.()
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {

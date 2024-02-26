@@ -1,38 +1,53 @@
 import * as vscode from 'vscode'
 
 import {
+    type ChatEventSource,
+    ConfigFeaturesSingleton,
+    type ConfigurationWithAccessToken,
+    PromptMixin,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
     newPromptMixin,
-    PromptMixin,
     setLogger,
-    type ConfigurationWithAccessToken,
-    ConfigFeaturesSingleton,
-    type ChatEventSource,
 } from '@sourcegraph/cody-shared'
 
-import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
+import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
-    CODY_FEEDBACK_URL,
     type AuthStatus,
+    CODY_FEEDBACK_URL,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import type { CodyCommandArgs } from './commands/types'
+import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
+import {
+    executeDocCommand,
+    executeExplainCommand,
+    executeExplainOutput,
+    executeSmellCommand,
+    executeTestCaseEditCommand,
+    executeTestChatCommand,
+    executeTestEditCommand,
+} from './commands/execute'
+import type { CodyCommandArgs } from './commands/types'
+import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
+import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import type { FixupTask } from './non-stop/FixupTask'
+import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -41,28 +56,14 @@ import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
+import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
+import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { executeCodyCommand, setCommandController } from './commands/CommandsController'
-import { newCodyCommandArgs } from './commands/utils/get-commands'
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
-import type { FixupTask } from './non-stop/FixupTask'
-import { EnterpriseContextFactory } from './context/enterprise-context-factory'
-import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
-import {
-    executeExplainCommand,
-    executeTestEditCommand,
-    executeSmellCommand,
-    executeDocCommand,
-    executeTestChatCommand,
-    executeTestCaseEditCommand,
-    executeExplainOutput,
-} from './commands/execute'
-import { registerSidebarCommands } from './services/SidebarCommands'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -115,16 +116,12 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     const disposables: vscode.Disposable[] = []
-
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Set codyignore list on git extension startup
-    const gitAPI = await gitAPIinit()
-    if (gitAPI) {
-        disposables.push(gitAPI)
-    }
+    // Set codyignore list after git extension startup
+    disposables.push(await gitAPIinit())
 
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
@@ -170,6 +167,7 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform)
@@ -211,6 +209,7 @@ const register = async (
         chatClient,
         enterpriseContextFactory,
         localEmbeddings || null,
+        contextRanking || null,
         symfRunner || null,
         guardrails
     )
@@ -516,7 +515,8 @@ const register = async (
                 privateMetadata: { source },
             })
             void vscode.commands.executeCommand(command, [source])
-        })
+        }),
+        ...setUpCodyIgnore(initialConfig)
     )
 
     /**
