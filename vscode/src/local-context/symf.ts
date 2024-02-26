@@ -228,6 +228,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
+    /**
+     * Triggers indexing for a scopeDir.
+     *
+     * Options:
+     * - retryIfLastAttemptFailed: if the last indexing run ended in failure, we don't retry
+     *   unless this value is true.
+     * - ignoreExisting: if an index already exists, we don't reindex unless this value is true.
+     *   This should be set to true when we want to update an index because files have changed.
+     */
     public async ensureIndex(
         scopeDir: FileURI,
         options: IndexOptions = { retryIfLastAttemptFailed: false, ignoreExisting: false }
