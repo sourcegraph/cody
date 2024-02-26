@@ -254,7 +254,7 @@ Cody should "remember" your questions and chat responses, even after closing IDE
 
 Useful tips:
 
-* Transcripts in `runIde` mode are located in `build/idea-sandbox/config/options/cody_history.xml`.
+* Transcript data is located in `PROJECT_DIR/.idea/cody_history.xml`.
 * You can force-save transcript by using the `Ctrl` + `S`.
 
 Test ideas:
