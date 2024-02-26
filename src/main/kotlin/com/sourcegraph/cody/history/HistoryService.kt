@@ -3,11 +3,13 @@ package com.sourcegraph.cody.history
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.HistoryState
+import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.history.state.MessageState
 import java.time.LocalDateTime
 
@@ -23,16 +25,17 @@ class HistoryService(private val project: Project) :
   }
 
   @Synchronized
-  fun updateChatMessages(
+  fun updateChatLlmProvider(
       internalId: String,
-      chatMessages: List<ChatMessage>,
-      selectedModel: String?
+      chatModelProvider: ChatModelsResponse.ChatModelProvider
   ) {
-    selectedModel?.let {
-      val found = getOrCreateChat(internalId)
-      found.model = selectedModel
-    }
-    updateChatMessages(internalId, chatMessages)
+    val found = getOrCreateChat(internalId)
+    found.llm =
+        LLMState().also {
+          it.model = chatModelProvider.model
+          it.title = chatModelProvider.title
+          it.provider = chatModelProvider.provider
+        }
   }
 
   @Synchronized

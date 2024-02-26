@@ -6,11 +6,17 @@ import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.PromptPanel
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.WebviewMessage
+import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
 import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.chat.SessionId
+import com.sourcegraph.cody.config.CodyAccount.Companion.isEnterpriseAccount
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.ui.EnhancedContextPanel
-import com.sourcegraph.cody.ui.ChatModel
+import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.ui.ChatScrollPane
 import com.sourcegraph.cody.vscode.CancellationToken
 import java.awt.BorderLayout
@@ -20,11 +26,15 @@ import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
 
-class ChatPanel(project: Project, chatSession: ChatSession, modelFromState: ChatModel?) :
-    JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
+class ChatPanel(
+    val project: Project,
+    val chatSession: ChatSession,
+    chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?
+) : JPanel(VerticalFlowLayout(VerticalFlowLayout.CENTER, 0, 0, true, false)) {
 
   val promptPanel: PromptPanel = PromptPanel(project, chatSession)
-  val llmDropdown = LLMDropdown(project, modelFromState)
+  private val llmDropdown =
+      LLMDropdown(project, onSetSelectedItem = ::setLlmForAgentSession, chatModelProviderFromState)
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
 
@@ -73,9 +83,18 @@ class ChatPanel(project: Project, chatSession: ChatSession, modelFromState: Chat
   ) {
     if (messagesPanel.componentCount == 1) {
       llmDropdown.updateAfterFirstMessage()
+      promptPanel.updateEmptyTextAfterFirstMessage()
     }
-    promptPanel.updateEmptyTextAfterFirstMessage()
     messagesPanel.addOrUpdateMessage(message, index, shouldAddBlinkingCursor)
+  }
+
+  @RequiresEdt
+  fun addAllMessages(messages: List<ChatMessage>) {
+    if (messages.isNotEmpty()) {
+      llmDropdown.updateAfterFirstMessage()
+      promptPanel.updateEmptyTextAfterFirstMessage()
+    }
+    messages.forEach(messagesPanel::addChatMessageAsComponent)
   }
 
   @RequiresEdt
@@ -94,6 +113,24 @@ class ChatPanel(project: Project, chatSession: ChatSession, modelFromState: Chat
 
   fun updateWithSessionId(sessionId: SessionId) {
     llmDropdown.fetchAndUpdateModels(sessionId)
-    llmDropdown.sessionId.complete(sessionId)
+  }
+
+  private fun setLlmForAgentSession(chatModelProvider: ChatModelsResponse.ChatModelProvider) {
+    val sessionId = chatSession.getSessionId() ?: return
+
+    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+      if (activeAccountType.isEnterpriseAccount()) {
+        agent.server.webviewReceiveMessage(
+            WebviewReceiveMessageParams(sessionId, WebviewMessage(command = "chatModel")))
+      } else {
+        agent.server.webviewReceiveMessage(
+            WebviewReceiveMessageParams(
+                sessionId, WebviewMessage(command = "chatModel", model = chatModelProvider.model)))
+      }
+    }
+
+    HistoryService.getInstance(project)
+        .updateChatLlmProvider(chatSession.getInternalId(), chatModelProvider)
   }
 }

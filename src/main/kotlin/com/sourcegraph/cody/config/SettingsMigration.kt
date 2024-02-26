@@ -16,6 +16,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.*
 import java.util.concurrent.CompletableFuture
@@ -29,6 +30,7 @@ class SettingsMigration : Activity {
       migrateProjectSettings(project)
       migrateAccounts(project)
     }
+    RunOnceUtil.runOnceForProject(project, "CodyHistoryLlmMigration") { migrateLlms(project) }
     RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
     RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
       toggleCodyToolbarWindow(project)
@@ -82,6 +84,40 @@ class SettingsMigration : Activity {
     migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
     migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)
   }
+
+  private fun migrateLlms(project: Project) {
+    HistoryService.getInstance(project)
+        .state
+        .chats
+        .filter { it.llm == null }
+        .forEach {
+          val (model, provider, title) =
+              modelToProviderAndTitle.getOrDefault(it.model, Triple("", "Unknown", "Unknown"))
+          val llmState = LLMState()
+          llmState.provider = provider
+          llmState.title = title
+          llmState.model = model
+          it.llm = llmState
+          it.model = null
+        }
+  }
+
+  private val modelToProviderAndTitle =
+      mapOf(
+          "Claude 2.0 by Anthropic" to Triple("anthropic/claude-2.0", "Anthropic", "Claude 2.0"),
+          "Claude 2.1 Preview by Anthropic" to
+              Triple("anthropic/claude-2.1", "Anthropic", "Claude 2.1 Preview"),
+          "Claude Instant by Anthropic" to
+              Triple("anthropic/claude-instant-1.2", "Anthropic", "Claude Instant"),
+          "ChatGPT 3.5 Turbo by OpenAI" to
+              Triple("openai/gpt-3.5-turbo", "OpenAI", "GPT-3.5 Turbo"),
+          "ChatGPT 4 Turbo Preview by OpenAI" to
+              Triple("openai/gpt-4-1106-preview", "OpenAI", "GPT-4 Turbo Preview"),
+          "Mixtral 8x7B by Mistral" to
+              Triple(
+                  "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+                  "Mistral",
+                  "Mixtral 8x7B"))
 
   private fun migrateDotcomAccount(
       project: Project,

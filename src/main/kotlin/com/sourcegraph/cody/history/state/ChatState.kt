@@ -18,6 +18,8 @@ class ChatState : BaseState() {
 
   @get:OptionTag(tag = "model", nameAttribute = "") var model: String? by string()
 
+  @get:OptionTag(tag = "llm", nameAttribute = "") var llm: LLMState? by property()
+
   @get:OptionTag(tag = "accountId", nameAttribute = "") var accountId: String? by string()
 
   @get:OptionTag(tag = "enhancedContext", nameAttribute = "")

@@ -13,7 +13,7 @@ Use Sourcegraph’s AI assistant Cody and Sourcegraph Code Search directly from 
 
 ### Autocomplete: Cody writes code for you
 
-Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models for accuracy and performance.
+Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLMs for accuracy and performance.
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 

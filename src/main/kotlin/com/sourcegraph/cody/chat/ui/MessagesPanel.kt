@@ -57,7 +57,7 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
   }
 
   @RequiresEdt
-  private fun addChatMessageAsComponent(message: ChatMessage) {
+  fun addChatMessageAsComponent(message: ChatMessage) {
     val singleMessagePanel =
         SingleMessagePanel(
             message, project, this, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, chatSession)
