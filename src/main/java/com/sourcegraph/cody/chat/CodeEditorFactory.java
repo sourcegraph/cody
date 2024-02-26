@@ -16,7 +16,6 @@ import com.intellij.openapi.editor.event.EditorMouseMotionListener;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
 import com.sourcegraph.cody.chat.ui.CodeEditorButtons;
@@ -31,8 +30,6 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import org.jetbrains.annotations.NotNull;
@@ -181,16 +178,10 @@ public class CodeEditorFactory {
       timer.setRepeats(false);
       timer.start();
 
-      Optional<@NotNull Project> project =
-          Arrays.stream(ProjectManager.getInstance().getOpenProjects()).findFirst();
-      if (project.isEmpty()) return;
-
       lastCopiedText = text;
       ApplicationManager.getApplication()
           .executeOnPooledThread(
-              () ->
-                  GraphQlLogger.logCodeGenerationEvent(
-                      project.get(), "copyButton", "clicked", text));
+              () -> GraphQlLogger.logCodeGenerationEvent(project, "copyButton", "clicked", text));
     };
   }
 

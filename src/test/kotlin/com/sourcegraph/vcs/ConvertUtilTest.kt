@@ -5,14 +5,14 @@ import junit.framework.TestCase
 
 class ConvertUtilTest : TestCase() {
 
-  fun `test conversion Azure DevOps UR`() {
+  fun `test conversion Azure DevOps URL`() {
     assertEquals(
         "dev.azure.com/organization/project/repository",
         convertGitCloneURLToCodebaseNameOrError(
             "https://dev.azure.com/organization/project/_git/repository"))
   }
 
-  fun `test conversion GitHub SSH UR`() {
+  fun `test conversion GitHub SSH URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git"))
@@ -38,33 +38,33 @@ class ConvertUtilTest : TestCase() {
         convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph"))
   }
 
-  fun `test conversion GitHub HTTPS UR`() {
+  fun `test conversion GitHub HTTPS URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError("https://github.com/sourcegraph/sourcegraph"))
   }
 
-  fun `test conversion Bitbucket HTTPS UR`() {
+  fun `test conversion Bitbucket HTTPS URL`() {
     assertEquals(
         "bitbucket.org/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError(
             "https://username@bitbucket.org/sourcegraph/sourcegraph.git"))
   }
 
-  fun `test conversion Bitbucket SSH UR`() {
+  fun `test conversion Bitbucket SSH URL`() {
     assertEquals(
         "bitbucket.sgdev.org/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError(
             "git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git"))
   }
 
-  fun `test conversion GitLab SSH UR`() {
+  fun `test conversion GitLab SSH URL`() {
     assertEquals(
         "gitlab.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError("git@gitlab.com:sourcegraph/sourcegraph.git"))
   }
 
-  fun `test conversion GitLab HTTPS UR`() {
+  fun `test conversion GitLab HTTPS URL`() {
 
     assertEquals(
         "gitlab.com/sourcegraph/sourcegraph",
@@ -77,16 +77,22 @@ class ConvertUtilTest : TestCase() {
         convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git"))
   }
 
-  fun `test conversion Eriks SSH Alias UR`() {
+  fun `test conversion Eriks SSH Alias URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError("github:sourcegraph/sourcegraph"))
   }
 
-  fun `test conversion HTTP UR`() {
+  fun `test conversion HTTP URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError("http://github.com/sourcegraph/sourcegraph"))
+  }
+
+  fun `test conversion URL`() {
+    assertEquals(
+        "github.com/sourcegraph/sourcegraph",
+        convertGitCloneURLToCodebaseNameOrError("github.com/sourcegraph/sourcegraph"))
   }
 
   private fun invalidConversion() = convertGitCloneURLToCodebaseNameOrError("invalid")

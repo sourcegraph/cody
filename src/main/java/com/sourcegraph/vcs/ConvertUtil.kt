@@ -11,7 +11,10 @@ fun convertGitCloneURLToCodebaseNameOrError(cloneURL: String): String {
     return "$host/$owner/${repo.replace(".git$".toRegex(), "")}"
   }
 
-  val uri = URI(cloneURL)
+  var uri = URI(cloneURL)
+  if (uri.scheme == null) {
+    uri = URI("http://$cloneURL")
+  }
 
   // Handle Azure DevOps URLs
   if (uri.host?.contains("dev.azure") == true && !uri.path.isNullOrEmpty()) {
