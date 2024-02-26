@@ -35,13 +35,13 @@ class AccordionSection(title: String) : JPanel() {
     add(contentPanel, BorderLayout.CENTER)
   }
 
-  private fun createToggleButtonHTML(title: String, isCollapsed: Boolean): String {
-    val symbol =
-        if (isCollapsed) "&#9658;" else "&#9660;" // Unicode entities for right and down arrows
-    return ("<html><body style='text-align:left'>" +
-        title +
-        " <span style='float:right; color:gray'>" +
-        symbol +
-        "</span></body></html>")
-  }
+  private fun createToggleButtonHTML(title: String, isCollapsed: Boolean): String =
+      """<html>
+          <body style='text-align:left'>
+            <span style='color:gray'>
+              ${if (isCollapsed) "&#9654;" else "&#9660;"}
+            </span>
+            &nbsp;$title
+          </body>
+        </html>"""
 }
