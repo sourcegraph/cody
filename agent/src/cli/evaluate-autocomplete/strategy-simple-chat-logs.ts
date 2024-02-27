@@ -1,7 +1,6 @@
-import * as fspromises from 'fs/promises'
 import * as path from 'path'
-import { Mutex } from 'async-mutex';
-
+import { Mutex } from 'async-mutex'
+import * as fspromises from 'fs/promises'
 
 export class StrategySimpleChatLogs {
     private logFilePath: string
@@ -9,31 +8,31 @@ export class StrategySimpleChatLogs {
     private logMutex: Mutex
 
     constructor(base_path: string) {
-        this.logFilePath = `${base_path}/${new Date().toISOString()}/file.log`;
-        this.logFilePathLatest = `${base_path}/latest/file.log`;
-        this.logMutex = new Mutex();
+        this.logFilePath = `${base_path}/${new Date().toISOString()}/file.log`
+        this.logFilePathLatest = `${base_path}/latest/file.log`
+        this.logMutex = new Mutex()
     }
 
     async initialize() {
-        await this.createLogFile();
-        await this.clearLogFilePathLatest();
+        await this.createLogFile()
+        await this.clearLogFilePathLatest()
     }
 
     clearLogFilePathLatest = async (): Promise<void> => {
         try {
-            await fspromises.mkdir(path.dirname(this.logFilePathLatest), { recursive: true });
-            await fspromises.writeFile(this.logFilePathLatest, '');
+            await fspromises.mkdir(path.dirname(this.logFilePathLatest), { recursive: true })
+            await fspromises.writeFile(this.logFilePathLatest, '')
         } catch (error) {
-            console.error('Error clearing log file:', error);
+            console.error('Error clearing log file:', error)
         }
     }
 
     createLogFile = async (): Promise<void> => {
         try {
-            await fspromises.mkdir(path.dirname(this.logFilePath), { recursive: true });
-            await fspromises.writeFile(this.logFilePath, '');
+            await fspromises.mkdir(path.dirname(this.logFilePath), { recursive: true })
+            await fspromises.writeFile(this.logFilePath, '')
         } catch (error) {
-            console.error('Error creating log file:', error);
+            console.error('Error creating log file:', error)
         }
     }
 
@@ -49,9 +48,9 @@ export class StrategySimpleChatLogs {
                 console.log(log)
                 await fspromises.appendFile(this.logFilePath, log + '\n')
                 await fspromises.appendFile(this.logFilePathLatest, log + '\n')
-            });
+            })
         } catch (error) {
-            console.error('Error writing log:', error);
+            console.error('Error writing log:', error)
         }
     }
 }

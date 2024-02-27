@@ -2,7 +2,7 @@
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
