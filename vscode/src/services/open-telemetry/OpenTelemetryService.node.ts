@@ -1,8 +1,9 @@
 import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
-import { NodeSDK } from '@opentelemetry/sdk-node'
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
@@ -21,7 +22,9 @@ export type OpenTelemetryServiceConfig = Pick<
 >
 
 export class OpenTelemetryService {
-    private sdk: NodeSDK | undefined
+    private tracerProvider?: NodeTracerProvider
+    private unloadInstrumentations?: () => void
+
     private lastTraceUrl: string | undefined
     // We use a single promise object that we chain on to, to avoid multiple reconfigure calls to
     // be run in parallel
@@ -51,27 +54,40 @@ export class OpenTelemetryService {
         }
         this.lastTraceUrl = traceUrl
 
-        const logLevel = this.config.debugVerbose ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR
+        const logLevel = this.config.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
         diag.setLogger(new DiagConsoleLogger(), logLevel)
 
-        await this.sdk?.shutdown()
-        this.sdk = undefined
+        await this.reset()
 
-        this.sdk = new NodeSDK({
+        this.unloadInstrumentations = registerInstrumentations({
+            instrumentations: [new HttpInstrumentation()],
+        })
+        this.configureTracerProvider(traceUrl)
+    }
+
+    public configureTracerProvider(traceUrl: string): void {
+        this.tracerProvider = new NodeTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
                 [SemanticResourceAttributes.SERVICE_VERSION]: version,
             }),
-            instrumentations: [new HttpInstrumentation()],
-            traceExporter: new OTLPTraceExporter({ url: traceUrl }),
-
-            // Disable default process logging. We do not care about the VS Code extension process
-            autoDetectResources: false,
-
-            ...((process.env.NODE_ENV === 'development' || this.config.debugVerbose) && {
-                spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
-            }),
         })
-        this.sdk.start()
+
+        // Add the default tracer exporter used in production.
+        this.tracerProvider.addSpanProcessor(
+            new BatchSpanProcessor(new OTLPTraceExporter({ url: traceUrl }))
+        )
+
+        // Add the console exporter used in development for verbose logging and debugging.
+        if (process.env.NODE_ENV === 'development' || this.config.debugVerbose) {
+            this.tracerProvider.addSpanProcessor(new BatchSpanProcessor(new ConsoleBatchSpanExporter()))
+        }
+
+        this.tracerProvider.register()
+    }
+
+    public async reset(): Promise<void> {
+        await this.tracerProvider?.shutdown()
+        this.unloadInstrumentations?.()
     }
 }
