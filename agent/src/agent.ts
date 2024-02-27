@@ -10,6 +10,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
+    ModelProvider,
     NoOpTelemetryRecorderProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
@@ -31,6 +32,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
@@ -736,7 +738,12 @@ export class Agent extends MessageHandler {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const chatModel = new SimpleChatModel(modelID, [], chatID)
+            const theModel = modelID ? modelID : ModelProvider.get(ModelUsage.Chat).at(0)?.model
+            if (!theModel) {
+                throw new Error('No default chat model found')
+            }
+
+            const chatModel = new SimpleChatModel(modelID!, [], chatID)
             for (const message of messages) {
                 if (message.error) {
                     chatModel.addErrorAsBotMessage(message.error)

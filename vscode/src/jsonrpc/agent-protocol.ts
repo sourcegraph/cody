@@ -47,7 +47,7 @@ export type ClientRequests = {
     // `type: 'transcript'` ExtensionMessage that is sent via
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
-    'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
+    'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ModelProvider[] }]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
