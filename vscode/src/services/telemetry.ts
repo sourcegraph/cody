@@ -105,8 +105,13 @@ function logEvent(
             eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''
         }`,
         eventName,
-        getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
-        JSON.stringify({ properties, opts })
+        {
+            verbose: {
+                details: getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
+                properties,
+                opts,
+            },
+        }
     )
     if (!eventLogger || !globalAnonymousUserID) {
         return

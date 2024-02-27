@@ -41,8 +41,6 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    // A feature flag to test potential chat experiments. No functionality is gated by it.
-    CodyChatMockTest = 'cody-chat-mock-test',
     // When enabled, fuses embeddings and symf context for chat.
     CodyChatFusedContext = 'cody-chat-fused-context',
 

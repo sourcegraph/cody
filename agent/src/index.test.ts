@@ -304,6 +304,44 @@ describe('Agent', () => {
             )
         }, 30_000)
 
+        it('chat/restore (With null model)', async () => {
+            // Step 1: Create a chat session asking what model is used.
+            const id1 = await client.request('chat/new', null)
+            const reply1 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id1,
+                    message: {
+                        command: 'submit',
+                        text: 'What model are you?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+
+            // Step 2: Restoring chat session without model.
+            const id2 = await client.request('chat/restore', {
+                messages: reply1.messages,
+                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
+            })
+            // Step 2: Asking again what model is used
+            const reply2 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id2,
+                    message: {
+                        command: 'submit',
+                        text: 'What model are you?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+            expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
+                '" I\'m an AI assistant created by Anthropic to be helpful, harmless, and honest. I don\'t have a specific model name or version."',
+                explainPollyError
+            )
+        }, 30_000)
+
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(animalUri)
             await client.request('command/execute', {
