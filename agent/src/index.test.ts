@@ -1112,7 +1112,7 @@ describe('Agent', () => {
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
                 `
-              "/** hello */
+              "/* hello */
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1142,9 +1142,10 @@ describe('Agent', () => {
                   name: string
                   makeAnimalSound(): string
                   isMammal: boolean
-                  logName(): void
+                  printName() {
+                    console.log(this.name)
+                  }
               }
-
               /* SELECTION_END */
 
               "
