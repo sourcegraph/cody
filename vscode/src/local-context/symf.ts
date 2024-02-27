@@ -283,7 +283,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     timeout: 1000 * 30, // timeout in 30 seconds
                 }
             )
-            logDebug('[Hitesh Custom]: symf stdout is ', stdout, 'with params index dir: ', indexDir, ' keywords:', keywordQuery)
+            logDebug(
+                '[Hitesh Custom]: symf stdout is ',
+                stdout,
+                'with params index dir: ',
+                indexDir,
+                ' keywords:',
+                keywordQuery
+            )
             return stdout
         } catch (error) {
             throw toSymfError(error)
@@ -630,7 +637,7 @@ class RWLock {
 
 function toSymfError(error: unknown): Error {
     logDebug('[Hitesh Custom]: got error in symf ', JSON.stringify(error))
-    
+
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {

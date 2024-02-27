@@ -6,18 +6,18 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { Semaphore } from 'async-mutex'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateSimpleChatStrategy } from './strategy-simple-chat'
-import { Semaphore } from 'async-mutex';
 import { StrategySimpleChatLogs } from './strategy-simple-chat-logs'
 
 export interface SimpleChatEvalConfig {
-    question: string,
-    ground_truth_answer: string,
-    commit: string,
+    question: string
+    ground_truth_answer: string
+    commit: string
     open_files?: string[]
 }
 
@@ -131,7 +131,7 @@ async function loadEvaluationConfig(
                 snapshotDirectory,
                 codyAgentBinary,
                 fixture,
-                csvPath: path.join(snapshotDirectory, 'autocomplete.csv')
+                csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
             })
         }
     }
@@ -285,8 +285,8 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .action(async (options: EvaluateAutocompleteOptions) => {
         // const concurrencyLimit = 10
         // const semaphore = new Semaphore(concurrencyLimit);
-        
-        const testOptions = await loadEvaluationConfig(options);
+
+        const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
             testOptions =>
                 matchesGlobPatterns(
@@ -299,10 +299,10 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                     options.excludeFixture,
                     testOptions.fixture.name
                 )
-        );
-        
+        )
+
         const concurrencyLimit = 1
-        const semaphore = new Semaphore(concurrencyLimit);
+        const semaphore = new Semaphore(concurrencyLimit)
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;
         // for(const workspace of workspacesToRun) {
@@ -311,17 +311,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         //     await evaluateWorkspace(workspace);
         //     remainingWorkspaces-=1
         // }
-        await Promise.all(workspacesToRun.map(async (workspace) => {
-            const [_, release] = await semaphore.acquire();
-            try {
-                await evaluateWorkspace(workspace);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Sleep for 1 second
-            } finally {
-                release();
-            }
-        }));
+        await Promise.all(
+            workspacesToRun.map(async workspace => {
+                const [_, release] = await semaphore.acquire()
+                try {
+                    await evaluateWorkspace(workspace)
+                    await new Promise(resolve => setTimeout(resolve, 1000)) // Sleep for 1 second
+                } finally {
+                    release()
+                }
+            })
+        )
     })
-
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
     const base_path = path.join(options.workspace, options.fixture.name)
@@ -360,7 +361,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             await evaluateBfgStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
-        } else if (options.fixture.strategy==EvaluationStrategy.SimpleChat) {
+        } else if (options.fixture.strategy === EvaluationStrategy.SimpleChat) {
             await evaluateSimpleChatStrategy(client, options)
         }
     } catch (error) {
