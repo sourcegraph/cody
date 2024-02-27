@@ -1,8 +1,8 @@
 import {
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
-    truncateText,
     logError,
+    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'

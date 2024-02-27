@@ -1,8 +1,8 @@
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
 import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import { forkSignal, sleep } from './utils'
-import type * as vscode from 'vscode'
 
 // The throttle timeout is relatively high so that we do not keep a lot of concurrent requests. 250
 // is chosen as it will keep about 2 requests concurrent with our current median latency of about

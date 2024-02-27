@@ -12,16 +12,6 @@ export enum CodyTaskState {
     pending = 9,
 }
 
-export function isTerminalCodyTaskState(state: CodyTaskState): boolean {
-    switch (state) {
-        case CodyTaskState.finished:
-        case CodyTaskState.error:
-            return true
-        default:
-            return false
-    }
-}
-
 /**
  * Calculates the minimum distance from the given position to the start or end of the provided range.
  */

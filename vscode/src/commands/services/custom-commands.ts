@@ -1,22 +1,22 @@
+import os from 'os'
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
-import os from 'os'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
-import { ConfigFiles, type CodyCommandsFile } from '../types'
-import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
-import { showNewCustomCommandMenu } from '../menus'
-import { URI, Utils } from 'vscode-uri'
-import { buildCodyCommandMap } from '../utils/get-commands'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
-import { getConfiguration } from '../../configuration'
 import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
-import { getDocText } from '../utils/workspace-files'
+import { URI, Utils } from 'vscode-uri'
+import { getConfiguration } from '../../configuration'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import { getCommandTreeItems } from '../../services/tree-views/commands'
+import { showNewCustomCommandMenu } from '../menus'
+import { type CodyCommandsFile, ConfigFiles } from '../types'
+import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
+import { buildCodyCommandMap } from '../utils/get-commands'
+import { getDocText } from '../utils/workspace-files'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 const isMacOS = isMac()
@@ -64,10 +64,6 @@ export class CustomCommandsManager implements vscode.Disposable {
                 this.configFileActions(type, 'delete')
             )
         )
-    }
-
-    public getCommands(): [string, CodyCommand][] {
-        return [...this.customCommandsMap].sort((a, b) => a[0].localeCompare(b[0]))
     }
 
     /**
@@ -311,44 +307,4 @@ export class CustomCommandsManager implements vscode.Disposable {
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
     await vscode.env.openExternal(vscode.Uri.parse(uri))
-}
-
-// TODO (bee) Migrate cody.json to new config file location
-// Rename the old config files to the new location
-export async function migrateCommandFiles(): Promise<void> {
-    // WORKSPACE
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
-    if (workspaceRoot) {
-        const oldWsPath = Utils.joinPath(workspaceRoot, ConfigFiles.VSCODE)
-        const newWSPath = Utils.joinPath(workspaceRoot, ConfigFiles.COMMAND)
-        await migrateContent(oldWsPath, newWSPath).then(
-            () => {},
-            error => undefined
-        )
-    }
-
-    // USER
-    if (userHomePath) {
-        const oldUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
-        const newUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.COMMAND)
-        await migrateContent(oldUserPath, newUserPath).then(
-            () => {},
-            error => undefined
-        )
-    }
-}
-
-async function migrateContent(oldFile: vscode.Uri, newFile: vscode.Uri): Promise<void> {
-    const oldUserContent = await getDocText(newFile)
-    if (!oldUserContent.trim()) {
-        return
-    }
-
-    const oldContent = await getDocText(oldFile)
-    const workspaceEditor = new vscode.WorkspaceEdit()
-    workspaceEditor.createFile(newFile, { ignoreIfExists: true })
-    workspaceEditor.insert(newFile, new vscode.Position(0, 0), JSON.stringify(oldContent, null, 2))
-    await vscode.workspace.applyEdit(workspaceEditor)
-    workspaceEditor.deleteFile(oldFile, { ignoreIfNotExists: true })
-    await vscode.workspace.openTextDocument(newFile).then(doc => doc.save())
 }

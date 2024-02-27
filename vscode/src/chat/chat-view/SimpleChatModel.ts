@@ -1,20 +1,20 @@
 import { findLast } from 'lodash'
 
 import {
-    errorToChatError,
-    reformatBotMessageForChat,
     type ChatError,
     type ChatMessage,
     type InteractionJSON,
     type InteractionMessage,
     type Message,
     type TranscriptJSON,
+    errorToChatError,
     isCodyIgnoredFile,
+    reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 
-import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 import type { Repo } from '../../context/repo-fetcher'
 import type { ContextItem } from '../../prompt-builder/types'
+import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
 
 /**
  * Interface for a chat message with additional context.
@@ -138,19 +138,6 @@ export class SimpleChatModel {
 
         // Removes everything from the index to the last element
         this.messagesWithContext.splice(index)
-    }
-
-    public updateLastHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        const lastMessage = this.messagesWithContext.at(-1)
-        if (!lastMessage) {
-            return
-        }
-        if (lastMessage.message.speaker === 'human') {
-            this.messagesWithContext.pop()
-        } else if (lastMessage.message.speaker === 'assistant') {
-            this.messagesWithContext.splice(-2, 2)
-        }
-        this.addHumanMessage(message, displayText)
     }
 
     public getMessagesWithContext(): MessageWithContext[] {

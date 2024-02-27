@@ -1,9 +1,9 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
+import type { URI } from 'vscode-uri'
+import { getSearchPatternForTestFiles } from '../utils/search-pattern'
 import { isValidTestFile } from '../utils/test-commands'
 import { getWorkspaceFilesContext } from './workspace'
-import { getSearchPatternForTestFiles } from '../utils/search-pattern'
-import type { URI } from 'vscode-uri'
 
 /**
  * Gets context files related to the given test file.

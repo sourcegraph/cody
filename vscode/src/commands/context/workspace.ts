@@ -1,7 +1,7 @@
-import { logError, type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextFile, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { CancellationTokenSource, workspace } from 'vscode'
-import { getDocText } from '../utils/workspace-files'
 import { createContextFile } from '../utils/create-context-file'
+import { getDocText } from '../utils/workspace-files'
 
 /**
  * Wrap the vscode findVSCodeFiles function to return context files.

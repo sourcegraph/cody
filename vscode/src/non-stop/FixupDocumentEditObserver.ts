@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import type { Edit, Position, Range } from './diff'
 import type { FixupFileCollection, FixupTextChanged } from './roles'
-import { updateFixedRange, updateRangeMultipleChanges, type TextChange } from './tracked-range'
+import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
 
 // This does some thunking to manage the two range types: diff ranges, and

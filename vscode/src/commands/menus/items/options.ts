@@ -1,9 +1,9 @@
 import { CodyCommandMenuItems } from '../..'
 import type { CommandMenuItem } from '../types'
 
-export const ASK_QUESTION_COMMAND = CodyCommandMenuItems[0]
+const ASK_QUESTION_COMMAND = CodyCommandMenuItems[0]
 
-export const EDIT_COMMAND = CodyCommandMenuItems[1]
+const EDIT_COMMAND = CodyCommandMenuItems[1]
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {

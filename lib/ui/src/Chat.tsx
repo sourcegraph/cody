@@ -4,26 +4,26 @@ import { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
-    isDefined,
     type ChatButton,
     type ChatInputHistory,
     type ChatMessage,
-    type ModelProvider,
     type CodyCommand,
     type ContextFile,
     type Guardrails,
-    getContextFileDisplayText,
+    type ModelProvider,
     getAtMentionQuery,
     getAtMentionedInputText,
+    getContextFileDisplayText,
     isAtMention,
     isAtRange,
+    isDefined,
 } from '@sourcegraph/cody-shared'
 
 import type { CodeBlockMeta } from './chat/CodeBlocks'
-import type { FileLinkProps } from './chat/components/EnhancedContext'
 import type { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import type { TranscriptItemClassNames } from './chat/TranscriptItem'
+import type { FileLinkProps } from './chat/components/EnhancedContext'
 
 import styles from './Chat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
@@ -72,7 +72,6 @@ interface ChatProps extends ChatClassNames {
         chatCommands: [string, CodyCommand][],
         input: string
     ) => [string, CodyCommand][]
-    ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     setContextSelection: (context: ContextFile[] | null) => void
@@ -157,17 +156,8 @@ export interface CodeBlockActionsProps {
     insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
 }
 
-export interface ChatCommandsProps {
-    setFormInput: (input: string) => void
-    setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyCommand][] | null
-    selectedChatCommand?: number
-    onSubmit: (input: string, inputType: WebviewChatSubmitType) => void
-}
-
 export interface UserContextSelectorProps {
     onSelected: (context: ContextFile, queryEndsWithColon?: boolean) => void
-    formInput: string
     contextSelection?: ContextFile[]
     selected?: number
     onSubmit: (input: string, inputType: 'user') => void
@@ -866,7 +856,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 selected={selectedChatContext}
                                 onSelected={onChatContextSelected}
                                 contextSelection={contextSelection}
-                                formInput={'@' + currentChatContextQuery}
                                 onSubmit={onSubmit}
                                 setSelectedChatContext={setSelectedChatContext}
                                 contextQuery={currentChatContextQuery ?? ''}

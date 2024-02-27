@@ -1,8 +1,8 @@
-import * as vscode from 'vscode'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
+import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
-import { PromptBuilder } from '../../prompt-builder'
 
 describe('DefaultPrompter', () => {
     afterEach(() => {

@@ -1,18 +1,18 @@
-import * as vscode from 'vscode'
 import assert from 'assert'
 import { execSync } from 'child_process'
-import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import fspromises from 'fs/promises'
+import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
-import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
+import { isNode16 } from './isNode16'
 import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
 
 const explainPollyError = `
@@ -300,6 +300,44 @@ describe('Agent', () => {
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
                 '" You told me your name is Lars Monsen."',
+                explainPollyError
+            )
+        }, 30_000)
+
+        it('chat/restore (With null model)', async () => {
+            // Step 1: Create a chat session asking what model is used.
+            const id1 = await client.request('chat/new', null)
+            const reply1 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id1,
+                    message: {
+                        command: 'submit',
+                        text: 'What model are you?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+
+            // Step 2: Restoring chat session without model.
+            const id2 = await client.request('chat/restore', {
+                messages: reply1.messages,
+                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
+            })
+            // Step 2: Asking again what model is used
+            const reply2 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id2,
+                    message: {
+                        command: 'submit',
+                        text: 'What model are you?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+            expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
+                '" I\'m an AI assistant created by Anthropic to be helpful, harmless, and honest. I don\'t have a specific model name or number."',
                 explainPollyError
             )
         }, 30_000)

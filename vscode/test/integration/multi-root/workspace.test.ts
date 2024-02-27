@@ -1,6 +1,6 @@
 import * as assert from 'assert'
-import * as vscode from 'vscode'
 import * as path from 'node:path'
+import * as vscode from 'vscode'
 
 suite('Multi-root Workspace', () => {
     test('was correctly loaded', async () => {

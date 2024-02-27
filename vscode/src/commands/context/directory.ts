@@ -1,13 +1,13 @@
 import {
-    truncateText,
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
     logError,
+    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Gets context messages for the files in the given directory.

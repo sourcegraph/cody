@@ -6,24 +6,24 @@ import { FeatureFlag, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shar
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
+import { logDebug } from '../log'
+import { completionProviderConfig } from './completion-provider-config'
 import type { DocumentContext } from './get-current-doc-context'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
+import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import type { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import { lines, removeIndentation } from './text-processing'
 import {
-    processInlineCompletions,
     type InlineCompletionItemWithAnalytics,
+    processInlineCompletions,
 } from './text-processing/process-inline-completions'
 import type { ContextSnippet } from './types'
-import { lines, removeIndentation } from './text-processing'
-import { logDebug } from '../log'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import { completionProviderConfig } from './completion-provider-config'
 import { forkSignal } from './utils'
 
 export interface RequestParams {

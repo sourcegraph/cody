@@ -3,14 +3,14 @@ import * as vscode from 'vscode'
 
 import {
     type ContextFileFile,
+    MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
     uriBasename,
-    MAX_CURRENT_FILE_TOKENS,
 } from '@sourcegraph/cody-shared'
 
-import { filterLargeFiles, getFileContextFiles } from './editor-context'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { filterLargeFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 

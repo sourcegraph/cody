@@ -1,7 +1,7 @@
 import { type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 import type { ContextItem } from './types'
 import { contextItemId, renderContextItem } from './utils'
-import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 

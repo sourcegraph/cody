@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test'
 
-import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, test as baseTest, type ExpectedEvents } from './helpers'
 import * as mockServer from '../fixtures/mock-server'
+import { sidebarExplorer, sidebarSignin } from './common'
+import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 

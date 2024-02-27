@@ -6,13 +6,13 @@ import * as vscode from 'vscode'
 
 import { logError } from '../../log'
 
+import path from 'node:path/posix'
 import {
-    MAX_CURRENT_FILE_TOKENS,
     type ContextFile,
+    MAX_CURRENT_FILE_TOKENS,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import path from 'node:path/posix'
 
 const _exec = promisify(exec)
 

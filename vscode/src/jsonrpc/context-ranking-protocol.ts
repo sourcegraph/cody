@@ -20,7 +20,7 @@ interface RankItemsParams {
     contextItems: RankContextItem[]
 }
 
-export interface RankerPredictions {
+interface RankerPredictions {
     prediction: RankerPrediction[]
 }
 

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import type { Diff } from './diff'
 import type { FixupFile } from './FixupFile'
 import type { FixupTask } from './FixupTask'
+import type { Diff } from './diff'
 
 interface TaskDecorations {
     edits: vscode.Range[]

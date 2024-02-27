@@ -3,7 +3,7 @@ import type { Memento } from 'vscode'
 
 import type { ChatHistory, ChatInputHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
 
-import { isSourcegraphToken, type AuthStatus } from '../chat/protocol'
+import { type AuthStatus, isSourcegraphToken } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {

@@ -7,20 +7,20 @@ import classNames from 'classnames'
 import type {
     ChatInputHistory,
     ChatMessage,
-    ModelProvider,
     ContextFile,
     Guardrails,
+    ModelProvider,
     TelemetryService,
 } from '@sourcegraph/cody-shared'
 import {
     Chat as ChatUI,
     type ChatButtonProps,
-    type WebviewChatSubmitType,
     type ChatUISubmitButtonProps,
     type ChatUITextAreaProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
     type UserAccountInfo,
+    type WebviewChatSubmitType,
 } from '@sourcegraph/cody-ui/src/Chat'
 import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
@@ -32,10 +32,10 @@ import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import { getVSCodeAPI, type VSCodeWrapper } from './utils/VSCodeApi'
+import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
-import styles from './Chat.module.css'
 import { verifyContextFilesFromInput } from '@sourcegraph/cody-shared/src/chat/input/user-context'
+import styles from './Chat.module.css'
 
 interface ChatboxProps {
     welcomeMessage?: string

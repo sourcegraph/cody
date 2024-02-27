@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { verifyContextFilesFromInput } from './user-context'
 import type { ContextFileFile } from '../..'
+import { verifyContextFilesFromInput } from './user-context'
 
 describe('verifyContextFilesFromInput', () => {
     it('returns empty array if no contextFilesMap provided', () => {

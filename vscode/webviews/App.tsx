@@ -3,13 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import {
-    GuardrailsPost,
     type ChatInputHistory,
     type ChatMessage,
-    type ModelProvider,
     type Configuration,
     type ContextFile,
     type EnhancedContextContextT,
+    GuardrailsPost,
+    type ModelProvider,
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
@@ -26,9 +26,9 @@ import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
@@ -220,6 +220,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={
                             !userHistory.filter(chat => chat.interactions.length)?.length
                         }
+                        vscodeAPI={vscodeAPI}
                     />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />

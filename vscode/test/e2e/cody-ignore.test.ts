@@ -1,5 +1,5 @@
-import { expect } from '@playwright/test'
 import path from 'path'
+import { expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 

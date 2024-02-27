@@ -13282,6 +13282,12 @@ log:
 
 
 
+
+
+
+
+
+
                       
                   </selected>
               - speaker: assistant
@@ -18236,6 +18242,480 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-02-22T01:11:40.791Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5cf8d8dc18412c693f512d2a13102039
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 348
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: What model are you?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 2955
+        content:
+          mimeType: text/event-stream
+          size: 2955
+          text: >+
+            event: completion
+
+            data: {"completion":" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthrop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 26 Feb 2024 12:56:07 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1293
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-26T12:56:06.090Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 96a7720c4d67d9cdf61b191f58670d16
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 537
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: What model are you?
+              - speaker: assistant
+                text: " I'm Claude, one of Anthropic's conversational AI models. I don't have a
+                  specific model number or version."
+              - speaker: human
+                text: What model are you?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 3882
+        content:
+          mimeType: text/event-stream
+          size: 3882
+          text: >+
+            event: completion
+
+            data: {"completion":" I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthrop","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 26 Feb 2024 12:56:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1293
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-26T12:56:08.022Z
       time: 0
       timings:
         blocked: -1

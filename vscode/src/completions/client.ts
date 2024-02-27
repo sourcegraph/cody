@@ -1,8 +1,15 @@
 import {
+    type BrowserOrNodeResponse,
+    type CodeCompletionsClient,
+    type CodeCompletionsParams,
+    type CompletionLogger,
+    type CompletionResponse,
+    type CompletionResponseGenerator,
+    CompletionStopReason,
+    type CompletionsClientConfig,
     FeatureFlag,
     NetworkError,
     RateLimitError,
-    CompletionStopReason,
     TracedError,
     addTraceparent,
     featureFlagProvider,
@@ -10,18 +17,11 @@ import {
     isAbortError,
     isNodeResponse,
     isRateLimitError,
-    type CodeCompletionsClient,
-    type CodeCompletionsParams,
-    type CompletionLogger,
-    type CompletionResponse,
-    type CompletionResponseGenerator,
-    type CompletionsClientConfig,
-    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared'
 
-import { fetch } from '../fetch'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { type Span, SpanStatusCode } from '@opentelemetry/api'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { fetch } from '../fetch'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.

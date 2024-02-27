@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
+import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 

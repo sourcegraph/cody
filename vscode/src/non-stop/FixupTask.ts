@@ -4,10 +4,10 @@ import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@s
 
 import type { EditIntent, EditMode } from '../edit/types'
 
-import type { Diff } from './diff'
-import type { FixupFile } from './FixupFile'
-import { CodyTaskState } from './utils'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
+import type { FixupFile } from './FixupFile'
+import type { Diff } from './diff'
+import { CodyTaskState } from './utils'
 
 export type taskID = string
 

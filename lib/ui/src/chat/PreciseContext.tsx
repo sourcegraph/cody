@@ -2,7 +2,7 @@ import type { FunctionComponent } from 'react'
 
 import { mdiGraphOutline, mdiMagnify } from '@mdi/js'
 
-import { pluralize, type PreciseContext } from '@sourcegraph/cody-shared'
+import { type PreciseContext, pluralize } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from './actions/TranscriptAction'
 

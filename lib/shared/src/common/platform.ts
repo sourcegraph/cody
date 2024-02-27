@@ -15,6 +15,4 @@ export function isWindows(): boolean {
     return false // default
 }
 
-export const isPlatform = (platform: string) => process.platform === platform
-
-export const isMac = () => isPlatform('darwin')
+export const isMac = () => process.platform === 'darwin'

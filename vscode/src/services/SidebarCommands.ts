@@ -8,9 +8,9 @@ import {
     CODY_FEEDBACK_URL,
     DISCORD_URL,
 } from '../chat/protocol'
+import { releaseNotesURL } from '../release'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
-import { releaseNotesURL } from '../release'
 import { version } from '../version'
 
 export function registerSidebarCommands(): vscode.Disposable[] {

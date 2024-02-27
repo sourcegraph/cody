@@ -60,7 +60,7 @@ export type {
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
-export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
+export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export {
     ProgrammingLanguage,
@@ -204,4 +204,4 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
-export { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
+export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'

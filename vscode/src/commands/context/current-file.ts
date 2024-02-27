@@ -1,12 +1,12 @@
 import {
     type ContextFile,
     MAX_CURRENT_FILE_TOKENS,
-    truncateText,
     logError,
+    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
+import { getEditor } from '../../editor/active-editor'
 
 export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
     return wrapInActiveSpan('commands.context.file', async span => {
