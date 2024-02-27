@@ -495,7 +495,7 @@
         "command": "cody.debug.export.logs",
         "category": "Cody",
         "group": "Cody",
-        "title": "Export Logs",
+        "title": "Export Logs…",
         "when": "config.cody.debug.enable"
       }
     ],
