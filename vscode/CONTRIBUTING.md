@@ -79,6 +79,7 @@ It can be helpful to build and run the packaged extension locally to replicate a
 
 To do this:
 
+1. Set the environment variable `CODY_RELEASE_TYPE` to one of the following values:	`stable`, `insiders`
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
 1. Run `pnpm release:dry-run`
 1. Uninstall any existing Cody extension from VS Code.
