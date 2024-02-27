@@ -202,8 +202,8 @@ private constructor(
   fun receiveWebviewExtensionMessage(message: ExtensionMessage) {
     when (message.type) {
       ExtensionMessage.Type.USER_CONTEXT_FILES -> {
-        if (message.context is List<*>) {
-          this.chatPanel.promptPanel.setContextFilesSelector(message.context)
+        if (message.userContextFiles is List<*>) {
+          this.chatPanel.promptPanel.setContextFilesSelector(message.userContextFiles)
         }
       }
       else -> {

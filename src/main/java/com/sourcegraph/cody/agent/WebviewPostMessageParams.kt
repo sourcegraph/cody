@@ -35,7 +35,7 @@ data class ExtensionMessage(
     val chatID: String? = null,
     val isTranscriptError: Boolean? = null,
     val customPrompts: List<List<Any>>? = null,
-    val context: List<ContextFile>? = null,
+    val userContextFiles: List<ContextFile>? = null,
     val errors: String?,
     val query: String? = null,
     val configFeatures: ConfigFeatures? = null,
