@@ -162,14 +162,10 @@ class CodyEditorFactoryListener : EditorFactoryListener {
             Position(selectionStartPosition.line, selectionStartPosition.column),
             Position(selectionEndPosition.line, selectionEndPosition.column))
       }
-      val carets = editor.caretModel.allCarets
-      if (carets.isNotEmpty()) {
-        val caret = carets[0]
-        val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
-        // A single-offset caret is a selection where end == start.
-        return Range(position, position)
-      }
-      return null
+      val caret = editor.caretModel.allCarets.firstOrNull() ?: return null
+      val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
+      // A single-offset caret is a selection where end == start.
+      return Range(position, position)
     }
 
     // Sends a textDocument/didChange notification to the agent server.
