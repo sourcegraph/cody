@@ -28,7 +28,7 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
     if (messageToUpdate != null) {
       val singleMessagePanel = messageToUpdate.getComponent(0) as? SingleMessagePanel
       val contextFilesPanel = messageToUpdate.getComponent(1) as? ContextFilesPanel
-      singleMessagePanel?.updateContentWith(message)
+      singleMessagePanel?.updateContentWith(message.actualMessage())
       contextFilesPanel?.updateContentWith(message.contextFiles)
     } else {
       addChatMessageAsComponent(message)

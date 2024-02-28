@@ -28,22 +28,29 @@ class SingleMessagePanel(
     private val chatSession: ChatSession,
 ) : PanelWithGradientBorder(gradientWidth, chatMessage.speaker) {
   private var lastMessagePart: MessagePart? = null
+  private var lastTrimmedText = ""
 
   init {
     val markdownNodes: Node = markdownParser.parse(chatMessage.actualMessage())
     markdownNodes.accept(MessageContentCreatorFromMarkdownNodes(this, htmlRenderer))
   }
 
-  fun updateContentWith(message: ChatMessage) {
-    val markdownNodes = markdownParser.parse(message.actualMessage())
-    val lastMarkdownNode = markdownNodes.lastChild
-    if (lastMarkdownNode != null && lastMarkdownNode.isCodeBlock()) {
-      val (code, language) = lastMarkdownNode.extractCodeAndLanguage()
-      addOrUpdateCode(code, language)
-    } else {
-      val nodesAfterLastCodeBlock = markdownNodes.findNodeAfterLastCodeBlock()
-      val renderedHtml = htmlRenderer.render(nodesAfterLastCodeBlock)
-      addOrUpdateText(renderedHtml)
+  fun updateContentWith(text: String) {
+    val trimmedText = text.trimEnd { c -> c == '`' || c.isWhitespace() }
+    val isGrowing =
+        trimmedText.contains(lastTrimmedText) && trimmedText.length > lastTrimmedText.length
+    if (isGrowing) {
+      lastTrimmedText = trimmedText
+      val markdownNodes = markdownParser.parse(text)
+      val lastMarkdownNode = markdownNodes.lastChild
+      if (lastMarkdownNode != null && lastMarkdownNode.isCodeBlock()) {
+        val (code, language) = lastMarkdownNode.extractCodeAndLanguage()
+        addOrUpdateCode(code, language)
+      } else {
+        val nodesAfterLastCodeBlock = markdownNodes.findNodeAfterLastCodeBlock()
+        val renderedHtml = htmlRenderer.render(nodesAfterLastCodeBlock)
+        addOrUpdateText(renderedHtml)
+      }
     }
   }
 
