@@ -152,7 +152,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             return [
                 {
                     node: cursorCapture.node,
-                    name: cursorCapture.name === 'export' ? 'documentableExport' : 'documentableNode',
+                    name: 'documentableNode',
                 },
             ] as const
         },

@@ -13,18 +13,13 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
             return []
         }
 
-        const { node, name } = documentableNode
+        const { node } = documentableNode
         // Expand the range from the node to include the full line
         const documentableRange = new vscode.Range(
             document.lineAt(node.startPosition.row).range.start,
             document.lineAt(node.endPosition.row).range.end
         )
-        const displayText =
-            name === 'documentableNode'
-                ? `Ask Cody to Document: ${node.text}`
-                : 'Ask Cody to Document This Export'
-
-        return [this.createCommandCodeAction(document, documentableRange, displayText)]
+        return [this.createCommandCodeAction(document, documentableRange, `Ask Cody to Document: ${node.text}`)]
     }
 
     private createCommandCodeAction(

@@ -137,10 +137,6 @@ const JS_DOCUMENTABLE_NODES_QUERY = dedent`
         name: (property_identifier) @identifier.property)
     (pair
         key: (property_identifier) @identifier.property)
-
-    ; Exports
-    ;--------------------------------
-    ((export_statement) @export)
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
