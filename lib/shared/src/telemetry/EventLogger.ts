@@ -1,5 +1,5 @@
 import type { ConfigurationWithAccessToken } from '../configuration'
-import { logError } from '../logger'
+import { logDebug, logError } from '../logger'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -124,6 +124,7 @@ export class EventLogger {
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,
         }
+        const publicArgumentString = this.verifyEventProperties(eventName, publicArgument)
         this.gqlAPIClient
             .logEvent(
                 {
@@ -132,7 +133,7 @@ export class EventLogger {
                     source: 'IDEEXTENSION',
                     url: '',
                     argument: '{}',
-                    publicArgument: JSON.stringify(publicArgument),
+                    publicArgument: publicArgumentString,
                     client: this.client,
                     connectedSiteID: this.siteIdentification?.siteid,
                     hashedLicenseKey: this.siteIdentification?.hashedLicenseKey,
@@ -151,5 +152,68 @@ export class EventLogger {
                 }
             })
             .catch(error => logError('EventLogger', 'Uncaught error logging event', error))
+    }
+
+    private verifyEventProperties(eventName: string, publicArgument: any): string {
+        const PII_REGEX = [
+            /sgp_(?:[a-fA-F0-9]{16}|local)_[a-fA-F0-9]{40}/, // V3 Sourcegraph Access token
+            /sgp_[a-fA-F0-9]{40}/, // V2 Sourcegraph Access token
+            /[a-fA-F0-9]{40}/, // v1 Sourcegraph Access token
+            /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/ // Dora - email regex
+         ]
+
+        PII_REGEX.find(regex => {
+            const match = publicArgument['serverEndpoint'].match(regex);
+            if(match) {
+                logDebug(
+                    `logEvent${
+                        ':alert: (PII DETECTED) in ' + eventName
+                    }`,
+                    eventName,
+                    {
+                        verbose: {
+                            details: ':alert: Telemetry string contains PII info',
+                            publicArgument,
+                        },
+                    }
+                )
+                publicArgument['serverEndpoint'] = publicArgument['serverEndpoint'].replace(regex, "REDACTED");
+            }
+        });
+        // prompts for enterprise cody customers
+
+        // techncally this isn't applicable for V1 events
+        // check serverEndpoint is not  NOT IN ('sourcegraph.com','localhost:3080', 'www.sourcegraph.com', 'https://sourcegraph.com/', 'https://sourcegraph.com', 'sourcegraph.test:3443', 'demo.sourcegraph.com')
+        // check if promptText is not null
+        // check if promptText is not empty
+        const allowedEndpoints = [
+            "sourcegraph.com",
+            "localhost:3080",
+            "www.sourcegraph.com",
+            "https://sourcegraph.com/",
+            "https://sourcegraph.com",
+            "sourcegraph.test:3443",
+            "demo.sourcegraph.com",
+        ];
+
+        if (
+            !allowedEndpoints.includes(publicArgument["serverEndpoint"]) &&
+            publicArgument["promptText"]
+        ) {
+            logDebug(
+                `logEvent${":alert: (PII DETECTED) in " + eventName}`,
+                eventName,
+                {
+                    verbose: {
+                        details: ":alert: Telemetry string contains PII info",
+                        publicArgument,
+                    },
+                }
+            );
+
+            publicArgument["promptText"] = "REDACTED";
+        }
+
+        return JSON.parse(publicArgument)
     }
 }

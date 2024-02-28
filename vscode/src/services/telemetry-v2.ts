@@ -190,13 +190,17 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
                     safe[`${key}.${nestedKey}`] = value as number
                 }
                 // Preserve the entire original value in unsafe
-                unsafe[key] = value
+                if(!verifyEventProperties(key, value)) {
+                    unsafe[key] = value
+                }
                 break
             }
 
             // By default, treat as potentially unsafe.
             default:
-                unsafe[key] = value
+                if(!verifyEventProperties(key, value)) {
+                    unsafe[key] = value
+                }
         }
     }
     return {
@@ -206,4 +210,33 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
         metadata: safe as { [key in KeysWithNumericValues<Properties>]: number },
         privateMetadata: unsafe,
     }
+}
+
+function verifyEventProperties(keyName: string, keyValue: string): boolean {
+    const PII_REGEX = [
+        /sgp_(?:[a-fA-F0-9]{16}|local)_[a-fA-F0-9]{40}/, // V3 Sourcegraph Access token
+        /sgp_[a-fA-F0-9]{40}/, // V2 Sourcegraph Access token
+        /[a-fA-F0-9]{40}/, // v1 Sourcegraph Access token
+        /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/ // Dora - email regex
+     ]
+
+     let matchFound = false;
+
+    PII_REGEX.find((regex) => {
+        const match = keyValue.match(regex);
+        if (match) {
+            logDebug(
+                `logEvent${":alert: (PII DETECTED) in v2 telemetry" + keyName}`,
+                keyValue,
+                {
+                    verbose: {
+                        details: ":alert: Telemetry string contains PII info",
+                        keyValue,
+                    },
+                }
+            );
+            matchFound = true;
+        }
+    });
+    return matchFound;
 }
