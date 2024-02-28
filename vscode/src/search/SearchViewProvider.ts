@@ -88,7 +88,7 @@ class IndexManager implements vscode.Disposable {
         void vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: `Building Cody search index for ${displayPath(scopeDir)}`,
+                title: `Updating Cody search index for ${displayPath(scopeDir)}`,
                 cancellable: true,
             },
             async (_progress, token) => {
@@ -115,7 +115,10 @@ class IndexManager implements vscode.Disposable {
     private async forceRefreshIndex(scopeDir: FileURI): Promise<void> {
         try {
             await this.symf.deleteIndex(scopeDir)
-            await this.symf.ensureIndex(scopeDir, { hard: true })
+            await this.symf.ensureIndex(scopeDir, {
+                retryIfLastAttemptFailed: true,
+                ignoreExisting: false,
+            })
         } catch (error) {
             if (!(error instanceof vscode.CancellationError)) {
                 void vscode.window.showErrorMessage(
@@ -177,7 +180,10 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         if (vscode.workspace.workspaceFolders) {
             for (const folder of vscode.workspace.workspaceFolders) {
                 if (isFileURI(folder.uri)) {
-                    void this.symfRunner.ensureIndex(folder.uri, { hard: false })
+                    void this.symfRunner.ensureIndex(folder.uri, {
+                        retryIfLastAttemptFailed: false,
+                        ignoreExisting: false,
+                    })
                 }
             }
         }
@@ -186,7 +192,8 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 for (const folder of event.added) {
                     if (isFileURI(folder.uri)) {
                         void this.symfRunner.ensureIndex(folder.uri, {
-                            hard: false,
+                            retryIfLastAttemptFailed: false,
+                            ignoreExisting: false,
                         })
                     }
                 }
