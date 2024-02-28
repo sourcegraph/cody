@@ -924,29 +924,37 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.cancelInProgressCompletion()
         const abortController = new AbortController()
         this.completionCanceller = () => abortController.abort()
-        const stream = this.chatClient.chat(
-            prompt,
-            { model: this.chatModel.modelID },
-            abortController.signal
-        )
+        try {
+            const stream = this.chatClient.chat(
+                prompt,
+                { model: this.chatModel.modelID },
+                abortController.signal
+            )
 
-        for await (const message of stream) {
-            switch (message.type) {
-                case 'change': {
-                    typewriter.update(message.text)
-                    break
+            for await (const message of stream) {
+                switch (message.type) {
+                    case 'change': {
+                        typewriter.update(message.text)
+                        break
+                    }
+                    case 'complete': {
+                        this.completionCanceller = undefined
+                        typewriter.close()
+                        typewriter.stop()
+                        break
+                    }
+                    case 'error': {
+                        this.cancelInProgressCompletion()
+                        typewriter.close()
+                        typewriter.stop(message.error)
+                    }
                 }
-                case 'complete': {
-                    this.completionCanceller = undefined
-                    typewriter.close()
-                    typewriter.stop()
-                    break
-                }
-                case 'error': {
-                    this.cancelInProgressCompletion()
-                    typewriter.close()
-                    typewriter.stop(message.error)
-                }
+            }
+        } catch (error: unknown) {
+            if (!isAbortError(error as Error)) {
+                this.cancelInProgressCompletion()
+                typewriter.close()
+                typewriter.stop(error as Error)
             }
         }
     }

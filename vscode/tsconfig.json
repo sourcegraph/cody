@@ -16,7 +16,7 @@
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-    ".storybook/*.ts"
+    ".storybook/*.ts", "../lib/shared/src/fetch.ts",
   ],
   "exclude": [
     "scripts",

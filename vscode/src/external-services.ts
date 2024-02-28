@@ -19,6 +19,7 @@ import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
+import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -58,7 +59,8 @@ export async function configureExternalServices(
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
         | 'createContextRankingController'
-    >
+    >,
+    authProvider: AuthProvider
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
@@ -85,7 +87,7 @@ export async function configureExternalServices(
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
-    const chatClient = new ChatClient(completionsClient)
+    const chatClient = new ChatClient(completionsClient, initialConfig, authProvider.getAuthStatus())
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 

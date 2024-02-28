@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type ChatClient, ConfigFeaturesSingleton, type ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatClient,
+    ConfigFeaturesSingleton,
+    type ModelProvider,
+} from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -9,7 +14,6 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import type { AuthStatus } from '../chat/protocol'
 import { editModel } from '../models'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'

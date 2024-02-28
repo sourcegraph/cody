@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     CodebaseContext,
     type ConfigurationWithAccessToken,
     type ContextGroup,
@@ -24,7 +25,7 @@ import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
 import type { RemoteSearch } from '../context/remote-search'
 import type { SidebarChatWebview } from './chat-view/SidebarViewController'
-import type { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import type { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

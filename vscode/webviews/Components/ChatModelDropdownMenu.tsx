@@ -132,6 +132,9 @@ const ProviderIcon = ({ model, className }: { model: string; className?: string 
     if (model.startsWith('openai/')) {
         return <OpenAILogo className={className} />
     }
+    if (model === 'anthropic/claude-2.1-bamboo') {
+        return <></>
+    }
     if (model.startsWith('anthropic/')) {
         return <AnthropicLogo className={className} />
     }

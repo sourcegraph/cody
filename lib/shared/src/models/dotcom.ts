@@ -9,6 +9,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         default: true,
         codyProOnly: false,
+        unifiedApi: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
@@ -17,6 +18,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
+        unifiedApi: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
@@ -25,7 +27,17 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
+        unifiedApi: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: '🎋',
+        model: 'anthropic/claude-2.1-bamboo',
+        provider: 'soon',
+        default: false,
+        codyProOnly: true,
+        unifiedApi: false,
+        usage: [ModelUsage.Chat],
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -33,6 +45,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
+        unifiedApi: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
@@ -41,6 +54,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
+        unifiedApi: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
@@ -49,6 +63,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
+        unifiedApi: false,
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
     },

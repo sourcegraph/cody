@@ -1,7 +1,6 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { type AuthStatus, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
-import type { AuthStatus } from '../chat/protocol'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'

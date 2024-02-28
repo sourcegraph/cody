@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
@@ -12,7 +13,6 @@ import {
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
-    type AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
     isSourcegraphToken,
