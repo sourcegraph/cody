@@ -1,14 +1,14 @@
 package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
 import com.sourcegraph.utils.CodyLanguageUtil
 
-class CodyDisableLanguageForAutocompleteAction : DumbAwareAction() {
+class CodyDisableLanguageForAutocompleteAction : DumbAwareBGTAction() {
   override fun actionPerformed(e: AnActionEvent) {
     val applicationSettings = CodyApplicationSettings.instance
     CodyEditorUtil.getLanguageForFocusedEditor(e)?.id?.let { languageId ->

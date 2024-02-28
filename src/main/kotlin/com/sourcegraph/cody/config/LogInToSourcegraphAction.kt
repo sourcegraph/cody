@@ -3,13 +3,12 @@ package com.sourcegraph.cody.config
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SsoAuthMethod
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 import java.awt.Component
-import java.lang.ClassCastException
 import javax.swing.Action
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -61,7 +60,7 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
   }
 }
 
-abstract class BaseAddAccountWithTokenAction : DumbAwareAction() {
+abstract class BaseAddAccountWithTokenAction : DumbAwareBGTAction() {
   abstract val defaultServer: String
 
   override fun update(e: AnActionEvent) {

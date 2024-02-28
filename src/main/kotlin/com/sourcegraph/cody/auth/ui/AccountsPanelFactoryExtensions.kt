@@ -22,6 +22,7 @@ import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountManager
 import com.sourcegraph.cody.auth.AccountsListener
 import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
+import com.sourcegraph.cody.ui.BGTActionSetter
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
@@ -83,6 +84,7 @@ private fun <A : Account, Cred, R> create(
     toolbar.addExtraAction(
         object : ToolbarDecorator.ElementActionButton("Set as Active", AllIcons.Actions.Checked) {
           init {
+            BGTActionSetter.runUpdateOnBackgroundThread(this)
             addCustomUpdater { isEnabled && model.activeAccount != accountsList.selectedValue }
           }
 

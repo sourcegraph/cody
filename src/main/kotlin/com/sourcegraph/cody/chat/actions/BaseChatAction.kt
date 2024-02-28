@@ -1,13 +1,13 @@
 package com.sourcegraph.cody.chat.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 
-abstract class BaseChatAction : DumbAwareAction() {
+abstract class BaseChatAction : DumbAwareBGTAction() {
 
   abstract fun doAction(project: Project)
 

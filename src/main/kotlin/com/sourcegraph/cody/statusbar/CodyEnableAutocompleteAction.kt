@@ -1,11 +1,11 @@
 package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 import com.sourcegraph.config.ConfigUtil
 
-class CodyEnableAutocompleteAction : DumbAwareAction("Enable Cody Autocomplete") {
+class CodyEnableAutocompleteAction : DumbAwareBGTAction("Enable Cody Autocomplete") {
   override fun actionPerformed(e: AnActionEvent) {
     CodyApplicationSettings.instance.isCodyAutocompleteEnabled = true
   }

@@ -4,6 +4,7 @@ import com.intellij.ide.actions.AboutAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.ui.BGTActionSetter
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -11,6 +12,11 @@ import com.sourcegraph.config.ConfigUtil
 import java.util.concurrent.TimeUnit
 
 class CodyStatusBarActionGroup : DefaultActionGroup() {
+
+  init {
+    BGTActionSetter.runUpdateOnBackgroundThread(this)
+  }
+
   override fun update(e: AnActionEvent) {
     super.update(e)
     e.presentation.isVisible = ConfigUtil.isCodyEnabled()

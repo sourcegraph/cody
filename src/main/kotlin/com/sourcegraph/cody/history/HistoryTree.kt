@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.history
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
@@ -18,6 +17,7 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.ui.DurationGroupFormatter
 import com.sourcegraph.cody.history.ui.HistoryTreeNodeRenderer
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import javax.swing.AbstractAction
@@ -191,7 +191,7 @@ class HistoryTree(
       icon: Icon?,
       private val isEnabled: () -> Boolean,
       private val action: () -> Unit
-  ) : AnAction(text, null, icon) {
+  ) : DumbAwareBGTAction(text, null, icon) {
 
     override fun update(e: AnActionEvent) {
       e.presentation.isEnabled = isEnabled()
