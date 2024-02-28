@@ -93,7 +93,7 @@ class CodyToolWindowContent(private val project: Project) {
         if (data != null) {
           ApplicationManager.getApplication().invokeLater {
             val isMyAccountTabVisible = tabbedPane.tabCount > MY_ACCOUNT_TAB_INDEX
-            if (data.isDotcomAccount && data.codyProFeatureFlag) {
+            if (data.isDotcomAccount) {
               if (!isMyAccountTabVisible) {
                 tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
               }

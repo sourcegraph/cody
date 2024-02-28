@@ -8,12 +8,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.agent.protocol.RateLimitError
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.common.BrowserOpener.openInBrowser
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
@@ -59,38 +55,22 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
 
   companion object {
     fun notify(rateLimitError: RateLimitError, project: Project) {
-      isCodyProJetbrains(project).thenApply { codyProJetbrains ->
-        val shouldShowUpgradeOption = codyProJetbrains && rateLimitError.upgradeIsAvailable
-        val content =
-            when {
-              shouldShowUpgradeOption ->
-                  CodyBundle.getString("UpgradeToCodyProNotification.content.upgrade")
-              else -> CodyBundle.getString("UpgradeToCodyProNotification.content.explain")
-            }
-        val title =
-            when {
-              shouldShowUpgradeOption ->
-                  CodyBundle.getString("UpgradeToCodyProNotification.title.upgrade")
-              else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
-            }
 
-        UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
-      }
-    }
-
-    fun isCodyProJetbrains(project: Project): CompletableFuture<Boolean> {
-      val result = CompletableFuture<Boolean>()
-      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-      if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-        CodyAgentService.withAgent(project) { agent ->
-          agent.server.evaluateFeatureFlag(GetFeatureFlag.CodyProJetBrains).thenApply {
-            result.complete(it == true)
+      val shouldShowUpgradeOption = rateLimitError.upgradeIsAvailable
+      val content =
+          when {
+            shouldShowUpgradeOption ->
+                CodyBundle.getString("UpgradeToCodyProNotification.content.upgrade")
+            else -> CodyBundle.getString("UpgradeToCodyProNotification.content.explain")
           }
-        }
-      } else {
-        result.complete(false)
-      }
-      return result
+      val title =
+          when {
+            shouldShowUpgradeOption ->
+                CodyBundle.getString("UpgradeToCodyProNotification.title.upgrade")
+            else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
+          }
+
+      UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

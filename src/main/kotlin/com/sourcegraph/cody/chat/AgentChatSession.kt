@@ -16,7 +16,6 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
-import com.sourcegraph.common.UpgradeToCodyProNotification.Companion.isCodyProJetbrains
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -141,16 +140,15 @@ private constructor(
         val rateLimitError = lastMessage.error.toRateLimitError()
         if (rateLimitError != null) {
           RateLimitStateManager.reportForChat(project, rateLimitError)
-          isCodyProJetbrains(project).thenApply { isCodyPro ->
-            val text =
-                when {
-                  rateLimitError.upgradeIsAvailable && isCodyPro ->
-                      CodyBundle.getString("chat.rate-limit-error.upgrade")
-                  else -> CodyBundle.getString("chat.rate-limit-error.explain")
-                }
 
-            addErrorMessageAsAssistantMessage(text, index = extensionMessage.messages.count() - 1)
-          }
+          val text =
+              when {
+                rateLimitError.upgradeIsAvailable ->
+                    CodyBundle.getString("chat.rate-limit-error.upgrade")
+                else -> CodyBundle.getString("chat.rate-limit-error.explain")
+              }
+
+          addErrorMessageAsAssistantMessage(text, index = extensionMessage.messages.count() - 1)
         } else {
           // Currently we ignore other kind of errors like context window limit reached
         }
