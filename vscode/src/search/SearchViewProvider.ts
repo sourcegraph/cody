@@ -131,6 +131,7 @@ class IndexManager implements vscode.Disposable {
     }
 }
 
+// MARK 1
 export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private webview?: vscode.Webview

@@ -50,6 +50,7 @@ import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
+import { GuideProvider } from './search/GuideProvider'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -273,6 +274,14 @@ const register = async (
         searchViewProvider.initialize()
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+
+        const guideProvider = new GuideProvider(context.extensionUri, symfRunner)
+        disposables.push(guideProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.guide', guideProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
             })
         )

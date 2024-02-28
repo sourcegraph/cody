@@ -241,6 +241,13 @@
           "when": "cody.activated"
         },
         {
+          "type": "webview",
+          "id": "cody.guide",
+          "name": "Guide (Experimental)",
+          "visibility": "visible",
+          "when": "cody.activated"
+        },
+        {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
           "when": "cody.activated"

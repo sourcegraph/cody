@@ -61,6 +61,7 @@ function doSearch(
 
 const debouncedDoSearch = debounce(doSearch, SEARCH_DEBOUNCE_MS)
 
+// MARK 2
 export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [query, setQuery] = React.useState('')
     const [searching, setSearching] = React.useState(false)
