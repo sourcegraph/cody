@@ -160,16 +160,13 @@ export class GhostHintDecorator implements vscode.Disposable {
                     const [documentableNode] = execQueryWrapper(editor.document, targetPosition, 'getDocumentableNode')
                     if (documentableNode) {
                         this.fireThrottledDisplayEvent('Document')
-
                         const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1);
-                        const range = new vscode.Range(precedingLine, Number.MAX_VALUE, precedingLine, Number.MAX_VALUE)
 
                         /**
                          * "Document" code flow.
-                         * We do not throttle here, as it's unlikely the user is actively adjusting a seleciton.
                          * Display ghost text above the relevant symbol.
                          */
-                        return this.setGhostText(editor, range, ghostSpecialCommandDecoration)
+                        return this.setThrottledGhostText(editor, new vscode.Position(precedingLine, Number.MAX_VALUE), ghostSpecialCommandDecoration)
                     }
 
                     if (isEmptyOrIncompleteSelection(editor.document, selection)) {
@@ -186,8 +183,8 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, posOrRange: vscode.Position | vscode.Range, decoration: vscode.TextEditorDecorationType): void {
-        this.activeDecorationRange = posOrRange instanceof vscode.Range? posOrRange : new vscode.Range(posOrRange, posOrRange)
+    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, decoration: vscode.TextEditorDecorationType): void {
+        this.activeDecorationRange = new vscode.Range(position, position)
         editor.setDecorations(decoration, [{ range: this.activeDecorationRange }])
     }
 
