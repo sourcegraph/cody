@@ -545,6 +545,11 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
+        "command": "cody.command.document-code",
+        "key": "alt+d",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",

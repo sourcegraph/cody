@@ -7,7 +7,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
+const CHAT_SHORTCUT_LABEL = process.platform === "win32" ? "Alt+L" : "Opt+L";
 const DOC_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+D' : 'Opt+D'
 
 /**
@@ -141,6 +141,23 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                     const selection = event.selections[0]
 
+                    const [documentableNode] = execQueryWrapper(editor.document, selection.active, 'getDocumentableNode')
+                    if (documentableNode) {
+                        /**
+                         * "Document" code flow.
+                         * Display ghost text above the relevant symbol.
+                         */
+                        this.fireThrottledDisplayEvent('Document')
+                        const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1);
+                        return this.setThrottledGhostText(editor, new vscode.Position(precedingLine, Number.MAX_VALUE), ghostSpecialCommandDecoration)
+                    }
+
+                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
+                        return this.clearGhostText(editor)
+                    }
+
                     /**
                      * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
                      * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
@@ -155,24 +172,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                     ) {
                         // Active decoration is incorrectly positioned, remove it before continuing
                         this.clearGhostText(editor)
-                    }
-
-                    const [documentableNode] = execQueryWrapper(editor.document, targetPosition, 'getDocumentableNode')
-                    if (documentableNode) {
-                        this.fireThrottledDisplayEvent('Document')
-                        const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1);
-
-                        /**
-                         * "Document" code flow.
-                         * Display ghost text above the relevant symbol.
-                         */
-                        return this.setThrottledGhostText(editor, new vscode.Position(precedingLine, Number.MAX_VALUE), ghostSpecialCommandDecoration)
-                    }
-
-                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                        return this.clearGhostText(editor)
                     }
 
                     this.fireThrottledDisplayEvent('EditOrChat')
