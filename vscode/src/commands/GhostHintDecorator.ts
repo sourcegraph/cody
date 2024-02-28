@@ -38,7 +38,18 @@ function isEmptyOrIncompleteSelection(
     )
 }
 
-function getSymbolDecorationPadding(insertionLine: vscode.TextLine, symbolRange: vscode.Range): number {
+/**
+ * Calculates padding to apply before and after the symbol decoration
+ * to align it with the text on the insertion line.
+ *
+ * @param insertionLine - The line that the symbol decoration will be inserted on
+ * @param symbolRange - The range of the symbol in the original location
+ * @returns The number of spaces to pad the decoration by on insertion line
+ */
+function getSymbolDecorationPadding(
+    insertionLine: vscode.TextLine,
+    symbolRange: vscode.Range
+): number {
     const insertionEndCharacter = insertionLine.range.end.character
 
     // We ideally want to attempt to anchor the decoration onto the start of end of the symbol range
@@ -74,30 +85,30 @@ type HintType = 'EditOrChat' | 'Document' | 'Generate'
  * executing this code early, without impacting VS Code startup time.
  */
 const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.TextEditorDecorationType }> =
-    {
-        EditOrChat: {
-            text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                isWholeLine: true,
-                after: {
-                    color: GHOST_TEXT_COLOR,
-                    margin: '0 0 0 1em',
-                },
-            }),
-        },
-        Document: {
-            text: `${DOC_SHORTCUT_LABEL} to Document`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                after: { color: GHOST_TEXT_COLOR },
-            }),
-        },
-        Generate: {
-            text: `${EDIT_SHORTCUT_LABEL} to Generate`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                after: { color: GHOST_TEXT_COLOR },
-            }),
-        },
-    }
+{
+    EditOrChat: {
+        text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+            after: {
+                color: GHOST_TEXT_COLOR,
+                margin: '0 0 0 1em',
+            },
+        }),
+    },
+    Document: {
+        text: `${DOC_SHORTCUT_LABEL} to Document`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: { color: GHOST_TEXT_COLOR },
+        }),
+    },
+    Generate: {
+        text: `${EDIT_SHORTCUT_LABEL} to Generate`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: { color: GHOST_TEXT_COLOR },
+        }),
+    },
+}
 
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
@@ -174,6 +185,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                         'getDocumentableNode'
                     )
                     if (documentableNode) {
+                        this.clearGhostText(editor)
                         /**
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
