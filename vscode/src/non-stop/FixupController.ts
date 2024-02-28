@@ -237,7 +237,8 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         source?: ChatEventSource,
-        destinationFile?: vscode.Uri
+        destinationFile?: vscode.Uri,
+        insertionPoint?: vscode.Position
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -249,7 +250,8 @@ export class FixupController
             mode,
             model,
             source,
-            destinationFile
+            destinationFile,
+            insertionPoint
         )
         this.tasks.set(task.id, task)
         const state = task.intent === 'test' ? CodyTaskState.pending : CodyTaskState.working
@@ -589,13 +591,15 @@ export class FixupController
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'inserting')
         const text = task.replacement
-        const range = task.selectionRange
+        // If we have specified a dedicated insertion point - use that.
+        // Otherwise fall back to using the start of the selection range.
+        const insertionPoint = task.insertionPoint || task.selectionRange.start
         if (!text) {
             return false
         }
 
         // add correct indentation based on first non empty character index
-        const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        const nonEmptyStartIndex = document.lineAt(insertionPoint.line).firstNonWhitespaceCharacterIndex
         // add indentation to each line
         const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
         // join text with new lines, and then remove everything after the last new line if it only contains white spaces
@@ -603,12 +607,12 @@ export class FixupController
 
         // Insert updated text at selection range
         if (edit instanceof vscode.WorkspaceEdit) {
-            edit.insert(document.uri, range.start, replacementText)
+            edit.insert(document.uri, insertionPoint, replacementText)
             return vscode.workspace.applyEdit(edit)
         }
 
         return edit(editBuilder => {
-            editBuilder.insert(range.start, replacementText)
+            editBuilder.insert(insertionPoint, replacementText)
         }, options)
     }
 

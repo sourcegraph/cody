@@ -11,6 +11,43 @@ import type { CodyCommandArgs } from '../types'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
+function getSymbolRangeAtPosition(
+    document: vscode.TextDocument,
+    position: vscode.Position
+): { range?: vscode.Range; insertionPoint?: vscode.Position } {
+    const [documentableNodeAtCursor] = execQueryWrapper(document, position, 'getDocumentableNode')
+    if (!documentableNodeAtCursor) {
+        return {}
+    }
+
+    const {
+        node: { startPosition, endPosition },
+        name,
+    } = documentableNodeAtCursor
+
+    let insertionPoint: vscode.Position
+    if (document.languageId === 'python' && (name === 'function' || name === 'class')) {
+        /**
+         * Adjust the insertion point to be below the symbol position for functions and classes.
+         * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/
+         */
+        insertionPoint = new vscode.Position(startPosition.row + 1, 0)
+    } else {
+        // Default insertion is at the start of the symbol line
+        insertionPoint = new vscode.Position(startPosition.row, 0)
+    }
+
+    return {
+        range: new vscode.Range(
+            startPosition.row,
+            startPosition.column,
+            endPosition.row,
+            endPosition.column
+        ),
+        insertionPoint,
+    }
+}
+
 /**
  * The command that generates a new docstring for the selected code.
  * When calls, the command will be executed as an inline-edit command.
@@ -41,12 +78,10 @@ export async function executeDocCommand(
          * Attempt to get the range of a documentable symbol at the current cursor position.
          * If present, use this for the edit instead of expanding the range to the nearest block.
          */
-        let symbolRange: vscode.Range | undefined
-        const [documentableNodeAtCursor] = execQueryWrapper(editor.document, editor.selection.active, 'getDocumentableNode')
-        if (documentableNodeAtCursor) {
-            const { node: { startPosition, endPosition } } = documentableNodeAtCursor
-            symbolRange = new vscode.Range(startPosition.row, startPosition.column, endPosition.row, endPosition.column)
-        }
+        const { range, insertionPoint } = getSymbolRangeAtPosition(
+            editor.document,
+            editor.selection.active
+        )
 
         return {
             type: 'edit',
@@ -55,7 +90,8 @@ export async function executeDocCommand(
                     instruction: prompt,
                     intent: 'doc',
                     mode: 'insert',
-                    range: symbolRange
+                    range,
+                    insertionPoint,
                 },
                 source: DefaultEditCommands.Doc,
             } satisfies ExecuteEditArguments),

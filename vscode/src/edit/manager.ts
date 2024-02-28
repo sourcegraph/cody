@@ -117,7 +117,8 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 source,
-                configuration.destinationFile
+                configuration.destinationFile,
+                configuration.insertionPoint
             )
         } else {
             task = await this.controller.promptUserForTask(

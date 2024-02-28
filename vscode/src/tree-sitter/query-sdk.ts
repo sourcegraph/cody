@@ -101,11 +101,7 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) =>
-        | []
-        | readonly [
-              { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
-          ]
+    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: string }]
 }
 
 /**
@@ -149,12 +145,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 return []
             }
 
-            return [
-                {
-                    node: cursorCapture.node,
-                    name: 'documentableNode',
-                },
-            ] as const
+            return [cursorCapture] as const
         },
     }
 }
