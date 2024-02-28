@@ -265,9 +265,15 @@ async function searchSymf(
 
         const indexExists = await symf.getIndexStatus(workspaceRoot)
         if (indexExists !== 'ready' && !blockOnIndex) {
-            void symf.ensureIndex(workspaceRoot, { hard: false })
+            void symf.ensureIndex(workspaceRoot, {
+                retryIfLastAttemptFailed: false,
+                ignoreExisting: false,
+            })
             return []
         }
+
+        // trigger background reindex if the index is stale
+        void symf?.reindexIfStale(workspaceRoot)
 
         const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(

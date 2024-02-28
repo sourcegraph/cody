@@ -980,6 +980,11 @@
           "default": false,
           "markdownDescription": "Preload follow-up completions"
         },
+        "cody.autocomplete.experimental.smartThrottle": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
+        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
