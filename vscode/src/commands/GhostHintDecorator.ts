@@ -7,7 +7,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
-const CHAT_SHORTCUT_LABEL = process.platform === "win32" ? "Alt+L" : "Opt+L";
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
 const DOC_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+D' : 'Opt+D'
 
 /**
@@ -51,35 +51,40 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
+type HintType = 'EditOrChat' | 'Document' | 'Generate'
+
 /**
- * Creates a new decoration for showing a "ghost" hint to the user.
+ * Decorations for showing a "ghost" hint to the user.
  *
- * Note: This needs to be created at extension run time as the order in which `createTextEditorDecorationType`
+ * Note: These needs to be created at extension run time as the order in which `createTextEditorDecorationType`
  * is called affects the ranking of the decoration - assuming multiple decorations.
  *
  * We should also ensure that `activationEvent` `onLanguage` is set to provide the best chance of
  * executing this code early, without impacting VS Code startup time.
  */
-const ghostEditChatHintDecoration = vscode.window.createTextEditorDecorationType({
-    isWholeLine: true,
-    after: {
-        color: GHOST_TEXT_COLOR,
-        margin: '0 0 0 1em',
-        contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`
-    },
-})
-
-/**
- * Special decoration that appears above the relevant text.
- * Should be used to attach text to symbols
- */
-const ghostSpecialCommandDecoration = vscode.window.createTextEditorDecorationType({
-    after: {
-        color: GHOST_TEXT_COLOR,
-        margin: "0 0 0 6em",
-        contentText: `${DOC_SHORTCUT_LABEL} to Document`
-    },
-})
+const HINT_DECORATIONS: Record<HintType, vscode.TextEditorDecorationType> = {
+    EditOrChat: vscode.window.createTextEditorDecorationType({
+        isWholeLine: true,
+        after: {
+            color: GHOST_TEXT_COLOR,
+            margin: '0 0 0 1em',
+            contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+        },
+    }),
+    Document: vscode.window.createTextEditorDecorationType({
+        after: {
+            color: GHOST_TEXT_COLOR,
+            margin: '0 0 0 6em',
+            contentText: `${DOC_SHORTCUT_LABEL} to Document`,
+        },
+    }),
+    Generate: vscode.window.createTextEditorDecorationType({
+        after: {
+            color: GHOST_TEXT_COLOR,
+            contentText: `${EDIT_SHORTCUT_LABEL} to Generate`,
+        },
+    }),
+}
 
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
@@ -141,15 +146,31 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                     const selection = event.selections[0]
 
-                    const [documentableNode] = execQueryWrapper(editor.document, selection.active, 'getDocumentableNode')
+                    if (editor.document.getText().length === 0) {
+                        this.clearGhostText(editor)
+                        /**
+                         * Generate code flow.
+                         * Show immediately on the first line of empty files.
+                         */
+                        return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
+                    }
+
+                    const [documentableNode] = execQueryWrapper(
+                        editor.document,
+                        selection.active,
+                        'getDocumentableNode'
+                    )
                     if (documentableNode) {
                         /**
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
                          */
-                        this.fireThrottledDisplayEvent('Document')
-                        const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1);
-                        return this.setThrottledGhostText(editor, new vscode.Position(precedingLine, Number.MAX_VALUE), ghostSpecialCommandDecoration)
+                        const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1)
+                        return this.setThrottledGhostText(
+                            editor,
+                            new vscode.Position(precedingLine, Number.MAX_VALUE),
+                            'Document'
+                        )
                     }
 
                     if (isEmptyOrIncompleteSelection(editor.document, selection)) {
@@ -174,29 +195,53 @@ export class GhostHintDecorator implements vscode.Disposable {
                         this.clearGhostText(editor)
                     }
 
-                    this.fireThrottledDisplayEvent('EditOrChat')
-                    // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
-                    return this.setThrottledGhostText(editor, targetPosition, ghostEditChatHintDecoration)
+                    /**
+                     * Edit code flow.
+                     * Show alongside a users' active selection
+                     */
+                    return this.setThrottledGhostText(editor, targetPosition, 'EditOrChat')
                 }
-            )
+            ),
+            vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
+                if (!editor) {
+                    return
+                }
+
+                if (editor.document.uri.scheme !== 'file') {
+                    // A non-file document, e.g. (an output pane)
+                    // Edit's aren't possible here, so do nothing
+                    return
+                }
+
+                if (editor.document.getText().length === 0) {
+                    this.clearGhostText(editor)
+                    /**
+                     * Generate code flow.
+                     * Show immediately on the first line of empty files.
+                     */
+                    return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
+                }
+            })
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, decoration: vscode.TextEditorDecorationType): void {
+    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, hint: HintType): void {
+        this.fireThrottledDisplayEvent(hint)
         this.activeDecorationRange = new vscode.Range(position, position)
-        editor.setDecorations(decoration, [{ range: this.activeDecorationRange }])
+        editor.setDecorations(HINT_DECORATIONS[hint], [{ range: this.activeDecorationRange }])
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
         this.setThrottledGhostText.cancel()
         this.activeDecorationRange = null
-        editor.setDecorations(ghostEditChatHintDecoration, [])
-        editor.setDecorations(ghostSpecialCommandDecoration, [])
+        Object.values(HINT_DECORATIONS).map(decoration => {
+            editor.setDecorations(decoration, [])
+        })
     }
 
-    private _fireDisplayEvent(type: 'Document' | 'EditOrChat'): void {
-        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { type })
-        telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { type }})
+    private _fireDisplayEvent(hint: HintType): void {
+        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { hint })
+        telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { hint } })
     }
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
