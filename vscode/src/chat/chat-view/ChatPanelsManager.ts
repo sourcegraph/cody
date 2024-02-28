@@ -7,6 +7,7 @@ import {
     type FeatureFlagProvider,
     type Guardrails,
     ModelProvider,
+    type SourcegraphCompletionsClient,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -70,6 +71,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private completionsClient: SourcegraphCompletionsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
@@ -229,6 +231,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             ...this.options,
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
+            completionsClient: this.completionsClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
             contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,

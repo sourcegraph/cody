@@ -16,6 +16,7 @@ import {
     type InteractionJSON,
     type Message,
     ModelProvider,
+    type SourcegraphCompletionsClient,
     type TranscriptJSON,
     Typewriter,
     featureFlagProvider,
@@ -90,6 +91,7 @@ interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+    completionsClient: SourcegraphCompletionsClient
     localEmbeddings: LocalEmbeddingsController | null
     contextRanking: ContextRankingController | null
     symf: SymfRunner | null
@@ -138,6 +140,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private config: ChatPanelConfig
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
+    private readonly completionsClient: SourcegraphCompletionsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly contextRanking: ContextRankingController | null
@@ -163,6 +166,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         extensionUri,
         authProvider,
         chatClient,
+        completionsClient,
         localEmbeddings,
         contextRanking,
         symf,
@@ -176,6 +180,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
+        this.completionsClient = completionsClient
         this.localEmbeddings = localEmbeddings
         this.contextRanking = contextRanking
         this.symf = symf
@@ -513,6 +518,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 try {
                     const prompt = await this.buildPrompt(prompter, sendTelemetry)
+
+                    const lastMessage = prompt.at(-1)
+                    const prevMessages = prompt.slice(0, -1)
+                    if (lastMessage?.text) {
+                        const original = lastMessage.text
+                        lastMessage.text = await rewritePrompt(
+                            this.completionsClient,
+                            prevMessages,
+                            lastMessage.text
+                        )
+                        console.log(`### original message:${original}\nnew message:${lastMessage.text}`)
+                    }
+
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan)
                 } catch (error) {
                     if (isRateLimitError(error)) {
@@ -1339,4 +1357,46 @@ function deserializedContextFilesToContextItems(
 
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
+}
+
+async function rewritePrompt(
+    completionsClient: SourcegraphCompletionsClient,
+    previousMessages: Message[],
+    text: string
+): Promise<string> {
+    const stream = completionsClient.stream({
+        messages: [
+            // ...previousMessages,
+            {
+                speaker: 'human',
+                text: `Rewrite the following message in between <message></message>, correcting spelling and grammar issues, but not changing names or proper nouns. Place the response in between tags <rewrittenMessage>like this</rewrittenMessage>. Here is the message: <message>${text}</message>.`,
+                // text: `Do your best to rewrite the following message in between <message></message> tags to be something that will yield a high quality response from an LLM. Try to correct spelling and grammatical mistakes, but do not change naems or proper nouns. Place the response in between tags <rewrittenMessage>like this</rewrittenMessage>. Here is the message: <message>${text}</message>`,
+            },
+            { speaker: 'assistant' },
+        ],
+        maxTokensToSample: 400,
+        temperature: 0.5,
+        topK: 1,
+        fast: true,
+    })
+
+    let rewrittenText = null
+    for await (const message of stream) {
+        switch (message.type) {
+            case 'change': {
+                rewrittenText = message.text
+                break
+            }
+            case 'error': {
+                throw message.error
+            }
+        }
+    }
+    if (rewrittenText === null) {
+        throw new Error('No rewrite was generated')
+    }
+    return rewrittenText
+        .trim()
+        .replace(/^<rewrittenMessage>(.*)<\/rewrittenMessage>$/, '$1')
+        .trim()
 }

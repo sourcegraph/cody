@@ -2,7 +2,12 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { type ChatClient, type Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type ChatClient,
+    type Guardrails,
+    ModelProvider,
+    type SourcegraphCompletionsClient,
+} from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
@@ -42,6 +47,7 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private completionsClient: SourcegraphCompletionsClient,
         private enterpriseContext: EnterpriseContextFactory | null,
         private localEmbeddings: LocalEmbeddingsController | null,
         private contextRanking: ContextRankingController | null,
@@ -60,6 +66,7 @@ export class ChatManager implements vscode.Disposable {
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
             this.chatClient,
+            this.completionsClient,
             this.localEmbeddings,
             this.contextRanking,
             this.symf,

@@ -6,6 +6,7 @@ import {
     type ConfigurationWithAccessToken,
     type Guardrails,
     type IntentDetector,
+    type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
     SourcegraphIntentDetectorClient,
     graphqlClient,
@@ -23,6 +24,7 @@ import { logDebug, logger } from './log'
 interface ExternalServices {
     intentDetector: IntentDetector
     chatClient: ChatClient
+    completionsClient: SourcegraphCompletionsClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     contextRanking: ContextRankingController | undefined
@@ -93,6 +95,7 @@ export async function configureExternalServices(
         intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
         chatClient,
         codeCompletionsClient,
+        completionsClient,
         guardrails,
         localEmbeddings,
         contextRanking,

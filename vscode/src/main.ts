@@ -165,6 +165,7 @@ const register = async (
     const {
         intentDetector,
         chatClient,
+        completionsClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
@@ -208,6 +209,7 @@ const register = async (
             config,
         },
         chatClient,
+        completionsClient,
         enterpriseContextFactory,
         localEmbeddings || null,
         contextRanking || null,
