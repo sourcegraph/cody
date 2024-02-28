@@ -490,6 +490,13 @@
         "command": "cody.embeddings.resolveIssue",
         "title": "Cody Embeddings",
         "when": "cody.embeddings.hasIssue"
+      },
+      {
+        "command": "cody.debug.export.logs",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Export Logs…",
+        "when": "config.cody.debug.enable"
       }
     ],
     "keybindings": [
@@ -696,6 +703,11 @@
         },
         {
           "command": "cody.welcome",
+          "when": "view == cody.support.tree.view",
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.debug.export.logs",
           "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
         },
