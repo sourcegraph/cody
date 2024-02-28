@@ -38,6 +38,16 @@ function isEmptyOrIncompleteSelection(
     )
 }
 
+function getSymbolDecorationPadding(insertionLine: vscode.TextLine, symbolRange: vscode.Range): number {
+    const insertionEndCharacter = insertionLine.range.end.character
+
+    // We ideally want to attempt to anchor the decoration onto the start of end of the symbol range
+    const symbolAnchor =
+        symbolRange.start.character > insertionEndCharacter ? symbolRange.start : symbolRange.end
+
+    return Math.max(symbolAnchor.character - insertionEndCharacter, 2)
+}
+
 export async function getGhostHintEnablement(): Promise<boolean> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
@@ -51,6 +61,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
+const UNCODE_SPACE = '\u00a0'
 type HintType = 'EditOrChat' | 'Document' | 'Generate'
 
 /**
@@ -62,29 +73,31 @@ type HintType = 'EditOrChat' | 'Document' | 'Generate'
  * We should also ensure that `activationEvent` `onLanguage` is set to provide the best chance of
  * executing this code early, without impacting VS Code startup time.
  */
-const HINT_DECORATIONS: Record<HintType, vscode.TextEditorDecorationType> = {
-    EditOrChat: vscode.window.createTextEditorDecorationType({
-        isWholeLine: true,
-        after: {
-            color: GHOST_TEXT_COLOR,
-            margin: '0 0 0 1em',
-            contentText: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.TextEditorDecorationType }> =
+    {
+        EditOrChat: {
+            text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                isWholeLine: true,
+                after: {
+                    color: GHOST_TEXT_COLOR,
+                    margin: '0 0 0 1em',
+                },
+            }),
         },
-    }),
-    Document: vscode.window.createTextEditorDecorationType({
-        after: {
-            color: GHOST_TEXT_COLOR,
-            margin: '0 0 0 6em',
-            contentText: `${DOC_SHORTCUT_LABEL} to Document`,
+        Document: {
+            text: `${DOC_SHORTCUT_LABEL} to Document`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                after: { color: GHOST_TEXT_COLOR },
+            }),
         },
-    }),
-    Generate: vscode.window.createTextEditorDecorationType({
-        after: {
-            color: GHOST_TEXT_COLOR,
-            contentText: `${EDIT_SHORTCUT_LABEL} to Generate`,
+        Generate: {
+            text: `${EDIT_SHORTCUT_LABEL} to Generate`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                after: { color: GHOST_TEXT_COLOR },
+            }),
         },
-    }),
-}
+    }
 
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
@@ -169,7 +182,16 @@ export class GhostHintDecorator implements vscode.Disposable {
                         return this.setThrottledGhostText(
                             editor,
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
-                            'Document'
+                            'Document',
+                            getSymbolDecorationPadding(
+                                editor.document.lineAt(precedingLine),
+                                new vscode.Range(
+                                    documentableNode.node.startPosition.row,
+                                    documentableNode.node.startPosition.column,
+                                    documentableNode.node.endPosition.row,
+                                    documentableNode.node.endPosition.column
+                                )
+                            )
                         )
                     }
 
@@ -225,16 +247,30 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
     }
 
-    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, hint: HintType): void {
+    private setGhostText(
+        editor: vscode.TextEditor,
+        position: vscode.Position,
+        hint: HintType,
+        padding = 0
+    ): void {
         this.fireThrottledDisplayEvent(hint)
+
+        const decorationHint = HINT_DECORATIONS[hint]
+        const decorationText = UNCODE_SPACE.repeat(padding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
-        editor.setDecorations(HINT_DECORATIONS[hint], [{ range: this.activeDecorationRange }])
+
+        editor.setDecorations(HINT_DECORATIONS[hint].decoration, [
+            {
+                range: this.activeDecorationRange,
+                renderOptions: { after: { contentText: decorationText } },
+            },
+        ])
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
         this.setThrottledGhostText.cancel()
         this.activeDecorationRange = null
-        Object.values(HINT_DECORATIONS).map(decoration => {
+        Object.values(HINT_DECORATIONS).map(({ decoration }) => {
             editor.setDecorations(decoration, [])
         })
     }
