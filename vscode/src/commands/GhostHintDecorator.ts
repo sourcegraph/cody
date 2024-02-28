@@ -61,7 +61,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
-const UNCODE_SPACE = '\u00a0'
+const UNICODE_SPACE = '\u00a0'
 type HintType = 'EditOrChat' | 'Document' | 'Generate'
 
 /**
@@ -256,7 +256,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.fireThrottledDisplayEvent(hint)
 
         const decorationHint = HINT_DECORATIONS[hint]
-        const decorationText = UNCODE_SPACE.repeat(padding) + decorationHint.text
+        const decorationText = UNICODE_SPACE.repeat(padding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
 
         editor.setDecorations(HINT_DECORATIONS[hint].decoration, [
