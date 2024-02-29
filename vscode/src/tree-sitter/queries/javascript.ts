@@ -128,15 +128,14 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 const JS_DOCUMENTABLE_NODES_QUERY = dedent`
     ; Identifiers
     ;--------------------------------
-    (_
-        name: (identifier) @identifier)
+    (_ name: (identifier) @symbol) @span
 
     ; Property Identifiers
     ;--------------------------------
     (method_definition
-        name: (property_identifier) @identifier.property)
+        name: (property_identifier) @symbol) @span
     (pair
-        key: (property_identifier) @identifier.property)
+        key: (property_identifier) @symbol) @span
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
@@ -145,23 +144,23 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ; Type Identifiers
     ;--------------------------------
     (_
-        name: (type_identifier) @identifier)
+        name: (type_identifier) @symbol) @span
 
     ; Type Signatures
     ;--------------------------------
-    ((call_signature) @signature)
+    ((call_signature) @symbol) @span
     (interface_declaration
         (interface_body
             (property_signature
-                name: (property_identifier) @signature.property)))
+                name: (property_identifier) @symbol))) @span
     (interface_declaration
         (interface_body
             (method_signature
-                name: (property_identifier) @signature.property)))
+                name: (property_identifier) @symbol))) @span
     (type_alias_declaration
         (object_type
             (property_signature
-                name: (property_identifier) @signature.property)))
+                name: (property_identifier) @sybmol))) @span
 `
 
 export const javascriptQueries = {

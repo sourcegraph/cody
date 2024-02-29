@@ -21,21 +21,23 @@ function getSymbolRangeAtPosition(
     }
 
     const {
-        node: { startPosition, endPosition },
-        name,
+        // symbol: { name },
+        span: { startPosition, endPosition }
     } = documentableNodeAtCursor
 
-    let insertionPoint: vscode.Position
-    if (document.languageId === 'python' && (name === 'function' || name === 'class')) {
-        /**
-         * Adjust the insertion point to be below the symbol position for functions and classes.
-         * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/
-         */
-        insertionPoint = new vscode.Position(startPosition.row + 1, 0)
-    } else {
-        // Default insertion is at the start of the symbol line
-        insertionPoint = new vscode.Position(startPosition.row, 0)
-    }
+    let insertionPoint = new vscode.Position(startPosition.row, 0)
+
+    // TODO: Provide a way to differentiate between symbols to change logic depending on if it's a function
+    // if (document.languageId === 'python' && (name === 'function' || name === 'class')) {
+    //     /**
+    //      * Adjust the insertion point to be below the symbol position for functions and classes.
+    //      * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/
+    //      */
+    //     insertionPoint = new vscode.Position(startPosition.row + 1, 0)
+    // } else {
+    //     // Default insertion is at the start of the symbol line
+    //     insertionPoint = new vscode.Position(startPosition.row, 0)
+    // }
 
     return {
         range: new vscode.Range(

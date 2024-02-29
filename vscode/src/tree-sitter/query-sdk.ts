@@ -101,7 +101,7 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: string }]
+    ) => [] | readonly [{ symbol: SyntaxNode, span: SyntaxNode }]
 }
 
 /**
@@ -133,19 +133,26 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
         getDocumentableNode: (root, start, end) => {
             const captures = queries.documentableNodes.compiled.captures(root, start, end)
 
-            const cursorCapture = findLast(captures, ({ node }) => {
-                return (
-                    node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
-                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
-                )
+            const symbol = getNodeIfMatchesPoint({
+                captures,
+                name: 'symbol',
+                // Taking the last result to get the most nested node.
+                // See https://github.com/tree-sitter/tree-sitter/discussions/2067
+                index: -1,
+                point: start,
             })
 
-            if (!cursorCapture) {
+            const span = getCapturedNodeAt({
+                captures,
+                name: 'span',
+                index: -1,
+            })
+
+            if (!symbol || !span) {
                 return []
             }
 
-            return [cursorCapture] as const
+            return [{ symbol, span }] as const
         },
     }
 }

@@ -190,7 +190,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
                          */
-                        const precedingLine = Math.max(0, documentableNode.node.startPosition.row - 1)
+                        const precedingLine = Math.max(0, documentableNode.symbol.startPosition.row - 1)
                         return this.setThrottledGhostText(
                             editor,
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -198,10 +198,10 @@ export class GhostHintDecorator implements vscode.Disposable {
                             getSymbolDecorationPadding(
                                 editor.document.lineAt(precedingLine),
                                 new vscode.Range(
-                                    documentableNode.node.startPosition.row,
-                                    documentableNode.node.startPosition.column,
-                                    documentableNode.node.endPosition.row,
-                                    documentableNode.node.endPosition.column
+                                    documentableNode.symbol.startPosition.row,
+                                    documentableNode.symbol.startPosition.column,
+                                    documentableNode.symbol.endPosition.row,
+                                    documentableNode.symbol.endPosition.column
                                 )
                             )
                         )
@@ -214,9 +214,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     /**
-                     * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
-                     * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
-                     */
+                                         * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
+                                         * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
+                                         */
                     const targetPosition = selection.isReversed
                         ? selection.active
                         : selection.active.translate(selection.end.character === 0 ? -1 : 0)
