@@ -8,10 +8,7 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
     constructor(
         private extensionUri: vscode.Uri,
         private symfRunner: SymfRunner
-    ) {
-        // TODO
-        console.log('GuideProvider constructor', this.webview, this.symfRunner)
-    }
+    ) {}
 
     dispose() {
         throw new Error('Method not implemented.')

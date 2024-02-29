@@ -235,15 +235,15 @@
         },
         {
           "type": "webview",
-          "id": "cody.search",
-          "name": "Natural Language Search (Beta)",
+          "id": "cody.guide",
+          "name": "Guide (Experimental)",
           "visibility": "visible",
           "when": "cody.activated"
         },
         {
           "type": "webview",
-          "id": "cody.guide",
-          "name": "Guide (Experimental)",
+          "id": "cody.search",
+          "name": "Natural Language Search (Beta)",
           "visibility": "visible",
           "when": "cody.activated"
         },

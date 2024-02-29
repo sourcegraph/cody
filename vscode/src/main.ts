@@ -269,19 +269,21 @@ const register = async (
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
     if (symfRunner && config.experimentalSymfContext) {
+        const guideProvider = new GuideProvider(context.extensionUri, symfRunner)
+        disposables.push(guideProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.guide', guideProvider, {
+                webviewOptions: {
+                    retainContextWhenHidden: true,
+                },
+            })
+        )
+
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
-                webviewOptions: { retainContextWhenHidden: true },
-            })
-        )
-
-        const guideProvider = new GuideProvider(context.extensionUri, symfRunner)
-        disposables.push(guideProvider)
-        disposables.push(
-            vscode.window.registerWebviewViewProvider('cody.guide', guideProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
             })
         )
