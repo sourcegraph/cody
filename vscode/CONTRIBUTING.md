@@ -80,7 +80,7 @@ It can be helpful to build and run the packaged extension locally to replicate a
 To do this:
 
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
-1. Run `pnpm release:dry-run`
+1. Run `CODY_RELEASE_TYPE=stable pnpm release:dry-run`
 1. Uninstall any existing Cody extension from VS Code.
 1. Run `code --install-extension dist/cody.vsix`
 
