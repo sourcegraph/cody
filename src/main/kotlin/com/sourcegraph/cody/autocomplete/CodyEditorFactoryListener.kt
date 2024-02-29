@@ -175,7 +175,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         afterUpdate: () -> Unit = {}
     ) {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-      val document = TextDocument.fromPath(file.path, editor.document.text, getSelection(editor))
+      val document = TextDocument.fromVirtualFile(file, editor.document.text, getSelection(editor))
       val project = editor.project ?: return
 
       if (hasFileChanged) {

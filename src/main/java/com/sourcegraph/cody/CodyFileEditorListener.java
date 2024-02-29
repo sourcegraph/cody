@@ -34,7 +34,7 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
 
     CodyAgentService.withAgent(
         source.getProject(),
-        agent -> agent.getServer().textDocumentDidClose(TextDocument.fromPath(file.getPath())));
+        agent -> agent.getServer().textDocumentDidClose(TextDocument.fromVirtualFile(file)));
   }
 
   public static void fileOpened(Project project, CodyAgent codyAgent, @NotNull VirtualFile file) {
@@ -43,7 +43,7 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
             .runReadAction(
                 (Computable<Document>) () -> FileDocumentManager.getInstance().getDocument(file));
     if (document != null) {
-      TextDocument textDocument = TextDocument.fromPath(file.getPath(), document.getText());
+      TextDocument textDocument = TextDocument.fromVirtualFile(file, document.getText());
       codyAgent.getServer().textDocumentDidOpen(textDocument);
     }
 

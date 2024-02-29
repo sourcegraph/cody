@@ -54,7 +54,7 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
             Thread.sleep(100);
           } catch (InterruptedException ignored) {
           }
-          agent.getServer().textDocumentDidFocus(TextDocument.fromPath(file.getPath()));
+          agent.getServer().textDocumentDidFocus(TextDocument.fromVirtualFile(file));
         });
 
     CodyAgentCodebase.getInstance(project).onFileOpened(project, file);

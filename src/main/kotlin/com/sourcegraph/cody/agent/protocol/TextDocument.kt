@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent.protocol
 
+import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.protocol.util.Rfc3986UriEncoder
-import java.nio.file.Paths
 
 class TextDocument
 private constructor(
@@ -14,9 +14,12 @@ private constructor(
 
     @JvmStatic
     @JvmOverloads
-    fun fromPath(path: String, content: String? = null, selection: Range? = null): TextDocument {
-      val uri = Paths.get(path).toUri().toString()
-      val rfc3986Uri = Rfc3986UriEncoder.encode(uri)
+    fun fromVirtualFile(
+        file: VirtualFile,
+        content: String? = null,
+        selection: Range? = null
+    ): TextDocument {
+      val rfc3986Uri = Rfc3986UriEncoder.encode(file.url)
       return TextDocument(rfc3986Uri, content, selection)
     }
   }
