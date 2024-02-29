@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type React from 'react'
 import type { Action } from '../src/chat/protocol'
+import styles from './SearchPanel.module.css'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const defaultDescription = `Create a new sidebar panel that's similar to the search panel but executes multiple queries under the hood, with various rewriting strategies.`
+
+function renderName(fqname: string): string {
+    const components = fqname.split('/')
+    const base = components.pop()
+    return `${base} ${components.join('/')}`
+}
 
 export const GuidePanel: React.FunctionComponent<{
     vscodeAPI: VSCodeWrapper
@@ -112,14 +119,47 @@ const ActionBlock: React.FunctionComponent<{
                         <div key={result.query}>
                             <div>
                                 <span>{result.query}</span>
+                                &nbsp;
                                 <span>
                                     {result.results.length}
+                                    &nbsp;-&nbsp;
                                     {result.results.length === 1 ? 'hit' : 'hits'}
                                 </span>
                             </div>
                             <div>
                                 {result.results.map(r => {
-                                    return <div>{r.fqname}</div>
+                                    return (
+                                        <div
+                                            key={`${r.fqname}`}
+                                            style={{
+                                                height: '100%',
+                                                lineHeight: '1.5em',
+                                                maxHeight: '1.5em',
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                            }}
+                                        >
+                                            <input
+                                                style={{
+                                                    flexShrink: 0,
+                                                    alignItems: 'center',
+                                                    height: '100%',
+                                                }}
+                                                type="checkbox"
+                                            />
+                                            <span
+                                                className={styles.filematchTitle}
+                                                style={{
+                                                    flexGrow: 1,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    lineHeight: '1.5em',
+                                                }}
+                                            >
+                                                {renderName(r.fqname)}
+                                            </span>
+                                        </div>
+                                    )
                                 })}
                             </div>
                         </div>
