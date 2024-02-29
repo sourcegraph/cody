@@ -9,8 +9,10 @@ import type {
 
 import { getConfiguration } from './configuration'
 
+export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
+
 export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel(
-    'Cody by Sourcegraph',
+    CODY_OUTPUT_CHANNEL,
     'json'
 )
 

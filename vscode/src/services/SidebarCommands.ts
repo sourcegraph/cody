@@ -72,5 +72,9 @@ export function registerSidebarCommands(): vscode.Disposable[] {
             logSidebarClick('account')
             void vscode.commands.executeCommand('cody.auth.account')
         }),
+        vscode.commands.registerCommand('cody.sidebar.logs', () => {
+            logSidebarClick('logs')
+            void vscode.commands.executeCommand('cody.debug.export.logs')
+        }),
     ]
 }
