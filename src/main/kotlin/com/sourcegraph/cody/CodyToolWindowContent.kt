@@ -4,7 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.TabbedPaneWrapper
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
 import com.jetbrains.rd.util.AtomicReference
@@ -22,7 +22,7 @@ import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.HistoryTree
 import com.sourcegraph.cody.history.state.ChatState
 import java.awt.CardLayout
-import java.awt.Component
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.border.Border
 
@@ -34,7 +34,7 @@ class CodyToolWindowContent(private val project: Project) {
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
   private val historyTree = HistoryTree(project, ::selectChat, ::removeChat, ::removeAllChats)
-  private val tabbedPane = JBTabbedPane()
+  private val tabbedPane = TabbedPaneWrapper(CodyAgentService.getInstance(project))
   private val currentChatSession: AtomicReference<AgentChatSession?> = AtomicReference(null)
 
   private val chatContainerPanel =
@@ -58,7 +58,7 @@ class CodyToolWindowContent(private val project: Project) {
     tabbedPane.insertSimpleTab("Chat History", historyTree, HISTORY_TAB_INDEX)
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
 
-    allContentPanel.add(tabbedPane, MAIN_PANEL, CHAT_PANEL_INDEX)
+    allContentPanel.add(tabbedPane.component, MAIN_PANEL, CHAT_PANEL_INDEX)
     allContentPanel.add(signInWithSourcegraphPanel, SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
     allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
 
@@ -99,7 +99,7 @@ class CodyToolWindowContent(private val project: Project) {
               }
               myAccountPanel.update(data.isCurrentUserPro)
             } else if (isMyAccountTabVisible) {
-              tabbedPane.remove(MY_ACCOUNT_TAB_INDEX)
+              tabbedPane.removeTabAt(MY_ACCOUNT_TAB_INDEX)
             }
           }
         }
@@ -190,7 +190,10 @@ class CodyToolWindowContent(private val project: Project) {
       }
     }
 
-    private fun JBTabbedPane.insertSimpleTab(title: String, component: Component, index: Int) =
-        insertTab(title, /* icon = */ null, component, /* tip = */ null, index)
+    private fun TabbedPaneWrapper.insertSimpleTab(
+        title: String,
+        component: JComponent,
+        index: Int
+    ) = insertTab(title, /* icon = */ null, component, /* tip = */ null, index)
   }
 }
