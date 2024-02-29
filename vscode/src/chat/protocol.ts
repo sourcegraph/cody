@@ -108,7 +108,7 @@ export type WebviewMessage =
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'agi/actions' }
+    | { type: 'agi/actions'; actions: Action[] }
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv

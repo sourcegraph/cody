@@ -1,4 +1,6 @@
 import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import { XMLParser } from 'fast-xml-parser'
 import * as vscode from 'vscode'
 import type { Action, WebviewMessage } from '../chat/protocol'
 import type { SymfRunner } from '../local-context/symf'
@@ -6,11 +8,13 @@ import type { SymfRunner } from '../local-context/symf'
 export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private webview?: vscode.Webview
+    private issueDescription = ''
     private actions: Action[] = []
 
     constructor(
         private extensionUri: vscode.Uri,
-        private symfRunner: SymfRunner
+        private symfRunner: SymfRunner,
+        private completionsClient: SourcegraphCompletionsClient
     ) {}
 
     dispose() {
@@ -58,6 +62,8 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'agi/submitIssueDescription':
+                this.issueDescription = message.description
+                this.actions = []
                 this.actions.push({
                     type: 'writeSearchQuery',
                     result: undefined,
@@ -74,9 +80,12 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
             return
         }
         switch (lastAction.type) {
-            case 'writeSearchQuery':
-                console.log('# doLastAction > writeSearchQuery')
+            case 'writeSearchQuery': {
+                const queries = await writeQueries(this.completionsClient, this.issueDescription)
+                lastAction.result = queries
+                await this.postActions()
                 break
+            }
         }
     }
 
@@ -86,4 +95,53 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
             actions: this.actions,
         })
     }
+}
+
+/*
+Create a new sidebar panel that's similar to the search panel but executes multiple queries under the hood, with various rewriting strategies.
+*/
+
+async function writeQueries(
+    completionsClient: SourcegraphCompletionsClient,
+    issueDescription: string
+): Promise<string[]> {
+    const stream = completionsClient.stream({
+        messages: [
+            {
+                speaker: 'human',
+                // text: `From this issue description, write a series of keyword searches to find related issues and documentation on Sourcegraph. Place each search query between <searchQuery>query here</searchQuery>. Here is the issue description: <issueDescription>${issueDescription}<issueDescription>`,
+                text: `Using an issue description, imagine a list of existing classes, functions, and modules in code that may be relevant to resolving the issue. For each, list a few keywords that could be used to search for it in a codebase. Use the following format for the response list: <symbol><name>nameOfClassFunctionOrModule</name><keywords>a few keywords that could be used to search for this</keywords></symbol>. Here is the issue description: <issueDescription>${issueDescription}<issueDescription>`,
+            },
+            { speaker: 'assistant' },
+        ],
+        maxTokensToSample: 400,
+        temperature: 0,
+        topK: 2,
+        fast: true,
+    })
+
+    let rawResponse = null
+    for await (const message of stream) {
+        switch (message.type) {
+            case 'change': {
+                rawResponse = message.text
+                break
+            }
+            case 'error': {
+                throw message.error
+            }
+        }
+    }
+    if (rawResponse === null) {
+        throw new Error('No queries were generated')
+    }
+    console.log('# got rawResponse', rawResponse)
+
+    const parser = new XMLParser()
+    const document = parser.parse(rawResponse)
+    console.log('# document', document)
+    const queries: string[] = ['symbol', 'function', 'class', 'module']
+        .flatMap((t: string) => document[t] ?? [])
+        .map(s => s.keywords ?? '')
+    return queries
 }

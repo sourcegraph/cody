@@ -269,7 +269,7 @@ const register = async (
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
     if (symfRunner && config.experimentalSymfContext) {
-        const guideProvider = new GuideProvider(context.extensionUri, symfRunner)
+        const guideProvider = new GuideProvider(context.extensionUri, symfRunner, completionsClient)
         disposables.push(guideProvider)
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.guide', guideProvider, {
